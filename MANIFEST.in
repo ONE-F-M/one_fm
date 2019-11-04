@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include one_fm *.css
+recursive-include one_fm *.csv
+recursive-include one_fm *.html
+recursive-include one_fm *.ico
+recursive-include one_fm *.js
+recursive-include one_fm *.json
+recursive-include one_fm *.md
+recursive-include one_fm *.png
+recursive-include one_fm *.py
+recursive-include one_fm *.svg
+recursive-include one_fm *.txt
+recursive-exclude one_fm *.pyc
