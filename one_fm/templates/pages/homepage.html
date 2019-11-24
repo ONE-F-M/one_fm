@@ -18,8 +18,24 @@
     <!-- Core Stylesheet -->
     <link href="assets/one_fm/assets/style.css" rel="stylesheet">
 
+    <link href="assets/one_fm/assets/css/animate.min.css" rel="stylesheet">
+
+    <link href="assets/one_fm/assets/css/effects.min.css" rel="stylesheet">
+
     <!-- Responsive CSS -->
     <link href="assets/one_fm/assets/css/responsive.css" rel="stylesheet">
+
+    <script>
+            window.frappe = {};
+            frappe.ready_events = [];
+            frappe.ready = function(fn) {
+                frappe.ready_events.push(fn);
+            }
+            window.dev_server = {{ dev_server }};
+            window.socketio_port = 9000;
+
+    </script>
+
 
 </head>
 
@@ -46,26 +62,30 @@
                                 <ul class="navbar-nav ml-auto" id="nav">
                                     <li class="nav-item active"><a class="nav-link" href="#home">Home</a></li>
                                     <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-                                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
                                     <!-- <li class="nav-item"><a class="nav-link" href="#screenshot">Screenshot</a></li> -->
                                     <!-- <li class="nav-item"><a class="nav-link" href="#pricing">Pricing</a></li> -->
-                                    <li class="nav-item"><a class="nav-link" href="#testimonials">News</a></li>
-                                    <li class="nav-item"><a class="nav-link" href="#team">Team</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="#projects">Projects</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="#clients">Clients</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="#jobs">Jobs</a></li>
                                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                                 </ul>
+                                <!--
                                 <div class="sing-up-button d-lg-none">
-                                    <a href="#">Sign Up Free</a>
+                                    <a href="#">Login</a>
                                 </div>
+                            -->
                             </div>
                         </nav>
                     </div>
                 </div>
-                <!-- Signup btn -->
+                <!-- Signup btn 
                 <div class="col-12 col-lg-2">
                     <div class="sing-up-button d-none d-lg-block">
-                        <a href="#">Sign Up Free</a>
+                        <a href="#">Login</a>
                     </div>
                 </div>
+                -->
             </div>
         </div>
     </header>
@@ -82,7 +102,7 @@
                         <p>One Facility Management is a leader in the fields of commercial automation and integrated security management systems providing the latest in products and services in these fields.</p>
                     </div>
                     <div class="get-start-area">
-                        <a href="#features" class="submit">Get Started</a>
+                        <a href="#services" class="submit">Get Started</a>
 
                         <!-- Form Start 
                         <form action="#" method="post" class="form-inline">
@@ -102,8 +122,8 @@
     <!-- ***** Wellcome Area End ***** -->
 
     <!-- ***** Special Area Start ***** -->
-    <section class="special-area bg-white section_padding_100" id="about">
-        <div class="container">
+    <section class="special-area bg-white section_padding_100">
+        <div class="container" id="about">
             <div class="row">
                 <div class="col-12">
                     <!-- Section Heading Area -->
@@ -211,13 +231,13 @@
     <!-- ***** Special Area End ***** -->
 
     <!-- ***** Awesome Features Start ***** -->
-    <section class="awesome-feature-area bg-white section_padding_0_50 clearfix" id="features">
+    <section class="awesome-feature-area bg-white section_padding_0_50 clearfix" id="services">
         <div class="container">
             <div class="row">
                 <div class="col-12">
                     <!-- Heading Text -->
                     <div class="section-heading text-center">
-                        <h2>Awesome Features</h2>
+                        <h2>Awesome Services</h2>
                         <div class="line-shape"></div>
                     </div>
                 </div>
@@ -325,11 +345,11 @@
                 <div class="col-12 col-md-3 col-lg-3">
                     <div class="single-cool-fact d-flex justify-content-center wow fadeInUp" data-wow-delay="0.2s">
                         <div class="counter-area">
-                            <h3><span class="counter">1122</span></h3>
+                            <h3><span class="counter" id="project_count">0</span></h3>
                         </div>
                         <div class="cool-facts-content">
                             <i class="ti-package"></i>
-                            <p><br>Project Done</p>
+                            <p><br>Project</p>
                         </div>
                     </div>
                 </div>
@@ -337,7 +357,7 @@
                 <div class="col-12 col-md-3 col-lg-3">
                     <div class="single-cool-fact d-flex justify-content-center wow fadeInUp" data-wow-delay="0.4s">
                         <div class="counter-area">
-                            <h3><span class="counter">4522</span></h3>
+                            <h3><span class="counter" id="employee_count">0</span></h3>
                         </div>
                         <div class="cool-facts-content">
                             <i class="fa fa-users"></i>
@@ -349,11 +369,11 @@
                 <div class="col-12 col-md-3 col-lg-3">
                     <div class="single-cool-fact d-flex justify-content-center wow fadeInUp" data-wow-delay="0.6s">
                         <div class="counter-area">
-                            <h3><span class="counter">1122</span></h3>
+                            <h3><span class="counter" id="sites_count">0</span></h3>
                         </div>
                         <div class="cool-facts-content">
                             <i class="fa fa-check-circle"></i>
-                            <p><br>Deal Done</p>
+                            <p><br>Sites</p>
                         </div>
                     </div>
                 </div>
@@ -361,7 +381,7 @@
                 <div class="col-12 col-md-3 col-lg-3">
                     <div class="single-cool-fact d-flex justify-content-center wow fadeInUp" data-wow-delay="0.8s">
                         <div class="counter-area">
-                            <h3><span class="counter">1200</span></h3>
+                            <h3><span class="counter" id="clients_count">0</span></h3>
                         </div>
                         <div class="cool-facts-content">
                             <i class="ti-face-smile"></i>
@@ -521,13 +541,12 @@
     -->
     <!-- ***** Pricing Plane Area End ***** -->
 
-    <!-- ***** Client Feedback Area Start ***** -->
+    <!-- ***** Client Feedback Area Start ***** 
     <section class="clients-feedback-area bg-white section_padding_100 clearfix" id="testimonials">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-12 col-md-10">
                     <div class="slider slider-for">
-                        <!-- Client Feedback Text  -->
                         <div class="client-feedback-text text-center">
                             <div class="client">
                                 <i class="fa fa-quote-left" aria-hidden="true"></i>
@@ -547,7 +566,6 @@
                                 <p>ISO-9001:2008</p>
                             </div>
                         </div>
-                        <!-- Client Feedback Text  -->
                         <div class="client-feedback-text text-center">
                             <div class="client">
                                 <i class="fa fa-quote-left" aria-hidden="true"></i>
@@ -567,7 +585,6 @@
                                 <p>New Service</p>
                             </div>
                         </div>
-                        <!-- Client Feedback Text  -->
                         <div class="client-feedback-text text-center">
                             <div class="client">
                                 <i class="fa fa-quote-left" aria-hidden="true"></i>
@@ -587,7 +604,6 @@
                                 <p>New Recruitment</p>
                             </div>
                         </div>
-                        <!-- Client Feedback Text  -->
                         <div class="client-feedback-text text-center">
                             <div class="client">
                                 <i class="fa fa-quote-left" aria-hidden="true"></i>
@@ -609,7 +625,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- Client Thumbnail Area -->
                 <div class="col-12 col-md-6 col-lg-5">
                     <div class="slider slider-nav">
                         <div class="client-thumbnail">
@@ -630,15 +645,213 @@
             </div>
         </div>
     </section>
-    <!-- ***** Client Feedback Area End ***** -->
+     -->
+    <section class="awesome-feature-area bg-white section_padding_0_50 clearfix" id="projects">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <!-- Heading Text -->
+                    <div class="section-heading text-center">
+                        <h2>Our best projects</h2>
+                        <div class="line-shape"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" id="our-project">
+                
+                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
+                    <div class="hover ehover11">
+                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
+                        <div class="projectoverlay">
+                            <h2>Effect 11</h2>
+                            <button class="info nullbutton" data-toggle="modal" data-target="#modal1">Show more
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
+                    <div class="hover ehover11">
+                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
+                        <div class="projectoverlay">
+                            <h2>Effect 11</h2>
+                            <button class="info nullbutton" data-toggle="modal" data-target="#modal2">Show more
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
+                    <div class="hover ehover11">
+                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
+                        <div class="projectoverlay">
+                            <h2>Effect 11</h2>
+                            <button class="info nullbutton" data-toggle="modal" data-target="#modal3">Show more
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
+                    <div class="hover ehover11">
+                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
+                        <div class="projectoverlay">
+                            <h2>Effect 11</h2>
+                            <button class="info nullbutton" data-toggle="modal" data-target="#modal4">Show more
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
+                    <div class="hover ehover11">
+                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
+                        <div class="projectoverlay">
+                            <h2>Effect 11</h2>
+                            <button class="info nullbutton" data-toggle="modal" data-target="#modal5">Show more
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
+                    <div class="hover ehover11">
+                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
+                        <div class="projectoverlay">
+                            <h2>Effect 11</h2>
+                            <button class="info nullbutton" data-toggle="modal" data-target="#modal6">Show more
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </section>
+
+
+
+<div id="modal1" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header right-to-left">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title">Hover effect 11</h2>
+            </div>
+            <div class="modal-body">
+                <h3>HTML</h3>
+                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
+                
+            </div>
+           
+        </div>
+    </div>
+</div>
+
+
+
+
+<div id="modal2" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header right-to-left">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title">Hover effect 2</h2>
+            </div>
+            <div class="modal-body">
+                <h3>HTML</h3>
+                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
+                
+            </div>
+           
+        </div>
+    </div>
+</div>
+
+
+<div id="modal3" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header right-to-left">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title">Hover effect 2</h2>
+            </div>
+            <div class="modal-body">
+                <h3>HTML</h3>
+                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
+                
+            </div>
+           
+        </div>
+    </div>
+</div>
+
+
+<div id="modal4" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header right-to-left">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title">Hover effect 2</h2>
+            </div>
+            <div class="modal-body">
+                <h3>HTML</h3>
+                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
+                
+            </div>
+           
+        </div>
+    </div>
+</div>
+
+
+<div id="modal5" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header right-to-left">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title">Hover effect 2</h2>
+            </div>
+            <div class="modal-body">
+                <h3>HTML</h3>
+                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
+                
+            </div>
+           
+        </div>
+    </div>
+</div>
+
+
+<div id="modal6" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header right-to-left">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title">Hover effect 2</h2>
+            </div>
+            <div class="modal-body">
+                <h3>HTML</h3>
+                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
+            </div>
+           
+        </div>
+    </div>
+</div>
+
+
 
     <!-- ***** CTA Area Start ***** -->
-    <section class="our-monthly-membership section_padding_50 clearfix">
+    <section class="our-monthly-membership section_padding_50 clearfix infosection">
         <div class="container">
             <div class="row align-items-center">
+                <!--
                 <div class="col-md-8">
                     <div class="membership-description">
-                        <h2>Join our Monthly Membership</h2>
+                        <h2>Join our Team</h2>
                         <p>Find the perfect plan for you — 100% satisfaction guaranteed.</p>
                     </div>
                 </div>
@@ -647,104 +860,261 @@
                         <a href="#">Get Started</a>
                     </div>
                 </div>
+            -->
             </div>
         </div>
     </section>
     <!-- ***** CTA Area End ***** -->
 
     <!-- ***** Our Team Area Start ***** -->
-    <section class="our-Team-area bg-white section_padding_100_50 clearfix" id="team">
+    <section class="our-Team-area bg-white section_padding_100_50 clearfix" id="clients">
         <div class="container">
             <div class="row">
                 <div class="col-12 text-center">
                     <!-- Heading Text  -->
                     <div class="section-heading">
-                        <h2>Our Team</h2>
+                        <h2>Our Clients</h2>
                         <div class="line-shape"></div>
                     </div>
                 </div>
             </div>
             <div class="row">
-                <div class="col-12 col-md-6 col-lg-3">
+                <div class="col-12 col-md-6 col-lg-2">
                     <div class="single-team-member">
                         <div class="member-image">
-                            <img src="assets/one_fm/assets/img/team-img/team-1.jpg" alt="">
-                            <div class="team-hover-effects">
-                                <div class="team-social-icon">
-                                    <a href="#"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                                    <a href="#"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                                    <a href="#"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
-                                    <a href="#"> <i class="fa fa-instagram" aria-hidden="true"></i></a>
-                                </div>
-                            </div>
+                            <img src="https://www.ttecjobs.com/img/logos/ttec-logo-black-share.png" alt="">
+                            <div class="team-hover-effects"></div>
                         </div>
-                        <div class="member-text">
+                        <div class="member-text text-center">
                             <h4>Jackson Nash</h4>
                             <p>Tax Advice</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-lg-3">
+                <div class="col-12 col-md-6 col-lg-2">
                     <div class="single-team-member">
                         <div class="member-image">
-                            <img src="assets/one_fm/assets/img/team-img/team-2.jpg" alt="">
-                            <div class="team-hover-effects">
-                                <div class="team-social-icon">
-                                    <a href="#"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                                    <a href="#"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                                    <a href="#"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
-                                    <a href="#"> <i class="fa fa-instagram" aria-hidden="true"></i></a>
-                                </div>
-                            </div>
+                            <img src="http://pngimg.com/uploads/adidas/adidas_PNG1.png" alt="">
+                            <div class="team-hover-effects"></div>
                         </div>
-                        <div class="member-text">
+                        <div class="member-text text-center">
                             <h4>Alex Manning</h4>
                             <p>CEO-Founder</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-lg-3">
+                <div class="col-12 col-md-6 col-lg-2">
                     <div class="single-team-member">
                         <div class="member-image">
-                            <img src="assets/one_fm/assets/img/team-img/team-3.jpg" alt="">
-                            <div class="team-hover-effects">
-                                <div class="team-social-icon">
-                                    <a href="#"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                                    <a href="#"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                                    <a href="#"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
-                                    <a href="#"> <i class="fa fa-instagram" aria-hidden="true"></i></a>
-                                </div>
-                            </div>
+                            <img src="https://www.eslgaming.com/sites/all/themes/stability/stability_sub/logo.png" alt="">
+                            <div class="team-hover-effects"></div>
                         </div>
-                        <div class="member-text">
+                        <div class="member-text text-center">
                             <h4>Ollie Schneider</h4>
                             <p>Business Planner</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-lg-3">
+                <div class="col-12 col-md-6 col-lg-2">
                     <div class="single-team-member">
                         <div class="member-image">
-                            <img src="assets/one_fm/assets/img/team-img/team-4.jpg" alt="">
-                            <div class="team-hover-effects">
-                                <div class="team-social-icon">
-                                    <a href="#"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                                    <a href="#"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                                    <a href="#"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
-                                    <a href="#"> <i class="fa fa-instagram" aria-hidden="true"></i></a>
-                                </div>
-                            </div>
+                            <img src="http://www.asisonline.org/globalassets/asis_logo_notag.png" alt="">
+                            <div class="team-hover-effects"></div>
                         </div>
-                        <div class="member-text">
+                        <div class="member-text text-center">
                             <h4>Roger West</h4>
                             <p>Financer</p>
                         </div>
                     </div>
                 </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <img src="http://pluspng.com/img-png/logo-apa-eagle-png-beer-bird-news-384.png" alt="">
+                            <div class="team-hover-effects"></div>
+                        </div>
+                        <div class="member-text text-center">
+                            <h4>Roger West</h4>
+                            <p>Financer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <img src="https://www.bird.co/wp-content/uploads/2018/11/FavIcon_org.png" alt="">
+                            <div class="team-hover-effects"></div>
+                        </div>
+                        <div class="member-text text-center">
+                            <h4>Roger West</h4>
+                            <p>Financer</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <img src="https://www.ttecjobs.com/img/logos/ttec-logo-black-share.png" alt="">
+                            <div class="team-hover-effects"></div>
+                        </div>
+                        <div class="member-text text-center">
+                            <h4>Jackson Nash</h4>
+                            <p>Tax Advice</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <img src="http://pngimg.com/uploads/adidas/adidas_PNG1.png" alt="">
+                            <div class="team-hover-effects"></div>
+                        </div>
+                        <div class="member-text text-center">
+                            <h4>Alex Manning</h4>
+                            <p>CEO-Founder</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <img src="https://www.eslgaming.com/sites/all/themes/stability/stability_sub/logo.png" alt="">
+                            <div class="team-hover-effects"></div>
+                        </div>
+                        <div class="member-text text-center">
+                            <h4>Ollie Schneider</h4>
+                            <p>Business Planner</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <img src="http://www.asisonline.org/globalassets/asis_logo_notag.png" alt="">
+                            <div class="team-hover-effects"></div>
+                        </div>
+                        <div class="member-text text-center">
+                            <h4>Roger West</h4>
+                            <p>Financer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <img src="http://pluspng.com/img-png/logo-apa-eagle-png-beer-bird-news-384.png" alt="">
+                            <div class="team-hover-effects"></div>
+                        </div>
+                        <div class="member-text text-center">
+                            <h4>Roger West</h4>
+                            <p>Financer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <img src="https://www.bird.co/wp-content/uploads/2018/11/FavIcon_org.png" alt="">
+                            <div class="team-hover-effects"></div>
+                        </div>
+                        <div class="member-text text-center">
+                            <h4>Roger West</h4>
+                            <p>Financer</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>
     <!-- ***** Our Team Area End ***** -->
+
+
+
+
+    <section class="our-monthly-membership section_padding_50 clearfix join-our-team" id="jobs">
+        <br><br><br><br><br>
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="membership-description">
+                        <h2>Join our Team</h2>
+                        <p>Find the perfect plan for you — 100% satisfaction guaranteed.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center wow bounceInDown">
+                    <a id="trigger-overlay" class="animated fadeInDown delay-2s send-message" href="#" data-scroll><span>Send us a message</span></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+        <!-- Jobs form 
+        <div id="pro">
+          <div class="overlay overlay-contentpush">
+            <button type="button" class="overlay-close">Close</button>
+            <div class="container">
+              <div class="projectplanner">
+                <h1>Join our Team</h1>
+                <h2>We'd love to hear from you.</h2>
+                <div class="container">
+                    <div class="row">
+                        
+                    
+                    <div class="col-sm-3"></div>
+                  <div class="col-sm-6">
+
+                    <form name="sentMessage" class="contactForm" id="contactForm" novalidate>
+                      <div class="control-group">
+                        <div class="controls">
+                          <label for="name">Name</label>
+                          <input type="text" class="form-control input-lg" placeholder="Name *" id="name" required data-validation-required-message="Please enter your name" />
+                          <p class="help-block"></p>
+                        </div>
+                      </div>
+                      <div class="control-group">
+                        <div class="controls">
+                          <label for="email">Email</label>
+                          <input type="email" class="form-control input-lg" placeholder="Email address *" id="email" required data-validation-required-message="Please enter your email" />
+                          <p class="help-block"></p>
+                        </div>
+                      </div>
+                      <div class="control-group">
+                        <div class="controls">
+                          <label for="website">Website</label>
+                          <input type="text" class="form-control input-lg" placeholder="Website" id="website" />
+                          <p class="help-block"></p>
+                        </div>
+                      </div>
+                      <div class="control-group">
+                        <div class="controls">
+                          <label for="message">Message</label>
+                          <textarea rows="10" cols="100" class="form-control input-lg" placeholder="How can we help? *" id="message" required
+                            data-validation-required-message="Please enter your message" minlength="5" 
+                            data-validation-minlength-message="Min 5 characters" maxlength="999" style="resize:none"></textarea>
+                          <p class="help-block"></p>
+                        </div>
+                      </div>
+                      <div id="success"> </div>
+                      <button type="submit" class="submit-btn center-block">Send Message</button><br />
+                      <span class="required">* required fields</span>
+                    </form>
+
+                  </div>
+                  <div class="col-sm-3"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        /Jobs form -->
+
+
+
 
     <!-- ***** Contact Us Area Start ***** -->
     <section class="footer-contact-area section_padding_100 clearfix" id="contact">
@@ -773,30 +1143,57 @@
                 <div class="col-md-6">
                     <!-- Form Start-->
                     <div class="contact_from">
-                        <form action="#" method="post">
+                        <form novalidate>
                             <!-- Message Input Area Start -->
                             <div class="contact_input_area">
                                 <div class="row">
                                     <!-- Single Input Area Start -->
                                     <div class="col-md-12">
-                                        <div class="form-group">
-                                            <input type="text" class="form-control" name="name" id="name" placeholder="Your Name" required>
+                                        <div class="form-group control-group">
+                                            <div class="controls">
+                                                <input type="text" class="form-control" name="name" id="name" placeholder="Your Name" required data-validation-required-message="Please enter your name">
+                                                <p class="help-block"></p>
+                                            </div>
                                         </div>
                                     </div>
                                     <!-- Single Input Area Start -->
                                     <div class="col-md-12">
-                                        <div class="form-group">
-                                            <input type="email" class="form-control" name="email" id="email" placeholder="Your E-mail" required>
+                                        <div class="form-group control-group">
+                                            <div class="controls">
+                                                <input type="email" class="form-control" name="email" id="email" placeholder="Your E-mail" required data-validation-required-message="Please enter your email">
+                                                <p class="help-block"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Single Input Area Start -->
+                                    <div class="col-md-12">
+                                        <div class="form-group control-group">
+                                            <div class="controls">
+                                <select class="form-control selectpicker" title="Your Subject" name="subject" id="subject" equired invalid>
+                                  <option value="" disabled selected>Your Subject ...</option>
+                                  <option value="Sales">Sales</option>
+                                  <option value="Partnerships">Partnerships</option>
+                                  <option value="Recruitment Agencies">Recruitment Agencies</option>
+                                  <option value="Staff Issues">Staff Issues</option>
+                                  <option value="General">General</option>
+                                </select>
+                                <p class="help-block"></p>
+                            </div>
                                         </div>
                                     </div>
                                     <!-- Single Input Area Start -->
                                     <div class="col-12">
-                                        <div class="form-group">
-                                            <textarea name="message" class="form-control" id="message" cols="30" rows="4" placeholder="Your Message *" required></textarea>
+                                        <div class="form-group control-group">
+                                            <div class="controls">
+                                            <textarea name="message" class="form-control" id="message" cols="30" rows="4" placeholder="Your Message *" required data-validation-required-message="Please enter your message" minlength="5" 
+          data-validation-minlength-message="Min 5 characters" maxlength="999"></textarea>
+                                            <p class="help-block"></p>
+                                        </div>
                                         </div>
                                     </div>
                                     <!-- Single Input Area Start -->
                                     <div class="col-12">
+                                        <div id="success"> </div>
                                         <button type="submit" class="btn submit-btn">Send Now</button>
                                     </div>
                                 </div>
@@ -807,38 +1204,15 @@
                 </div>
             </div>
         </div>
+
+
+
     </section>
     <!-- ***** Contact Us Area End ***** -->
 
     <!-- ***** Footer Area Start ***** -->
     <footer class="footer-social-icon text-center section_padding_70 clearfix">
-        <!-- footer logo -->
-
-
-
-        <div class="footer-text">
-            <h2>Ca.</h2>
-        </div>
-        <!-- social icon-->
-        <div class="footer-social-icon">
-            <a href="#"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-            <a href="#"><i class="active fa fa-twitter" aria-hidden="true"></i></a>
-            <a href="#"> <i class="fa fa-instagram" aria-hidden="true"></i></a>
-            <a href="#"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
-        </div>
-        <div class="footer-menu">
-            <nav>
-                <ul>
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Terms &amp; Conditions</a></li>
-                    <li><a href="#">Privacy Policy</a></li>
-                    <li><a href="#">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-        <!-- Foooter Text-->
         <div class="copyright-text">
-            <!-- ***** Removing this text is now allowed! This template is licensed under CC BY 3.0 ***** -->
             <p>Copyright ©2019 <a href="http://one-fm.com/" target="_blank">ONE Facilities Management</a></p>
         </div>
     </footer>
@@ -858,6 +1232,18 @@
     <script src="assets/one_fm/assets/js/footer-reveal.min.js"></script>
     <!-- Active JS -->
     <script src="assets/one_fm/assets/js/active.js"></script>
+
+    <script src="assets/one_fm/assets/js/scripts.js"></script>
+    <script src="assets/one_fm/assets/js/overlay.js"></script>
+
+    <script src="assets/one_fm/assets/js/jqBootstrapValidation.js"></script>
+
+
+    <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
+    <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
+
+
+
 </body>
 
 </html>
