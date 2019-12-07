@@ -111,6 +111,17 @@ home_page = "coming_soon"
 # Testing
 # -------
 
+fixtures = [
+      {
+        "dt": "Custom Field", 
+        "filters": [["name", "in", ["Project-project_image","Project-site_section_01","Project-project_sites"]]]
+      },
+      {
+        "dt": "Property Setter", 
+        "filters": [["doc_type", "in", ["Lead"]]]
+      }
+]
+
 # before_tests = "one_fm.install.before_tests"
 
 # Overriding Whitelisted Methods

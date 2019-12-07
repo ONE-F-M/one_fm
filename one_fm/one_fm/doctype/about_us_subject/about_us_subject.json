@@ -1,0 +1,36 @@
+{
+ "creation": "2019-12-01 19:24:20.662623",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "font_icon",
+  "subject"
+ ],
+ "fields": [
+  {
+   "fieldname": "font_icon",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Font Icon"
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Subject",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2019-12-01 19:32:54.167412",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "About Us Subject",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

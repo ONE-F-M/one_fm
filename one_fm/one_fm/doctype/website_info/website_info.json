@@ -1,0 +1,172 @@
+{
+ "creation": "2019-12-01 19:11:04.305718",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "about_us_section",
+  "section_title",
+  "section_header",
+  "section_subject",
+  "what_we_want_section",
+  "our_vision",
+  "column_break_7",
+  "our_mission",
+  "services_section",
+  "services_title",
+  "services_data",
+  "contact_us_section",
+  "address",
+  "phone",
+  "email",
+  "social_media_section",
+  "facebook",
+  "youtube",
+  "column_break_17",
+  "twitter",
+  "instagram"
+ ],
+ "fields": [
+  {
+   "fieldname": "about_us_section",
+   "fieldtype": "Section Break",
+   "label": "About Us"
+  },
+  {
+   "fieldname": "section_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_header",
+   "fieldtype": "Data",
+   "label": "Section Header"
+  },
+  {
+   "fieldname": "section_subject",
+   "fieldtype": "Table",
+   "label": "Section Subject",
+   "options": "About Us Subject",
+   "reqd": 1
+  },
+  {
+   "fieldname": "what_we_want_section",
+   "fieldtype": "Section Break",
+   "label": "What We Want"
+  },
+  {
+   "fieldname": "our_vision",
+   "fieldtype": "Table",
+   "label": "Our Vision",
+   "options": "Our Vision",
+   "reqd": 1
+  },
+  {
+   "fieldname": "our_mission",
+   "fieldtype": "Table",
+   "label": "Our Mission",
+   "options": "Our Mission",
+   "reqd": 1
+  },
+  {
+   "fieldname": "services_section",
+   "fieldtype": "Section Break",
+   "label": "Services"
+  },
+  {
+   "fieldname": "services_data",
+   "fieldtype": "Table",
+   "label": "Services data",
+   "options": "Services Subject",
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact_us_section",
+   "fieldtype": "Section Break",
+   "label": "Contact Us"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Data",
+   "label": "Address",
+   "reqd": 1
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone",
+   "reqd": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "social_media_section",
+   "fieldtype": "Section Break",
+   "label": "Social Media"
+  },
+  {
+   "fieldname": "facebook",
+   "fieldtype": "Data",
+   "label": "Facebook"
+  },
+  {
+   "fieldname": "youtube",
+   "fieldtype": "Data",
+   "label": "Youtube"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "twitter",
+   "fieldtype": "Data",
+   "label": "Twitter"
+  },
+  {
+   "fieldname": "instagram",
+   "fieldtype": "Data",
+   "label": "Instagram"
+  },
+  {
+   "fieldname": "services_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Services Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "hide_toolbar": 1,
+ "issingle": 1,
+ "modified": "2019-12-01 20:32:21.742888",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Website Info",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

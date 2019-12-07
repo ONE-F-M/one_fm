@@ -1,0 +1,135 @@
+{
+ "autoname": "PR.######",
+ "creation": "2019-12-07 18:50:17.333945",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "project",
+  "address",
+  "nature_of_demand",
+  "technical_verification",
+  "from",
+  "column_break_3",
+  "employee_name",
+  "site",
+  "priority",
+  "supply",
+  "description_of_the_request",
+  "section_break_6",
+  "items",
+  "total_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Site"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Read Only",
+   "label": "Employee Name",
+   "options": "employee.employee_name"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Purchase Request Item",
+   "options": "Purchase Request Item"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Data",
+   "label": "Address"
+  },
+  {
+   "fieldname": "nature_of_demand",
+   "fieldtype": "Select",
+   "label": "Nature Of Demand",
+   "options": "\nAssets\nConsumables\nServices\nOthers"
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority",
+   "options": "Normal\nUrgent\nCritic"
+  },
+  {
+   "fieldname": "supply",
+   "fieldtype": "Select",
+   "label": "Supply",
+   "options": "Local\nImport"
+  },
+  {
+   "fieldname": "technical_verification",
+   "fieldtype": "Select",
+   "label": "Technical Verification",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval: doc.technical_verification=='Yes'",
+   "fieldname": "from",
+   "fieldtype": "Data",
+   "label": "From"
+  },
+  {
+   "fieldname": "description_of_the_request",
+   "fieldtype": "Text",
+   "label": "Description of The Request"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount",
+   "read_only": 1
+  }
+ ],
+ "modified": "2019-12-07 20:42:36.879162",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Purchase Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

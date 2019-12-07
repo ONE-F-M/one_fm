@@ -15,6 +15,8 @@
     <link rel="icon" href="assets/one_fm/assets/img/logo-img/favicon.ico">
     <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/8.5.0/svg/shield.svg">
 
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+
     <!-- Core Stylesheet -->
     <link href="assets/one_fm/assets/style.css" rel="stylesheet">
 
@@ -41,9 +43,13 @@
 
 <body>
     <!-- Preloader Start -->
+
+    <!--
     <div id="preloader">
         <div class="colorlib-load"></div>
     </div>
+    -->
+
 
     <!-- ***** Header Area Start ***** -->
     <header class="header_area animated">
@@ -54,7 +60,7 @@
                     <div class="menu_area">
                         <nav class="navbar navbar-expand-lg navbar-light">
                             <!-- Logo -->
-                            <a class="navbar-brand" href="#"><img src="assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png" alt="One FM" style="width: 35%;" id="logo"></a>
+                            <a class="navbar-brand" href="#"><img src="assets/one_fm/assets/img/logo-img/ONEFM_Identity_white.png" alt="One FM" style="width: 35%;vertical-align: initial;" id="logo"></a>
                             <!--<a class="navbar-brand" href="#">Ca.</a>-->
                             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#ca-navbar" aria-controls="ca-navbar" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                             <!-- Menu Area -->
@@ -63,33 +69,75 @@
                                     <li class="nav-item active"><a class="nav-link" href="#home">Home</a></li>
                                     <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
                                     <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
-                                    <!-- <li class="nav-item"><a class="nav-link" href="#screenshot">Screenshot</a></li> -->
-                                    <!-- <li class="nav-item"><a class="nav-link" href="#pricing">Pricing</a></li> -->
-                                    <li class="nav-item"><a class="nav-link" href="#projects">Projects</a></li>
+                                    <!--<li class="nav-item"><a class="nav-link" href="#projects">Projects</a></li>-->
                                     <li class="nav-item"><a class="nav-link" href="#clients">Clients</a></li>
                                     <li class="nav-item"><a class="nav-link" href="#jobs">Jobs</a></li>
                                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                                 </ul>
-                                <!--
-                                <div class="sing-up-button d-lg-none">
-                                    <a href="#">Login</a>
-                                </div>
-                            -->
+
                             </div>
                         </nav>
                     </div>
                 </div>
-                <!-- Signup btn 
+                <!-- Signup btn -->
                 <div class="col-12 col-lg-2">
                     <div class="sing-up-button d-none d-lg-block">
-                        <a href="#">Login</a>
+                        <a href="#" data-toggle="modal" data-target="#request_quote">Request Quote</a>
                     </div>
                 </div>
-                -->
+                
             </div>
         </div>
     </header>
     <!-- ***** Header Area End ***** -->
+
+
+
+<div id="request_quote" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header right-to-left">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title">Request Quote</h2>
+            </div>
+            <div class="modal-applyed">
+                    <form>
+                        <div class="form-group">
+                        <label for="person_name">Person Name</label>
+                        <input type="text" class="form-control" name="person_name" id="person_name" placeholder="Enter name" required>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="organization_name">Organization Name</label>
+                        <input type="text" class="form-control" name="organization_name" id="organization_name" placeholder="Enter organization name" required>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="quote_email">Email Address</label>
+                        <input type="email" class="form-control" name="quote_email" id="quote_email" placeholder="Enter email" >
+                      </div>
+
+                       <div class="form-group">
+                        <label for="mobile_no">Mobile No.</label>
+                        <input type="text" class="form-control" name="mobile_no" id="mobile_no" placeholder="Enter mobile number" required>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="quote_notes">Notes</label>
+                        <textarea class="form-control" name="quote_notes" id="quote_notes" rows="3"></textarea>
+                      </div>
+
+                      <button type="button" class="btn btn-primary" onclick="request_new_quote()">Submit</button>
+
+                    </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 
     <!-- ***** Wellcome Area Start ***** -->
     <section class="wellcome_area clearfix" id="home">
@@ -97,27 +145,40 @@
             <div class="row h-100 align-items-center">
                 <div class="col-12 col-md">
                     <div class="wellcome-heading">
-                        <h2>WE SUPPLY PROTECTION</h2>
-                        <h3>One FM</h3>
+                        <!-- <h2 class="wow fadeInDown" data-wow-delay="0.5s">WE SUPPLY PROTECTION</h2> -->
+
+                        <h2 class="typewrite" data-period="2000" data-type='[ "Hi, We are One FM.",
+                        "We Provide Security Services.", 
+                        "We Provide HVAC services.", 
+                        "We Provide Generator Services.", 
+                        "We Provide Cleaning services.", 
+                        "We Provide Plumbing Services.", 
+                        "We Provide IT services.", 
+                        "We Provide Electrical & AC services.", 
+                        "We Provide Landscaping services.", 
+                        "We Provide Facilities Management services." ]'>
+                            <span class="wrap"></span>
+                        </h2>
+
+                        <h3>One FM
+                            <hr class="full_hr" style="height:10px;background-color:#fff;">
+                            <hr class="half_hr" style="height:10px;background-color:#fff;width:50%;">
+                        </h3>
                         <p>One Facility Management is a leader in the fields of commercial automation and integrated security management systems providing the latest in products and services in these fields.</p>
                     </div>
-                    <div class="get-start-area">
-                        <a href="#services" class="submit">Get Started</a>
 
-                        <!-- Form Start 
-                        <form action="#" method="post" class="form-inline">
-                            <input type="email" class="form-control email" placeholder="name@company.com">
-                            <input type="submit" class="submit" value="Get Started">
-                        </form>
-                         Form End -->
-                    </div>
                 </div>
             </div>
         </div>
         <!-- Welcome thumb -->
+
+        <!--
         <div class="welcome-thumb wow fadeInDown" data-wow-delay="0.5s">
             <img src="assets/one_fm/assets/img/bage-img/website-security.png" alt="">
         </div>
+    -->
+
+
     </section>
     <!-- ***** Wellcome Area End ***** -->
 
@@ -128,16 +189,15 @@
                 <div class="col-12">
                     <!-- Section Heading Area -->
                     <div class="section-heading text-center">
-                        <h2>Why Is It Special</h2>
+                        <h2 id="about_us_title">Why we are ONE</h2>
                         <div class="line-shape"></div>
                     </div>
                 </div>
             </div>
 
             <div class="row">
-
                 <div class="col-12 col-md-12">
-                    <div class="single-special wow fadeInUp" data-wow-delay="0.2s">
+                    <div class="single-special wow fadeInUp" data-wow-delay="0.2s" id="about_us_content">
                         <h4 class="text-center">YEAR’S OF EXPERIENCE</h4>
                         <p><i class="fa fa-home"></i>   One Facilities Management Services Company is founded after deep studies and considerations made to the local security and services industry of Kuwait. One Facilities Management promised to have the best security and services solutions delivery ever made by security services providers aiming to lead the industry in the next few years.</p>
                         <p><i class="fa fa-shield"></i>   Being the best IT Services Company in Kuwait, we are specialized for Security in Kuwait, providing a full range of Security Services, Security Equipment, IT Solutions, Labouring Services, Transportation Services and Security Guards tailored to match our client’s needs using our great experienced staff.</p>
@@ -146,36 +206,6 @@
                     </div>
                 </div>
 
-
-                <!--
-                <div class="col-12 col-md-4">
-                    <div class="single-special text-center wow fadeInUp" data-wow-delay="0.2s">
-                        <div class="single-icon">
-                            <i class="ti-mobile" aria-hidden="true"></i>
-                        </div>
-                        <h4>Easy to use</h4>
-                        <p>We build pretty complex tools and this allows us to take designs and turn them into functional quickly and easily</p>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <div class="single-special text-center wow fadeInUp" data-wow-delay="0.4s">
-                        <div class="single-icon">
-                            <i class="ti-ruler-pencil" aria-hidden="true"></i>
-                        </div>
-                        <h4>Powerful Design</h4>
-                        <p>We build pretty complex tools and this allows us to take designs and turn them into functional quickly and easily</p>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <div class="single-special text-center wow fadeInUp" data-wow-delay="0.6s">
-                        <div class="single-icon">
-                            <i class="ti-settings" aria-hidden="true"></i>
-                        </div>
-                        <h4>Customizability</h4>
-                        <p>We build pretty complex tools and this allows us to take designs and turn them into functional quickly and easily</p>
-                    </div>
-                </div>
-            -->
 
             </div>
         </div>
@@ -187,10 +217,12 @@
                         <div class="special_description_content our-goal">
                             <h2>What We Want!</h2>
                             <h4>Our Vision</h4>
-                            <p>“One FM – to be a Regional Leader providing a Trade Marked Services”</p>
+                                <ul id="our_vision">
+                                    <li>“One FM – to be a Regional Leader providing a Trade Marked Services”</li>
+                                </ul>
                             <br>
                             <h4>Our Mission</h4>
-                                <ul>
+                                <ul id="our_mission">
                                     <li>Expert; Delivering the right solution, tailored to our customers.</li>
                                     <li>Professional; Using such employees, equipments and technologies in serving our customers.</li>
                                     <li>Transparent; Within the firm and toward our relationships with our valued customers.</li>
@@ -199,22 +231,6 @@
                                     <li>Customer satisfaction before profit; which reflects our care to our employee and our valued customers.</li>
                                 </ul>
                             
-                            <!--
-                                <div class="app-download-area">
-                                <div class="app-download-btn wow fadeInUp" data-wow-delay="0.2s">
-                                    <a href="#">
-                                        <i class="fa fa-android"></i>
-                                        <p class="mb-0"><span>available on</span> Google Store</p>
-                                    </a>
-                                </div>
-                                <div class="app-download-btn wow fadeInDown" data-wow-delay="0.4s">
-                                    <a href="#">
-                                        <i class="fa fa-apple"></i>
-                                        <p class="mb-0"><span>available on</span> Apple Store</p>
-                                    </a>
-                                </div>
-                                </div>
-                            -->
                         </div>
                     </div>
 
@@ -237,13 +253,13 @@
                 <div class="col-12">
                     <!-- Heading Text -->
                     <div class="section-heading text-center">
-                        <h2>Awesome Services</h2>
+                        <h2 id="services_title">ONE Services</h2>
                         <div class="line-shape"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row" id="services_content">
                 <!-- Single Feature Start -->
                 <div class="col-12 col-sm-6 col-lg-4">
                     <div class="single-feature">
@@ -318,32 +334,26 @@
     </section>
     <!-- ***** Awesome Features End ***** -->
 
-    <!-- ***** Video Area Start ***** -->
-    <div class="video-section">
-        <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <!-- Video Area Start -->
-                    <div class="video-area" style="background-image: url(assets/one_fm/assets/img/bage-img/security-camera.jpg);">
-                        <!--
-                            <div class="video-play-btn">
-                                <a href="https://www.youtube.com/watch?v=f5BBJ4ySgpo" class="video_btn"><i class="fa fa-play" aria-hidden="true"></i></a>
-                            </div>
-                        -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- ***** Video Area End ***** -->
 
     <!-- ***** Cool Facts Area Start ***** -->
-    <section class="cool_facts_area clearfix">
-        <div class="container">
+    <section class="cool_facts_area clearfix" >
+        <div class="container" id="clients">
             <div class="row">
-                <!-- Single Cool Fact-->
+
                 <div class="col-12 col-md-3 col-lg-3">
-                    <div class="single-cool-fact d-flex justify-content-center wow fadeInUp" data-wow-delay="0.2s">
+                    <div class="single-cool-fact d-flex justify-content-center reveal-holder wow fadeInUp" data-wow-delay="0.8s">
+                        <div class="counter-area">
+                            <h3><span class="counter" id="clients_count">0</span></h3>
+                        </div>
+                        <div class="cool-facts-content">
+                            <i class="ti-face-smile"></i>
+                            <p><br>Client</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <div class="single-cool-fact d-flex justify-content-center reveal-holder wow fadeInUp" data-wow-delay="0.2s">
                         <div class="counter-area">
                             <h3><span class="counter" id="project_count">0</span></h3>
                         </div>
@@ -353,9 +363,21 @@
                         </div>
                     </div>
                 </div>
-                <!-- Single Cool Fact-->
+
                 <div class="col-12 col-md-3 col-lg-3">
-                    <div class="single-cool-fact d-flex justify-content-center wow fadeInUp" data-wow-delay="0.4s">
+                    <div class="single-cool-fact d-flex justify-content-center reveal-holder wow fadeInUp" data-wow-delay="0.6s">
+                        <div class="counter-area">
+                            <h3><span class="counter" id="sites_count">0</span></h3>
+                        </div>
+                        <div class="cool-facts-content">
+                            <i class="fa fa-check-circle"></i>
+                            <p><br>Site</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <div class="single-cool-fact d-flex justify-content-center reveal-holder wow fadeInUp" data-wow-delay="0.4s">
                         <div class="counter-area">
                             <h3><span class="counter" id="employee_count">0</span></h3>
                         </div>
@@ -365,279 +387,36 @@
                         </div>
                     </div>
                 </div>
-                <!-- Single Cool Fact-->
-                <div class="col-12 col-md-3 col-lg-3">
-                    <div class="single-cool-fact d-flex justify-content-center wow fadeInUp" data-wow-delay="0.6s">
-                        <div class="counter-area">
-                            <h3><span class="counter" id="sites_count">0</span></h3>
-                        </div>
-                        <div class="cool-facts-content">
-                            <i class="fa fa-check-circle"></i>
-                            <p><br>Sites</p>
-                        </div>
-                    </div>
-                </div>
-                <!-- Single Cool Fact-->
-                <div class="col-12 col-md-3 col-lg-3">
-                    <div class="single-cool-fact d-flex justify-content-center wow fadeInUp" data-wow-delay="0.8s">
-                        <div class="counter-area">
-                            <h3><span class="counter" id="clients_count">0</span></h3>
-                        </div>
-                        <div class="cool-facts-content">
-                            <i class="ti-face-smile"></i>
-                            <p><br>Clients</p>
-                        </div>
-                    </div>
-                </div>
+
             </div>
         </div>
     </section>
     <!-- ***** Cool Facts Area End ***** -->
 
-    <!-- ***** App Screenshots Area Start ***** -->
-    <!--
-        <section class="app-screenshots-area bg-white section_padding_0_100 clearfix" id="screenshot">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 text-center">
-                        <div class="section-heading">
-                            <h2>App Screenshots</h2>
-                            <div class="line-shape"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="app_screenshots_slides owl-carousel">
-                            <div class="single-shot">
-                                <img src="assets/one_fm/assets/img/scr-img/app-1.jpg" alt="">
-                            </div>
-                            <div class="single-shot">
-                                <img src="assets/one_fm/assets/img/scr-img/app-2.jpg" alt="">
-                            </div>
-                            <div class="single-shot">
-                                <img src="assets/one_fm/assets/img/scr-img/app-3.jpg" alt="">
-                            </div>
-                            <div class="single-shot">
-                                <img src="assets/one_fm/assets/img/scr-img/app-4.jpg" alt="">
-                            </div>
-                            <div class="single-shot">
-                                <img src="assets/one_fm/assets/img/scr-img/app-5.jpg" alt="">
-                            </div>
-                            <div class="single-shot">
-                                <img src="assets/one_fm/assets/img/scr-img/app-3.jpg" alt="">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    -->
-    <!-- ***** App Screenshots Area End *****====== -->
 
-    <!-- ***** Pricing Plane Area Start *****==== -->
-    <!--
-        <section class="pricing-plane-area section_padding_100_70 clearfix" id="pricing">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="section-heading text-center">
-                            <h2>Pricing Plan</h2>
-                            <div class="line-shape"></div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="row no-gutters">
-                    <div class="col-12 col-md-6 col-lg-3">
-                        <div class="single-price-plan text-center">
-                            <div class="package-plan">
-                                <h5>Starter Plan</h5>
-                                <div class="ca-price d-flex justify-content-center">
-                                    <span>$</span>
-                                    <h4>29</h4>
-                                </div>
-                            </div>
-                            <div class="package-description">
-                                <p>Up to 10 users monthly</p>
-                                <p>Unlimited updates</p>
-                                <p>Free host &amp; domain</p>
-                                <p>24/7 Support</p>
-                                <p>10 Unique Users</p>
-                            </div>
-                            <div class="plan-button">
-                                <a href="#">Select Plan</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-3">
-                        <div class="single-price-plan text-center">
-                            <div class="package-plan">
-                                <h5>Basic Plan</h5>
-                                <div class="ca-price d-flex justify-content-center">
-                                    <span>$</span>
-                                    <h4>49</h4>
-                                </div>
-                            </div>
-                            <div class="package-description">
-                                <p>Up to 10 users monthly</p>
-                                <p>Unlimited updates</p>
-                                <p>Free host &amp; domain</p>
-                                <p>24/7 Support</p>
-                                <p>10 Unique Users</p>
-                            </div>
-                            <div class="plan-button">
-                                <a href="#">Select Plan</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-3">
-                        <div class="single-price-plan active text-center">
-                            <div class="package-plan">
-                                <h5>Advenced Plan</h5>
-                                <div class="ca-price d-flex justify-content-center">
-                                    <span>$</span>
-                                    <h4>69</h4>
-                                </div>
-                            </div>
-                            <div class="package-description">
-                                <p>Up to 10 users monthly</p>
-                                <p>Unlimited updates</p>
-                                <p>Free host &amp; domain</p>
-                                <p>24/7 Support</p>
-                                <p>10 Unique Users</p>
-                            </div>
-                            <div class="plan-button">
-                                <a href="#">Select Plan</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-3">
-                        <div class="single-price-plan text-center">
-                            <div class="package-plan">
-                                <h5>Community Plan</h5>
-                                <div class="ca-price d-flex justify-content-center">
-                                    <span>$</span>
-                                    <h4>99</h4>
-                                </div>
-                            </div>
-                            <div class="package-description">
-                                <p>Up to 10 users monthly</p>
-                                <p>Unlimited updates</p>
-                                <p>Free host &amp; domain</p>
-                                <p>24/7 Support</p>
-                                <p>10 Unique Users</p>
-                            </div>
-                            <div class="plan-button">
-                                <a href="#">Select Plan</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    -->
-    <!-- ***** Pricing Plane Area End ***** -->
-
-    <!-- ***** Client Feedback Area Start ***** 
-    <section class="clients-feedback-area bg-white section_padding_100 clearfix" id="testimonials">
+    <!-- ***** Our Team Area Start ***** -->
+    <section class="our-Team-area bg-white section_padding_0_50 clearfix">
         <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-12 col-md-10">
-                    <div class="slider slider-for">
-                        <div class="client-feedback-text text-center">
-                            <div class="client">
-                                <i class="fa fa-quote-left" aria-hidden="true"></i>
-                            </div>
-                            <div class="client-description text-center">
-                                <p>“ One Fm Services Company celebrating the reward of ISO-9001:2008 in producing security services. Great moment, Great people. Thank you for all the support One FM Family Members. ”</p>
-                            </div>
-                            <div class="star-icon text-center">
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                            </div>
-                            <div class="client-name text-center">
-                                <h5>ARMOR ISO CERTIFIED</h5>
-                                <p>ISO-9001:2008</p>
-                            </div>
-                        </div>
-                        <div class="client-feedback-text text-center">
-                            <div class="client">
-                                <i class="fa fa-quote-left" aria-hidden="true"></i>
-                            </div>
-                            <div class="client-description text-center">
-                                <p>“ One FM deployed a brand new patrolling cars to cover Kuwait metropolitan areas. Our experienced patrolling officers now using the patrolling guard tour system which allow us to closely observe our clients sites and report accordingly. ”</p>
-                            </div>
-                            <div class="star-icon text-center">
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                            </div>
-                            <div class="client-name text-center">
-                                <h5>New Patrolling Cars On Duty</h5>
-                                <p>New Service</p>
-                            </div>
-                        </div>
-                        <div class="client-feedback-text text-center">
-                            <div class="client">
-                                <i class="fa fa-quote-left" aria-hidden="true"></i>
-                            </div>
-                            <div class="client-description text-center">
-                                <p>“ One FM now recruting more security guards. You are more than welcome to join our great team to share the success. We are expanding!!”</p>
-                            </div>
-                            <div class="star-icon text-center">
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                            </div>
-                            <div class="client-name text-center">
-                                <h5>Share The Success</h5>
-                                <p>New Recruitment</p>
-                            </div>
-                        </div>
-                        <div class="client-feedback-text text-center">
-                            <div class="client">
-                                <i class="fa fa-quote-left" aria-hidden="true"></i>
-                            </div>
-                            <div class="client-description text-center">
-                                <p>“ One FM SERVICES is proud to introduce new online service to all clients. The portal will provide services details, packages, online tracking to each client and billing information. ”</p>
-                            </div>
-                            <div class="star-icon text-center">
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                                <i class="ion-ios-star"></i>
-                            </div>
-                            <div class="client-name text-center">
-                                <h5>ARMOR Clients Portal</h5>
-                                <p>Online Service</p>
-                            </div>
-                        </div>
+            <div class="row">
+                <div class="col-12 text-center">
+                    <!-- Heading Text  -->
+                    <div class="section-heading">
+                        <h2>Our Clients</h2>
+                        <div class="line-shape"></div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-lg-5">
-                    <div class="slider slider-nav">
-                        <div class="client-thumbnail">
-                            <img src="assets/one_fm/assets/img/bage-img/certificate.jpg" alt="">
+            </div>
+            <div class="row" id="our_clients_info">
+                
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <img src="https://www.bird.co/wp-content/uploads/2018/11/FavIcon_org.png" alt="">
+                            <div class="team-hover-effects"></div>
                         </div>
-                        <div class="client-thumbnail">
-                            <img src="assets/one_fm/assets/img/bage-img/patrol-cars.jpg" alt="">
-                        </div>
-                        <div class="client-thumbnail">
-                            <img src="assets/one_fm/assets/img/bage-img/security-guard.jpg" alt="">
-                        </div>
-                        <div class="client-thumbnail">
-                            <img src="assets/one_fm/assets/img/bage-img/web-portal.jpg" alt="">
+                        <div class="member-text text-center">
+                            <h4>Roger West</h4>
                         </div>
                     </div>
                 </div>
@@ -645,83 +424,48 @@
             </div>
         </div>
     </section>
-     -->
-    <section class="awesome-feature-area bg-white section_padding_0_50 clearfix" id="projects">
+    <!-- ***** Our Team Area End ***** -->
+
+
+
+    <section class="our-monthly-membership section_padding_50 clearfix join-our-team">
+        <br><br><br><br><br>
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="membership-description">
+                        <h2>We Make Your Business Our Business</h2>
+                        <p>No.1  in Kuwait providing services to the organizations from the government sector to the public sector all over in Kuwait.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+
+    <section class="awesome-feature-area bg-white section_padding_100_50 clearfix" id="jobs">
         <div class="container">
             <div class="row">
                 <div class="col-12">
                     <!-- Heading Text -->
                     <div class="section-heading text-center">
-                        <h2>Our best projects</h2>
+                        <h2>Join our Team</h2>
                         <div class="line-shape"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="row" id="our-project">
+            <div class="row" id="our-jobs">
                 
-                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                    <div class="hover ehover11">
-                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
-                        <div class="projectoverlay">
-                            <h2>Effect 11</h2>
-                            <button class="info nullbutton" data-toggle="modal" data-target="#modal1">Show more
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
 
                 <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
                     <div class="hover ehover11">
-                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
+                        <img class="img-responsive" src="assets/one_fm/assets/img/bg-img/Welcome-Background.jpg" alt="">
                         <div class="projectoverlay">
-                            <h2>Effect 11</h2>
-                            <button class="info nullbutton" data-toggle="modal" data-target="#modal2">Show more
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                    <div class="hover ehover11">
-                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
-                        <div class="projectoverlay">
-                            <h2>Effect 11</h2>
-                            <button class="info nullbutton" data-toggle="modal" data-target="#modal3">Show more
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                    <div class="hover ehover11">
-                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
-                        <div class="projectoverlay">
-                            <h2>Effect 11</h2>
-                            <button class="info nullbutton" data-toggle="modal" data-target="#modal4">Show more
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                    <div class="hover ehover11">
-                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
-                        <div class="projectoverlay">
-                            <h2>Effect 11</h2>
-                            <button class="info nullbutton" data-toggle="modal" data-target="#modal5">Show more
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                    <div class="hover ehover11">
-                        <img class="img-responsive" src="assets/one_fm/assets/img/bage-img/p3.jpg" alt="">
-                        <div class="projectoverlay">
-                            <h2>Effect 11</h2>
-                            <button class="info nullbutton" data-toggle="modal" data-target="#modal6">Show more
+                            <h2>PROJECT1</h2>
+                            <button class="info nullbutton showmorebutton" data-toggle="modal" data-target="#modal1">Read More
                             </button>
                         </div>
                     </div>
@@ -744,374 +488,52 @@
             <div class="modal-body">
                 <h3>HTML</h3>
                 <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
-                
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('erpnext-developer').classList.toggle('hidden');">Apply</button>
             </div>
-           
-        </div>
-    </div>
-</div>
-
-
-
-
-<div id="modal2" class="modal fade">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header right-to-left">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h2 class="modal-title">Hover effect 2</h2>
-            </div>
-            <div class="modal-body">
-                <h3>HTML</h3>
-                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
-                
-            </div>
-           
-        </div>
-    </div>
-</div>
-
-
-<div id="modal3" class="modal fade">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header right-to-left">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h2 class="modal-title">Hover effect 2</h2>
-            </div>
-            <div class="modal-body">
-                <h3>HTML</h3>
-                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
-                
-            </div>
-           
-        </div>
-    </div>
-</div>
-
-
-<div id="modal4" class="modal fade">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header right-to-left">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h2 class="modal-title">Hover effect 2</h2>
-            </div>
-            <div class="modal-body">
-                <h3>HTML</h3>
-                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
-                
-            </div>
-           
-        </div>
-    </div>
-</div>
-
-
-<div id="modal5" class="modal fade">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header right-to-left">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h2 class="modal-title">Hover effect 2</h2>
-            </div>
-            <div class="modal-body">
-                <h3>HTML</h3>
-                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
-                
-            </div>
-           
-        </div>
-    </div>
-</div>
-
-
-<div id="modal6" class="modal fade">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header right-to-left">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h2 class="modal-title">Hover effect 2</h2>
-            </div>
-            <div class="modal-body">
-                <h3>HTML</h3>
-                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
-            </div>
-           
-        </div>
-    </div>
-</div>
-
-
-
-    <!-- ***** CTA Area Start ***** -->
-    <section class="our-monthly-membership section_padding_50 clearfix infosection">
-        <div class="container">
-            <div class="row align-items-center">
-                <!--
-                <div class="col-md-8">
-                    <div class="membership-description">
-                        <h2>Join our Team</h2>
-                        <p>Find the perfect plan for you — 100% satisfaction guaranteed.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="get-started-button wow bounceInDown" data-wow-delay="0.5s">
-                        <a href="#">Get Started</a>
-                    </div>
-                </div>
-            -->
-            </div>
-        </div>
-    </section>
-    <!-- ***** CTA Area End ***** -->
-
-    <!-- ***** Our Team Area Start ***** -->
-    <section class="our-Team-area bg-white section_padding_100_50 clearfix" id="clients">
-        <div class="container">
-            <div class="row">
-                <div class="col-12 text-center">
-                    <!-- Heading Text  -->
-                    <div class="section-heading">
-                        <h2>Our Clients</h2>
-                        <div class="line-shape"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="https://www.ttecjobs.com/img/logos/ttec-logo-black-share.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Jackson Nash</h4>
-                            <p>Tax Advice</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="http://pngimg.com/uploads/adidas/adidas_PNG1.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Alex Manning</h4>
-                            <p>CEO-Founder</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="https://www.eslgaming.com/sites/all/themes/stability/stability_sub/logo.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Ollie Schneider</h4>
-                            <p>Business Planner</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="http://www.asisonline.org/globalassets/asis_logo_notag.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Roger West</h4>
-                            <p>Financer</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="http://pluspng.com/img-png/logo-apa-eagle-png-beer-bird-news-384.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Roger West</h4>
-                            <p>Financer</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="https://www.bird.co/wp-content/uploads/2018/11/FavIcon_org.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Roger West</h4>
-                            <p>Financer</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="https://www.ttecjobs.com/img/logos/ttec-logo-black-share.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Jackson Nash</h4>
-                            <p>Tax Advice</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="http://pngimg.com/uploads/adidas/adidas_PNG1.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Alex Manning</h4>
-                            <p>CEO-Founder</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="https://www.eslgaming.com/sites/all/themes/stability/stability_sub/logo.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Ollie Schneider</h4>
-                            <p>Business Planner</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="http://www.asisonline.org/globalassets/asis_logo_notag.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Roger West</h4>
-                            <p>Financer</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="http://pluspng.com/img-png/logo-apa-eagle-png-beer-bird-news-384.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Roger West</h4>
-                            <p>Financer</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-2">
-                    <div class="single-team-member">
-                        <div class="member-image">
-                            <img src="https://www.bird.co/wp-content/uploads/2018/11/FavIcon_org.png" alt="">
-                            <div class="team-hover-effects"></div>
-                        </div>
-                        <div class="member-text text-center">
-                            <h4>Roger West</h4>
-                            <p>Financer</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </section>
-    <!-- ***** Our Team Area End ***** -->
-
-
-
-
-    <section class="our-monthly-membership section_padding_50 clearfix join-our-team" id="jobs">
-        <br><br><br><br><br>
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <div class="membership-description">
-                        <h2>Join our Team</h2>
-                        <p>Find the perfect plan for you — 100% satisfaction guaranteed.</p>
-                    </div>
-                </div>
-                <div class="col-md-4 text-center wow bounceInDown">
-                    <a id="trigger-overlay" class="animated fadeInDown delay-2s send-message" href="#" data-scroll><span>Send us a message</span></a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-
-        <!-- Jobs form 
-        <div id="pro">
-          <div class="overlay overlay-contentpush">
-            <button type="button" class="overlay-close">Close</button>
-            <div class="container">
-              <div class="projectplanner">
-                <h1>Join our Team</h1>
-                <h2>We'd love to hear from you.</h2>
-                <div class="container">
-                    <div class="row">
-                        
-                    
-                    <div class="col-sm-3"></div>
-                  <div class="col-sm-6">
-
-                    <form name="sentMessage" class="contactForm" id="contactForm" novalidate>
-                      <div class="control-group">
-                        <div class="controls">
-                          <label for="nameclose">Name</label>
-                          <input type="text" class="form-control input-lg" placeholder="Name *" id="name" required data-validation-required-message="Please enter your name" />
-                          <p class="help-block"></p>
-                        </div>
+            
+            <div class="modal-applyed hidden" id="erpnext-developer">
+                <hr>
+                    <form id="frmFileUp">
+                        <div class="form-group">
+                        <label for="applicant_name">Applicant Name</label>
+                        <input type="text" class="form-control" name="applicant_name" id="applicant_name" placeholder="Enter name" required>
                       </div>
-                      <div class="control-group">
-                        <div class="controls">
-                          <label for="emaiclosel">Email</label>
-                          <input type="email" class="form-control input-lg" placeholder="Email address *" id="email" required data-validation-required-message="Please enter your email" />
-                          <p class="help-block"></p>
-                        </div>
+
+                      <div class="form-group">
+                        <label for="applicant_email">Email Address</label>
+                        <input type="email" class="form-control" name="applicant_email" id="applicant_email" placeholder="Enter email" required>
                       </div>
-                      <div class="control-group">
-                        <div class="controls">
-                          <label for="website">Website</label>
-                          <input type="text" class="form-control input-lg" placeholder="Website" id="website" />
-                          <p class="help-block"></p>
-                        </div>
+
+                      <div class="form-group">
+                        <label for="applicant_cover">Cover Letter</label>
+                        <textarea class="form-control" name="applicant_cover" id="applicant_cover" rows="3"></textarea>
                       </div>
-                      <div class="control-group">
-                        <div class="controls">
-                          <label for="message">Message</label>
-                          <textarea rows="10" cols="100" class="form-control input-lg" placeholder="How can we help? *" id="message" required
-                            data-validation-required-message="Please enter your message" minlength="5" 
-                            data-validation-minlength-message="Min 5 characters" maxlength="999" style="resize:none"></textarea>
-                          <p class="help-block"></p>
-                        </div>
+
+                      <div class="form-group">
+                        <label for="applicant_files">Resume Attachment</label>
+                        <input type="file" class="form-control-file" name="applicant_files" id="applicant_files">
                       </div>
-                      <div id="success"> </div>
-                      <button type="submit" class="submit-btn center-block">Send Message</button><br />
-                      <span class="required">* required fields</span>
+
+                      <button type="button" id="btn_upload" class="btn btn-primary" onclick="add_new_job_applicant('erpnext-developer')">Submit</button>
+
                     </form>
 
-                  </div>
-                  <div class="col-sm-3"></div>
-                  </div>
-                </div>
-              </div>
             </div>
-          </div>
         </div>
-        /Jobs form -->
+    </div>
+</div>
+
+
+
+
+
+    <!-- ***** Our Team Area Start ***** -->
+    <section class="our-Team-area bg-white  clearfix">
+    
+                <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d6956.178638870675!2d48.005844!3d29.338378!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x4fde92abc99ed6ca!2sArmor%20Services!5e0!3m2!1sen!2sus!4v1575285888646!5m2!1sen!2sus" width="100%" height="450" frameborder="0" style="border:0;" allowfullscreen=""></iframe>
+
+    </section>
+    <!-- ***** Our Team Area End ***** -->
 
 
 
@@ -1120,7 +542,7 @@
     <section class="footer-contact-area section_padding_100 clearfix" id="contact">
         <div class="container">
             <div class="row">
-                <div class="col-md-6">closclosee
+                <div class="col-md-6">
                     <!-- Heading Text  -->
                     <div class="section-heading">
                         <h2>Get in touch with us!</h2>
@@ -1130,14 +552,23 @@
                         <h4>We'd love to hear from you</h4>
                         <p>Whether you have a question about features, trials, pricing, or anything else, our team is ready to answer all your questions</p>
                     </div>
-                    <div class="address-text">
+                    <div class="address-text" id="contact_address">
                         <p><span>Address:</span> 32059, Hawally – 44403</p>
                     </div>
-                    <div class="phone-text">
+                    <div class="phone-text" id="contact_phone">
                         <p><span>Phone:</span> +965 22651654</p>
                     </div>
-                    <div class="email-text">
+                    <div class="email-text" id="contact_email">
                         <p><span>Email:</span> info@one-fm.com</p>
+                    </div>
+                    <div>
+                        <p class="social" id="social_media">
+                            <a href="#" class="external facebook"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="external youtube"><i class="fab fa-youtube"></i></a>
+                            <a href="#" class="external twitter"><i class="fab fa-twitter"></i></a>
+                            <a href="#" title="" class="external instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="mailto:info@one-fm.com" class="email"><i class="fa fa-envelope"> </i></a>
+                        </p>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -1238,11 +669,123 @@
 
     <script src="assets/one_fm/assets/js/jqBootstrapValidation.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
 
     <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
     <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
 
 
+    <script>
+
+var TxtType = function(el, toRotate, period) {
+        this.toRotate = toRotate;
+        this.el = el;
+        this.loopNum = 0;
+        this.period = parseInt(period, 10) || 2000;
+        this.txt = '';
+        this.tick();
+        this.isDeleting = false;
+    };
+
+    TxtType.prototype.tick = function() {
+        var i = this.loopNum % this.toRotate.length;
+        var fullTxt = this.toRotate[i];
+
+        if (this.isDeleting) {
+        this.txt = fullTxt.substring(0, this.txt.length - 1);
+        } else {
+        this.txt = fullTxt.substring(0, this.txt.length + 1);
+        }
+
+        this.el.innerHTML = '<span class="wrap">'+this.txt+'</span>';
+
+        var that = this;
+        var delta = 200 - Math.random() * 100;
+
+        if (this.isDeleting) { delta /= 2; }
+
+        if (!this.isDeleting && this.txt === fullTxt) {
+        delta = this.period;
+        this.isDeleting = true;
+        } else if (this.isDeleting && this.txt === '') {
+        this.isDeleting = false;
+        this.loopNum++;
+        delta = 500;
+        }
+
+        setTimeout(function() {
+        that.tick();
+        }, delta);
+    };
+
+    window.onload = function() {
+        var elements = document.getElementsByClassName('typewrite');
+        for (var i=0; i<elements.length; i++) {
+            var toRotate = elements[i].getAttribute('data-type');
+            var period = elements[i].getAttribute('data-period');
+            if (toRotate) {
+              new TxtType(elements[i], JSON.parse(toRotate), period);
+            }
+        }
+        // INJECT CSS
+        var css = document.createElement("style");
+        css.type = "text/css";
+        css.innerHTML = ".typewrite > .wrap { border-right: 0.08em solid #fff}";
+        document.body.appendChild(css);
+    };
+
+</script>
+
+
+
+    <script>
+
+
+//     var eventFired = false,
+//     objectPositionTop = $('.cool_facts_area').offset().top;
+
+// $(window).on('scroll', function() {
+
+//  var currentPosition = $(document).scrollTop();
+//  if (currentPosition > objectPositionTop && eventFired === false) {
+
+//    eventFired = true;
+//    new WOW().init();
+//  }
+
+// });
+       
+
+
+
+// function isOnScreen(elem) {
+//     if( elem.length == 0 ) {
+//         return;
+//     }
+//     var $window = jQuery(window)
+//     var viewport_top = $window.scrollTop()
+//     var viewport_height = $window.height()
+//     var viewport_bottom = viewport_top + viewport_height
+//     var $elem = jQuery(elem)
+//     var top = $elem.offset().top
+//     var height = $elem.height()
+//     var bottom = top + height
+
+//     return (top >= viewport_top && top < viewport_bottom) ||
+//     (bottom > viewport_top && bottom <= viewport_bottom) ||
+//     (height > viewport_height && top <= viewport_top && bottom >= viewport_bottom)
+// }
+
+// jQuery( document ).ready( function() {
+//     window.addEventListener('scroll', function(e) {
+//         if( isOnScreen( jQuery('.cool_facts_area') ) ) { 
+//             console.log('hiii');
+//             new WOW().init();
+//         }   
+//     });
+// });
+       
+    </script>
 
 </body>
 

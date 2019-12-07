@@ -88,12 +88,12 @@ ul.nav.navbar-nav {
     color: #fff
 }
 
-.col-lg-3,
+/*.col-lg-3,
 .col-md-4,
 .col-sm-6,
 .col-xs-12 {
     padding: 0
-}
+}*/
 
 .hover {
     float: left;
@@ -993,8 +993,9 @@ button:focus {
 }
 
 .ehover11 {
-    background: -webkit-linear-gradient(45deg, #ff89e9 0, #05abe0 100%);
-    background: linear-gradient(45deg, #ff89e9 0, #05abe0 100%)
+    background-image: linear-gradient(to right, #494e53, #61666c, #7b8085, #959ba0, #b0b6bb);
+    /*background: -webkit-linear-gradient(45deg, #ff89e9 0, #05abe0 100%);
+    background: linear-gradient(45deg, #ff89e9 0, #05abe0 100%)*/
 }
 
 .ehover11 img {
