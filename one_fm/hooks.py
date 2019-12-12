@@ -119,6 +119,15 @@ fixtures = [
       {
         "dt": "Property Setter", 
         "filters": [["doc_type", "in", ["Lead"]]]
+      },
+            {
+        "dt": "Workflow State"
+      },
+            {
+        "dt": "Workflow Action Master"
+      },
+            {
+        "dt": "Workflow"
       }
 ]
 

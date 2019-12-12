@@ -1910,3 +1910,14 @@ SOCIAL LINKS
   width: 50%;
 }
 
+
+
+.navbar-light .navbar-toggler{
+    border-color: rgba(181, 181, 181, 0.52)!important;
+}
+
+
+.ehover11 h2{
+    font-size: x-large!important;
+}
+

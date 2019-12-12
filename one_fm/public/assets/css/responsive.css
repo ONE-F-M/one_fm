@@ -48,7 +48,7 @@
     #ca-navbar {
         padding: 30px;
         border-radius: 3px;
-        background-color: #5b32b4;
+        background-color: #a883e9;
         text-align: left;
     }
     .sing-up-button {
@@ -133,7 +133,7 @@
     #ca-navbar {
         padding: 20px;
         border-radius: 3px;
-        background-color: #5b32b4;
+        background-color: #a883e9;
         text-align: left;
     }
     .sing-up-button {
@@ -237,7 +237,7 @@
         width: 20%!important;
     }
     .wellcome-heading > h3 {
-        font-size: 284px;
+        /*font-size: 284px;*/
     }
     .wellcome-heading > h2 {
         font-size: 70px;

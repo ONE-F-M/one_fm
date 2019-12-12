@@ -1,0 +1,62 @@
+{
+ "creation": "2019-12-07 18:54:11.883422",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_name",
+  "item_description",
+  "column_break_2",
+  "qty",
+  "column_break_8",
+  "uom"
+ ],
+ "fields": [
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Requested Quantity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "label": "UOM",
+   "options": "UOM"
+  },
+  {
+   "columns": 3,
+   "fieldname": "item_description",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Item Description",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2019-12-09 00:48:17.388455",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Item Request Items",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

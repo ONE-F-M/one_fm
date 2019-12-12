@@ -1,25 +1,23 @@
 {
- "autoname": "PR.######",
+ "autoname": "field:item_request_code",
  "creation": "2019-12-07 18:50:17.333945",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "item_request_code",
   "employee",
-  "project",
-  "address",
-  "nature_of_demand",
-  "technical_verification",
-  "from",
-  "column_break_3",
   "employee_name",
+  "project",
   "site",
+  "column_break_3",
+  "posting_date",
   "priority",
-  "supply",
-  "description_of_the_request",
+  "nature_of_demand",
+  "item_request_type",
   "section_break_6",
   "items",
-  "total_amount"
+  "amended_from"
  ],
  "fields": [
   {
@@ -47,9 +45,9 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Read Only",
-   "label": "Employee Name",
    "options": "employee.employee_name"
   },
   {
@@ -59,13 +57,8 @@
   {
    "fieldname": "items",
    "fieldtype": "Table",
-   "label": "Purchase Request Item",
-   "options": "Purchase Request Item"
-  },
-  {
-   "fieldname": "address",
-   "fieldtype": "Data",
-   "label": "Address"
+   "label": "Requested Item",
+   "options": "Item Request Items"
   },
   {
    "fieldname": "nature_of_demand",
@@ -80,40 +73,40 @@
    "options": "Normal\nUrgent\nCritic"
   },
   {
-   "fieldname": "supply",
-   "fieldtype": "Select",
-   "label": "Supply",
-   "options": "Local\nImport"
-  },
-  {
-   "fieldname": "technical_verification",
-   "fieldtype": "Select",
-   "label": "Technical Verification",
-   "options": "\nYes\nNo"
-  },
-  {
-   "depends_on": "eval: doc.technical_verification=='Yes'",
-   "fieldname": "from",
+   "fieldname": "item_request_code",
    "fieldtype": "Data",
-   "label": "From"
+   "label": "Item Request Code",
+   "reqd": 1,
+   "unique": 1
   },
   {
-   "fieldname": "description_of_the_request",
-   "fieldtype": "Text",
-   "label": "Description of The Request"
-  },
-  {
-   "default": "0",
-   "fieldname": "total_amount",
-   "fieldtype": "Currency",
-   "label": "Total Amount",
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date",
    "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Item Request",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_request_type",
+   "fieldtype": "Select",
+   "label": "Item Request type",
+   "options": "\nWithin the budget\nOutside the budget"
   }
  ],
- "modified": "2019-12-07 20:42:36.879162",
+ "is_submittable": 1,
+ "modified": "2019-12-11 12:27:02.364715",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Purchase Request",
+ "name": "Item Request",
  "owner": "Administrator",
  "permissions": [
   {
@@ -126,10 +119,12 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "track_changes": 1
+ "track_changes": 1,
+ "track_seen": 1
 }

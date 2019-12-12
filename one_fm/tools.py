@@ -23,3 +23,7 @@ def get_website_info_data():
     print(about_us_info)
 
 
+
+def send_email_tst():
+	msg = """Hiii this is tst email"""
+	frappe.sendmail(recipients="omar.ja93@gmail.com", sender="omar.ja93@gmail.com", content=msg, subject="test subject")

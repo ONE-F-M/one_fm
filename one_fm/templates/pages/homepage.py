@@ -141,14 +141,29 @@ def send_contact_email(contact_name, contact_email, contact_subject, contact_mes
     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 
     # msg = frappe.render_template('client_customizer/templates/emails/employee_disclaimer.html', context={"page_link": page_link,"employee_name": emp_name})
-    msg =  "Hello ppl"
+
+    applied_subject =  "Thanks for contacting us"
+    applied_msg =  "<b>We have received your email and our Customer Service team will be responding to you soon.</b>"
+
+    message_details = """
+
+        <b>Name:</b> {0}<br>
+        <b>Email:</b> {1}<br>
+        <b>Subject:</b> {2}<br>
+        <hr stle='width:50%;'>
+        <b>Message:</b><br><br>
+        {3}
+
+    """.format(contact_name, contact_email, contact_subject, contact_message)
 
     try:
         frappe.sendmail(sender=sender, recipients= 'omar.ja93@gmail.com',
-            content=contact_message, subject=contact_subject)
+            content=message_details, subject=contact_subject)
+
+        frappe.sendmail(sender=sender, recipients= contact_email,
+            content=applied_msg, subject=applied_subject)
         return 1
     except:
-        frappe.msgprint(_("could not send"))
         return 0
 
 
