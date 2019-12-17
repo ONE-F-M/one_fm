@@ -1,0 +1,68 @@
+{
+ "autoname": "field:designation_name_arabic",
+ "creation": "2019-12-15 21:54:12.573888",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "designation_name_english",
+  "designation_name_arabic",
+  "designation_code",
+  "\u0645\u0647\u0646\u0629_\u0642\u0631\u0627\u0631_\u0627\u0644\u0646\u0633\u0628\u0629"
+ ],
+ "fields": [
+  {
+   "fieldname": "designation_name_english",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Designation Name (English)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "designation_name_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Designation Name (Arabic)",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "designation_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Designation Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "\u0645\u0647\u0646\u0629_\u0642\u0631\u0627\u0631_\u0627\u0644\u0646\u0633\u0628\u0629",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "\u0645\u0647\u0646\u0629 \u0642\u0631\u0627\u0631 \u0627\u0644\u0646\u0633\u0628\u0629",
+   "options": "\u0639\u0644\u0645\u064a\u0648\u0646 \u0648 \u0641\u0646\u064a\u0648\u0646\n\u0645\u062f\u064a\u0631\u0648\u0646\n\u0643\u062a\u0628\u0629 \u0648 \u062a\u0646\u0641\u064a\u0630\u064a\u0648\u0646\n\u0645\u0642\u062f\u0645\u064a \u062e\u062f\u0645\u0627\u062a\n\u0628\u0627\u0626\u0639\u0648\u0646",
+   "reqd": 1
+  }
+ ],
+ "modified": "2019-12-15 21:58:31.364493",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PAM Designation List",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

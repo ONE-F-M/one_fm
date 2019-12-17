@@ -1,0 +1,38 @@
+{
+ "creation": "2019-12-12 16:04:28.777858",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "article_of_association"
+ ],
+ "fields": [
+  {
+   "fieldname": "article_of_association",
+   "fieldtype": "Attach",
+   "label": "Article of Association"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2019-12-12 16:04:28.777858",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Article Of Association",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

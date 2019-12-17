@@ -1,0 +1,60 @@
+{
+ "creation": "2019-12-15 22:11:11.164977",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "authorized_signatory_name_english",
+  "authorized_signatory_name_arabic",
+  "civil_id_number",
+  "nationality_arabic",
+  "nationality_english"
+ ],
+ "fields": [
+  {
+   "fieldname": "authorized_signatory_name_english",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Authorized Signatory Name (ENGLISH)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "authorized_signatory_name_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Authorized Signatory Name (ARABIC)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "civil_id_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Civil ID Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "nationality_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Nationality (ARABIC)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "nationality_english",
+   "fieldtype": "Data",
+   "label": "Nationality (ENGLISH)",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2019-12-16 12:32:41.531662",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PAM Authorized Signatory Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -10,5 +10,13 @@ def get_data():
 			"icon": "octicon octicon-file-directory",
 			"type": "module",
 			"label": _("One Fm")
+		},
+		{
+		"module_name": "GRD",
+			"category": "Modules",
+			"label": _("GRD"),
+			"color": "#2ecc71",
+			"icon": "octicon octicon-organization",
+			"type": "module"
 		}
 	]

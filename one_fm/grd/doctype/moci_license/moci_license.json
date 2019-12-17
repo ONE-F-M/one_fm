@@ -1,0 +1,81 @@
+{
+ "autoname": "field:license_trade_name_english",
+ "creation": "2019-12-15 16:43:11.658921",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "license_number",
+  "license_expiry_date",
+  "license_trade_name_arabic",
+  "license_trade_name_english",
+  "street",
+  "building"
+ ],
+ "fields": [
+  {
+   "fieldname": "license_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "License Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "license_expiry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "License Expiry Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "license_trade_name_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "License Trade Name (Arabic)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "license_trade_name_english",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "License Trade Name (English)",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "street",
+   "fieldtype": "Data",
+   "label": "Street",
+   "reqd": 1
+  },
+  {
+   "fieldname": "building",
+   "fieldtype": "Data",
+   "label": "Building",
+   "reqd": 1
+  }
+ ],
+ "modified": "2019-12-15 16:59:56.638878",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "MOCI License",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

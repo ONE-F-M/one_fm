@@ -1,0 +1,80 @@
+{
+ "autoname": "field:pam_file_name",
+ "creation": "2019-12-15 17:26:49.167172",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "pam_file_name",
+  "license_trade_name_english",
+  "pam_file_number",
+  "pam_file_governorate_arabic",
+  "company_unified_number",
+  "designation",
+  "contract_file_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "pam_file_name",
+   "fieldtype": "Data",
+   "label": "PAM File Name",
+   "unique": 1
+  },
+  {
+   "fieldname": "pam_file_number",
+   "fieldtype": "Data",
+   "label": "PAM File Number"
+  },
+  {
+   "fieldname": "pam_file_governorate_arabic",
+   "fieldtype": "Select",
+   "label": "PAM File Governorate Arabic",
+   "options": "\u0627\u0644\u0639\u0627\u0635\u0645\u0629 - Capital\n\u062d\u0648\u0644\u064a - Hawalli\n\u0627\u0644\u0641\u0631\u0648\u0627\u0646\u064a\u0629 - Farwaniya\n\u0645\u0628\u0627\u0631\u0643 \u0627\u0644\u0643\u0628\u064a\u0631 - Mubarak Al-Kabeer\n\u0627\u0644\u0623\u062d\u0645\u062f\u064a - Ahmadi\n\u0627\u0644\u062c\u0647\u0631\u0627\u0621 - Jahra"
+  },
+  {
+   "fieldname": "company_unified_number",
+   "fieldtype": "Data",
+   "label": "Company Unified Number"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Table",
+   "label": "Designation",
+   "options": "PAM File Table"
+  },
+  {
+   "fieldname": "contract_file_number",
+   "fieldtype": "Data",
+   "label": "Contract File Number"
+  },
+  {
+   "fieldname": "license_trade_name_english",
+   "fieldtype": "Link",
+   "label": "Company License",
+   "options": "MOCI License"
+  }
+ ],
+ "modified": "2019-12-15 22:07:02.122481",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PAM File",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
