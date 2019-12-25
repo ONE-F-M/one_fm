@@ -16,8 +16,30 @@ from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 
 
-def get_website_info_data():
 
+def add_fm_accounts():
+    from frappe.utils.csvutils import read_csv_content
+    from frappe.core.doctype.data_import.importer import upload
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Chart_of_Accounts.csv", "r") as infile:   
+        rows = read_csv_content(infile.read())
+        i = 0
+        for index, row in enumerate(rows):
+   #          frappe.get_doc({
+			# 	"doctype":"Account",
+			# 	"acount_name": row[0],
+			# 	"parent_account": row[1],
+			# 	"is_group": row[3]
+			# }).insert(ignore_permissions=True)
+
+            i+=1
+            print(row[0])
+
+        print('*************')
+        print(i)
+
+
+
+def get_website_info_data():
     # about_us_info = frappe.client.get_list("Website Info", fields=['section_title','section_header','section_subject'])
     about_us_info = frappe.db.get_single_value("Website Info", "section_subject")
     print(about_us_info)
@@ -27,3 +49,4 @@ def get_website_info_data():
 def send_email_tst():
 	msg = """Hiii this is tst email"""
 	frappe.sendmail(recipients="omar.ja93@gmail.com", sender="omar.ja93@gmail.com", content=msg, subject="test subject")
+

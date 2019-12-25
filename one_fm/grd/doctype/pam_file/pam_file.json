@@ -6,8 +6,10 @@
  "engine": "InnoDB",
  "field_order": [
   "pam_file_name",
-  "license_trade_name_english",
   "pam_file_number",
+  "government_project",
+  "main_pam_file",
+  "license_trade_name_english",
   "pam_file_governorate_arabic",
   "company_unified_number",
   "designation",
@@ -48,13 +50,27 @@
    "label": "Contract File Number"
   },
   {
+   "depends_on": "eval:doc.government_project==0",
    "fieldname": "license_trade_name_english",
    "fieldtype": "Link",
    "label": "Company License",
    "options": "MOCI License"
+  },
+  {
+   "default": "0",
+   "fieldname": "government_project",
+   "fieldtype": "Check",
+   "label": "Government Project"
+  },
+  {
+   "depends_on": "eval: doc.government_project == 1",
+   "fieldname": "main_pam_file",
+   "fieldtype": "Link",
+   "label": "Select PAM File to be Main",
+   "options": "PAM File"
   }
  ],
- "modified": "2019-12-15 22:07:02.122481",
+ "modified": "2019-12-18 18:44:56.559549",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM File",

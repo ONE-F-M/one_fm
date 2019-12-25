@@ -1,11 +1,14 @@
 {
+ "autoname": "PSC-.YYYY.-.MM.-.######",
  "creation": "2019-12-12 16:46:39.932257",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "pam_salary_certificate",
-  "pam_salary_certificate_expiry_date"
+  "pam_file_name",
+  "pam_file_number",
+  "pam_salary_certificate_expiry_date",
+  "pam_salary_certificate"
  ],
  "fields": [
   {
@@ -27,9 +30,22 @@
    "label": "PAM Salary Certificate Expiry Date",
    "reqd": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "pam_file_name",
+   "fieldtype": "Link",
+   "label": "PAM File Name",
+   "options": "PAM File",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "pam_file_name.pam_file_number",
+   "fieldname": "pam_file_number",
+   "fieldtype": "Read Only",
+   "label": "PAM File Number"
   }
  ],
- "modified": "2019-12-15 12:14:58.338991",
+ "modified": "2019-12-19 14:31:02.651109",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Salary Certificate",

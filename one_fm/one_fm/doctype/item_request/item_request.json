@@ -1,11 +1,10 @@
 {
- "autoname": "field:item_request_code",
+ "autoname": "IR-.YYYY.-.MM.-.######",
  "creation": "2019-12-07 18:50:17.333945",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "item_request_code",
   "employee",
   "employee_name",
   "project",
@@ -14,18 +13,20 @@
   "posting_date",
   "priority",
   "nature_of_demand",
-  "item_request_type",
+  "budgeted",
   "section_break_6",
   "items",
   "amended_from"
  ],
  "fields": [
   {
+   "default": "Employee",
    "fieldname": "employee",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -47,8 +48,10 @@
   {
    "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
-   "fieldtype": "Read Only",
-   "options": "employee.employee_name"
+   "fieldtype": "Data",
+   "hidden": 1,
+   "options": "employee.employee_name",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_6",
@@ -73,13 +76,6 @@
    "options": "Normal\nUrgent\nCritic"
   },
   {
-   "fieldname": "item_request_code",
-   "fieldtype": "Data",
-   "label": "Item Request Code",
-   "reqd": 1,
-   "unique": 1
-  },
-  {
    "default": "Today",
    "fieldname": "posting_date",
    "fieldtype": "Date",
@@ -96,14 +92,14 @@
    "read_only": 1
   },
   {
-   "fieldname": "item_request_type",
+   "fieldname": "budgeted",
    "fieldtype": "Select",
-   "label": "Item Request type",
-   "options": "\nWithin the budget\nOutside the budget"
+   "label": "Is the request budgeted",
+   "options": "\nYes\nNo"
   }
  ],
  "is_submittable": 1,
- "modified": "2019-12-11 12:27:02.364715",
+ "modified": "2019-12-18 17:01:01.350728",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item Request",
@@ -120,6 +116,30 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1,
    "write": 1
   }
  ],

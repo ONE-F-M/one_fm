@@ -192,7 +192,7 @@
  "idx": 1,
  "image_field": "image",
  "max_attachments": 3,
- "modified": "2019-12-17 10:46:51.057498",
+ "modified": "2019-12-18 16:00:02.892510",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item Group",
@@ -251,7 +251,7 @@
   }
  ],
  "quick_entry": 1,
- "search_fields": "parent_item_group",
+ "search_fields": "parent_item_group,item_group_code",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC"

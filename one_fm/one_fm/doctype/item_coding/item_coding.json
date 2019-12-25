@@ -4,8 +4,11 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "warehouse",
+  "parent_item_group",
+  "subitem_group",
+  "item_group",
   "item_code",
+  "warehouse",
   "actual_qty",
   "column_break_7",
   "item_code_name",
@@ -87,10 +90,31 @@
    "label": "Warehouse",
    "options": "Warehouse",
    "reqd": 1
+  },
+  {
+   "fieldname": "parent_item_group",
+   "fieldtype": "Link",
+   "label": "Parent Item Group",
+   "options": "Item Group",
+   "reqd": 1
+  },
+  {
+   "fieldname": "subitem_group",
+   "fieldtype": "Link",
+   "label": "Subitem Group",
+   "options": "Item Group",
+   "reqd": 1
+  },
+  {
+   "fieldname": "item_group",
+   "fieldtype": "Link",
+   "label": "Item Group",
+   "options": "Item Group",
+   "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2019-12-16 14:59:04.418145",
+ "modified": "2019-12-18 17:03:20.746679",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item Coding",

@@ -1,27 +1,28 @@
 {
- "autoname": "field:pam_file_name",
+ "autoname": "PAS-.YYYY.-.MM.-.######",
  "creation": "2019-12-15 22:16:03.398590",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "pam_file_number",
   "pam_file_name",
+  "pam_file_number",
   "authorized_signatory",
   "estimation_expiry_date",
   "authorized_signatory_expiry_date"
  ],
  "fields": [
   {
+   "fetch_from": "pam_file_name.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Link",
-   "label": "PAM File Number",
-   "options": "PAM File"
+   "fieldtype": "Read Only",
+   "label": "PAM File Number"
   },
   {
    "fieldname": "pam_file_name",
-   "fieldtype": "Data",
-   "label": "PAM File Name",
+   "fieldtype": "Link",
+   "label": "PAM File Name Dennis",
+   "options": "PAM File",
    "unique": 1
   },
   {
@@ -41,7 +42,7 @@
    "label": "Authorized Signatory Expiry Date"
   }
  ],
- "modified": "2019-12-15 22:16:16.962889",
+ "modified": "2019-12-25 12:35:06.368989",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Authorized Signatory List",

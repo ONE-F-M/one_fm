@@ -90,6 +90,13 @@ home_page = "coming_soon"
 # Scheduled Tasks
 # ---------------
 
+scheduler_events = {
+  "daily": [
+    'one_fm.utils.pam_salary_certificate_expiry_date',
+    'one_fm.utils.pam_authorized_signatory'
+  ]
+}
+
 # scheduler_events = {
 # 	"all": [
 # 		"one_fm.tasks.all"

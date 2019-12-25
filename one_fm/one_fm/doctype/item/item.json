@@ -1066,7 +1066,7 @@
  "idx": 2,
  "image_field": "image",
  "max_attachments": 1,
- "modified": "2019-12-17 14:25:01.902379",
+ "modified": "2019-12-19 10:40:27.470270",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item",
@@ -1120,7 +1120,7 @@
    "role": "Manufacturing User"
   }
  ],
- "search_fields": "item_name,description,item_group,customer_code",
+ "search_fields": "item_name,description,item_group,customer_code,item_id",
  "show_name_in_global_search": 1,
  "show_preview_popup": 1,
  "sort_field": "idx desc,modified desc",

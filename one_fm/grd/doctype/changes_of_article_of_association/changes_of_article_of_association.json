@@ -6,7 +6,9 @@
  "engine": "InnoDB",
  "field_order": [
   "change_name",
-  "attach_changes_to_article_of_association"
+  "attach_changes_to_article_of_association",
+  "section_break_3",
+  "preview_article"
  ],
  "fields": [
   {
@@ -23,9 +25,19 @@
    "in_list_view": 1,
    "label": "Attach Changes to Article of Association",
    "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.attach_changes_to_article_of_association",
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "preview_article",
+   "fieldtype": "HTML",
+   "label": "Preview Article"
   }
  ],
- "modified": "2019-12-15 16:49:46.762523",
+ "modified": "2019-12-19 12:44:09.042468",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Changes of Article of Association",

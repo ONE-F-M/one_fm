@@ -11,8 +11,15 @@ def get_data():
 					"type": "doctype",
 					"name": "Item Request",
 					"onboard": 1,
-					"dependencies": ["Item", "Employee"],
+					"dependencies": ["Employee"],
 					"description": _("Item Request given to Employee."),
+				},
+				{
+					"type": "doctype",
+					"name": "Stock Check",
+					"onboard": 1,
+					"dependencies": ["Item","Item Group"],
+					"description": _("Stock Check."),
 				},
 			]
 		},
