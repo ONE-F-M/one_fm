@@ -39,20 +39,42 @@ def pam_salary_certificate_expiry_date():
         date_difference = date_diff(pam[1], getdate(nowdate()))
 
         page_link = get_url("/desk#Form/PAM Salary Certificate/" + pam[0])
+        setting = frappe.get_doc("PAM Salary Certificate Setting")
 
-        # if date_difference>0 and date_difference<30 and date_difference%7 == 0 :
-        frappe.get_doc({
-            "doctype":"Task",
-            "subject": "PAM salary certificate expiry date",
-            "description": "PAM Salary Certificate will Expire after {0} day<br>Please, Need your action From <a href='{1}'>here</a> ".format(date_difference, page_link)
-        }).insert(ignore_permissions=True)
+        if date_difference>0 and date_difference<setting.notification_start and date_difference%setting.notification_period == 0 :
+            frappe.get_doc({
+                "doctype":"ToDo",
+                # "subject": "PAM salary certificate expiry date",
+                "description": "PAM Salary Certificate will Expire after {0} day".format(date_difference),
+                "reference_type": "PAM Salary Certificate",
+                "reference_name": pam[0],
+                "owner": 'omar.ja93@gmail.com',
+                "date": pam[1]
+            }).insert(ignore_permissions=True)
 
-        print(page_link)
+            print("PAM Salary Certificate will Expire after {0} day".format(date_difference))
+
 
 
 
 def pam_authorized_signatory():
-    print('hii')
+    pam_authorized_signatory = frappe.db.sql("select name,authorized_signatory_expiry_date from `tabPAM Authorized Signatory List`")
+    for pam in pam_authorized_signatory:
+        date_difference = date_diff(pam[1], getdate(nowdate()))
 
+        page_link = get_url("/desk#Form/PAM Authorized Signatory List/" + pam[0])
+        setting = frappe.get_doc("PAM Authorized Signatory Setting")
 
+        if date_difference>0 and date_difference<setting.notification_start and date_difference%setting.notification_period == 0 :
+            frappe.get_doc({
+                "doctype":"ToDo",
+                # "subject": "PAM salary certificate expiry date",
+                "description": "PAM Authorized Signatory will Expire after {0} day".format(date_difference),
+                "reference_type": "PAM Authorized Signatory List",
+                "reference_name": pam[0],
+                "owner": 'omar.ja93@gmail.com',
+                "date": pam[1]
+            }).insert(ignore_permissions=True)
+
+            print("PAM Authorized Signatory will Expire after {0} day".format(date_difference))
 
