@@ -73,6 +73,16 @@ def get_data():
 					"name": "PAM Designation List",
 					"onboard": 1,
 				},
+				{
+					"type": "doctype",
+					"name": "PAM Salary Certificate Setting",
+					"onboard": 1,
+				},
+				{
+					"type": "doctype",
+					"name": "PAM Authorized Signatory Setting",
+					"onboard": 1,
+				},
 			]
 		}
         
