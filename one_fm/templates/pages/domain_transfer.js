@@ -1,11 +1,10 @@
 frappe.ready(function() {
 
     var curr_url = window.location.href
-    if (curr_url.startsWith('http://one-fm') && location.pathname!='/homepage') {
+    // if (curr_url.startsWith('one-fm'))
+    if (curr_url=='http://one-fm.com/') {
         window.location.replace('/homepage');
-    }
-
-    if (!curr_url.startsWith('http://one-fm')) {
+    } else {
         window.location.replace('/login');
     }
 
