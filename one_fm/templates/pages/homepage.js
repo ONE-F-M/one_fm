@@ -190,31 +190,22 @@ function get_website_info_count(){
 
 
 
-    // console.log('hii');
-    // $.ajax({
-    //   type: 'POST',
-    //     url: "http://35.222.162.1/api/method/one_fm.templates.pages.homepage.get_website_info_count",
-    //     headers: {
-    //         'Access-Control-Allow-Origin': '*',
-    //         'Access-Control-Allow-Credentials': 'true',
-    //       "Accept" : "text/plain; charset=utf-8",
-    //     "Content-Type": "text/plain; charset=utf-8"
-    //     },
-    //     crossDomain : true,
-    //     dataType: 'json',
-    //     beforeSend: function (xhr, settings) {
-    //       xhr.setRequestHeader('Access-Control-Allow-Origin', '*'); 
-    //       xhr.setRequestHeader('Access-Control-Allow-Credentials', 'true'); 
-    //     },
-    //     success: function(data, textStatus, xhr) {
-    //         console.log(data);
-    //         alert("Success");
-    //     },
-    //     error: function(data, textStatus, xhr) {
-    //       console.log(data);
-    //         alert("Failure");
-    //     }
-    // });
+    console.log('hii');
+    $.ajax({
+      type: 'POST',
+        // url: "http://35.222.162.1/api/method/one_fm.templates.pages.homepage.get_website_info_count",
+        url: "http://35.222.162.1/api/method/version",
+        crossDomain : true,
+        dataType: 'json',
+        success: function(data, textStatus, xhr) {
+            console.log(data);
+            alert("Success");
+        },
+        error: function(data, textStatus, xhr) {
+          console.log(data);
+            alert("Failure");
+        }
+    });
 
 
 // curl -X POST http://35.222.162.1/api/method/one_fm.templates.pages.homepage.get_website_info_count -d "command_string=ON&position=1"

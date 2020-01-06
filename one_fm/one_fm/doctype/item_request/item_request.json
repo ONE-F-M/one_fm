@@ -99,13 +99,15 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2019-12-18 17:01:01.350728",
+ "modified": "2020-01-06 14:54:27.015940",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item Request",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -119,6 +121,8 @@
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,

@@ -25,10 +25,12 @@ class StockCheck(Document):
                 delivery_doc.save()
                 frappe.db.commit()
 
+                self.delivery_note = delivery_doc.name
+                
                 page_link = get_url("/desk#Form/Delivery Note/" + delivery_doc.name)
                 frappe.msgprint("<a href='{0}'>Delivery Note</a> has been created".format(page_link))
 
-                # self.send_notifications(page_link)
+                self.send_notifications(page_link)
 
             else:
                 purchase_doc = frappe.get_doc({
@@ -44,10 +46,12 @@ class StockCheck(Document):
                 purchase_doc.save()
                 frappe.db.commit()
 
+                self.purchase_order = purchase_doc.name
+
                 page_link = get_url("/desk#Form/Purchase Order/" + purchase_doc.name)
                 frappe.msgprint("<a href='{0}'>Purchase Order</a> has been created".format(page_link))
 
-                # self.send_notifications(page_link)
+                self.send_notifications(page_link)
 
 
     def send_notifications(self,page_link):
@@ -62,10 +66,10 @@ class StockCheck(Document):
         prefered_email_manager = frappe.get_value("Employee", filters = {"name": frappe.session.user}, fieldname = "prefered_email")
         
         # stock manager
-        frappe.publish_realtime(event='msgprint', message='New Item Request has been approved, please check next step from <a href="{0}">Here</a> for your Action'.format(page_link), user='omar.ja93@gmail.com')
+        frappe.publish_realtime(event='msgprint', message='Stock Check has been approved, please check next step from <a href="{0}">Here</a> for your Action'.format(page_link), user='omar.ja93@gmail.com')
         
         # employee who create
-        frappe.publish_realtime(event='msgprint', message='Your Item Request has been approved, and its now under stock review', user=prefered_email_employee)
+        frappe.publish_realtime(event='msgprint', message='Stock Check has been approved, and its now in the next step', user=prefered_email_employee)
 
         if sender and prefered_email_employee:
             try:
