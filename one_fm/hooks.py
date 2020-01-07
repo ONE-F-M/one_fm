@@ -80,6 +80,14 @@ home_page = "domain_transfer"
 # ---------------
 # Hook on document methods and events
 
+
+doc_events = {
+    "Leave Application": {
+        "on_update": "one_fm.utils.paid_sick_leave_validation",
+        "on_submit": "one_fm.utils.paid_sick_leave_validation"
+    }
+}
+
 # doc_events = {
 # 	"*": {
 # 		"on_update": "method",
@@ -94,7 +102,8 @@ home_page = "domain_transfer"
 scheduler_events = {
   "daily": [
     'one_fm.utils.pam_salary_certificate_expiry_date',
-    'one_fm.utils.pam_authorized_signatory'
+    'one_fm.utils.pam_authorized_signatory',
+    'one_fm.utils.hooked_leave_allocation_builder'
   ]
 }
 
