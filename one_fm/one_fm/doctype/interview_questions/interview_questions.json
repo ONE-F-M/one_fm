@@ -1,0 +1,49 @@
+{
+ "creation": "2020-01-10 15:30:17.021647",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "questions",
+  "answer",
+  "score",
+  "weight"
+ ],
+ "fields": [
+  {
+   "fieldname": "questions",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Questions"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Score"
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Answer"
+  },
+  {
+   "fieldname": "weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Weight"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-01-10 15:33:39.765547",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Interview Questions",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,43 @@
+{
+ "creation": "2020-01-10 14:56:14.520517",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "country",
+  "processes",
+  "total_duration"
+ ],
+ "fields": [
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "processes",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Processes"
+  },
+  {
+   "fieldname": "total_duration",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Total Duration"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-01-10 14:57:35.974880",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Agency Country Process",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

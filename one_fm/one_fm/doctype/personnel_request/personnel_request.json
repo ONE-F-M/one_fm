@@ -1,0 +1,493 @@
+{
+ "autoname": "PRF-.###",
+ "creation": "2020-01-10 09:15:04.734278",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "agency",
+  "company",
+  "column_break_2",
+  "closing_date",
+  "job_details_section",
+  "position",
+  "department",
+  "project",
+  "quantity",
+  "column_break_7",
+  "shiftworking_condition",
+  "number_of_days_of_work",
+  "number_of_days_off",
+  "working_hours",
+  "new",
+  "replacement",
+  "column_break_11",
+  "number_of_vacation_days",
+  "salary",
+  "pam_title",
+  "overtime_requirement",
+  "full_time",
+  "part_timr",
+  "section_break_23",
+  "age_range",
+  "nationality",
+  "education",
+  "height",
+  "column_break_34",
+  "age_mandatory",
+  "nationality_mandatory",
+  "education_mandatory",
+  "height_mandatory",
+  "column_break_31",
+  "weight",
+  "years_of_experience",
+  "management_year_of_experience",
+  "previous_company_size",
+  "column_break_37",
+  "weight_mandatory",
+  "year_of_experience_mandatory",
+  "management_experience_mandatory",
+  "previous_company_size_mandatory",
+  "language_section",
+  "language",
+  "performance_section",
+  "qualification",
+  "skill",
+  "industry_knowledge",
+  "tools_to_operate",
+  "column_break_50",
+  "job_function",
+  "team_function",
+  "firm_function",
+  "column_break_54",
+  "competency_profile",
+  "smart_profile",
+  "responsibilty_section",
+  "budget",
+  "property",
+  "asset",
+  "financial",
+  "supervisor_responsibilty",
+  "column_break_63",
+  "accountability_document",
+  "accountability_process",
+  "accountability_project",
+  "accountability_people",
+  "column_break_68",
+  "train_others",
+  "major_responsibility__time",
+  "section_break_71",
+  "tool",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "job_details_section",
+   "fieldtype": "Section Break",
+   "label": "Job Details"
+  },
+  {
+   "fieldname": "position",
+   "fieldtype": "Link",
+   "label": "Position",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "shiftworking_condition",
+   "fieldtype": "Data",
+   "label": "Shift/Working Condition"
+  },
+  {
+   "fieldname": "number_of_vacation_days",
+   "fieldtype": "Int",
+   "label": "Number of Vacation Days"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "fieldname": "number_of_days_of_work",
+   "fieldtype": "Int",
+   "label": "Number of Days of Work"
+  },
+  {
+   "fieldname": "salary",
+   "fieldtype": "Float",
+   "label": "Salary"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "number_of_days_off",
+   "fieldtype": "Int",
+   "label": "Number of Days Off"
+  },
+  {
+   "fieldname": "pam_title",
+   "fieldtype": "Data",
+   "label": "PAM Title"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Int",
+   "label": "Quantity"
+  },
+  {
+   "fieldname": "working_hours",
+   "fieldtype": "Time",
+   "label": "Working Hours"
+  },
+  {
+   "fieldname": "overtime_requirement",
+   "fieldtype": "Float",
+   "label": "Overtime Requirement"
+  },
+  {
+   "default": "0",
+   "fieldname": "new",
+   "fieldtype": "Check",
+   "label": "New"
+  },
+  {
+   "default": "0",
+   "fieldname": "replacement",
+   "fieldtype": "Check",
+   "label": "Replacement"
+  },
+  {
+   "default": "0",
+   "fieldname": "full_time",
+   "fieldtype": "Check",
+   "label": "Full Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "part_timr",
+   "fieldtype": "Check",
+   "label": "Part Time"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_23",
+   "fieldtype": "Section Break",
+   "label": "Person"
+  },
+  {
+   "fieldname": "age_range",
+   "fieldtype": "Data",
+   "label": "Age Range"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Country"
+  },
+  {
+   "fieldname": "education",
+   "fieldtype": "Data",
+   "label": "Education"
+  },
+  {
+   "fieldname": "height",
+   "fieldtype": "Data",
+   "label": "Height",
+   "options": "\n"
+  },
+  {
+   "fieldname": "weight",
+   "fieldtype": "Data",
+   "label": "Weight"
+  },
+  {
+   "fieldname": "column_break_34",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "years_of_experience",
+   "fieldtype": "Data",
+   "label": "Years of Experience"
+  },
+  {
+   "fieldname": "management_year_of_experience",
+   "fieldtype": "Data",
+   "label": "Management Year of Experience"
+  },
+  {
+   "fieldname": "previous_company_size",
+   "fieldtype": "Data",
+   "label": "Previous Company Size"
+  },
+  {
+   "fieldname": "language",
+   "fieldtype": "Table",
+   "label": "Language",
+   "options": "Personnel Language"
+  },
+  {
+   "fieldname": "language_section",
+   "fieldtype": "Section Break",
+   "label": "Language"
+  },
+  {
+   "default": "0",
+   "fieldname": "age_mandatory",
+   "fieldtype": "Check",
+   "label": "Age Range Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "nationality_mandatory",
+   "fieldtype": "Check",
+   "label": "Nationality Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "education_mandatory",
+   "fieldtype": "Check",
+   "label": "Education Mandatory"
+  },
+  {
+   "fieldname": "column_break_31",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "height_mandatory",
+   "fieldtype": "Check",
+   "label": "Height Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "weight_mandatory",
+   "fieldtype": "Check",
+   "label": "Weight Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "year_of_experience_mandatory",
+   "fieldtype": "Check",
+   "label": "Year of Experience Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "management_experience_mandatory",
+   "fieldtype": "Check",
+   "label": "Management Experience Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "previous_company_size_mandatory",
+   "fieldtype": "Check",
+   "label": "Previous Company Size Mandatory"
+  },
+  {
+   "fieldname": "column_break_37",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "performance_section",
+   "fieldtype": "Section Break",
+   "label": "Performance"
+  },
+  {
+   "fieldname": "qualification",
+   "fieldtype": "Data",
+   "label": "Qualification"
+  },
+  {
+   "fieldname": "skill",
+   "fieldtype": "Data",
+   "label": "Skill"
+  },
+  {
+   "fieldname": "industry_knowledge",
+   "fieldtype": "Data",
+   "label": "Industry Knowledge"
+  },
+  {
+   "fieldname": "tools_to_operate",
+   "fieldtype": "Data",
+   "label": "Tools To Operate"
+  },
+  {
+   "fieldname": "column_break_50",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "job_function",
+   "fieldtype": "Small Text",
+   "label": "Job Function"
+  },
+  {
+   "fieldname": "team_function",
+   "fieldtype": "Small Text",
+   "label": "Team Function"
+  },
+  {
+   "fieldname": "firm_function",
+   "fieldtype": "Small Text",
+   "label": "Firm Function"
+  },
+  {
+   "fieldname": "column_break_54",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "competency_profile",
+   "fieldtype": "Small Text",
+   "label": "Competency Profile"
+  },
+  {
+   "fieldname": "smart_profile",
+   "fieldtype": "Small Text",
+   "label": "SMART Profile"
+  },
+  {
+   "fieldname": "responsibilty_section",
+   "fieldtype": "Section Break",
+   "label": "Responsibilty"
+  },
+  {
+   "fieldname": "budget",
+   "fieldtype": "Data",
+   "label": "Budget"
+  },
+  {
+   "fieldname": "property",
+   "fieldtype": "Data",
+   "label": "Property"
+  },
+  {
+   "fieldname": "asset",
+   "fieldtype": "Data",
+   "label": "Asset"
+  },
+  {
+   "fieldname": "financial",
+   "fieldtype": "Data",
+   "label": "Financial"
+  },
+  {
+   "fieldname": "supervisor_responsibilty",
+   "fieldtype": "Data",
+   "label": "Supervisor Responsibilty"
+  },
+  {
+   "fieldname": "column_break_63",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "accountability_document",
+   "fieldtype": "Data",
+   "label": "Accountability Document"
+  },
+  {
+   "fieldname": "accountability_process",
+   "fieldtype": "Data",
+   "label": "Accountability Process"
+  },
+  {
+   "fieldname": "accountability_project",
+   "fieldtype": "Data",
+   "label": "Accountability Project"
+  },
+  {
+   "fieldname": "accountability_people",
+   "fieldtype": "Data",
+   "label": "Accountability People"
+  },
+  {
+   "fieldname": "column_break_68",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "train_others",
+   "fieldtype": "Select",
+   "label": "Train Others",
+   "options": "Yes\nNo"
+  },
+  {
+   "fieldname": "major_responsibility__time",
+   "fieldtype": "Small Text",
+   "label": "Major Responsibility % Time"
+  },
+  {
+   "fieldname": "section_break_71",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "tool",
+   "fieldtype": "Small Text",
+   "label": "Tool"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Personnel Request",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "agency",
+   "fieldtype": "Check",
+   "label": "Agency"
+  },
+  {
+   "default": "0",
+   "fieldname": "company",
+   "fieldtype": "Check",
+   "label": "Company"
+  },
+  {
+   "fieldname": "closing_date",
+   "fieldtype": "Date",
+   "label": "Closing Date"
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2020-01-10 11:18:15.902576",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Personnel Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

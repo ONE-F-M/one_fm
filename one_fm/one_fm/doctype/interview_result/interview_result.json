@@ -1,0 +1,65 @@
+{
+ "autoname": "INR-.###",
+ "creation": "2020-01-10 15:45:20.820421",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "designation",
+  "column_break_2",
+  "job_applicant",
+  "section_break_4",
+  "interview_question_result"
+ ],
+ "fields": [
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "label": "Job Applicant",
+   "options": "Job Applicant"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "interview_question_result",
+   "fieldtype": "Table",
+   "label": "Interview Question Result",
+   "options": "Interview Question Result"
+  }
+ ],
+ "modified": "2020-01-10 15:54:07.943941",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Interview Result",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

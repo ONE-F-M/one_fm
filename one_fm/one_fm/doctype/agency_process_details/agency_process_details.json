@@ -1,0 +1,56 @@
+{
+ "creation": "2020-01-10 15:00:38.935747",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "process_name",
+  "responsible",
+  "total_duration",
+  "attachement",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "process_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Process Name"
+  },
+  {
+   "fieldname": "responsible",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Responsible"
+  },
+  {
+   "fieldname": "total_duration",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Total Duration"
+  },
+  {
+   "fieldname": "attachement",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Attachement"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Notes"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-01-10 15:03:01.140371",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Agency Process Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
