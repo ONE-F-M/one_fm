@@ -7,29 +7,38 @@ import frappe, os
 import json
 from frappe.model.document import Document
 from frappe.utils import get_site_base_path
+from erpnext.hr.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils.csvutils import read_csv_content_from_uploaded_file, read_csv_content
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
+from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import expire_allocation, create_leave_ledger_entry
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form, \
-    comma_or, get_fullname, add_years, add_months, add_days, nowdate , comma_and
+    comma_or, get_fullname, add_years, add_months, add_days, nowdate,get_first_day,get_last_day
 import datetime
 
 
 @frappe.whitelist(allow_guest=True)
 def paid_sick_leave_validation(doc, method):
+    salary = get_salary(doc.employee)
+    daily_rate = salary/30
+
     allocation_records = get_leave_allocation_records(nowdate(), doc.employee, "Sick Leave - مرضية")
     allocation_from_date = allocation_records[doc.employee]["Sick Leave - مرضية"].from_date
     allocation_to_date = allocation_records[doc.employee]["Sick Leave - مرضية"].to_date
-    
+
     curr_year_applied_days = get_approved_leaves_for_period(doc.employee, "Sick Leave - مرضية", allocation_from_date, allocation_to_date)
 
-    # curr_total_applied_days = curr_year_applied_days + doc.total_leave_days
+    remain_paid = 0 
+    remain_three_quarter_paid = 0 
+    remain_half_paid = 0 
+    remain_quarter_paid = 0 
+    remain_without_paid = 0
 
-    if curr_year_applied_days>0 and curr_year_applied_days<=15:
+    if curr_year_applied_days>=0 and curr_year_applied_days<=15:
         remain_paid = 15-curr_year_applied_days
         if doc.total_leave_days > remain_paid:
             remain_three_quarter_paid = doc.total_leave_days-remain_paid
@@ -42,49 +51,163 @@ def paid_sick_leave_validation(doc, method):
                     if remain_quarter_paid>10:
                         remain_quarter_paid = 10
                         remain_without_paid = (((doc.total_leave_days-remain_paid)-10)-10)-10
-                
-    if curr_year_applied_days>15 and curr_year_applied_days<=25:
-        remain_three_quarter_paid = curr_year_applied_days-15
-        if remain_three_quarter_paid>10:
-            remain_three_quarter_paid = 10
-            remain_half_paid = (curr_year_applied_days-15)-10
+
+    elif curr_year_applied_days>15 and curr_year_applied_days<=25:
+        remain_three_quarter_paid = 25-curr_year_applied_days
+        if doc.total_leave_days>remain_three_quarter_paid:
+            remain_half_paid = doc.total_leave_days-remain_three_quarter_paid
             if remain_half_paid>10:
                 remain_half_paid = 10
-                remain_quarter_paid = ((curr_year_applied_days-15)-10)-10
+                remain_quarter_paid = (doc.total_leave_days-remain_three_quarter_paid)-10
                 if remain_quarter_paid>10:
                     remain_quarter_paid = 10
-                    remain_without_paid = (((curr_year_applied_days-15)-10)-10)-10
+                    remain_without_paid = ((doc.total_leave_days-remain_three_quarter_paid)-10)-10
+        else:
+            remain_three_quarter_paid = doc.total_leave_days
+
                 
-    if curr_year_applied_days>25 and curr_year_applied_days<=35:
-        remain_half_paid = curr_year_applied_days-25
-        if remain_half_paid>10:
-            remain_half_paid = 10
-            remain_quarter_paid = (curr_year_applied_days-25)-10
+    elif curr_year_applied_days>25 and curr_year_applied_days<=35:
+        remain_half_paid = 35-curr_year_applied_days
+        if doc.total_leave_days>remain_half_paid:
+            remain_quarter_paid = doc.total_leave_days-remain_half_paid
             if remain_quarter_paid>10:
                 remain_quarter_paid = 10
-                remain_without_paid = ((curr_year_applied_days-25)-10)-10
+                remain_without_paid = (doc.total_leave_days-remain_half_paid)-10
+        else:
+            remain_half_paid = doc.total_leave_days
 
-    if curr_year_applied_days>35 and curr_year_applied_days<=45:
-        remain_quarter_paid = curr_year_applied_days-35
-        if remain_quarter_paid>10:
-            remain_quarter_paid = 10
-            remain_without_paid = (curr_year_applied_days-35)-10
+
+    elif curr_year_applied_days>35 and curr_year_applied_days<=45:
+        remain_quarter_paid = 45-curr_year_applied_days
+        if doc.total_leave_days>remain_quarter_paid:
+            remain_quarter_paid = doc.total_leave_days-remain_quarter_paid
+            if remain_quarter_paid>10:
+                remain_quarter_paid = 10
+                remain_without_paid = (curr_year_applied_days-35)-10
                 
-    if curr_year_applied_days>45 and curr_year_applied_days<=75:
-        remain_without_paid = curr_year_applied_days-45
-           
+    elif curr_year_applied_days>45 and curr_year_applied_days<=75:
+        remain_without_paid = 75-curr_year_applied_days
+        if doc.total_leave_days<remain_without_paid:
+            remain_without_paid = doc.total_leave_days
 
 
-    frappe.msgprint(cstr(allocation_records))
-    frappe.msgprint(cstr(curr_year_applied_days))
+    # frappe.msgprint('Year Applied days : '+cstr(curr_year_applied_days))
+    # frappe.msgprint('Employee Salary : '+cstr(salary))
+    # frappe.msgprint('Daily Rate : '+cstr(daily_rate))
+    # frappe.msgprint('Remain Paid : '+cstr(remain_paid))
 
-    # frappe.get_doc({
-    #     "doctype":"Additional Salary",
-    #     "employee": doc.employee,
-    #     "salary_component": 'Sick Leave Deduction',
-    #     "payroll_date": doc.from_date,
-    #     "amount": 1000
-    # }).insert(ignore_permissions=True)
+    # frappe.msgprint('Remain Three Quarter Paid : '+cstr(remain_three_quarter_paid))
+    # frappe.msgprint('Remain Half Paid : '+cstr(remain_half_paid))
+    # frappe.msgprint('Remain Quarter Paid : '+cstr(remain_quarter_paid))
+    # frappe.msgprint('Remain Without Paid : '+cstr(remain_without_paid))
+
+    if remain_three_quarter_paid>0:
+        deduction_notes = """
+            Employee Salary: <b>{0}</b><br>
+            Daily Rate: <b>{1}</b><br>
+            Deduction Days Number: <b>{2}</b><br>
+            Paid Percent: <b>75%</b>
+        """.format(salary,daily_rate,remain_three_quarter_paid)
+
+        frappe.get_doc({
+            "doctype":"Additional Salary",
+            "employee": doc.employee,
+            "docstatus": 1,
+            "salary_component": 'Sick Leave Deduction',
+            "payroll_date": doc.from_date,
+            "leave_application": doc.name,
+            "notes": deduction_notes,
+            "amount": remain_three_quarter_paid*daily_rate*0.25
+        }).insert(ignore_permissions=True)
+
+    if remain_half_paid>0:
+        deduction_notes = """
+            Employee Salary: <b>{0}</b><br>
+            Daily Rate: <b>{1}</b><br>
+            Deduction Days Number: <b>{2}</b><br>
+            Paid Percent: <b>50%</b>
+        """.format(salary,daily_rate,remain_half_paid)
+
+        frappe.get_doc({
+            "doctype":"Additional Salary",
+            "employee": doc.employee,
+            "docstatus": 1,
+            "salary_component": 'Sick Leave Deduction',
+            "payroll_date": doc.from_date,
+            "leave_application": doc.name,
+            "notes": deduction_notes,
+            "amount": remain_half_paid*daily_rate*0.5
+        }).insert(ignore_permissions=True)
+
+    if remain_quarter_paid>0:
+        deduction_notes = """
+            Employee Salary: <b>{0}</b><br>
+            Daily Rate: <b>{1}</b><br>
+            Deduction Days Number: <b>{2}</b><br>
+            Paid Percent: <b>25%</b>
+        """.format(salary,daily_rate,remain_quarter_paid)
+
+        frappe.get_doc({
+            "doctype":"Additional Salary",
+            "employee": doc.employee,
+            "docstatus": 1,
+            "salary_component": 'Sick Leave Deduction',
+            "payroll_date": doc.from_date,
+            "leave_application": doc.name,
+            "notes": deduction_notes,
+            "amount": remain_quarter_paid*daily_rate*0.75
+        }).insert(ignore_permissions=True)
+
+    if remain_without_paid>0:
+        deduction_notes = """
+            Employee Salary: <b>{0}</b><br>
+            Daily Rate: <b>{1}</b><br>
+            Deduction Days Number: <b>{2}</b><br>
+            Paid Percent: <b>0%</b>
+        """.format(salary,daily_rate,remain_without_paid)
+
+        frappe.get_doc({
+            "doctype":"Additional Salary",
+            "employee": doc.employee,
+            "docstatus": 1,
+            "salary_component": 'Sick Leave Deduction',
+            "payroll_date": doc.from_date,
+            "leave_application": doc.name,
+            "notes": deduction_notes,
+            "amount": remain_without_paid*daily_rate
+        }).insert(ignore_permissions=True)
+
+
+
+def get_salary(employee):
+    salary_amount = 0
+
+    salary_slip_name = frappe.db.sql("select name from `tabSalary Slip` where employee='{0}' order by creation desc limit 1".format(employee))
+    if salary_slip_name:
+        doc = frappe.get_doc('Salary Slip', salary_slip_name[0][0])
+
+        for earning in doc.earnings:
+            if earning.salary_component =='Basic':
+                salary_amount = earning.amount
+
+    else:
+        doc = frappe.new_doc("Salary Slip")
+        doc.payroll_frequency= "Monthly"
+        doc.start_date=get_first_day(getdate(nowdate()))
+        doc.end_date=get_last_day(getdate(nowdate()))
+        doc.employee= str(employee)
+        doc.posting_date= nowdate()
+        doc.insert(ignore_permissions=True)
+
+        if doc.name:
+            for earning in doc.earnings:
+                if earning.salary_component =='Basic':
+                    salary_amount = earning.amount
+
+            doc.delete()
+
+    return salary_amount
+
 
 
 @frappe.whitelist(allow_guest=True)
@@ -109,38 +232,23 @@ def hooked_leave_allocation_builder():
                     allocation_from_date = year + "-" + month + "-" + day
                     allocation_to_date = add_days(add_years(allocation_from_date,1),-1)
 
-                # if lt.name == "Annual Leave - اجازة اعتيادية":
-                #     prev_year_date = frappe.utils.data.add_years(frappe.utils.data.nowdate(), -1)
-                #     prev_year_allocation_records = get_leave_allocation_records(prev_year_date, emp.name, "Annual Leave - اجازة اعتيادية")
-                #     if prev_year_allocation_records:
-                #         from_date = prev_year_allocation_records[emp.name]["Annual Leave - اجازة اعتيادية"].from_date
-                #         to_date = prev_year_allocation_records[emp.name]["Annual Leave - اجازة اعتيادية"].to_date
-                #         prev_year_total_leaves_allocated = prev_year_allocation_records[emp.name]["Annual Leave - اجازة اعتيادية"].total_leaves_allocated                                
-                #         prev_year_applied_days = get_approved_leaves_for_period(emp.name, "Annual Leave - اجازة اعتيادية", from_date, to_date)
+                if lt.name == "Annual Leave - اجازة اعتيادية":
+                    new_leaves_allocated = 30/365
 
-                #         if prev_year_total_leaves_allocated == prev_year_applied_days:
-                #             new_leaves_allocated = 0
-                #         elif prev_year_total_leaves_allocated > prev_year_applied_days:
-                #             remain_days = prev_year_total_leaves_allocated - prev_year_applied_days
-                #             new_leaves_allocated = remain_days + 0
-                #             if new_leaves_allocated > 30:
-                #                 new_leaves_allocated = 30
-                #     else:
-                #         new_leaves_allocated = 0
+                    su = frappe.new_doc("Leave Allocation")
+                    su.update({
+                        "leave_type": "Annual Leave - اجازة اعتيادية",
+                        "employee": emp.name,
+                        "from_date": allocation_from_date,
+                        "to_date": allocation_to_date,
+                        "carry_forward": 1,
+                        "new_leaves_allocated": new_leaves_allocated
+                        })
+                    su.save(ignore_permissions=True)
+                    su.submit()
+                    frappe.db.commit()
+                    print('New **Annual Leave - اجازة اعتيادية** for employee {0}'.format(emp.name))
 
-                    # print('New **Annual Leave - اجازة اعتيادية** for employee {0}'.format(emp.name))
-
-                    # su = frappe.new_doc("Leave Allocation")
-                    # su.update({
-                    #     "leave_type": "Annual Leave - اجازة اعتيادية",
-                    #     "employee": emp.name,
-                    #     "from_date": allocation_from_date,
-                    #     "to_date": add_years(allocation_to_date,4),
-                    #     "new_leaves_allocated": new_leaves_allocated
-                    #     })
-                    # su.save(ignore_permissions=True)
-                    # su.submit()
-                    # frappe.db.commit()
 
                 if lt.name == "Sick Leave - مرضية":
                     sl = frappe.new_doc("Leave Allocation")
@@ -154,33 +262,66 @@ def hooked_leave_allocation_builder():
                     sl.save(ignore_permissions=True)
                     sl.submit()
                     frappe.db.commit()
-
                     print('New **Sick Leave - مرضية** for employee {0}'.format(emp.name))
 
 
 
-# def increase_daily_leave_balance():
-#     emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name"])
-#     for emp in emps:
-#         allocation = frappe.db.sql("select name from `tabLeave Allocation` where leave_type='Annual Leave - اجازة اعتيادية' and employee='{0}' and docstatus=1 and '{1}' between from_date and to_date order by to_date desc limit 1".format(emp.name,nowdate()))
-#         if allocation:
-#             if str(frappe.utils.get_last_day(nowdate())) == str(nowdate()):
+def increase_daily_leave_balance():
+    emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name"])
+    for emp in emps:
+        allocation = frappe.db.sql("select name from `tabLeave Allocation` where leave_type='Annual Leave - اجازة اعتيادية' and employee='{0}' and docstatus=1 and '{1}' between from_date and to_date order by to_date desc limit 1".format(emp.name,nowdate()))
+        if allocation:
+            leave_balance = 30/365
+            final_leave_balance = leave_balance
 
-#                 doc = frappe.get_doc('Leave Allocation', allocation[0][0])
+            allocation_records = get_leave_allocation_records(nowdate(), emp.name, 'Sick Leave - مرضية')
+            allocation_from_date = allocation_records[emp.name]["Sick Leave - مرضية"].from_date
+            allocation_to_date = allocation_records[emp.name]["Sick Leave - مرضية"].to_date
 
-#                 current_year_applied_days = get_approved_leaves_for_period(emp.name, "Annual Leave - اجازة اعتيادية", doc.from_date, doc.to_date)
-#                 current_remain_days = flt(doc.new_leaves_allocated)-flt(current_year_applied_days)
+            attendance = frappe.db.sql_list("select attendance_date from `tabAttendance` where docstatus=1 and status='On Leave' and leave_type='Sick Leave - مرضية' and employee='{0}' and attendance_date between '{1}' and '{2}' ".format(emp.name, allocation_from_date, allocation_to_date))
+            
+            attendance_until_today = frappe.db.sql("select count(attendance_date) from `tabAttendance` where docstatus=1 and status='On Leave' and leave_type='Sick Leave - مرضية' and employee='{0}' and attendance_date between '{1}' and '{2}' ".format(emp.name, allocation_from_date, getdate(nowdate())))[0][0]
+            
+            if getdate(nowdate()) not in attendance:
+                attendance_until_today = 0
 
-#                 if current_remain_days < 30.0:
-#                     if current_remain_days + 2.5 >= 30.0:
-#                         leave_balance = current_year_applied_days + 30.0
-#                     else:
-#                         leave_balance = doc.new_leaves_allocated + 2.5
-#                     doc.new_leaves_allocated = leave_balance
-#                     doc.save()
-#                     print("Increase daily leave balance for employee {0}".format(emp.name))
+            if attendance_until_today>=0 and attendance_until_today<=15:
+                final_leave_balance = leave_balance
+            elif attendance_until_today>15 and attendance_until_today<=25:
+                final_leave_balance = leave_balance*0.75
+            elif attendance_until_today>25 and attendance_until_today<=35:
+                final_leave_balance = leave_balance*0.5
+            elif attendance_until_today>35 and attendance_until_today<=45:
+                final_leave_balance = leave_balance*0.25
+            elif attendance_until_today>45 and attendance_until_today<=75:
+                final_leave_balance = leave_balance*0.0
 
+            print(attendance_until_today)
+            print('******************************************')
+            print(final_leave_balance)
 
+            doc = frappe.get_doc('Leave Allocation', allocation[0][0])
+            doc.new_leaves_allocated = doc.new_leaves_allocated+final_leave_balance
+            doc.total_leaves_allocated = doc.new_leaves_allocated+doc.unused_leaves
+            doc.save()
+            frappe.db.commit()
+            print("Increase daily leave balance for employee {0}".format(emp.name))
+
+            ledger = frappe._dict(
+                doctype='Leave Ledger Entry',
+                employee=emp.name,
+                leave_type='Annual Leave - اجازة اعتيادية',
+                transaction_type='Leave Allocation',
+                transaction_name=allocation[0][0],
+                leaves = final_leave_balance,
+                from_date = allocation_from_date,
+                to_date = allocation_to_date,
+                is_carry_forward=0,
+                is_expired=0,
+                is_lwp=0
+            )
+            frappe.get_doc(ledger).submit()
+           
 
 def get_leave_allocation_records(date, employee=None, leave_type=None):
     conditions = (" and employee='%s'" % employee) if employee else ""

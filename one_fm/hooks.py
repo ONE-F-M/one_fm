@@ -83,8 +83,7 @@ home_page = "domain_transfer"
 
 doc_events = {
     "Leave Application": {
-        "on_update": "one_fm.utils.paid_sick_leave_validation",
-        "on_submit": "one_fm.utils.paid_sick_leave_validation"
+        "before_submit": "one_fm.utils.paid_sick_leave_validation"
     }
 }
 
@@ -103,7 +102,8 @@ scheduler_events = {
   "daily": [
     'one_fm.utils.pam_salary_certificate_expiry_date',
     'one_fm.utils.pam_authorized_signatory',
-    'one_fm.utils.hooked_leave_allocation_builder'
+    'one_fm.utils.hooked_leave_allocation_builder',
+    'one_fm.utils.increase_daily_leave_balance'
   ]
 }
 
