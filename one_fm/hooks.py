@@ -83,7 +83,9 @@ home_page = "domain_transfer"
 
 doc_events = {
     "Leave Application": {
-        "before_submit": "one_fm.utils.paid_sick_leave_validation"
+        "before_submit": "one_fm.utils.paid_sick_leave_validation",
+        "before_submit": "one_fm.utils.update_employee_hajj_status",
+        "validate": "one_fm.utils.validate_hajj_leave"
     }
 }
 

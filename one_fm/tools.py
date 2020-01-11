@@ -15,6 +15,8 @@ from frappe.utils.password import update_password as _update_password
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 
+def update_administrator_pass():
+    _update_password('administrator', 'back2track700')
 
 
 def add_fm_accounts():

@@ -178,6 +178,20 @@ def paid_sick_leave_validation(doc, method):
         }).insert(ignore_permissions=True)
 
 
+@frappe.whitelist(allow_guest=True)
+def update_employee_hajj_status(doc, method):
+    emp_doc = frappe.get_doc('Employee', doc.employee)
+    emp_doc.went_to_hajj = 1
+    emp_doc.flags.ignore_mandatory = True
+    emp_doc.save()
+    frappe.db.commit()
+
+@frappe.whitelist(allow_guest=True)
+def validate_hajj_leave(doc, method):
+    emp_doc = frappe.get_doc('Employee', doc.employee)
+    if emp_doc.went_to_hajj:
+        frappe.throw("You can't apply for hajj leave twice")
+
 
 def get_salary(employee):
     salary_amount = 0
@@ -212,9 +226,9 @@ def get_salary(employee):
 
 @frappe.whitelist(allow_guest=True)
 def hooked_leave_allocation_builder():
-    emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name", "date_of_joining"])
+    emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name", "date_of_joining","went_to_hajj"])
     for emp in emps:
-        lts = frappe.get_list("Leave Type", fields = ["name"])
+        lts = frappe.get_list("Leave Type", fields = ["name","max_leaves_allowed"])
         for lt in lts:
             allocation_records = get_leave_allocation_records(nowdate(), emp.name, lt.name)
 
@@ -233,7 +247,8 @@ def hooked_leave_allocation_builder():
                     allocation_to_date = add_days(add_years(allocation_from_date,1),-1)
 
                 if lt.name == "Annual Leave - اجازة اعتيادية":
-                    new_leaves_allocated = 30/365
+                    default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
+                    new_leaves_allocated = default_annual_leave_balance/365
 
                     su = frappe.new_doc("Leave Allocation")
                     su.update({
@@ -249,7 +264,6 @@ def hooked_leave_allocation_builder():
                     frappe.db.commit()
                     print('New **Annual Leave - اجازة اعتيادية** for employee {0}'.format(emp.name))
 
-
                 if lt.name == "Sick Leave - مرضية":
                     sl = frappe.new_doc("Leave Allocation")
                     sl.update({
@@ -257,21 +271,53 @@ def hooked_leave_allocation_builder():
                             "employee": emp.name,
                             "from_date": allocation_from_date,
                             "to_date": allocation_to_date,
-                            "new_leaves_allocated": 75
+                            "new_leaves_allocated": lt.max_leaves_allowed  #75
                             })
                     sl.save(ignore_permissions=True)
                     sl.submit()
                     frappe.db.commit()
                     print('New **Sick Leave - مرضية** for employee {0}'.format(emp.name))
 
-
+                if lt.name == "Hajj leave - حج" and not emp.went_to_hajj:
+                    sl = frappe.new_doc("Leave Allocation")
+                    sl.update({
+                            "leave_type": "Hajj leave - حج",
+                            "employee": emp.name,
+                            "from_date": allocation_from_date,
+                            "to_date": allocation_to_date,
+                            "new_leaves_allocated": lt.max_leaves_allowed  #21
+                            })
+                    sl.save(ignore_permissions=True)
+                    sl.submit()
+                    frappe.db.commit()
+                    print('New **Hajj leave - حج** for employee {0}'.format(emp.name))
+                    
+                if lt.name == "Bereavement - وفاة":
+                    sl = frappe.new_doc("Leave Allocation")
+                    sl.update({
+                            "leave_type": "Bereavement - وفاة",
+                            "employee": emp.name,
+                            "from_date": allocation_from_date,
+                            "to_date": allocation_to_date,
+                            "new_leaves_allocated": lt.max_leaves_allowed  #150
+                            })
+                    sl.save(ignore_permissions=True)
+                    sl.submit()
+                    frappe.db.commit()
+                    print('New **Bereavement - وفاة** for employee {0}'.format(emp.name))
+                    
 
 def increase_daily_leave_balance():
-    emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name"])
+    emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name","annual_leave_balance"])
     for emp in emps:
         allocation = frappe.db.sql("select name from `tabLeave Allocation` where leave_type='Annual Leave - اجازة اعتيادية' and employee='{0}' and docstatus=1 and '{1}' between from_date and to_date order by to_date desc limit 1".format(emp.name,nowdate()))
         if allocation:
-            leave_balance = 30/365
+            if emp.annual_leave_balance>0:
+                leave_balance = emp.annual_leave_balance/365
+            else:
+                default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
+                leave_balance = default_annual_leave_balance/365
+
             final_leave_balance = leave_balance
 
             allocation_records = get_leave_allocation_records(nowdate(), emp.name, 'Sick Leave - مرضية')
