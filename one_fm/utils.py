@@ -178,19 +178,51 @@ def paid_sick_leave_validation(doc, method):
         }).insert(ignore_permissions=True)
 
 
+
+@frappe.whitelist(allow_guest=True)
+def bereavement_leave_validation(doc, method):
+    allocation = frappe.db.sql("select name from `tabLeave Allocation` where leave_type='Bereavement - وفاة' and employee='{0}' and docstatus=1 and '{1}' between from_date and to_date order by to_date desc limit 1".format(doc.employee, nowdate()))
+    if allocation:
+        allocation_doc = frappe.get_doc('Leave Allocation', allocation[0][0])
+        allocation_doc.new_leaves_allocated = allocation_doc.new_leaves_allocated+doc.total_leave_days
+        allocation_doc.total_leaves_allocated = allocation_doc.new_leaves_allocated+allocation_doc.unused_leaves
+        allocation_doc.save()
+        frappe.db.commit()
+        print("Increase Bereavement leave balance for employee {0}".format(doc.employee))
+
+        ledger = frappe._dict(
+            doctype='Leave Ledger Entry',
+            employee=doc.employee,
+            leave_type='Bereavement - وفاة',
+            transaction_type='Leave Allocation',
+            transaction_name=allocation[0][0],
+            leaves = doc.total_leave_days,
+            from_date = allocation_doc.from_date,
+            to_date = allocation_doc.to_date,
+            is_carry_forward=0,
+            is_expired=0,
+            is_lwp=0
+        )
+        frappe.get_doc(ledger).submit()
+
+
+
+
 @frappe.whitelist(allow_guest=True)
 def update_employee_hajj_status(doc, method):
-    emp_doc = frappe.get_doc('Employee', doc.employee)
-    emp_doc.went_to_hajj = 1
-    emp_doc.flags.ignore_mandatory = True
-    emp_doc.save()
-    frappe.db.commit()
+    if doc.leave_type == 'Hajj leave - حج':
+        emp_doc = frappe.get_doc('Employee', doc.employee)
+        emp_doc.went_to_hajj = 1
+        emp_doc.flags.ignore_mandatory = True
+        emp_doc.save()
+        frappe.db.commit()
 
 @frappe.whitelist(allow_guest=True)
 def validate_hajj_leave(doc, method):
-    emp_doc = frappe.get_doc('Employee', doc.employee)
-    if emp_doc.went_to_hajj:
-        frappe.throw("You can't apply for hajj leave twice")
+    if doc.leave_type == 'Hajj leave - حج':
+        emp_doc = frappe.get_doc('Employee', doc.employee)
+        if emp_doc.went_to_hajj:
+            frappe.throw("You can't apply for hajj leave twice")
 
 
 def get_salary(employee):
