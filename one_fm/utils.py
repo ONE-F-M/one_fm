@@ -275,6 +275,15 @@ def hooked_leave_allocation_builder():
                     day = "0" + str(getdate(emp.date_of_joining).day) if len(str(getdate(emp.date_of_joining).day)) == 1 else str(getdate(emp.date_of_joining).day)
                     month = "0" + str(getdate(emp.date_of_joining).month) if len(str(getdate(emp.date_of_joining).month)) == 1 else str(getdate(emp.date_of_joining).month)
                     year = str(getdate(nowdate()).year)
+
+                    if getdate(emp.date_of_joining).month<=getdate(nowdate()).month:
+                        if getdate(emp.date_of_joining).day<=getdate(nowdate()).day:
+                            year = str(getdate(nowdate()).year)
+                        else:
+                            year = str(getdate(nowdate()).year-1)
+                    else:
+                        year = str(getdate(nowdate()).year-1)
+
                     allocation_from_date = year + "-" + month + "-" + day
                     allocation_to_date = add_days(add_years(allocation_from_date,1),-1)
 
