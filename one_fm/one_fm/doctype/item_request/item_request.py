@@ -14,6 +14,15 @@ class ItemRequest(Document):
                 self.docstatus = 1
                 self.docstatus = 2
 
+        page_link = get_url("/desk#Form/Item Request/" + self.name)
+
+        # self.send_notifications(page_link)
+
+        # Line manager
+        if frappe.session.user!='Administrator':
+            frappe.publish_realtime(event='msgprint', message='New Item Request has been created, need your action <a href="{0}">Here</a>.'.format(page_link), user='Administrator')
+
+
     def on_submit(self):
         frappe.msgprint("Your request has been received")
 
@@ -31,7 +40,8 @@ class ItemRequest(Document):
             })
 
         for item in self.items:
-            check_stock.append('item_coding', {"item_code_name":item.item_name,"item_description":item.item_description,"qty":item.qty,"uom":item.uom})
+            if item.accepted:
+                check_stock.append('item_coding', {"item_code_name":item.item_name,"item_description":item.item_description,"qty":item.qty,"uom":item.uom})
 
         check_stock.flags.ignore_validate = True
         check_stock.flags.ignore_mandatory = True
@@ -40,7 +50,14 @@ class ItemRequest(Document):
 
         page_link = get_url("/desk#Form/Stock Check/" + check_stock.name)
 
-        self.send_notifications(page_link)
+        # self.send_notifications(page_link)
+        
+        # stock manager
+        frappe.publish_realtime(event='msgprint', message='New Item Request has been approved, please check next step from <a href="{0}">Here</a> for your Action'.format(page_link), user='Administrator')
+        
+        # employee who create
+        prefered_email_employee = frappe.get_value("Employee", filters = {"name": self.employee}, fieldname = "prefered_email")
+        frappe.publish_realtime(event='msgprint', message='Your Item Request has been approved, and its now under stock review', user=prefered_email_employee)
 
 
     def send_notifications(self,page_link):

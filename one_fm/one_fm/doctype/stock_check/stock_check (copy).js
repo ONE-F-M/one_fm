@@ -4,6 +4,42 @@
 frappe.ui.form.on('Stock Check', {
     refresh: function(frm){
 
+            cur_frm.set_query("parent_item_group", "item_coding", function(doc, cdt, cdn) {
+                var d = locals[cdt][cdn];
+                return{
+                    filters: [
+                        ['Item Group', 'parent_item_group', '=', 'All Item Groups']
+                    ]
+                }
+            });
+
+            cur_frm.set_query("subitem_group", "item_coding", function(doc, cdt, cdn) {
+                var d = locals[cdt][cdn];
+                return{
+                    filters: [
+                        ['Item Group', 'parent_item_group', '=', d.parent_item_group]
+                    ]
+                }
+            });
+
+            cur_frm.set_query("item_group", "item_coding", function(doc, cdt, cdn) {
+                var d = locals[cdt][cdn];
+                return{
+                    filters: [
+                        ['Item Group', 'parent_item_group', '=', d.subitem_group]
+                    ]
+                }
+            });
+
+            cur_frm.set_query("item_code", "item_coding", function(doc, cdt, cdn) {
+                var d = locals[cdt][cdn];
+                return{
+                    filters: [
+                        ['Item', 'item_group', '=', d.item_group]
+                    ]
+                }
+            });
+
     },
     setup: function(frm) {
         frm.set_indicator_formatter('item_code',
@@ -27,9 +63,10 @@ frappe.ui.form.on('Stock Check', {
                     frm.refresh_field("item_coding");
                 });
             })
+
+
         }
 	}
-    
 });
 
 
@@ -76,6 +113,27 @@ frappe.ui.form.on('Item Coding', {
             });
         }else{
             frappe.model.set_value(cdt, cdn, 'actual_qty', 0.0);
+        }
+    },
+    parent_item_group: function(frm,cdt,cdn) {
+        var row = locals[cdt][cdn];
+        if(row.parent_item_group){
+            frappe.model.set_value(cdt, cdn, 'subitem_group', '');
+            frappe.model.set_value(cdt, cdn, 'item_group', '');
+            frappe.model.set_value(cdt, cdn, 'item_code', '');
+        }
+    },
+    subitem_group: function(frm,cdt,cdn) {
+        var row = locals[cdt][cdn];
+        if(row.parent_item_group){
+           frappe.model.set_value(cdt, cdn, 'item_group', '');
+            frappe.model.set_value(cdt, cdn, 'item_code', '');
+        }
+    },
+    item_group: function(frm,cdt,cdn) {
+        var row = locals[cdt][cdn];
+        if(row.parent_item_group){
+            frappe.model.set_value(cdt, cdn, 'item_code', '');
         }
     }
 

@@ -9,7 +9,9 @@
   "column_break_2",
   "qty",
   "column_break_8",
-  "uom"
+  "uom",
+  "column_break_7",
+  "accepted"
  ],
  "fields": [
   {
@@ -47,10 +49,21 @@
    "in_list_view": 1,
    "label": "Item Description",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "accepted",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Accepted"
   }
  ],
  "istable": 1,
- "modified": "2019-12-09 00:48:17.388455",
+ "modified": "2020-01-26 16:16:03.246026",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item Request Items",
