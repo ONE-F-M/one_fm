@@ -67,7 +67,7 @@
 
 
 	    var curr_url = window.location.href
-	    if (curr_url.startsWith('http://one-fm')) {
+	    if (curr_url.startsWith('http://one-fm') || curr_url.startsWith('https://one-fm')) {
 	        window.location.replace('/homepage');
 	    } else {
 	        window.location.replace('/login');
