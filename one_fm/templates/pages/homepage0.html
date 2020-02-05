@@ -1,28 +1,16 @@
-{% extends "templates/web.html" %}
+<!DOCTYPE html>
+<html lang="en">
 
-{%- block head_include %}
-{% endblock -%}
-{%- block banner -%}
-{%- endblock -%}
-{%- block navbar -%}
-{%- endblock -%}
-
-{%- block style %}{%- endblock -%}
-
-{%- block base_scripts %}{%- endblock -%}
-
-{%- block footer -%}
-{%- endblock -%}
-
-{% block meta_block %}
+<head>
     <meta charset="UTF-8">
     <meta name="description" content="">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-{% endblock %}
+    <!-- The above 4 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
+    <!-- Title -->
+    <title>One FM</title>
 
-{%- block head -%}
     <!-- Favicon -->
     <link rel="icon" href="assets/one_fm/assets/img/logo-img/favicon.ico">
     <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/8.5.0/svg/shield.svg">
@@ -39,19 +27,28 @@
     <!-- Responsive CSS -->
     <link href="assets/one_fm/assets/css/responsive.css" rel="stylesheet">
 
-{% endblock %}
+    <script>
+            window.frappe = {};
+            frappe.ready_events = [];
+            frappe.ready = function(fn) {
+                frappe.ready_events.push(fn);
+            }
+            window.dev_server = {{ dev_server }};
+            window.socketio_port = {{ frappe.socketio_port }};
+
+    </script>
 
 
+</head>
 
-{% block title %}One FM{% endblock %}
+<body>
+    <!-- Preloader Start -->
 
-
-{% block mainsection %}
-{% endblock %}
-
-
-
-{% block websitecontent %}
+    <!--
+    <div id="preloader">
+        <div class="colorlib-load"></div>
+    </div>
+    -->
 
 
     <!-- ***** Header Area Start ***** -->
@@ -799,6 +796,6 @@ var TxtType = function(el, toRotate, period) {
        
     </script>
 
+</body>
 
-{% endblock %}
-
+</html>
