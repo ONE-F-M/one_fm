@@ -1,11 +1,13 @@
 {
- "autoname": "IR-.YYYY.-.MM.-.######",
+ "autoname": "format:IR-{department_code}-{YYYY}-{MM}-{#####}",
  "creation": "2019-12-07 18:50:17.333945",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "employee",
+  "department",
+  "department_code",
   "employee_name",
   "project",
   "site",
@@ -33,13 +35,16 @@
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
-   "options": "Project"
+   "options": "Project",
+   "reqd": 1
   },
   {
+   "depends_on": "eval:doc.project",
    "fieldname": "site",
    "fieldtype": "Link",
    "label": "Site",
-   "options": "Site"
+   "options": "Site",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_3",
@@ -96,10 +101,24 @@
    "fieldtype": "Select",
    "label": "Is the request budgeted",
    "options": "\nYes\nNo"
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Read Only",
+   "label": "Department",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.department_code",
+   "fieldname": "department_code",
+   "fieldtype": "Read Only",
+   "label": "Department Code",
+   "reqd": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-01-26 16:11:36.351004",
+ "modified": "2020-02-25 13:18:59.758431",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item Request",
