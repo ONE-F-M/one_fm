@@ -1,5 +1,5 @@
 {
- "autoname": "format:IR-{department_code}-{YYYY}-{MM}-{#####}",
+ "autoname": "format:IR-{department_code}-{YYYY}-{#####}",
  "creation": "2019-12-07 18:50:17.333945",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -100,7 +100,8 @@
    "fieldname": "budgeted",
    "fieldtype": "Select",
    "label": "Is the request budgeted",
-   "options": "\nYes\nNo"
+   "options": "\nYes\nNo",
+   "permlevel": 1
   },
   {
    "fetch_from": "employee.department",
@@ -118,7 +119,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2020-02-25 13:18:59.758431",
+ "modified": "2020-03-10 19:30:58.873213",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item Request",
@@ -152,6 +153,18 @@
    "role": "HR Manager",
    "share": 1,
    "submit": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
    "write": 1
   },
   {

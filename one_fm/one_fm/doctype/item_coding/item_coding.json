@@ -9,6 +9,7 @@
   "actual_qty",
   "column_break_7",
   "item_code_name",
+  "item_category",
   "section_break_4",
   "item_description",
   "column_break_2",
@@ -87,10 +88,17 @@
    "label": "Warehouse",
    "options": "Warehouse",
    "reqd": 1
+  },
+  {
+   "fieldname": "item_category",
+   "fieldtype": "Link",
+   "label": "Item Category",
+   "options": "Item Category",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2020-01-26 17:07:52.194376",
+ "modified": "2020-03-10 20:25:14.078642",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item Coding",

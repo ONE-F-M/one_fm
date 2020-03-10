@@ -45,6 +45,25 @@ frappe.ui.form.on('Item Request', {
 		        };
 		    });
 		}
+	},
+	onload: function(frm) {
+		frm.trigger('budgeted_validate');
+	},
+	budgeted_validat: function(frm){
+		frm.trigger('budgeted_validate');
+	},
+	budgeted_validate: function(frm){
+		if(cur_frm.doc.budgeted=='Yes'){
+			var df = frappe.meta.get_docfield("Item Request Items", 'item_category' , cur_frm.doc.name);
+            df.hidden = 0; 
+			
+			frm.fields_dict["items"].grid.toggle_reqd("item_category", true);
+		}else{
+			var df = frappe.meta.get_docfield("Item Request Items", 'item_category' , cur_frm.doc.name);
+            df.hidden = 1;
+			
+			frm.fields_dict["items"].grid.toggle_reqd("item_category", false);
+		}
 	}
 });
 

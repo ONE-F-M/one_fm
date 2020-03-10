@@ -122,7 +122,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "item_request.item_request_type",
+   "fetch_from": "item_request.budgeted",
    "fieldname": "budgeted",
    "fieldtype": "Select",
    "label": "Is the request budgeted",
@@ -161,7 +161,7 @@
  ],
  "in_create": 1,
  "is_submittable": 1,
- "modified": "2020-02-25 13:18:45.333687",
+ "modified": "2020-03-10 20:27:34.538573",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Stock Check",

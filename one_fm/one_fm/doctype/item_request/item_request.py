@@ -41,7 +41,7 @@ class ItemRequest(Document):
 
         for item in self.items:
             if item.accepted:
-                check_stock.append('item_coding', {"item_code_name":item.item_name,"item_description":item.item_description,"qty":item.qty,"uom":item.uom})
+                check_stock.append('item_coding', {"item_code_name":item.item_name,"item_category":item.item_category,"item_description":item.item_description,"qty":item.qty,"uom":item.uom})
 
         check_stock.flags.ignore_validate = True
         check_stock.flags.ignore_mandatory = True
