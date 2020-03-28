@@ -884,6 +884,15 @@ class Item(WebsiteGenerator):
 			if not enabled:
 				frappe.msgprint(msg=_("You have to enable auto re-order in Stock Settings to maintain re-order levels."), title=_("Enable Auto Re-Order"), indicator="orange")
 
+
+	def get_item_id_series(self):
+		previous_item_id = frappe.db.sql("select item_id from `tabItem` where parent_item_group='{0}' and subitem_group='{1}' and item_group='{2}' order by item_id desc".format(self.parent_item_group, self.subitem_group, self.item_group))
+		if previous_item_id:
+			return previous_item_id[0][0]
+		else:
+			return '000'
+
+
 def get_timeline_data(doctype, name):
 	'''returns timeline data based on stock ledger entry'''
 	out = {}

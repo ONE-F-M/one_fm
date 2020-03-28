@@ -2,7 +2,7 @@
  "allow_guest_to_view": 1,
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "field:item_id",
+ "autoname": "field:item_code",
  "creation": "2013-05-03 10:45:46",
  "description": "A Product or a Service that is bought, sold or kept in stock.",
  "doctype": "DocType",
@@ -21,6 +21,7 @@
   "item_code",
   "is_item_from_hub",
   "stock_uom",
+  "item_barcode",
   "column_break0",
   "disabled",
   "allow_alternative_item",
@@ -36,6 +37,12 @@
   "over_billing_allowance",
   "image",
   "section_break_11",
+  "description1",
+  "description2",
+  "description3",
+  "description4",
+  "description5",
+  "final_description",
   "brand",
   "description",
   "sb_barcodes",
@@ -183,6 +190,7 @@
    "bold": 1,
    "fieldname": "item_name",
    "fieldtype": "Data",
+   "hidden": 1,
    "in_global_search": 1,
    "label": "Item Name",
    "oldfieldname": "item_name",
@@ -213,7 +221,7 @@
    "fieldname": "stock_uom",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
-   "label": "Default Unit of Measure",
+   "label": "Unit of Measure",
    "oldfieldname": "stock_uom",
    "oldfieldtype": "Link",
    "options": "UOM",
@@ -308,6 +316,7 @@
   {
    "fieldname": "brand",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Brand",
    "oldfieldname": "brand",
    "oldfieldtype": "Link",
@@ -325,6 +334,7 @@
   {
    "fieldname": "sb_barcodes",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Barcodes"
   },
   {
@@ -1057,8 +1067,46 @@
    "fieldname": "item_id",
    "fieldtype": "Data",
    "label": "Item ID",
-   "reqd": 1,
-   "unique": 1
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": " ",
+   "fieldname": "item_barcode",
+   "fieldtype": "Barcode",
+   "label": "Item Barcode"
+  },
+  {
+   "fieldname": "description1",
+   "fieldtype": "Data",
+   "label": "Description1"
+  },
+  {
+   "fieldname": "description2",
+   "fieldtype": "Data",
+   "label": "Description2"
+  },
+  {
+   "fieldname": "description3",
+   "fieldtype": "Data",
+   "label": "Description3"
+  },
+  {
+   "fieldname": "description4",
+   "fieldtype": "Data",
+   "label": "Description4"
+  },
+  {
+   "fieldname": "description5",
+   "fieldtype": "Data",
+   "label": "Description5"
+  },
+  {
+   "fieldname": "final_description",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Final Description",
+   "read_only": 1
   }
  ],
  "has_web_view": 1,
@@ -1066,7 +1114,7 @@
  "idx": 2,
  "image_field": "image",
  "max_attachments": 1,
- "modified": "2019-12-19 10:40:27.470270",
+ "modified": "2020-03-25 11:30:31.791258",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Item",
@@ -1120,11 +1168,10 @@
    "role": "Manufacturing User"
   }
  ],
- "search_fields": "item_name,description,item_group,customer_code,item_id",
+ "search_fields": "item_name,description,final_description,item_group,customer_code,item_id",
  "show_name_in_global_search": 1,
  "show_preview_popup": 1,
  "sort_field": "idx desc,modified desc",
  "sort_order": "DESC",
- "title_field": "item_name",
  "track_changes": 1
 }

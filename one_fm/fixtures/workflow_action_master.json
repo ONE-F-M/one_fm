@@ -2,6 +2,46 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2020-02-01 11:07:36.096023",
+  "name": "Approval Request",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Approval Request"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2020-02-01 11:11:31.802414",
+  "name": "HR Rejected",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "HR Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2020-02-01 11:11:55.261627",
+  "name": "HR Approved",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "HR Approved"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2020-02-01 11:30:33.777234",
+  "name": "Cancel",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Cancel"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2019-11-24 17:45:54.584854",
   "name": "Approve",
   "parent": null,

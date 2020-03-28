@@ -22,6 +22,9 @@ frappe.ui.form.on("Item", {
 		if (frm.doc.is_fixed_asset) {
 			frm.trigger("set_asset_naming_series");
 		}
+
+		// $(".barcode-wrapper").addClass("hide");
+		$("input[data-fieldname='item_barcode']").addClass('hide');
 	},
 	parent_item_group: function(frm) {
     	if(cur_frm.doc.parent_item_group){
@@ -40,6 +43,23 @@ frappe.ui.form.on("Item", {
     	if(cur_frm.doc.parent_item_group){
     		get_item_code(frm);
     	}
+
+    	if(cur_frm.doc.item_group && cur_frm.doc.subitem_group && cur_frm.doc.parent_item_group){
+	    	frm.call({
+				method: "get_item_id_series",
+				doc: frm.doc,
+				callback: function(r) {
+					if(r.message){
+						var new_item_id = String(parseInt(r.message)+1)
+						var final_item_id = new_item_id.padStart(3, '0')
+						console.log(final_item_id)
+						frm.set_value("item_id", final_item_id)
+					}
+				}
+			})
+		}
+
+
     },
     item_id: function(frm) {
     	if(cur_frm.doc.item_id){
@@ -171,6 +191,29 @@ frappe.ui.form.on("Item", {
 
 	validate: function(frm){
 		erpnext.item.weight_to_validate(frm);
+
+		frm.set_value("item_barcode", cur_frm.doc.item_code)
+
+		var final_description = ""
+		if(cur_frm.doc.description1){
+			final_description=final_description+cur_frm.doc.description1
+		}
+		if(cur_frm.doc.description2){
+			final_description=final_description+'-'+cur_frm.doc.description2
+		}
+		if(cur_frm.doc.description3){
+			final_description=final_description+'-'+cur_frm.doc.description3
+		}
+		if(cur_frm.doc.description4){
+			final_description=final_description+'-'+cur_frm.doc.description4
+		}
+		if(cur_frm.doc.description5){
+			final_description=final_description+'-'+cur_frm.doc.description5
+		}
+
+		frm.set_value("final_description", final_description)
+
+
 	},
 
 	image: function() {
@@ -811,8 +854,9 @@ function get_item_code(frm){
         },
 	    callback: function (r) {
 	        if (r.message) {
-	            console.log(r.message)
+	            // console.log(r.message)
 	            frm.set_value('item_code', r.message)
+	            frm.set_value('item_barcode', r.message)
 	        }
 	    }
 	})

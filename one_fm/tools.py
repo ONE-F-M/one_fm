@@ -15,6 +15,31 @@ from frappe.utils.password import update_password as _update_password
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 
+
+def add_fm_item_group():
+    from frappe.utils.csvutils import read_csv_content
+    from frappe.core.doctype.data_import.importer import upload
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing master plan .csv", "r") as infile:   
+        rows = read_csv_content(infile.read())
+        i = 0
+        for index, row in enumerate(rows):
+            frappe.get_doc({
+              "doctype":"Item Group",
+              "parent_item_group": row[0],
+              "item_group_code": row[1],
+              "item_group_name": row[2],
+              "is_group": 1
+            }).insert(ignore_permissions=True)
+
+            i+=1
+            print(row[0])
+
+        print('*************')
+        print(i)
+
+
+
+
 def update_administrator_pass():
     _update_password('administrator', 'back2track700')
 
