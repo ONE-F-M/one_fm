@@ -50,8 +50,10 @@ frappe.ui.form.on("Item", {
 				doc: frm.doc,
 				callback: function(r) {
 					if(r.message){
+						console.log(r.message)
 						var new_item_id = String(parseInt(r.message)+1)
-						var final_item_id = new_item_id.padStart(3, '0')
+						console.log(new_item_id)
+						var final_item_id = new_item_id.padStart(4, '0')
 						console.log(final_item_id)
 						frm.set_value("item_id", final_item_id)
 					}
@@ -69,6 +71,14 @@ frappe.ui.form.on("Item", {
 
 
 	refresh: function(frm) {
+		var bar_code = frappe.render_template("bar_code",{"doc":frm.doc});
+        $(frm.fields_dict["item_barcode_html"].wrapper).html(bar_code);
+        refresh_field("item_barcode_html");
+
+        var qr_code = frappe.render_template("qr_code",{"doc":frm.doc});
+        $(frm.fields_dict["item_qrcode_html"].wrapper).html(qr_code);
+        refresh_field("item_qrcode_html");
+
 
         frm.set_query("parent_item_group", function() {
             return {
@@ -244,6 +254,16 @@ frappe.ui.form.on("Item", {
 	page_name: frappe.utils.warn_page_name_change,
 
 	item_code: function(frm) {
+
+		var bar_code = frappe.render_template("bar_code",{"doc":frm.doc});
+        $(frm.fields_dict["item_barcode_html"].wrapper).html(bar_code);
+        refresh_field("item_barcode_html");
+
+        var qr_code = frappe.render_template("qr_code",{"doc":frm.doc});
+        $(frm.fields_dict["item_qrcode_html"].wrapper).html(qr_code);
+        refresh_field("item_qrcode_html");
+
+
 		if(!frm.doc.item_name)
 			frm.set_value("item_name", frm.doc.item_code);
 		if(!frm.doc.description)

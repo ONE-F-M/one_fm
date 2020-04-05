@@ -15,24 +15,26 @@
   "variant_of",
   "item_name",
   "parent_item_group",
-  "subitem_group",
   "item_group",
-  "item_id",
   "item_code",
   "is_item_from_hub",
-  "stock_uom",
-  "item_barcode",
+  "valuation_rate",
+  "item_barcode_html",
   "column_break0",
+  "subitem_group",
+  "item_id",
+  "stock_uom",
   "disabled",
+  "is_fixed_asset",
+  "asset_category",
+  "asset_naming_series",
+  "item_qrcode_html",
+  "item_barcode",
   "allow_alternative_item",
   "is_stock_item",
   "include_item_in_manufacturing",
   "opening_stock",
-  "valuation_rate",
   "standard_rate",
-  "is_fixed_asset",
-  "asset_category",
-  "asset_naming_series",
   "over_delivery_receipt_allowance",
   "over_billing_allowance",
   "image",
@@ -57,6 +59,7 @@
   "weight_per_unit",
   "weight_uom",
   "reorder_section",
+  "enable",
   "reorder_levels",
   "unit_of_measure_conversion",
   "uoms",
@@ -203,7 +206,7 @@
    "in_list_view": 1,
    "in_preview": 1,
    "in_standard_filter": 1,
-   "label": "Item Group",
+   "label": "Item",
    "oldfieldname": "item_group",
    "oldfieldtype": "Link",
    "options": "Item Group",
@@ -214,6 +217,7 @@
    "default": "0",
    "fieldname": "is_item_from_hub",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Is Item from Hub",
    "read_only": 1
   },
@@ -241,6 +245,7 @@
    "default": "0",
    "fieldname": "allow_alternative_item",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Allow Alternative Item"
   },
   {
@@ -248,6 +253,7 @@
    "default": "1",
    "fieldname": "is_stock_item",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Maintain Stock",
    "oldfieldname": "is_stock_item",
    "oldfieldtype": "Select"
@@ -256,6 +262,7 @@
    "default": "1",
    "fieldname": "include_item_in_manufacturing",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Include Item In Manufacturing"
   },
   {
@@ -263,6 +270,7 @@
    "depends_on": "eval:(doc.__islocal&&doc.is_stock_item && !doc.has_serial_no && !doc.has_batch_no)",
    "fieldname": "opening_stock",
    "fieldtype": "Float",
+   "hidden": 1,
    "label": "Opening Stock"
   },
   {
@@ -276,6 +284,7 @@
    "depends_on": "eval:doc.__islocal",
    "fieldname": "standard_rate",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Standard Selling Rate"
   },
   {
@@ -349,6 +358,7 @@
    "depends_on": "is_stock_item",
    "fieldname": "inventory_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Inventory",
    "oldfieldtype": "Section Break",
    "options": "fa fa-truck"
@@ -430,6 +440,7 @@
    "collapsible": 1,
    "fieldname": "unit_of_measure_conversion",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Units of Measure"
   },
   {
@@ -447,6 +458,7 @@
    "depends_on": "eval:doc.is_stock_item || doc.is_fixed_asset",
    "fieldname": "serial_nos_and_batches",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Serial Nos and Batches"
   },
   {
@@ -520,6 +532,7 @@
    "collapsible_depends_on": "attributes",
    "fieldname": "variants_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Variants"
   },
   {
@@ -552,6 +565,7 @@
   {
    "fieldname": "defaults",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Sales, Purchase, Accounting Defaults"
   },
   {
@@ -632,6 +646,7 @@
    "collapsible": 1,
    "fieldname": "supplier_details",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Supplier Details"
   },
   {
@@ -657,6 +672,7 @@
    "collapsible": 1,
    "fieldname": "foreign_trade_details",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Foreign Trade Details"
   },
   {
@@ -679,6 +695,7 @@
    "collapsible": 1,
    "fieldname": "sales_details",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Sales Details",
    "oldfieldtype": "Section Break",
    "options": "fa fa-tag"
@@ -712,6 +729,7 @@
    "collapsible": 1,
    "fieldname": "deferred_revenue",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Deferred Revenue"
   },
   {
@@ -742,6 +760,7 @@
    "collapsible": 1,
    "fieldname": "deferred_expense_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Deferred Expense"
   },
   {
@@ -772,6 +791,7 @@
    "collapsible": 1,
    "fieldname": "customer_details",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Customer Details"
   },
   {
@@ -785,6 +805,7 @@
    "collapsible_depends_on": "taxes",
    "fieldname": "item_tax_section_break",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Item Tax",
    "oldfieldtype": "Section Break",
    "options": "fa fa-money"
@@ -833,6 +854,7 @@
    "depends_on": "is_stock_item",
    "fieldname": "manufacturing",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Manufacturing",
    "oldfieldtype": "Section Break",
    "options": "fa fa-cogs"
@@ -999,6 +1021,7 @@
    "depends_on": "eval:(!doc.is_item_from_hub)",
    "fieldname": "hub_publishing_sb",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Hub Publishing Details"
   },
   {
@@ -1039,6 +1062,7 @@
    "depends_on": "eval:!doc.__islocal",
    "fieldname": "over_delivery_receipt_allowance",
    "fieldtype": "Float",
+   "hidden": 1,
    "label": "Over Delivery/Receipt Allowance (%)",
    "oldfieldname": "tolerance",
    "oldfieldtype": "Currency"
@@ -1047,19 +1071,20 @@
    "depends_on": "eval:!doc.__islocal",
    "fieldname": "over_billing_allowance",
    "fieldtype": "Float",
+   "hidden": 1,
    "label": "Over Billing Allowance (%)"
   },
   {
    "fieldname": "parent_item_group",
    "fieldtype": "Link",
-   "label": "Parent Item Group",
+   "label": "Group",
    "options": "Item Group",
    "reqd": 1
   },
   {
    "fieldname": "subitem_group",
    "fieldtype": "Link",
-   "label": "Subitem Group",
+   "label": "Subgroup",
    "options": "Item Group",
    "reqd": 1
   },
@@ -1074,6 +1099,7 @@
    "default": " ",
    "fieldname": "item_barcode",
    "fieldtype": "Barcode",
+   "hidden": 1,
    "label": "Item Barcode"
   },
   {
@@ -1107,6 +1133,22 @@
    "in_list_view": 1,
    "label": "Final Description",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "enable",
+   "fieldtype": "Check",
+   "label": "Enable"
+  },
+  {
+   "fieldname": "item_barcode_html",
+   "fieldtype": "HTML",
+   "label": "Item Barcode"
+  },
+  {
+   "fieldname": "item_qrcode_html",
+   "fieldtype": "HTML",
+   "label": "Item QRcode"
   }
  ],
  "has_web_view": 1,
@@ -1114,8 +1156,8 @@
  "idx": 2,
  "image_field": "image",
  "max_attachments": 1,
- "modified": "2020-03-25 11:30:31.791258",
- "modified_by": "Administrator",
+ "modified": "2020-04-05 14:03:14.266631",
+ "modified_by": "georges@armor-services.com",
  "module": "One Fm",
  "name": "Item",
  "owner": "Administrator",
