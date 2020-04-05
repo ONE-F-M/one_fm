@@ -890,7 +890,7 @@ class Item(WebsiteGenerator):
 		if previous_item_id:
 			return previous_item_id[0][0]
 		else:
-			return '000'
+			return '0000'
 
 
 def get_timeline_data(doctype, name):

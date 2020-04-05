@@ -15,6 +15,13 @@ from frappe.utils.password import update_password as _update_password
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 
+# def remov_data():
+#     data = frappe.db.sql_list("select name from `tabUOM` where name not in ('PCS','Nos')")
+#     for i in data:
+#         doc = frappe.get_doc("UOM", i)
+#         doc.delete()
+#         print(i)
+
 
 def add_fm_item_group():
     from frappe.utils.csvutils import read_csv_content
