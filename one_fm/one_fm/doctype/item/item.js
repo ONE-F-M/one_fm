@@ -68,18 +68,21 @@ frappe.ui.form.on("Item", {
     		get_item_code(frm);
     	}
     },
-
-
-	refresh: function(frm) {
-		var bar_code = frappe.render_template("bar_code",{"doc":frm.doc});
+    render_barcode_template: function(frm) {
+    	var bar_code = frappe.render_template("bar_code",{"doc":frm.doc});
         $(frm.fields_dict["item_barcode_html"].wrapper).html(bar_code);
         refresh_field("item_barcode_html");
 
         var qr_code = frappe.render_template("qr_code",{"doc":frm.doc});
         $(frm.fields_dict["item_qrcode_html"].wrapper).html(qr_code);
         refresh_field("item_qrcode_html");
+    },
 
 
+	refresh: function(frm) {
+
+		frm.trigger("render_barcode_template");
+		
         frm.set_query("parent_item_group", function() {
             return {
                 filters: [
@@ -200,6 +203,9 @@ frappe.ui.form.on("Item", {
 	},
 
 	validate: function(frm){
+
+		frm.trigger("render_barcode_template");
+		
 		erpnext.item.weight_to_validate(frm);
 
 		frm.set_value("item_barcode", cur_frm.doc.item_code)
@@ -255,14 +261,7 @@ frappe.ui.form.on("Item", {
 
 	item_code: function(frm) {
 
-		var bar_code = frappe.render_template("bar_code",{"doc":frm.doc});
-        $(frm.fields_dict["item_barcode_html"].wrapper).html(bar_code);
-        refresh_field("item_barcode_html");
-
-        var qr_code = frappe.render_template("qr_code",{"doc":frm.doc});
-        $(frm.fields_dict["item_qrcode_html"].wrapper).html(qr_code);
-        refresh_field("item_qrcode_html");
-
+		frm.trigger("render_barcode_template");
 
 		if(!frm.doc.item_name)
 			frm.set_value("item_name", frm.doc.item_code);
