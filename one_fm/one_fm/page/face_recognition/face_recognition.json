@@ -1,0 +1,23 @@
+{
+ "content": null,
+ "creation": "2020-04-05 10:12:44.278504",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2020-04-05 10:12:44.278504",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "face-recognition",
+ "owner": "Administrator",
+ "page_name": "Face Recognition",
+ "roles": [
+  {
+   "role": "All"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Face Recognition"
+}
