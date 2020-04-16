@@ -28,12 +28,12 @@ def eye_aspect_ratio(eye):
 
 @frappe.whitelist()
 def verify_face(video_path=None):
-	video_path = frappe.utils.cstr(frappe.local.site)+"/private/files/kartik2.mp4"
+	# video_path = frappe.utils.cstr(frappe.local.site)+"/private/files/kartik2.mp4"
 	shape_predictor = frappe.utils.cstr(frappe.local.site)+"/private/files/shape_predictor_68_face_landmarks.dat"
 	# define two constants, one for the eye aspect ratio to indicate
 	# blink and then a second constant for the number of consecutive
 	# frames the eye must be below the threshold
-	EYE_AR_THRESH = 0.30
+	EYE_AR_THRESH = 0.29
 	EYE_AR_CONSEC_FRAMES = 2
 	# initialize the frame counters and the total number of blinks
 	COUNTER = 0
@@ -54,9 +54,9 @@ def verify_face(video_path=None):
 	print("[INFO] starting video stream thread...")
 	vs = FileVideoStream(video_path).start()
 	fileStream = True
-	vs = VideoStream(src=0).start()
+	# vs = VideoStream(src=0).start()
 	# vs = VideoStream(usePiCamera=True).start()
-	fileStream = False
+	# fileStream = False
 	time.sleep(1.0)
 	print(vs.read())	
 	# loop over frames from the video stream
@@ -152,15 +152,22 @@ def verify_face(video_path=None):
 	# do a bit of cleanup
 	# cv2.destroyAllWindows()
 	vs.stop()
+	return TOTAL
 
 @frappe.whitelist()
-def upload_image(file):
-	print(file)
-	# OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+frappe.session.user+".png"
-	# try:
-	# 	with open(OUTPUT_IMAGE_PATH, "wb") as fh:
-	# 			fh.write(base64.standard_b64decode(base64image.encode()))
-	# 			return (OUTPUT_IMAGE_PATH)
-	# except Exception as exc:
-	# 	frappe.log_error(frappe.get_traceback())
-	# 	raise exc
+def upload_file():
+	try:
+		files = frappe.request.files
+		file = files['file']
+		content = file.stream.read()
+		filename = file.filename	
+		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
+		with open(OUTPUT_IMAGE_PATH, "wb") as fh:
+				fh.write(content)
+				# return (OUTPUT_IMAGE_PATH)
+				print(OUTPUT_IMAGE_PATH)
+				blinks = verify_face(OUTPUT_IMAGE_PATH)
+				return blinks
+	except Exception as exc:
+		frappe.log_error(frappe.get_traceback())
+		raise exc
