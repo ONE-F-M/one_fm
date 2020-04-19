@@ -228,6 +228,7 @@ frappe.ui.form.on("Item", {
 		}
 
 		frm.set_value("final_description", final_description)
+		frm.set_value("item_name", final_description)
 
 
 	},

@@ -1,0 +1,248 @@
+{
+ "allow_import": 1,
+ "autoname": "format:PR-{MM}.{#####}",
+ "creation": "2020-04-15 23:08:22.452106",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "requested_by",
+  "requester_name",
+  "department",
+  "supply",
+  "description_of_the_request",
+  "column_break_10",
+  "nature_of_demand",
+  "priority",
+  "delivery",
+  "correspondence_to_the_budget",
+  "technical_verification",
+  "from",
+  "project_section",
+  "code",
+  "site",
+  "column_break_4",
+  "date",
+  "address",
+  "section_break_14",
+  "items",
+  "amount",
+  "suppliers_quotation_section",
+  "suppliers_quotation",
+  "description_section",
+  "note",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "requested_by.employee_name",
+   "fieldname": "requester_name",
+   "fieldtype": "Read Only",
+   "label": "Requester Name"
+  },
+  {
+   "fetch_from": "requested_by.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supply",
+   "fieldtype": "Select",
+   "label": "Supply",
+   "options": "Local\nImport"
+  },
+  {
+   "fieldname": "description_of_the_request",
+   "fieldtype": "Small Text",
+   "label": "Description of The Request"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "nature_of_demand",
+   "fieldtype": "Select",
+   "label": "Nature of Demand",
+   "options": "\nAssets\nConsumables\nServices\nOthers"
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority",
+   "options": "Normal\nUrgent\nCritic"
+  },
+  {
+   "fieldname": "delivery",
+   "fieldtype": "Select",
+   "label": "Delivery",
+   "options": "\nOver Land\nSea Freight\nAir Freight"
+  },
+  {
+   "fieldname": "correspondence_to_the_budget",
+   "fieldtype": "Select",
+   "label": "Correspondence to the Budget",
+   "options": "\nIn Budget\nNot in Budget\nExceed Budget"
+  },
+  {
+   "fieldname": "technical_verification",
+   "fieldtype": "Select",
+   "label": "Technical Verification",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.technical_verification=='Yes'",
+   "fieldname": "from",
+   "fieldtype": "Data",
+   "label": "From"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "project_section",
+   "fieldtype": "Section Break",
+   "label": "Project"
+  },
+  {
+   "fieldname": "code",
+   "fieldtype": "Link",
+   "label": "Code",
+   "options": "Project"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Site"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Link",
+   "label": "Address",
+   "options": "Address"
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break",
+   "label": "Purchase Request Item"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Purchase Request Item",
+   "options": "Purchase Request Item"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "suppliers_quotation_section",
+   "fieldtype": "Section Break",
+   "label": "Suppliers Quotation"
+  },
+  {
+   "fieldname": "suppliers_quotation",
+   "fieldtype": "Table",
+   "label": "Suppliers Quotation",
+   "options": "Suppliers Quotation"
+  },
+  {
+   "fieldname": "description_section",
+   "fieldtype": "Section Break",
+   "label": "Description"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Text Editor",
+   "label": "Note"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Purchase Request",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "icon": "fa fa-shopping-cart",
+ "is_submittable": 1,
+ "modified": "2020-04-17 22:32:58.931337",
+ "modified_by": "omar.ja93@gmail.com",
+ "module": "One Fm",
+ "name": "Purchase Request",
+ "owner": "omar.ja93@gmail.com",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User"
+  }
+ ],
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
