@@ -1106,27 +1106,32 @@
   {
    "fieldname": "description1",
    "fieldtype": "Data",
-   "label": "Description1"
+   "label": "Description1",
+   "reqd": 1
   },
   {
    "fieldname": "description2",
    "fieldtype": "Data",
-   "label": "Description2"
+   "label": "Description2",
+   "reqd": 1
   },
   {
    "fieldname": "description3",
    "fieldtype": "Data",
-   "label": "Description3"
+   "label": "Description3",
+   "reqd": 1
   },
   {
    "fieldname": "description4",
    "fieldtype": "Data",
-   "label": "Description4"
+   "label": "Description4",
+   "reqd": 1
   },
   {
    "fieldname": "description5",
    "fieldtype": "Data",
-   "label": "Description5"
+   "label": "Description5",
+   "reqd": 1
   },
   {
    "fieldname": "final_description",
@@ -1157,8 +1162,8 @@
  "idx": 2,
  "image_field": "image",
  "max_attachments": 1,
- "modified": "2020-04-06 00:15:14.720789",
- "modified_by": "georges@armor-services.com",
+ "modified": "2020-04-19 10:34:39.735381",
+ "modified_by": "omar.ja93@gmail.com",
  "module": "One Fm",
  "name": "Item",
  "owner": "Administrator",
@@ -1211,7 +1216,7 @@
    "role": "Manufacturing User"
   }
  ],
- "search_fields": "item_name,description,final_description,item_group,customer_code,item_id",
+ "search_fields": "description,description1,description2,description3,description4,description5",
  "show_name_in_global_search": 1,
  "show_preview_popup": 1,
  "sort_field": "idx desc,modified desc",

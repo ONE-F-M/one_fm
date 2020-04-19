@@ -522,3 +522,9 @@ def pam_authorized_signatory():
 
             print("PAM Authorized Signatory will Expire after {0} day".format(date_difference))
 
+
+
+
+@frappe.whitelist(allow_guest=True)
+def change_naming_series(doc, method):
+    doc.name = doc.uom_abbreviation
