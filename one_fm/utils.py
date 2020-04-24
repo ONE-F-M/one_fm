@@ -708,11 +708,13 @@ def get_salary(employee):
 
 @frappe.whitelist(allow_guest=True)
 def hooked_leave_allocation_builder():
-    from erpnext.hr.doctype.leave_allocation.leave_allocation import get_leave_allocation_for_period
     # Get Active Employee List
     employee_list = frappe.get_all("Employee", filters={"status": "Active"},
         fields=["name", "date_of_joining", "went_to_hajj", "grade", "leave_policy"])
+    frappe.enqueue(leave_allocation_builder, timeout=600, employee_list=employee_list)
 
+def leave_allocation_builder(employee_list):
+    from erpnext.hr.doctype.leave_allocation.leave_allocation import get_leave_allocation_for_period
     # Get Leave Policy for employee
     leave_type_details = get_leave_type_details()
     for employee in employee_list:
@@ -726,7 +728,6 @@ def hooked_leave_allocation_builder():
                 leave_allocated = get_leave_allocation_for_period(employee.name, policy_detail.leave_type, from_date, to_date)
                 if not leave_allocated and not (leave_type_details.get(policy_detail.leave_type).is_lwp):
                     create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date)
-        # frappe.db.commit()
 
 def get_employee_leave_policy(employee):
     leave_policy = employee.leave_policy
