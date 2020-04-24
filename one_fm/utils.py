@@ -783,66 +783,55 @@ def create_leave_allocation(employee, policy_detail, leave_type_details, from_da
         allocation.submit()
 
 def increase_daily_leave_balance():
-    emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name","annual_leave_balance"])
-    for emp in emps:
-        allocation = frappe.db.sql("select name from `tabLeave Allocation` where leave_type='Annual Leave - اجازة اعتيادية' and employee='{0}' and docstatus=1 and '{1}' between from_date and to_date order by to_date desc limit 1".format(emp.name,nowdate()))
-        if allocation:
-            if emp.annual_leave_balance>0:
-                leave_balance = emp.annual_leave_balance/365
-            else:
-                default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
-                leave_balance = default_annual_leave_balance/365
+    # Get List of Leave Allocation for today (Leave Type - Is Paid Annual Leave)
+    query = """
+        select
+            la.name, la.leave_type
+        from
+            `tabLeave Allocation` la, `tabLeave Type` lt
+        where
+            lt.one_fm_is_paid_annual_leave=1 and la.docstatus=1 and '{0}' between from_date and to_date
+            and la.leave_type=lt.name
+    """
+    allocation_list = frappe.db.sql(query.format(getdate(nowdate())), as_dict=True)
+    print(allocation_list)
+    from erpnext.hr.doctype.leave_application.leave_application import get_leaves_for_period
+    for alloc in allocation_list:
+        allocation = frappe.get_doc("Leave Allocation", alloc.name)
+        leave_type = frappe.get_doc("Leave Type", alloc.leave_type)
 
-            final_leave_balance = leave_balance
+        # Get Employee Paid Sick Leave
+        leave_days = 0
+        if leave_type.one_fm_paid_sick_leave_type_dependent:
+            leave_days += get_leaves_for_period(allocation.employee, leave_type.one_fm_paid_sick_leave_type_dependent, allocation.from_date, allocation.to_date)
+        else:
+            leave_type_list = frappe.get_all('Leave Type', filters= {'one_fm_is_paid_sick_leave': 1}, fields= ["name"])
+            for lt in leave_type_list:
+                leave_days += get_leaves_for_period(allocation.employee, lt.name, allocation.from_date, allocation.to_date)
 
-            allocation_records = get_leave_allocation_records(nowdate(), emp.name, 'Sick Leave - مرضية')
-            allocation_from_date = allocation_records[emp.name]["Sick Leave - مرضية"].from_date
-            allocation_to_date = allocation_records[emp.name]["Sick Leave - مرضية"].to_date
+        # Get Daily Allocation of Annual Leave
+        employee_annual_leave = frappe.db.get_value('Employee', allocation.employee, 'annual_leave_balance')
+        if employee_annual_leave > 0:
+            daily_allocation = employee_annual_leave/365
+        else:
+            default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
+            daily_allocation = default_annual_leave_balance/365
 
-            attendance = frappe.db.sql_list("select attendance_date from `tabAttendance` where docstatus=1 and status='On Leave' and leave_type='Sick Leave - مرضية' and employee='{0}' and attendance_date between '{1}' and '{2}' ".format(emp.name, allocation_from_date, allocation_to_date))
+        # Set Daily Allocation form leave type
+        new_leaves_allocated = daily_allocation
+        if leave_days > 0 and leave_type.one_fm_annual_leave_allocation_reduction:
+            percent_of_reduction = 0
+            allocation_reduction = sorted(leave_type.one_fm_annual_leave_allocation_reduction, key=lambda x: x.number_of_paid_sick_leave)
+            for alloc_reduction in allocation_reduction:
+                if alloc_reduction.number_of_paid_sick_leave <= leave_days:
+                    percent_of_reduction = alloc_reduction.percentage_of_allocation_reduction
+            if percent_of_reduction > 0:
+                new_leaves_allocated = daily_allocation - daily_allocation * (percent_of_reduction/100)
 
-            attendance_until_today = frappe.db.sql("select count(attendance_date) from `tabAttendance` where docstatus=1 and status='On Leave' and leave_type='Sick Leave - مرضية' and employee='{0}' and attendance_date between '{1}' and '{2}' ".format(emp.name, allocation_from_date, getdate(nowdate())))[0][0]
-
-            if getdate(nowdate()) not in attendance:
-                attendance_until_today = 0
-
-            if attendance_until_today>=0 and attendance_until_today<=15:
-                final_leave_balance = leave_balance
-            elif attendance_until_today>15 and attendance_until_today<=25:
-                final_leave_balance = leave_balance*0.75
-            elif attendance_until_today>25 and attendance_until_today<=35:
-                final_leave_balance = leave_balance*0.5
-            elif attendance_until_today>35 and attendance_until_today<=45:
-                final_leave_balance = leave_balance*0.25
-            elif attendance_until_today>45 and attendance_until_today<=75:
-                final_leave_balance = leave_balance*0.0
-
-            print(attendance_until_today)
-            print('******************************************')
-            print(final_leave_balance)
-
-            doc = frappe.get_doc('Leave Allocation', allocation[0][0])
-            doc.new_leaves_allocated = doc.new_leaves_allocated+final_leave_balance
-            doc.total_leaves_allocated = doc.new_leaves_allocated+doc.unused_leaves
-            doc.save()
-            frappe.db.commit()
-            print("Increase daily leave balance for employee {0}".format(emp.name))
-
-            ledger = frappe._dict(
-                doctype='Leave Ledger Entry',
-                employee=emp.name,
-                leave_type='Annual Leave - اجازة اعتيادية',
-                transaction_type='Leave Allocation',
-                transaction_name=allocation[0][0],
-                leaves = final_leave_balance,
-                from_date = allocation_from_date,
-                to_date = allocation_to_date,
-                is_carry_forward=0,
-                is_expired=0,
-                is_lwp=0
-            )
-            frappe.get_doc(ledger).submit()
-
+        allocation.new_leaves_allocated = allocation.new_leaves_allocated+new_leaves_allocated
+        allocation.total_leaves_allocated = allocation.new_leaves_allocated+allocation.unused_leaves
+        allocation.save()
+        frappe.db.commit()
 
 def get_leave_allocation_records(date, employee=None, leave_type=None):
     conditions = (" and employee='%s'" % employee) if employee else ""
