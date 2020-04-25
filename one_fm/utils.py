@@ -721,7 +721,16 @@ def leave_allocation_builder(employee_list):
         leave_policy = get_employee_leave_policy(employee)
         if leave_policy and leave_policy.leave_policy_details:
             for policy_detail in leave_policy.leave_policy_details:
-                from_date = getdate(employee.date_of_joining)
+                if getdate(add_years(employee.date_of_joining, 1)) > getdate(nowdate()):
+                    from_date = getdate(employee.date_of_joining)
+                else:
+                    datetime1 = get_datetime(getdate(employee.date_of_joining))
+                    datetime2 = get_datetime(getdate(nowdate()))
+
+                    time_difference = relativedelta(datetime2, datetime1)
+                    difference_in_years = time_difference.years
+                    from_date = getdate(add_years(employee.date_of_joining, difference_in_years))
+
                 to_date = getdate(add_days(add_years(from_date, 1), -1))
 
                 # Check allocation exists for leave type in leave Policy, If not then create leave allocation
