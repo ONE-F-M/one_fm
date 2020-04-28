@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
+from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 class PurchaseRequest(Document):
 
@@ -58,4 +59,26 @@ class PurchaseRequest(Document):
         
         if(employee_signature):
             return employee_signature[0][0]
+
+
+
+@frappe.whitelist()
+def get_sites(doctype, txt, searchfield, start, page_len, filters):
+    return frappe.db.sql("""select site from `tabProject Sites`
+        where parent=%(project)s
+            and ({key} like %(txt)s
+                or site like %(txt)s)
+        order by
+            if(locate(%(_txt)s, site), locate(%(_txt)s, site), 99999),
+            idx desc,
+            site
+        limit %(start)s, %(page_len)s""".format(**{
+            'key': searchfield
+        }), {
+            'txt': "%s%%" % txt,
+            '_txt': txt.replace("%", ""),
+            'start': start,
+            'page_len': page_len,
+            'project': filters.get('project')
+        })
 

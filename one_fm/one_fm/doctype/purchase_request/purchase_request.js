@@ -3,6 +3,18 @@
 
 frappe.ui.form.on('Purchase Request', {
 	refresh: function(frm) {
+        
+
+        cur_frm.set_query("site", function() {
+            return {
+                query: "one_fm.one_fm.doctype.purchase_request.purchase_request.get_sites",
+                filters: {
+                    project: cur_frm.doc.code
+                }         
+            };
+        });
+
+
 
 	},
 	validate: function(frm) {
@@ -20,7 +32,7 @@ frappe.ui.form.on('Purchase Request Item', {
     requested_quantity: function (frm, cdt, cdn) {
         var row = locals[cdt][cdn];
 
-        if (row.requested_quantity && drow.unit_price) {
+        if (row.requested_quantity && row.unit_price) {
             frappe.model.set_value(cdt, cdn, "total_amount", row.requested_quantity * row.unit_price);
         }
     },
@@ -58,6 +70,18 @@ frappe.ui.form.on("Purchase Request Item", "total_amount", function (frm, cdt, c
     frm.set_value("amount", total);
 });
 
+
+frappe.ui.form.on("Purchase Request Item", "selected", function (frm, cdt, cdn) {
+    var items_status = [];
+    $.each(frm.doc.items || [], function (i, d) {
+        items_status.push(d.selected);
+    });
+    if(!items_status.includes(0)){
+        frm.set_value("ordered", 1);
+    }else{
+        frm.set_value("ordered", 0);
+    }
+});
 
 
 

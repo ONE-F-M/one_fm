@@ -1,6 +1,6 @@
 {
- "autoname": "SPOI.#######",
- "creation": "2020-04-24 18:37:45.006201",
+ "autoname": "PRI.#######",
+ "creation": "2020-04-15 23:36:17.352485",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -8,16 +8,18 @@
   "item_code",
   "column_break_2",
   "item_name",
+  "reqd_by_date",
   "description_section",
   "description",
   "section_break_6",
-  "qty",
+  "requested_quantity",
+  "uom",
+  "column_break_8",
   "unit_price",
   "total_amount",
-  "column_break_8",
-  "uom",
-  "currency",
-  "purchase_request_item_id"
+  "notes_section",
+  "selected",
+  "note"
  ],
  "fields": [
   {
@@ -39,12 +41,19 @@
    "label": "Item Name"
   },
   {
+   "fieldname": "reqd_by_date",
+   "fieldtype": "Date",
+   "label": "Reqd By Date",
+   "reqd": 1
+  },
+  {
    "collapsible": 1,
    "fieldname": "description_section",
    "fieldtype": "Section Break",
    "label": "Description"
   },
   {
+   "fetch_from": "item_code.description",
    "fieldname": "description",
    "fieldtype": "Text Editor",
    "label": "Description"
@@ -54,6 +63,14 @@
    "fieldtype": "Section Break"
   },
   {
+   "fieldname": "requested_quantity",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Requested Quantity",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "item_code.stock_uom",
    "fieldname": "uom",
    "fieldtype": "Link",
    "label": "UOM",
@@ -77,31 +94,31 @@
    "read_only": 1
   },
   {
-   "fieldname": "qty",
-   "fieldtype": "Float",
+   "collapsible": 1,
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "selected",
+   "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Qty",
-   "reqd": 1
-  },
-  {
-   "fieldname": "currency",
-   "fieldtype": "Link",
-   "label": "Currency",
-   "options": "Currency"
-  },
-  {
-   "fieldname": "purchase_request_item_id",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Purchase Request Item ID",
+   "label": "Ordered",
    "read_only": 1
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Text Editor",
+   "label": "Note"
   }
  ],
  "istable": 1,
- "modified": "2020-04-28 13:10:26.987417",
+ "modified": "2020-04-28 14:33:19.571288",
  "modified_by": "omar.ja93@gmail.com",
  "module": "One Fm",
- "name": "Supplier Purchase Order Item",
+ "name": "Purchase Request Item",
  "owner": "omar.ja93@gmail.com",
  "permissions": [],
  "quick_entry": 1,

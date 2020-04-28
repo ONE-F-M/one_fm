@@ -14,7 +14,7 @@ frappe.ui.form.on('Supplier Purchase Order', {
             frm.doc.items = []
             frm.refresh_field("items");
             $.each(tabletransfer.items, function(index, row){
-                if(row.selected){
+                if(!row.selected){
                     var d = frm.add_child("items");
                     d.item_code = row.item_code;
                     d.item_name = row.item_name;
@@ -23,6 +23,7 @@ frappe.ui.form.on('Supplier Purchase Order', {
                     d.unit_price = row.unit_price;
                     d.total_amount = row.total_amount;
                     d.uom = row.uom;
+                    d.purchase_request_item_id = row.name
                     frm.set_value("total_amount", cur_frm.doc.total_amount+row.total_amount);
                     frm.refresh_field("items");
                 }
@@ -37,7 +38,8 @@ frappe.ui.form.on('Supplier Purchase Order', {
         frm.set_query("purchase_request", function() {
             return {
                 filters: [
-                    ['Purchase Request', 'docstatus', '=', 1]
+                    ['Purchase Request', 'docstatus', '=', 1],
+                    ['Purchase Request', 'ordered', '=', 0]
                 ]
             }
         });

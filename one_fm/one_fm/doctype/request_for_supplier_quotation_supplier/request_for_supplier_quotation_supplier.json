@@ -1,4 +1,5 @@
 {
+ "autoname": "RFSQS.#######",
  "creation": "2020-04-19 15:02:19.907712",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -74,7 +75,7 @@
   }
  ],
  "istable": 1,
- "modified": "2020-04-19 15:37:51.292778",
+ "modified": "2020-04-28 13:11:29.628987",
  "modified_by": "omar.ja93@gmail.com",
  "module": "One Fm",
  "name": "Request for Supplier Quotation Supplier",
