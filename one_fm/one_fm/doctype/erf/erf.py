@@ -25,6 +25,7 @@ class ERF(Document):
 	def on_submit(self):
 		self.set_erf_finalized()
 		self.validate_recruiter_assigned()
+		create_job_opening_from_erf(self)
 
 	def set_erf_code(self):
 		self.erf_code = self.name
@@ -90,3 +91,40 @@ class ERF(Document):
 	def validate_recruiter_assigned(self):
 		if not self.recruiter_assigned:
 			frappe.throw(_('Recruiter Assigned is a Mandatory Field to Submit.!'))
+
+def create_job_opening_from_erf(erf):
+	job_opening = frappe.new_doc("Job Opening")
+	job_opening.job_title = erf.erf_code+'-'+erf.designation+'-'+erf.department
+	job_opening.designation = erf.designation
+	job_opening.department = erf.department
+	job_opening.one_fm_erf = erf.name
+	employee = frappe.db.exists("Employee", {"user_id": erf.owner})
+	job_opening.one_fm_hiring_manager = employee if employee else ''
+	job_opening.one_fm_no_of_positions_by_erf = erf.total_no_of_candidates_required
+	job_opening.one_fm_job_opening_created = today()
+	job_opening.one_fm_minimum_experience_required = erf.minimum_experience_required
+	job_opening.one_fm_maximum_experience_required = erf.maximum_experience_required
+	job_opening.one_fm_minimum_age_required = erf.minimum_age_required
+	job_opening.one_fm_maximum_age_required = erf.maximum_age_required
+	job_opening.one_fm_performance_profile_ = erf.performance_profile
+	set_erf_skills_in_job_opening(job_opening, erf)
+	set_erf_language_in_job_opening(job_opening, erf)
+	job_opening.save(ignore_permissions = True)
+
+def set_erf_language_in_job_opening(job_opening, erf):
+	if erf.languages:
+		for language in erf.languages:
+			lang = job_opening.append('one_fm_languages')
+			lang.language = language.language
+			lang.language_name = language.language_name
+			lang.speak = language.speak
+			lang.read = language.read
+			lang.write = language.write
+			lang.expert = language.expert
+
+def set_erf_skills_in_job_opening(job_opening, erf):
+	if erf.designation_skill:
+		for skill in erf.designation_skill:
+			jo_skill = job_opening.append('one_fm_designation_skill')
+			jo_skill.skill = skill.skill
+			jo_skill.one_fm_skill_level = skill.one_fm_skill_level
