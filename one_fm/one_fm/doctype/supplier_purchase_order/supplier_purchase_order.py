@@ -13,6 +13,8 @@ class SupplierPurchaseOrder(Document):
         return money_in_words(self.total_amount)
 
     def on_submit(self):
+        self.validate_selected_item()
+        self.validate_completed_order()
         self.make_stock_entry()
 
     def make_stock_entry(self):
@@ -33,7 +35,36 @@ class SupplierPurchaseOrder(Document):
         doc.insert(ignore_permissions=True)
 
 
+    def validate_selected_item(self):
+        for item in self.items:
+            doc = frappe.get_doc("Purchase Request Item", item.purchase_request_item_id)
+            if doc.selected!=1:
+                doc.selected = 1
 
+                doc.flags.ignore_mandatory = True
+                doc.save(ignore_permissions=True)
+                frappe.db.commit()
+            else:
+                old_purchase_order = frappe.db.sql("""select parent from `tabSupplier Purchase Order Item` where parenttype='Supplier Purchase Order'
+                                  and item_code='{0}' """.format(item.item_code))
+                if old_purchase_order:
+                    frappe.throw("Item <b>{0}</b> is already purchased, please check purchase order <b>{1}</b>".format(item.item_code,old_purchase_order[0][0]))
+                else:
+                    frappe.throw("Item <b>{0}</b> is already purchased !".format(item.item_code))
+
+    def validate_completed_order(self):
+        purchase_request = frappe.get_doc("Purchase Request", self.purchase_request)
+        items_status = []
+        for item in purchase_request.items:
+            items_status.append(item.selected)
+
+        if 0 in items_status:
+            purchase_request.ordered = 0
+        else:
+            purchase_request.ordered = 1
+        purchase_request.flags.ignore_mandatory = True
+        purchase_request.save(ignore_permissions=True)
+        frappe.db.commit()
 
 
 
