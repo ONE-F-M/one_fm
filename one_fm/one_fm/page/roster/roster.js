@@ -4,4 +4,6 @@ frappe.pages['roster'].on_page_load = function(wrapper) {
 		title: 'None',
 		single_column: true
 	});
+	$(wrapper).closest('.page-container').empty().append(frappe.render_template('roster'));
+
 }

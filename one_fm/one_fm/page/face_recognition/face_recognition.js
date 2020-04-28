@@ -8,7 +8,7 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 	$(wrapper).find('.layout-main-section').empty().append(frappe.render_template('face_recognition'));
 	
 	frappe.db.get_value("Employee", {"user_id":"k.sharma@armor-services.com"}, "*", function(r){
-		console.log(r)
+		// console.log(r)
 		let {image, employee_name, company, department, designation} = r;
 		let card = `
 		<div class="card">
@@ -37,7 +37,7 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 
 		recorder.ondataavailable = event => data.push(event.data);
 		recorder.start();
-		console.log(recorder.state + " for " + (lengthInMS/1000) + " seconds...");
+		// console.log(recorder.state + " for " + (lengthInMS/1000) + " seconds...");
 
 		let stopped = new Promise((resolve, reject) => {
 		recorder.onstop = resolve;
@@ -75,7 +75,7 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 				setTimeout(function(){ 
 					$('#cover-spin').show(0);
 					recorder.stop(); 
-				}, 10000);
+				}, 5000);
 				let data = [];
 		
 				recorder.ondataavailable = event => data.push(event.data);
@@ -114,7 +114,7 @@ function upload_file(file){
 				let r = null;
 				try {
 					r = JSON.parse(xhr.responseText);
-					console.log(r);
+					frappe.msgprint(r.message);
 				} catch (e) {
 					r = xhr.responseText;
 				}
@@ -156,20 +156,20 @@ function upload_file(file){
 
 function sendVideoToAPI (blob) {
 	// let fd = new FormData();
-	console.log(blob);
+	// console.log(blob);
     let file = new File([blob], 'recording');
 
-    console.log(file); // test to see if appending form data would work, it didn't this is completely empty. 
+    // console.log(file); // test to see if appending form data would work, it didn't this is completely empty. 
 	const reader = new FileReader();
 	reader.addEventListener('loadend', () => {
-		console.log(reader);
+		// console.log(reader);
 	   // reader.result contains the contents of blob as a typed array
 	});
 	reader.readAsArrayBuffer(blob);
 	const fileurl = URL.createObjectURL(blob);
     let form = new FormData();
     form.append('video', file);
-    console.log(fileurl); // test to see if appending form data would work, it didn't this is completely empty. 
+    // console.log(fileurl); // test to see if appending form data would work, it didn't this is completely empty. 
     
     frappe.xcall('one_fm.one_fm.page.face_recognition.face_recognition.upload_image',{file: fileurl})
 	.then(r =>{

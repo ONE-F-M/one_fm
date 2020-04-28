@@ -1,0 +1,48 @@
+{
+ "creation": "2020-04-26 13:58:58.307683",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "app_id",
+  "app_key"
+ ],
+ "fields": [
+  {
+   "fieldname": "app_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "App ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "app_key",
+   "fieldtype": "Password",
+   "in_list_view": 1,
+   "label": "App Key",
+   "reqd": 1
+  }
+ ],
+ "issingle": 1,
+ "modified": "2020-04-26 13:58:58.307683",
+ "modified_by": "Administrator",
+ "module": "OneFM Integrations",
+ "name": "Kairos Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

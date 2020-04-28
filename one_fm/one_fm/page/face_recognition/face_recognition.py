@@ -68,23 +68,25 @@ def verify_face(video_path=None):
 		
 		if not isinstance(vs.read(), np.ndarray):
 			break
+
+		if vs.read() is None:
+			break
 		# grab the frame from the threaded video file stream, resize
 		# it, and convert it to grayscale
 		# channels)
 		frame = vs.read()
+
 		frame = imutils.resize(frame, width=450)
 		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 		# detect faces in the grayscale frame
 		rects = detector(gray, 0)
-		# print("RECTS",len(rects))
 
 		# loop over the face detections
 		for rect in rects:
 			# determine the facial landmarks for the face region, then
 			# convert the facial landmark (x, y)-coordinates to a NumPy
 			# array
-			# print("[RECT]", rect)
 			shape = predictor(gray, rect)
 			shape = face_utils.shape_to_np(shape)
 
@@ -105,9 +107,6 @@ def verify_face(video_path=None):
 			cv2.drawContours(frame, [leftEyeHull], -1, (0, 255, 0), 1)
 			cv2.drawContours(frame, [rightEyeHull], -1, (0, 255, 0), 1)
 
-			# print(TOTAL)
-			# print(COUNTER)
-
 			# check to see if the eye aspect ratio is below the blink
 			# threshold, and if so, increment the blink frame counter
 			if ear < EYE_AR_THRESH:
@@ -123,7 +122,7 @@ def verify_face(video_path=None):
 
 				# reset the eye frame counter
 				COUNTER = 0
-			# print(TOTAL)
+	
 			print( "Blinks: {}".format(TOTAL), "EAR: {:.2f}".format(ear))
 			# draw the total number of blinks on the frame along with
 			# the computed eye aspect ratio for the frame
