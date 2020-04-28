@@ -1,0 +1,71 @@
+{
+ "editable_grid": 1,
+ "fields": [
+  {
+   "options": "Customer",
+   "label": "Client",
+   "fieldname": "client",
+   "fieldtype": "Link"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "options": "Operations Project",
+   "label": "Project",
+   "fieldname": "project",
+   "fieldtype": "Link"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "options": "Contract Addendum",
+   "label": "Addendums",
+   "fieldname": "addendums",
+   "fieldtype": "Table"
+  },
+  {
+   "read_only": 1,
+   "label": "Renewal Count",
+   "fieldname": "renewal_count",
+   "fieldtype": "Data"
+  }
+ ],
+ "name": "Contracts",
+ "modified_by": "Administrator",
+ "field_order": [
+  "client",
+  "renewal_count",
+  "column_break_2",
+  "project",
+  "section_break_4",
+  "addendums"
+ ],
+ "creation": "2020-04-28 11:07:30.373279",
+ "doctype": "DocType",
+ "modified": "2020-04-28 12:58:34.741122",
+ "sort_field": "modified",
+ "track_changes": 1,
+ "permissions": [
+  {
+   "role": "System Manager",
+   "report": 1,
+   "print": 1,
+   "write": 1,
+   "email": 1,
+   "share": 1,
+   "delete": 1,
+   "export": 1,
+   "create": 1,
+   "read": 1
+  }
+ ],
+ "module": "Operations",
+ "sort_order": "DESC",
+ "engine": "InnoDB",
+ "owner": "Administrator",
+ "quick_entry": 1
+}

@@ -13,9 +13,8 @@
   "site_name",
   "site_location",
   "column_break_7",
-  "site_poc",
-  "contact_html",
   "account_supervisor",
+  "account_supervisor_name",
   "section_break_15",
   "transport_required",
   "column_break_17",
@@ -27,7 +26,9 @@
   "column_break_23",
   "area",
   "neighbours",
-  "camerascctvcontrol_room"
+  "camerascctvcontrol_room",
+  "poc_list_section",
+  "site_poc"
  ],
  "fields": [
   {
@@ -58,14 +59,9 @@
   },
   {
    "fieldname": "site_poc",
-   "fieldtype": "Link",
+   "fieldtype": "Table",
    "label": "Site POC",
-   "options": "Contact"
-  },
-  {
-   "fieldname": "contact_html",
-   "fieldtype": "HTML",
-   "label": "POC details"
+   "options": "Site POC"
   },
   {
    "fieldname": "column_break_7",
@@ -149,9 +145,21 @@
    "fieldname": "camerascctvcontrol_room",
    "fieldtype": "Data",
    "label": "Cameras/CCTV/Control Room"
+  },
+  {
+   "fieldname": "poc_list_section",
+   "fieldtype": "Section Break",
+   "label": "POC List"
+  },
+  {
+   "fetch_from": "account_supervisor.employee_name",
+   "fieldname": "account_supervisor_name",
+   "fieldtype": "Data",
+   "label": "Account Supervisor Name",
+   "read_only": 1
   }
  ],
- "modified": "2020-04-27 14:14:38.771643",
+ "modified": "2020-04-28 13:41:08.299119",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Site",

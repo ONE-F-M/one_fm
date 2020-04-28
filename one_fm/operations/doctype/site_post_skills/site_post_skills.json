@@ -1,0 +1,36 @@
+{
+ "owner": "Administrator",
+ "track_changes": 1,
+ "sort_order": "DESC",
+ "istable": 1,
+ "modified_by": "Administrator",
+ "creation": "2020-04-28 19:37:02.412265",
+ "modified": "2020-04-28 19:37:07.897689",
+ "engine": "InnoDB",
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "field_order": [
+  "skill",
+  "required_proficiency"
+ ],
+ "editable_grid": 1,
+ "fields": [
+  {
+   "fieldname": "skill",
+   "fieldtype": "Link",
+   "label": "Skill",
+   "options": "Skill",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "required_proficiency",
+   "fieldtype": "Rating",
+   "label": "Required Proficiency",
+   "in_list_view": 1
+  }
+ ],
+ "module": "Operations",
+ "doctype": "DocType",
+ "name": "Site Post Skills",
+ "permissions": []
+}

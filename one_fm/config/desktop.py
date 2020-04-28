@@ -12,11 +12,18 @@ def get_data():
 			"label": _("One Fm")
 		},
 		{
-		"module_name": "GRD",
+			"module_name": "GRD",
 			"category": "Modules",
 			"label": _("GRD"),
 			"color": "#2ecc71",
 			"icon": "octicon octicon-organization",
+			"type": "module"
+		},
+		{
+			"module_name": "Operations",
+			"label": _("Operations"),
+			"color": "grey",
+			"icon": "octicon octicon-file-directory",
 			"type": "module"
 		}
 	]

@@ -11,11 +11,11 @@
   "attendees",
   "section_break_5",
   "discussion_topic",
+  "meeting_duration",
   "column_break_7",
   "issues",
   "action_taken_section",
-  "action",
-  "meeting_duration"
+  "action"
  ],
  "fields": [
   {
@@ -69,8 +69,9 @@
   },
   {
    "fieldname": "action",
-   "fieldtype": "Small Text",
-   "label": "Action"
+   "fieldtype": "Table",
+   "label": "Action",
+   "options": "MOM Action"
   },
   {
    "description": "In minutes",
@@ -83,7 +84,7 @@
    "fieldtype": "Column Break"
   }
  ],
- "modified": "2020-04-27 16:06:27.494546",
+ "modified": "2020-04-28 13:51:18.726784",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM",

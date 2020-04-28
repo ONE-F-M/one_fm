@@ -29,11 +29,11 @@ def get_data():
 			},
 			{
 				'label': _('Communication'),
-				'items': []
+				'items': ['Contracts']
 			},
 			{
 				'label': _('Project Structure'),
-				'items': ['Site', 'Shift Type']
+				'items': ['Site', 'Site Shift']
 			},
 		]
 	}

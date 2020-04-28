@@ -1,21 +1,23 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Site', {
-	refresh: function(frm) {
-		if(frm.doc.site_poc !== undefined){
-			get_contact(frm);
+frappe.ui.form.on('Site POC', {
+	form_render: function(frm, cdt, cdn) {
+		let doc = locals[cdt][cdn];
+		if(doc.poc !== undefined){
+			get_contact(doc);
 		}
 	},
-	site_poc: function(frm){
-		if(frm.doc.site_poc !== undefined){
-			get_contact(frm);
+	poc: function(frm, cdt, cdn){
+		let doc = locals[cdt][cdn];
+		if(doc.poc !== undefined){
+			get_contact(doc);
 		}
 	}
 });
 
-function get_contact(frm){
-	let site_poc = frm.doc.site_poc;
+function get_contact(doc){
+	let site_poc = doc.poc;
 	frappe.call({
 		method: 'frappe.client.get',
 		args: {
