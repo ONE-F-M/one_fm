@@ -388,8 +388,7 @@
    "fieldname": "supplier_group_table",
    "fieldtype": "Table",
    "label": "Supplier Group Table",
-   "options": "Supplier Group Table",
-   "reqd": 1
+   "options": "Supplier Group Table"
   },
   {
    "fieldname": "supplier_payment_terms",
@@ -401,7 +400,7 @@
  "icon": "fa fa-user",
  "idx": 370,
  "image_field": "image",
- "modified": "2020-04-15 15:54:59.188321",
+ "modified": "2020-04-20 14:58:20.824672",
  "modified_by": "omar.ja93@gmail.com",
  "module": "One Fm",
  "name": "Supplier",

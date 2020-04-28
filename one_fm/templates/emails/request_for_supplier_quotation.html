@@ -20,13 +20,13 @@
         <multiline>{{ message_for_supplier }}</multiline>
     </td>
 </tr>
+<br><br>
 <tr>
     <td valign="top" align="center">
         <table style="color:#71746f;width:80%;" class="table">
             <tr>
-                <th>Item Name</th>{% endif %}
+                <th>Item Name</th>
                 <th>Description</th>
-                <th>Image</th>
                 <th>Quantity</th>
                 <th>UOM</th>
                 <th>Required Date</th>
@@ -38,9 +38,6 @@
                 </td>
                 <td>
                     {% if item.description %}{{ item.description }}{% endif %}
-                </td>
-                <td>
-                    {% if item.image_view %}{{ item.image_view }}{% endif %}
                 </td>
                 <td>
                     {% if item.qty %}{{ item.qty }}{% endif %}
@@ -66,11 +63,6 @@
     <td valign="top" align="center">&nbsp;</td>
 </tr>
 {% if terms %}
-<tr>
-    <td style="font-family: 'Cairo', sans-serif; font-size:30px; color:#4b4b4c; line-height:30px; font-weight:bold;" mc:edit="tm2-04" valign="top" align="center">
-        <b>Terms and Conditions</b>
-    </td>
-</tr>
 <tr>
     <td style="font-family: 'Cairo', sans-serif;font-size:13px;color:#71746f;line-height:22px;padding: 0 56px;font-weight:normal;" mc:edit="tm2-05" valign="top" align="center">
         <multiline>{{ terms }}</multiline>

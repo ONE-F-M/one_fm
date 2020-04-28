@@ -16,9 +16,6 @@ frappe.ui.form.on('Purchase Request', {
 });
 
 
-
-
-
 frappe.ui.form.on('Purchase Request Item', {
     requested_quantity: function (frm, cdt, cdn) {
         var row = locals[cdt][cdn];
@@ -47,15 +44,6 @@ frappe.ui.form.on('Suppliers Quotation', {
             frappe.model.set_value(cdt, cdn, "reason", );
         }
 
-
-        $.each(frm.doc.suppliers_quotation || [], function (i, d) {
-
-        	if(row.idx!=d.idx){
-	    		frappe.model.set_value(d.doctype, d.name, "approved", 0);
-	    	}
-	    });
-
-
     }
 
 });
@@ -69,4 +57,24 @@ frappe.ui.form.on("Purchase Request Item", "total_amount", function (frm, cdt, c
     });
     frm.set_value("amount", total);
 });
+
+
+
+
+// cur_frm.set_query("supplier", "items", function (doc, cdt, cdn) {
+//     var row = locals[cdt][cdn];
+//     if (!row || row === undefined) {
+//         return
+//     }
+//     var supplier_length = cur_frm.doc.suppliers_quotation.length
+//     var supplier = []
+//     for (var i = 0; i < supplier_length; i++) {
+//         supplier.push(cur_frm.doc.suppliers_quotation[i].supplier)
+//     }
+//     return {
+//         filters: [
+//             ['Supplier', 'name', 'in', supplier]
+//         ]
+//     }
+// });
 
