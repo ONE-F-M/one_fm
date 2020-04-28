@@ -106,7 +106,7 @@ def create_job_opening_from_erf(erf):
 	job_opening.one_fm_maximum_experience_required = erf.maximum_experience_required
 	job_opening.one_fm_minimum_age_required = erf.minimum_age_required
 	job_opening.one_fm_maximum_age_required = erf.maximum_age_required
-	job_opening.one_fm_performance_profile_ = erf.performance_profile
+	job_opening.one_fm_performance_profile = erf.performance_profile
 	set_erf_skills_in_job_opening(job_opening, erf)
 	set_erf_language_in_job_opening(job_opening, erf)
 	job_opening.save(ignore_permissions = True)
