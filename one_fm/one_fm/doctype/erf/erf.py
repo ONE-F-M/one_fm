@@ -143,4 +143,4 @@ def set_erf_skills_in_job_opening(job_opening, erf):
 		for skill in erf.designation_skill:
 			jo_skill = job_opening.append('one_fm_designation_skill')
 			jo_skill.skill = skill.skill
-			jo_skill.one_fm_skill_level = skill.one_fm_skill_level
+			jo_skill.one_fm_proficiency = skill.one_fm_proficiency

@@ -251,24 +251,24 @@ var calculate_total_cost_to_company = function(frm) {
 var set_basic_skill_from_designation = function(frm) {
   frm.clear_table("designation_skill");
   if(frm.doc.designation){
-    frappe.call({
-      method: 'frappe.client.get',
-      args: {
-        doctype: "Designation",
-        filters: {"name":frm.doc.designation}
-      },
-      callback: function(r) {
-        if(r.message && r.message.skills){
-          let skills = r.message.skills;
-          skills.forEach(function(designation_skill) {
-        		let skill = frappe.model.add_child(frm.doc, 'Designation Skill', 'designation_skill');
-        		frappe.model.set_value(skill.doctype, skill.name, 'skill', designation_skill.skill);
-        		frappe.model.set_value(skill.doctype, skill.name, 'one_fm_skill_level', designation_skill.one_fm_skill_level);
-        	});
-        }
-        frm.refresh_field('designation_skill');
-      }
-    });
+		frappe.call({
+			method: 'frappe.client.get',
+			args: {
+				doctype: "Designation",
+				filters: {"name":frm.doc.designation}
+			},
+			callback: function(r) {
+				if(r.message && r.message.skills){
+					let skills = r.message.skills;
+					skills.forEach(function(designation_skill) {
+						let skill = frappe.model.add_child(frm.doc, 'Designation Skill', 'designation_skill');
+						frappe.model.set_value(skill.doctype, skill.name, 'skill', designation_skill.skill);
+						frappe.model.set_value(skill.doctype, skill.name, 'one_fm_proficiency', designation_skill.one_fm_proficiency);
+					});
+				}
+				frm.refresh_field('designation_skill');
+			}
+		});
   }
   frm.refresh_field('designation_skill');
 };
