@@ -26,7 +26,11 @@ class ERF(Document):
 	def on_submit(self):
 		self.set_erf_finalized()
 		self.validate_recruiter_assigned()
-		create_job_opening_from_erf(self)
+		if self.status == 'Draft':
+			frappe.throw(_('You can not Submit ERF with Draft Status.'))
+		if self.status == 'Accepted':
+			create_job_opening_from_erf(self)
+		frappe.msgprint(_('Department Manager Will Notified By Email.'))
 
 	def set_erf_code(self):
 		self.erf_code = self.name

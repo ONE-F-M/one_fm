@@ -43,6 +43,9 @@ frappe.ui.form.on('ERF', {
 	},
 	erf_request: function(frm) {
 		set_erf_request_details(frm);
+	},
+	status: function(frm) {
+		set_reason_for_decline_reqd(frm);
 	}
 });
 
@@ -63,6 +66,15 @@ frappe.ui.form.on('ERF Employee Benefit', {
     calculate_benefit_cost_to_company(frm);
   }
 });
+
+var set_reason_for_decline_reqd = function(frm) {
+	if(frm.doc.status == 'Declined'){
+		frm.set_df_property('reason_for_decline', 'reqd', true);
+	}
+	else{
+		frm.set_df_property('reason_for_decline', 'reqd', false);
+	}
+};
 
 var set_erf_request_details = function(frm) {
 	if(frm.doc.erf_request){
