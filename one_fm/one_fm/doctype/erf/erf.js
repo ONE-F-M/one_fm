@@ -78,9 +78,18 @@ var set_erf_request_details = function(frm) {
 					frm.set_value('department', request.department);
 					frm.set_value('designation', request.designation);
 					frm.set_value('no_of_candidates_by_erf_request', request.number_of_candidates_required);
+					frm.set_value('reason_for_request', request.reason_for_request);
 				}
 			}
 		});
+		frm.set_df_property('department', 'read_only', true);
+		frm.set_df_property('designation', 'read_only', true);
+		frm.set_df_property('reason_for_request', 'read_only', true);
+	}
+	else {
+		frm.set_df_property('department', 'read_only', false);
+		frm.set_df_property('designation', 'read_only', false);
+		frm.set_df_property('reason_for_request', 'read_only', false);
 	}
 };
 
@@ -98,7 +107,7 @@ var calculate_benefit_cost_to_company = function(frm) {
 var set_other_benefits = function(frm) {
 	if(!frm.doc.other_benefits){
 		frm.clear_table('other_benefits');
-		let options = ['Company Provided Car', 'Mobile with Line', 'Health Insurance']
+		let options = ['Company Provided Car', 'Mobile with Line', 'Health Insurance'];
 		options.forEach((option) => {
 			let benefit = frappe.model.add_child(frm.doc, 'ERF Employee Benefit', 'other_benefits');
 			frappe.model.set_value(benefit.doctype, benefit.name, 'benefit', option);

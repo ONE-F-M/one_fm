@@ -12,6 +12,7 @@ class ERF(Document):
 	def validate(self):
 		self.set_erf_code()
 		self.validate_languages()
+		self.validate_with_erf_request()
 		self.validate_type_of_travel()
 		self.validate_type_of_license()
 		self.set_salary_structure_from_grade()
@@ -91,6 +92,17 @@ class ERF(Document):
 	def validate_recruiter_assigned(self):
 		if not self.recruiter_assigned:
 			frappe.throw(_('Recruiter Assigned is a Mandatory Field to Submit.!'))
+
+	def validate_with_erf_request(self):
+		erf_request = frappe.get_doc('ERF Request', self.erf_request)
+		if erf_request.department != self.department:
+			frappe.throw(_('The Department in ERF Request and ERF Should be the Same.'))
+		if erf_request.designation != self.designation:
+			frappe.throw(_('The Designation in ERF Request and ERF Should be the Same.'))
+		if erf_request.reason_for_request != self.reason_for_request:
+			frappe.throw(_('The Reason for Request in ERF Request and ERF Should be the Same.'))
+		if erf_request.number_of_candidates_required < self.total_no_of_candidates_required:
+			frappe.throw(_('Total Number Candidates Required Should not exceed ERF Request.'))
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
