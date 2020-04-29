@@ -12,6 +12,7 @@ class ERF(Document):
 	def validate(self):
 		self.set_erf_code()
 		self.validate_languages()
+		self.set_other_benefits()
 		self.validate_with_erf_request()
 		self.validate_type_of_travel()
 		self.validate_type_of_license()
@@ -107,6 +108,13 @@ class ERF(Document):
 			frappe.throw(_('The Reason for Request in ERF Request and ERF Should be the Same.'))
 		if erf_request.number_of_candidates_required < self.total_no_of_candidates_required:
 			frappe.throw(_('Total Number Candidates Required Should not exceed ERF Request.'))
+
+	def set_other_benefits(self):
+		if self.is_new() and not self.other_benefits:
+			options = ['Company Provided Car', 'Mobile with Line', 'Health Insurance']
+			for option in options:
+				benefit = self.append('other_benefits')
+				benefit.benefit = option
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
