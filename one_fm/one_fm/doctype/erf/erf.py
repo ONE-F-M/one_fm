@@ -100,6 +100,10 @@ class ERF(Document):
 
 	def validate_with_erf_request(self):
 		erf_request = frappe.get_doc('ERF Request', self.erf_request)
+		if erf_request.docstatus != 1:
+			frappe.throw(_('ERF Request should be submitted.'))
+		if erf_request.status != 'Accepted':
+			frappe.throw(_('ERF Request should be Accepted.'))
 		if erf_request.department != self.department:
 			frappe.throw(_('The Department in ERF Request and ERF Should be the Same.'))
 		if erf_request.designation != self.designation:

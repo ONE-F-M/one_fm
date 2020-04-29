@@ -22,5 +22,7 @@ class ERFRequest(Document):
 			frappe.msgprint(_('Department Manager Will Notified By Email.'))
 
 	def validate_with_erf(self):
-		# TODO: If erf is created against an erf request then erf must be Deleted or cancelled to change erf request
-		pass
+		erf = frappe.db.exists('ERF', {'erf_request': self.name, 'docstatus': ['<', 2]})
+		if erf:
+			frappe.throw(_("""An ERF <b><a href="#Form/ERF/{0}">{0}</a></b> is exists against this request, \
+				Can not change this ERF Request.!""").format(erf, self.name))
