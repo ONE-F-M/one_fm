@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
+  "erf_request",
   "erf_code",
   "column_break_3",
   "erf_initiation",
@@ -35,6 +36,7 @@
   "candidates_required_section",
   "gender_height_requirement",
   "total_no_of_candidates_required",
+  "no_of_candidates_by_erf_request",
   "education_and_other_requirements_section",
   "education_qualification",
   "minimum_experience_required",
@@ -457,11 +459,25 @@
    "fieldtype": "Section Break",
    "label": "Salary Compensation Budget",
    "permlevel": 1
+  },
+  {
+   "fieldname": "erf_request",
+   "fieldtype": "Link",
+   "label": "ERF Request",
+   "options": "ERF Request",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "no_of_candidates_by_erf_request",
+   "fieldtype": "Int",
+   "label": "Number of Candidates by ERF Request",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-04-28 20:48:32.681866",
+ "modified": "2020-04-29 09:06:26.493688",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

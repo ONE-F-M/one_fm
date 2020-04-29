@@ -2,6 +2,17 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('ERF', {
+	refresh: function(frm) {
+		frm.set_query('erf_request', function () {
+			return {
+				filters: {
+					'docstatus': 1,
+					'status': 'Accepted',
+					'department_manager': frappe.user.name
+				}
+			};
+		});
+	},
 	onload: function(frm) {
 		set_other_benefits(frm);
 	},
@@ -29,6 +40,9 @@ frappe.ui.form.on('ERF', {
 	},
 	salary_structure: function(frm) {
 		set_salary_details(frm);
+	},
+	erf_request: function(frm) {
+		set_erf_request_details(frm);
 	}
 });
 
@@ -49,6 +63,26 @@ frappe.ui.form.on('ERF Employee Benefit', {
     calculate_benefit_cost_to_company(frm);
   }
 });
+
+var set_erf_request_details = function(frm) {
+	if(frm.doc.erf_request){
+		frappe.call({
+			method: 'frappe.client.get',
+			args: {
+				doctype: 'ERF Request',
+				filters: {name: frm.doc.erf_request}
+			},
+			callback: function(r) {
+				if(r.message){
+					let request = r.message
+					frm.set_value('department', request.department);
+					frm.set_value('designation', request.designation);
+					frm.set_value('no_of_candidates_by_erf_request', request.number_of_candidates_required);
+				}
+			}
+		});
+	}
+};
 
 var calculate_benefit_cost_to_company = function(frm) {
 	let total = 0;
