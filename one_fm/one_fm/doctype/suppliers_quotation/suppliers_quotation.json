@@ -1,0 +1,62 @@
+{
+ "creation": "2020-04-16 18:14:32.036576",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "supplier_quotation",
+  "column_break_5",
+  "approved",
+  "reason",
+  "notes_section",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "supplier_quotation",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Supplier Quotation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "approved",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Approved"
+  },
+  {
+   "depends_on": "eval:doc.approved==1",
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Reason"
+  },
+  {
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-05-04 18:41:59.770902",
+ "modified_by": "omar.ja93@gmail.com",
+ "module": "One Fm",
+ "name": "Suppliers Quotation",
+ "owner": "omar.ja93@gmail.com",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
