@@ -1,0 +1,582 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-04-27 12:23:19.321973",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "erf_request",
+  "erf_code",
+  "status",
+  "reason_for_decline",
+  "column_break_3",
+  "erf_initiation",
+  "erf_finalized",
+  "section_break_2",
+  "designation",
+  "department",
+  "project",
+  "grade",
+  "column_break_8",
+  "reason_for_request",
+  "expected_date_of_deployment",
+  "hiring_method",
+  "recruiter_assigned",
+  "work_section",
+  "working_days",
+  "off_days",
+  "vacation_days",
+  "travel_required",
+  "type_of_travel",
+  "column_break_14",
+  "place_of_work",
+  "shift_working",
+  "night_shift",
+  "shift_hours",
+  "candidates_required_section",
+  "gender_height_requirement",
+  "total_no_of_candidates_required",
+  "no_of_candidates_by_erf_request",
+  "education_and_other_requirements_section",
+  "education_qualification",
+  "minimum_experience_required",
+  "maximum_experience_required",
+  "driving_license_required",
+  "type_of_license",
+  "column_break_30",
+  "minimum_age_required",
+  "maximum_age_required",
+  "language_section",
+  "languages",
+  "basic_skill_section",
+  "designation_skill",
+  "performance_profile",
+  "tools_section",
+  "tool_request_item",
+  "salary_compensation_budget_section",
+  "salary_structure",
+  "salary_details",
+  "salary_per_person",
+  "total_cost_in_salary",
+  "column_break_44",
+  "other_benefits",
+  "benefit_cost_to_company",
+  "total_cost_to_company",
+  "grd_section",
+  "pam_file_name",
+  "pam_designation",
+  "pam_available_quantity",
+  "column_break_54",
+  "required_quantity",
+  "final_quantity",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "ERF-.YYYY.-"
+  },
+  {
+   "fieldname": "erf_code",
+   "fieldtype": "Data",
+   "label": "ERF Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "ERF",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Designation",
+   "options": "Designation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Department",
+   "options": "Department",
+   "reqd": 1
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Grade",
+   "options": "Employee Grade",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reason_for_request",
+   "fieldtype": "Select",
+   "label": "Reason for Request",
+   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "expected_date_of_deployment",
+   "fieldtype": "Date",
+   "label": "Expected Date of Deployment",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "shift_working",
+   "fieldtype": "Check",
+   "label": "Shift Working"
+  },
+  {
+   "default": "0",
+   "fieldname": "night_shift",
+   "fieldtype": "Check",
+   "label": "Night Shift"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "shift_hours",
+   "fieldtype": "Float",
+   "label": "Shift Hours"
+  },
+  {
+   "description": "30 Days Month",
+   "fieldname": "working_days",
+   "fieldtype": "Int",
+   "label": "Working Days In a Month",
+   "reqd": 1
+  },
+  {
+   "depends_on": "travel_required",
+   "fieldname": "type_of_travel",
+   "fieldtype": "Select",
+   "label": "Type of Travel",
+   "options": "\nLocal\nOverseas\nLocal and Overseas"
+  },
+  {
+   "fieldname": "place_of_work",
+   "fieldtype": "Data",
+   "label": "Place of Work",
+   "reqd": 1
+  },
+  {
+   "fieldname": "vacation_days",
+   "fieldtype": "Int",
+   "label": "Vacation Days In an Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "travel_required",
+   "fieldtype": "Check",
+   "label": "Travel Required"
+  },
+  {
+   "fieldname": "education_qualification",
+   "fieldtype": "Select",
+   "label": "Education Qualification",
+   "options": "\nGraduate\nPost Graduate\nUnder Graduate",
+   "reqd": 1
+  },
+  {
+   "depends_on": "driving_license_required",
+   "fieldname": "type_of_license",
+   "fieldtype": "Select",
+   "label": "Type of License",
+   "options": "\nLight\nHeavy\nMotor Bike"
+  },
+  {
+   "fieldname": "column_break_30",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "minimum_age_required",
+   "fieldtype": "Int",
+   "label": "Minimum Age Required (In Years)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "maximum_age_required",
+   "fieldtype": "Int",
+   "label": "Maximum Age Required (In Years)"
+  },
+  {
+   "fieldname": "minimum_experience_required",
+   "fieldtype": "Int",
+   "label": "Minimum Experience Required (In Years)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "maximum_experience_required",
+   "fieldtype": "Int",
+   "label": "Maximum Experience Required (In Years)"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "basic_skill_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Skills"
+  },
+  {
+   "fieldname": "performance_profile",
+   "fieldtype": "Data",
+   "label": "Performance Profile",
+   "reqd": 1
+  },
+  {
+   "fieldname": "salary_details",
+   "fieldtype": "Table",
+   "label": "Salary Details",
+   "options": "ERF Salary Detail",
+   "permlevel": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_44",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "hiring_method",
+   "fieldtype": "Select",
+   "label": "Hiring Method",
+   "options": "\nBulk Recruitment\nA la carte Recruitment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "recruiter_assigned",
+   "fieldtype": "Link",
+   "label": "Recruiter Assigned",
+   "options": "User"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "grd_section",
+   "fieldtype": "Section Break",
+   "label": "GRD",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "pam_file_name",
+   "fieldtype": "Data",
+   "label": "PAM File Name",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "pam_designation",
+   "fieldtype": "Link",
+   "label": "PAM Designation",
+   "options": "Designation",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "column_break_54",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "required_quantity",
+   "fieldtype": "Int",
+   "label": "Required Quantity",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "final_quantity",
+   "fieldtype": "Int",
+   "label": "Final Quantity",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "erf_finalized",
+   "fieldtype": "Date",
+   "label": "ERF Finalized",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "work_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Work Details"
+  },
+  {
+   "fieldname": "gender_height_requirement",
+   "fieldtype": "Table",
+   "options": "ERF Gender Height Requirement",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "education_and_other_requirements_section",
+   "fieldtype": "Section Break",
+   "label": "Education and Other Requirements"
+  },
+  {
+   "fieldname": "designation_skill",
+   "fieldtype": "Table",
+   "label": "Designation Skill",
+   "options": "Designation Skill",
+   "reqd": 1
+  },
+  {
+   "fieldname": "tool_request_item",
+   "fieldtype": "Table",
+   "options": "ERF Tool Request Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_no_of_candidates_required",
+   "fieldtype": "Int",
+   "label": "Total No of Candidates Required",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "language_section",
+   "fieldtype": "Section Break",
+   "label": "Language"
+  },
+  {
+   "fieldname": "languages",
+   "fieldtype": "Table",
+   "options": "Employee Language Requirement",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "candidates_required_section",
+   "fieldtype": "Section Break",
+   "label": "Candidates Required"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "tools_section",
+   "fieldtype": "Section Break",
+   "label": "Tools Required for Employee to Work"
+  },
+  {
+   "description": "30 Days Month",
+   "fieldname": "off_days",
+   "fieldtype": "Int",
+   "label": "Off Days In a Month",
+   "reqd": 1
+  },
+  {
+   "fieldname": "salary_per_person",
+   "fieldtype": "Currency",
+   "label": "Salary Per Person",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_cost_in_salary",
+   "fieldtype": "Currency",
+   "label": "Total Cost in Salary",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "pam_available_quantity",
+   "fieldtype": "Int",
+   "label": "Available Quantity",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "driving_license_required",
+   "fieldtype": "Check",
+   "label": "Kuwait Driving License Required"
+  },
+  {
+   "fieldname": "salary_structure",
+   "fieldtype": "Link",
+   "label": "Salary Structure",
+   "options": "Salary Structure",
+   "permlevel": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "erf_initiation",
+   "fieldtype": "Date",
+   "label": "ERF Initiation Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_cost_to_company",
+   "fieldtype": "Currency",
+   "label": "Total Cost to Company",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "other_benefits",
+   "fieldtype": "Table",
+   "label": "Other Benefits",
+   "options": "ERF Employee Benefit",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "benefit_cost_to_company",
+   "fieldtype": "Currency",
+   "label": "Benefit Cost to Company",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "salary_compensation_budget_section",
+   "fieldtype": "Section Break",
+   "label": "Salary Compensation Budget",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "erf_request",
+   "fieldtype": "Link",
+   "label": "ERF Request",
+   "options": "ERF Request",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "no_of_candidates_by_erf_request",
+   "fieldtype": "Int",
+   "label": "Number of Candidates by ERF Request",
+   "read_only": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nDraft\nAccepted\nDeclined\nClosed",
+   "permlevel": 1
+  },
+  {
+   "depends_on": "eval:doc.status == 'Declined'",
+   "fieldname": "reason_for_decline",
+   "fieldtype": "Small Text",
+   "label": "Reason for Decline",
+   "permlevel": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-04-29 22:10:30.372695",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "ERF",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
