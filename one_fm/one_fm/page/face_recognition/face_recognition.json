@@ -4,7 +4,7 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2020-04-05 10:04:29.055748",
+ "modified": "2020-05-02 19:15:09.880417",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "face-recognition",
@@ -12,7 +12,7 @@
  "page_name": "Face Recognition",
  "roles": [
   {
-   "role": "System Manager"
+   "role": "All"
   }
  ],
  "script": null,

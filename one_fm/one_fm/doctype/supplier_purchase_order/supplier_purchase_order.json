@@ -47,7 +47,7 @@
   {
    "fieldname": "supplier",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Supplier",
    "options": "Supplier",
    "reqd": 1
@@ -56,6 +56,7 @@
    "fetch_from": "supplier.supplier_name",
    "fieldname": "supplier_name",
    "fieldtype": "Read Only",
+   "in_list_view": 1,
    "label": "Supplier Name"
   },
   {
@@ -68,7 +69,8 @@
    "fetch_from": "purchase_request.code",
    "fieldname": "code",
    "fieldtype": "Link",
-   "label": "Code",
+   "in_standard_filter": 1,
+   "label": "Project Code",
    "options": "Project"
   },
   {
@@ -110,6 +112,7 @@
   {
    "fieldname": "purchase_request",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Purchase Request",
    "options": "Purchase Request",
    "reqd": 1
@@ -209,7 +212,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2020-04-26 21:17:09.131147",
+ "modified": "2020-05-04 10:30:06.068693",
  "modified_by": "omar.ja93@gmail.com",
  "module": "One Fm",
  "name": "Supplier Purchase Order",
@@ -224,9 +227,45 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "System Manager",
+   "role": "Purchase Manager",
    "share": 1,
    "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
    "write": 1
   }
  ],

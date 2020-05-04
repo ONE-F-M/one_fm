@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "item_code",
+  "remain_qty",
   "column_break_2",
   "item_name",
   "description_section",
@@ -95,10 +96,16 @@
    "hidden": 1,
    "label": "Purchase Request Item ID",
    "read_only": 1
+  },
+  {
+   "fieldname": "remain_qty",
+   "fieldtype": "Int",
+   "label": "Remain Qty",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2020-04-28 13:10:26.987417",
+ "modified": "2020-04-30 11:12:12.886172",
  "modified_by": "omar.ja93@gmail.com",
  "module": "One Fm",
  "name": "Supplier Purchase Order Item",

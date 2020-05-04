@@ -1,0 +1,37 @@
+{
+ "creation": "2020-04-27 14:56:26.766154",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "poc_name",
+  "attended_meeting"
+ ],
+ "fields": [
+  {
+   "fieldname": "poc_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "POC Name",
+   "options": "Contact"
+  },
+  {
+   "default": "0",
+   "fieldname": "attended_meeting",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Attended Meeting"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-04-27 15:54:06.313386",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "MOM POC",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

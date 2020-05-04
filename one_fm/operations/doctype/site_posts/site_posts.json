@@ -1,0 +1,81 @@
+{
+ "modified_by": "Administrator",
+ "name": "Site Posts",
+ "creation": "2020-04-28 19:34:20.868872",
+ "doctype": "DocType",
+ "sort_order": "DESC",
+ "permissions": [],
+ "field_order": [
+  "post_type",
+  "gender",
+  "qty",
+  "column_break_2",
+  "post_location",
+  "division",
+  "sales_item",
+  "section_break_8",
+  "post_description"
+ ],
+ "fields": [
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_break_2"
+  },
+  {
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "fieldname": "gender"
+  },
+  {
+   "fieldtype": "Select",
+   "label": "Division",
+   "options": "Security\nManagement",
+   "fieldname": "division"
+  },
+  {
+   "fieldtype": "Select",
+   "label": "Post Location",
+   "options": "Internal\nExternal",
+   "fieldname": "post_location"
+  },
+  {
+   "fieldtype": "Link",
+   "label": "Post Type",
+   "options": "Post Type Template",
+   "in_list_view": 1,
+   "fieldname": "post_type"
+  },
+  {
+   "fieldtype": "Link",
+   "label": "Sales Item",
+   "options": "Item",
+   "in_list_view": 1,
+   "fieldname": "sales_item"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_break_8"
+  },
+  {
+   "fieldtype": "Small Text",
+   "label": "Post Description",
+   "fieldname": "post_description"
+  },
+  {
+   "fieldtype": "Data",
+   "label": "Qty",
+   "in_list_view": 1,
+   "fieldname": "qty"
+  }
+ ],
+ "engine": "InnoDB",
+ "owner": "Administrator",
+ "modified": "2020-05-02 15:41:36.777567",
+ "editable_grid": 1,
+ "track_changes": 1,
+ "sort_field": "modified",
+ "istable": 1,
+ "quick_entry": 1,
+ "module": "Operations"
+}

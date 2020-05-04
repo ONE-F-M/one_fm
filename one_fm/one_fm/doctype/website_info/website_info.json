@@ -4,17 +4,17 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "home_section",
+  "home_section_title",
+  "home_section_body",
   "about_us_section",
-  "section_title",
-  "section_header",
-  "section_subject",
-  "what_we_want_section",
-  "our_vision",
-  "column_break_7",
-  "our_mission",
+  "about_us_section_title",
+  "about_us_section_body",
   "services_section",
-  "services_title",
   "services_data",
+  "clients_section",
+  "clients_section_title",
+  "clients_section_body",
   "contact_us_section",
   "address",
   "phone",
@@ -33,65 +33,15 @@
    "label": "About Us"
   },
   {
-   "fieldname": "section_title",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Section title",
-   "reqd": 1
-  },
-  {
-   "fieldname": "section_header",
-   "fieldtype": "Data",
-   "label": "Section Header"
-  },
-  {
-   "fieldname": "section_subject",
-   "fieldtype": "Table",
-   "label": "Section Subject",
-   "options": "About Us Subject",
-   "reqd": 1
-  },
-  {
-   "fieldname": "what_we_want_section",
-   "fieldtype": "Section Break",
-   "label": "What We Want"
-  },
-  {
-   "fieldname": "our_vision",
-   "fieldtype": "Table",
-   "label": "Our Vision",
-   "options": "Our Vision",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_7",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "our_mission",
-   "fieldtype": "Table",
-   "label": "Our Mission",
-   "options": "Our Mission",
-   "reqd": 1
-  },
-  {
    "fieldname": "services_section",
    "fieldtype": "Section Break",
-   "label": "Services"
-  },
-  {
-   "fieldname": "services_title",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Services Title",
-   "reqd": 1
+   "label": "Our Services"
   },
   {
    "fieldname": "services_data",
    "fieldtype": "Table",
    "label": "Services data",
-   "options": "Services Subject",
-   "reqd": 1
+   "options": "Services Subject"
   },
   {
    "fieldname": "contact_us_section",
@@ -101,20 +51,17 @@
   {
    "fieldname": "address",
    "fieldtype": "Data",
-   "label": "Address",
-   "reqd": 1
+   "label": "Address"
   },
   {
    "fieldname": "phone",
    "fieldtype": "Data",
-   "label": "Phone",
-   "reqd": 1
+   "label": "Phone"
   },
   {
    "fieldname": "email",
    "fieldtype": "Data",
-   "label": "Email",
-   "reqd": 1
+   "label": "Email"
   },
   {
    "fieldname": "social_media_section",
@@ -144,12 +91,53 @@
    "fieldname": "instagram",
    "fieldtype": "Data",
    "label": "Instagram"
+  },
+  {
+   "fieldname": "home_section",
+   "fieldtype": "Section Break",
+   "label": "Home"
+  },
+  {
+   "fieldname": "about_us_section_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section title"
+  },
+  {
+   "fieldname": "about_us_section_body",
+   "fieldtype": "Small Text",
+   "label": "Section Body"
+  },
+  {
+   "fieldname": "home_section_title",
+   "fieldtype": "Data",
+   "label": "Section title"
+  },
+  {
+   "fieldname": "home_section_body",
+   "fieldtype": "Small Text",
+   "label": "Section Body"
+  },
+  {
+   "fieldname": "clients_section",
+   "fieldtype": "Section Break",
+   "label": "Clients"
+  },
+  {
+   "fieldname": "clients_section_title",
+   "fieldtype": "Data",
+   "label": "Section title"
+  },
+  {
+   "fieldname": "clients_section_body",
+   "fieldtype": "Small Text",
+   "label": "Section Body"
   }
  ],
  "hide_toolbar": 1,
  "issingle": 1,
- "modified": "2020-01-05 11:15:27.318082",
- "modified_by": "Administrator",
+ "modified": "2020-05-04 11:05:54.579816",
+ "modified_by": "omar.ja93@gmail.com",
  "module": "One Fm",
  "name": "Website Info",
  "owner": "Administrator",

@@ -1,1 +1,13 @@
-[]
+[
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
+  "dt": "ERF Request",
+  "modified": "2020-05-04 06:54:02.915244",
+  "name": "ERF Request-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on('ERF Request', {\n\trefresh(frm) {\n\t    let fields = ['reason_for_request', 'number_of_candidates_required', 'department', 'designation',\n\t        'department_manager', 'reference_type', 'reference_name'];\n    \tset_read_only_fields(frm, fields, false);\n\t}\n});\n\nvar set_read_only_fields = function(frm, fields, read_only) {\n\tfields.forEach((field) => {\n\t\tfrm.set_df_property(field, 'read_only', read_only);\n\t});\n};"
+ }
+]

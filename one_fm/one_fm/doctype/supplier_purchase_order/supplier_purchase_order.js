@@ -18,13 +18,14 @@ frappe.ui.form.on('Supplier Purchase Order', {
                     var d = frm.add_child("items");
                     d.item_code = row.item_code;
                     d.item_name = row.item_name;
+                    d.remain_qty = parseFloat(row.requested_quantity)-parseFloat(row.ordered_qty);
                     d.description = row.description;
-                    d.qty = row.requested_quantity;
+                    d.qty = parseFloat(row.requested_quantity)-parseFloat(row.ordered_qty);
                     d.unit_price = row.unit_price;
-                    d.total_amount = row.total_amount;
+                    d.total_amount = d.qty*d.unit_price;
                     d.uom = row.uom;
                     d.purchase_request_item_id = row.name
-                    frm.set_value("total_amount", cur_frm.doc.total_amount+row.total_amount);
+                    frm.set_value("total_amount", cur_frm.doc.total_amount+d.total_amount);
                     frm.refresh_field("items");
                 }
             });
@@ -61,7 +62,7 @@ frappe.ui.form.on('Supplier Purchase Order Item', {
     qty: function (frm, cdt, cdn) {
         var row = locals[cdt][cdn];
 
-        if (row.qty && drow.unit_price) {
+        if (row.qty && row.unit_price) {
             frappe.model.set_value(cdt, cdn, "total_amount", row.qty * row.unit_price);
         }
     },

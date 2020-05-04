@@ -1,0 +1,72 @@
+{
+ "creation": "2020-04-28 11:38:39.371535",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "version",
+  "section_break_2",
+  "start_date",
+  "end_date",
+  "column_break_5",
+  "contract_duration",
+  "section_break_7",
+  "attach_contract"
+ ],
+ "fields": [
+  {
+   "fieldname": "version",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "End Date"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "In days",
+   "fieldname": "contract_duration",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Contract Duration"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "attach_contract",
+   "fieldtype": "Attach",
+   "label": "Attach Contract"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-04-28 12:49:03.269613",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Contract Addendum",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
