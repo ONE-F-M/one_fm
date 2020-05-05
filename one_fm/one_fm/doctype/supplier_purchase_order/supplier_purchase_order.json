@@ -78,7 +78,7 @@
    "fieldname": "site",
    "fieldtype": "Link",
    "label": "Site",
-   "options": "Site"
+   "options": "Operations Site"
   },
   {
    "fieldname": "column_break_6",
@@ -212,8 +212,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2020-05-04 10:30:06.068693",
- "modified_by": "omar.ja93@gmail.com",
+ "modified": "2020-05-05 18:38:49.386037",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Supplier Purchase Order",
  "owner": "omar.ja93@gmail.com",

@@ -9,7 +9,11 @@ def get_data():
 		'transactions': [
 			{
 				'label': _('Operations'),
-				'items': ['Operations Task', 'Timesheet', 'Expense Claim', 'Issue' , 'Project Update']
+				'items': ['Timesheet', 'Expense Claim', 'Issue' , 'Project Update']
+			},
+			{
+				'label': _('Operations Actions'),
+				'items': ['Operations Task', 'MOM']
 			},
 			{
 				'label': _('Material'),
@@ -33,7 +37,7 @@ def get_data():
 			},
 			{
 				'label': _('Project Structure'),
-				'items': ['Site', 'Site Shift']
+				'items': ['Operations Site', 'Operations Shift']
 			},
 		]
 	}

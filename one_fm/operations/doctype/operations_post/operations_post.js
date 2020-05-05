@@ -1,7 +1,7 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Site Post', {
+frappe.ui.form.on('Operations Post', {
 	post_type: function(frm){
 		let post_type = frm.doc.post_type;
 		if(post_type !== undefined){

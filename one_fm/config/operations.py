@@ -4,7 +4,7 @@ from frappe import _
 def get_data():
 	return [
         {
-			"label": _("Operations"),
+			"label": _("Operations Structure"),
 			"items": [
 				{
 					"color": "grey",
@@ -17,15 +17,15 @@ def get_data():
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
-					"name": "Site",
-					"label": _("Site")
+					"name": "Operations Site",
+					"label": _("Operations Site")
 				},
                 {
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
-					"name": "Site Shift",
-					"label": _("Site Shift")
+					"name": "Operations Shift",
+					"label": _("Operations Shift")
 				},
                 {
 					"color": "grey",
@@ -38,8 +38,8 @@ def get_data():
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
-					"name": "Site Post",
-					"label": _("Site Post")
+					"name": "Operations Post",
+					"label": _("Operations Post")
 				},
                 {
 					"color": "grey",
@@ -48,7 +48,11 @@ def get_data():
 					"name": "Contracts",
 					"label": _("Project Contract")
 				},
-                {
+			]
+		},{
+			"label": _("Operations Actions"),
+			"items": [
+				{
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",

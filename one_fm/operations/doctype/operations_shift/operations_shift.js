@@ -1,7 +1,7 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Site Shift', {
+frappe.ui.form.on('Operations Shift', {
 	// refresh: function(frm) {
 
 	// }

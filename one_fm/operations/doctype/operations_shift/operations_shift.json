@@ -16,15 +16,14 @@
   "supervisor",
   "column_break_14",
   "supervisor_name",
-  "section_break_12",
-  "posts"
+  "section_break_12"
  ],
  "fields": [
   {
    "fieldname": "site",
    "fieldtype": "Link",
    "label": "Site",
-   "options": "Site"
+   "options": "Operations Site"
   },
   {
    "fieldname": "column_break_2",
@@ -87,18 +86,12 @@
   {
    "fieldname": "column_break_8",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "posts",
-   "fieldtype": "Table",
-   "label": "Posts",
-   "options": "Site Posts"
   }
  ],
- "modified": "2020-05-02 16:37:14.420371",
+ "modified": "2020-05-05 18:45:12.055397",
  "modified_by": "Administrator",
  "module": "Operations",
- "name": "Site Shift",
+ "name": "Operations Shift",
  "owner": "Administrator",
  "permissions": [
   {
