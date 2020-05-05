@@ -1,7 +1,7 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Site POC', {
+frappe.ui.form.on('POC', {
 	form_render: function(frm, cdt, cdn) {
 		let doc = locals[cdt][cdn];
 		if(doc.poc !== undefined){
@@ -17,12 +17,12 @@ frappe.ui.form.on('Site POC', {
 });
 
 function get_contact(doc){
-	let site_poc = doc.poc;
+	let operations_site_poc = doc.poc;
 	frappe.call({
 		method: 'frappe.client.get',
 		args: {
 			doctype: 'Contact',
-			name: site_poc
+			name: operations_site_poc
 		},
 		callback: function(r) {
 			if(!r.exc) {

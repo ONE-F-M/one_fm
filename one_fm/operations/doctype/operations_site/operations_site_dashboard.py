@@ -9,7 +9,7 @@ def get_data():
 		'transactions': [
 			{
 				'label': _('Operations'),
-				'items': ['Site Shift', 'POC']
+				'items': ['Operations Shift', 'Operations Post']
 			},
 		]
 	}

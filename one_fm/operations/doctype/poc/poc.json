@@ -5,6 +5,7 @@
  "engine": "InnoDB",
  "field_order": [
   "poc",
+  "designation",
   "column_break_2",
   "contact_html"
  ],
@@ -23,13 +24,18 @@
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Data",
+   "label": "POC Designation"
   }
  ],
  "istable": 1,
- "modified": "2020-04-28 13:47:02.261098",
+ "modified": "2020-05-05 19:37:16.856192",
  "modified_by": "Administrator",
  "module": "Operations",
- "name": "Site POC",
+ "name": "POC",
  "owner": "Administrator",
  "permissions": [],
  "quick_entry": 1,

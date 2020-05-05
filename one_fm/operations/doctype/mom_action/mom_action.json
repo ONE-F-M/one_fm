@@ -4,18 +4,15 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "action",
+  "subject",
   "column_break_2",
-  "subject"
+  "priority",
+  "column_break_4",
+  "send_notification",
+  "section_break_4",
+  "description"
  ],
  "fields": [
-  {
-   "fieldname": "action",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Action",
-   "options": "Operations Task"
-  },
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
@@ -26,10 +23,38 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Subject"
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Priority",
+   "options": "Low\nMedium\nHigh\nUrgent"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "send_notification",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Send Notification"
   }
  ],
  "istable": 1,
- "modified": "2020-04-28 13:54:31.547671",
+ "modified": "2020-05-05 19:32:12.351847",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM Action",

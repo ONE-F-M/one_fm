@@ -70,7 +70,9 @@
   "column_break_60",
   "number_of_sites",
   "number_of_shifts",
-  "number_of_posts"
+  "number_of_posts",
+  "poc_list_section",
+  "project_poc"
  ],
  "fields": [
   {
@@ -494,11 +496,22 @@
    "fieldtype": "Select",
    "label": "Type of Service",
    "options": "Option1\nOption2"
+  },
+  {
+   "fieldname": "poc_list_section",
+   "fieldtype": "Section Break",
+   "label": "POC List"
+  },
+  {
+   "fieldname": "project_poc",
+   "fieldtype": "Table",
+   "label": "Project POC",
+   "options": "POC"
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "max_attachments": 4,
- "modified": "2020-04-27 14:33:15.676293",
+ "modified": "2020-05-05 19:34:57.212214",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Project",
