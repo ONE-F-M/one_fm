@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe.contacts.address_and_contact import load_address_and_contact, delete_contact_and_address
 from frappe import _
 from frappe.utils import getdate, today
+from one_fm.one_fm.doctype.demand_letter.demand_letter import get_valid_demand_letter
 from one_fm.one_fm.doctype.agency_contract.agency_contract import get_valid_agency_contract
 
 class Agency(Document):
@@ -60,6 +61,9 @@ def is_agency_active(agency):
 	elif not get_valid_agency_contract(agency):
 		active = False
 		msg = "Agency has no Active or Valid Contract"
+	elif not get_valid_demand_letter(agency):
+		active = False
+		msg = "Agency has no Valid Demand Letter"
 
 	return {'active': active, 'message': msg}
 
