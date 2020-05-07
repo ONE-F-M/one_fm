@@ -34,6 +34,8 @@
   "prevent_pos",
   "section_001",
   "supplier_group_table",
+  "supplier_document_section",
+  "supplier_document",
   "allowed_to_transact_section",
   "companies",
   "section_break_7",
@@ -395,12 +397,23 @@
    "fieldtype": "Link",
    "label": "Supplier Payment Terms",
    "options": "Mode of Payment"
+  },
+  {
+   "fieldname": "supplier_document_section",
+   "fieldtype": "Section Break",
+   "label": "Supplier Document"
+  },
+  {
+   "fieldname": "supplier_document",
+   "fieldtype": "Table",
+   "label": "Supplier Document",
+   "options": "Supplier Document"
   }
  ],
  "icon": "fa fa-user",
  "idx": 370,
  "image_field": "image",
- "modified": "2020-05-05 10:47:40.696757",
+ "modified": "2020-05-07 10:12:34.443829",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Supplier",
