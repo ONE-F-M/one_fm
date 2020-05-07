@@ -32,6 +32,13 @@
   "warn_pos",
   "prevent_rfqs",
   "prevent_pos",
+  "bank_account_info_section",
+  "iban",
+  "bank",
+  "bank_account_no",
+  "swift_code",
+  "column_break_29",
+  "location",
   "section_001",
   "supplier_group_table",
   "supplier_document_section",
@@ -99,6 +106,7 @@
   {
    "fieldname": "default_bank_account",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Default Bank Account",
    "options": "Bank Account"
   },
@@ -172,6 +180,7 @@
   {
    "fieldname": "supplier_type",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Supplier Type",
    "options": "Supplier Type"
   },
@@ -408,12 +417,53 @@
    "fieldtype": "Table",
    "label": "Supplier Document",
    "options": "Supplier Document"
+  },
+  {
+   "fieldname": "bank_account_info_section",
+   "fieldtype": "Section Break",
+   "label": "Bank Account Info"
+  },
+  {
+   "fieldname": "iban",
+   "fieldtype": "Data",
+   "label": "IBAN"
+  },
+  {
+   "depends_on": "eval:doc.location=='External'",
+   "fieldname": "bank",
+   "fieldtype": "Link",
+   "label": "Bank",
+   "options": "Bank"
+  },
+  {
+   "depends_on": "eval:doc.location=='External'",
+   "fieldname": "bank_account_no",
+   "fieldtype": "Data",
+   "label": "Bank Account No"
+  },
+  {
+   "fieldname": "column_break_29",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Internal",
+   "fieldname": "location",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Location",
+   "options": "Internal\nExternal"
+  },
+  {
+   "depends_on": "eval:doc.location=='External'",
+   "fieldname": "swift_code",
+   "fieldtype": "Data",
+   "label": "SWIFT Code"
   }
  ],
  "icon": "fa fa-user",
  "idx": 370,
  "image_field": "image",
- "modified": "2020-05-07 10:12:34.443829",
+ "modified": "2020-05-07 10:34:10.004132",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Supplier",
