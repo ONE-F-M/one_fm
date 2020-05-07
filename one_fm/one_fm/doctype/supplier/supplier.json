@@ -394,14 +394,14 @@
    "fieldname": "supplier_payment_terms",
    "fieldtype": "Link",
    "label": "Supplier Payment Terms",
-   "options": "Supplier Payment Terms"
+   "options": "Mode of Payment"
   }
  ],
  "icon": "fa fa-user",
  "idx": 370,
  "image_field": "image",
- "modified": "2020-04-20 14:58:20.824672",
- "modified_by": "omar.ja93@gmail.com",
+ "modified": "2020-05-05 10:47:40.696757",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Supplier",
  "name_case": "Title Case",
