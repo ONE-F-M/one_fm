@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "AG-.####",
  "creation": "2020-01-10 14:29:46.733063",
  "doctype": "DocType",
@@ -6,17 +7,25 @@
  "engine": "InnoDB",
  "field_order": [
   "agency",
-  "column_break_2",
-  "country",
-  "section_break_3",
   "supplier_code",
-  "adress",
   "company_number",
-  "column_break_7",
-  "email",
-  "contact_person",
-  "contact_number",
-  "contact_email",
+  "company_email",
+  "agency_job_application_passcode",
+  "column_break_2",
+  "active",
+  "country",
+  "license_no",
+  "license_validity_date",
+  "address_contacts",
+  "address_html",
+  "agency_website",
+  "column_break_12",
+  "contact_html",
+  "attachments_required_section",
+  "attach_copy_of_agency_license",
+  "verify_copy_of_agency_license",
+  "attachments_cb",
+  "passport_copy_of_agency_signatory",
   "section_break_12",
   "agency_country_process"
  ],
@@ -24,61 +33,36 @@
   {
    "fieldname": "agency",
    "fieldtype": "Data",
-   "label": "Agency"
+   "in_list_view": 1,
+   "label": "Agency Name",
+   "reqd": 1
   },
   {
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country"
-  },
-  {
-   "fieldname": "section_break_3",
-   "fieldtype": "Section Break"
+   "options": "Country",
+   "reqd": 1
   },
   {
    "fieldname": "supplier_code",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Supplier Code",
    "options": "Supplier"
   },
   {
-   "fieldname": "adress",
-   "fieldtype": "Small Text",
-   "label": "Adress"
-  },
-  {
    "fieldname": "company_number",
    "fieldtype": "Data",
-   "label": "Company Number"
-  },
-  {
-   "fieldname": "column_break_7",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "email",
-   "fieldtype": "Data",
-   "label": "Email"
-  },
-  {
-   "fieldname": "contact_person",
-   "fieldtype": "Data",
-   "label": "Contact Person"
-  },
-  {
-   "fieldname": "contact_number",
-   "fieldtype": "Data",
-   "label": "Contact Number"
-  },
-  {
-   "fieldname": "contact_email",
-   "fieldtype": "Data",
-   "label": "Contact Email"
+   "in_list_view": 1,
+   "label": "Company Contact Number",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_12",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "License"
   },
   {
    "fieldname": "agency_country_process",
@@ -89,11 +73,96 @@
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "license_no",
+   "fieldtype": "Data",
+   "label": "License No",
+   "reqd": 1
+  },
+  {
+   "fieldname": "agency_job_application_passcode",
+   "fieldtype": "Password",
+   "in_list_view": 1,
+   "label": "Agency Job Application Passcode",
+   "reqd": 1
+  },
+  {
+   "fieldname": "address_contacts",
+   "fieldtype": "Section Break",
+   "label": "Address and Contact",
+   "options": "fa fa-map-marker"
+  },
+  {
+   "fieldname": "address_html",
+   "fieldtype": "HTML",
+   "label": "Address HTML",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contact_html",
+   "fieldtype": "HTML",
+   "label": "Contact HTML",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attachments_required_section",
+   "fieldtype": "Section Break",
+   "label": "Attachments Required"
+  },
+  {
+   "fieldname": "attach_copy_of_agency_license",
+   "fieldtype": "Attach",
+   "label": "Attach Copy of Agency License"
+  },
+  {
+   "fieldname": "attachments_cb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "passport_copy_of_agency_signatory",
+   "fieldtype": "Attach",
+   "label": "Passport Copy of Agency Signatory"
+  },
+  {
+   "fieldname": "license_validity_date",
+   "fieldtype": "Date",
+   "label": "License Validity Date",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active"
+  },
+  {
+   "default": "0",
+   "depends_on": "attach_copy_of_agency_license",
+   "fieldname": "verify_copy_of_agency_license",
+   "fieldtype": "Check",
+   "label": "Verify Copy of Agency License"
+  },
+  {
+   "fieldname": "agency_website",
+   "fieldtype": "Data",
+   "label": "Agency Website"
+  },
+  {
+   "fieldname": "company_email",
+   "fieldtype": "Data",
+   "label": "Company Email",
+   "options": "Email"
   }
  ],
- "modified": "2020-01-10 15:04:59.187340",
+ "links": [],
+ "modified": "2020-05-07 08:24:48.386480",
  "modified_by": "Administrator",
- "module": "one_fm",
+ "module": "One Fm",
  "name": "Agency",
  "owner": "Administrator",
  "permissions": [
@@ -108,10 +177,34 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "agency",
  "track_changes": 1
 }
