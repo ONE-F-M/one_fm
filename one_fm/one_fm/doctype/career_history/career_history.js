@@ -150,5 +150,6 @@ var set_current_job_details = function(frm, job_applicant) {
     frappe.model.set_value(current_job.doctype, current_job.name, 'job_title', job_applicant.one_fm_current_job_title);
     frappe.model.set_value(current_job.doctype, current_job.name, 'job_start_date', job_applicant.one_fm_employment_start_date);
     frappe.model.set_value(current_job.doctype, current_job.name, 'job_end_date', job_applicant.one_fm_employment_end_date);
+    frappe.model.set_value(current_job.doctype, current_job.name, 'monthly_salary_in_dolor', job_applicant.one_fm_current_salary);
   }
 };
