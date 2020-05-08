@@ -1,0 +1,143 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-05-08 12:33:28.181529",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "job_applicant",
+  "erf",
+  "total_years_of_experience",
+  "column_break_5",
+  "number_promotions_and_salary_changes",
+  "career_history_score",
+  "career_history_company_section",
+  "number_of_companies",
+  "career_history_company",
+  "about_the_opportunity_section",
+  "about_the_opportunity",
+  "shoves_and_tugs_section",
+  "shoves",
+  "shoves_and_tugs_cb_column",
+  "tugs"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "CH-.YYYY.-"
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "label": "Job Applicant",
+   "options": "Job Applicant"
+  },
+  {
+   "fieldname": "career_history_company",
+   "fieldtype": "Table",
+   "label": "Career History Company",
+   "options": "Career History Company",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_erf",
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "label": "ERF",
+   "options": "ERF",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_years_of_experience",
+   "fieldtype": "Float",
+   "label": "Total Years Of Experience",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "number_promotions_and_salary_changes",
+   "fieldtype": "Float",
+   "label": "Number Promotions and Salary Changes",
+   "read_only": 1
+  },
+  {
+   "fieldname": "career_history_score",
+   "fieldtype": "Float",
+   "label": "Career History Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "career_history_company_section",
+   "fieldtype": "Section Break",
+   "label": "Career History Company"
+  },
+  {
+   "default": "1",
+   "description": "Mention the Number of Companies you've worked with including your current company",
+   "fieldname": "number_of_companies",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Number of Companies",
+   "reqd": 1
+  },
+  {
+   "fieldname": "about_the_opportunity_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "about_the_opportunity",
+   "fieldtype": "Small Text",
+   "label": "What is it that Makes You Interested in this Opportunity"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "shoves_and_tugs_section",
+   "fieldtype": "Section Break",
+   "label": "Shoves and Tugs"
+  },
+  {
+   "fieldname": "shoves",
+   "fieldtype": "Small Text",
+   "label": "Shoves"
+  },
+  {
+   "fieldname": "shoves_and_tugs_cb_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tugs",
+   "fieldtype": "Small Text",
+   "label": "Tugs"
+  }
+ ],
+ "links": [],
+ "modified": "2020-05-08 19:25:38.987395",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Career History",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
