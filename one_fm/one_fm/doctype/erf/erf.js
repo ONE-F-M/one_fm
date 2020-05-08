@@ -84,7 +84,6 @@ var set_objectives_and_krs = function(frm) {
 				if(r && r.message){
 					let objectives = r.message.objectives;
 					objectives.forEach((item, i) => {
-						console.log(item);
 						let objective = frappe.model.add_child(frm.doc, 'OKR Performance Profile Objective', 'objectives');
 						frappe.model.set_value(objective.doctype, objective.name, 'objective', item.objective);
 						frappe.model.set_value(objective.doctype, objective.name, 'type', item.type);
