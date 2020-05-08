@@ -1,15 +1,16 @@
 import frappe
+from frappe import _
 from scipy.spatial import distance as dist
 from imutils.video import FileVideoStream
 from imutils.video import VideoStream
 import matplotlib.pyplot as plt 
-from imutils import face_utils
+from imutils import face_utils, paths
 import numpy as np
-import argparse
+import argparse, face_recognition
 import imutils
 import time
 import dlib
-import cv2, base64
+import pickle, cv2, os
 
 
 
@@ -26,7 +27,131 @@ def eye_aspect_ratio(eye):
 	# return the eye aspect ratio
 	return ear
 
+
+def setup_directories():
+	"""
+		Use this function to create directories needed for the face recognition system: dataset directory and facial embeddings
+	"""
+	from pathlib import Path
+	Path(frappe.utils.cstr(frappe.local.site)+"/private/files/user/").mkdir(parents=True, exist_ok=True)
+	Path(frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/").mkdir(parents=True, exist_ok=True)
+	Path(frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/").mkdir(parents=True, exist_ok=True)
+	Path(frappe.utils.cstr(frappe.local.site)+"/private/files/face_rec_temp/").mkdir(parents=True, exist_ok=True)
+	Path(frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/").mkdir(parents=True, exist_ok=True)
+
 @frappe.whitelist()
+def enroll():
+	try:
+		files = frappe.request.files
+		file = files['file']
+		content = file.stream.read()
+		filename = file.filename	
+		OUTPUT_VIDEO_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
+		with open(OUTPUT_VIDEO_PATH, "wb") as fh:
+				fh.write(content)
+				create_dataset(OUTPUT_VIDEO_PATH)
+
+	except Exception as exc:
+		frappe.log_error(frappe.get_traceback())
+		raise exc
+
+@frappe.whitelist()
+def verify():
+	try:
+		files = frappe.request.files
+		file = files['file']
+		content = file.stream.read()
+		filename = file.filename	
+		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
+		with open(OUTPUT_IMAGE_PATH, "wb") as fh:
+				fh.write(content)
+				blinks, image = verify_face(OUTPUT_IMAGE_PATH)
+				if blinks > 0:
+					return 'Face Recognition Passed. End of Demo. Thank You!' if recognize_face(image) else frappe.throw(_('Face Recognition Failed. Please try again.'))
+				else:
+					frappe.throw(_('Liveness Detection Failed. Please try again.'))
+	except Exception as exc:
+		frappe.log_error(frappe.get_traceback())
+		raise exc
+
+
+def create_dataset(video):
+	setup_directories()
+	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"
+	vs = FileVideoStream(video).start()
+	fileStream = True
+	count = 0 
+	while True:
+		# if this is a file video stream, then we need to check if
+		# there any more frames left in the buffer to process
+		if fileStream and not vs.more():
+			break
+		
+		if not isinstance(vs.read(), np.ndarray):
+			break
+
+		if vs.read() is None:
+			break
+		# grab the frame from the threaded video file stream, resize
+		# it, and convert it to grayscale
+		# channels)
+		frame = vs.read()
+		# print(frame)
+		cv2.imwrite(OUTPUT_DIRECTORY + "{0}.jpg".format(count+1), frame)
+		count = count + 1
+
+	create_encodings(OUTPUT_DIRECTORY)
+
+
+def create_encodings(directory, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
+	"""
+		directory : directory path containing dataset 
+	"""
+	print(directory)
+	OUTPUT_ENCODING_PATH_PREFIX = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"
+	user_id = frappe.session.user
+	# grab the paths to the input images in our dataset
+	imagePaths = list(paths.list_images(directory))
+	print(imagePaths)
+	#encodings file output path
+	encoding_path = OUTPUT_ENCODING_PATH_PREFIX + user_id +".pickle"
+	# initialize the list of known encodings and known names
+	knownEncodings = []
+	knownNames = []
+
+	for (i, imagePath) in enumerate(imagePaths):
+		# extract the person name from the image path i.e User Id
+		print("[INFO] processing image {}/{}".format(i + 1, len(imagePaths)))
+		name = imagePath.split(os.path.sep)[-2]
+
+		# load the input image and convert it from BGR (OpenCV ordering)
+		# to dlib ordering (RGB)
+		image = cv2.imread(imagePath)
+		rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+		# detect the (x, y)-coordinates of the bounding boxes
+		# corresponding to each face in the input image
+		boxes = face_recognition.face_locations(rgb, model=detection_method)
+
+		# compute the facial embedding for the face
+		encodings = face_recognition.face_encodings(rgb, boxes)
+
+		# loop over the encodings
+		for encoding in encodings:
+			# add each encoding + name to our set of known names and
+			# encodings
+			knownEncodings.append(encoding)
+			knownNames.append(name)
+
+	# dump the facial encodings + names to disk	
+	data = {"encodings": knownEncodings, "names": knownNames}
+	print(data)
+	f = open(encoding_path, "wb")
+	f.write(pickle.dumps(data))
+	f.close()
+
+
+
 def verify_face(video_path=None):
 	# video_path = frappe.utils.cstr(frappe.local.site)+"/private/files/kartik2.mp4"
 	shape_predictor = frappe.utils.cstr(frappe.local.site)+"/private/files/shape_predictor_68_face_landmarks.dat"
@@ -34,7 +159,7 @@ def verify_face(video_path=None):
 	# blink and then a second constant for the number of consecutive
 	# frames the eye must be below the threshold
 	EYE_AR_THRESH = 0.29
-	EYE_AR_CONSEC_FRAMES = 2
+	EYE_AR_CONSEC_FRAMES = 1
 	# initialize the frame counters and the total number of blinks
 	COUNTER = 0
 	TOTAL = 0
@@ -58,8 +183,10 @@ def verify_face(video_path=None):
 	# vs = VideoStream(usePiCamera=True).start()
 	# fileStream = False
 	time.sleep(1.0)
-	print(vs.read())	
+	# print(vs.read())	
 	# loop over frames from the video stream
+	IMAGE_PATH = ""
+
 	while True:
 		# if this is a file video stream, then we need to check if
 		# there any more frames left in the buffer to process
@@ -76,7 +203,7 @@ def verify_face(video_path=None):
 		# channels)
 		frame = vs.read()
 
-		frame = imutils.resize(frame, width=450)
+		frame = imutils.resize(frame, width=640)
 		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 		# detect faces in the grayscale frame
@@ -104,13 +231,15 @@ def verify_face(video_path=None):
 			# visualize each of the eyes
 			leftEyeHull = cv2.convexHull(leftEye)
 			rightEyeHull = cv2.convexHull(rightEye)
-			cv2.drawContours(frame, [leftEyeHull], -1, (0, 255, 0), 1)
-			cv2.drawContours(frame, [rightEyeHull], -1, (0, 255, 0), 1)
+			# cv2.drawContours(frame, [leftEyeHull], -1, (0, 255, 0), 1)
+			# cv2.drawContours(frame, [rightEyeHull], -1, (0, 255, 0), 1)
 
 			# check to see if the eye aspect ratio is below the blink
 			# threshold, and if so, increment the blink frame counter
+			print(ear, EYE_AR_THRESH)
 			if ear < EYE_AR_THRESH:
 				COUNTER += 1
+				print("[TOTAL COUNTER]", COUNTER)
 
 			# otherwise, the eye aspect ratio is not below the blink
 			# threshold
@@ -118,55 +247,72 @@ def verify_face(video_path=None):
 				# if the eyes were closed for a sufficient number of
 				# then increment the total number of blinks
 				if COUNTER >= EYE_AR_CONSEC_FRAMES:
+					IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
 					TOTAL += 1
+					print("[TOTAL TOTAL]", TOTAL)
+					cv2.imwrite(IMAGE_PATH,frame)
+					return TOTAL, IMAGE_PATH
 
 				# reset the eye frame counter
 				COUNTER = 0
 	
 			print( "Blinks: {}".format(TOTAL), "EAR: {:.2f}".format(ear))
-			# draw the total number of blinks on the frame along with
-			# the computed eye aspect ratio for the frame
 
-			# cv2.putText(frame, "Blinks: {}".format(TOTAL), (10, 30),
-			# 	cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-			# cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),
-			# 	cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-	
-		# show the frame
-		# cv2.imshow("Frame", frame)
-		# img = cv2.rectangle(frame, (5, 5), (200, 200), (255, 200, 0), 2) 
-		# plt.imshow(img, cmap='gray') 
-		# plt.show()
-
-		# key = 0xFF
-		# key = cv2.waitKey(1) & 0xFF
-		# cv2.imshow('Faces', frame) 
-
-		# if the `q` key was pressed, break from the loop
-		# if key == ord("q"):
-		# 	break
 	print("[TOTAL]", TOTAL)
 	print("[COUNT]", COUNTER)
 	
 	# do a bit of cleanup
 	# cv2.destroyAllWindows()
 	vs.stop()
-	return TOTAL
+	return TOTAL, IMAGE_PATH
 
-@frappe.whitelist()
-def upload_file():
+
+def recognize_face(image):
 	try:
-		files = frappe.request.files
-		file = files['file']
-		content = file.stream.read()
-		filename = file.filename	
-		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
-		with open(OUTPUT_IMAGE_PATH, "wb") as fh:
-				fh.write(content)
-				# return (OUTPUT_IMAGE_PATH)
-				print(OUTPUT_IMAGE_PATH)
-				blinks = verify_face(OUTPUT_IMAGE_PATH)
-				return blinks
-	except Exception as exc:
-		frappe.log_error(frappe.get_traceback())
-		raise exc
+		ENCODINGS_PATH = frappe.utils.cstr(
+			frappe.local.site)+"/private/files/facial_recognition/"+frappe.session.user+".pickle"
+		# values should be "hog" or "cnn" . cnn is CPU and memory intensive.
+		DETECTION_METHOD = "hog"
+
+		# load the known faces and embeddings
+		face_data = pickle.loads(open(ENCODINGS_PATH, "rb").read())
+
+		# load the input image and convert it from BGR to RGB
+		image = cv2.imread(image)
+		rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+		# detect the (x, y)-coordinates of the bounding boxes corresponding
+		# to each face in the input image, then compute the facial embeddings
+		# for each face
+		boxes = face_recognition.face_locations(rgb,
+												model=DETECTION_METHOD)
+		encodings = face_recognition.face_encodings(rgb, boxes)
+
+		if not encodings:
+			return False
+		return match_encodings(encodings, face_data)
+
+	except Exception as e:
+		print(frappe.get_traceback())
+
+
+def match_encodings(encodings, face_data):
+	try:
+		# loop over the facial embeddings
+		for encoding in encodings:
+			# attempt to match each face in the input image to our known
+			# encodings
+			matches = face_recognition.compare_faces(
+				face_data["encodings"], encoding)
+			# check to see if we have found a match
+			if True in matches:
+				# find the indexes of all matched faces
+				matchedIdxs = [i for (i, b) in enumerate(matches) if b]
+				print(matchedIdxs, matches)
+				return True if ((len(matchedIdxs) / len(matches)) * 100 > 80) else False
+			else:
+				return False
+		else:
+			return False
+	except Exception as identifier:
+		print(frappe.get_traceback())

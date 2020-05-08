@@ -1,25 +1,26 @@
-<div id="cover-spin"></div>
-<div class="col-md-3" id="profile-card">
-    <button class="button1" id="enrollButton">
-        START ENROLLMENT
-    </button>
-    <button class="button1" id="startButton">
-        PROCEED TO CHECK IN
-    </button>
-</div>
-<div class="col-md-9 enrollment" style="display:none">
-    <div style="text-align:center">
-        <video id="enroll_preview" width="700" height="400" autoplay muted text-center></video>
-        <button class="button1" id="enroll">
-            ENROLL
+<div class="page-wrap">
+    <div id="cover-spin"></div>
+    <div class="col-md-3 col-xs-12" id="profile-card">
+        <button class="btn btn-sm btn-primary btn-start" id="enrollButton">
+            START ENROLLMENT
+        </button>
+        <button class="btn btn-sm btn-primary btn-start" id="startButton">
+            PROCEED TO CHECK IN
         </button>
     </div>
-</div>
-<div class="col-md-9 verification" style="display:none">
-    <div style="text-align:center">
-        <video id="preview" width="700" height="400" autoplay muted text-center></video>
-        <button class="button1" id="verify">
-            CHECK IN
-        </button>
+    <div class="col-md-9 col-xs-12 enrollment" style="display:none">
+        <div style="text-align:center">
+            <div id="cues"></div>
+            <video id="enroll_preview" autoplay muted text-center></video>
+            <button class="btn btn-sm btn-primary btn-start" id="enroll">
+                ENROLL
+            </button>
+        </div>
+    </div>
+    <div class="col-md-9 col-xs-12 verification" style="display:none">
+        <div style="text-align:center">
+            <div id="countdown"></div>
+            <video id="preview" autoplay muted text-center></video>
+        </div>
     </div>
 </div>
