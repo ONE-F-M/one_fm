@@ -7,7 +7,7 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 
 	$(wrapper).find('.layout-main-section').empty().append(frappe.render_template('face_recognition'));
 	
-	frappe.db.get_value("Employee", {"user_id":"k.sharma@armor-services.com"}, "*", function(r){
+	frappe.db.get_value("Employee", {"user_id":frappe.session.user}, "*", function(r){
 		console.log(r)
 		let {image, employee_name, company, department, designation} = r;
 		let card = `

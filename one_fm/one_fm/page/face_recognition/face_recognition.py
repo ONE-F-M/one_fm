@@ -42,6 +42,7 @@ def setup_directories():
 @frappe.whitelist()
 def enroll():
 	try:
+		setup_directories()
 		files = frappe.request.files
 		file = files['file']
 		content = file.stream.read()
@@ -76,7 +77,6 @@ def verify():
 
 
 def create_dataset(video):
-	setup_directories()
 	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"
 	vs = FileVideoStream(video).start()
 	fileStream = True
