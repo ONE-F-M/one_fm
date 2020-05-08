@@ -16,12 +16,12 @@
   "career_history_company_section",
   "number_of_companies",
   "career_history_company",
-  "about_the_opportunity_section",
-  "about_the_opportunity",
   "shoves_and_tugs_section",
   "shoves",
   "shoves_and_tugs_cb_column",
-  "tugs"
+  "tugs",
+  "about_the_opportunity_section",
+  "about_the_opportunity"
  ],
  "fields": [
   {
@@ -105,7 +105,7 @@
   },
   {
    "fieldname": "shoves",
-   "fieldtype": "Small Text",
+   "fieldtype": "Data",
    "label": "Shoves"
   },
   {
@@ -114,12 +114,12 @@
   },
   {
    "fieldname": "tugs",
-   "fieldtype": "Small Text",
+   "fieldtype": "Data",
    "label": "Tugs"
   }
  ],
  "links": [],
- "modified": "2020-05-08 19:25:38.987395",
+ "modified": "2020-05-08 22:35:37.323456",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",

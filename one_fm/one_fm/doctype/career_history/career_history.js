@@ -31,7 +31,7 @@ frappe.ui.form.on('Career History Company', {
   },
   career_history_company_remove: function(frm, cdt, cdn) {
     if(frm.doc.career_history_company.length < frm.doc.number_of_companies){
-      frappe.msgprint(__('Not Permitted'));
+      frappe.msgprint(__('Not Permitted, Please Update the Number of Companies to Remove Row.'));
       frappe.model.add_child(frm.doc, 'Career History Company', 'career_history_company');
     }
   }
