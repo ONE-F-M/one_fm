@@ -3,10 +3,9 @@ from frappe import _
 from scipy.spatial import distance as dist
 from imutils.video import FileVideoStream
 from imutils.video import VideoStream
-import matplotlib.pyplot as plt 
 from imutils import face_utils, paths
 import numpy as np
-import argparse, face_recognition
+import face_recognition
 import imutils
 import time
 import dlib
