@@ -1,0 +1,235 @@
+{
+ "actions": [],
+ "creation": "2020-05-08 12:35:42.562266",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "current_job",
+  "company_name",
+  "job_title",
+  "monthly_salary_in_dolor",
+  "column_break_4",
+  "job_start_date",
+  "job_end_date",
+  "years_of_experience",
+  "responsibilities_and_accomplishment_section",
+  "responsibility_one",
+  "responsibility_two",
+  "column_break_11",
+  "responsibility_three",
+  "major_accomplishment",
+  "promotions_section",
+  "did_you_get_any_promotion",
+  "reason_for_promotion",
+  "total_promotions",
+  "column_break_18",
+  "recruiter_notes_promotions",
+  "recruiter_validation_score_promotion",
+  "salary_hikes_section",
+  "did_you_get_any_salary_increase",
+  "reason_for_salary_increase",
+  "total_salary_changes",
+  "column_break_25",
+  "recruiter_notes_salary_changes",
+  "recruiter_validation_score_salary_change",
+  "section_break_29",
+  "did_you_leave_the_job",
+  "reason_for_leaving_job",
+  "why_do_you_plan_to_leave_the_job"
+ ],
+ "fields": [
+  {
+   "fieldname": "company_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Company Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "monthly_salary_in_dolor",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Monthly Salary in Dolor",
+   "reqd": 1
+  },
+  {
+   "fieldname": "job_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Job Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "job_start_date",
+   "fieldtype": "Date",
+   "label": "Job Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "job_end_date",
+   "fieldtype": "Date",
+   "label": "Job End Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "years_of_experience",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Years Of Experience",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "responsibilities_and_accomplishment_section",
+   "fieldtype": "Section Break",
+   "label": "Responsibilities and Accomplishment"
+  },
+  {
+   "fieldname": "responsibility_one",
+   "fieldtype": "Data",
+   "label": "Responsibility 1"
+  },
+  {
+   "fieldname": "responsibility_two",
+   "fieldtype": "Data",
+   "label": "Responsibility 2"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "responsibility_three",
+   "fieldtype": "Data",
+   "label": "Responsibility 3"
+  },
+  {
+   "description": "Please describe a major accomplishment while you worked here",
+   "fieldname": "major_accomplishment",
+   "fieldtype": "Data",
+   "label": "Major Accomplishment"
+  },
+  {
+   "fieldname": "promotions_section",
+   "fieldtype": "Section Break",
+   "label": "Promotions"
+  },
+  {
+   "default": "No",
+   "fieldname": "did_you_get_any_promotion",
+   "fieldtype": "Select",
+   "label": "Did you get any Promotion",
+   "options": "Yes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.did_you_get_any_promotion == 'Yes'",
+   "fieldname": "total_promotions",
+   "fieldtype": "Int",
+   "label": "Total Promotions"
+  },
+  {
+   "depends_on": "eval:doc.did_you_get_any_promotion == 'Yes'",
+   "fieldname": "reason_for_promotion",
+   "fieldtype": "Data",
+   "label": "Reason for Promotion"
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recruiter_notes_promotions",
+   "fieldtype": "Data",
+   "label": "Recruiter Notes Promotions"
+  },
+  {
+   "fieldname": "recruiter_validation_score_promotion",
+   "fieldtype": "Float",
+   "label": "Recruiter Validation Score"
+  },
+  {
+   "fieldname": "salary_hikes_section",
+   "fieldtype": "Section Break",
+   "label": "Salary Hikes"
+  },
+  {
+   "default": "No",
+   "fieldname": "did_you_get_any_salary_increase",
+   "fieldtype": "Select",
+   "label": "Did you get any Salary Increase",
+   "options": "Yes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.did_you_get_any_salary_increase == 'Yes'",
+   "fieldname": "reason_for_salary_increase",
+   "fieldtype": "Data",
+   "label": " Reason for Salary Increase"
+  },
+  {
+   "depends_on": "eval:doc.did_you_get_any_salary_increase == 'Yes'",
+   "fieldname": "total_salary_changes",
+   "fieldtype": "Int",
+   "label": "Total Salary Changes"
+  },
+  {
+   "fieldname": "column_break_25",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recruiter_notes_salary_changes",
+   "fieldtype": "Data",
+   "label": "Recruiter Notes Salary Changes"
+  },
+  {
+   "fieldname": "recruiter_validation_score_salary_change",
+   "fieldtype": "Float",
+   "label": "Recruiter Validation Score"
+  },
+  {
+   "default": "0",
+   "fieldname": "current_job",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Current Job"
+  },
+  {
+   "fieldname": "section_break_29",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval: doc.current_job != 1 || doc.did_you_leave_the_job == 'Yes'",
+   "fieldname": "reason_for_leaving_job",
+   "fieldtype": "Data",
+   "label": "Reason for Leaving Job"
+  },
+  {
+   "default": "No",
+   "depends_on": "eval: doc.current_job == 1",
+   "fieldname": "did_you_leave_the_job",
+   "fieldtype": "Select",
+   "label": "Did You Leave the Job",
+   "options": "Yes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.did_you_leave_the_job == 'No' && doc.current_job ==1",
+   "fieldname": "why_do_you_plan_to_leave_the_job",
+   "fieldtype": "Data",
+   "label": "Why Do You Plan to Leave the Job"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-05-08 22:34:14.216268",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Career History Company",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -135,9 +135,82 @@ def create_job_opening_from_erf(erf):
 	job_opening.one_fm_minimum_age_required = erf.minimum_age_required
 	job_opening.one_fm_maximum_age_required = erf.maximum_age_required
 	job_opening.one_fm_performance_profile = erf.performance_profile
+	description = set_description_by_performance_profile(job_opening, erf)
+	if description:
+		job_opening.description = description
 	set_erf_skills_in_job_opening(job_opening, erf)
 	set_erf_language_in_job_opening(job_opening, erf)
 	job_opening.save(ignore_permissions = True)
+
+def set_description_by_performance_profile(job_opening, erf):
+	if erf.performance_profile and erf.objectives and erf.key_results:
+		template = get_job_openig_description_template()
+		return frappe.render_template(
+			template, dict(
+				objectives=erf.objectives,
+				key_results=erf.key_results
+			)
+		)
+
+def get_job_openig_description_template():
+	return """
+		{% if objectives %}
+		<div>
+			<b><u>Objectives:</u></b>
+		</div>
+		<div style="overflow-x: auto;">
+			<table class="table table-bordered table-hover">
+				<thead>
+					<tr>
+						<td><b>Objective</b></td>
+						<td><b>Type</b></td>
+						<td><b>Time Frame</b></td>
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in objectives %}
+						<tr>
+							<td>{{ item.objective }}</td>
+							<td class='text-right'>
+								{{ item.type }}
+							</td>
+							<td class='text-right'>
+								{{ item.time_frame }}
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% if key_results %}
+		<div>
+			<b><u>Key Results:</u></b>
+		</div>
+		<div>
+			<table class="table table-bordered table-hover">
+				<tbody>
+					<tr>
+						<td><b>Key Result</b></td>
+						<td><b>Objective</b></td>
+						<td><b>Target To Be Achieved by</b></td>
+					</tr>
+					{% for item in key_results %}
+						<tr>
+							<td>{{ item.key_result }}</td>
+							<td class='text-right'>
+								{{ item.objective }}
+							</td>
+							<td class='text-right'>
+								{{ item.target_to_be_achieved_by }}
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% endif %}
+		{% endif %}
+	"""
 
 def set_erf_language_in_job_opening(job_opening, erf):
 	if erf.languages:
