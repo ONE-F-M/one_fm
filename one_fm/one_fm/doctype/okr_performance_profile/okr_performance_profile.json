@@ -26,6 +26,7 @@
    "unique": 1
   },
   {
+   "description": "The key results which link to achieving the main objectives",
    "fieldname": "key_results",
    "fieldtype": "Table",
    "label": "Key Results",
@@ -33,6 +34,7 @@
    "reqd": 1
   },
   {
+   "description": "Below are your main objectives to you are accomplish during the years time keeping in mind the below time frame",
    "fieldname": "objectives",
    "fieldtype": "Table",
    "label": "Objectives",
@@ -41,7 +43,7 @@
   }
  ],
  "links": [],
- "modified": "2020-05-08 00:14:55.704469",
+ "modified": "2020-05-09 02:21:32.570879",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile",
