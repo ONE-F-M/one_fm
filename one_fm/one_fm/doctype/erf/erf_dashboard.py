@@ -7,6 +7,9 @@ def get_data():
         'transactions': [
             {
                 'items': ['Job Opening']
+            },
+            {
+                'items': ['Job Applicant']
             }
         ],
     }
