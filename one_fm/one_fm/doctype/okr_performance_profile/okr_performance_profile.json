@@ -1,5 +1,7 @@
 {
  "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
  "autoname": "field:okr_title",
  "creation": "2020-05-07 21:32:02.989055",
  "doctype": "DocType",
@@ -43,7 +45,7 @@
   }
  ],
  "links": [],
- "modified": "2020-05-09 02:21:32.570879",
+ "modified": "2020-05-09 14:16:13.601515",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile",
