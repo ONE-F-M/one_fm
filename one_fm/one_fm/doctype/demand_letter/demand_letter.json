@@ -1,0 +1,192 @@
+{
+ "actions": [],
+ "autoname": "field:demand_letter",
+ "creation": "2020-05-05 11:19:43.703964",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "demand_letter",
+  "agency",
+  "agency_name",
+  "column_break_4",
+  "country",
+  "date_of_issue",
+  "valid_till_date",
+  "agency_address_section",
+  "agency_address",
+  "complete_adress",
+  "recruitment_details_section",
+  "demand_letter_demand",
+  "terms_and_conditions_section",
+  "terms_and_condition_template",
+  "recruitment_terms_and_condition",
+  "section_break_14",
+  "pam_file",
+  "authorized_signatory",
+  "column_break_16",
+  "attach_stamped_demand_letter",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "demand_letter",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Demand Letter",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "agency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Agency",
+   "options": "Agency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Country",
+   "options": "Country",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Demand Letter",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "complete_adress",
+   "fieldtype": "Small Text",
+   "label": "Complete Adress",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "description": "We request you to recruit on our behalf under the mentioned categories of following personnel",
+   "fieldname": "recruitment_details_section",
+   "fieldtype": "Section Break",
+   "label": "Recruitment Details"
+  },
+  {
+   "collapsible": 1,
+   "description": "Recruit on our behalf under the following terms and conditions.",
+   "fieldname": "terms_and_conditions_section",
+   "fieldtype": "Section Break",
+   "label": "Terms and Conditions"
+  },
+  {
+   "fieldname": "terms_and_condition_template",
+   "fieldtype": "Link",
+   "label": "Terms and Condition Template",
+   "options": "Recruitment Terms and Condition Template",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "recruitment_terms_and_condition",
+   "fieldtype": "Table",
+   "options": "Recruitment Terms and Condition",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "agency.agency",
+   "fetch_if_empty": 1,
+   "fieldname": "agency_name",
+   "fieldtype": "Data",
+   "label": "Agency Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "demand_letter_demand",
+   "fieldtype": "Table",
+   "options": "Demand Letter Demand",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attach_stamped_demand_letter",
+   "fieldtype": "Attach",
+   "label": "Attach Stamped Demand Letter",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "valid_till_date",
+   "fieldtype": "Date",
+   "label": "Valid Till Date",
+   "print_hide": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "agency_address",
+   "fieldtype": "Link",
+   "label": "Agency Address",
+   "options": "Address"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "agency_address_section",
+   "fieldtype": "Section Break",
+   "label": "Agency Address"
+  },
+  {
+   "fieldname": "date_of_issue",
+   "fieldtype": "Date",
+   "label": " Date of Issue",
+   "reqd": 1
+  },
+  {
+   "fieldname": "pam_file",
+   "fieldtype": "Link",
+   "label": "PAM File",
+   "options": "PAM File",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "authorized_signatory",
+   "fieldtype": "Select",
+   "label": "Authorized Signatory"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-05-07 14:11:33.369849",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Demand Letter",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

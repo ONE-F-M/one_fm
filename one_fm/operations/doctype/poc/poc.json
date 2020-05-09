@@ -1,0 +1,45 @@
+{
+ "creation": "2020-04-28 13:37:45.917741",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "poc",
+  "designation",
+  "column_break_2",
+  "contact_html"
+ ],
+ "fields": [
+  {
+   "fieldname": "poc",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "POC",
+   "options": "Contact"
+  },
+  {
+   "fieldname": "contact_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Data",
+   "label": "POC Designation"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-05-05 19:37:16.856192",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "POC",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

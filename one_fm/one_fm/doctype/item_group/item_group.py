@@ -32,7 +32,6 @@ class ItemGroup(NestedSet, WebsiteGenerator):
             if frappe.db.exists("Item Group", _('All Item Groups')):
                 self.parent_item_group = _('All Item Groups')
 
-
         # previous_item_group_code = frappe.db.sql("select item_group_code from `tabItem Group` where parent_item_group='{0}' order by item_group_code desc".format(self.parent_item_group))
         # if previous_item_group_code:
         #   return previous_item_group_code[0][0]
@@ -41,7 +40,7 @@ class ItemGroup(NestedSet, WebsiteGenerator):
 
 
         self.make_route()
-
+        
 
     def before_insert(self):
         self.validate_get_parent()

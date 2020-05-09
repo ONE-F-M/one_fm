@@ -8,9 +8,11 @@ def get_data():
                         'Country Process': 'agency',
                 },
                 'transactions': [
-                        {
-                                'items': ['Country Process']
-                        },
+                    {
+                        'items': ['Country Process']
+                    },
+                    {
+                        'items': ['Demand Letter', 'Agency Contract']
+                    }
                 ]
         }
-

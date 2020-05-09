@@ -1,0 +1,61 @@
+{
+ "actions": [],
+ "creation": "2020-05-07 22:49:41.652284",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "objective",
+  "type",
+  "column_break_2",
+  "time_frame",
+  "objective_linking_with"
+ ],
+ "fields": [
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "\nBusiness\nStretch\nPersonal",
+   "reqd": 1
+  },
+  {
+   "fieldname": "time_frame",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Time Frame (Number of Days)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "objective_linking_with",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Objective Linking With",
+   "options": "Designation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "objective",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Objective",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-05-08 22:41:17.243609",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "OKR Performance Profile Objective",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

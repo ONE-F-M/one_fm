@@ -45,7 +45,6 @@ def add_asset_item():
                   "item_group_name": row[3]
                 })
                 doc.insert(ignore_permissions=True)
-                doc.save()
 
             if not frappe.db.exists("UOM", {"uom_abbreviation": row[6]}):
                 frappe.get_doc({

@@ -53,6 +53,8 @@
   "basic_skill_section",
   "designation_skill",
   "performance_profile",
+  "objectives",
+  "key_results",
   "tools_section",
   "tool_request_item",
   "salary_compensation_budget_section",
@@ -254,8 +256,9 @@
   },
   {
    "fieldname": "performance_profile",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Performance Profile",
+   "options": "OKR Performance Profile",
    "reqd": 1
   },
   {
@@ -490,11 +493,25 @@
    "fieldtype": "Small Text",
    "label": "Reason for Decline",
    "permlevel": 1
+  },
+  {
+   "fieldname": "objectives",
+   "fieldtype": "Table",
+   "label": "Objectives",
+   "options": "OKR Performance Profile Objective",
+   "reqd": 1
+  },
+  {
+   "fieldname": "key_results",
+   "fieldtype": "Table",
+   "label": "Key Results",
+   "options": "OKR Performance Profile Key Result",
+   "reqd": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-04-29 22:10:30.372695",
+ "modified": "2020-05-08 00:47:46.895163",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

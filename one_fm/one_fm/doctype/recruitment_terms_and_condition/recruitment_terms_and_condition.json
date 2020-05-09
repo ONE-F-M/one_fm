@@ -1,0 +1,42 @@
+{
+ "actions": [],
+ "creation": "2020-05-05 11:45:41.609681",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "terms",
+  "column_break_2",
+  "conditions"
+ ],
+ "fields": [
+  {
+   "fieldname": "terms",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Terms",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "conditions",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Conditions",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-05-05 11:45:41.609681",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Recruitment Terms and Condition",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

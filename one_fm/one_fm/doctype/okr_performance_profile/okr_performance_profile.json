@@ -1,0 +1,67 @@
+{
+ "actions": [],
+ "autoname": "field:okr_title",
+ "creation": "2020-05-07 21:32:02.989055",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "okr_title",
+  "objectives",
+  "key_results",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "okr_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "OKR Performance Profile Title",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "The key results which link to achieving the main objectives",
+   "fieldname": "key_results",
+   "fieldtype": "Table",
+   "label": "Key Results",
+   "options": "OKR Performance Profile Key Result",
+   "reqd": 1
+  },
+  {
+   "description": "Below are your main objectives to you are accomplish during the years time keeping in mind the below time frame",
+   "fieldname": "objectives",
+   "fieldtype": "Table",
+   "label": "Objectives",
+   "options": "OKR Performance Profile Objective",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2020-05-09 02:21:32.570879",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "OKR Performance Profile",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

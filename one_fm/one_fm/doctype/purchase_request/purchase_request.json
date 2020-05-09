@@ -127,7 +127,7 @@
    "fieldname": "site",
    "fieldtype": "Link",
    "label": "Site",
-   "options": "Site"
+   "options": "Operations Site"
   },
   {
    "fieldname": "column_break_4",
@@ -218,7 +218,7 @@
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
- "modified": "2020-05-05 10:48:37.656803",
+ "modified": "2020-05-05 18:38:48.202469",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Purchase Request",
