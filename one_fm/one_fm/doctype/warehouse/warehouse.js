@@ -58,7 +58,14 @@ frappe.ui.form.on("Warehouse", {
 				}
 			}
 		}
-	}
+	},
+	status: function(frm) {
+        if (frm.doc.status == 'Enable') {
+            frm.set_value("disabled", 0);
+        } else {
+            frm.set_value("disabled", 1);
+        }
+    }
 });
 
 function convert_to_group_or_ledger(frm){

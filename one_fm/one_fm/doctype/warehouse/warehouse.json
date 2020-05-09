@@ -14,6 +14,7 @@
   "company",
   "disabled",
   "column_break_4",
+  "status",
   "account",
   "warehouse_type",
   "address_and_contact",
@@ -78,6 +79,7 @@
    "default": "0",
    "fieldname": "disabled",
    "fieldtype": "Check",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "Disabled"
   },
@@ -238,12 +240,20 @@
    "fieldtype": "Data",
    "label": "Warehouse Code",
    "read_only": 1
+  },
+  {
+   "default": "Enable",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Enable\nDisable\nFreeze",
+   "reqd": 1
   }
  ],
  "icon": "fa fa-building",
  "idx": 1,
  "is_tree": 1,
- "modified": "2020-05-05 10:47:55.478827",
+ "modified": "2020-05-09 14:57:01.191865",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Warehouse",
