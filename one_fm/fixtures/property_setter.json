@@ -1,9 +1,37 @@
 [
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
+  "default_value": null,
+  "doc_type": "Opportunity",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "naming_series",
+  "modified": "2020-05-06 10:12:34.122573",
+  "name": "Opportunity-naming_series-options",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "options",
+  "property_type": "Text",
+  "value": "CRM-OPP-.YYYY.-"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Customer",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "naming_series",
+  "modified": "2020-05-06 10:12:37.049477",
+  "name": "Customer-naming_series-options",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "options",
+  "property_type": "Text",
+  "value": "CUST-.YYYY.-"
+ },
+ {
   "default_value": null,
   "doc_type": "Request for Quotation",
   "docstatus": 0,
@@ -20,10 +48,6 @@
   "value": "PUR-RFQ-.YYYY.-"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier",
   "docstatus": 0,
@@ -40,10 +64,6 @@
   "value": "SUP-.YYYY.-"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Budget",
   "docstatus": 0,
@@ -60,10 +80,6 @@
   "value": "\nCost Center\nProject\n"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Item",
   "docstatus": 0,
@@ -80,10 +96,6 @@
   "value": "is_stock_item"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Journal Entry",
   "docstatus": 0,
@@ -100,10 +112,6 @@
   "value": "\nJV-.#### -YYYY."
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Journal Entry",
   "docstatus": 0,
@@ -120,10 +128,6 @@
   "value": ""
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Company",
   "docstatus": 0,
@@ -140,10 +144,6 @@
   "value": "chart_of_accounts"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Company",
   "docstatus": 0,
@@ -160,10 +160,6 @@
   "value": ""
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Leave Application",
   "docstatus": 0,
@@ -180,10 +176,6 @@
   "value": "HR-LAP-.YYYY.-"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Leave Allocation",
   "docstatus": 0,
@@ -200,10 +192,6 @@
   "value": "HR-LAL-.YYYY.-"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Item",
   "docstatus": 0,
@@ -220,10 +208,6 @@
   "value": "STO-ITEM-.YYYY.-"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -240,10 +224,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -260,10 +240,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -280,10 +256,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -300,10 +272,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Order",
   "docstatus": 0,
@@ -320,10 +288,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Order",
   "docstatus": 0,
@@ -340,10 +304,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Invoice",
   "docstatus": 0,
@@ -360,10 +320,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Invoice",
   "docstatus": 0,
@@ -380,10 +336,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -400,10 +352,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Invoice",
   "docstatus": 0,
@@ -420,10 +368,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Payment Entry",
   "docstatus": 0,
@@ -440,10 +384,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -460,10 +400,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -480,10 +416,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -500,10 +432,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -520,10 +448,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -540,10 +464,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -560,10 +480,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -580,10 +496,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -600,10 +512,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -620,10 +528,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -640,10 +544,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -660,10 +560,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -680,10 +576,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -700,10 +592,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -720,10 +608,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -740,10 +624,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Lead",
   "docstatus": 0,
@@ -760,10 +640,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Leave Application",
   "docstatus": 0,
@@ -780,10 +656,6 @@
   "value": "Administrator"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Leave Application",
   "docstatus": 0,
@@ -800,10 +672,6 @@
   "value": "Approved"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Leave Application",
   "docstatus": 0,
@@ -820,10 +688,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Leave Ledger Entry",
   "docstatus": 0,
@@ -840,10 +704,6 @@
   "value": "9"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Employee",
   "docstatus": 0,
@@ -860,10 +720,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Employee",
   "docstatus": 0,
@@ -880,10 +736,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Employee",
   "docstatus": 0,
@@ -900,10 +752,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Employee",
   "docstatus": 0,
@@ -920,10 +768,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Employee",
   "docstatus": 0,
@@ -940,10 +784,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Salary Slip",
   "docstatus": 0,
@@ -960,10 +800,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Salary Slip",
   "docstatus": 0,
@@ -980,10 +816,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier",
   "docstatus": 0,
@@ -1000,10 +832,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier",
   "docstatus": 0,
@@ -1020,10 +848,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Customer",
   "docstatus": 0,
@@ -1040,10 +864,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Customer",
   "docstatus": 0,
@@ -1060,10 +880,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -1080,10 +896,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -1100,10 +912,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -1120,10 +928,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -1140,10 +944,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Delivery Note",
   "docstatus": 0,
@@ -1160,10 +960,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Delivery Note",
   "docstatus": 0,
@@ -1180,10 +976,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Quotation",
   "docstatus": 0,
@@ -1200,10 +992,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Quotation",
   "docstatus": 0,
@@ -1220,10 +1008,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Quotation",
   "docstatus": 0,
@@ -1240,10 +1024,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Quotation",
   "docstatus": 0,
@@ -1260,10 +1040,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -1280,10 +1056,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -1300,10 +1072,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -1320,10 +1088,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -1340,10 +1104,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -1360,10 +1120,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -1380,10 +1136,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -1400,10 +1152,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -1420,10 +1168,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Delivery Note",
   "docstatus": 0,
@@ -1440,10 +1184,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Delivery Note",
   "docstatus": 0,
@@ -1460,10 +1200,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Delivery Note",
   "docstatus": 0,
@@ -1480,10 +1216,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Delivery Note",
   "docstatus": 0,
@@ -1500,10 +1232,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier Quotation",
   "docstatus": 0,
@@ -1520,10 +1248,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier Quotation",
   "docstatus": 0,
@@ -1540,10 +1264,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier Quotation",
   "docstatus": 0,
@@ -1560,10 +1280,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier Quotation",
   "docstatus": 0,
@@ -1580,10 +1296,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Order",
   "docstatus": 0,
@@ -1600,10 +1312,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Order",
   "docstatus": 0,
@@ -1620,10 +1328,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Order",
   "docstatus": 0,
@@ -1640,10 +1344,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Order",
   "docstatus": 0,
@@ -1660,10 +1360,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Invoice",
   "docstatus": 0,
@@ -1680,10 +1376,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Invoice",
   "docstatus": 0,
@@ -1700,10 +1392,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Invoice",
   "docstatus": 0,
@@ -1720,10 +1408,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Invoice",
   "docstatus": 0,
@@ -1740,10 +1424,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Quotation",
   "docstatus": 0,
@@ -1760,10 +1440,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Quotation",
   "docstatus": 0,
@@ -1780,10 +1456,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -1800,10 +1472,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Order",
   "docstatus": 0,
@@ -1820,10 +1488,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -1840,10 +1504,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Sales Invoice",
   "docstatus": 0,
@@ -1860,10 +1520,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Delivery Note",
   "docstatus": 0,
@@ -1880,10 +1536,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Delivery Note",
   "docstatus": 0,
@@ -1900,10 +1552,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier Quotation",
   "docstatus": 0,
@@ -1920,10 +1568,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier Quotation",
   "docstatus": 0,
@@ -1940,10 +1584,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Order",
   "docstatus": 0,
@@ -1960,10 +1600,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Order",
   "docstatus": 0,
@@ -1980,10 +1616,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Invoice",
   "docstatus": 0,
@@ -2000,10 +1632,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Invoice",
   "docstatus": 0,
@@ -2020,10 +1648,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Receipt",
   "docstatus": 0,
@@ -2040,10 +1664,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Receipt",
   "docstatus": 0,
@@ -2060,10 +1680,6 @@
   "value": "0"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "UOM",
   "docstatus": 0,
@@ -2080,390 +1696,6 @@
   "value": ""
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "naming_series",
-  "modified": "2020-04-05 13:43:57.009709",
-  "name": "Item-naming_series-reqd",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "reqd",
-  "property_type": "Check",
-  "value": "0"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "naming_series",
-  "modified": "2020-04-05 13:43:57.243893",
-  "name": "Item-naming_series-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "item_code",
-  "modified": "2020-04-05 13:43:57.463479",
-  "name": "Item-item_code-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "0"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "item_code",
-  "modified": "2020-04-05 13:43:57.681954",
-  "name": "Item-item_code-reqd",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "reqd",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Item Barcode",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "barcode",
-  "modified": "2020-04-05 13:43:57.909458",
-  "name": "Item Barcode-barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Clinical Procedure Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "barcode",
-  "modified": "2020-04-05 13:43:58.021677",
-  "name": "Clinical Procedure Item-barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Sales Invoice Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "barcode",
-  "modified": "2020-04-05 13:43:58.142778",
-  "name": "Sales Invoice Item-barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Stock Reconciliation Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "barcode",
-  "modified": "2020-04-05 13:43:58.320196",
-  "name": "Stock Reconciliation Item-barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Purchase Receipt Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "barcode",
-  "modified": "2020-04-05 13:43:58.447452",
-  "name": "Purchase Receipt Item-barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Delivery Note Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "barcode",
-  "modified": "2020-04-05 13:43:58.623967",
-  "name": "Delivery Note Item-barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Stock Entry Detail",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "barcode",
-  "modified": "2020-04-05 13:43:58.791225",
-  "name": "Stock Entry Detail-barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Item",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "barcodes",
-  "modified": "2020-04-05 13:43:58.944826",
-  "name": "Item-barcodes-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Delivery Note",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "scan_barcode",
-  "modified": "2020-04-05 13:43:59.162743",
-  "name": "Delivery Note-scan_barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Sales Invoice",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "scan_barcode",
-  "modified": "2020-04-05 13:43:59.385977",
-  "name": "Sales Invoice-scan_barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Stock Entry",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "scan_barcode",
-  "modified": "2020-04-05 13:43:59.654740",
-  "name": "Stock Entry-scan_barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Purchase Order",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "scan_barcode",
-  "modified": "2020-04-05 13:43:59.827401",
-  "name": "Purchase Order-scan_barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Purchase Invoice",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "scan_barcode",
-  "modified": "2020-04-05 13:44:00.031037",
-  "name": "Purchase Invoice-scan_barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Material Request",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "scan_barcode",
-  "modified": "2020-04-05 13:44:00.259084",
-  "name": "Material Request-scan_barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
-  "default_value": null,
-  "doc_type": "Sales Order",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "scan_barcode",
-  "modified": "2020-04-05 13:44:00.391512",
-  "name": "Sales Order-scan_barcode-hidden",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "property": "hidden",
-  "property_type": "Check",
-  "value": "1"
- },
- {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Address",
   "docstatus": 0,
@@ -2480,10 +1712,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Address",
   "docstatus": 0,
@@ -2500,10 +1728,6 @@
   "value": "1"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Purchase Request",
   "docstatus": 0,
@@ -2520,10 +1744,6 @@
   "value": "Purchase Request PF"
  },
  {
-  "_assign": null,
-  "_comments": null,
-  "_liked_by": null,
-  "_user_tags": null,
   "default_value": null,
   "doc_type": "Supplier Purchase Order",
   "docstatus": 0,
@@ -2538,5 +1758,341 @@
   "property": "default_print_format",
   "property_type": "Data",
   "value": "Supplier Purchase Order PF"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "naming_series",
+  "modified": "2020-05-06 10:57:10.470303",
+  "name": "Item-naming_series-reqd",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "reqd",
+  "property_type": "Check",
+  "value": "0"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "naming_series",
+  "modified": "2020-05-06 10:57:10.723520",
+  "name": "Item-naming_series-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "item_code",
+  "modified": "2020-05-06 10:57:10.977092",
+  "name": "Item-item_code-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "0"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "item_code",
+  "modified": "2020-05-06 10:57:11.198362",
+  "name": "Item-item_code-reqd",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "reqd",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Item Barcode",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "barcode",
+  "modified": "2020-05-06 10:57:11.453937",
+  "name": "Item Barcode-barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Clinical Procedure Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "barcode",
+  "modified": "2020-05-06 10:57:11.614185",
+  "name": "Clinical Procedure Item-barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Sales Invoice Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "barcode",
+  "modified": "2020-05-06 10:57:11.765566",
+  "name": "Sales Invoice Item-barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Stock Reconciliation Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "barcode",
+  "modified": "2020-05-06 10:57:11.959073",
+  "name": "Stock Reconciliation Item-barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Stock Entry Detail",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "barcode",
+  "modified": "2020-05-06 10:57:12.098787",
+  "name": "Stock Entry Detail-barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Delivery Note Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "barcode",
+  "modified": "2020-05-06 10:57:12.264990",
+  "name": "Delivery Note Item-barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Purchase Receipt Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "barcode",
+  "modified": "2020-05-06 10:57:12.466085",
+  "name": "Purchase Receipt Item-barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Job Card",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "barcode",
+  "modified": "2020-05-06 10:57:12.644538",
+  "name": "Job Card-barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Item",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "barcodes",
+  "modified": "2020-05-06 10:57:12.821344",
+  "name": "Item-barcodes-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Delivery Note",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "scan_barcode",
+  "modified": "2020-05-06 10:57:13.091035",
+  "name": "Delivery Note-scan_barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Sales Invoice",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "scan_barcode",
+  "modified": "2020-05-06 10:57:13.313283",
+  "name": "Sales Invoice-scan_barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Stock Entry",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "scan_barcode",
+  "modified": "2020-05-06 10:57:13.593165",
+  "name": "Stock Entry-scan_barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Purchase Order",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "scan_barcode",
+  "modified": "2020-05-06 10:57:13.810176",
+  "name": "Purchase Order-scan_barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Purchase Invoice",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "scan_barcode",
+  "modified": "2020-05-06 10:57:14.062014",
+  "name": "Purchase Invoice-scan_barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Material Request",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "scan_barcode",
+  "modified": "2020-05-06 10:57:14.308983",
+  "name": "Material Request-scan_barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Sales Order",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "scan_barcode",
+  "modified": "2020-05-06 10:57:14.455909",
+  "name": "Sales Order-scan_barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Purchase Receipt",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "scan_barcode",
+  "modified": "2020-05-06 10:57:14.707959",
+  "name": "Purchase Receipt-scan_barcode-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
  }
 ]

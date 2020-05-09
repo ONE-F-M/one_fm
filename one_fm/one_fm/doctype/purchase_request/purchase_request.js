@@ -15,7 +15,6 @@ frappe.ui.form.on('Purchase Request', {
         });
 
 
-
 	},
 	validate: function(frm) {
 		var total = 0;
