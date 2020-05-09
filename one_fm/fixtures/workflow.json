@@ -114,7 +114,7 @@
   "doctype": "Workflow",
   "document_type": "Request for Supplier Quotation",
   "is_active": 1,
-  "modified": "2020-05-04 10:35:15.159579",
+  "modified": "2020-05-09 15:12:15.382146",
   "name": "Request for Supplier Quotation WF",
   "override_status": 0,
   "parent": null,
@@ -162,7 +162,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "Financial",
+    "allow_edit": "HR Manager",
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -175,7 +175,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "Financial",
+    "allow_edit": "HR Manager",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -214,7 +214,7 @@
    {
     "action": "Approve",
     "allow_self_approval": 1,
-    "allowed": "Financial",
+    "allowed": "HR Manager",
     "condition": null,
     "next_state": "Approved by Financial",
     "parent": "Request for Supplier Quotation WF",
@@ -242,7 +242,7 @@
   "doctype": "Workflow",
   "document_type": "Purchase Request",
   "is_active": 1,
-  "modified": "2020-05-04 10:35:30.535852",
+  "modified": "2020-05-09 15:12:03.389118",
   "name": "Purchase Request WF",
   "override_status": 0,
   "parent": null,
@@ -290,7 +290,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "Financial",
+    "allow_edit": "HR Manager",
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -303,7 +303,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "Financial",
+    "allow_edit": "HR Manager",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -342,7 +342,7 @@
    {
     "action": "Approve",
     "allow_self_approval": 1,
-    "allowed": "Financial",
+    "allowed": "HR Manager",
     "condition": null,
     "next_state": "Approved by Financial",
     "parent": "Purchase Request WF",
@@ -353,7 +353,7 @@
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Financial",
+    "allowed": "HR Manager",
     "condition": null,
     "next_state": "Approved by Financial",
     "parent": "Purchase Request WF",
@@ -370,7 +370,7 @@
   "doctype": "Workflow",
   "document_type": "Supplier Purchase Order",
   "is_active": 1,
-  "modified": "2020-05-04 10:35:44.956558",
+  "modified": "2020-05-09 15:11:48.841164",
   "name": "Supplier Purchase Order WF",
   "override_status": 0,
   "parent": null,
@@ -418,7 +418,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "Financial",
+    "allow_edit": "HR Manager",
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -431,7 +431,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "Financial",
+    "allow_edit": "HR Manager",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -470,7 +470,7 @@
    {
     "action": "Approve",
     "allow_self_approval": 1,
-    "allowed": "Financial",
+    "allowed": "HR Manager",
     "condition": null,
     "next_state": "Approved by Financial",
     "parent": "Supplier Purchase Order WF",

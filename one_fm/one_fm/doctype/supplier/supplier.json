@@ -23,6 +23,7 @@
   "represents_company",
   "image",
   "column_break0",
+  "status",
   "supplier_group",
   "supplier_type",
   "pan",
@@ -170,8 +171,6 @@
    "fieldname": "supplier_group",
    "fieldtype": "Link",
    "hidden": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Supplier Group",
    "oldfieldname": "supplier_type",
    "oldfieldtype": "Link",
@@ -202,6 +201,7 @@
    "default": "0",
    "fieldname": "disabled",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Disabled"
   },
   {
@@ -458,12 +458,21 @@
    "fieldname": "swift_code",
    "fieldtype": "Data",
    "label": "SWIFT Code"
+  },
+  {
+   "default": "Enable",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Enable\nDisable\nBlacklist",
+   "reqd": 1
   }
  ],
  "icon": "fa fa-user",
  "idx": 370,
  "image_field": "image",
- "modified": "2020-05-07 10:34:10.004132",
+ "modified": "2020-05-09 14:41:43.295055",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Supplier",
