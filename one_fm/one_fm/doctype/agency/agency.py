@@ -58,7 +58,7 @@ def is_agency_active(agency):
 	elif getdate(today()) > getdate(agency.license_validity_date):
 		active = False
 		msg = "Agency Lisence Validity is Expired"
-	elif not get_valid_agency_contract(agency):
+	elif not get_valid_agency_contract(agency.name):
 		active = False
 		msg = "Agency has no Active or Valid Contract"
 	elif not get_valid_demand_letter(agency.name):
