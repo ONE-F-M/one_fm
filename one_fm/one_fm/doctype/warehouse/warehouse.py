@@ -32,7 +32,6 @@ class Warehouse(NestedSet):
                 self.set_onload('account', account)
         load_address_and_contact(self)
 
-
     def before_insert(self):
         self.validate_get_parent()
 
