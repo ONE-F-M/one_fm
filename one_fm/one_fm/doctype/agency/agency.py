@@ -61,7 +61,7 @@ def is_agency_active(agency):
 	elif not get_valid_agency_contract(agency):
 		active = False
 		msg = "Agency has no Active or Valid Contract"
-	elif not get_valid_demand_letter(agency):
+	elif not get_valid_demand_letter(agency.name):
 		active = False
 		msg = "Agency has no Valid Demand Letter"
 
