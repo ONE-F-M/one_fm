@@ -297,14 +297,16 @@
    "fieldname": "pam_file_name",
    "fieldtype": "Data",
    "label": "PAM File Name",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "fieldname": "pam_designation",
    "fieldtype": "Link",
    "label": "PAM Designation",
    "options": "Designation",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "fieldname": "column_break_54",
@@ -314,13 +316,15 @@
    "fieldname": "required_quantity",
    "fieldtype": "Int",
    "label": "Required Quantity",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "fieldname": "final_quantity",
    "fieldtype": "Int",
    "label": "Final Quantity",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "fieldname": "erf_finalized",
@@ -414,7 +418,8 @@
    "fieldname": "pam_available_quantity",
    "fieldtype": "Int",
    "label": "Available Quantity",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "default": "0",
@@ -511,7 +516,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-08 00:47:46.895163",
+ "modified": "2020-05-09 14:31:35.365929",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
