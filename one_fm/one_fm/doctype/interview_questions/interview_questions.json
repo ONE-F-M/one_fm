@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2020-01-10 15:30:17.021647",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -6,7 +7,6 @@
  "field_order": [
   "questions",
   "answer",
-  "score",
   "weight"
  ],
  "fields": [
@@ -14,13 +14,8 @@
    "fieldname": "questions",
    "fieldtype": "Small Text",
    "in_list_view": 1,
-   "label": "Questions"
-  },
-  {
-   "fieldname": "score",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Score"
+   "label": "Questions",
+   "reqd": 1
   },
   {
    "fieldname": "answer",
@@ -36,9 +31,10 @@
   }
  ],
  "istable": 1,
- "modified": "2020-01-10 15:33:39.765547",
+ "links": [],
+ "modified": "2020-05-10 12:26:56.576361",
  "modified_by": "Administrator",
- "module": "one_fm",
+ "module": "One Fm",
  "name": "Interview Questions",
  "owner": "Administrator",
  "permissions": [],
