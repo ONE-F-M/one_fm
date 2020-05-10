@@ -25,6 +25,7 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 	let enroll_preview = document.getElementById("enroll_preview");
 	let startButton = document.getElementById("startButton");
 
+
 	enrollButton.addEventListener("click", function() {
 		$('.enrollment').show();
 		$('.verification').hide();
@@ -37,9 +38,10 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 		countdown();		
 		navigator.mediaDevices.getUserMedia({
 			video: {
-				width: { ideal: 4096 },
-				height: { ideal: 2160 },
-				frameRate: {ideal: 10, max: 15}
+				width: { ideal: 1024 },
+				height: { ideal: 768 },
+				frameRate: {ideal: 10, max: 20},
+				facingMode: 'user'
 			},
 			audio: false
 		})
@@ -82,9 +84,10 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 		show_cues();
 		navigator.mediaDevices.getUserMedia({
 			video: {
-				width: { ideal: 4096 },
-				height: { ideal: 2160 },
-				frameRate: {ideal: 10, max: 15}
+				width: { ideal: 1024 },
+				height: { ideal: 768 },
+				frameRate: {ideal: 10, max: 20},
+				facingMode: 'user'
 			},
 			audio: false
 		})
