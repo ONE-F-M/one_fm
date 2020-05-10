@@ -28,7 +28,7 @@
    "unique": 1
   },
   {
-   "description": "The key results which link to achieving the main objectives",
+   "description": "Below are the Key results you would need to achieve to reach the primary objectives in the given time frame",
    "fieldname": "key_results",
    "fieldtype": "Table",
    "label": "Key Results",
@@ -36,7 +36,7 @@
    "reqd": 1
   },
   {
-   "description": "Below are your main objectives to you are accomplish during the years time keeping in mind the below time frame",
+   "description": "You will be involved with building and managing the daily activities of the you will be involved with building and managing the daily activities of the soft services team to make the cinema going experience for the patrons a blissfully hygienic experience.\nYour Primary Objective is are as below",
    "fieldname": "objectives",
    "fieldtype": "Table",
    "label": "Objectives",
@@ -45,7 +45,7 @@
   }
  ],
  "links": [],
- "modified": "2020-05-09 14:16:13.601515",
+ "modified": "2020-05-10 12:36:54.383500",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile",
