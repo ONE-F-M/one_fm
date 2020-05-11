@@ -11,9 +11,11 @@ class OverlapError(frappe.ValidationError): pass
 class CareerHistory(Document):
 	def validate(self):
 		set_totals_in_career_history_company(self)
-		self.validate_date_in_promotions_salary_hikes()
+		self.validate_date_overlap_within_childs()
 
-	def validate_date_in_promotions_salary_hikes(self):
+	def validate_date_overlap_within_childs(self):
+		for company in self.career_history_company:
+			validate_overlap(self, company, 'Company')
 		if self.promotions:
 			for promotion in self.promotions:
 				validate_overlap(self, promotion, 'Promotions')
@@ -22,7 +24,7 @@ class CareerHistory(Document):
 			for salary_hike in self.salary_hikes:
 				validate_overlap(self, salary_hike, 'Salary Hikes')
 
-def validate_overlap(doc, child_doc, table_label):
+def validate_overlap(doc, child_doc, table):
 	query = """
 		select
 			name
@@ -31,24 +33,34 @@ def validate_overlap(doc, child_doc, table_label):
 		where
 			name != %(name)s
 		"""
-	query += get_doc_condition()
+	query += get_doc_condition(table)
 
 	if not child_doc.name:
 		# hack! if name is null, it could cause problems with !=
 		child_doc.name = "New "+child_doc.doctype
 
-	overlap_doc = frappe.db.sql(query.format(child_doc.doctype),{
-			"start_date": child_doc.start_date,
-			"end_date": child_doc.end_date,
-			"name": child_doc.name,
-			"company_name": child_doc.company_name,
-			"parent": doc.name
-		}, as_dict = 1)
+	query_filter = {"name": child_doc.name, "parent": doc.name}
+	if table == 'Company':
+		query_filter['start_date'] = child_doc.job_start_date
+		query_filter['end_date'] = child_doc.job_end_date
+	else:
+		query_filter['start_date'] = child_doc.start_date
+		query_filter['end_date'] = child_doc.end_date
+		query_filter['company_name'] = child_doc.company_name
+
+	overlap_doc = frappe.db.sql(query.format(child_doc.doctype), query_filter, as_dict = 1)
+
 	if overlap_doc:
 		frappe.throw(_("Row {0}: Start Date and End Date of Career History ({1}) is overlapping with {2}")
-			.format(child_doc.idx, table_label, overlap_doc[0].name), OverlapError)
+			.format(child_doc.idx, table, overlap_doc[0].name), OverlapError)
 
-def get_doc_condition():
+def get_doc_condition(table):
+	if table == 'Company':
+		return """
+			and (job_start_date between %(start_date)s and %(end_date)s
+			or job_end_date between %(start_date)s and %(end_date)s
+			or (job_start_date < %(start_date)s and job_end_date > %(end_date)s))
+		"""
 	return """
 		and company_name = %(company_name)s and (start_date between %(start_date)s and %(end_date)s
 		or end_date between %(start_date)s and %(end_date)s
