@@ -37,12 +37,40 @@ frappe.ui.form.on('Career History Company', {
     }
   },
 	did_you_get_any_promotion: function(frm, cdt, cdn) {
+		validate_promotion_item_exists(frm, cdt, cdn);
 		set_promotions_and_salary_hike_field(frm);
 	},
 	did_you_get_any_salary_increase: function(frm) {
+		validate_salary_hikes_item_exists(frm, cdt, cdn);
 		set_promotions_and_salary_hike_field(frm);
 	}
 });
+
+var validate_promotion_item_exists = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.did_you_get_any_promotion == 'No' && frm.doc.promotions){
+		frm.doc.promotions.forEach((item) => {
+	    if(item.company_name == child.company_name){
+				frappe.model.set_value(child.doctype, child.name, 'did_you_get_any_promotion', 'Yes');
+				frm.refresh_field('promotions');
+				frappe.throw(__("Please Clear the Promotion Details for the Company"))
+			}
+	  });
+	}
+};
+
+var validate_salary_hikes_item_exists = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.did_you_get_any_salary_increase == 'No' && frm.doc.salary_hikes){
+		frm.doc.salary_hikes.forEach((item) => {
+	    if(item.company_name == child.company_name){
+				frappe.model.set_value(child.doctype, child.name, 'did_you_get_any_salary_increase', 'Yes');
+				frm.refresh_field('salary_hikes');
+				frappe.throw(__("Please Clear the Salary Hike Details for the Company"))
+			}
+	  });
+	}
+};
 
 var set_promotions_and_salary_hike_field = function(frm) {
 	let promotions = false;
