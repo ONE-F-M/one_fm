@@ -40,7 +40,7 @@ frappe.ui.form.on('Career History Company', {
 		validate_promotion_item_exists(frm, cdt, cdn);
 		set_promotions_and_salary_hike_field(frm);
 	},
-	did_you_get_any_salary_increase: function(frm) {
+	did_you_get_any_salary_increase: function(frm, cdt, cdn) {
 		validate_salary_hikes_item_exists(frm, cdt, cdn);
 		set_promotions_and_salary_hike_field(frm);
 	}
