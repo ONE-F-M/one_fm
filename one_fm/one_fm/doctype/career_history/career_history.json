@@ -9,6 +9,7 @@
   "naming_series",
   "job_applicant",
   "erf",
+  "total_years_of_experience_str",
   "total_years_of_experience",
   "column_break_5",
   "number_promotions_and_salary_changes",
@@ -55,6 +56,7 @@
   {
    "fieldname": "total_years_of_experience",
    "fieldtype": "Float",
+   "hidden": 1,
    "label": "Total Years Of Experience",
    "read_only": 1
   },
@@ -116,10 +118,16 @@
    "fieldname": "tugs",
    "fieldtype": "Data",
    "label": "Tugs"
+  },
+  {
+   "fieldname": "total_years_of_experience_str",
+   "fieldtype": "Data",
+   "label": "Total Years Of Experience",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-05-08 22:35:37.323456",
+ "modified": "2020-05-09 18:29:59.545610",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",

@@ -12,6 +12,7 @@
   "column_break_4",
   "job_start_date",
   "job_end_date",
+  "years_of_experience_str",
   "years_of_experience",
   "responsibilities_and_accomplishment_section",
   "responsibility_one",
@@ -75,10 +76,9 @@
   {
    "fieldname": "years_of_experience",
    "fieldtype": "Float",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Years Of Experience",
-   "read_only": 1,
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "column_break_4",
@@ -220,11 +220,18 @@
    "fieldname": "why_do_you_plan_to_leave_the_job",
    "fieldtype": "Data",
    "label": "Why Do You Plan to Leave the Job"
+  },
+  {
+   "fieldname": "years_of_experience_str",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Years of Experience",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-08 22:34:14.216268",
+ "modified": "2020-05-09 18:30:14.516713",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History Company",

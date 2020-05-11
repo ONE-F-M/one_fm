@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2020-01-10 15:45:05.673239",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -6,6 +7,8 @@
  "field_order": [
   "questions",
   "answer",
+  "column_break_3",
+  "applicant_answer",
   "score",
   "weight"
  ],
@@ -14,31 +17,43 @@
    "fieldname": "questions",
    "fieldtype": "Small Text",
    "in_list_view": 1,
-   "label": "Questions"
+   "label": "Questions",
+   "reqd": 1
   },
   {
    "fieldname": "answer",
    "fieldtype": "Small Text",
-   "in_list_view": 1,
    "label": "Answer"
   },
   {
    "fieldname": "score",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Score"
+   "label": "Score",
+   "reqd": 1
   },
   {
    "fieldname": "weight",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Weight"
+  },
+  {
+   "fieldname": "applicant_answer",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Applicant Answer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
- "modified": "2020-01-10 15:45:05.673239",
+ "links": [],
+ "modified": "2020-05-10 12:26:40.161753",
  "modified_by": "Administrator",
- "module": "one_fm",
+ "module": "One Fm",
  "name": "Interview Question Result",
  "owner": "Administrator",
  "permissions": [],

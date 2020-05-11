@@ -101,6 +101,14 @@ var calculate_years_of_experience = function(frm, cdt, cdn) {
   	date_obj.setTime(date_diff_ms);
   	let	years =  date_obj.getFullYear() - 1970;
     let month_factor = parseFloat(date_obj.getMonth())/12;
+		let years_of_experience_str = '';
+		if(years > 0){
+			years_of_experience_str = years + " Year(s) ";
+		}
+		if(date_obj.getMonth() && date_obj.getMonth() > 0){
+			years_of_experience_str += date_obj.getMonth() + " Month(s) ";
+		}
+		child.years_of_experience_str = years_of_experience_str;
     child.years_of_experience = years+month_factor;
   }
   frm.refresh_field('career_history_company');
@@ -115,7 +123,17 @@ var calculate_total_years_of_experience = function(frm) {
     });
   }
   frm.set_value('total_years_of_experience', total_years_of_experience);
-  calculate_career_history_score(frm);
+	let years = total_years_of_experience - (total_years_of_experience%1);
+	let months = Math.round((total_years_of_experience%1)*12);
+	let total_years_of_experience_str = '';
+	if(years > 0){
+		total_years_of_experience_str = years + " Year(s) ";
+	}
+	if(months > 0){
+		total_years_of_experience_str += months + " Month(s) ";
+	}
+	frm.set_value('total_years_of_experience_str', total_years_of_experience_str);
+	calculate_career_history_score(frm);
 };
 
 var set_job_applicant_details = function(frm) {
