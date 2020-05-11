@@ -1,0 +1,115 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-05-11 20:48:00.690034",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "job_applicant",
+  "column_break_3",
+  "erf",
+  "best_reference_section",
+  "best_references",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "BR-.YYYY.-"
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_erf",
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "label": "ERF",
+   "options": "ERF",
+   "read_only": 1
+  },
+  {
+   "fieldname": "best_reference_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "best_references",
+   "fieldtype": "Table",
+   "label": "Best References",
+   "options": "Applicant Best Reference Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Applicant Best Reference",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-05-11 20:59:01.504260",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Applicant Best Reference",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
