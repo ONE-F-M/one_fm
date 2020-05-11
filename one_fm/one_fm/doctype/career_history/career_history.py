@@ -10,8 +10,19 @@ from frappe import _
 class OverlapError(frappe.ValidationError): pass
 class CareerHistory(Document):
 	def validate(self):
+		self.validate_dates()
 		set_totals_in_career_history_company(self)
 		self.validate_date_overlap_within_childs()
+		self.validate_pormotions_during_company()
+
+	def validate_pormotions_during_company(self):
+		for company in self.career_history_company:
+			if self.promotions:
+				for promotion in self.promotions:
+					if company.company_name == promotion.company_name:
+						if promotion.start_date < company.job_start_date or promotion.end_date > company.job_end_date:
+							frappe.throw(_("Row {0}: Start Date and End Date of Promotion not during the ({1}) days")
+								.format(promotion.idx, promotion.company_name), OverlapError)
 
 	def validate_date_overlap_within_childs(self):
 		for company in self.career_history_company:
@@ -23,6 +34,18 @@ class CareerHistory(Document):
 		if self.salary_hikes:
 			for salary_hike in self.salary_hikes:
 				validate_overlap(self, salary_hike, 'Salary Hikes')
+
+	def validate_dates(self):
+		self.validate_dates_in_child('career_history_company', 'job_start_date', 'job_end_date', 'Career History')
+		self.validate_dates_in_child('promotions', 'start_date', 'end_date', 'Promotions')
+		self.validate_dates_in_child('salary_hikes', 'start_date', 'end_date', 'Salary Hikes')
+
+
+	def validate_dates_in_child(self, child_name, start_date_field, end_date_field, table_label):
+		for child in self.get(child_name):
+			if child.get(start_date_field) > child.get(end_date_field):
+				frappe.throw(_("Row {0}: End Date cannot be before Start Date in {1}")
+					.format(child.idx, table_label), OverlapError)
 
 def validate_overlap(doc, child_doc, table):
 	query = """
