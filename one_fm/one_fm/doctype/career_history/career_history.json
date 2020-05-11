@@ -140,6 +140,7 @@
   {
    "fieldname": "promotions",
    "fieldtype": "Table",
+   "label": "Promotions",
    "options": "Career History Promotion"
   },
   {
@@ -151,6 +152,7 @@
   {
    "fieldname": "salary_hikes",
    "fieldtype": "Table",
+   "label": "Salary Hikes",
    "options": "Career History Salary Hike"
   },
   {
@@ -167,7 +169,7 @@
   }
  ],
  "links": [],
- "modified": "2020-05-11 09:44:55.415048",
+ "modified": "2020-05-11 12:07:06.766975",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",

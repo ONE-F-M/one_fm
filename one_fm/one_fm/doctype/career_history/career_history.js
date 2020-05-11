@@ -4,6 +4,7 @@
 frappe.ui.form.on('Career History', {
 	refresh: function(frm) {
 		set_company_options(frm);
+		set_promotions_and_salary_hike_field(frm);
 	},
 	job_applicant: function(frm) {
     set_job_applicant_details(frm);
@@ -34,8 +35,39 @@ frappe.ui.form.on('Career History Company', {
       frappe.msgprint(__('Not Permitted, Please Update the Number of Companies to Remove Row.'));
       frappe.model.add_child(frm.doc, 'Career History Company', 'career_history_company');
     }
-  }
+  },
+	did_you_get_any_promotion: function(frm, cdt, cdn) {
+		set_promotions_and_salary_hike_field(frm);
+	},
+	did_you_get_any_salary_increase: function(frm) {
+		set_promotions_and_salary_hike_field(frm);
+	}
 });
+
+var set_promotions_and_salary_hike_field = function(frm) {
+	let promotions = false;
+	let salary_hikes = false;
+	if(frm.doc.career_history_company){
+		frm.doc.career_history_company.forEach((item) => {
+	    if(item.did_you_get_any_promotion == 'Yes'){
+				promotions = true;
+			}
+			if(item.did_you_get_any_salary_increase == 'Yes'){
+				salary_hikes = true;
+			}
+	  });
+	}
+	frm.set_df_property('promotions_section', 'hidden', !promotions);
+	frm.set_df_property('salary_hikes_section', 'hidden', !salary_hikes);
+	frm.set_df_property('promotions', 'reqd', promotions);
+	frm.set_df_property('salary_hikes', 'reqd', salary_hikes);
+	if(!promotions){
+		frm.clear_table('promotions');
+	}
+	if(!salary_hikes){
+		frm.clear_table('salary_hikes');
+	}
+};
 
 var set_company_options = function(frm) {
   var options = [''];
