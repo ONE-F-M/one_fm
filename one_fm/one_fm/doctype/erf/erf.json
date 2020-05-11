@@ -43,11 +43,11 @@
   "education_qualification",
   "minimum_experience_required",
   "maximum_experience_required",
-  "driving_license_required",
-  "type_of_license",
-  "column_break_30",
   "minimum_age_required",
   "maximum_age_required",
+  "column_break_30",
+  "driving_license_required",
+  "type_of_license",
   "language_section",
   "languages",
   "basic_skill_section",
@@ -220,7 +220,7 @@
    "fieldname": "type_of_license",
    "fieldtype": "Select",
    "label": "Type of License",
-   "options": "\nLight\nHeavy\nMotor Bike"
+   "options": "\nLight\nHeavy\nMotor Bike\nInshaya"
   },
   {
    "fieldname": "column_break_30",
@@ -516,7 +516,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-09 14:31:35.365929",
+ "modified": "2020-05-11 09:11:36.981270",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
