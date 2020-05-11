@@ -38,10 +38,12 @@ frappe.ui.form.on('Career History Company', {
   },
 	did_you_get_any_promotion: function(frm, cdt, cdn) {
 		validate_promotion_item_exists(frm, cdt, cdn);
+		set_company_options(frm);
 		set_promotions_and_salary_hike_field(frm);
 	},
 	did_you_get_any_salary_increase: function(frm, cdt, cdn) {
 		validate_salary_hikes_item_exists(frm, cdt, cdn);
+		set_company_options(frm);
 		set_promotions_and_salary_hike_field(frm);
 	}
 });
@@ -98,12 +100,18 @@ var set_promotions_and_salary_hike_field = function(frm) {
 };
 
 var set_company_options = function(frm) {
-  var options = [''];
+  var promotion_company_options = [''];
+	var salary_hike_company_options = [''];
   frm.doc.career_history_company.forEach((item, i) => {
-    options[i+1] = item.company_name;
+		if(item.did_you_get_any_promotion == 'Yes'){
+			promotion_company_options[i+1] = item.company_name;
+		}
+		if(item.did_you_get_any_salary_increase == 'Yes'){
+			salary_hike_company_options[i+1] = item.company_name;
+		}
   });
-  frappe.meta.get_docfield("Career History Promotion", "company_name", frm.doc.name).options = options;
-	frappe.meta.get_docfield("Career History Salary Hike", "company_name", frm.doc.name).options = options;
+  frappe.meta.get_docfield("Career History Promotion", "company_name", frm.doc.name).options = promotion_company_options;
+	frappe.meta.get_docfield("Career History Salary Hike", "company_name", frm.doc.name).options = salary_hike_company_options;
   frm.refresh_field('promotions');
 	frm.refresh_field('salary_hikes');
 };
