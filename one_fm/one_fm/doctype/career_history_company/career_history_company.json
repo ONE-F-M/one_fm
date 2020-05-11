@@ -20,19 +20,13 @@
   "column_break_11",
   "responsibility_three",
   "major_accomplishment",
-  "promotions_section",
+  "promotions_and_salary_section",
   "did_you_get_any_promotion",
-  "reason_for_promotion",
   "total_promotions",
-  "column_break_18",
-  "recruiter_notes_promotions",
   "recruiter_validation_score_promotion",
-  "salary_hikes_section",
+  "column_break_18",
   "did_you_get_any_salary_increase",
-  "reason_for_salary_increase",
   "total_salary_changes",
-  "column_break_25",
-  "recruiter_notes_salary_changes",
   "recruiter_validation_score_salary_change",
   "section_break_29",
   "did_you_leave_the_job",
@@ -51,7 +45,7 @@
    "fieldname": "monthly_salary_in_dolor",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Monthly Salary in Dolor",
+   "label": "Monthly Salary",
    "reqd": 1
   },
   {
@@ -115,11 +109,6 @@
    "label": "Major Accomplishment"
   },
   {
-   "fieldname": "promotions_section",
-   "fieldtype": "Section Break",
-   "label": "Promotions"
-  },
-  {
    "default": "No",
    "fieldname": "did_you_get_any_promotion",
    "fieldtype": "Select",
@@ -133,29 +122,14 @@
    "label": "Total Promotions"
   },
   {
-   "depends_on": "eval:doc.did_you_get_any_promotion == 'Yes'",
-   "fieldname": "reason_for_promotion",
-   "fieldtype": "Data",
-   "label": "Reason for Promotion"
-  },
-  {
    "fieldname": "column_break_18",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "recruiter_notes_promotions",
-   "fieldtype": "Data",
-   "label": "Recruiter Notes Promotions"
-  },
-  {
    "fieldname": "recruiter_validation_score_promotion",
    "fieldtype": "Float",
-   "label": "Recruiter Validation Score"
-  },
-  {
-   "fieldname": "salary_hikes_section",
-   "fieldtype": "Section Break",
-   "label": "Salary Hikes"
+   "label": "Recruiter Validation Score",
+   "read_only": 1
   },
   {
    "default": "No",
@@ -166,29 +140,15 @@
   },
   {
    "depends_on": "eval:doc.did_you_get_any_salary_increase == 'Yes'",
-   "fieldname": "reason_for_salary_increase",
-   "fieldtype": "Data",
-   "label": " Reason for Salary Increase"
-  },
-  {
-   "depends_on": "eval:doc.did_you_get_any_salary_increase == 'Yes'",
    "fieldname": "total_salary_changes",
    "fieldtype": "Int",
    "label": "Total Salary Changes"
   },
   {
-   "fieldname": "column_break_25",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "recruiter_notes_salary_changes",
-   "fieldtype": "Data",
-   "label": "Recruiter Notes Salary Changes"
-  },
-  {
    "fieldname": "recruiter_validation_score_salary_change",
    "fieldtype": "Float",
-   "label": "Recruiter Validation Score"
+   "label": "Recruiter Validation Score",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -227,11 +187,16 @@
    "in_list_view": 1,
    "label": "Years of Experience",
    "read_only": 1
+  },
+  {
+   "fieldname": "promotions_and_salary_section",
+   "fieldtype": "Section Break",
+   "label": "Promotions and Salary Hikes"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-09 18:30:14.516713",
+ "modified": "2020-05-11 11:19:46.184370",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History Company",

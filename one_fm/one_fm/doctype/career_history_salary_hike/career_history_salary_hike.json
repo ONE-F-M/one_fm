@@ -1,0 +1,76 @@
+{
+ "actions": [],
+ "creation": "2020-05-11 09:38:01.472894",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company_name",
+  "job_title",
+  "start_date",
+  "end_date",
+  "reason_for_salary_increase",
+  "column_break_6",
+  "recruiter_notes_salary_changes",
+  "recruiter_validation_score"
+ ],
+ "fields": [
+  {
+   "fieldname": "company_name",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Company Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "job_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Job Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "reason_for_salary_increase",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": " Reason for Salary Increase",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recruiter_notes_salary_changes",
+   "fieldtype": "Data",
+   "label": "Recruiter Notes Salary Changes"
+  },
+  {
+   "fieldname": "recruiter_validation_score",
+   "fieldtype": "Float",
+   "label": "Recruiter Validation Score"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-05-11 11:40:21.898234",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Career History Salary Hike",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
