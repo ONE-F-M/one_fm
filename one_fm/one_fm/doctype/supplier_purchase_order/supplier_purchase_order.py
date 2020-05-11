@@ -21,6 +21,12 @@ class SupplierPurchaseOrder(Document):
         self.validate_completed_order()
         self.make_stock_entry()
 
+    def on_update(self):
+        if self.workflow_state == 'Approved by Financial':
+            self.status = 'Waiting for management approval'
+        elif self.workflow_state == 'Approved by Management':
+            self.status = 'Approved and sent to supplier'
+
     def make_stock_entry(self):
         doc = frappe.new_doc("Stock Entry")
         doc.stock_entry_type = 'Material Receipt'

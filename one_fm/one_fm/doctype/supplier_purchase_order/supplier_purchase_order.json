@@ -13,6 +13,7 @@
   "requested_for",
   "supply_description",
   "column_break_60",
+  "status",
   "purchase_request_date",
   "delivery_date",
   "buyer",
@@ -78,7 +79,7 @@
    "fieldname": "site",
    "fieldtype": "Link",
    "label": "Site",
-   "options": "Operations Site"
+   "options": "Site"
   },
   {
    "fieldname": "column_break_6",
@@ -209,10 +210,18 @@
    "fieldtype": "Currency",
    "label": "Total Amount",
    "read_only": 1
+  },
+  {
+   "default": "Waiting for finance approval",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Waiting for finance approval\nWaiting for management approval\nApproved and sent to supplier\nDelivered\nClosed",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-05-05 18:38:49.386037",
+ "modified": "2020-05-11 10:36:34.770337",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Supplier Purchase Order",

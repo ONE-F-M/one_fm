@@ -28,16 +28,15 @@ def get_columns(filters):
         _("Place Of Delivery") + ":Link/Warehouse:150",
         _("Delivery Date") + ":Date:150",
         _("Project") + ":Link/Project:150",
-        _("Status") + "::100"
+        _("Status") + "::250"
         ]
 
 
 def get_conditions(filters):
     conditions = ""
-    doc_status = {"Draft": 0, "Submitted": 1, "Cancelled": 2}
 
-    if filters.get("docstatus"):
-        conditions += " and docstatus = {0}".format(doc_status[filters.get("docstatus")])
+    if filters.get("status"):
+        conditions += " and status = '{0}'".format(filters.get("status"))
 
     if filters.get("requested_by"):
         conditions += " and requested_by = '{0}' ".format(filters.get("requested_by"))
@@ -59,7 +58,7 @@ def get_conditions(filters):
 def get_data(filters):
     conditions = get_conditions(filters)
     data=[]
-    li_list=frappe.db.sql("""select name, purchase_request, requested_by, requester_name, supplier, supplier_name, place_of_delivery, delivery_date, code, docstatus from `tabSupplier Purchase Order` where 1=1 {0} """.format(conditions),as_dict=1)
+    li_list=frappe.db.sql("""select name, purchase_request, requested_by, requester_name, supplier, supplier_name, place_of_delivery, delivery_date, code, status from `tabSupplier Purchase Order` where 1=1 {0} """.format(conditions),as_dict=1)
     
     for purchase in li_list:
 
@@ -73,7 +72,7 @@ def get_data(filters):
             purchase.place_of_delivery,
             purchase.delivery_date,
             purchase.code,
-            'Draft' if purchase.docstatus==0 else 'Submitted' if purchase.docstatus==1 else 'Cancelled'
+            purchase.status
         ]
         data.append(row)
 
