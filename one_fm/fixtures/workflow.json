@@ -114,7 +114,7 @@
   "doctype": "Workflow",
   "document_type": "Request for Supplier Quotation",
   "is_active": 1,
-  "modified": "2020-05-09 15:12:15.382146",
+  "modified": "2020-05-11 10:50:46.693481",
   "name": "Request for Supplier Quotation WF",
   "override_status": 0,
   "parent": null,
@@ -136,34 +136,8 @@
     "update_value": null
    },
    {
-    "allow_edit": "Stock Manager",
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Request for Supplier Quotation WF",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Approved by Management",
-    "update_field": null,
-    "update_value": null
-   },
-   {
-    "allow_edit": "Stock Manager",
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Request for Supplier Quotation WF",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Rejected by Management",
-    "update_field": null,
-    "update_value": null
-   },
-   {
     "allow_edit": "HR Manager",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -186,6 +160,32 @@
     "state": "Rejected by Financial",
     "update_field": null,
     "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Request for Supplier Quotation WF",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved by Management",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Request for Supplier Quotation WF",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected by Management",
+    "update_field": null,
+    "update_value": null
    }
   ],
   "transitions": [
@@ -194,7 +194,7 @@
     "allow_self_approval": 1,
     "allowed": "Stock Manager",
     "condition": null,
-    "next_state": "Approved by Management",
+    "next_state": "Approved by Financial",
     "parent": "Request for Supplier Quotation WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -203,9 +203,9 @@
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Stock Manager",
+    "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Rejected by Management",
+    "next_state": "Rejected by Financial",
     "parent": "Request for Supplier Quotation WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -216,22 +216,22 @@
     "allow_self_approval": 1,
     "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Approved by Financial",
+    "next_state": "Approved by Management",
     "parent": "Request for Supplier Quotation WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Approved by Management"
+    "state": "Approved by Financial"
    },
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Financial",
+    "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Approved by Financial",
+    "next_state": "Rejected by Management",
     "parent": "Request for Supplier Quotation WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Approved by Management"
+    "state": "Approved by Financial"
    }
   ],
   "workflow_name": "Request for Supplier Quotation WF",
@@ -242,7 +242,7 @@
   "doctype": "Workflow",
   "document_type": "Purchase Request",
   "is_active": 1,
-  "modified": "2020-05-09 15:12:03.389118",
+  "modified": "2020-05-11 10:51:38.541609",
   "name": "Purchase Request WF",
   "override_status": 0,
   "parent": null,
@@ -264,34 +264,8 @@
     "update_value": null
    },
    {
-    "allow_edit": "Stock Manager",
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Purchase Request WF",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Approved by Management",
-    "update_field": null,
-    "update_value": null
-   },
-   {
-    "allow_edit": "Stock Manager",
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Purchase Request WF",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Rejected by Management",
-    "update_field": null,
-    "update_value": null
-   },
-   {
     "allow_edit": "HR Manager",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -314,6 +288,32 @@
     "state": "Rejected by Financial",
     "update_field": null,
     "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Purchase Request WF",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved by Management",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Purchase Request WF",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected by Management",
+    "update_field": null,
+    "update_value": null
    }
   ],
   "transitions": [
@@ -322,7 +322,7 @@
     "allow_self_approval": 1,
     "allowed": "Stock Manager",
     "condition": null,
-    "next_state": "Approved by Management",
+    "next_state": "Approved by Financial",
     "parent": "Purchase Request WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -331,9 +331,9 @@
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Stock Manager",
+    "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Rejected by Management",
+    "next_state": "Rejected by Financial",
     "parent": "Purchase Request WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -344,22 +344,22 @@
     "allow_self_approval": 1,
     "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Approved by Financial",
+    "next_state": "Approved by Management",
     "parent": "Purchase Request WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Approved by Management"
+    "state": "Approved by Financial"
    },
    {
     "action": "Reject",
     "allow_self_approval": 1,
     "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Approved by Financial",
+    "next_state": "Rejected by Management",
     "parent": "Purchase Request WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Approved by Management"
+    "state": "Approved by Financial"
    }
   ],
   "workflow_name": "Purchase Request WF",
@@ -370,7 +370,7 @@
   "doctype": "Workflow",
   "document_type": "Supplier Purchase Order",
   "is_active": 1,
-  "modified": "2020-05-09 15:11:48.841164",
+  "modified": "2020-05-11 10:33:24.755129",
   "name": "Supplier Purchase Order WF",
   "override_status": 0,
   "parent": null,
@@ -392,34 +392,8 @@
     "update_value": null
    },
    {
-    "allow_edit": "Stock Manager",
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Supplier Purchase Order WF",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Approved by Management",
-    "update_field": null,
-    "update_value": null
-   },
-   {
-    "allow_edit": "Stock Manager",
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Supplier Purchase Order WF",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Rejected by Management",
-    "update_field": null,
-    "update_value": null
-   },
-   {
     "allow_edit": "HR Manager",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -442,15 +416,41 @@
     "state": "Rejected by Financial",
     "update_field": null,
     "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Supplier Purchase Order WF",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved by Management",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Supplier Purchase Order WF",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected by Management",
+    "update_field": null,
+    "update_value": null
    }
   ],
   "transitions": [
    {
     "action": "Approve",
     "allow_self_approval": 1,
-    "allowed": "Stock Manager",
+    "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Approved by Management",
+    "next_state": "Approved by Financial",
     "parent": "Supplier Purchase Order WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -459,9 +459,9 @@
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Stock Manager",
+    "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Rejected by Management",
+    "next_state": "Rejected by Financial",
     "parent": "Supplier Purchase Order WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -472,22 +472,22 @@
     "allow_self_approval": 1,
     "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Approved by Financial",
+    "next_state": "Approved by Management",
     "parent": "Supplier Purchase Order WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Approved by Management"
+    "state": "Approved by Financial"
    },
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Financial",
+    "allowed": "HR Manager",
     "condition": null,
-    "next_state": "Approved by Financial",
+    "next_state": "Rejected by Management",
     "parent": "Supplier Purchase Order WF",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Approved by Management"
+    "state": "Approved by Financial"
    }
   ],
   "workflow_name": "Supplier Purchase Order WF",

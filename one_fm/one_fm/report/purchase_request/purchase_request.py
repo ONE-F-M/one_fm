@@ -26,13 +26,13 @@ def get_columns(filters):
         _("Purchase Date") + ":Date:150",
         _("Project") + ":Link/Project:150",
         _("Ordered") + "::100",
-        _("Status") + "::100"
+        _("Status") + "::250"
         ]
 
 
 def get_conditions(filters):
     conditions = ""
-    doc_status = {"Draft": 0, "Submitted": 1, "Cancelled": 2}
+    doc_status = {"Pending": 0, "Submitted": 1, "Rejected": 2}
 
     if filters.get("docstatus"):
         conditions += " and docstatus = {0}".format(doc_status[filters.get("docstatus")])
@@ -54,9 +54,15 @@ def get_conditions(filters):
 def get_data(filters):
     conditions = get_conditions(filters)
     data=[]
-    li_list=frappe.db.sql("""select name, request_for_quotation, requested_by, requester_name, purchase_date, code, ordered, docstatus from `tabPurchase Request` where 1=1 {0} """.format(conditions),as_dict=1)
-    
+    li_list=frappe.db.sql("""select name, request_for_quotation, requested_by, requester_name, purchase_date, code, ordered, docstatus, workflow_state from `tabPurchase Request` where 1=1 {0} """.format(conditions),as_dict=1)
+    pending_state = ''
+
     for purchase in li_list:
+
+        if purchase.workflow_state=='Pending':
+            pending_state = 'Waiting for Finance approval'
+        elif purchase.workflow_state=='Approved by Financial':
+            pending_state = 'Waiting for Managment approval'
 
         row = [
             purchase.name,
@@ -66,7 +72,7 @@ def get_data(filters):
             purchase.purchase_date,
             purchase.code,
             'Yes' if purchase.ordered==1 else 'No',
-            'Draft' if purchase.docstatus==0 else 'Submitted' if purchase.docstatus==1 else 'Cancelled'
+            pending_state if purchase.docstatus==0 else 'Submitted' if purchase.docstatus==1 else 'Rejected'
         ]
         data.append(row)
 

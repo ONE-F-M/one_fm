@@ -28,10 +28,9 @@ frappe.query_reports["Purchase Request"] = {
 		},
 		{
 			"fieldname":"docstatus",
-			"label":__("Document Status"),
+			"label":__("Status"),
 			"fieldtype":"Select",
-			"options":["Draft", "Submitted", "Cancelled"],
-			"default":"Submitted"
+			"options":["", "Pending", "Submitted", "Rejected"]
 		}
 	]
 }

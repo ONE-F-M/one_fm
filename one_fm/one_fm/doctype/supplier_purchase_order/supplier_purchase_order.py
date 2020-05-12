@@ -14,6 +14,11 @@ class SupplierPurchaseOrder(Document):
         return money_in_words(self.total_amount)
 
     def validate(self):
+        if hasattr(self,"workflow_state"):
+            if "Rejected" in self.workflow_state:
+                self.docstatus = 1
+                self.docstatus = 2
+
         self.validate_qty_amount()
 
     def on_submit(self):
