@@ -148,8 +148,6 @@ def create_job_opening_from_erf(erf):
 	job_opening.one_fm_job_opening_created = today()
 	job_opening.one_fm_minimum_experience_required = erf.minimum_experience_required
 	job_opening.one_fm_maximum_experience_required = erf.maximum_experience_required
-	job_opening.one_fm_minimum_age_required = erf.minimum_age_required
-	job_opening.one_fm_maximum_age_required = erf.maximum_age_required
 	job_opening.one_fm_performance_profile = erf.performance_profile
 	description = set_description_by_performance_profile(job_opening, erf)
 	if description:

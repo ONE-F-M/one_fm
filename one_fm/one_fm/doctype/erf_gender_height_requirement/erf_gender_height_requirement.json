@@ -8,11 +8,13 @@
   "gender",
   "number",
   "height",
+  "minimum_age",
+  "maximum_age",
   "is_height_mandatory"
  ],
  "fields": [
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "gender",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -21,7 +23,6 @@
    "reqd": 1
   },
   {
-   "columns": 2,
    "fieldname": "number",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -29,24 +30,36 @@
    "reqd": 1
   },
   {
-   "columns": 2,
    "fieldname": "height",
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Height (In cm)"
   },
   {
-   "columns": 4,
    "default": "0",
    "fieldname": "is_height_mandatory",
    "fieldtype": "Check",
-   "in_list_view": 1,
    "label": "Is Height Mandatory"
+  },
+  {
+   "columns": 2,
+   "fieldname": "minimum_age",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Minimum Age (In Years)",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "maximum_age",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Maximum Age (In Years)"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-12 11:39:14.509279",
+ "modified": "2020-05-12 17:45:03.301539",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF Gender Height Requirement",

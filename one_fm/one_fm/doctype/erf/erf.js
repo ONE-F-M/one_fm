@@ -53,25 +53,8 @@ frappe.ui.form.on('ERF', {
 	},
 	expected_date_of_deployment: function(frm) {
 		validate_date(frm);
-	},
-	minimum_age_required: function(frm) {
-		validate_age_range(frm);
-	},
-	maximum_age_required: function(frm) {
-		validate_age_range(frm);
 	}
 });
-
-var validate_age_range = function(frm) {
-	if(frm.doc.minimum_age_required && frm.doc.minimum_age_required <= 15){
-		frm.set_value('minimum_age_required', '');
-		frappe.throw(__("Minimum Age Required (In Years) is cannot be Less than or equal to 15 Years"));
-	}
-	if(frm.doc.maximum_age_required && frm.doc.maximum_age_required >= 70){
-		frm.set_value('maximum_age_required', '');
-		frappe.throw(__("Maximum Age Required (In Years) is cannot be Greater than or equal to 70 Years"));
-	}
-};
 
 var validate_date = function(frm) {
 	if(frm.doc.expected_date_of_deployment < frm.doc.erf_initiation){
@@ -91,8 +74,26 @@ frappe.ui.form.on('ERF Gender Height Requirement', {
 	},
 	is_height_mandatory: function(frm, cdt, cdn) {
 		validate_height_exist(frm, cdt, cdn);
+	},
+	minimum_age: function(frm, cdt, cdn) {
+		validate_age_range(frm, cdt, cdn);
+	},
+	maximum_age: function(frm, cdt, cdn) {
+		validate_age_range(frm, cdt, cdn);
 	}
 });
+
+var validate_age_range = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.minimum_age && child.minimum_age <= 15){
+		frappe.model.set_value(child.doctype, child.name, 'minimum_age', '');
+		frappe.throw(__("Minimum Age Required (In Years) is cannot be Less than or equal to 15 Years"));
+	}
+	if(child.maximum_age && child.maximum_age >= 70){
+		frappe.model.set_value(child.doctype, child.name, 'maximum_age', '');
+		frappe.throw(__("Maximum Age Required (In Years) is cannot be Greater than or equal to 70 Years"));
+	}
+};
 
 var validate_height_exist = function(frm, cdt, cdn) {
 	var child = locals[cdt][cdn];

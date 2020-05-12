@@ -43,8 +43,6 @@
   "education_qualification",
   "minimum_experience_required",
   "maximum_experience_required",
-  "minimum_age_required",
-  "maximum_age_required",
   "column_break_30",
   "driving_license_required",
   "type_of_license",
@@ -228,17 +226,6 @@
   {
    "fieldname": "column_break_30",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "minimum_age_required",
-   "fieldtype": "Int",
-   "label": "Minimum Age Required (In Years)",
-   "reqd": 1
-  },
-  {
-   "fieldname": "maximum_age_required",
-   "fieldtype": "Int",
-   "label": "Maximum Age Required (In Years)"
   },
   {
    "fieldname": "minimum_experience_required",
@@ -536,7 +523,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-12 14:28:23.759869",
+ "modified": "2020-05-12 18:02:23.188424",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
