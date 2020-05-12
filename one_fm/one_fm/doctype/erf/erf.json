@@ -41,6 +41,8 @@
   "no_of_candidates_by_erf_request",
   "education_and_other_requirements_section",
   "education_qualification",
+  "specialization",
+  "certification",
   "minimum_experience_required",
   "maximum_experience_required",
   "column_break_30",
@@ -519,11 +521,21 @@
    "fieldtype": "Select",
    "label": "Open to Different Skilled and Experienced Candidates",
    "options": "Yes\nNo"
+  },
+  {
+   "fieldname": "specialization",
+   "fieldtype": "Data",
+   "label": "Specialization"
+  },
+  {
+   "fieldname": "certification",
+   "fieldtype": "Data",
+   "label": "Certification"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-12 18:02:23.188424",
+ "modified": "2020-05-12 18:20:02.965460",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
