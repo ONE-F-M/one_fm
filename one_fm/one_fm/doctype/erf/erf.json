@@ -56,6 +56,7 @@
   "objective_description",
   "objectives",
   "key_results",
+  "open_to_different_skilled_and_experienced_candidates",
   "tools_section",
   "tool_request_item",
   "salary_compensation_budget_section",
@@ -74,7 +75,8 @@
   "column_break_54",
   "required_quantity",
   "final_quantity",
-  "amended_from"
+  "amended_from",
+  "data_71"
  ],
  "fields": [
   {
@@ -518,11 +520,23 @@
    "fieldname": "objective_description",
    "fieldtype": "HTML",
    "read_only": 1
+  },
+  {
+   "fieldname": "data_71",
+   "fieldtype": "Data"
+  },
+  {
+   "default": "Yes",
+   "description": "Would you be open to seeing a person who has a track record of doing these types of work even if the person had a different mix of skills and experiences ?",
+   "fieldname": "open_to_different_skilled_and_experienced_candidates",
+   "fieldtype": "Select",
+   "label": "Open to Different Skilled and Experienced Candidates",
+   "options": "Yes\nNo"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-12 14:03:16.448707",
+ "modified": "2020-05-12 14:28:23.759869",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
