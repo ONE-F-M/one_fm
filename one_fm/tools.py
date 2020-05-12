@@ -16,6 +16,84 @@ from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 
 
+def add_suppliers():
+    from frappe.utils.csvutils import read_csv_content
+    from frappe.core.doctype.data_import.importer import upload
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/supplier_code.csv", "r") as infile:   
+        rows = read_csv_content(infile.read())
+        i = 0
+        for index, row in enumerate(rows):
+            if not frappe.db.exists("Supplier Group", {"supplier_group_name": row[2]}):
+
+                frappe.get_doc({
+                  "doctype":"Supplier Group",
+                  "supplier_group_name": row[2]
+                }).insert(ignore_permissions=True)
+
+
+            supp = frappe.get_doc({
+              "doctype":"Supplier",
+              "supplier_name": row[1],
+              "supplier_group": row[2]
+            })
+            supp.insert(ignore_permissions=True)
+
+            if row[3]:
+                frappe.get_doc({
+                  "doctype":"Address",
+                  "address_type": 'Office',
+                  "address_line1": row[3],
+                  "city": 'KUWAIT',
+                  "links": [
+                      {
+                        "doctype": "Dynamic Link",
+                        "parenttype": "Address",
+                        "link_doctype": 'Supplier',
+                        "link_name": supp.name
+                      }
+                    ]
+                }).insert(ignore_permissions=True)
+
+            if row[4]:
+
+                doc = frappe.new_doc('Contact')
+                doc.first_name = row[4]
+
+                if row[5]:
+                    doc.append("phone_nos",{
+                        "doctype": "Dynamic Link",
+                            "parenttype": "Contact",
+                            "phone": row[5],
+                            "is_primary_phone": 1
+                        })
+
+                if row[6]:
+                    doc.append("phone_nos",{
+                        "doctype": "Dynamic Link",
+                            "parenttype": "Contact",
+                            "phone": row[6],
+                            "is_primary_mobile_no": 1
+                        })
+
+                if row[7]:
+                    doc.append("email_ids",{
+                        "doctype": "Contact Email",
+                            "parenttype": "Contact",
+                            "email_id": row[7],
+                            "is_primary": 1
+                        })
+
+                doc.append("links",{
+                    "doctype": "Dynamic Link",
+                        "parenttype": "Contact",
+                        "link_doctype": 'Supplier',
+                        "link_name": supp.name
+                    })
+
+                doc.insert(ignore_permissions=True)
+                print(row[0])
+
+
 
 
 def add_asset_item():

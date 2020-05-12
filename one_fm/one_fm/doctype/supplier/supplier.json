@@ -2,7 +2,7 @@
  "allow_events_in_timeline": 1,
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": ".######",
+ "autoname": "SUB-.######",
  "creation": "2013-01-10 16:34:11",
  "description": "Supplier of Goods or Services.",
  "doctype": "DocType",
@@ -170,8 +170,7 @@
   {
    "fieldname": "supplier_group",
    "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Supplier Group",
+   "label": "Category",
    "oldfieldname": "supplier_type",
    "oldfieldtype": "Link",
    "options": "Supplier Group"
@@ -472,7 +471,7 @@
  "icon": "fa fa-user",
  "idx": 370,
  "image_field": "image",
- "modified": "2020-05-09 14:41:43.295055",
+ "modified": "2020-05-12 17:45:27.363786",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Supplier",
