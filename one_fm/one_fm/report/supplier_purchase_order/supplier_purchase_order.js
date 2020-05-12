@@ -33,11 +33,10 @@ frappe.query_reports["Supplier Purchase Order"] = {
 			"options": "Project"
 		},
 		{
-			"fieldname":"status",
+			"fieldname":"docstatus",
 			"label":__("Status"),
 			"fieldtype":"Select",
-			"options":["Waiting for finance approval", "Waiting for management approval", "Approved and sent to supplier", "Delivered", "Closed"],
-			"default":"Submitted"
+			"options":["", "Pending", "Submitted", "Delivered", "Closed", "Rejected"]
 		}
 	]
 }

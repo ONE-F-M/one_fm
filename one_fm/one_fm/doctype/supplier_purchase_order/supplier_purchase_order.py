@@ -14,18 +14,17 @@ class SupplierPurchaseOrder(Document):
         return money_in_words(self.total_amount)
 
     def validate(self):
+        if hasattr(self,"workflow_state"):
+            if "Rejected" in self.workflow_state:
+                self.docstatus = 1
+                self.docstatus = 2
+
         self.validate_qty_amount()
 
     def on_submit(self):
         self.validate_selected_item()
         self.validate_completed_order()
         self.make_stock_entry()
-
-    def on_update(self):
-        if self.workflow_state == 'Approved by Financial':
-            self.status = 'Waiting for management approval'
-        elif self.workflow_state == 'Approved by Management':
-            self.status = 'Approved and sent to supplier'
 
     def make_stock_entry(self):
         doc = frappe.new_doc("Stock Entry")

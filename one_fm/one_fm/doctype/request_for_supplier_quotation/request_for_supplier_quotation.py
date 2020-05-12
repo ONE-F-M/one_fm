@@ -12,6 +12,11 @@ from frappe.core.doctype.communication.email import make
 
 class RequestforSupplierQuotation(Document):
     def validate(self):
+        if hasattr(self,"workflow_state"):
+            if "Rejected" in self.workflow_state:
+                self.docstatus = 1
+                self.docstatus = 2
+                
         self.validate_duplicate_supplier()
         self.update_email_id()
 

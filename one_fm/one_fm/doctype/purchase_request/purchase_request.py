@@ -9,6 +9,13 @@ from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 class PurchaseRequest(Document):
 
+    def validate(self):
+        if hasattr(self,"workflow_state"):
+            if "Rejected" in self.workflow_state:
+                self.docstatus = 1
+                self.docstatus = 2
+                
+
     # def validate(self):
     #     selected_suppliers = []
     #     linked_suppliers = []
