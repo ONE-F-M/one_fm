@@ -277,7 +277,7 @@ var calculate_total_required_candidates = function (frm, cdt, cdn) {
 	if(total > frm.doc.no_of_candidates_by_erf_request){
 		frappe.model.set_value(child.doctype, child.name, 'number', 0);
 		frm.refresh_field('gender_height_requirement');
-		frappe.throw(__('Total Number of Candidates cannot be greater than Number of Candidates by ERF Request'))
+		frappe.throw(__('Total Number Candidates Required Should not exceed ERF Request.'))
 	}
   frm.set_value('total_no_of_candidates_required', total);
 };
