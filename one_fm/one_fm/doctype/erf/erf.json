@@ -425,7 +425,7 @@
    "default": "0",
    "fieldname": "driving_license_required",
    "fieldtype": "Check",
-   "label": "Kuwait Driving License Required"
+   "label": "Is Kuwait Driving License a Mandatory Requirement"
   },
   {
    "fieldname": "salary_structure",
@@ -516,7 +516,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-12 11:12:13.142559",
+ "modified": "2020-05-12 11:56:46.817210",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
