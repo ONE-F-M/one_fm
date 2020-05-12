@@ -4,8 +4,17 @@
 frappe.ui.form.on('OKR Performance Profile', {
 	refresh: function(frm) {
     set_objective_option_to_kr(frm);
+		set_objectoves_description(frm);
+	},
+	description: function(frm) {
+		set_objectoves_description(frm);
 	}
 });
+
+var set_objectoves_description = function(frm) {
+	let description = frm.doc.description?frm.doc.description:'';
+	frm.fields_dict.objective_description.html(description);
+};
 
 frappe.ui.form.on('OKR Performance Profile Objective', {
 	objective: function(frm) {

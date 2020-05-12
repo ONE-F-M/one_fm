@@ -163,6 +163,7 @@ def set_description_by_performance_profile(job_opening, erf):
 		template = get_job_openig_description_template()
 		return frappe.render_template(
 			template, dict(
+				objective_description=frappe.db.get_value('OKR Performance Profile', erf.performance_profile, 'description'),
 				objectives=erf.objectives,
 				key_results=erf.key_results
 			)
@@ -172,6 +173,8 @@ def get_job_openig_description_template():
 	return """
 		{% if objectives %}
 		<div>
+			<p>{{ objective_description }}</p>
+			<br/>
 			<b><u>Objectives:</u></b>
 		</div>
 		<div style="overflow-x: auto;">

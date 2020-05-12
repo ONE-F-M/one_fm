@@ -53,6 +53,7 @@
   "basic_skill_section",
   "designation_skill",
   "performance_profile",
+  "objective_description",
   "objectives",
   "key_results",
   "tools_section",
@@ -502,21 +503,26 @@
   {
    "fieldname": "objectives",
    "fieldtype": "Table",
-   "label": "Objectives",
+   "label": "Your Primary Objective is are as below",
    "options": "OKR Performance Profile Objective",
    "reqd": 1
   },
   {
    "fieldname": "key_results",
    "fieldtype": "Table",
-   "label": "Key Results",
+   "label": "Below are the Key results you would need to achieve to reach the primary objectives in the given time frame",
    "options": "OKR Performance Profile Key Result",
    "reqd": 1
+  },
+  {
+   "fieldname": "objective_description",
+   "fieldtype": "HTML",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-12 11:56:46.817210",
+ "modified": "2020-05-12 14:03:16.448707",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
