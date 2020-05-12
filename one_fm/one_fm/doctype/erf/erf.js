@@ -52,8 +52,25 @@ frappe.ui.form.on('ERF', {
 	},
 	expected_date_of_deployment: function(frm) {
 		validate_date(frm);
+	},
+	minimum_age_required: function(frm) {
+		validate_age_range(frm);
+	},
+	maximum_age_required: function(frm) {
+		validate_age_range(frm);
 	}
 });
+
+var validate_age_range = function(frm) {
+	if(frm.doc.minimum_age_required && frm.doc.minimum_age_required <= 15){
+		frm.set_value('minimum_age_required', '');
+		frappe.throw(__("Minimum Age Required (In Years) is cannot be Less than or equal to 15 Years"));
+	}
+	if(frm.doc.maximum_age_required && frm.doc.maximum_age_required >= 70){
+		frm.set_value('maximum_age_required', '');
+		frappe.throw(__("Maximum Age Required (In Years) is cannot be Greater than or equal to 70 Years"));
+	}
+};
 
 var validate_date = function(frm) {
 	if(frm.doc.expected_date_of_deployment < frm.doc.erf_initiation){
@@ -67,8 +84,30 @@ var validate_date = function(frm) {
 frappe.ui.form.on('ERF Gender Height Requirement', {
 	number: function(frm, cdt, cdn){
     calculate_total_required_candidates(frm, cdt, cdn);
-  }
+  },
+	height: function(frm, cdt, cdn) {
+		validate_height_range(frm, cdt, cdn);
+	},
+	is_height_mandatory: function(frm, cdt, cdn) {
+		validate_height_exist(frm, cdt, cdn);
+	}
 });
+
+var validate_height_exist = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.is_height_mandatory && !child.height){
+		frappe.throw(__('Please put an Height, If Height is Mandatory'));
+	}
+};
+
+var validate_height_range = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.height && child.height <= 10){
+		frappe.model.set_value(child.doctype, child.name, 'height', '');
+		frm.refresh_field('gender_height_requirement');
+		frappe.throw(__('Hieght Must be greter than 10cm.'));
+	}
+};
 
 frappe.ui.form.on('ERF Salary Detail', {
 	amount: function(frm, cdt, cdn){
@@ -275,7 +314,7 @@ var calculate_total_required_candidates = function (frm, cdt, cdn) {
     });
   }
 	if(total > frm.doc.no_of_candidates_by_erf_request){
-		frappe.model.set_value(child.doctype, child.name, 'number', 0);
+		frappe.model.set_value(child.doctype, child.name, 'number', '');
 		frm.refresh_field('gender_height_requirement');
 		frappe.throw(__('Total Number Candidates Required Should not exceed ERF Request.'))
 	}
