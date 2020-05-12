@@ -18,7 +18,7 @@ frappe.ui.form.on('ERF', {
 	},
 	total_no_of_candidates_required: function(frm) {
     calculate_total_cost_in_salary(frm);
-    set_required_quantity(frm);
+    set_required_quantity_grd(frm);
 	},
   salary_per_person: function(frm) {
     calculate_total_cost_in_salary(frm);
@@ -49,12 +49,24 @@ frappe.ui.form.on('ERF', {
 	},
 	performance_profile: function(frm) {
 		set_objectives_and_krs(frm);
+	},
+	expected_date_of_deployment: function(frm) {
+		validate_date(frm);
 	}
 });
 
+var validate_date = function(frm) {
+	if(frm.doc.expected_date_of_deployment < frm.doc.erf_initiation){
+		frappe.throw(__("Expected Date of Deployment cannot be before ERF Initiation Date"));
+	}
+	if(frm.doc.expected_date_of_deployment < frappe.datetime.today()){
+		frappe.throw(__("Expected Date of Deployment cannot be before Today"));
+	}
+};
+
 frappe.ui.form.on('ERF Gender Height Requirement', {
 	number: function(frm, cdt, cdn){
-    calculate_total_required_candidates(frm);
+    calculate_total_required_candidates(frm, cdt, cdn);
   }
 });
 
@@ -245,7 +257,7 @@ var set_off_days = function(frm) {
 	}
 };
 
-var set_required_quantity = function(frm) {
+var set_required_quantity_grd = function(frm) {
   if(frm.doc.total_no_of_candidates_required){
     frm.set_value('required_quantity', frm.doc.total_no_of_candidates_required);
   }
@@ -254,13 +266,19 @@ var set_required_quantity = function(frm) {
   }
 }
 
-var calculate_total_required_candidates = function (frm) {
+var calculate_total_required_candidates = function (frm, cdt, cdn) {
   let total = 0;
+	var child = locals[cdt][cdn];
   if(frm.doc.gender_height_requirement){
     frm.doc.gender_height_requirement.forEach(function(required_candidate) {
       total += required_candidate.number;
     });
   }
+	if(total > frm.doc.no_of_candidates_by_erf_request){
+		frappe.model.set_value(child.doctype, child.name, 'number', 0);
+		frm.refresh_field('gender_height_requirement');
+		frappe.throw(__('Total Number of Candidates cannot be greater than Number of Candidates by ERF Request'))
+	}
   frm.set_value('total_no_of_candidates_required', total);
 };
 

@@ -11,10 +11,9 @@ from frappe import _
 class ERF(Document):
 	def validate(self):
 		self.set_erf_code()
+		self.validate_date()
 		self.validate_languages()
 		self.set_other_benefits()
-		self.validate_with_erf_request()
-		self.validate_type_of_travel()
 		self.validate_type_of_license()
 		self.set_salary_structure_from_grade()
 		self.set_salary_details()
@@ -23,6 +22,14 @@ class ERF(Document):
 		self.calculate_total_cost_in_salary()
 		self.calculate_benefit_cost_to_company()
 		self.calculate_total_cost_to_company()
+		self.validate_with_erf_request()
+		self.validate_type_of_travel()
+
+	def validate_date(self):
+		if self.erf_initiation > self.expected_date_of_deployment:
+			frappe.throw(_("Expected Date of Deployment cannot be before ERF Initiation Date"))
+		if self.expected_date_of_deployment < today():
+			frappe.throw(_("Expected Date of Deployment cannot be before Today"))
 
 	def on_submit(self):
 		self.set_erf_finalized()
