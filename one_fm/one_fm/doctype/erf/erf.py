@@ -32,6 +32,7 @@ class ERF(Document):
 			frappe.throw(_("Expected Date of Deployment cannot be before Today"))
 
 	def on_submit(self):
+		self.set_erf_request()
 		self.set_erf_finalized()
 		self.validate_recruiter_assigned()
 		if self.status == 'Draft':
@@ -39,6 +40,9 @@ class ERF(Document):
 		if self.status == 'Accepted':
 			create_job_opening_from_erf(self)
 		frappe.msgprint(_('Department Manager Will Notified By Email.'))
+
+	def set_erf_request(self):
+		frappe.db.set_value('ERF Request', self.erf_request, 'erf_created', True)
 
 	def set_erf_code(self):
 		self.erf_code = self.name
@@ -119,6 +123,11 @@ class ERF(Document):
 			frappe.throw(_('The Reason for Request in ERF Request and ERF Should be the Same.'))
 		if erf_request.number_of_candidates_required < self.total_no_of_candidates_required:
 			frappe.throw(_('Total Number Candidates Required Should not exceed ERF Request.'))
+		erf_exists = frappe.db.exists('ERF', dict(erf_request = self.erf_request,
+			docstatus = 1, name = ('!=', self.name)))
+		if erf_exists:
+			frappe.throw(_("""Submitted ERF <b><a href="#Form/ERF/{0}">{0}</a></b> exists \
+			for ERF Request {1}""").format(erf_exists, self.erf_request))
 
 	def set_other_benefits(self):
 		if self.is_new() and not self.other_benefits:

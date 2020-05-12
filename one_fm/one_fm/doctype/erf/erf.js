@@ -8,7 +8,8 @@ frappe.ui.form.on('ERF', {
 				filters: {
 					'docstatus': 1,
 					'status': 'Accepted',
-					'department_manager': frappe.user.name
+					'department_manager': frappe.user.name,
+					'erf_created': false
 				}
 			};
 		});
