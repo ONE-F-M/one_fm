@@ -41,20 +41,22 @@
   "no_of_candidates_by_erf_request",
   "education_and_other_requirements_section",
   "education_qualification",
+  "specialization",
+  "certification",
   "minimum_experience_required",
   "maximum_experience_required",
+  "column_break_30",
   "driving_license_required",
   "type_of_license",
-  "column_break_30",
-  "minimum_age_required",
-  "maximum_age_required",
   "language_section",
   "languages",
   "basic_skill_section",
   "designation_skill",
   "performance_profile",
+  "objective_description",
   "objectives",
   "key_results",
+  "open_to_different_skilled_and_experienced_candidates",
   "tools_section",
   "tool_request_item",
   "salary_compensation_budget_section",
@@ -73,7 +75,8 @@
   "column_break_54",
   "required_quantity",
   "final_quantity",
-  "amended_from"
+  "amended_from",
+  "data_71"
  ],
  "fields": [
   {
@@ -220,22 +223,11 @@
    "fieldname": "type_of_license",
    "fieldtype": "Select",
    "label": "Type of License",
-   "options": "\nLight\nHeavy\nMotor Bike"
+   "options": "\nLight\nHeavy\nMotor Bike\nInshaya"
   },
   {
    "fieldname": "column_break_30",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "minimum_age_required",
-   "fieldtype": "Int",
-   "label": "Minimum Age Required (In Years)",
-   "reqd": 1
-  },
-  {
-   "fieldname": "maximum_age_required",
-   "fieldtype": "Int",
-   "label": "Maximum Age Required (In Years)"
   },
   {
    "fieldname": "minimum_experience_required",
@@ -252,7 +244,7 @@
    "collapsible": 1,
    "fieldname": "basic_skill_section",
    "fieldtype": "Section Break",
-   "label": "Basic Skills"
+   "label": "Basic Skills and Performance Profile"
   },
   {
    "fieldname": "performance_profile",
@@ -425,7 +417,7 @@
    "default": "0",
    "fieldname": "driving_license_required",
    "fieldtype": "Check",
-   "label": "Kuwait Driving License Required"
+   "label": "Is Kuwait Driving License a Mandatory Requirement"
   },
   {
    "fieldname": "salary_structure",
@@ -502,21 +494,48 @@
   {
    "fieldname": "objectives",
    "fieldtype": "Table",
-   "label": "Objectives",
+   "label": "Your Primary Objective is are as below",
    "options": "OKR Performance Profile Objective",
    "reqd": 1
   },
   {
    "fieldname": "key_results",
    "fieldtype": "Table",
-   "label": "Key Results",
+   "label": "Below are the Key results you would need to achieve to reach the primary objectives in the given time frame",
    "options": "OKR Performance Profile Key Result",
    "reqd": 1
+  },
+  {
+   "fieldname": "objective_description",
+   "fieldtype": "HTML",
+   "read_only": 1
+  },
+  {
+   "fieldname": "data_71",
+   "fieldtype": "Data"
+  },
+  {
+   "default": "Yes",
+   "description": "Would you be open to seeing a person who has a track record of doing these types of work even if the person had a different mix of skills and experiences ?",
+   "fieldname": "open_to_different_skilled_and_experienced_candidates",
+   "fieldtype": "Select",
+   "label": "Open to Different Skilled and Experienced Candidates",
+   "options": "Yes\nNo"
+  },
+  {
+   "fieldname": "specialization",
+   "fieldtype": "Data",
+   "label": "Specialization"
+  },
+  {
+   "fieldname": "certification",
+   "fieldtype": "Data",
+   "label": "Certification"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-09 14:31:35.365929",
+ "modified": "2020-05-12 18:20:02.965460",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

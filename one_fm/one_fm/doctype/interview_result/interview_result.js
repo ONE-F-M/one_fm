@@ -6,7 +6,7 @@ frappe.ui.form.on('Interview Result', {
     frm.set_query('interview_template', function () {
 			return {
 				filters: {
-					'designation': frm.doc.designation
+					'designation': ['in', [frm.doc.designation, '']]
 				}
 			};
 		});

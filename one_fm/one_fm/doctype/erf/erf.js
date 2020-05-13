@@ -8,7 +8,8 @@ frappe.ui.form.on('ERF', {
 				filters: {
 					'docstatus': 1,
 					'status': 'Accepted',
-					'department_manager': frappe.user.name
+					'department_manager': frappe.user.name,
+					'erf_created': false
 				}
 			};
 		});
@@ -18,7 +19,7 @@ frappe.ui.form.on('ERF', {
 	},
 	total_no_of_candidates_required: function(frm) {
     calculate_total_cost_in_salary(frm);
-    set_required_quantity(frm);
+    set_required_quantity_grd(frm);
 	},
   salary_per_person: function(frm) {
     calculate_total_cost_in_salary(frm);
@@ -49,14 +50,66 @@ frappe.ui.form.on('ERF', {
 	},
 	performance_profile: function(frm) {
 		set_objectives_and_krs(frm);
+	},
+	expected_date_of_deployment: function(frm) {
+		validate_date(frm);
 	}
 });
 
+var validate_date = function(frm) {
+	if(frm.doc.expected_date_of_deployment < frm.doc.erf_initiation){
+		frappe.throw(__("Expected Date of Deployment cannot be before ERF Initiation Date"));
+	}
+	if(frm.doc.expected_date_of_deployment < frappe.datetime.today()){
+		frappe.throw(__("Expected Date of Deployment cannot be before Today"));
+	}
+};
+
 frappe.ui.form.on('ERF Gender Height Requirement', {
 	number: function(frm, cdt, cdn){
-    calculate_total_required_candidates(frm);
-  }
+    calculate_total_required_candidates(frm, cdt, cdn);
+  },
+	height: function(frm, cdt, cdn) {
+		validate_height_range(frm, cdt, cdn);
+	},
+	is_height_mandatory: function(frm, cdt, cdn) {
+		validate_height_exist(frm, cdt, cdn);
+	},
+	minimum_age: function(frm, cdt, cdn) {
+		validate_age_range(frm, cdt, cdn);
+	},
+	maximum_age: function(frm, cdt, cdn) {
+		validate_age_range(frm, cdt, cdn);
+	}
 });
+
+var validate_age_range = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.minimum_age && child.minimum_age <= 15){
+		frappe.model.set_value(child.doctype, child.name, 'minimum_age', '');
+		frappe.throw(__("Minimum Age Required (In Years) is cannot be Less than or equal to 15 Years"));
+	}
+	if(child.maximum_age && child.maximum_age >= 70){
+		frappe.model.set_value(child.doctype, child.name, 'maximum_age', '');
+		frappe.throw(__("Maximum Age Required (In Years) is cannot be Greater than or equal to 70 Years"));
+	}
+};
+
+var validate_height_exist = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.is_height_mandatory && !child.height){
+		frappe.throw(__('Please put an Height, If Height is Mandatory'));
+	}
+};
+
+var validate_height_range = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.height && child.height <= 10){
+		frappe.model.set_value(child.doctype, child.name, 'height', '');
+		frm.refresh_field('gender_height_requirement');
+		frappe.throw(__('Hieght Must be greter than 10cm.'));
+	}
+};
 
 frappe.ui.form.on('ERF Salary Detail', {
 	amount: function(frm, cdt, cdn){
@@ -82,6 +135,7 @@ var set_objectives_and_krs = function(frm) {
 			},
 			callback: function(r) {
 				if(r && r.message){
+					frm.fields_dict.objective_description.html(r.message.description);
 					let objectives = r.message.objectives;
 					objectives.forEach((item, i) => {
 						let objective = frappe.model.add_child(frm.doc, 'OKR Performance Profile Objective', 'objectives');
@@ -245,7 +299,7 @@ var set_off_days = function(frm) {
 	}
 };
 
-var set_required_quantity = function(frm) {
+var set_required_quantity_grd = function(frm) {
   if(frm.doc.total_no_of_candidates_required){
     frm.set_value('required_quantity', frm.doc.total_no_of_candidates_required);
   }
@@ -254,13 +308,19 @@ var set_required_quantity = function(frm) {
   }
 }
 
-var calculate_total_required_candidates = function (frm) {
+var calculate_total_required_candidates = function (frm, cdt, cdn) {
   let total = 0;
+	var child = locals[cdt][cdn];
   if(frm.doc.gender_height_requirement){
     frm.doc.gender_height_requirement.forEach(function(required_candidate) {
       total += required_candidate.number;
     });
   }
+	if(total > frm.doc.no_of_candidates_by_erf_request){
+		frappe.model.set_value(child.doctype, child.name, 'number', '');
+		frm.refresh_field('gender_height_requirement');
+		frappe.throw(__('Total Number Candidates Required Should not exceed ERF Request.'))
+	}
   frm.set_value('total_no_of_candidates_required', total);
 };
 

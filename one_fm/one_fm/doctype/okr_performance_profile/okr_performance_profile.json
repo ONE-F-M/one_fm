@@ -9,15 +9,17 @@
  "engine": "InnoDB",
  "field_order": [
   "okr_title",
+  "objective_description",
   "objectives",
   "key_results",
   "description"
  ],
  "fields": [
   {
+   "default": "You will be involved with building and managing the daily activities of the you will be involved with building and managing the daily activities of the soft services team to make the cinema going experience for the patrons a blissfully hygienic experience.",
    "fieldname": "description",
    "fieldtype": "Small Text",
-   "label": "Description"
+   "label": "Please write A short Description of the Job that connects with his primary objectives"
   },
   {
    "fieldname": "okr_title",
@@ -28,24 +30,27 @@
    "unique": 1
   },
   {
-   "description": "Below are the Key results you would need to achieve to reach the primary objectives in the given time frame",
    "fieldname": "key_results",
    "fieldtype": "Table",
-   "label": "Key Results",
+   "label": "Below are the Key results you would need to achieve to reach the primary objectives in the given time frame",
    "options": "OKR Performance Profile Key Result",
    "reqd": 1
   },
   {
-   "description": "You will be involved with building and managing the daily activities of the you will be involved with building and managing the daily activities of the soft services team to make the cinema going experience for the patrons a blissfully hygienic experience.\nYour Primary Objective is are as below",
    "fieldname": "objectives",
    "fieldtype": "Table",
-   "label": "Objectives",
+   "label": "Your Primary Objective is are as below",
    "options": "OKR Performance Profile Objective",
    "reqd": 1
+  },
+  {
+   "fieldname": "objective_description",
+   "fieldtype": "HTML",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-05-10 12:36:54.383500",
+ "modified": "2020-05-12 14:08:48.836978",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile",

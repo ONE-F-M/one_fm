@@ -11,10 +11,9 @@ from frappe import _
 class ERF(Document):
 	def validate(self):
 		self.set_erf_code()
+		self.validate_date()
 		self.validate_languages()
 		self.set_other_benefits()
-		self.validate_with_erf_request()
-		self.validate_type_of_travel()
 		self.validate_type_of_license()
 		self.set_salary_structure_from_grade()
 		self.set_salary_details()
@@ -23,8 +22,17 @@ class ERF(Document):
 		self.calculate_total_cost_in_salary()
 		self.calculate_benefit_cost_to_company()
 		self.calculate_total_cost_to_company()
+		self.validate_with_erf_request()
+		self.validate_type_of_travel()
+
+	def validate_date(self):
+		if self.erf_initiation > self.expected_date_of_deployment:
+			frappe.throw(_("Expected Date of Deployment cannot be before ERF Initiation Date"))
+		if self.expected_date_of_deployment < today():
+			frappe.throw(_("Expected Date of Deployment cannot be before Today"))
 
 	def on_submit(self):
+		self.set_erf_request()
 		self.set_erf_finalized()
 		self.validate_recruiter_assigned()
 		if self.status == 'Draft':
@@ -32,6 +40,9 @@ class ERF(Document):
 		if self.status == 'Accepted':
 			create_job_opening_from_erf(self)
 		frappe.msgprint(_('Department Manager Will Notified By Email.'))
+
+	def set_erf_request(self):
+		frappe.db.set_value('ERF Request', self.erf_request, 'erf_created', True)
 
 	def set_erf_code(self):
 		self.erf_code = self.name
@@ -112,6 +123,11 @@ class ERF(Document):
 			frappe.throw(_('The Reason for Request in ERF Request and ERF Should be the Same.'))
 		if erf_request.number_of_candidates_required < self.total_no_of_candidates_required:
 			frappe.throw(_('Total Number Candidates Required Should not exceed ERF Request.'))
+		erf_exists = frappe.db.exists('ERF', dict(erf_request = self.erf_request,
+			docstatus = 1, name = ('!=', self.name)))
+		if erf_exists:
+			frappe.throw(_("""Submitted ERF <b><a href="#Form/ERF/{0}">{0}</a></b> exists \
+			for ERF Request {1}""").format(erf_exists, self.erf_request))
 
 	def set_other_benefits(self):
 		if self.is_new() and not self.other_benefits:
@@ -132,8 +148,6 @@ def create_job_opening_from_erf(erf):
 	job_opening.one_fm_job_opening_created = today()
 	job_opening.one_fm_minimum_experience_required = erf.minimum_experience_required
 	job_opening.one_fm_maximum_experience_required = erf.maximum_experience_required
-	job_opening.one_fm_minimum_age_required = erf.minimum_age_required
-	job_opening.one_fm_maximum_age_required = erf.maximum_age_required
 	job_opening.one_fm_performance_profile = erf.performance_profile
 	description = set_description_by_performance_profile(job_opening, erf)
 	if description:
@@ -147,6 +161,7 @@ def set_description_by_performance_profile(job_opening, erf):
 		template = get_job_openig_description_template()
 		return frappe.render_template(
 			template, dict(
+				objective_description=frappe.db.get_value('OKR Performance Profile', erf.performance_profile, 'description'),
 				objectives=erf.objectives,
 				key_results=erf.key_results
 			)
@@ -156,6 +171,8 @@ def get_job_openig_description_template():
 	return """
 		{% if objectives %}
 		<div>
+			<p>{{ objective_description }}</p>
+			<br/>
 			<b><u>Objectives:</u></b>
 		</div>
 		<div style="overflow-x: auto;">
