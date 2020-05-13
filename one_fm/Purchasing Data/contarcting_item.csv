@@ -1,21 +1,19 @@
-14,Contarcting,,,,,UNIT,CODE
+001,Electrical work,001,Electrical work Charges,0001,Charges,Pcs,14001001001
 ,,,,,,,
-001,Electrical work,001,Charges,001,,,14001001001
+002,Mechanical work,001,Mechanical work Charges,001,Charges,Pcs,14002001002
 ,,,,,,,
-002,Mechanical work,002,Charges,002,,,14002001002
+003,Civil work,001,Civil work Charges,001,Charges,Pcs,14003001003
 ,,,,,,,
-"""003",Civil work,003,Charges,003,,,14003001003
+004,Labor charges,001,Labor charges Charges,001,Charges,Pcs,14004001004
 ,,,,,,,
-004,Labor charges,004,Charges,004,,,14004001004
+005,Carpenter charges,001,Carpenter charges Charges,001,Charges,Pcs,14005001005
 ,,,,,,,
-005,Carpenter charges,005,Charges,005,,,14005001005
+006,Plumbing charges,001,Plumbing charges Charges,001,Charges,Pcs,14006001006
 ,,,,,,,
-006,Plumbing charges,006,Charges,006,,,14006001006
+007,Painting charges,001,Painting charges Charges,001,Charges,Pcs,14007001007
 ,,,,,,,
-007,Painting charges,007,Charges,007,,,14007001007
+008,Transportation,001,Transportation Charges,001,Charges,Pcs,14007001008
 ,,,,,,,
-008,Transportation,008,Charges,008,,,14007001008
+009,Generator rental charges,001,Generator rental charges Charges,001,Charges,Pcs,14007001009
 ,,,,,,,
-009,Generator rental charges,009,Charges,009,,,14007001009
-,,,,,,,
-010,Xcite insurance-2year,010,Charges,010,,,14007001010
+010,Xcite insurance-2year,001,Xcite insurance-2year Charges,001,Charges,Pcs,14007001010

@@ -16,6 +16,432 @@ from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 
 
+
+
+def add_uniform_item():
+    from frappe.utils.csvutils import read_csv_content
+    from frappe.core.doctype.data_import.importer import upload
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/uniform_item.csv", "r") as infile:   
+        rows = read_csv_content(infile.read())
+        i = 0
+        for index, row in enumerate(rows):
+            if row[2]:
+                if not frappe.db.exists("Item Group", {"name": '005-Uniforms'}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": 'All Item Groups',
+                      "item_group_code": '005',
+                      "item_group_name": 'Uniforms',
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+                if not frappe.db.exists("Item Group", {"name": str(row[0])+'-'+str(row[1])}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": '005-Uniforms',
+                      "item_group_code": row[0],
+                      "item_group_name": row[1],
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item Group", {"name": str(row[2])+'-'+str(row[3])}):
+
+                    item_group_name_parent = str(row[0])+'-'+str(row[1])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": item_group_name_parent,
+                      "item_group_code": row[2],
+                      "item_group_name": row[3],
+                      "is_group": 0
+                    })
+                    doc.insert(ignore_permissions=True)
+
+                if not frappe.db.exists("UOM", {"uom_abbreviation": row[6]}):
+                    frappe.get_doc({
+                      "doctype":"UOM",
+                      "uom_name": row[6],
+                      "uom_abbreviation": row[6]
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item", {"name": '005'+str(row[0])+str(row[2])+str(row[4])}):
+
+                    subitem_group = str(row[0])+'-'+str(row[1])
+                    item_group = str(row[2])+'-'+str(row[3])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item",
+                      "parent_item_group": '005-Uniforms',
+                      "subitem_group": subitem_group,
+                      "item_group": item_group,
+                      "item_id": str(row[4]),
+                      "item_code": '005'+str(row[0])+str(row[2])+str(row[4]),
+                      "stock_uom": row[6],
+                      "description1": row[5],
+                      "description2": row[5],
+                      "description3": row[5],
+                      "description4": row[5],
+                      "description5": row[5],
+                      "description": row[5]
+                    })
+                    doc.flags.ignore_mandatory = True
+                    doc.insert(ignore_permissions=True)
+
+                i+=1
+                print(str(i)+ ' ----- ' +'005'+str(row[0])+str(row[2])+str(row[4]))
+
+        print('*********************************')
+        print(i)
+        print('*********************************')
+
+
+
+
+
+
+
+def add_services_item():
+    from frappe.utils.csvutils import read_csv_content
+    from frappe.core.doctype.data_import.importer import upload
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/services_item.csv", "r") as infile:   
+        rows = read_csv_content(infile.read())
+        i = 0
+        for index, row in enumerate(rows):
+            if row[2]:
+                if not frappe.db.exists("Item Group", {"name": '004-Services'}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": 'All Item Groups',
+                      "item_group_code": '004',
+                      "item_group_name": 'Services',
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+                if not frappe.db.exists("Item Group", {"name": str(row[0])+'-'+str(row[1])}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": '004-Services',
+                      "item_group_code": row[0],
+                      "item_group_name": row[1],
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item Group", {"name": str(row[2])+'-'+str(row[3])}):
+
+                    item_group_name_parent = str(row[0])+'-'+str(row[1])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": item_group_name_parent,
+                      "item_group_code": row[2],
+                      "item_group_name": row[3],
+                      "is_group": 0
+                    })
+                    doc.insert(ignore_permissions=True)
+
+                if not frappe.db.exists("UOM", {"uom_abbreviation": row[6]}):
+                    frappe.get_doc({
+                      "doctype":"UOM",
+                      "uom_name": row[6],
+                      "uom_abbreviation": row[6]
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item", {"name": '004'+str(row[0])+str(row[2])+str(row[4])}):
+
+                    subitem_group = str(row[0])+'-'+str(row[1])
+                    item_group = str(row[2])+'-'+str(row[3])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item",
+                      "parent_item_group": '004-Services',
+                      "subitem_group": subitem_group,
+                      "item_group": item_group,
+                      "item_id": str(row[4]),
+                      "item_code": '004'+str(row[0])+str(row[2])+str(row[4]),
+                      "stock_uom": row[6],
+                      "description1": row[5],
+                      "description2": row[5],
+                      "description3": row[5],
+                      "description4": row[5],
+                      "description5": row[5],
+                      "description": row[5]
+                    })
+                    doc.flags.ignore_mandatory = True
+                    doc.insert(ignore_permissions=True)
+
+                i+=1
+                print(str(i)+ ' ----- ' +'004'+str(row[0])+str(row[2])+str(row[4]))
+
+        print('*********************************')
+        print(i)
+        print('*********************************')
+
+
+
+
+
+
+
+def add_contarcting_item():
+    from frappe.utils.csvutils import read_csv_content
+    from frappe.core.doctype.data_import.importer import upload
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/contarcting_item.csv", "r") as infile:   
+        rows = read_csv_content(infile.read())
+        i = 0
+        for index, row in enumerate(rows):
+            if row[2]:
+                if not frappe.db.exists("Item Group", {"name": '003-Contarcting'}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": 'All Item Groups',
+                      "item_group_code": '003',
+                      "item_group_name": 'Contarcting',
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+                if not frappe.db.exists("Item Group", {"name": str(row[0])+'-'+str(row[1])}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": '003-Contarcting',
+                      "item_group_code": row[0],
+                      "item_group_name": row[1],
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item Group", {"name": str(row[2])+'-'+str(row[3])}):
+
+                    item_group_name_parent = str(row[0])+'-'+str(row[1])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": item_group_name_parent,
+                      "item_group_code": row[2],
+                      "item_group_name": row[3],
+                      "is_group": 0
+                    })
+                    doc.insert(ignore_permissions=True)
+
+                if not frappe.db.exists("UOM", {"uom_abbreviation": row[6]}):
+                    frappe.get_doc({
+                      "doctype":"UOM",
+                      "uom_name": row[6],
+                      "uom_abbreviation": row[6]
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item", {"name": '003'+str(row[0])+str(row[2])+str(row[4])}):
+
+                    subitem_group = str(row[0])+'-'+str(row[1])
+                    item_group = str(row[2])+'-'+str(row[3])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item",
+                      "parent_item_group": '003-Contarcting',
+                      "subitem_group": subitem_group,
+                      "item_group": item_group,
+                      "item_id": str(row[4]),
+                      "item_code": '003'+str(row[0])+str(row[2])+str(row[4]),
+                      "stock_uom": row[6],
+                      "description1": row[5],
+                      "description2": row[5],
+                      "description3": row[5],
+                      "description4": row[5],
+                      "description5": row[5],
+                      "description": row[5]
+                    })
+                    doc.flags.ignore_mandatory = True
+                    doc.insert(ignore_permissions=True)
+
+                i+=1
+                print(str(i)+ ' ----- ' +'003'+str(row[0])+str(row[2])+str(row[4]))
+
+        print('*********************************')
+        print(i)
+        print('*********************************')
+
+
+
+
+
+
+def add_consumables_item():
+    from frappe.utils.csvutils import read_csv_content
+    from frappe.core.doctype.data_import.importer import upload
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/consumables_item.csv", "r") as infile:   
+        rows = read_csv_content(infile.read())
+        i = 0
+        for index, row in enumerate(rows):
+            if row[2]:
+                if not frappe.db.exists("Item Group", {"name": '002-Consumables'}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": 'All Item Groups',
+                      "item_group_code": '002',
+                      "item_group_name": 'Consumables',
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+                if not frappe.db.exists("Item Group", {"name": str(row[0])+'-'+str(row[1])}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": '002-Consumables',
+                      "item_group_code": row[0],
+                      "item_group_name": row[1],
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item Group", {"name": str(row[2])+'-'+str(row[3])}):
+
+                    item_group_name_parent = str(row[0])+'-'+str(row[1])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": item_group_name_parent,
+                      "item_group_code": row[2],
+                      "item_group_name": row[3],
+                      "is_group": 0
+                    })
+                    doc.insert(ignore_permissions=True)
+
+                if not frappe.db.exists("UOM", {"uom_abbreviation": row[6]}):
+                    frappe.get_doc({
+                      "doctype":"UOM",
+                      "uom_name": row[6],
+                      "uom_abbreviation": row[6]
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item", {"name": '002'+str(row[0])+str(row[2])+str(row[4])}):
+
+                    subitem_group = str(row[0])+'-'+str(row[1])
+                    item_group = str(row[2])+'-'+str(row[3])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item",
+                      "parent_item_group": '002-Consumables',
+                      "subitem_group": subitem_group,
+                      "item_group": item_group,
+                      "item_id": str(row[4]),
+                      "item_code": '002'+str(row[0])+str(row[2])+str(row[4]),
+                      "stock_uom": row[6],
+                      "description1": row[5],
+                      "description2": row[5],
+                      "description3": row[5],
+                      "description4": row[5],
+                      "description5": row[5],
+                      "description": row[5]
+                    })
+                    doc.flags.ignore_mandatory = True
+                    doc.insert(ignore_permissions=True)
+
+                i+=1
+                print(str(i)+ ' ----- ' +'002'+str(row[0])+str(row[2])+str(row[4]))
+
+        print('*********************************')
+        print(i)
+        print('*********************************')
+
+
+
+
+def add_asset_item():
+    from frappe.utils.csvutils import read_csv_content
+    from frappe.core.doctype.data_import.importer import upload
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/asset_item.csv", "r") as infile:   
+        rows = read_csv_content(infile.read())
+        i = 0
+        for index, row in enumerate(rows):
+            if row[2]:
+                if not frappe.db.exists("Item Group", {"name": '001-Assets'}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": 'All Item Groups',
+                      "item_group_code": '001',
+                      "item_group_name": 'Assets',
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+                if not frappe.db.exists("Item Group", {"name": str(row[0])+'-'+str(row[1])}):
+
+                    frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": '001-Assets',
+                      "item_group_code": row[0],
+                      "item_group_name": row[1],
+                      "is_group": 1
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item Group", {"name": str(row[2])+'-'+str(row[3])}):
+
+                    item_group_name_parent = str(row[0])+'-'+str(row[1])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item Group",
+                      "parent_item_group": item_group_name_parent,
+                      "item_group_code": row[2],
+                      "item_group_name": row[3],
+                      "is_group": 0
+                    })
+                    doc.insert(ignore_permissions=True)
+
+                if not frappe.db.exists("UOM", {"uom_abbreviation": row[6]}):
+                    frappe.get_doc({
+                      "doctype":"UOM",
+                      "uom_name": row[6],
+                      "uom_abbreviation": row[6]
+                    }).insert(ignore_permissions=True)
+
+
+                if not frappe.db.exists("Item", {"name": '001'+str(row[0])+str(row[2])+str(row[4])}):
+
+                    subitem_group = str(row[0])+'-'+str(row[1])
+                    item_group = str(row[2])+'-'+str(row[3])
+
+                    doc = frappe.get_doc({
+                      "doctype":"Item",
+                      "parent_item_group": '001-Assets',
+                      "subitem_group": subitem_group,
+                      "item_group": item_group,
+                      "item_id": str(row[4]),
+                      "item_code": '001'+str(row[0])+str(row[2])+str(row[4]),
+                      "stock_uom": row[6],
+                      "description1": row[5],
+                      "description2": row[5],
+                      "description3": row[5],
+                      "description4": row[5],
+                      "description5": row[5],
+                      "description": row[5]
+                    })
+                    doc.flags.ignore_mandatory = True
+                    doc.insert(ignore_permissions=True)
+
+                i+=1
+                print(str(i)+ ' ----- ' +'001'+str(row[0])+str(row[2])+str(row[4]))
+
+        print('*********************************')
+        print(i)
+        print('*********************************')
+
+
+
+
+
 def add_suppliers():
     from frappe.utils.csvutils import read_csv_content
     from frappe.core.doctype.data_import.importer import upload
@@ -94,63 +520,6 @@ def add_suppliers():
                 print(row[0])
 
 
-
-
-def add_asset_item():
-    from frappe.utils.csvutils import read_csv_content
-    from frappe.core.doctype.data_import.importer import upload
-    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/asset_item.csv", "r") as infile:   
-        rows = read_csv_content(infile.read())
-        i = 0
-        for index, row in enumerate(rows):
-            if not frappe.db.exists("Item Group", {"item_group_name": row[1]}):
-
-                frappe.get_doc({
-                  "doctype":"Item Group",
-                  "parent_item_group": '001-Assets',
-                  "item_group_name": row[1]
-                }).insert(ignore_permissions=True)
-
-
-            if not frappe.db.exists("Item Group", {"item_group_name": row[3]}):
-
-                item_group_name_parent = frappe.db.get_value("Item Group", {"item_group_name": row[1]}, "name")
-
-
-                doc = frappe.get_doc({
-                  "doctype":"Item Group",
-                  "parent_item_group": item_group_name_parent,
-                  "item_group_name": row[3]
-                })
-                doc.insert(ignore_permissions=True)
-
-            if not frappe.db.exists("UOM", {"uom_abbreviation": row[6]}):
-                frappe.get_doc({
-                  "doctype":"UOM",
-                  "uom_abbreviation": row[6]
-                }).insert(ignore_permissions=True)
-
-
-            # subitem_group = frappe.db.get_value("Item Group", {"item_group_name": row[1]}, "name")
-            # item_group = frappe.db.get_value("Item Group", {"item_group_name": row[3]}, "name")
-
-            # doc = frappe.get_doc({
-            #   "doctype":"Item",
-            #   "parent_item_group": '001-Assets',
-            #   "subitem_group": subitem_group,
-            #   "item_group": item_group,
-            #   "stock_uom": row[6],
-            #   "description": row[8]
-            # })
-            # doc.flags.ignore_mandatory = True
-            # doc.insert(ignore_permissions=True)
-
-            i+=1
-            print(i)
-
-        print('*********************************')
-        print(i)
-        print('*********************************')
 
 
 
