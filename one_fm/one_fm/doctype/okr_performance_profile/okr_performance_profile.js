@@ -3,27 +3,20 @@
 
 frappe.ui.form.on('OKR Performance Profile', {
 	refresh: function(frm) {
+		if(!frm.is_new()){
+			frm.set_df_property('okr_title_section', 'hidden', true);
+		}
     set_objective_option_to_kr(frm);
 		set_objectoves_description(frm);
-		frm.add_custom_button(__('Help'), function() {
-			show_help_text(frm);
-		});
+		frm.fields_dict.help_text.html(get_help_text_html());
 	},
 	description: function(frm) {
 		set_objectoves_description(frm);
 	}
 });
 
-var show_help_text = function(frm) {
-	var dialog = new frappe.ui.Dialog({
-		title: 'Help',
-		width: 400,
-		fields: [
-			{fieldname:'help_text', fieldtype:'HTML'}
-		]
-	});
-	var help_text_html = `\
-			<h3>You can Re evaluate the OKRs based on the below questions</h3>\
+var get_help_text_html = function() {
+	return `\
 			<p>Objective:</p>\
 			<ol>\
 			<li>On this job what types of projects and tasks would this person be assigned?</li>\
@@ -34,8 +27,6 @@ var show_help_text = function(frm) {
 			<li>What the candidate would need to accomplish in doing this work that indicates this person is a great performer?</li>\
 			</ol>
 	`;
-	dialog.fields_dict.help_text.html(help_text_html);
-	dialog.show();
 };
 
 var set_objectoves_description = function(frm) {
