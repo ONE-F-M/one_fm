@@ -1,59 +1,57 @@
-13,Services,,,,,UNIT,CODE
+001,Installation,001,Installation Charges,0001,,Pcs,13001001001
 ,,,,,,,
-001,Installation- Fee,001,Charges,001,,,13001001001
+002,Stiching/Embroidery,001,Stiching/Embroidery Charges,0001,,Pcs,13002002001
 ,,,,,,,
-002,Stiching/Embroidery charges,002,Charges,001,,,13002002001
+003,Repair ,001,Repair Charges,0001,,Pcs,13003003001
 ,,,,,,,
-"""003",Repair ,003,Charges,001,,,13003003001
+004,Vehicle maintanace,001,Vehicle maintanace Charges,0001,,Pcs,13004004001
 ,,,,,,,
-004,Vehicle maintanace,004,Charges,001,,,13004004001
+005,Delivery,001,Delivery Charges,0001,,Pcs,13005005001
 ,,,,,,,
-005,Delivery charges,005,Charges,001,,,13005005001
+006,Assembly,001,Assembly Charges,0001,,Pcs,13006006001
 ,,,,,,,
-006,Assembly charges,006,Charges,001,,,13006006001
+007,Accomodation Maintenance ,001,Accomodation Maintenance  Charges,0001,,Pcs,13007007001
 ,,,,,,,
-007,Accomodation Maintenance ,007,Charges,001,,,13007007001
+008,Service,001,Service Charges,0001,,Pcs,13008008001
 ,,,,,,,
-008,Service,008,Charges,001,,,13008008001
+009,Electrical work Services,001,Electrical work Charges,0001,,Pcs,13009009001
 ,,,,,,,
-009,Electrical work,009,Charges,001,,,13009009001
+010,Plumbing material,001,Plumbing material Charges,0001,,Pcs,13001010001
 ,,,,,,,
-010,Plumbing material,010,Charges,001,,,13001010001
+011,Marble grinding & polishing,001,Marble grinding & polishing Charges,0001,,Pcs,13011011001
 ,,,,,,,
-011,Marble grinding & polishing,011,Charges,001,,,13011011001
+012,Rent Services,001,Rent Services Charges,0001,,Pcs,13012012001
 ,,,,,,,
-012,Rent Services,012,Charges,001,,,13012012001
+013,Branding,001,Branding Charges,0001,,Pcs,13013013001
 ,,,,,,,
-013,Branding,013,Charges,001,,,13013013001
+014,Entertainment,001,Entertainment Charges,0001,,Pcs,13014014001
 ,,,,,,,
-014,Entertainment,014,Charges,001,,,13014014001
+015,Pest control,001,Pest control Charges,0001,,Pcs,13015015001
 ,,,,,,,
-015,Pest control,015,Charges,001,,,13015015001
+016,Painting material,001,Painting material Charges,0001,,Pcs,13016016001
 ,,,,,,,
-016,Painting material,016,Charges,001,,,13016016001
+017,Catering,001,Catering Charges,0001,,Pcs,13017017001
 ,,,,,,,
-0017,Catering,017,Charges,001,,,13017017001
+018,Transportation Services,001,Transportation Charges,0001,,Pcs,13018018001
 ,,,,,,,
-0018,Transportation charges,018,Charges,001,,,13018018001
+019,Garbage removal,001,Garbage removal Charges,0001,,Pcs,13019019001
 ,,,,,,,
-0019,Garbage removal charges,019,Charges,001,,,13019019001
+020,Cleaning material,001,Cleaning material Charges,0001,,Pcs,13020020001
 ,,,,,,,
-020,Cleaning material,020,Charges,001,,,13020020001
+021,Machine inspection,001,Machine inspection Charges,0001,,Pcs,13021021001
 ,,,,,,,
-021,Machine inspection charge,021,Charges,001,,,13021021001
+022,Fuel Services,001,Fuel Charges,0001,,Pcs,13022022001
 ,,,,,,,
-022,Fuel charges,022,Charges,001,,,13022022001
+023,Printing,001,Printing Charges,0001,,Pcs,13023023001
 ,,,,,,,
-023,Printing charges,023,Charges,001,,,13023023001
+024,Ticket,001,Ticket Charges,0001,,Pcs,13024024001
 ,,,,,,,
-024,Ticket charges,024,Charges,001,,,13024024001
+025,Packing material,001,Packing material Charges,0001,,Pcs,13025025001
 ,,,,,,,
-025,Packing material charges,025,Charges,001,,,13025025001
+026,Hotel booking,001,Hotel booking Charges,0001,,Pcs,13026026001
 ,,,,,,,
-026,Hotel booking charges,026,Charges,001,,,13026026001
+027,Laundry ,001,Laundry  Charges,0001,,Pcs,13027027001
 ,,,,,,,
-027,Laundry ,027,Charges,001,,,13027027001
+028,Hospital visit,001,Hospital visit Charges,0001,,Pcs,13028028001
 ,,,,,,,
-028,Hospital visit charges,028,Charges,001,,,13028028001
-,,,,,,,
-029,Laith work,029,Charges,001,,,13029029001
+029,Laith work,001,Laith work Charges,0001,,Pcs,13029029001

@@ -42,8 +42,8 @@ class ItemGroup(NestedSet, WebsiteGenerator):
         self.make_route()
         
 
-    def before_insert(self):
-        self.validate_get_parent()
+    # def before_insert(self):
+    #     self.validate_get_parent()
 
 
     def validate_get_parent(self):

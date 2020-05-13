@@ -54,14 +54,14 @@
   "doctype": "Property Setter",
   "doctype_or_field": "DocField",
   "field_name": "naming_series",
-  "modified": "2020-04-10 20:44:04.217442",
+  "modified": "2020-05-12 17:42:12.440720",
   "name": "Supplier-naming_series-options",
   "parent": null,
   "parentfield": null,
   "parenttype": null,
   "property": "options",
   "property_type": "Text",
-  "value": "SUP-.YYYY.-"
+  "value": "SUB-.######"
  },
  {
   "default_value": null,
@@ -2094,5 +2094,21 @@
   "property": "hidden",
   "property_type": "Check",
   "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Supplier",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "naming_series",
+  "modified": "2020-05-12 17:42:12.495646",
+  "name": "Supplier-naming_series-default",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "default",
+  "property_type": "Text",
+  "value": "SUB-.######"
  }
 ]

@@ -1,426 +1,426 @@
-1,vehicles,1,Car,1,Sedan,Pcs,10001001001,
-1,vehicles,1,Car,2,SUV,Pcs,10001001002,
-1,vehicles,2,Bus ,1,12 seaters,Pcs,10001002001,
-1,vehicles,2,Bus ,2,27 seaters,Pcs,10001002002,
-,,,,,,,,
-,,,,,,,,
-2,Furniture,1,Bed frame,1,Metal size :Single,Pcs,10002001001,
-,,,,2,Metal size :Double,Pcs,10002001002,
-,,,,,,,,
-,,2,Matress,1,Single,Pcs,10002002001,
-,,,,2,Double,Pcs,10002002002,
-,,,,,,,,
-,,3,Pillow,1,Standard,Pcs,10002003001,
-,,,,,,,,
-,,4,Cabinet,1,Metal -4 drawer,Pcs,10002004001,
-,,,,2,Wooden,Pcs,10002004002,
-,,,,3,Metal-Double door,Pcs,10002004003,
-,,,,4,Metal-Double door (Accomodation),Pcs,10002004004,
-,,,,5,Metal -3 drawer,Pcs,10002004005,
-,,,,6,File cabinet-Erik 70341005,Pcs,10002004006,
-,,,,,,,,
-,,5,Chairs,1,Visitor chairs,Pcs,10002005001,
-,,,,2,Mobile chairs,Pcs,10002005002,
-,,,,3,Folding chair- GUNDE BLACK,Pcs,10002005003,
-,,,,4,Chair- RENBERGET SWIV CHR BOMSTAD BLACK,Pcs,10002005004,
-,,,,5,Chair-Black color,Pcs,10002005005,
-,,,,,,,,
-,,6,Desk,1,Wooden desk L-shape ,Pcs,10002006001,
-,,,,2,Wooden desk ,Pcs,10002006002,
-,,,,,,,,
-,,7,Table,1,White Table-THYGE ,Pcs,10002007001,
-,,,,2,Grey Table - BEKANT,Pcs,10002007002,
-,,,,3,Table-Plastic,Pcs,10002007003,
-,,,,,,,,
-,,8,Sofa,1,Leather sofa single,Pcs,10002008001,
-,,,,2,Leather sofa double,Pcs,10002008002,
-,,,,,,,,
-,,9,Shelves,1,Wooden shelves size :,Pcs,10002009001,
-,,,,2,Wooden shelves size :,Pcs,10002009002,
-,,,,,,,,
-,,10,Bedsheet,1,Single,Pcs,10002010001,
-,,,,2,Double,Pcs,10002010002,
-,,,,,,,,
-,,11,Blanket,1,Single,Pcs,10002011001,
-,,,,,,,,
-,,12,Towel,1,Bath towel,Pcs,10002012001,
-,,,,2,Hand towel,Pcs,10002012002,
-,,,,,,,,
-,,13,Partition,1,Partition stand,Pcs,10002013001,
-,,,,,,,,
-,,14,Podium,1,Podium,Pcs,10002014001,
-,,,,2,Sticker,Pcs,10002014002,
-,,,,,,,,
-,,15,Shoe rack,1,Shoe rack,Pcs,10002015001,
-,,,,,,,,
-,,16,Shelf,1,Open shelf rack,Pcs,10002016001,
-,,,,,,,,
-,,17,Caddy,1,Caddy,Pcs,10002017001,
-,,,,,,,,
-,,18,Mat for floor,1,Floor mat- Rubber,Pcs,10002018001,
-,,,,2,Floor mat- Plastic,Pcs,10002018002,
-,,,,3,Floor mat- roll,Pcs,10002018003,
-,,,,,,,,
-,,19,Iron stand,1,Iron stand,Pcs,10002019001,
-,,,,,,,,
-,,20,Glass,1,Glass,Pcs,10002020001,
-,,,,,,,,
-,,21,Door handle w/lock,1,Door handle w/lock,Pcs,10002021001,
-,,,,,,,,
-,,22,Cupboard lock,1,Lock,Pcs,10002022001,
-,,,,,,,,
-,,23,Curtain,1,Window curtain,Pcs,10002023001,
-,,,,,,,,
-,,24,Clips,1,Wall clips for curtain,Pcs,10002024001,
-,,,,,,,,
-,,25,Pipe,1,White rods for curtain,Pcs,10002025001,
-,,,,,,,,
-,,26,Screw,1,Screw,Pcs,10002026001,
-,,,,,,,,
-3,Electronics,1,Desktop,1,Desktop CPU-HP,Set,10003001001,
-,,,,,,,,
-,,2,Printer,1,Black and white ,Pcs,10003002001,
-,,,,2,Colored,Pcs,10003002002,
-,,,,3,Label printer,Pcs,10003002003,
-,,,,,,,,
-,,,,,,,,
-,,3,Photocopy machine,1,RICOH Photo copy machine Aficio MP C3502,Pcs,10003003001,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,4,Multifunction device(Copier/printer/scanner),1,Black and white ,Pcs,10003004001,
-,,,,2,Colored,Pcs,10003004002,
-,,,,,,,,
-,,5,Laptop,1,"11""inch",Pcs,10003005001,
-,,,,2,"12""inch",Pcs,10003005002,
-,,,,3,"13""inch",Pcs,10003005003,
-,,,,4,"14""inch",Pcs,10003005004,
-,,,,,,,,
-,,6,Monitor,1,"19"" inch",Pcs,10003006001,
-,,,,2,"21"" inch",Pcs,10003006002,
-,,,,3,"27"" inch",Pcs,10003006003,
-,,,,4,"24"" inch-HP",Pcs,10003006004,
-,,,,5,"22"" inch-Used",pcs,10003006005,
-,,,,,,,,
-,,7,Television,1,"32""inch",Pcs,10003007001,
-,,,,2,"42""inch",Pcs,10003007002,
-,,,,3,"55""inch",Pcs,10003007003,
-,,,,,,,,
-,,8,CCTV system,1,Camera,Set,10003008001,
-,,,,2,DVR,set,10003008002,
-,,,,,,,,
-,,9,Finger print device,1,Mobile finger print device,Set,10003009001,
-,,,,2,Fixed finger print device,Set,10003009002,
-,,,,3,Supreme face station2,Set,10003009003,
-,,,,,,,,
-,,10,Mouse ,1,Wireless mouse,Pcs,10003010001,
-,,,,2,Wired mouse,Pcs,10003010002,
-,,,,,,,,
-,,11,Mouse Pad,1,Normal mouse pad,Pcs,10003011001,
-,,,,,,,,
-,,12,Keybord,1,Wireless keyboard,Pcs,10003012001,
-,,,,2,Wired keyboard,Pcs,10003012002,
-,,,,3,Combo -Keyboard W/mouse,Pcs,10003012003,
-,,,,,,,,
-,,,,,,,,
-,,13,MISC connection,1,HDMI cable,Pcs,10003013001,
-,,,,2,USB cable,Pcs,10003013002,
-,,,,3,Extension code- 8 sluts,Pcs,10003013003,
-,,,,4,Extension code- 4 sluts,Pcs,10003013004,
-,,,,5,Charger- Fingerprint machine,Pcs,10003013005,
-,,,,6,Power adaptor,Pcs,10003013006,
-,,,,7,ZXP 3 cleaning kit,Pcs,10003013007,
-,,,,8,Extension Board- 50mtr,Pcs,10003013008,
-,,,,9,Extension Board- 25mtr,Pcs,10003013009,
-,,,,10,Power flex 4,Pcs,10003013010,8
-,,,,11,Scaffolding,Pcs,10003013011,6.5
-,,,,12,Certficate holder,Pcs,10003013012,1.5
-,,,,13,Verification sample -Positive 10011326,Pcs,10003013013,4.75
-,,,,14,Verification sample -Negative 10010156,Pcs,10003013014,0.5
-,,,,15,Dual mode verification trap 42200277,Pcs,10003013015,1
-,,,,16,Cable wire,Pcs,10003013016,
-,,,,17,Trunky,Pcs,10003013017,
-,,,,18,Tupperwear,Pcs,10003013018,
-,,,,19,Wire sleeve,Pcs,10003013019,
-,,,,20,Camera connector,Pcs,10003013019,
-,,,,21,Torch,Pcs,10003013020,
-,,,,22,Lamp,Pcs,10003013021,
-,,,,23,3pin plug,Pcs,10003013022,
-,,,,24,Converter- 24v DC to 12v AC,Pcs,10003013023,
-,,,,25,4GB RAM CARD-TRANSCEND,Pcs,10003013024,
-,,,,26,Windows 10 professional,Pcs,10003013025,
-,,,,27,Trunki,Pcs,10003013026,
-,,,,28,Bulb (CFL),Pcs,10003013027,
-,,,,29,Bulb -Toilet,Pcs,10003013028,
-,,,,30,Printer cable-HP 4630,Pcs,10003013028,
-,,,,31,Head count,Pcs,10003013029,
-,,,,32,Sample traps md 1964-100,Ctn,10003013030,On board
-,,,,33,Calibration traps md 1965-25,Ctn,10003013031,On board
-,,,,34,Cabinet fan filters-42200160,Pkt,10003013032,Camco
-,,,,35,Cotton swabs-42200164,Pkt,10003013033,Camco
-,,,,36,Alcohol swabs-42200165,Pkt,10003013034,Camco
-,,,,37,Desorber screen-0051736,Pcs,10003013035,Camco
-,,,,38,Printer paper roll-42200172,Pkt,10003013036,Camco
-,,,,39,Sieve Canister-42500025,Ctn,10003013037,Camco
-,,,,40,Verification trap-Dual mode-42200277,Ctn,10003013038,Camco
-,,,,41,T.V wall bracket,Pcs,10003013039,
-,,,,42,Google chrome cast,Pcs,10003013040,
-,,,,43,Digital safe,Pcs,10003013041,
-,,,,44,File shelf,Pcs,10003013042,
-,,,,45,DIgital thermometer- head,Pcs,10003013043,Lulu
-,,,,,,,,
-,,14,Water cooler,1,Water cooler stainless steel- 2taps ,Pcs,10003014001,
-,,,,2,Water cooler-20ltr,Pcs,10003014002,
-,,,,,,,,
-,,15,USB device,1,USB flash drive-16GB,Pcs,10003015001,
-,,,,2,USB flash drive-32GB,Pcs,10003015002,
-,,,,3,USB Connector,Pcs,10003015003,
-,,,,4,Wifi-Adaptor,Pcs,10003015004,
-,,,,,,,,
-,,16,Water boiler,1,Waterboiler- Sunstar,Pcs,10003016001,
-,,,,,,,,
-,,17,Projector,1,Wireless projector,Pcs,10003017001,
-,,,,2,Projector screen,Pcs,10003017002,
-,,,,3,Wireless Dongle,Pcs,10003017003,
-,,,,4,Speaker,Pcs,10003017004,
-,,,,5,Amplifier,Pcs,10003017005,
-,,,,6,Wireless Mic,Pcs,10003017006,
-,,,,,,,,
-,,18,Kettle,1,Electric Kettle,Pcs,10003018001,
-,,,,,,,,
-,,19,Iron box,1,Iron box,Pcs,10003019001,
-,,,,2,Steam iron box,Pcs,10003019002,
-,,,,,,,,
-,,20,Shredder,1,Paper shredder machine,Pcs,10003020001,
-,,,,,,,,
-,,21,Washing machine,1,Manual,Pcs,10003021001,
-,,,,,,,,
-,,22,3pin plug,1,,Pcs,10003022001,
-,,,,,,,,
-,,23,Binding machine,1,,Pcs,10003023001,
-,,,,,,,,
-,,24,Torch,1,Professional,Pcs,10003024001,
-,,,,,,,,
-,,25,Lamp,1,Portable,Pcs,10003025001,
-,,,,2,Fuse,Pcs,10003025002,
-,,,,,,,,
-,,26,Insect killer,1,Insect killer-2x15wt,Pcs,10003026001,
-,,,,2,Insect killer-2x20wt,Pcs,10003026002,
-,,,,,,,,
-,,27,Radio - DP 2400,1,Radio - DP 2400,Pcs,10003027001,
-,,,,2,Head set,Pcs,10003027002,
-,,,,3,Spare batteries-DP 2000 e series,Pcs,10003027003,
-,,,,,,,,
-,,28,ID CARD machine,1,ZEBRA ZC 300,Pcs,10003028001,
-,,,,,,,,
-,,29,Lamination machine,1,Lamination machine,Pcs,10003029001,
-,,,,2,Lamination cover 60x90cm,Pcs,10003029002,
-,,,,,,,,
-4,Kitchen items,1,Gas stove,1,Double burner,Pcs,10004001001,
-,,2,Gas cylinder,2,Gas cylinder,Pcs,10004002002,
-,,3,Oven,3,MIcrowave oven,Pcs,10004003003,
-,,4,Regulator,4,Standard,Pcs,10004004004,
-,,5,Refrigerator,5,Single door-165ltr,Pcs,10004005005,
-,,6,Refrigerator,5,Double door,Pcs,10004006006,
-,,7,Gas stove,6,Small 3kg,Pcs,10004006007,
-,,8,Mug,8,Mug,Pcs,10004006008,
-,,9,Frypan,9,Frypan,Pcs,10004006009,
-,,10,Saucepan,10,Saucepan,Pcs,10004006010,
-,,11,Plate,11,Plate,Pcs,10004006011,
-,,12,Spoon,12,Spoon,Pcs,10004006012,
-,,13,Gas,13,Gas small can-1kg,Pcs,10004006013,
-,,14,Pot,14,Rice pot,Pcs,10004006014,
-,,15,Burner with Oven,15,Burner with Oven,Pcs,10004006015,
-,,,,,,,,
-5,Accessories,1,Paper  dispenser,1,,Pcs,10005001001,
-,,2,Soap dispenser,2,,Pcs,10005002002,
-,,3,Dust bin,3,,Pcs,10005003003,
-,,4,Air freshener dispenser,4,,Pcs,10005003004,
-,,5,Air freshener refill,5,,Pcs,10005003005,
-,,6,Keyholder box,6,,Pcs,10005003006,
-,,7,Stamp,7,Self inking stamp- Medium,Pcs,10005003007,
-,,8,Stamp,8,Self inking stamp- Big with logo,Pcs,10005003008,
-,,9,Name plate,9,Name plate- Acrylic,Pcs,10005003009,
-,,10,Maxiroll dispenser,10,,Pcs,10005003010,
-,,11,Cat trap,11,,Pcs,10005003011,
-,,12,Name plate,12,Name plate- wooden,Pcs,10005003012,
-,,13,Checklist holder,13,Wallmount checklist holder,Pcs,10005003013,
-,,14,Stamp,14,Date stamp- Medium,Pcs,10005003014,
-,,15,Fire extinguisher,15,Fire extinguisher,Pcs,10005003015,
-,,16,Medium plastic tray 638x443x113 mm with out rubber feet,16,,Pcs,10005003016,
-,,17,Under vehicle inspection mirror,17,Under vehicle inspection mirror,Pcs,10005003017,
-,,18,Suggestion box,18,Suggestion box,Pcs,10005003018,
-,,19,Retractable post (Barrier),19,Retractable post (Barrier),Pcs,10005003019,
-,,20,Hand bidet (Shattaf head silver),20,Hand bidet (Shattaf head silver),Pcs,10005003020,
-,,21,Key chain,21,Key chain,Pcs,10005003021,
-,,22,Rake with handle,22,Rake with handle,Pcs,10005003022,
-,,23,Telescopic Wavy shears,23,Telescopic Wavy shears,Pcs,10005003023,
-,,24,Leaves picker,24,Leaves picker,Pcs,10005003024,Acer hardware
-,,25,safety glass,25,safety glass,Pcs,10005003025,
-,,26,Cable tie,26,Cable tie,Pcs,10005003026,
-,,27,Glue board-Orkin,27,Glue board-Orkin,Pcs,10005003027,
-,,28,Window tin cat-Orkin,28,Window tin cat-Orkin,Pcs,10005003028,
-,,29,Confiscated box,29,Confiscated box,Pcs,10005003029,
-,,30,Traffic Baton,30,Traffic Baton,Pcs,10005003030,
-,,31,Helmet-white,31,Helmet-white,Pcs,10005003031,
-,,32,Safety gloves,32,Safety gloves,Pcs,10005003032,
-,,33,Chain,33,Chain-Small,Pcs,10005003033,
-,,34,Hooks,34,Hooks,Pcs,10005003034,
-,,35,Electric cable,35,Electric cable,Pcs,10005003035,
-,,36,Cable tie,36,Cable tie,Pcs,10005003036,
-,,37,Cable cover,37,Cable cover,Pcs,10005003037,
-,,38,Drum unit,38,Drum unit,Pcs,10005003038,
-,,39,Chain,39,Chain-Big,Pcs,10005003039,
-,,40,Lock,40,Lock with key,Pcs,10005003040,
-,,41,Traffic cones,41,Traffic cones-110cm,Pcs,10005003041,
-,,42,Silinder-door lock,42,Silinder-door lock,Pcs,10005003042,
-,,43,Hatch lock,43,Hatch lock,Pcs,10005003043,
-,,44,Wire cutter,44,Wire cutter,Pcs,10005003044,
-,,45,Desk table set,45,Desk table set,Pcs,10005003045,
-,,,,,,,,
-6,Cleaning machine,1,Pressure washer,1,Pressure water machine,Pcs,10006001001,
-,,2,Coupling,2,Coupling-water machine,Pcs,10006002002,
-,,3,Sweeper,3,Sweeper machine NIlfisk SW 750,Pcs,10006002003,
-,,4,Vaccum cleaner,4,Double bent steel pipe with brush,Pcs,10006002004,
-,,5,Carpet cleaning machine,5,Carpet tool,Pcs,10006002005,
-,,6,Carpet extraction machine,6,Carpet extraction machine,Pcs,10006002006,
-,,7,Scrubbing machine Jolly 17,7,Scrubbing machine Jolly 17,Pcs,10006002007,
-,,8,Vaccum cleaner wet & dry- Florentini,8,Vaccum cleaner wet & dry- Florentini,Pcs,10006002008,
-,,,,,,,,
-7,Mobile,1,Smartphone,1,Mobile phone -Samsung Grand Prime,Pcs,10007001001,
-,,,,2,Power bank,Pcs,10007001002,
-,,,,3,Mobile phone -Nokia,Pcs,10007001003,
-,,,,4,Screen protector-Nokia 6.1,Pcs,10007001004,
-,,,,5,Mobile case,Pcs,10007001005,
-,,,,6,Samsung Tab10 ,Pcs,10007001006,
-,,,,,,,,
-8,Tags,1, Tags,1,NFC-Plastic tags,Pcs,10008001001,
-,,,,2,Key tags plastic,Pcs,10008001002,
-,,,,3,Laynards,Pcs,10008001003,
-,,,,4,Name badge,Pcs,10008001004,
-,,,,,,,,
-9,Spareparts,1,Tools,1,AC DRIVE,Pcs,10009001001,
-,,2,Tools,2,Bearing 6204,Pcs,10009001002,
-,,3,Tools,3,Locking ring,Pcs,10009001003,
-,,4,Tools,4,Distance washer bearing,Pcs,10009001004,
-,,5,Tools,5,Bearing washer 421A,Pcs,10009001005,
-,,6,Tools,6,Bearing circlip,Pcs,10009001006,
-,,7,Tools,7,Ring 421A box assy,Pcs,10009001007,
-,,8,Tools,8,Seal,Pcs,10009001008,
-,,9,Tools,9,Wet/dry motor,Pcs,10009001009,
-,,10,Tools,10,L Gasket,Pcs,10009001010,
-,,11,Tools,11,Blade SQGE,Pcs,10009001011,
-,,12,Tools,12,Blade SQGE Rear,Pcs,10009001012,
-,,13,Tools,13,Starting capacitor 100MF 230-240V 50H,Pcs,10009001013,
-,,14,Tools,14,Running Capacitor 32MF 230-240V 50H,Pcs,10009001014,
-,,15,Tools,15,cap base for Vaccum cleaner F39F1-code CB004,Pcs,10009001015,
-,,16,Tools,16,By pass motor for vaccum cleaner  F39F1-code M0152,Pcs,10009001016,
-,,17,Tools,17,Blade SQGE Front,Pcs,10009001017,
-,,18,Tools,18,Actuator spring squeegee housing,Pcs,10009001018,
-,,19,Tools,19,Strap cap drain,Pcs,10009001019,
-,,20,Tools,20,Squeegee assy,Pcs,10009001020,
-,,21,Tools,21,TE 86866 pin cotter,Pcs,10009001021,
-,,22,Tools,22,Key nut,Pcs,10009001022,
-,,23,Tools,23,Bearing vac motor,Pcs,10009001023,
-,,24,Tools,24,Motor vaccum 24v 280w sip,Pcs,10009001024,
-,,25,Tools,25,NA 9100000816 hose suction black,Pcs,10009001025,
-,,26,Tools,26,Plastic tube,Pcs,10009001026,
-,,27,Tools,27,Tube,Pcs,10009001027,
-,,28,Tools,28,Wet flr nozzle,Pcs,10009001028,
-,,29,Tools,29,Block SQGE guide,Pcs,10009001029,
-,,30,Tools,30,Block  guide SQQE,Pcs,10009001030,
-,,31,Tools,31,Standard brush,Pcs,10009001031,
-,,32,Tools,32,Basket H8.D,Pcs,10009001032,
-,,33,TE 1220241-T12,33,Brush Assy Disk,Pcs,10009001033,
-,,34,Tools,34,Hose Assy Drain,Pcs,10009001034,
-,,35,Tools,35,Caster Assy,Pcs,10009001035,
-,,36,Tools,36,Filter panel,Pcs,10009001036,
-,,37,TE 1220223-T7,37,Brush Assy Disk,Pcs,10009001037,
-,,38,Tools,38,Frame SQGE side,Pcs,10009001038,
-,,39,Tools,39,Strap WLDT SQGE T12,Pcs,10009001039,
-,,40,Tools,40,Latch weldment hook,Pcs,10009001040,
-,,41,Tools,41,"Single disc pad holder 17""",Pcs,10009001041,
-,,42,Tools,42,"Hard brush for scrubbing machine 17""",Pcs,10009001042,
-,,43,Tools,43,"Soft brush for scrubbing machine 17""",Pcs,10009001043,
-,,44,Tools,44,Flex hose D38,Pcs,10009001044,
-,,45,Tools,45,Latch CMPR YEL Grip,Pcs,10009001045,
-,,46,Tools,46,Blade SQGE side,Pcs,10009001046,
-,,47,Tools,47,Pad holder STABIPAD,Pcs,10009001047,
-,,48,Tools,48,Scrubbing brush C51,Pcs,10009001048,
-,,49,Tools,49,Developing unit kit,Pcs,10009001049,
-,,50,Tools,50,Vaccum filter,Pcs,10009001050,
-,,51,Tools,51,Felt seal 510B MTR,Pcs,10009001051,
-,,52,Tools,52,Contactor 8A,Pcs,10009001052,
-,,53,Tools,53,Oil sleeve,Pcs,10009001053,
-,,54,Tools,54,Cable core 12MTR 15MM,Pcs,10009001054,
-,,55,Tools,55,Charger kit 36vdc 021 A-T12,Pcs,10009001055,
-,,56,Tools,56,VR BRUSH KIT,Pcs,10009001056,
-,,57,Tools,57,FILTER PANEL,Pcs,10009001057,
-,,58,Tools,58,HOSE KIT,Pcs,10009001058,
-,,59,Tools,59,Spanner,Pcs,10009001059,
-,,60,Tools,60,Plier,Pcs,10009001060,
-,,61,Tools,61,Screw driver,Pcs,10009001061,
-,,62,Tools,62,Tester,Pcs,10009001062,
-,,63,Tools,63,Scraper-Large,Pcs,10009001063,
-,,64,Tools,64,Scraper-Small,Pcs,10009001064,
-,,65,Tools,65,Scraper blade,Pcs,10009001065,
-,,66,Tools,66,Telescopic pole-3mtr,Pcs,10009001066,
-,,67,Tools,67,Bearing bolt,Pcs,10009001067,
-,,68,Tools,68,TE 30241 brush assy disc,Pcs,10009001068,
-,,69,Tools,69,"Plate MTG,Gaske",Pcs,10009001069,
-,,70,Tools,70,TE 1408255 screw,Pcs,10009001070,
-,,71,Tools,71,"Gasket URE 50,03,74w 05.31L",Pcs,10009001071,
-,,72,Tools,72,Wand,Pcs,10009001072,
-,,73,Tools,73,Black flexible hose for Vaccum cleaner-F39F1-KT003N,Pcs,10009001073,
-,,74,Tools,74,Tank for Jolly 17 machine,Pcs,10009001074,
-,,75,Tools,75,Wheel D.42- ST 02572/BL,Pcs,10009001075,
-,,76,Tools,76,Spring-NA 08042900,Pcs,10009001076,
-,,77,Tools,77,Spring-NA 08042800,Pcs,10009001077,
-,,78,Tools,78,TE 08236 pin cotter,Pcs,10009001078,
-,,79,Tools,79,TE 223198 screw,Pcs,10009001079,
-,,80,Tools,80,Gun lubricant,Pcs,10009001080,
-,,81,Tools,81,Charger cable,Pcs,10009001081,
-,,82,Tools,82,3pin plug 13AMP,Pcs,10009001082,
-,,83,Tools,83,Start capacitor for Jolly 17-MP 501,Pcs,10009001083,
-,,84,Tools,84,Condenser for Jolly-MP 502,Pcs,10009001084,
-,,85,Tools,85,Actuator -TE 9010845,Pcs,10009001085,
-,,86,Tools,86,Drill machine,Pcs,10009001086,
-,,87,Tools,87,Wire for Jolly 17,Pcs,10009001087,
-,,88,Tools,88,Pin clevis-TE 1205975,Pcs,10009001088,
-,,89,Tools,89,Skirt RBR Front disc-TE 1201053,Pcs,10009001089,
-,,90,Tools,90,Skirt RBR rear disc-TE 1201127,Pcs,10009001090,
-,,91,Tools,91,Bushing sleeve,Pcs,10009001091,
-,,92,Tools,92,Washer thrust,Pcs,10009001092,
-,,93,Tools,93,Bushing fling,Pcs,10009001093,
-,,94,Tools,94,Pin clevis-TE 09088,Pcs,10009001094,
-,,95,Tools,95,Pin cotter hair,Pcs,10009001095,
-,,96,Tools,96,Spring extn,Pcs,10009001096,
-,,97,Tools,97,Screw Flt SOC M8*1.25,Pcs,10009001097,
-,,98,Tools,98,Screw FLT M6 X,Pcs,10009001098,
-,,99,Tools,99,Nut hex lock M8x1.25x30.ss,Pcs,10009001099,
-,,100,Tools,100,Latch CMPR YEL Grip,Pcs,10009001100,
-,,101,Tools,101,Door casting squeegee.L,Pcs,10009001101,
-,,102,Tools,102,Bushing flng 0.63B 0.72D 0.25L,Pcs,10009001102,
-,,103,Tools,103,"Bushing flng 0.50B,0.59D,0.25L",Pcs,10009001103,
-,,104,Tools,104,Bushing flng 1.00B 1.13D 0.5L,Pcs,10009001104,
-,,105,Tools,105,NA 9100000810 BLADE SQGE 740MM 29 GUM KIT,Pcs,10009001105,
-,,106,Tools,106,NA 08608541 TENSION SPRING,Pcs,10009001106,
-,,107,Tools,107,1.5 MM CABLE 3 CORE 10MTR,Pcs,10009001107,
-,,108,Tools,108,SCREW,Pcs,10009001108,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-10,Garden items,1,Urea,1,Urea,Kg,10010001001,
-,,2,Pipe pin,2,Pipe pin,Pcs,10010001002,
-,,3,Tool box,3,Tool box,Pkt,10010001003,
-,,4,Multibit screw driver 32 in 1,4,Multibit screw driver 32 in 1,Pkt,10010001004,
-,,5,water hose,5,water hose-25mtr,Pkt,10010001005,
-,,6,Charlotte pipe 3/4 inch,6,Charlotte pipe 3/4 inch,Pcs,10010001006,
-,,7,Graden Trowel gardening hand shovel,7,Graden Trowel gardening hand shovel,Pcs,10010001007,
-,,8,Garden hose pipe connector 11mm,8,Garden hose pipe connector 11mm,Pcs,10010001008,
-,,9,Square shovel with long handle,9,Square shovel with long handle,Pcs,10010001009,
-,,10,Glue,10,Glue,Tin,10010001010,
+001,vehicles,001,Car,0001,Sedan,Pcs,10001001001
+001,vehicles,001,Car,0002,SUV,Pcs,10001001002
+001,vehicles,002,Bus ,0001,12 seaters,Pcs,10001002001
+001,vehicles,002,Bus ,0002,27 seaters,Pcs,10001002002
+,,,,,,,
+,,,,,,,
+002,Furniture,001,Bed frame,0001,Metal size :Single,Pcs,10002001001
+002,Furniture,001,Bed frame,0002,Metal size :Double,Pcs,10002001002
+,,,,,,,
+002,Furniture,002,Matress,0001,Single,Pcs,10002002001
+002,Furniture,002,Matress,0002,Double,Pcs,10002002002
+,,,,,,,
+002,Furniture,003,Pillow,0001,Standard,Pcs,10002003001
+,,,,,,,
+002,Furniture,004,Cabinet,0001,Metal -4 drawer,Pcs,10002004001
+002,Furniture,004,Cabinet,0002,Wooden,Pcs,10002004002
+002,Furniture,004,Cabinet,0003,Metal-Double door,Pcs,10002004003
+002,Furniture,004,Cabinet,0004,Metal-Double door (Accomodation),Pcs,10002004004
+002,Furniture,004,Cabinet,0005,Metal -3 drawer,Pcs,10002004005
+002,Furniture,004,Cabinet,0006,File cabinet-Erik 70341005,Pcs,10002004006
+,,,,,,,
+002,Furniture,005,Chairs,0001,Visitor chairs,Pcs,10002005001
+002,Furniture,005,Chairs,0002,Mobile chairs,Pcs,10002005002
+002,Furniture,005,Chairs,0003,Folding chair- GUNDE BLACK,Pcs,10002005003
+002,Furniture,005,Chairs,0004,Chair- RENBERGET SWIV CHR BOMSTAD BLACK,Pcs,10002005004
+002,Furniture,005,Chairs,0005,Chair-Black color,Pcs,10002005005
+,,,,,,,
+002,Furniture,006,Desk,0001,Wooden desk L-shape ,Pcs,10002006001
+002,Furniture,006,Desk,0002,Wooden desk ,Pcs,10002006002
+,,,,,,,
+002,Furniture,007,Table,0001,White Table-THYGE ,Pcs,10002007001
+002,Furniture,007,Table,0002,Grey Table - BEKANT,Pcs,10002007002
+002,Furniture,007,Table,0003,Table-Plastic,Pcs,10002007003
+,,,,,,,
+002,Furniture,008,Sofa,0001,Leather sofa single,Pcs,10002008001
+002,Furniture,008,Sofa,0002,Leather sofa double,Pcs,10002008002
+,,,,,,,
+002,Furniture,009,Shelves,0001,Wooden shelves size :,Pcs,10002009001
+002,Furniture,009,Shelves,0002,Wooden shelves size :,Pcs,10002009002
+,,,,,,,
+002,Furniture,010,Bedsheet,0001,Single,Pcs,10002010001
+002,Furniture,010,Bedsheet,0002,Double,Pcs,10002010002
+,,,,,,,
+002,Furniture,011,Blanket,0001,Single,Pcs,10002011001
+,,,,,,,
+002,Furniture,012,Towel,0001,Bath towel,Pcs,10002012001
+002,Furniture,012,Towel,0002,Hand towel,Pcs,10002012002
+,,,,,,,
+002,Furniture,013,Partition,0001,Partition stand,Pcs,10002013001
+,,,,,,,
+002,Furniture,014,Podium,0001,Podium,Pcs,10002014001
+002,Furniture,014,Podium,0002,Sticker,Pcs,10002014002
+,,,,,,,
+002,Furniture,015,Shoe rack,0001,Shoe rack,Pcs,10002015001
+,,,,,,,
+002,Furniture,016,Shelf,0001,Open shelf rack,Pcs,10002016001
+,,,,,,,
+002,Furniture,017,Caddy,0001,Caddy,Pcs,10002017001
+,,,,,,,
+002,Furniture,018,Mat for floor,0001,Floor mat- Rubber,Pcs,10002018001
+002,Furniture,018,Mat for floor,0002,Floor mat- Plastic,Pcs,10002018002
+002,Furniture,018,Mat for floor,0003,Floor mat- roll,Pcs,10002018003
+,,,,,,,
+002,Furniture,019,Iron stand,0001,Iron stand,Pcs,10002019001
+,,,,,,,
+002,Furniture,020,Glass,0001,Glass,Pcs,10002020001
+,,,,,,,
+002,Furniture,021,Door handle w/lock,0001,Door handle w/lock,Pcs,10002021001
+,,,,,,,
+002,Furniture,022,Cupboard lock,0001,Lock,Pcs,10002022001
+,,,,,,,
+002,Furniture,023,Curtain,0001,Window curtain,Pcs,10002023001
+,,,,,,,
+002,Furniture,024,Clips,0001,Wall clips for curtain,Pcs,10002024001
+,,,,,,,
+002,Furniture,025,Pipe,0001,White rods for curtain,Pcs,10002025001
+,,,,,,,
+002,Furniture,026,Screw,0001,Screw,Pcs,10002026001
+,,,,,,,
+003,Electronics,001,Desktop,0001,Desktop CPU-HP,Set,10003001001
+,,,,,,,
+003,Electronics,002,Printer,0001,Black and white ,Pcs,10003002001
+003,Electronics,002,Printer,0002,Colored,Pcs,10003002002
+003,Electronics,002,Printer,0003,Label printer,Pcs,10003002003
+,,,,,,,
+,,,,,,,
+003,Electronics,003,Photocopy machine,0001,RICOH Photo copy machine Aficio MP C3502,Pcs,10003003001
+,,,,,,,
+,,,,,,,
+,,,,,,,
+003,Electronics,004,Multifunction device(Copier/printer/scanner),0001,Black and white ,Pcs,10003004001
+003,Electronics,004,Multifunction device(Copier/printer/scanner),0002,Colored,Pcs,10003004002
+,,,,,,,
+003,Electronics,005,Laptop,0001,"11""inch",Pcs,10003005001
+003,Electronics,005,Laptop,0002,"12""inch",Pcs,10003005002
+003,Electronics,005,Laptop,0003,"13""inch",Pcs,10003005003
+003,Electronics,005,Laptop,0004,"14""inch",Pcs,10003005004
+,,,,,,,
+003,Electronics,006,Monitor,0001,"19"" inch",Pcs,10003006001
+003,Electronics,006,Monitor,0002,"21"" inch",Pcs,10003006002
+003,Electronics,006,Monitor,0003,"27"" inch",Pcs,10003006003
+003,Electronics,006,Monitor,0004,"24"" inch-HP",Pcs,10003006004
+003,Electronics,006,Monitor,0005,"22"" inch-Used",pcs,10003006005
+,,,,,,,
+003,Electronics,007,Television,0001,"32""inch",Pcs,10003007001
+003,Electronics,007,Television,0002,"42""inch",Pcs,10003007002
+003,Electronics,007,Television,0003,"55""inch",Pcs,10003007003
+,,,,,,,
+003,Electronics,008,CCTV system,0001,Camera,Set,10003008001
+003,Electronics,008,CCTV system,0002,DVR,Set,10003008002
+,,,,,,,
+003,Electronics,009,Finger print device,0001,Mobile finger print device,Set,10003009001
+003,Electronics,009,Finger print device,0002,Fixed finger print device,Set,10003009002
+003,Electronics,009,Finger print device,0003,Supreme face station2,Set,10003009003
+,,,,,,,
+003,Electronics,010,Mouse ,0001,Wireless mouse,Pcs,10003010001
+003,Electronics,010,Mouse ,0002,Wired mouse,Pcs,10003010002
+,,,,,,,
+003,Electronics,011,Mouse Pad,0001,Normal mouse pad,Pcs,10003011001
+,,,,,,,
+003,Electronics,012,Keybord,0001,Wireless keyboard,Pcs,10003012001
+003,Electronics,012,Keybord,0002,Wired keyboard,Pcs,10003012002
+003,Electronics,012,Keybord,0003,Combo -Keyboard W/mouse,Pcs,10003012003
+,,,,,,,
+,,,,,,,
+003,Electronics,013,MISC connection,0001,HDMI cable,Pcs,10003013001
+003,Electronics,013,MISC connection,0002,USB cable,Pcs,10003013002
+003,Electronics,013,MISC connection,0003,Extension code- 8 sluts,Pcs,10003013003
+003,Electronics,013,MISC connection,0004,Extension code- 4 sluts,Pcs,10003013004
+003,Electronics,013,MISC connection,0005,Charger- Fingerprint machine,Pcs,10003013005
+003,Electronics,013,MISC connection,0006,Power adaptor,Pcs,10003013006
+003,Electronics,013,MISC connection,0007,ZXP 3 cleaning kit,Pcs,10003013007
+003,Electronics,013,MISC connection,0008,Extension Board- 50mtr,Pcs,10003013008
+003,Electronics,013,MISC connection,0009,Extension Board- 25mtr,Pcs,10003013009
+003,Electronics,013,MISC connection,0010,Power flex 4,Pcs,10003013010
+003,Electronics,013,MISC connection,0011,Scaffolding,Pcs,10003013011
+003,Electronics,013,MISC connection,0012,Certficate holder,Pcs,10003013012
+003,Electronics,013,MISC connection,0013,Verification sample -Positive 10011326,Pcs,10003013013
+003,Electronics,013,MISC connection,0014,Verification sample -Negative 10010156,Pcs,10003013014
+003,Electronics,013,MISC connection,0015,Dual mode verification trap 42200277,Pcs,10003013015
+003,Electronics,013,MISC connection,0016,Cable wire,Pcs,10003013016
+003,Electronics,013,MISC connection,0017,Trunky,Pcs,10003013017
+003,Electronics,013,MISC connection,0018,Tupperwear,Pcs,10003013018
+003,Electronics,013,MISC connection,0019,Wire sleeve,Pcs,10003013019
+003,Electronics,013,MISC connection,0020,Camera connector,Pcs,10003013019
+003,Electronics,013,MISC connection,0021,Torch,Pcs,10003013020
+003,Electronics,013,MISC connection,0022,Lamp,Pcs,10003013021
+003,Electronics,013,MISC connection,0023,3pin plug,Pcs,10003013022
+003,Electronics,013,MISC connection,0024,Converter- 24v DC to 12v AC,Pcs,10003013023
+003,Electronics,013,MISC connection,0025,4GB RAM CARD-TRANSCEND,Pcs,10003013024
+003,Electronics,013,MISC connection,0026,Windows 10 professional,Pcs,10003013025
+003,Electronics,013,MISC connection,0027,Trunki,Pcs,10003013026
+003,Electronics,013,MISC connection,0028,Bulb (CFL),Pcs,10003013027
+003,Electronics,013,MISC connection,0029,Bulb -Toilet,Pcs,10003013028
+003,Electronics,013,MISC connection,0030,Printer cable-HP 4630,Pcs,10003013028
+003,Electronics,013,MISC connection,0031,Head count,Pcs,10003013029
+003,Electronics,013,MISC connection,0032,Sample traps md 1964-100,Ctn,10003013030
+003,Electronics,013,MISC connection,0033,Calibration traps md 1965-25,Ctn,10003013031
+003,Electronics,013,MISC connection,0034,Cabinet fan filters-42200160,Pkt,10003013032
+003,Electronics,013,MISC connection,0035,Cotton swabs-42200164,Pkt,10003013033
+003,Electronics,013,MISC connection,0036,Alcohol swabs-42200165,Pkt,10003013034
+003,Electronics,013,MISC connection,0037,Desorber screen-0051736,Pcs,10003013035
+003,Electronics,013,MISC connection,0038,Printer paper roll-42200172,Pkt,10003013036
+003,Electronics,013,MISC connection,0039,Sieve Canister-42500025,Ctn,10003013037
+003,Electronics,013,MISC connection,0040,Verification trap-Dual mode-42200277,Ctn,10003013038
+003,Electronics,013,MISC connection,0041,T.V wall bracket,Pcs,10003013039
+003,Electronics,013,MISC connection,0042,Google chrome cast,Pcs,10003013040
+003,Electronics,013,MISC connection,0043,Digital safe,Pcs,10003013041
+003,Electronics,013,MISC connection,0044,File shelf,Pcs,10003013042
+003,Electronics,013,MISC connection,0045,DIgital thermometer- head,Pcs,10003013043
+003,Electronics,,,,,,
+003,Electronics,014,Water cooler,0001,Water cooler stainless steel- 2taps ,Pcs,10003014001
+003,Electronics,014,Water cooler,0002,Water cooler-20ltr,Pcs,10003014002
+003,Electronics,,,,,,
+003,Electronics,015,USB device,0001,USB flash drive-16GB,Pcs,10003015001
+003,Electronics,015,USB device,0002,USB flash drive-32GB,Pcs,10003015002
+003,Electronics,015,USB device,0003,USB Connector,Pcs,10003015003
+003,Electronics,015,USB device,0004,Wifi-Adaptor,Pcs,10003015004
+003,Electronics,,,,,,
+003,Electronics,016,Water boiler,0001,Waterboiler- Sunstar,Pcs,10003016001
+003,Electronics,,,,,,
+003,Electronics,017,Projector,0001,Wireless projector,Pcs,10003017001
+003,Electronics,017,Projector,0002,Projector screen,Pcs,10003017002
+003,Electronics,017,Projector,0003,Wireless Dongle,Pcs,10003017003
+003,Electronics,017,Projector,0004,Speaker,Pcs,10003017004
+003,Electronics,017,Projector,0005,Amplifier,Pcs,10003017005
+003,Electronics,017,Projector,0006,Wireless Mic,Pcs,10003017006
+003,Electronics,,,,,,
+003,Electronics,018,Kettle,0001,Electric Kettle,Pcs,10003018001
+003,Electronics,,,,,,
+003,Electronics,019,Iron box,0001,Iron box,Pcs,10003019001
+003,Electronics,019,Iron box,0002,Steam iron box,Pcs,10003019002
+003,Electronics,,,,,,
+003,Electronics,020,Shredder,0001,Paper shredder machine,Pcs,10003020001
+003,Electronics,,,,,,
+003,Electronics,021,Washing machine,0001,Manual,Pcs,10003021001
+003,Electronics,,,,,,
+003,Electronics,022,3pin plug,0001,Manual,Pcs,10003022001
+003,Electronics,,,,,,
+003,Electronics,023,Binding machine,0001,Manual,Pcs,10003023001
+003,Electronics,,,,,,
+003,Electronics,024,Torch,0001,Professional,Pcs,10003024001
+003,Electronics,,,,,,
+003,Electronics,025,Lamp,0001,Portable,Pcs,10003025001
+003,Electronics,025,Lamp,0002,Fuse,Pcs,10003025002
+003,Electronics,,,,,,
+003,Electronics,026,Insect killer,0001,Insect killer-2x15wt,Pcs,10003026001
+003,Electronics,026,Insect killer,0002,Insect killer-2x20wt,Pcs,10003026002
+003,Electronics,,,,,,
+003,Electronics,027,Radio - DP 2400,0001,Radio - DP 2400,Pcs,10003027001
+003,Electronics,027,Radio - DP 2400,0002,Head Set,Pcs,10003027002
+003,Electronics,027,Radio - DP 2400,0003,Spare batteries-DP 2000 e series,Pcs,10003027003
+003,Electronics,,,,,,
+003,Electronics,028,ID CARD machine,0001,ZEBRA ZC 300,Pcs,10003028001
+003,Electronics,,,,,,
+003,Electronics,029,Lamination machine,0001,Lamination machine,Pcs,10003029001
+003,Electronics,029,Lamination machine,0002,Lamination cover 60x90cm,Pcs,10003029002
+,,,,,,,
+004,Kitchen items,001,Gas stove,0001,Double burner,Pcs,10004001001
+004,Kitchen items,002,Gas cylinder,0001,Gas cylinder,Pcs,10004002002
+004,Kitchen items,003,Oven,0001,MIcrowave oven,Pcs,10004003003
+004,Kitchen items,004,Regulator,0001,Standard,Pcs,10004004004
+004,Kitchen items,005,Refrigerator,0001,Single door-165ltr,Pcs,10004005005
+004,Kitchen items,005,Refrigerator,0002,Double door,Pcs,10004006006
+004,Kitchen items,005,Refrigerator,0003,Small 3kg,Pcs,10004006007
+004,Kitchen items,005,Refrigerator,0004,Mug,Pcs,10004006008
+004,Kitchen items,005,Refrigerator,0005,Frypan,Pcs,10004006009
+004,Kitchen items,005,Refrigerator,0006,Saucepan,Pcs,10004006010
+004,Kitchen items,005,Refrigerator,0007,Plate,Pcs,10004006011
+004,Kitchen items,005,Refrigerator,0008,Spoon,Pcs,10004006012
+004,Kitchen items,005,Refrigerator,0009,Gas small can-1kg,Pcs,10004006013
+004,Kitchen items,005,Refrigerator,0010,Rice pot,Pcs,10004006014
+004,Kitchen items,005,Refrigerator,0011,Burner with Oven,Pcs,10004006015
+,,,,,,,
+005,Accessories,001,Paper  dispenser,0001,Paper  dispenser,Pcs,10005001001
+005,Accessories,002,Soap dispenser,0001,Soap dispenser,Pcs,10005002002
+005,Accessories,003,Dust bin,0001,Dust bin,Pcs,10005003003
+005,Accessories,003,Dust bin,0002,Dust bin,Pcs,10005003004
+005,Accessories,003,Dust bin,0003,Dust bin,Pcs,10005003005
+005,Accessories,003,Dust bin,0004,Dust bin,Pcs,10005003006
+005,Accessories,003,Dust bin,0005,Self inking stamp- Medium,Pcs,10005003007
+005,Accessories,003,Dust bin,0006,Self inking stamp- Big with logo,Pcs,10005003008
+005,Accessories,003,Dust bin,0007,Name plate- Acrylic,Pcs,10005003009
+005,Accessories,003,Dust bin,0008,Dust bin,Pcs,10005003010
+005,Accessories,003,Dust bin,0009,Dust bin,Pcs,10005003011
+005,Accessories,003,Dust bin,0010,Name plate- wooden,Pcs,10005003012
+005,Accessories,003,Dust bin,0011,Wallmount checklist holder,Pcs,10005003013
+005,Accessories,003,Dust bin,0012,Date stamp- Medium,Pcs,10005003014
+005,Accessories,003,Dust bin,0013,Fire extinguisher,Pcs,10005003015
+005,Accessories,003,Dust bin,0014,Dust bin,Pcs,10005003016
+005,Accessories,003,Dust bin,0015,Under vehicle inspection mirror,Pcs,10005003017
+005,Accessories,003,Dust bin,0016,Suggestion box,Pcs,10005003018
+005,Accessories,003,Dust bin,0017,Retractable post (Barrier),Pcs,10005003019
+005,Accessories,003,Dust bin,0018,Hand bidet (Shattaf head silver),Pcs,10005003020
+005,Accessories,003,Dust bin,0019,Key chain,Pcs,10005003021
+005,Accessories,003,Dust bin,0020,Rake with handle,Pcs,10005003022
+005,Accessories,003,Dust bin,0021,Telescopic Wavy shears,Pcs,10005003023
+005,Accessories,003,Dust bin,0022,Leaves picker,Pcs,10005003024
+005,Accessories,003,Dust bin,0023,safety glass,Pcs,10005003025
+005,Accessories,003,Dust bin,0024,Cable tie,Pcs,10005003026
+005,Accessories,003,Dust bin,0025,Glue board-Orkin,Pcs,10005003027
+005,Accessories,003,Dust bin,0026,Window tin cat-Orkin,Pcs,10005003028
+005,Accessories,003,Dust bin,0027,Confiscated box,Pcs,10005003029
+005,Accessories,003,Dust bin,0028,Traffic Baton,Pcs,10005003030
+005,Accessories,003,Dust bin,0029,Helmet-white,Pcs,10005003031
+005,Accessories,003,Dust bin,0030,Safety gloves,Pcs,10005003032
+005,Accessories,003,Dust bin,0031,Chain-Small,Pcs,10005003033
+005,Accessories,003,Dust bin,0032,Hooks,Pcs,10005003034
+005,Accessories,003,Dust bin,0033,Electric cable,Pcs,10005003035
+005,Accessories,003,Dust bin,0034,Cable tie,Pcs,10005003036
+005,Accessories,003,Dust bin,0035,Cable cover,Pcs,10005003037
+005,Accessories,003,Dust bin,0036,Drum unit,Pcs,10005003038
+005,Accessories,003,Dust bin,0037,Chain-Big,Pcs,10005003039
+005,Accessories,003,Dust bin,0038,Lock with key,Pcs,10005003040
+005,Accessories,003,Dust bin,0039,Traffic cones-110cm,Pcs,10005003041
+005,Accessories,003,Dust bin,0040,Silinder-door lock,Pcs,10005003042
+005,Accessories,003,Dust bin,0041,Hatch lock,Pcs,10005003043
+005,Accessories,003,Dust bin,0042,Wire cutter,Pcs,10005003044
+005,Accessories,003,Dust bin,0043,Desk table Set,Pcs,10005003045
+,,,,,,,
+006,Cleaning machine,001,Pressure washer,0001,Pressure water machine,Pcs,10006001001
+006,Cleaning machine,002,Coupling,0001,Coupling-water machine,Pcs,10006002002
+006,Cleaning machine,002,Coupling,0002,Sweeper machine NIlfisk SW 750,Pcs,10006002003
+006,Cleaning machine,002,Coupling,0003,Double bent steel pipe with brush,Pcs,10006002004
+006,Cleaning machine,002,Coupling,0004,Carpet tool,Pcs,10006002005
+006,Cleaning machine,002,Coupling,0005,Carpet extraction machine,Pcs,10006002006
+006,Cleaning machine,002,Coupling,0006,Scrubbing machine Jolly 17,Pcs,10006002007
+006,Cleaning machine,002,Coupling,0007,Vaccum cleaner wet & dry- Florentini,Pcs,10006002008
+,,,,,,,
+007,Mobile,001,Smartphone,0001,Mobile phone -Samsung Grand Prime,Pcs,10007001001
+007,Mobile,001,Smartphone,0002,Power bank,Pcs,10007001002
+007,Mobile,001,Smartphone,0003,Mobile phone -Nokia,Pcs,10007001003
+007,Mobile,001,Smartphone,0004,Screen protector-Nokia 6.1,Pcs,10007001004
+007,Mobile,001,Smartphone,0005,Mobile case,Pcs,10007001005
+007,Mobile,001,Smartphone,0006,Samsung Tab10 ,Pcs,10007001006
+,,,,,,,
+008,Tags,001, Tag,0001,NFC-Plastic tags,Pcs,10008001001
+008,Tags,001, Tag,0002,Key tags plastic,Pcs,10008001002
+008,Tags,001, Tag,0003,Laynards,Pcs,10008001003
+008,Tags,001, Tag,0004,Name badge,Pcs,10008001004
+,,,,,,,
+009,Spareparts,001,Tools,0001,AC DRIVE,Pcs,10009001001
+009,Spareparts,001,Tools,0002,Bearing 6204,Pcs,10009001002
+009,Spareparts,001,Tools,0003,Locking ring,Pcs,10009001003
+009,Spareparts,001,Tools,0004,Distance washer bearing,Pcs,10009001004
+009,Spareparts,001,Tools,0005,Bearing washer 421A,Pcs,10009001005
+009,Spareparts,001,Tools,0006,Bearing circlip,Pcs,10009001006
+009,Spareparts,001,Tools,0007,Ring 421A box assy,Pcs,10009001007
+009,Spareparts,001,Tools,0008,Seal,Pcs,10009001008
+009,Spareparts,001,Tools,0009,Wet/dry motor,Pcs,10009001009
+009,Spareparts,001,Tools,0010,L Gasket,Pcs,10009001010
+009,Spareparts,001,Tools,0011,Blade SQGE,Pcs,10009001011
+009,Spareparts,001,Tools,0012,Blade SQGE Rear,Pcs,10009001012
+009,Spareparts,001,Tools,0013,Starting capacitor 100MF 230-240V 50H,Pcs,10009001013
+009,Spareparts,001,Tools,0014,Running Capacitor 32MF 230-240V 50H,Pcs,10009001014
+009,Spareparts,001,Tools,0015,cap base for Vaccum cleaner F39F1-code CB004,Pcs,10009001015
+009,Spareparts,001,Tools,0016,By pass motor for vaccum cleaner  F39F1-code M0152,Pcs,10009001016
+009,Spareparts,001,Tools,0017,Blade SQGE Front,Pcs,10009001017
+009,Spareparts,001,Tools,0018,Actuator spring squeegee housing,Pcs,10009001018
+009,Spareparts,001,Tools,0019,Strap cap drain,Pcs,10009001019
+009,Spareparts,001,Tools,0020,Squeegee assy,Pcs,10009001020
+009,Spareparts,001,Tools,0021,TE 86866 pin cotter,Pcs,10009001021
+009,Spareparts,001,Tools,0022,Key nut,Pcs,10009001022
+009,Spareparts,001,Tools,0023,Bearing vac motor,Pcs,10009001023
+009,Spareparts,001,Tools,0024,Motor vaccum 24v 280w sip,Pcs,10009001024
+009,Spareparts,001,Tools,0025,NA 9100000816 hose suction black,Pcs,10009001025
+009,Spareparts,001,Tools,0026,Plastic tube,Pcs,10009001026
+009,Spareparts,001,Tools,0027,Tube,Pcs,10009001027
+009,Spareparts,001,Tools,0028,Wet flr nozzle,Pcs,10009001028
+009,Spareparts,001,Tools,0029,Block SQGE guide,Pcs,10009001029
+009,Spareparts,001,Tools,0030,Block  guide SQQE,Pcs,10009001030
+009,Spareparts,001,Tools,0031,Standard brush,Pcs,10009001031
+009,Spareparts,001,Tools,0032,Basket H8.D,Pcs,10009001032
+009,Spareparts,001,Tools,0033,Brush Assy Disk,Pcs,10009001033
+009,Spareparts,001,Tools,0034,Hose Assy Drain,Pcs,10009001034
+009,Spareparts,001,Tools,0035,Caster Assy,Pcs,10009001035
+009,Spareparts,001,Tools,0036,Filter panel,Pcs,10009001036
+009,Spareparts,001,Tools,0037,Brush Assy Disk,Pcs,10009001037
+009,Spareparts,001,Tools,0038,Frame SQGE side,Pcs,10009001038
+009,Spareparts,001,Tools,0039,Strap WLDT SQGE T12,Pcs,10009001039
+009,Spareparts,001,Tools,0040,Latch weldment hook,Pcs,10009001040
+009,Spareparts,001,Tools,0041,"Single disc pad holder 17""",Pcs,10009001041
+009,Spareparts,001,Tools,0042,"Hard brush for scrubbing machine 17""",Pcs,10009001042
+009,Spareparts,001,Tools,0043,"Soft brush for scrubbing machine 17""",Pcs,10009001043
+009,Spareparts,001,Tools,0044,Flex hose D38,Pcs,10009001044
+009,Spareparts,001,Tools,0045,Latch CMPR YEL Grip,Pcs,10009001045
+009,Spareparts,001,Tools,0046,Blade SQGE side,Pcs,10009001046
+009,Spareparts,001,Tools,0047,Pad holder STABIPAD,Pcs,10009001047
+009,Spareparts,001,Tools,0048,Scrubbing brush C51,Pcs,10009001048
+009,Spareparts,001,Tools,0049,Developing unit kit,Pcs,10009001049
+009,Spareparts,001,Tools,0050,Vaccum filter,Pcs,10009001050
+009,Spareparts,001,Tools,0051,Felt seal 510B MTR,Pcs,10009001051
+009,Spareparts,001,Tools,0052,Contactor 8A,Pcs,10009001052
+009,Spareparts,001,Tools,0053,Oil sleeve,Pcs,10009001053
+009,Spareparts,001,Tools,0054,Cable core 12MTR 15MM,Pcs,10009001054
+009,Spareparts,001,Tools,0055,Charger kit 36vdc 021 A-T12,Pcs,10009001055
+009,Spareparts,001,Tools,0056,VR BRUSH KIT,Pcs,10009001056
+009,Spareparts,001,Tools,0057,FILTER PANEL,Pcs,10009001057
+009,Spareparts,001,Tools,0058,HOSE KIT,Pcs,10009001058
+009,Spareparts,001,Tools,0059,Spanner,Pcs,10009001059
+009,Spareparts,001,Tools,0060,Plier,Pcs,10009001060
+009,Spareparts,001,Tools,0061,Screw driver,Pcs,10009001061
+009,Spareparts,001,Tools,0062,Tester,Pcs,10009001062
+009,Spareparts,001,Tools,0063,Scraper-Large,Pcs,10009001063
+009,Spareparts,001,Tools,0064,Scraper-Small,Pcs,10009001064
+009,Spareparts,001,Tools,0065,Scraper blade,Pcs,10009001065
+009,Spareparts,001,Tools,0066,Telescopic pole-3mtr,Pcs,10009001066
+009,Spareparts,001,Tools,0067,Bearing bolt,Pcs,10009001067
+009,Spareparts,001,Tools,0068,TE 30241 brush assy disc,Pcs,10009001068
+009,Spareparts,001,Tools,0069,"Plate MTG,Gaske",Pcs,10009001069
+009,Spareparts,001,Tools,0070,TE 1408255 screw,Pcs,10009001070
+009,Spareparts,001,Tools,0071,"Gasket URE 50,03,74w 05.31L",Pcs,10009001071
+009,Spareparts,001,Tools,0072,Wand,Pcs,10009001072
+009,Spareparts,001,Tools,0073,Black flexible hose for Vaccum cleaner-F39F1-KT003N,Pcs,10009001073
+009,Spareparts,001,Tools,0074,Tank for Jolly 17 machine,Pcs,10009001074
+009,Spareparts,001,Tools,0075,Wheel D.42- ST 02572/BL,Pcs,10009001075
+009,Spareparts,001,Tools,0076,Spring-NA 08042900,Pcs,10009001076
+009,Spareparts,001,Tools,0077,Spring-NA 08042800,Pcs,10009001077
+009,Spareparts,001,Tools,0078,TE 08236 pin cotter,Pcs,10009001078
+009,Spareparts,001,Tools,0079,TE 223198 screw,Pcs,10009001079
+009,Spareparts,001,Tools,0080,Gun lubricant,Pcs,10009001080
+009,Spareparts,001,Tools,0081,Charger cable,Pcs,10009001081
+009,Spareparts,001,Tools,0082,3pin plug 13AMP,Pcs,10009001082
+009,Spareparts,001,Tools,0083,Start capacitor for Jolly 17-MP 501,Pcs,10009001083
+009,Spareparts,001,Tools,0084,Condenser for Jolly-MP 502,Pcs,10009001084
+009,Spareparts,001,Tools,0085,Actuator -TE 9010845,Pcs,10009001085
+009,Spareparts,001,Tools,0086,Drill machine,Pcs,10009001086
+009,Spareparts,001,Tools,0087,Wire for Jolly 17,Pcs,10009001087
+009,Spareparts,001,Tools,0088,Pin clevis-TE 1205975,Pcs,10009001088
+009,Spareparts,001,Tools,0089,Skirt RBR Front disc-TE 1201053,Pcs,10009001089
+009,Spareparts,001,Tools,0090,Skirt RBR rear disc-TE 1201127,Pcs,10009001090
+009,Spareparts,001,Tools,0091,Bushing sleeve,Pcs,10009001091
+009,Spareparts,001,Tools,0092,Washer thrust,Pcs,10009001092
+009,Spareparts,001,Tools,0093,Bushing fling,Pcs,10009001093
+009,Spareparts,001,Tools,0094,Pin clevis-TE 09088,Pcs,10009001094
+009,Spareparts,001,Tools,0095,Pin cotter hair,Pcs,10009001095
+009,Spareparts,001,Tools,0096,Spring extn,Pcs,10009001096
+009,Spareparts,001,Tools,0097,Screw Flt SOC M8*1.25,Pcs,10009001097
+009,Spareparts,001,Tools,0098,Screw FLT M6 X,Pcs,10009001098
+009,Spareparts,001,Tools,0099,Nut hex lock M8x1.25x30.ss,Pcs,10009001099
+009,Spareparts,001,Tools,0100,Latch CMPR YEL Grip,Pcs,10009001100
+009,Spareparts,001,Tools,0101,Door casting squeegee.L,Pcs,10009001101
+009,Spareparts,001,Tools,0102,Bushing flng 0.63B 0.72D 0.25L,Pcs,10009001102
+009,Spareparts,001,Tools,0103,"Bushing flng 0.50B,0.59D,0.25L",Pcs,10009001103
+009,Spareparts,001,Tools,0104,Bushing flng 1.00B 1.13D 0.5L,Pcs,10009001104
+009,Spareparts,001,Tools,0105,NA 9100000810 BLADE SQGE 740MM 29 GUM KIT,Pcs,10009001105
+009,Spareparts,001,Tools,0106,NA 08608541 TENSION SPRING,Pcs,10009001106
+009,Spareparts,001,Tools,0107,1.5 MM CABLE 3 CORE 10MTR,Pcs,10009001107
+009,Spareparts,001,Tools,0108,SCREW,Pcs,10009001108
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+010,Garden items,001,Urea,0001,Urea,Kg,10010001001
+010,Garden items,001,Urea,0002,Pipe pin,Pcs,10010001002
+010,Garden items,001,Urea,0003,Tool box,Pkt,10010001003
+010,Garden items,001,Urea,0004,Multibit screw driver 32 in 1,Pkt,10010001004
+010,Garden items,001,Urea,0005,water hose-25mtr,Pkt,10010001005
+010,Garden items,001,Urea,0006,Charlotte pipe 3/4 inch,Pcs,10010001006
+010,Garden items,001,Urea,0007,Graden Trowel gardening hand shovel,Pcs,10010001007
+010,Garden items,001,Urea,0008,Garden hose pipe connector 11mm,Pcs,10010001008
+010,Garden items,001,Urea,0009,Square shovel with long handle,Pcs,10010001009
+010,Garden items,001,Urea,0010,Glue,Tin,10010001010
