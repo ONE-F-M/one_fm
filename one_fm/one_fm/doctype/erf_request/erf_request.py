@@ -26,3 +26,24 @@ class ERFRequest(Document):
 		if erf:
 			frappe.throw(_("""An ERF <b><a href="#Form/ERF/{0}">{0}</a></b> is exists against this request, \
 				Can not change this ERF Request.!""").format(erf, self.name))
+
+def trigger_employee_exit(doc, method):
+	if doc.status == 'Left' and not exists_erf_request_on_employee_exit(doc):
+		create_erf_request(doc.doctype, doc.name)
+
+def exists_erf_request_on_employee_exit(employee):
+	return frappe.db.exists('Employee', {'name': employee.name, 'docstatus': 1})
+
+def create_erf_request(trigger_dt, trigger_dn):
+	trigger_doc = frappe.get_doc(trigger_dt, trigger_dn)
+	erf_request = frappe.new_doc('ERF Request')
+	erf_request.reference_type = trigger_dt
+	erf_request.reference_name = trigger_dn
+	if trigger_dt == 'Employee':
+		erf_request.reason_for_request = 'Employee Exit'
+		erf_request.number_of_candidates_required = 1
+		erf_request.department = trigger_doc.department
+		erf_request.designation = trigger_doc.designation
+
+	erf_request.save(ignore_permissions=True)
+	frappe.msgprint(_('ERF Request {0} is created').format(erf_request.name), alert=True)

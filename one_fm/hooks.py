@@ -90,6 +90,9 @@ doc_events = {
     },
     "UOM": {
         "autoname": "one_fm.utils.change_naming_series"
+    },
+    "Employee": {
+        "on_update": "one_fm.one_fm.doctype.erf_request.erf_request.trigger_employee_exit"
     }
 }
 
@@ -135,7 +138,7 @@ scheduler_events = {
 # -------
 
 fixtures = ["Custom Field","Property Setter","Workflow State","Workflow Action Master","Workflow","Custom Script","Print Format"]
-      
+
 # fixtures = [
 #       {
 #         "dt": "Custom Field"
@@ -167,4 +170,3 @@ fixtures = ["Custom Field","Property Setter","Workflow State","Workflow Action M
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
-
