@@ -516,10 +516,9 @@
   },
   {
    "default": "Yes",
-   "description": "Would you be open to seeing a person who has a track record of doing these types of work even if the person had a different mix of skills and experiences ?",
    "fieldname": "open_to_different_skilled_and_experienced_candidates",
    "fieldtype": "Select",
-   "label": "Open to Different Skilled and Experienced Candidates",
+   "label": "would you be open to see applicants with a track record of doing these types of work even if the person had a different mix of skills, exp ?",
    "options": "Yes\nNo"
   },
   {
@@ -535,7 +534,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-12 18:20:02.965460",
+ "modified": "2020-05-13 13:53:02.238060",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
