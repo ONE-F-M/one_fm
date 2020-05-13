@@ -16,6 +16,7 @@
   "column_break_7",
   "status",
   "reason_for_decline",
+  "erf_created",
   "references_section",
   "reference_type",
   "column_break_12",
@@ -83,7 +84,7 @@
   {
    "fieldname": "references_section",
    "fieldtype": "Section Break",
-   "label": "References"
+   "label": "Hiring Trigger Reference"
   },
   {
    "fieldname": "reference_type",
@@ -127,11 +128,18 @@
    "options": "User",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "erf_created",
+   "fieldtype": "Check",
+   "label": "ERF Created",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-04-29 11:45:51.977742",
+ "modified": "2020-05-12 12:35:41.881107",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF Request",

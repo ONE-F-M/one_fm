@@ -17,6 +17,12 @@
   "career_history_company_section",
   "number_of_companies",
   "career_history_company",
+  "promotions_section",
+  "promotions",
+  "promotion_total_score",
+  "salary_hikes_section",
+  "salary_hikes",
+  "salary_hike_total_score",
   "shoves_and_tugs_section",
   "shoves",
   "shoves_and_tugs_cb_column",
@@ -41,7 +47,7 @@
   {
    "fieldname": "career_history_company",
    "fieldtype": "Table",
-   "label": "Career History Company",
+   "label": "Career History",
    "options": "Career History Company",
    "reqd": 1
   },
@@ -124,10 +130,46 @@
    "fieldtype": "Data",
    "label": "Total Years Of Experience",
    "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "promotions_section",
+   "fieldtype": "Section Break",
+   "label": "Promotions"
+  },
+  {
+   "fieldname": "promotions",
+   "fieldtype": "Table",
+   "label": "Promotions",
+   "options": "Career History Promotion"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "salary_hikes_section",
+   "fieldtype": "Section Break",
+   "label": "Salary Hikes"
+  },
+  {
+   "fieldname": "salary_hikes",
+   "fieldtype": "Table",
+   "label": "Salary Hikes",
+   "options": "Career History Salary Hike"
+  },
+  {
+   "fieldname": "promotion_total_score",
+   "fieldtype": "Float",
+   "label": "Promotion Total Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "salary_hike_total_score",
+   "fieldtype": "Float",
+   "label": "Salary Hike Total Score",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-05-09 18:29:59.545610",
+ "modified": "2020-05-11 13:51:35.165295",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",
@@ -142,6 +184,30 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
    "share": 1,
    "write": 1
   }
