@@ -60,7 +60,7 @@ var validate_date = function(frm) {
 	if(frm.doc.expected_date_of_deployment < frm.doc.erf_initiation){
 		frappe.throw(__("Expected Date of Deployment cannot be before ERF Initiation Date"));
 	}
-	if(frm.doc.expected_date_of_deployment < frappe.datetime.today()){
+	if(frm.doc.expected_date_of_deployment < frappe.datetime.now_date()){
 		frappe.throw(__("Expected Date of Deployment cannot be before Today"));
 	}
 };
