@@ -60,7 +60,8 @@
   {
    "fieldname": "help_text",
    "fieldtype": "HTML",
-   "label": "Help Text"
+   "label": "Help Text",
+   "options": "<p style=\"font-size: 12px; color: #8d99a6;\">Objective:</p>\n<ol>\n<li style=\"font-size: 12px; color: #8d99a6;\">On this job what types of projects and tasks would this person be assigned?</li>\n<li style=\"font-size: 12px; color: #8d99a6;\">Why would a top person who's not looking, would see this as a better career opportunity than the person's current role or some competing opportunity for other than a big monetary increase?</li>\n</ol>\n<p style=\"font-size: 12px; color: #8d99a6;\">Key Results:</p>\n<ol>\n<li style=\"font-size: 12px; color: #8d99a6;\">What the candidate would need to accomplish in doing this work that indicates this person is a great performer?</li>\n</ol>"
   },
   {
    "fieldname": "objectives_and_key_results_section",
@@ -72,7 +73,7 @@
   }
  ],
  "links": [],
- "modified": "2020-05-13 20:29:34.210642",
+ "modified": "2020-05-14 22:09:06.158577",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile",

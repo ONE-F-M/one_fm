@@ -8,26 +8,11 @@ frappe.ui.form.on('OKR Performance Profile', {
 		}
     set_objective_option_to_kr(frm);
 		set_objectoves_description(frm);
-		frm.fields_dict.help_text.html(get_help_text_html());
 	},
 	description: function(frm) {
 		set_objectoves_description(frm);
 	}
 });
-
-var get_help_text_html = function() {
-	return `\
-			<p>Objective:</p>\
-			<ol>\
-			<li>On this job what types of projects and tasks would this person be assigned?</li>\
-			<li>Why would a top person who's not looking, would see this as a better career opportunity than the person's current role or some competing opportunity for other than a big monetary increase?</li>\
-			</ol>\
-			<p>Key Results:</p>\
-			<ol>\
-			<li>What the candidate would need to accomplish in doing this work that indicates this person is a great performer?</li>\
-			</ol>
-	`;
-};
 
 var set_objectoves_description = function(frm) {
 	let description = frm.doc.description?frm.doc.description:'';
