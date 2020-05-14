@@ -43,6 +43,8 @@
   {
    "fieldname": "site_code",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Site Code"
   },
   {
@@ -58,12 +60,6 @@
    "options": "Location"
   },
   {
-   "fieldname": "site_poc",
-   "fieldtype": "Table",
-   "label": "Site POC",
-   "options": "POC"
-  },
-  {
    "fieldname": "column_break_7",
    "fieldtype": "Column Break"
   },
@@ -71,6 +67,8 @@
    "fetch_from": "project.project_name",
    "fieldname": "project_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Project Name",
    "read_only": 1
   },
@@ -155,11 +153,19 @@
    "fetch_from": "account_supervisor.employee_name",
    "fieldname": "account_supervisor_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Account Supervisor Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "site_poc",
+   "fieldtype": "Table",
+   "label": "Site POC",
+   "options": "POC"
   }
  ],
- "modified": "2020-05-05 19:34:46.450743",
+ "modified": "2020-05-14 21:47:01.528150",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Site",

@@ -6,5 +6,5 @@ from __future__ import unicode_literals
 # import frappe
 from frappe.model.document import Document
 
-class ApplicantBestReferenceItem(Document):
+class Roster(Document):
 	pass

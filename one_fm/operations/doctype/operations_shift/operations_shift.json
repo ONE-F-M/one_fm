@@ -1,5 +1,4 @@
 {
- "autoname": "field:site_code",
  "creation": "2020-04-28 18:51:50.039815",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -16,12 +15,19 @@
   "supervisor",
   "column_break_14",
   "supervisor_name",
-  "section_break_12"
+  "section_break_12",
+  "start_time",
+  "end_time",
+  "column_break_15",
+  "duration",
+  "shift_classification"
  ],
  "fields": [
   {
    "fieldname": "site",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Site",
    "options": "Operations Site"
   },
@@ -52,13 +58,14 @@
    "fieldname": "site_code",
    "fieldtype": "Data",
    "label": "Site Code",
-   "read_only": 1,
-   "unique": 1
+   "read_only": 1
   },
   {
    "fetch_from": "site.project_name",
    "fieldname": "project_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Project Name",
    "read_only": 1
   },
@@ -73,22 +80,57 @@
    "options": "Employee"
   },
   {
-   "fieldname": "column_break_14",
-   "fieldtype": "Column Break"
-  },
-  {
    "fetch_from": "supervisor.employee_name",
    "fieldname": "supervisor_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Supervisor Name",
    "read_only": 1
   },
   {
    "fieldname": "column_break_8",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "shift_type.start_time",
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "label": "Start time",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift_type.end_time",
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "label": "End time",
+   "read_only": 1
+  },
+  {
+   "description": "In hours",
+   "fetch_from": "shift_type.duration",
+   "fieldname": "duration",
+   "fieldtype": "Int",
+   "label": "Duration",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift_type.shift_type",
+   "fieldname": "shift_classification",
+   "fieldtype": "Data",
+   "label": "Shift Classification",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2020-05-05 18:45:12.055397",
+ "modified": "2020-05-14 22:11:43.718049",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",

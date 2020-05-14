@@ -60,7 +60,7 @@ var validate_date = function(frm) {
 	if(frm.doc.expected_date_of_deployment < frm.doc.erf_initiation){
 		frappe.throw(__("Expected Date of Deployment cannot be before ERF Initiation Date"));
 	}
-	if(frm.doc.expected_date_of_deployment < frappe.datetime.today()){
+	if(frm.doc.expected_date_of_deployment < frappe.datetime.now_date()){
 		frappe.throw(__("Expected Date of Deployment cannot be before Today"));
 	}
 };
@@ -104,7 +104,7 @@ var validate_height_exist = function(frm, cdt, cdn) {
 
 var validate_height_range = function(frm, cdt, cdn) {
 	var child = locals[cdt][cdn];
-	if(child.height && child.height <= 10){
+	if(child.height && child.height <= 145){
 		frappe.model.set_value(child.doctype, child.name, 'height', '');
 		frm.refresh_field('gender_height_requirement');
 		frappe.throw(__('Hieght Must be greter than 10cm.'));

@@ -1,0 +1,55 @@
+{
+ "autoname": "field:post_name",
+ "sort_order": "DESC",
+ "owner": "Administrator",
+ "name": "Operations Post Template",
+ "modified": "2020-04-29 19:58:31.924691",
+ "engine": "InnoDB",
+ "doctype": "DocType",
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "creation": "2020-04-29 19:47:30.454876",
+ "modified_by": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "report": 1,
+   "read": 1,
+   "share": 1,
+   "print": 1,
+   "delete": 1,
+   "create": 1,
+   "role": "System Manager",
+   "email": 1,
+   "write": 1
+  }
+ ],
+ "field_order": [
+  "post_name",
+  "skills",
+  "designations"
+ ],
+ "editable_grid": 1,
+ "track_changes": 1,
+ "module": "Operations",
+ "fields": [
+  {
+   "fieldtype": "Data",
+   "unique": 1,
+   "label": "Post Name",
+   "fieldname": "post_name"
+  },
+  {
+   "options": "Post Skills",
+   "fieldtype": "Table",
+   "fieldname": "skills",
+   "label": "Skills"
+  },
+  {
+   "options": "Post Designations",
+   "fieldtype": "Table",
+   "fieldname": "designations",
+   "label": "Designations"
+  }
+ ]
+}

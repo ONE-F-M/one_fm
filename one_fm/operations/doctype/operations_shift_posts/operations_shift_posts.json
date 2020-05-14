@@ -1,0 +1,81 @@
+{
+ "modified": "2020-05-02 15:41:36.777567",
+ "creation": "2020-04-28 19:34:20.868872",
+ "quick_entry": 1,
+ "name": "Operations Shift Posts",
+ "owner": "Administrator",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "fields": [
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_break_2"
+  },
+  {
+   "label": "Gender",
+   "fieldtype": "Link",
+   "fieldname": "gender",
+   "options": "Gender"
+  },
+  {
+   "label": "Division",
+   "fieldtype": "Select",
+   "fieldname": "division",
+   "options": "Security\nManagement"
+  },
+  {
+   "label": "Post Location",
+   "fieldtype": "Select",
+   "fieldname": "post_location",
+   "options": "Internal\nExternal"
+  },
+  {
+   "label": "Post Type",
+   "fieldtype": "Link",
+   "fieldname": "post_type",
+   "in_list_view": 1,
+   "options": "Post Type Template"
+  },
+  {
+   "label": "Sales Item",
+   "fieldtype": "Link",
+   "fieldname": "sales_item",
+   "in_list_view": 1,
+   "options": "Item"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_break_8"
+  },
+  {
+   "label": "Post Description",
+   "fieldtype": "Small Text",
+   "fieldname": "post_description"
+  },
+  {
+   "label": "Qty",
+   "fieldtype": "Data",
+   "fieldname": "qty",
+   "in_list_view": 1
+  }
+ ],
+ "module": "Operations",
+ "istable": 1,
+ "sort_order": "DESC",
+ "engine": "InnoDB",
+ "sort_field": "modified",
+ "permissions": [],
+ "modified_by": "Administrator",
+ "field_order": [
+  "post_type",
+  "gender",
+  "qty",
+  "column_break_2",
+  "post_location",
+  "division",
+  "sales_item",
+  "section_break_8",
+  "post_description"
+ ],
+ "track_changes": 1
+}

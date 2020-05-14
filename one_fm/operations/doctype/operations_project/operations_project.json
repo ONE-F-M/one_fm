@@ -63,16 +63,16 @@
   "column_break_45",
   "message",
   "section_break_57",
+  "account_manager",
+  "manager_name",
   "contract_duration",
   "no_of_posts_as_per_contract",
-  "type_of_service",
-  "account_manager",
   "column_break_60",
   "number_of_sites",
   "number_of_shifts",
   "number_of_posts",
   "poc_list_section",
-  "project_poc"
+  "poc"
  ],
  "fields": [
   {
@@ -184,6 +184,7 @@
    "fieldname": "customer",
    "fieldtype": "Link",
    "in_global_search": 1,
+   "in_standard_filter": 1,
    "label": "Customer",
    "oldfieldname": "customer",
    "oldfieldtype": "Link",
@@ -492,26 +493,27 @@
    "label": "Contract Duration"
   },
   {
-   "fieldname": "type_of_service",
-   "fieldtype": "Select",
-   "label": "Type of Service",
-   "options": "Option1\nOption2"
-  },
-  {
    "fieldname": "poc_list_section",
    "fieldtype": "Section Break",
    "label": "POC List"
   },
   {
-   "fieldname": "project_poc",
+   "fieldname": "poc",
    "fieldtype": "Table",
    "label": "Project POC",
    "options": "POC"
+  },
+  {
+   "fetch_from": "account_manager.employee_name",
+   "fieldname": "manager_name",
+   "fieldtype": "Data",
+   "label": "Manager Name",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-puzzle-piece",
  "max_attachments": 4,
- "modified": "2020-05-05 19:34:57.212214",
+ "modified": "2020-05-13 16:32:21.234325",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Project",

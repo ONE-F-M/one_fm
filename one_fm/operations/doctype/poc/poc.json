@@ -28,11 +28,12 @@
   {
    "fieldname": "designation",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "POC Designation"
   }
  ],
  "istable": 1,
- "modified": "2020-05-05 19:37:16.856192",
+ "modified": "2020-05-11 11:02:04.113249",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "POC",
