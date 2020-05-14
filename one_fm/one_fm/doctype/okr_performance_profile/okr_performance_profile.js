@@ -37,8 +37,22 @@ var set_objectoves_description = function(frm) {
 frappe.ui.form.on('OKR Performance Profile Objective', {
 	objective: function(frm) {
     set_objective_option_to_kr(frm);
+	},
+	from_date: function(frm, cdt, cdn) {
+		calculate_time_frame(frm, cdt, cdn);
+	},
+	to_date: function(frm, cdt, cdn) {
+		calculate_time_frame(frm, cdt, cdn);
 	}
 });
+
+var calculate_time_frame = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.from_date && child.to_date){
+		frappe.model.set_value(child.doctype, child.name, 'time_frame', frappe.datetime.get_diff(child.to_date, child.from_date));
+	}
+	frm.refresh_field('objectives');
+};
 
 var set_objective_option_to_kr = function(frm) {
   var options = [''];
