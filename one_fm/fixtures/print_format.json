@@ -726,5 +726,31 @@
   "raw_printing": 0,
   "show_section_headings": 0,
   "standard": "No"
+ },
+ {
+  "align_labels_right": 0,
+  "css": null,
+  "custom_format": 1,
+  "default_print_language": "en",
+  "disabled": 0,
+  "doc_type": "Job Offer",
+  "docstatus": 0,
+  "doctype": "Print Format",
+  "font": "Default",
+  "format_data": null,
+  "html": "{% set terms_exist = doc.terms and (doc.terms|striptags).strip() or \"\" %}\n\n{% if letter_head and not no_letterhead -%}\n    <div class=\"letter-head\">{{ letter_head }}</div>\n    <hr>\n{%- endif %}\n\n<!-- {% if terms_exist -%} class=\"page-break\" {%- endif %} -->\n<div>\n<p>\n\n<!-- job offer content starts here, <br> is used to create new lines -->\nDate: {{ doc.get_formatted(\"offer_date\") }}\n<br><br>\n<div align=\"center\"  style=\"font-size:20px;\">\n  <b><u>Job Offer Letter</u></b>\n</div>\n<br/><br/><br/>\n<b>Dear Mr/Mrs {{ doc.applicant_name }},</b>\n\n<br><br>\n\n<p>\n  We are pleased to proceed into an agreement contract with you and offer you a position at <b>{{ doc.company }} Company</b> as a <b>{{ doc.designation }}</b>.\n</p>\n\n<br>\n\n<!-- job offer terms and description from the table -->\n<p>For the benefits of the two parties, our offer terms as follows:</p>\n\n{%- if doc.offer_terms -%}\n    <table class=\"table\">\n      <tbody>\n        {%- for row in doc.one_fm_salary_details -%}\n        <tr>\n          <td style=\"width: 40%; border:none;\">\n          <b>{{ row.salary_component }}</b>\n          </td>\n          <td style=\"width: 1%; border:none;\">\n          <b>:</b>\n          </td>\n          <td style=\"width: 59%; border:none;\">\n            {{ row.get_formatted('amount') }}\n          </td>\n        </tr>\n        {%- endfor -%}\n        {%- if doc.one_fm_job_offer_total_salary -%}\n        <tr>\n          <td style=\"width: 40%; border:none;\">\n          <b>Total Monthly Salary</b>\n          </td>\n          <td style=\"width: 1%; border:none;\">\n          <b>:</b>\n          </td>\n          <td style=\"width: 59%; border:none;\">\n            {{ doc.get_formatted('one_fm_job_offer_total_salary') }}\n          </td>\n        </tr>\n        {%- endif -%}\n        {%- for row in doc.offer_terms -%}\n        <tr>\n          <td style=\"width: 40%; border:none;\">\n          <b>{{ row.offer_term }}</b>\n          </td>\n          <td style=\"width: 1%; border:none;\">\n          <b>:</b>\n          </td>\n          <td style=\"width: 59%; border:none;\">\n            {{ row.value }}\n          </td>\n        </tr>\n        {%- endfor -%}\n      </tbody>\n    </table>\n{%- endif -%}\n\n<br>\n\n<!-- job offer content continues -->\n\n<p>All the terms of the Company are subject to change at any time upon the approval of the Company's management.</p>\n<p>Please confirm your acceptance of this Job Offer to the Human Resources Department at your earliest convenience noting that this offer is only valid for a period of five (5) working days from the date of issue.</p>\n\n<br>\n\n<p class=\"strong\">\n\nSincerely,\n\n<br><br><br><br>\n\nAuthorized Signatory\n\n<br>\n\n{{ doc.company }}\n\n<!-- job offer content ends here -->\n\n</p>\n</div>\n\n<!-- job offer terms and conditions -->\n<br>\n{% if terms_exist %}\n<div> {{ doc.terms }} </div>\n{% endif %}\n",
+  "line_breaks": 0,
+  "modified": "2020-05-14 13:36:39.672081",
+  "module": "HR",
+  "name": "One FM Job Offer",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "print_format_builder": 0,
+  "print_format_type": "Jinja",
+  "raw_commands": null,
+  "raw_printing": 0,
+  "show_section_headings": 0,
+  "standard": "No"
  }
 ]
