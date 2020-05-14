@@ -3,7 +3,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-import frappe
+import frappe, re
 from frappe.model.document import Document
 from frappe.contacts.address_and_contact import load_address_and_contact, delete_contact_and_address
 from frappe import _
@@ -14,6 +14,8 @@ from one_fm.one_fm.doctype.agency_contract.agency_contract import get_valid_agen
 class Agency(Document):
 	def validate(self):
 		self.validate_active_agency()
+		if self.agency_website:
+			validate_website_adress(self.agency_website)
 
 	def after_insert(self):
 		supplier = self.create_supplier_if_not_created()
@@ -37,6 +39,19 @@ class Agency(Document):
 			active_details = is_agency_active(self)
 			if not active_details['active']:
 				frappe.throw(_(active_details['message']))
+
+@frappe.whitelist()
+def validate_website_adress(website):
+	regex = re.compile(
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+	if(bool(re.match(regex, website))==True):
+		return True
+	return False
 
 def create_supplier_for_agency(agency):
 	supplier = frappe.new_doc('Supplier')

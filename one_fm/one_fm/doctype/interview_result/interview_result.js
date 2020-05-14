@@ -13,8 +13,26 @@ frappe.ui.form.on('Interview Result', {
 	},
   interview_template: function(frm) {
     set_interview_template(frm);
-  }
+  },
+	get_best_reference: function(frm) {
+		set_best_reference_table_property(frm);
+	}
 });
+
+var set_best_reference_table_property = function(frm) {
+	if(frm.doc.get_best_reference){
+		frm.set_df_property('best_references', 'reqd', true);
+		var references = ['Best Boss', 'Best Colleague', 'Best Employee'];
+		references.forEach((item) => {
+			let reference = frappe.model.add_child(frm.doc, 'Interview Best Reference', 'best_references');
+			frappe.model.set_value(reference.doctype, reference.name, 'reference', item);
+		});
+	}
+	else{
+		frm.clear_table('best_references');
+	}
+	frm.refresh_field('best_references');
+};
 
 frappe.ui.form.on('Interview Question Result', {
 	score: function(frm) {

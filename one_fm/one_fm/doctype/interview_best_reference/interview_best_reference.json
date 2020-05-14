@@ -1,15 +1,17 @@
 {
  "actions": [],
- "creation": "2020-05-11 20:52:21.427082",
+ "creation": "2020-05-13 19:14:30.111155",
  "doctype": "DocType",
- "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "reference",
   "name_of_person",
-  "column_break_3",
   "contact_number",
-  "why_he"
+  "email",
+  "designation",
+  "column_break_3",
+  "why_he",
+  "reference_feedback"
  ],
  "fields": [
   {
@@ -34,23 +36,40 @@
    "label": "Contact Number"
   },
   {
-   "columns": 3,
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "why_he",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Why He/She?"
   },
   {
-   "fieldname": "column_break_3",
-   "fieldtype": "Column Break"
+   "fieldname": "reference_feedback",
+   "fieldtype": "Small Text",
+   "label": "Reference Feedback"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-11 21:15:52.643464",
+ "modified": "2020-05-13 22:45:46.466946",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Applicant Best Reference Item",
+ "name": "Interview Best Reference",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",

@@ -11,12 +11,15 @@
   "column_break_2",
   "designation",
   "interview_template",
+  "get_best_reference",
   "section_break_4",
   "interview_question_result",
   "section_break_8",
   "total_score",
   "column_break_10",
   "average_score",
+  "best_reference_section",
+  "best_references",
   "amended_from"
  ],
  "fields": [
@@ -90,11 +93,29 @@
    "options": "Interview Result",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "depends_on": "get_best_reference",
+   "fieldname": "best_reference_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "get_best_reference",
+   "fieldtype": "Check",
+   "label": "Get Best Reference Details"
+  },
+  {
+   "depends_on": "get_best_reference",
+   "fieldname": "best_references",
+   "fieldtype": "Table",
+   "label": "Best References",
+   "options": "Interview Best Reference"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-10 13:16:39.112516",
+ "modified": "2020-05-13 19:19:59.940906",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview Result",

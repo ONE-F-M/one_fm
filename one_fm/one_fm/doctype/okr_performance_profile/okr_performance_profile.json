@@ -8,18 +8,21 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "okr_title_section",
   "okr_title",
+  "help_section",
+  "help_text",
+  "objectives_and_key_results_section",
+  "description",
   "objective_description",
   "objectives",
-  "key_results",
-  "description"
+  "key_results"
  ],
  "fields": [
   {
-   "default": "You will be involved with building and managing the daily activities of the you will be involved with building and managing the daily activities of the soft services team to make the cinema going experience for the patrons a blissfully hygienic experience.",
+   "default": "Please write A short Description of the Job that connects with his primary objectives",
    "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "Please write A short Description of the Job that connects with his primary objectives"
+   "fieldtype": "Small Text"
   },
   {
    "fieldname": "okr_title",
@@ -46,11 +49,30 @@
   {
    "fieldname": "objective_description",
    "fieldtype": "HTML",
-   "read_only": 1
+   "hidden": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "help_section",
+   "fieldtype": "Section Break",
+   "label": "You should ask these questions before you fill the OKR"
+  },
+  {
+   "fieldname": "help_text",
+   "fieldtype": "HTML",
+   "label": "Help Text"
+  },
+  {
+   "fieldname": "objectives_and_key_results_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "okr_title_section",
+   "fieldtype": "Section Break"
   }
  ],
  "links": [],
- "modified": "2020-05-12 14:08:48.836978",
+ "modified": "2020-05-13 20:29:34.210642",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile",
