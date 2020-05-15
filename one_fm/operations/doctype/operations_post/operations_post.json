@@ -7,7 +7,6 @@
  "field_order": [
   "post_name",
   "post_type",
-  "quantity",
   "column_break_4",
   "site_shift",
   "site",
@@ -24,12 +23,6 @@
   "designations"
  ],
  "fields": [
-  {
-   "fieldname": "post_type",
-   "fieldtype": "Link",
-   "label": "Post Type",
-   "options": "Post Type Template"
-  },
   {
    "fieldname": "post_name",
    "fieldtype": "Data",
@@ -51,6 +44,8 @@
   {
    "fieldname": "site_shift",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Site Shift",
    "options": "Operations Shift"
   },
@@ -58,6 +53,8 @@
    "fetch_from": "site_shift.site",
    "fieldname": "site",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Site",
    "options": "Operations Site",
    "read_only": 1
@@ -81,10 +78,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Both",
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Gender",
-   "options": "Gender"
+   "options": "Both\nMale\nFemale"
   },
   {
    "fieldname": "column_break_10",
@@ -110,12 +108,13 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "quantity",
-   "fieldtype": "Int",
-   "label": "Quantity"
+   "fieldname": "post_type",
+   "fieldtype": "Link",
+   "label": "Post Type",
+   "options": "Post Type Template"
   }
  ],
- "modified": "2020-05-05 19:29:00.569588",
+ "modified": "2020-05-15 10:19:04.200044",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",
