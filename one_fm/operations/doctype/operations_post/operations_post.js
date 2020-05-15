@@ -2,14 +2,14 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Operations Post', {
-	post_type: function(frm){
-		let post_type = frm.doc.post_type;
-		if(post_type !== undefined){
+	post_template: function(frm){
+		let post_template = frm.doc.post_template;
+		if(post_template !== undefined){
 			frappe.call({
 				method:"frappe.client.get",
 				args: {
-					doctype: "Post Type Template",
-					name: post_type,
+					doctype: "Operations Post Template",
+					name: post_template,
                 },
 				callback: function(r) {
 					if(!r.exc) {

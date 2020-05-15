@@ -12,32 +12,28 @@ def get_data():
 				'items': ['Timesheet', 'Expense Claim', 'Issue' , 'Project Update']
 			},
 			{
-				'label': _('Operations Actions'),
-				'items': ['Operations Task', 'MOM']
-			},
-			{
-				'label': _('Material'),
-				'items': ['Material Request', 'BOM', 'Stock Entry']
-			},
-			{
 				'label': _('Sales'),
 				'items': ['Sales Order', 'Delivery Note', 'Sales Invoice']
 			},
 			{
 				'label': _('Purchase'),
 				'items': ['Purchase Order', 'Purchase Receipt', 'Purchase Invoice']
-			},			
-			{
-				'label': _('Equipment'),
-				'items': []
 			},
 			{
-				'label': _('Communication'),
-				'items': ['Contracts']
+				'label': _('Material'),
+				'items': ['Material Request', 'BOM', 'Stock Entry']
+			},
+			{
+				'label': _('Operations Actions'),
+				'items': ['Operations Task', 'MOM']
 			},
 			{
 				'label': _('Project Structure'),
 				'items': ['Operations Site', 'Operations Shift']
+			},	
+			{
+				'label': _('Communication'),
+				'items': ['Contracts']
 			},
 		]
 	}
