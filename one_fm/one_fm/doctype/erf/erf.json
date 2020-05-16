@@ -19,12 +19,10 @@
   "designation",
   "department",
   "project",
-  "grade",
   "column_break_8",
   "reason_for_request",
   "expected_date_of_deployment",
   "hiring_method",
-  "recruiter_assigned",
   "work_section",
   "working_days",
   "off_days",
@@ -61,11 +59,15 @@
   "tools_section",
   "tool_request_item",
   "salary_compensation_budget_section",
+  "grade",
   "salary_structure",
   "salary_details",
   "salary_per_person",
   "total_cost_in_salary",
   "column_break_44",
+  "recruiter_assigned",
+  "need_to_assign_more_recruiter",
+  "secondary_recruiter_assigned",
   "other_benefits",
   "benefit_cost_to_company",
   "total_cost_to_company",
@@ -134,9 +136,8 @@
    "fieldname": "grade",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Grade",
-   "options": "Employee Grade",
-   "reqd": 1
+   "label": "Employee Grade",
+   "options": "Employee Grade"
   },
   {
    "fieldname": "reason_for_request",
@@ -460,7 +461,7 @@
    "collapsible": 1,
    "fieldname": "salary_compensation_budget_section",
    "fieldtype": "Section Break",
-   "label": "Salary Compensation Budget",
+   "label": "HR and Salary Compensation Budget",
    "permlevel": 1
   },
   {
@@ -539,11 +540,26 @@
    "label": "ERF Requested By",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "need_to_assign_more_recruiter",
+   "fieldtype": "Check",
+   "label": "Need to Assign More Recruiter",
+   "permlevel": 1
+  },
+  {
+   "depends_on": "need_to_assign_more_recruiter",
+   "fieldname": "secondary_recruiter_assigned",
+   "fieldtype": "Link",
+   "label": "Secondary Recruiter Assigned",
+   "options": "User",
+   "permlevel": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-15 14:10:04.076274",
+ "modified": "2020-05-16 11:41:01.290989",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
