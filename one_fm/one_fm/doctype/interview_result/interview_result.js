@@ -29,6 +29,7 @@ var set_best_reference_table_property = function(frm) {
 		});
 	}
 	else{
+		frm.set_df_property('best_references', 'reqd', false);
 		frm.clear_table('best_references');
 	}
 	frm.refresh_field('best_references');
