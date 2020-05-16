@@ -39,7 +39,9 @@ class ERF(Document):
 			frappe.throw(_('You can not Submit ERF with Draft Status.'))
 		if self.status == 'Accepted':
 			create_job_opening_from_erf(self)
-		frappe.msgprint(_('Department Manager Will Notified By Email.'))
+		if self.status in ['Accepted', 'Declined']:
+			send_email(self, [self.erf_requested_by, self.recruiter_assigned])
+			frappe.msgprint(_('{0} and {1} Will be Notified By Email.').format(self.erf_requested_by, self.recruiter_assigned))
 
 	def set_erf_request(self):
 		frappe.db.set_value('ERF Request', self.erf_request, 'erf_created', True)
@@ -135,6 +137,18 @@ class ERF(Document):
 			for option in options:
 				benefit = self.append('other_benefits')
 				benefit.benefit = option
+
+def send_email(doc, recipients):
+	message = '<p> Please Review the ERF {0} and take action.</p>'.format(doc.name)
+	if doc.status == 'Declined' and doc.reason_for_decline:
+		message = '<p> ERF {0} is Declined due to {1}.</p>'.format(doc.name, doc.reason_for_decline)
+	frappe.sendmail(
+		recipients= recipients,
+		subject='{0} ERF for {1}'.format(doc.status, doc.designation),
+		message=message,
+		reference_doctype=doc.doctype,
+		reference_name=doc.name
+	)
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
