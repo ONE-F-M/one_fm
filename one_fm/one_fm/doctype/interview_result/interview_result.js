@@ -36,10 +36,21 @@ var set_best_reference_table_property = function(frm) {
 };
 
 frappe.ui.form.on('Interview Question Result', {
-	score: function(frm) {
+	score: function(frm, cdt, cdn) {
+		validate_score_with_weight(frm, cdt, cdn);
     calculate_total_and_avg_score(frm);
 	}
 });
+
+var validate_score_with_weight = function(frm, cdt, cdn) {
+	var child = locals[cdt][cdn];
+	if(child.weight && child.score){
+		if(child.score > child.weight){
+			frappe.model.set_value(child.doctype, child.name, 'score', '');
+			frappe.throw(__("Score is cannot be Greater than Weight {0}", [child.weight]));
+		}
+	}
+};
 
 var calculate_total_and_avg_score = function(frm) {
   var total = 0;
@@ -73,6 +84,16 @@ var set_interview_template = function(frm) {
             frappe.model.set_value(interview_question.doctype, interview_question.name, 'questions', item.questions);
             frappe.model.set_value(interview_question.doctype, interview_question.name, 'answer', item.answer);
             frappe.model.set_value(interview_question.doctype, interview_question.name, 'weight', item.weight);
+						if(item.answer_based_on_weight_distribution == 1){
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'answer_based_on_weight_distribution', item.answer_based_on_weight_distribution);
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'answer_0', item.answer_0);
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'answer_1', item.answer_1);
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'answer_2', item.answer_2);
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'answer_3', item.answer_3);
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'answer_4', item.answer_4);
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'answer_5', item.answer_5);
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'exception', item.exception);
+						}
           });
         }
         frm.refresh_field('interview_question_result');
