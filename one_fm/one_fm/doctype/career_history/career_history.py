@@ -9,11 +9,17 @@ from frappe import _
 
 class OverlapError(frappe.ValidationError): pass
 class CareerHistory(Document):
+	def on_update(self):
+		update_career_history_score_of_applicant(self)
+
 	def validate(self):
 		self.validate_dates()
 		set_totals_in_career_history_company(self)
 		self.validate_date_overlap_within_childs()
 		self.validate_pormotions_during_company()
+
+	def on_trash(self):
+		update_career_history_score_of_applicant(self, True)
 
 	def validate_pormotions_during_company(self):
 		for company in self.career_history_company:
@@ -46,6 +52,21 @@ class CareerHistory(Document):
 			if child.get(start_date_field) > child.get(end_date_field):
 				frappe.throw(_("Row {0}: End Date cannot be before Start Date in {1}")
 					.format(child.idx, table_label), OverlapError)
+
+def update_career_history_score_of_applicant(doc, delete=False):
+	score = frappe.db.exists('Job Applicant Score', {'parent': doc.job_applicant, 'reference_dt': doc.doctype, 'reference_dn': doc.name})
+	if score and delete:
+		frappe.delete_doc('Job Applicant Score', score)
+	elif score:
+		frappe.db.set_value('Job Applicant Score', score, 'score', doc.career_history_score)
+	elif not delete:
+		job_applicant = frappe.get_doc('Job Applicant', doc.job_applicant)
+		interview_score = job_applicant.append('one_fm_job_applicant_score')
+		interview_score.interview = 'Career History'
+		interview_score.score = doc.career_history_score
+		interview_score.reference_dt = doc.doctype
+		interview_score.reference_dn = doc.name
+		job_applicant.save(ignore_permissions=True)
 
 def validate_overlap(doc, child_doc, table):
 	query = """

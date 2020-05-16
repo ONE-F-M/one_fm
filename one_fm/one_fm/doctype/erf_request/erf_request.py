@@ -9,17 +9,19 @@ from frappe.model.document import Document
 
 class ERFRequest(Document):
 	def on_submit(self):
-		# TODO: Notify the HR Manager through email
-		frappe.msgprint(_('HR Manager Will Notified By Email.'))
+		manager_users = get_manager_users()
+		name_of_users = []
+		for manager_user in manager_users:
+			name_of_users.append(frappe.db.get_value('User', manager_user, 'full_name'))
+		if manager_users:
+			send_email(self, manager_users)
+			frappe.msgprint(_('{0}, Will Notified By Email.').format(name_of_users[0]))
 
 	def on_update_after_submit(self):
-		self.validate_with_erf()
-		if self.status == 'Accepted':
-			# TODO: Notify the Department Manager or Hiring Manager through email
-			frappe.msgprint(_('Department Manager Will Notified By Email.'))
-		elif self.status == 'Declined':
-			# TODO: Notify the Department Manager or Hiring Manager through email, with reason Decline
-			frappe.msgprint(_('Department Manager Will Notified By Email.'))
+		# self.validate_with_erf()
+		if self.status in ['Accepted', 'Declined']:
+			send_email(self, self.department_manager)
+			frappe.msgprint(_('{0}, Will Notified By Email.').format(frappe.db.get_value('User', self.department_manager, 'full_name')))
 
 	def validate_with_erf(self):
 		erf = frappe.db.exists('ERF', {'erf_request': self.name, 'docstatus': ['<', 2]})
@@ -47,3 +49,26 @@ def create_erf_request(trigger_dt, trigger_dn):
 
 	erf_request.save(ignore_permissions=True)
 	frappe.msgprint(_('ERF Request {0} is created').format(erf_request.name), alert=True)
+
+def send_email(doc, recipients):
+	message = '<p> Please Review the ERF Request {0} and take action.</p>'.format(doc.name)
+	if doc.status == 'Declined' and doc.reason_for_decline:
+		message = '<p> ERF Request {0} is Declined due to {1}.</p>'.format(doc.name, doc.reason_for_decline)
+	frappe.sendmail(
+		recipients= recipients,
+		subject='{0} ERF Request for {1}'.format(doc.status, doc.designation),
+		message=message,
+		reference_doctype=doc.doctype,
+		reference_name=doc.name
+	)
+
+def get_manager_users(role='HR Manager'):
+	query = """
+		select
+			parent
+		FROM
+			`tabHas Role`
+		WHERE
+			role=%(role)s AND parent!='Administrator' AND parent IN (SELECT email FROM tabUser WHERE enabled=1)
+	"""
+	return frappe.db.sql_list(query,{"role": role})
