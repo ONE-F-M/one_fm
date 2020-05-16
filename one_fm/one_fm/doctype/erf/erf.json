@@ -30,6 +30,7 @@
   "travel_required",
   "type_of_travel",
   "column_break_14",
+  "location_of_work",
   "place_of_work",
   "shift_working",
   "night_shift",
@@ -530,8 +531,9 @@
   },
   {
    "fieldname": "certification",
-   "fieldtype": "Data",
-   "label": "Certification"
+   "fieldtype": "Link",
+   "label": "Certification",
+   "options": "Candidate Certification"
   },
   {
    "fetch_from": "erf_request.department_manager",
@@ -555,11 +557,19 @@
    "label": "Secondary Recruiter Assigned",
    "options": "User",
    "permlevel": 1
+  },
+  {
+   "description": "Governorate",
+   "fieldname": "location_of_work",
+   "fieldtype": "Select",
+   "label": "Location of Work",
+   "options": "\nAl Asimah\nHawalli\nFarwaniya\nMubarak Al-Kabeer\nAhmadi\nJahra",
+   "reqd": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-16 22:05:30.697336",
+ "modified": "2020-05-16 23:23:17.524096",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
