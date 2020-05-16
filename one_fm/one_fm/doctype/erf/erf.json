@@ -12,6 +12,7 @@
   "status",
   "reason_for_decline",
   "column_break_3",
+  "erf_requested_by",
   "erf_initiation",
   "erf_finalized",
   "section_break_2",
@@ -530,11 +531,19 @@
    "fieldname": "certification",
    "fieldtype": "Data",
    "label": "Certification"
+  },
+  {
+   "fetch_from": "erf_request.department_manager",
+   "fieldname": "erf_requested_by",
+   "fieldtype": "Link",
+   "label": "ERF Requested By",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-13 13:53:02.238060",
+ "modified": "2020-05-15 14:10:04.076274",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
