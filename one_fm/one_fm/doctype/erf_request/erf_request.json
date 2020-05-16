@@ -17,6 +17,8 @@
   "status",
   "reason_for_decline",
   "erf_created",
+  "total_salary_componsation",
+  "other_cost_to_company",
   "references_section",
   "reference_type",
   "column_break_12",
@@ -40,8 +42,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Reason For Request",
-   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nOther",
-   "read_only": 1,
+   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nUnPlanned",
    "reqd": 1
   },
   {
@@ -49,7 +50,6 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Number of Candidates Required ",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -57,7 +57,6 @@
    "fieldtype": "Link",
    "label": "Department",
    "options": "Department",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -65,7 +64,6 @@
    "fieldtype": "Link",
    "label": "Designation",
    "options": "Designation",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -125,19 +123,32 @@
    "fieldname": "department_manager",
    "fieldtype": "Link",
    "label": "Department Manager",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "erf_created",
    "fieldtype": "Check",
-   "label": "ERF Created",
-   "read_only": 1
+   "hidden": 1,
+   "label": "ERF Created"
+  },
+  {
+   "depends_on": "eval: doc.reason_for_request == 'UnPlanned'",
+   "fieldname": "total_salary_componsation",
+   "fieldtype": "Currency",
+   "label": "Total Salary Componsation"
+  },
+  {
+   "depends_on": "eval: doc.reason_for_request == 'UnPlanned'",
+   "fieldname": "other_cost_to_company",
+   "fieldtype": "Data",
+   "label": "Other Cost to Company"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-13 09:58:11.894183",
+ "modified": "2020-05-16 21:49:23.549207",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF Request",

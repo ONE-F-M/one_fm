@@ -2,6 +2,11 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('ERF Request', {
+	onload: function(frm) {
+		if(frm.is_new()){
+			frm.set_value('department_manager', frappe.session.user);
+		}
+	},
 	refresh: function(frm) {
     if(frm.doc.docstatus == 1 && frm.doc.status == 'Accepted'){
 			if(frappe.user.name == frm.doc.department_manager){
@@ -13,6 +18,17 @@ frappe.ui.form.on('ERF Request', {
         view_erf(frm);
       });
     }
+	},
+	reason_for_request: function(frm) {
+		if(frm.doc.reason_for_request == 'UnPlanned'){
+			frm.set_value('number_of_candidates_required', 1);
+			frm.set_df_property('number_of_candidates_required', 'read_only', true);
+		}
+		else{
+			frm.set_df_property('number_of_candidates_required', 'read_only', false);
+			frm.set_value('total_salary_componsation', '');
+			frm.set_value('other_cost_to_company', '');
+		}
 	}
 });
 
