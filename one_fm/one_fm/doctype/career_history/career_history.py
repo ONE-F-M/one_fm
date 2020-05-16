@@ -16,12 +16,36 @@ class CareerHistory(Document):
 		self.validate_dates()
 		set_totals_in_career_history_company(self)
 		self.validate_date_overlap_within_childs()
-		self.validate_pormotions_during_company()
+		self.validate_pormotions_and_salary_during_company()
+		self.validate_pormotions_exist_for_company()
+		self.validate_salary_hikes_exist_for_company()
 
 	def on_trash(self):
 		update_career_history_score_of_applicant(self, True)
 
-	def validate_pormotions_during_company(self):
+	def validate_salary_hikes_exist_for_company(self):
+		for company in self.career_history_company:
+			if company.did_you_get_any_salary_increase == 'Yes':
+				hikes_for_company = False
+				if self.salary_hikes:
+					for salary_hike in self.salary_hikes:
+						if company.company_name == salary_hike.company_name:
+							hikes_for_company = True
+				if not hikes_for_company:
+					frappe.throw(_('You have to add Salary Hikes for the Company {0}').format(company.company_name))
+
+	def validate_pormotions_exist_for_company(self):
+		for company in self.career_history_company:
+			if company.did_you_get_any_promotion == 'Yes':
+				promotions_for_company = False
+				if self.promotions:
+					for promotion in self.promotions:
+						if company.company_name == promotion.company_name:
+							promotions_for_company = True
+				if not promotions_for_company:
+					frappe.throw(_('You have to add Promotions for the Company {0}').format(company.company_name))
+
+	def validate_pormotions_and_salary_during_company(self):
 		for company in self.career_history_company:
 			if self.promotions:
 				for promotion in self.promotions:
@@ -29,6 +53,12 @@ class CareerHistory(Document):
 						if promotion.start_date < company.job_start_date or promotion.end_date > company.job_end_date:
 							frappe.throw(_("Row {0}: Start Date and End Date of Promotion not during the ({1}) days")
 								.format(promotion.idx, promotion.company_name), OverlapError)
+			if self.salary_hikes:
+				for salary_hike in self.salary_hikes:
+					if company.company_name == salary_hike.company_name:
+						if salary_hike.start_date < company.job_start_date or salary_hike.end_date > company.job_end_date:
+							frappe.throw(_("Row {0}: Start Date and End Date of Salary Hike not during the ({1}) days")
+								.format(salary_hike.idx, salary_hike.company_name), OverlapError)
 
 	def validate_date_overlap_within_childs(self):
 		for company in self.career_history_company:
@@ -75,7 +105,7 @@ def validate_overlap(doc, child_doc, table):
 		from
 			`tab{0}`
 		where
-			name != %(name)s
+			name != %(name)s and parent = %(parent)s
 		"""
 	query += get_doc_condition(table)
 

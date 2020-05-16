@@ -8,6 +8,10 @@ from frappe import _
 from frappe.model.document import Document
 
 class ERFRequest(Document):
+	def validate(self):
+		if self.is_new():
+			self.department_manager = frappe.session.user
+
 	def on_submit(self):
 		manager_users = get_manager_users()
 		name_of_users = []
@@ -18,7 +22,7 @@ class ERFRequest(Document):
 			frappe.msgprint(_('{0}, Will Notified By Email.').format(name_of_users[0]))
 
 	def on_update_after_submit(self):
-		# self.validate_with_erf()
+		self.validate_with_erf()
 		if self.status in ['Accepted', 'Declined']:
 			send_email(self, self.department_manager)
 			frappe.msgprint(_('{0}, Will Notified By Email.').format(frappe.db.get_value('User', self.department_manager, 'full_name')))
