@@ -32,10 +32,10 @@ def paid_sick_leave_validation(doc, method):
 
     curr_year_applied_days = get_approved_leaves_for_period(doc.employee, "Sick Leave - مرضية", allocation_from_date, allocation_to_date)
 
-    remain_paid = 0 
-    remain_three_quarter_paid = 0 
-    remain_half_paid = 0 
-    remain_quarter_paid = 0 
+    remain_paid = 0
+    remain_three_quarter_paid = 0
+    remain_half_paid = 0
+    remain_quarter_paid = 0
     remain_without_paid = 0
 
     if curr_year_applied_days>=0 and curr_year_applied_days<=15:
@@ -65,7 +65,7 @@ def paid_sick_leave_validation(doc, method):
         else:
             remain_three_quarter_paid = doc.total_leave_days
 
-                
+
     elif curr_year_applied_days>25 and curr_year_applied_days<=35:
         remain_half_paid = 35-curr_year_applied_days
         if doc.total_leave_days>remain_half_paid:
@@ -84,7 +84,7 @@ def paid_sick_leave_validation(doc, method):
             if remain_quarter_paid>10:
                 remain_quarter_paid = 10
                 remain_without_paid = (curr_year_applied_days-35)-10
-                
+
     elif curr_year_applied_days>45 and curr_year_applied_days<=75:
         remain_without_paid = 75-curr_year_applied_days
         if doc.total_leave_days<remain_without_paid:
@@ -332,7 +332,7 @@ def hooked_leave_allocation_builder():
                     sl.submit()
                     frappe.db.commit()
                     print('New **Hajj leave - حج** for employee {0}'.format(emp.name))
-                    
+
                 if lt.name == "Bereavement - وفاة":
                     sl = frappe.new_doc("Leave Allocation")
                     sl.update({
@@ -346,7 +346,7 @@ def hooked_leave_allocation_builder():
                     sl.submit()
                     frappe.db.commit()
                     print('New **Bereavement - وفاة** for employee {0}'.format(emp.name))
-                    
+
 
 def increase_daily_leave_balance():
     emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name","annual_leave_balance"])
@@ -366,9 +366,9 @@ def increase_daily_leave_balance():
             allocation_to_date = allocation_records[emp.name]["Sick Leave - مرضية"].to_date
 
             attendance = frappe.db.sql_list("select attendance_date from `tabAttendance` where docstatus=1 and status='On Leave' and leave_type='Sick Leave - مرضية' and employee='{0}' and attendance_date between '{1}' and '{2}' ".format(emp.name, allocation_from_date, allocation_to_date))
-            
+
             attendance_until_today = frappe.db.sql("select count(attendance_date) from `tabAttendance` where docstatus=1 and status='On Leave' and leave_type='Sick Leave - مرضية' and employee='{0}' and attendance_date between '{1}' and '{2}' ".format(emp.name, allocation_from_date, getdate(nowdate())))[0][0]
-            
+
             if getdate(nowdate()) not in attendance:
                 attendance_until_today = 0
 
@@ -408,7 +408,7 @@ def increase_daily_leave_balance():
                 is_lwp=0
             )
             frappe.get_doc(ledger).submit()
-           
+
 
 def get_leave_allocation_records(date, employee=None, leave_type=None):
     conditions = (" and employee='%s'" % employee) if employee else ""
@@ -528,3 +528,34 @@ def pam_authorized_signatory():
 @frappe.whitelist(allow_guest=True)
 def change_naming_series(doc, method):
     doc.name = doc.uom_abbreviation
+
+def validate_job_applicant(doc, method):
+    set_job_applicant_status(doc, method)
+    set_average_score(doc, method)
+
+def set_average_score(doc, method):
+    if doc.one_fm_job_applicant_score:
+        total = 0
+        no_of_interview = 0
+        for score in doc.one_fm_job_applicant_score:
+            total += score.score
+            no_of_interview += 1
+        if total > 0 and no_of_interview > 0:
+            doc.one_fm_average_interview_score = total/no_of_interview
+            doc.one_fm_applicant_status = 'Interview'
+        if doc.one_fm_career_history_score:
+            doc.one_fm_average_score = (total+doc.one_fm_career_history_score)/(no_of_interview+1)
+
+def set_job_applicant_status(doc, method):
+    if doc.one_fm_applicant_status != 'Selected':
+        if doc.one_fm_documents_required:
+            verified = True
+            exception = False
+            status = 'Verified'
+            for document_required in doc.one_fm_documents_required:
+                if not document_required.received:
+                    if not document_required.exception:
+                        status = 'Not Verified'
+                    else:
+                        status = 'Verified - With Exception'
+            doc.one_fm_document_verification = status
