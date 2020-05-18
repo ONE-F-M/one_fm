@@ -84,19 +84,10 @@ class CareerHistory(Document):
 					.format(child.idx, table_label), OverlapError)
 
 def update_career_history_score_of_applicant(doc, delete=False):
-	score = frappe.db.exists('Job Applicant Score', {'parent': doc.job_applicant, 'reference_dt': doc.doctype, 'reference_dn': doc.name})
-	if score and delete:
-		frappe.delete_doc('Job Applicant Score', score)
-	elif score:
-		frappe.db.set_value('Job Applicant Score', score, 'score', doc.career_history_score)
-	elif not delete:
-		job_applicant = frappe.get_doc('Job Applicant', doc.job_applicant)
-		interview_score = job_applicant.append('one_fm_job_applicant_score')
-		interview_score.interview = 'Career History'
-		interview_score.score = doc.career_history_score
-		interview_score.reference_dt = doc.doctype
-		interview_score.reference_dn = doc.name
-		job_applicant.save(ignore_permissions=True)
+	job_applicant = frappe.get_doc('Job Applicant', doc.job_applicant)
+	job_applicant.one_fm_career_history_reference = doc.name if not delete else ''
+	job_applicant.one_fm_career_history_score = doc.career_history_score if not delete else ''
+	job_applicant.save(ignore_permissions=True)
 
 def validate_overlap(doc, child_doc, table):
 	query = """
