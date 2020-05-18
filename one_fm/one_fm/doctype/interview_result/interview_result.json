@@ -8,8 +8,13 @@
  "field_order": [
   "job_applicant",
   "job_opening",
+  "erf",
+  "interview_schedule",
+  "interview_scheduled_date",
+  "interview_date",
   "column_break_2",
   "designation",
+  "interview_type",
   "interview_template",
   "get_best_reference",
   "section_break_4",
@@ -38,8 +43,10 @@
   {
    "fieldname": "job_applicant",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Job Applicant",
-   "options": "Job Applicant"
+   "options": "Job Applicant",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_4",
@@ -49,7 +56,8 @@
    "fieldname": "interview_question_result",
    "fieldtype": "Table",
    "label": "Interview Question Result",
-   "options": "Interview Question Result"
+   "options": "Interview Question Result",
+   "reqd": 1
   },
   {
    "fetch_from": "job_applicant.job_title",
@@ -62,8 +70,10 @@
   {
    "fieldname": "interview_template",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Interview Template",
-   "options": "Interview"
+   "options": "Interview",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_8",
@@ -111,11 +121,49 @@
    "fieldtype": "Table",
    "label": "Best References",
    "options": "Interview Best Reference"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_erf",
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "ERF",
+   "options": "ERF",
+   "read_only": 1
+  },
+  {
+   "fieldname": "interview_scheduled_date",
+   "fieldtype": "Datetime",
+   "label": "Interview Scheduled Date",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "interview_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Interview Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "interview_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Interview Type",
+   "options": "Interview Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "interview_schedule",
+   "fieldtype": "Link",
+   "label": "Interview Schedule",
+   "options": "Job Applicant Interview Schedule",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-16 19:20:20.104571",
+ "modified": "2020-05-18 22:03:07.075051",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview Result",

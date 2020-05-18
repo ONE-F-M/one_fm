@@ -6,18 +6,59 @@ frappe.ui.form.on('Interview Result', {
     frm.set_query('interview_template', function () {
 			return {
 				filters: {
-					'designation': ['in', [frm.doc.designation, '']]
+					'designation': ['in', [frm.doc.designation, '']],
+					'interview_type': frm.doc.interview_type
 				}
 			};
 		});
+		if(frm.is_new()){
+			frm.set_value('interview_date', frappe.datetime.now_datetime());
+		}
 	},
   interview_template: function(frm) {
     set_interview_template(frm);
   },
 	get_best_reference: function(frm) {
 		set_best_reference_table_property(frm);
+	},
+	job_applicant: function(frm) {
+		// set_job_applicant_interview_schedule_details(frm);
+	},
+	interview_type: function(frm) {
+		// set_job_applicant_interview_schedule_details(frm);
 	}
 });
+
+var set_job_applicant_interview_schedule_details = function(frm) {
+	if(frm.doc.job_applicant){
+		frappe.call({
+			method: 'frappe.client.get',
+			args: {
+				doctype: 'Job Applicant',
+				filters: {name: frm.doc.job_applicant}
+			},
+			callback: function(r) {
+				if(r && r.message && r.message.one_fm_interview_schedules && r.message.one_fm_interview_schedules.length > 0){
+					var schedules = r.message.one_fm_interview_schedules;
+					var interview_types = [];
+					schedules.forEach((item, i) => {
+						if(frm.doc.interview_type && frm.doc.interview_type == item.interview_type){
+							frm.set_value('interview_scheduled_date', item.scheduled_on);
+						}
+						interview_types[i] = item.interview_type;
+					});
+					frm.set_query('interview_type', function () {
+						return {
+							filters: {
+							'name': ['in', interview_types]
+							}
+						};
+					});
+				}
+			}
+		});
+	}
+};
 
 var set_best_reference_table_property = function(frm) {
 	if(frm.doc.get_best_reference){

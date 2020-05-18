@@ -7,6 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "interview_template_title",
+  "interview_type",
+  "column_break_3",
   "designation",
   "section_break_2",
   "interview_questions"
@@ -36,10 +38,21 @@
    "label": "Interview Template Title",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "interview_type",
+   "fieldtype": "Link",
+   "label": "Interview Type",
+   "options": "Interview Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2020-05-10 10:49:04.626393",
+ "modified": "2020-05-18 13:08:58.171554",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview",
