@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today
+from frappe.utils import today, get_url
 from frappe import _
 
 class ERF(Document):
@@ -146,9 +146,10 @@ class ERF(Document):
 				benefit.benefit = option
 
 def send_email(doc, recipients):
-	message = '<p> Please Review the ERF {0} and take action.</p>'.format(doc.name)
+	page_link = get_url("/desk#Form/ERF/" + doc.name)
+	message = "<p>Please Review the ERF <a href='{0}'>{1}</a> and take action.</p>".format(page_link, doc.name)
 	if doc.status == 'Declined' and doc.reason_for_decline:
-		message = '<p> ERF {0} is Declined due to {1}.</p>'.format(doc.name, doc.reason_for_decline)
+		message = "<p>ERF <a href='{0}'>{1}</a> is Declined due to {2}</p>".format(page_link, doc.name, doc.reason_for_decline)
 	frappe.sendmail(
 		recipients= recipients,
 		subject='{0} ERF for {1}'.format(doc.status, doc.designation),
