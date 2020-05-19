@@ -27,8 +27,18 @@ frappe.ui.form.on('ERF Request', {
 			frm.set_value('total_salary_componsation', '');
 			frm.set_value('other_cost_to_company', '');
 		}
+	},
+	urgency_of_deployment: function(frm) {
+		validate_date(frm);
 	}
 });
+
+var validate_date = function(frm) {
+	if(frm.doc.urgency_of_deployment < frappe.datetime.now_date()){
+		frm.set_value('urgency_of_deployment', '');
+		frappe.throw(__("Urgency of Deployment cannot be before Today"));
+	}
+};
 
 var create_erf = function(frm) {
   frappe.route_options = {"erf_request": frm.doc.name};
