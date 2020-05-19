@@ -1,12 +1,14 @@
 {
  "actions": [],
- "creation": "2020-01-10 15:45:05.673239",
+ "creation": "2020-05-19 16:54:30.928107",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "questions",
   "answer",
+  "weight",
+  "column_break_3",
   "answer_based_on_weight_distribution",
   "answer_0",
   "answer_1",
@@ -14,11 +16,7 @@
   "answer_3",
   "answer_4",
   "answer_5",
-  "exception",
-  "column_break_3",
-  "applicant_answer",
-  "score",
-  "weight"
+  "exception"
  ],
  "fields": [
   {
@@ -31,94 +29,74 @@
   {
    "fieldname": "answer",
    "fieldtype": "Small Text",
+   "in_list_view": 1,
    "label": "Answer"
   },
   {
-   "fieldname": "score",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Score",
-   "reqd": 1
+   "default": "0",
+   "fieldname": "answer_based_on_weight_distribution",
+   "fieldtype": "Check",
+   "label": "Have More Answer Based on Weight Distribution"
   },
   {
-   "fieldname": "weight",
-   "fieldtype": "Float",
-   "label": "Weight"
+   "depends_on": "answer_based_on_weight_distribution",
+   "fieldname": "answer_0",
+   "fieldtype": "Data",
+   "label": "0"
   },
   {
-   "fieldname": "applicant_answer",
-   "fieldtype": "Small Text",
-   "in_list_view": 1,
-   "label": "Applicant Answer",
-   "reqd": 1
+   "depends_on": "answer_based_on_weight_distribution",
+   "fieldname": "answer_1",
+   "fieldtype": "Data",
+   "label": "1"
+  },
+  {
+   "depends_on": "answer_based_on_weight_distribution",
+   "fieldname": "answer_2",
+   "fieldtype": "Data",
+   "label": "2"
+  },
+  {
+   "depends_on": "answer_based_on_weight_distribution",
+   "fieldname": "answer_3",
+   "fieldtype": "Data",
+   "label": "3"
+  },
+  {
+   "depends_on": "answer_based_on_weight_distribution",
+   "fieldname": "answer_4",
+   "fieldtype": "Data",
+   "label": "4"
+  },
+  {
+   "depends_on": "answer_based_on_weight_distribution",
+   "fieldname": "answer_5",
+   "fieldtype": "Data",
+   "label": "5"
+  },
+  {
+   "depends_on": "answer_based_on_weight_distribution",
+   "fieldname": "exception",
+   "fieldtype": "Data",
+   "label": "Exception"
   },
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "answer_based_on_weight_distribution",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "answer_based_on_weight_distribution"
-  },
-  {
-   "depends_on": "answer_based_on_weight_distribution",
-   "fieldname": "answer_0",
-   "fieldtype": "Data",
-   "label": "0",
-   "read_only": 1
-  },
-  {
-   "depends_on": "answer_based_on_weight_distribution",
-   "fieldname": "answer_1",
-   "fieldtype": "Data",
-   "label": "1",
-   "read_only": 1
-  },
-  {
-   "depends_on": "answer_based_on_weight_distribution",
-   "fieldname": "answer_2",
-   "fieldtype": "Data",
-   "label": "2",
-   "read_only": 1
-  },
-  {
-   "depends_on": "answer_based_on_weight_distribution",
-   "fieldname": "answer_3",
-   "fieldtype": "Data",
-   "label": "3",
-   "read_only": 1
-  },
-  {
-   "depends_on": "answer_based_on_weight_distribution",
-   "fieldname": "answer_4",
-   "fieldtype": "Data",
-   "label": "4",
-   "read_only": 1
-  },
-  {
-   "depends_on": "answer_based_on_weight_distribution",
-   "fieldname": "answer_5",
-   "fieldtype": "Data",
-   "label": "5",
-   "read_only": 1
-  },
-  {
-   "depends_on": "answer_based_on_weight_distribution",
-   "fieldname": "exception",
-   "fieldtype": "Data",
-   "label": "Exception",
-   "read_only": 1
+   "fieldname": "weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Weight"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-19 12:35:42.330284",
+ "modified": "2020-05-19 17:25:45.091075",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Interview Question Result",
+ "name": "Interview Attitude",
  "owner": "Administrator",
  "permissions": [],
  "quick_entry": 1,

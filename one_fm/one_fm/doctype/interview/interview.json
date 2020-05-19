@@ -8,10 +8,23 @@
  "field_order": [
   "interview_template_title",
   "interview_type",
+  "for_interview_sheet",
+  "is_bulk",
   "column_break_3",
   "designation",
-  "section_break_2",
-  "interview_questions"
+  "interview_questions_section",
+  "interview_questions",
+  "interview_sheet_section",
+  "general",
+  "attitude",
+  "technical",
+  "column_break_13",
+  "experience",
+  "language",
+  "bulk_interview_sheet_section",
+  "general_questions",
+  "attitude_questions",
+  "technical_questions"
  ],
  "fields": [
   {
@@ -21,15 +34,11 @@
    "options": "Designation"
   },
   {
-   "fieldname": "section_break_2",
-   "fieldtype": "Section Break"
-  },
-  {
+   "depends_on": "eval:!doc.is_bulk",
    "fieldname": "interview_questions",
    "fieldtype": "Table",
    "label": "Interview Questions",
-   "options": "Interview Questions",
-   "reqd": 1
+   "options": "Interview Questions"
   },
   {
    "fieldname": "interview_template_title",
@@ -49,10 +58,95 @@
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "for_interview_sheet",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "For Interview Sheet",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:!doc.is_bulk",
+   "fieldname": "interview_questions_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:!doc.is_bulk && doc.for_interview_sheet",
+   "fieldname": "interview_sheet_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Interview Sheet Template"
+  },
+  {
+   "fieldname": "general",
+   "fieldtype": "Link",
+   "label": "General",
+   "options": "Interview"
+  },
+  {
+   "fieldname": "attitude",
+   "fieldtype": "Link",
+   "label": "Attitude",
+   "options": "Interview"
+  },
+  {
+   "fieldname": "technical",
+   "fieldtype": "Link",
+   "label": "Technical",
+   "options": "Interview"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "label": "Language",
+   "options": "Interview"
+  },
+  {
+   "fieldname": "experience",
+   "fieldtype": "Link",
+   "label": "Work Experience",
+   "options": "Interview"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_bulk",
+   "fieldtype": "Check",
+   "label": "Is Bulk",
+   "read_only": 1
+  },
+  {
+   "depends_on": "is_bulk",
+   "fieldname": "bulk_interview_sheet_section",
+   "fieldtype": "Section Break",
+   "label": "Bulk Interview Sheet"
+  },
+  {
+   "fieldname": "general_questions",
+   "fieldtype": "Table",
+   "label": "General Questions",
+   "options": "Interview General"
+  },
+  {
+   "fieldname": "attitude_questions",
+   "fieldtype": "Table",
+   "label": "Attitude Questions",
+   "options": "Interview Attitude"
+  },
+  {
+   "fieldname": "technical_questions",
+   "fieldtype": "Table",
+   "label": "Technical Questions",
+   "options": "Interview Technical"
   }
  ],
  "links": [],
- "modified": "2020-05-18 13:08:58.171554",
+ "modified": "2020-05-19 17:05:18.053100",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview",
@@ -71,6 +165,7 @@
    "write": 1
   }
  ],
+ "search_fields": "interview_type",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

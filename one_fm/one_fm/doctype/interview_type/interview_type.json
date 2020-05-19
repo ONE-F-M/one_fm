@@ -6,7 +6,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "interview_type"
+  "interview_type",
+  "for_interview_sheet",
+  "is_bulk"
  ],
  "fields": [
   {
@@ -16,10 +18,25 @@
    "label": "Interview Type",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "default": "0",
+   "fieldname": "for_interview_sheet",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "For Interview Sheet"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "default": "0",
+   "fieldname": "is_bulk",
+   "fieldtype": "Check",
+   "label": "Is Bulk"
   }
  ],
  "links": [],
- "modified": "2020-05-18 13:06:10.902913",
+ "modified": "2020-05-19 16:46:01.321362",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview Type",

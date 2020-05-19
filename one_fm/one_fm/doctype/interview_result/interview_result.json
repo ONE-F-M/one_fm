@@ -16,9 +16,16 @@
   "designation",
   "interview_type",
   "interview_template",
+  "is_bulk",
   "get_best_reference",
   "section_break_4",
   "interview_question_result",
+  "interview_sheet_general",
+  "interview_sheet_attitude",
+  "interview_sheet_technical",
+  "work_experience_details",
+  "interview_experience_note",
+  "work_experience_score",
   "section_break_8",
   "total_score",
   "column_break_10",
@@ -53,11 +60,11 @@
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval:!doc.is_bulk",
    "fieldname": "interview_question_result",
    "fieldtype": "Table",
    "label": "Interview Question Result",
-   "options": "Interview Question Result",
-   "reqd": 1
+   "options": "Interview Question Result"
   },
   {
    "fetch_from": "job_applicant.job_title",
@@ -159,11 +166,58 @@
    "label": "Interview Schedule",
    "options": "Job Applicant Interview Schedule",
    "read_only": 1
+  },
+  {
+   "depends_on": "is_bulk",
+   "fieldname": "interview_sheet_general",
+   "fieldtype": "Table",
+   "label": "Interview Sheet General",
+   "options": "Interview Sheet General"
+  },
+  {
+   "depends_on": "is_bulk",
+   "fieldname": "interview_sheet_attitude",
+   "fieldtype": "Table",
+   "label": "Interview Sheet Attitude",
+   "options": "Interview Sheet Attitude"
+  },
+  {
+   "depends_on": "is_bulk",
+   "fieldname": "interview_sheet_technical",
+   "fieldtype": "Table",
+   "label": "Interview Sheet Technical",
+   "options": "Interview Sheet Technical"
+  },
+  {
+   "depends_on": "is_bulk",
+   "fieldname": "work_experience_details",
+   "fieldtype": "HTML",
+   "label": "Work Experience Details"
+  },
+  {
+   "depends_on": "is_bulk",
+   "fieldname": "interview_experience_note",
+   "fieldtype": "Table",
+   "label": "Interview Experience Note",
+   "options": "Interview Experience Note"
+  },
+  {
+   "depends_on": "is_bulk",
+   "fieldname": "work_experience_score",
+   "fieldtype": "Float",
+   "label": "Work Experience Score"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_bulk",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Bulk"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-18 22:03:07.075051",
+ "modified": "2020-05-19 17:42:58.349971",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview Result",
