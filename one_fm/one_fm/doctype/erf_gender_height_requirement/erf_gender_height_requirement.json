@@ -10,6 +10,7 @@
   "height",
   "minimum_age",
   "maximum_age",
+  "nationality",
   "is_height_mandatory"
  ],
  "fields": [
@@ -53,13 +54,19 @@
    "columns": 2,
    "fieldname": "maximum_age",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Maximum Age (In Years)"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Nationality",
+   "options": "Nationality"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-16 22:04:00.336291",
+ "modified": "2020-05-20 23:25:53.200803",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF Gender Height Requirement",

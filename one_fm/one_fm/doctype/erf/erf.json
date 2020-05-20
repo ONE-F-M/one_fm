@@ -36,6 +36,7 @@
   "night_shift",
   "shift_hours",
   "candidates_required_section",
+  "is_height_mandatory",
   "gender_height_requirement",
   "total_no_of_candidates_required",
   "no_of_candidates_by_erf_request",
@@ -235,7 +236,7 @@
   {
    "fieldname": "minimum_experience_required",
    "fieldtype": "Int",
-   "label": "Minimum Experience Required (In Years)",
+   "label": "Minimum Relevant Experience Required (In Years)",
    "reqd": 1
   },
   {
@@ -565,11 +566,17 @@
    "label": "Location of Work",
    "options": "\nHawalli, Kuwait\nFarwaniya, Kuwait\nMubarak Al-Kabeer, Kuwait\nAhmadi, Kuwait\nJahra, Kuwait",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_height_mandatory",
+   "fieldtype": "Check",
+   "label": "Is Height Mandatory"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-17 13:31:37.990440",
+ "modified": "2020-05-20 23:27:30.533437",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

@@ -14,6 +14,13 @@ frappe.ui.form.on('ERF', {
 			};
 		});
 	},
+	validate: function(frm) {
+		if(frm.doc.gender_height_requirement){
+			frm.doc.gender_height_requirement.forEach((item, i) => {
+				validate_height_exist(frm, item.doctype, item.name);
+			});
+		}
+	},
 	onload: function(frm) {
 		set_other_benefits(frm);
 	},
@@ -61,8 +68,20 @@ frappe.ui.form.on('ERF', {
 	maximum_experience_required: function(frm) {
 		validate_experience_with_max_age(frm);
 		validate_experience_range(frm);
+	},
+	is_height_mandatory: function(frm) {
+		set_is_hieght_mandatory_in_table(frm);
 	}
 });
+
+var set_is_hieght_mandatory_in_table = function(frm) {
+	if(frm.doc.gender_height_requirement){
+		frm.doc.gender_height_requirement.forEach((item, i) => {
+			frappe.model.set_value(item.doctype, item.name, 'is_height_mandatory', frm.doc.is_height_mandatory);
+		});
+		frm.refresh_field('gender_height_requirement');
+	}
+};
 
 var validate_experience_with_min_age = function(frm) {
 	if(frm.doc.minimum_experience_required && frm.doc.gender_height_requirement){
@@ -107,6 +126,9 @@ var validate_date = function(frm) {
 };
 
 frappe.ui.form.on('ERF Gender Height Requirement', {
+	gender_height_requirement_add: function(frm, cdt, cdn) {
+		frappe.model.set_value(cdt, cdn, 'is_height_mandatory', frm.doc.is_height_mandatory);
+	},
 	number: function(frm, cdt, cdn){
     calculate_total_required_candidates(frm, cdt, cdn);
   },
@@ -114,7 +136,7 @@ frappe.ui.form.on('ERF Gender Height Requirement', {
 		validate_height_range(frm, cdt, cdn);
 	},
 	is_height_mandatory: function(frm, cdt, cdn) {
-		validate_height_exist(frm, cdt, cdn);
+		// validate_height_exist(frm, cdt, cdn);
 	},
 	minimum_age: function(frm, cdt, cdn) {
 		validate_age_range(frm, cdt, cdn);

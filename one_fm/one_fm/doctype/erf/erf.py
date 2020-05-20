@@ -41,10 +41,15 @@ class ERF(Document):
 			create_job_opening_from_erf(self)
 		if self.status in ['Accepted', 'Declined']:
 			recipients = [self.erf_requested_by, self.recruiter_assigned]
+			if self.erf_requested_by == self.recruiter_assigned:
+				recipients = [self.erf_requested_by]
 			if self.need_to_assign_more_recruiter and self.secondary_recruiter_assigned:
 				recipients.append(self.secondary_recruiter_assigned)
 			send_email(self, recipients)
-			frappe.msgprint(_('{0} and {1} Will be Notified By Email.').format(self.erf_requested_by, self.recruiter_assigned))
+			msg = _('{0} and {1} Will be Notified By Email.').format(self.erf_requested_by, self.recruiter_assigned)
+			if self.erf_requested_by == self.recruiter_assigned:
+				msg = _('{0} Will be Notified By Email.').format(self.erf_requested_by)
+			frappe.msgprint(msg)
 
 	def set_erf_request(self):
 		frappe.db.set_value('ERF Request', self.erf_request, 'erf_created', True)
