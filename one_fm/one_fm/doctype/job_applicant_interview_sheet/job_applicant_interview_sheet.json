@@ -1,0 +1,205 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-05-19 12:01:27.453183",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "job_applicant",
+  "erf",
+  "job_opening",
+  "column_break_4",
+  "designation",
+  "interview_template",
+  "general_section",
+  "interview_sheet_general",
+  "general_average_score",
+  "attitude_section",
+  "interview_sheet_attitude",
+  "attitude_average_score",
+  "technical_section",
+  "interview_sheet_technical",
+  "technical_average_score",
+  "work_experience_section",
+  "work_experience_details",
+  "interview_sheet_experience",
+  "experience_average_score",
+  "language_section",
+  "interview_sheet_language",
+  "language_average_score",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "INRS-.YYYY.-"
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_erf",
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "ERF",
+   "options": "ERF",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "interview_template",
+   "fieldtype": "Link",
+   "label": "Interview Template",
+   "options": "Interview"
+  },
+  {
+   "fieldname": "general_section",
+   "fieldtype": "Section Break",
+   "label": "General"
+  },
+  {
+   "fieldname": "attitude_section",
+   "fieldtype": "Section Break",
+   "label": "Attitude"
+  },
+  {
+   "fieldname": "technical_section",
+   "fieldtype": "Section Break",
+   "label": "Technical"
+  },
+  {
+   "fieldname": "work_experience_section",
+   "fieldtype": "Section Break",
+   "label": "Work Experience"
+  },
+  {
+   "fieldname": "language_section",
+   "fieldtype": "Section Break",
+   "label": "Language"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Job Applicant Interview Sheet",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "general_average_score",
+   "fieldtype": "Float",
+   "label": "General Average Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attitude_average_score",
+   "fieldtype": "Float",
+   "label": "Attitude Average Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "technical_average_score",
+   "fieldtype": "Float",
+   "label": "Technical Average Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "language_average_score",
+   "fieldtype": "Float",
+   "label": "Language Average Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "interview_sheet_general",
+   "fieldtype": "Table",
+   "options": "Interview Sheet General"
+  },
+  {
+   "fieldname": "interview_sheet_attitude",
+   "fieldtype": "Table",
+   "options": "Interview Sheet Attitude"
+  },
+  {
+   "fieldname": "interview_sheet_technical",
+   "fieldtype": "Table",
+   "options": "Interview Sheet Technical"
+  },
+  {
+   "fieldname": "interview_sheet_language",
+   "fieldtype": "Table",
+   "options": "Interview Sheet Language"
+  },
+  {
+   "fetch_from": "job_opening.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_applicant.job_title",
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
+   "label": "Job Opening",
+   "options": "Job Opening",
+   "read_only": 1
+  },
+  {
+   "fieldname": "work_experience_details",
+   "fieldtype": "HTML",
+   "label": "Work Experience Details"
+  },
+  {
+   "fieldname": "interview_sheet_experience",
+   "fieldtype": "Table",
+   "options": "Interview Sheet Experience"
+  },
+  {
+   "fieldname": "experience_average_score",
+   "fieldtype": "Float",
+   "label": "Work Experience Average Score",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-05-19 14:41:01.206795",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Job Applicant Interview Sheet",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -16,8 +16,9 @@ app_license = "MIT"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/one_fm/css/one_fm.css"
-# app_include_js = "/assets/one_fm/js/one_fm.js"
-
+app_include_js = [
+		"/assets/one_fm/js/maps.js"
+]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
 # web_include_js = "/assets/one_fm/js/one_fm.js"
@@ -27,6 +28,11 @@ app_license = "MIT"
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+	"Location" : "public/js/doctype_js/location.js",
+	"Customer" : "public/js/doctype_js/customer.js",
+	"Shift Type" : "public/js/doctype_js/shift_type.js",
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -82,15 +88,24 @@ home_page = "domain_transfer"
 
 
 doc_events = {
-    "Leave Application": {
-        "before_submit": "one_fm.utils.paid_sick_leave_validation",
-        "on_submit": "one_fm.utils.bereavement_leave_validation",
-        "before_submit": "one_fm.utils.update_employee_hajj_status",
-        "validate": "one_fm.utils.validate_hajj_leave"
-    },
-    "UOM": {
-        "autoname": "one_fm.utils.change_naming_series"
-    }
+	"Leave Application": {
+		"before_submit": "one_fm.utils.paid_sick_leave_validation",
+		"on_submit": "one_fm.utils.bereavement_leave_validation",
+		"before_submit": "one_fm.utils.update_employee_hajj_status",
+		"validate": "one_fm.utils.validate_hajj_leave"
+	},
+	"UOM": {
+		"autoname": "one_fm.utils.change_naming_series"
+	},
+	"Employee": {
+		"on_update": "one_fm.one_fm.doctype.erf_request.erf_request.trigger_employee_exit"
+	},
+	"Job Applicant": {
+		"validate": "one_fm.utils.validate_job_applicant"
+	},
+	"Shift Type": {
+		"autoname": "one_fm.api.doc_events.naming_series"
+	}
 }
 
 # doc_events = {
@@ -105,12 +120,12 @@ doc_events = {
 # ---------------
 
 scheduler_events = {
-  "daily": [
-    'one_fm.utils.pam_salary_certificate_expiry_date',
-    'one_fm.utils.pam_authorized_signatory',
-    'one_fm.utils.hooked_leave_allocation_builder',
-    'one_fm.utils.increase_daily_leave_balance'
-  ]
+	"daily": [
+		'one_fm.utils.pam_salary_certificate_expiry_date',
+		'one_fm.utils.pam_authorized_signatory',
+		'one_fm.utils.hooked_leave_allocation_builder',
+		'one_fm.utils.increase_daily_leave_balance'
+	]
 }
 
 # scheduler_events = {
@@ -135,7 +150,7 @@ scheduler_events = {
 # -------
 
 fixtures = ["Custom Field","Property Setter","Workflow State","Workflow Action Master","Workflow","Custom Script","Print Format"]
-      
+
 # fixtures = [
 #       {
 #         "dt": "Custom Field"
@@ -167,4 +182,3 @@ fixtures = ["Custom Field","Property Setter","Workflow State","Workflow Action M
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
-

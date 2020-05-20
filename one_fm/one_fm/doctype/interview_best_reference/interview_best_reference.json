@@ -1,0 +1,77 @@
+{
+ "actions": [],
+ "creation": "2020-05-13 19:14:30.111155",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "reference",
+  "name_of_person",
+  "contact_number",
+  "email",
+  "designation",
+  "column_break_3",
+  "why_he",
+  "reference_feedback"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Reference",
+   "options": "\nBest Boss\nBest Colleague\nBest Employee\nWorst Boss\nWorst Colleague\nWorst Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "name_of_person",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name of Person",
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Contact Number"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "why_he",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Why He/She?"
+  },
+  {
+   "fieldname": "reference_feedback",
+   "fieldtype": "Small Text",
+   "label": "Reference Feedback"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-05-13 22:45:46.466946",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Interview Best Reference",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -31,8 +31,8 @@ def get_data():
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
-					"name": "Post Type Template",
-					"label": _("Post Type Template")
+					"name": "Operations Post Template",
+					"label": _("Operations Post Template")
 				},
                 {
 					"color": "grey",

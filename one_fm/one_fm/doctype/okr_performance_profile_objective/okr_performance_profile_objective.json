@@ -8,6 +8,8 @@
   "objective",
   "type",
   "column_break_2",
+  "from_date",
+  "to_date",
   "time_frame",
   "objective_linking_with"
  ],
@@ -47,11 +49,21 @@
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date"
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-12 14:35:01.678665",
+ "modified": "2020-05-14 14:55:26.808804",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile Objective",

@@ -9,6 +9,7 @@
   "company_name",
   "job_title",
   "monthly_salary_in_dolor",
+  "country_of_employment",
   "column_break_4",
   "job_start_date",
   "job_end_date",
@@ -45,8 +46,7 @@
    "fieldname": "monthly_salary_in_dolor",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Monthly Salary",
-   "reqd": 1
+   "label": "Monthly Salary"
   },
   {
    "fieldname": "job_title",
@@ -196,11 +196,17 @@
    "fieldname": "promotions_and_salary_section",
    "fieldtype": "Section Break",
    "label": "Promotions and Salary Hikes"
+  },
+  {
+   "fieldname": "country_of_employment",
+   "fieldtype": "Link",
+   "label": "Country of Employment",
+   "options": "Country"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-11 12:45:37.060213",
+ "modified": "2020-05-19 14:09:03.057174",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History Company",

@@ -12,18 +12,17 @@
   "status",
   "reason_for_decline",
   "column_break_3",
+  "erf_requested_by",
   "erf_initiation",
   "erf_finalized",
   "section_break_2",
   "designation",
   "department",
   "project",
-  "grade",
   "column_break_8",
   "reason_for_request",
   "expected_date_of_deployment",
   "hiring_method",
-  "recruiter_assigned",
   "work_section",
   "working_days",
   "off_days",
@@ -31,6 +30,7 @@
   "travel_required",
   "type_of_travel",
   "column_break_14",
+  "location_of_work",
   "place_of_work",
   "shift_working",
   "night_shift",
@@ -60,11 +60,15 @@
   "tools_section",
   "tool_request_item",
   "salary_compensation_budget_section",
+  "grade",
   "salary_structure",
   "salary_details",
   "salary_per_person",
   "total_cost_in_salary",
   "column_break_44",
+  "recruiter_assigned",
+  "need_to_assign_more_recruiter",
+  "secondary_recruiter_assigned",
   "other_benefits",
   "benefit_cost_to_company",
   "total_cost_to_company",
@@ -133,15 +137,14 @@
    "fieldname": "grade",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Grade",
-   "options": "Employee Grade",
-   "reqd": 1
+   "label": "Employee Grade",
+   "options": "Employee Grade"
   },
   {
    "fieldname": "reason_for_request",
    "fieldtype": "Select",
    "label": "Reason for Request",
-   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nOther",
+   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nUnPlanned",
    "reqd": 1
   },
   {
@@ -214,7 +217,7 @@
   {
    "fieldname": "education_qualification",
    "fieldtype": "Select",
-   "label": "Education Qualification",
+   "label": "Minimum Educational Qualification",
    "options": "\nGraduate\nPost Graduate\nUnder Graduate",
    "reqd": 1
   },
@@ -459,7 +462,7 @@
    "collapsible": 1,
    "fieldname": "salary_compensation_budget_section",
    "fieldtype": "Section Break",
-   "label": "Salary Compensation Budget",
+   "label": "HR and Salary Compensation Budget",
    "permlevel": 1
   },
   {
@@ -516,10 +519,9 @@
   },
   {
    "default": "Yes",
-   "description": "Would you be open to seeing a person who has a track record of doing these types of work even if the person had a different mix of skills and experiences ?",
    "fieldname": "open_to_different_skilled_and_experienced_candidates",
    "fieldtype": "Select",
-   "label": "Open to Different Skilled and Experienced Candidates",
+   "label": "would you be open to see applicants with a track record of doing these types of work even if the person had a different mix of skills, exp ?",
    "options": "Yes\nNo"
   },
   {
@@ -529,13 +531,45 @@
   },
   {
    "fieldname": "certification",
-   "fieldtype": "Data",
-   "label": "Certification"
+   "fieldtype": "Link",
+   "label": "Certification",
+   "options": "Candidate Certification"
+  },
+  {
+   "fetch_from": "erf_request.department_manager",
+   "fieldname": "erf_requested_by",
+   "fieldtype": "Link",
+   "label": "ERF Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "need_to_assign_more_recruiter",
+   "fieldtype": "Check",
+   "label": "Need to Assign More Recruiter",
+   "permlevel": 1
+  },
+  {
+   "depends_on": "need_to_assign_more_recruiter",
+   "fieldname": "secondary_recruiter_assigned",
+   "fieldtype": "Link",
+   "label": "Secondary Recruiter Assigned",
+   "options": "User",
+   "permlevel": 1
+  },
+  {
+   "description": "Governorate",
+   "fieldname": "location_of_work",
+   "fieldtype": "Select",
+   "label": "Location of Work",
+   "options": "\nHawalli, Kuwait\nFarwaniya, Kuwait\nMubarak Al-Kabeer, Kuwait\nAhmadi, Kuwait\nJahra, Kuwait",
+   "reqd": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-12 18:20:02.965460",
+ "modified": "2020-05-17 13:31:37.990440",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

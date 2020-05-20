@@ -1,4 +1,5 @@
 {
+ "autoname": "format:{DD}-{MM}-{YYYY}|{site}",
  "creation": "2020-04-27 15:55:06.978338",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -84,7 +85,7 @@
    "fieldtype": "Column Break"
   }
  ],
- "modified": "2020-05-05 18:38:52.814837",
+ "modified": "2020-05-15 10:24:26.184734",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM",
