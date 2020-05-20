@@ -532,6 +532,8 @@ def change_naming_series(doc, method):
 def validate_job_applicant(doc, method):
     set_job_applicant_status(doc, method)
     set_average_score(doc, method)
+    if doc.one_fm_applicant_status == "Shortlisted":
+        create_job_offer_from_job_applicant(doc.name)
 
 def set_average_score(doc, method):
     if doc.one_fm_job_applicant_score:
@@ -559,3 +561,50 @@ def set_job_applicant_status(doc, method):
                     else:
                         status = 'Verified - With Exception'
             doc.one_fm_document_verification = status
+
+def create_job_offer_from_job_applicant(job_applicant):
+    if not frappe.db.exist('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
+        job_app = frappe.get_doc('Job Applicant', job_applicant)
+        erf = frappe.get_doc('ERF', job_app.one_fm_erf)
+        job_offer = frappe.new_doc('Job Offer')
+        set_erf_details(job_offer, erf)
+        job_offer.save(ignore_permissions = True)
+
+def set_erf_details(job_offer, erf):
+    job_offer.erf = erf.name
+    job_offer.designation = erf.designation
+    set_salary_details(job_offer, erf)
+    set_other_benefits_to_terms(job_offer, erf)
+
+def set_salary_details(job_offer, erf):
+    total_amount = 0
+    for salary in erf.salary_details:
+        total_amount += salary.amount
+        salary_details = job_offer.append('one_fm_salary_details')
+        salary_details.salary_component = salary.salary_component
+        salary_details.amount = salary.amount
+    job_offer.one_fm_job_offer_total_salary = total_amount
+
+def set_other_benefits_to_terms(job_offer, erf):
+    if erf.other_benefits:
+        for benefit in erf.other_benefits:
+            terms = job_offer.append('offer_terms')
+            terms.offer_term = benefit.benefit
+            terms.value = 'Company Provided'
+    terms_list = ['Kuwait Visa processing Fees', 'Kuwait Residency Fees', 'Kuwait insurance Fees']
+    for term in terms_list:
+        terms = job_offer.append('offer_terms')
+        terms.offer_term = term
+        terms.value = 'Borne By The Company'
+
+    hours = erf.shift_hours if erf.shift_hours else 9
+    vacation_days = erf.vacation_days if erf.vacation_days else 30
+    terms = job_offer.append('offer_terms')
+    terms.offer_term = 'Working Hours'
+    terms.value = str(hours)+' hours a day, (Subject to Operational Requirements) from Sunday to Thursday'
+    terms = job_offer.append('offer_terms')
+    terms.offer_term = 'Annual Leave'
+    terms.value = '('+str(vacation_days)+') days paid leave, as per Kuwait Labor Law (Private Sector)'
+    terms = job_offer.append('offer_terms')
+    terms.offer_term = 'Probation Period'
+    terms.value = '(100) working days'
