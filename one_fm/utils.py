@@ -568,6 +568,9 @@ def create_job_offer_from_job_applicant(job_applicant):
         job_app = frappe.get_doc('Job Applicant', job_applicant)
         erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         job_offer = frappe.new_doc('Job Offer')
+        job_offer.job_applicant = job_app.name
+        job_offer.applicant_name = job_app.applicant_name
+        job_offer.offer_date = today()
         set_erf_details(job_offer, erf)
         job_offer.save(ignore_permissions = True)
 
