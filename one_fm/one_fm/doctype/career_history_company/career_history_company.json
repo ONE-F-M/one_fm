@@ -8,7 +8,7 @@
   "current_job",
   "company_name",
   "job_title",
-  "monthly_salary_in_dolor",
+  "monthly_salary_in_kwd",
   "country_of_employment",
   "column_break_4",
   "job_start_date",
@@ -41,12 +41,6 @@
    "in_list_view": 1,
    "label": "Company Name",
    "reqd": 1
-  },
-  {
-   "fieldname": "monthly_salary_in_dolor",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Monthly Salary"
   },
   {
    "fieldname": "job_title",
@@ -202,11 +196,17 @@
    "fieldtype": "Link",
    "label": "Country of Employment",
    "options": "Country"
+  },
+  {
+   "fieldname": "monthly_salary_in_kwd",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Monthly Salary in KWD"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-19 14:09:03.057174",
+ "modified": "2020-05-20 21:48:23.573919",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History Company",
