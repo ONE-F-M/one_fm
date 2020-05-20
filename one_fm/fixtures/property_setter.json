@@ -1,6 +1,22 @@
 [
  {
   "default_value": null,
+  "doc_type": "ERF Request",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "naming_series",
+  "modified": "2020-05-21 00:11:16.546940",
+  "name": "ERF Request-naming_series-options",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "options",
+  "property_type": "Text",
+  "value": "ERFR-.YYYY.-"
+ },
+ {
+  "default_value": null,
   "doc_type": "Location",
   "docstatus": 0,
   "doctype": "Property Setter",

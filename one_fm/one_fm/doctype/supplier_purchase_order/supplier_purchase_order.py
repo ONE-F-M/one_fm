@@ -24,7 +24,7 @@ class SupplierPurchaseOrder(Document):
     def on_submit(self):
         self.validate_selected_item()
         self.validate_completed_order()
-        self.make_stock_entry()
+        # self.make_stock_entry()
 
     def make_stock_entry(self):
         doc = frappe.new_doc("Stock Entry")
