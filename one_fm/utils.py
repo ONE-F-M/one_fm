@@ -544,7 +544,8 @@ def set_average_score(doc, method):
             no_of_interview += 1
         if total > 0 and no_of_interview > 0:
             doc.one_fm_average_interview_score = total/no_of_interview
-            doc.one_fm_applicant_status = 'Interview'
+            if doc.one_fm_applicant_status == 'Draft':
+                doc.one_fm_applicant_status = 'Interview'
         if doc.one_fm_career_history_score:
             doc.one_fm_average_score = (total+doc.one_fm_career_history_score)/(no_of_interview+1)
 
@@ -563,7 +564,7 @@ def set_job_applicant_status(doc, method):
             doc.one_fm_document_verification = status
 
 def create_job_offer_from_job_applicant(job_applicant):
-    if not frappe.db.exist('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
+    if not frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
         job_app = frappe.get_doc('Job Applicant', job_applicant)
         erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         job_offer = frappe.new_doc('Job Offer')
