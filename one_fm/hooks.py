@@ -100,9 +100,12 @@ doc_events = {
 	"Employee": {
 		"on_update": "one_fm.one_fm.doctype.erf_request.erf_request.trigger_employee_exit"
 	},
+	"Job Applicant": {
+		"validate": "one_fm.utils.validate_job_applicant"
+	},
 	"Shift Type": {
 		"autoname": "one_fm.api.doc_events.naming_series"
-	}	
+	}
 }
 
 # doc_events = {

@@ -84,19 +84,10 @@ class CareerHistory(Document):
 					.format(child.idx, table_label), OverlapError)
 
 def update_career_history_score_of_applicant(doc, delete=False):
-	score = frappe.db.exists('Job Applicant Score', {'parent': doc.job_applicant, 'reference_dt': doc.doctype, 'reference_dn': doc.name})
-	if score and delete:
-		frappe.delete_doc('Job Applicant Score', score)
-	elif score:
-		frappe.db.set_value('Job Applicant Score', score, 'score', doc.career_history_score)
-	elif not delete:
-		job_applicant = frappe.get_doc('Job Applicant', doc.job_applicant)
-		interview_score = job_applicant.append('one_fm_job_applicant_score')
-		interview_score.interview = 'Career History'
-		interview_score.score = doc.career_history_score
-		interview_score.reference_dt = doc.doctype
-		interview_score.reference_dn = doc.name
-		job_applicant.save(ignore_permissions=True)
+	job_applicant = frappe.get_doc('Job Applicant', doc.job_applicant)
+	job_applicant.one_fm_career_history_reference = doc.name if not delete else ''
+	job_applicant.one_fm_career_history_score = doc.career_history_score if not delete else ''
+	job_applicant.save(ignore_permissions=True)
 
 def validate_overlap(doc, child_doc, table):
 	query = """
@@ -164,3 +155,59 @@ def set_totals_in_career_history_company(doc):
 			company.recruiter_validation_score_promotion = recruiter_validation_score_promotion
 			company.total_salary_changes = total_salary_hike
 			company.recruiter_validation_score_salary_change = recruiter_validation_score_salary_change
+
+@frappe.whitelist()
+def get_career_history(job_applicant):
+	career_history_id = frappe.db.exists('Career History', {'job_applicant': job_applicant})
+	if career_history_id:
+		return frappe.get_doc('Career History', career_history_id)
+	return None
+
+@frappe.whitelist()
+def get_career_history_as_html(job_applicant):
+	career_history = get_career_history(job_applicant)
+	return career_history_html(career_history) if career_history else ''
+
+def career_history_html(career_history):
+	if career_history.career_history_company:
+		template = get_career_history_html_template()
+		return frappe.render_template(
+			template, dict(objectives=career_history.career_history_company)
+		)
+
+def get_career_history_html_template():
+	return """
+		{% if objectives %}
+		<div>
+			<b><u>Experience Details:</u></b>
+		</div>
+		<div style="overflow-x: auto;">
+			<table class="table table-bordered table-hover">
+				<thead>
+					<tr>
+						<td><b>Company Name</b></td>
+						<td><b>Job Title</b></td>
+						<td><b>Country of Experience</b></td>
+						<td><b>Years of Experience</b></td>
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in objectives %}
+						<tr>
+							<td>{{ item.company_name }}</td>
+							<td>
+								{{ item.job_title }}
+							</td>
+							<td>
+								{{ item.country_of_employment }}
+							</td>
+							<td>
+								{{ item.years_of_experience_str }}
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% endif %}
+	"""

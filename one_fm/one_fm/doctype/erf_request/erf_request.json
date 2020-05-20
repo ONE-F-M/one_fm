@@ -18,7 +18,8 @@
   "reason_for_decline",
   "erf_created",
   "total_salary_componsation",
-  "other_cost_to_company",
+  "urgency_of_deployment",
+  "reason_for_unplanned_erf",
   "references_section",
   "reference_type",
   "column_break_12",
@@ -141,14 +142,20 @@
   },
   {
    "depends_on": "eval: doc.reason_for_request == 'UnPlanned'",
-   "fieldname": "other_cost_to_company",
-   "fieldtype": "Data",
-   "label": "Other Cost to Company"
+   "fieldname": "urgency_of_deployment",
+   "fieldtype": "Date",
+   "label": "Urgency of Deployment"
+  },
+  {
+   "depends_on": "eval: doc.reason_for_request == 'UnPlanned'",
+   "fieldname": "reason_for_unplanned_erf",
+   "fieldtype": "Small Text",
+   "label": "Reason for Unplanned ERF"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-16 21:49:23.549207",
+ "modified": "2020-05-19 21:52:36.662325",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF Request",

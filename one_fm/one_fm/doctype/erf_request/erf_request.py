@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import get_url
 
 class ERFRequest(Document):
 	def validate(self):
@@ -55,9 +56,10 @@ def create_erf_request(trigger_dt, trigger_dn):
 	frappe.msgprint(_('ERF Request {0} is created').format(erf_request.name), alert=True)
 
 def send_email(doc, recipients):
-	message = '<p> Please Review the ERF Request {0} and take action.</p>'.format(doc.name)
+	page_link = get_url("/desk#Form/ERF Request/" + doc.name)
+	message = "<p>Please Review the ERF Request <a href='{0}'>{1}</a> and take action.</p>".format(page_link, doc.name)
 	if doc.status == 'Declined' and doc.reason_for_decline:
-		message = '<p> ERF Request {0} is Declined due to {1}.</p>'.format(doc.name, doc.reason_for_decline)
+		message = "<p>ERF Request <a href='{0}'>{1}</a> is Declined due to {2}</p>".format(page_link, doc.name, doc.reason_for_decline)
 	frappe.sendmail(
 		recipients= recipients,
 		subject='{0} ERF Request for {1}'.format(doc.status, doc.designation),

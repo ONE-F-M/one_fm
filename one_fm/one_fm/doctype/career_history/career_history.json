@@ -12,6 +12,7 @@
   "total_years_of_experience_str",
   "total_years_of_experience",
   "column_break_5",
+  "validated_by_recruiter_on",
   "number_promotions_and_salary_changes",
   "career_history_score",
   "career_history_company_section",
@@ -166,10 +167,15 @@
    "fieldtype": "Float",
    "label": "Salary Hike Total Score",
    "read_only": 1
+  },
+  {
+   "fieldname": "validated_by_recruiter_on",
+   "fieldtype": "Date",
+   "label": "Validated By Recruiter On"
   }
  ],
  "links": [],
- "modified": "2020-05-11 13:51:35.165295",
+ "modified": "2020-05-18 14:17:58.238115",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",

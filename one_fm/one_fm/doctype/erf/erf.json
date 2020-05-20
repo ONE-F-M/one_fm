@@ -144,7 +144,7 @@
    "fieldname": "reason_for_request",
    "fieldtype": "Select",
    "label": "Reason for Request",
-   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nOther",
+   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nUnPlanned",
    "reqd": 1
   },
   {
@@ -563,13 +563,13 @@
    "fieldname": "location_of_work",
    "fieldtype": "Select",
    "label": "Location of Work",
-   "options": "\nAl Asimah\nHawalli\nFarwaniya\nMubarak Al-Kabeer\nAhmadi\nJahra",
+   "options": "\nHawalli, Kuwait\nFarwaniya, Kuwait\nMubarak Al-Kabeer, Kuwait\nAhmadi, Kuwait\nJahra, Kuwait",
    "reqd": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-16 23:23:17.524096",
+ "modified": "2020-05-17 13:31:37.990440",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

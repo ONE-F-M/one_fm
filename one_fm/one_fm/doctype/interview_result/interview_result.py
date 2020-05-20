@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
+from frappe.utils import getdate
 
 class InterviewResult(Document):
 	def on_submit(self):
@@ -27,6 +28,7 @@ def update_interview_score_of_applicant(doc, cancel=False):
 		interview_score.score = doc.average_score
 		interview_score.reference_dt = doc.doctype
 		interview_score.reference_dn = doc.name
+		interview_score.date = getdate(doc.interview_date)
 		job_applicant.save(ignore_permissions=True)
 
 def remove_best_reference(doc):
