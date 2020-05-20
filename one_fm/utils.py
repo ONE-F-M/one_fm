@@ -17,7 +17,7 @@ from datetime import date
 from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import expire_allocation, create_leave_ledger_entry
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form, \
-    comma_or, get_fullname, add_years, add_months, add_days, nowdate,get_first_day,get_last_day
+    comma_or, get_fullname, add_years, add_months, add_days, nowdate,get_first_day,get_last_day, today
 import datetime
 
 
