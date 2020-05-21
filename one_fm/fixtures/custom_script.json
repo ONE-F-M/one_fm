@@ -2,6 +2,17 @@
  {
   "docstatus": 0,
   "doctype": "Custom Script",
+  "dt": "Supplier",
+  "modified": "2020-05-21 18:45:54.006807",
+  "name": "Supplier-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on('Supplier', {\n\trefresh(frm) {\n\t\t\n\n\t\tcur_frm.set_query(\"group\", \"supplier_group_table\", function(doc, cdt, cdn) {\n            var d = locals[cdt][cdn];\n            return {\n                filters: [\n                    ['Item Group', 'parent_item_group', '=', 'All Item Groups']\n                ]\n            }\n        });\n\n        cur_frm.set_query(\"subgroup\", \"supplier_group_table\", function(doc, cdt, cdn) {\n            var d = locals[cdt][cdn];\n            return {\n                filters: [\n                    ['Item Group', 'parent_item_group', '=', d.group]\n                ]\n            }\n        });\n\n\n\t},\n\tstatus: function(frm) {\n        if (frm.doc.status == 'Enable') {\n            frm.set_value(\"disabled\", 0);\n        } else {\n            frm.set_value(\"disabled\", 1);\n        }\n    }\n})"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
   "dt": "ERF Request",
   "modified": "2020-05-04 06:54:02.915244",
   "name": "ERF Request-Client",
