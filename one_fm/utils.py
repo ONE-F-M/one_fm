@@ -530,6 +530,24 @@ def pam_authorized_signatory():
 def change_naming_series(doc, method):
     doc.name = doc.uom_abbreviation
 
+@frappe.whitelist(allow_guest=True)
+def warehouse_naming_series(doc, method):
+    doc.name = doc.warehouse_code+' - '+doc.warehouse_name
+
+
+
+@frappe.whitelist(allow_guest=True)
+def validate_get_warehouse_parent(doc, method):
+    new_warehouse_code = frappe.db.sql("select warehouse_code+1 from `tabWarehouse` where parent ='{0}' order by warehouse_code desc limit 1".format(doc.parent_warehouse))
+    if new_warehouse_code:
+        new_warehouse_code_final = new_warehouse_code[0][0]
+    else:
+        new_warehouse_code_final = '1'
+
+    doc.warehouse_code = str(int(new_warehouse_code_final)).zfill(3)
+
+
+
 def validate_job_applicant(doc, method):
     set_job_applicant_status(doc, method)
     set_average_score(doc, method)
