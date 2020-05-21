@@ -2526,5 +2526,21 @@
   "property": "reqd",
   "property_type": "Check",
   "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Warehouse",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "disabled",
+  "modified": "2020-05-21 19:17:04.466983",
+  "name": "Warehouse-disabled-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
  }
 ]
