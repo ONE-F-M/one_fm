@@ -53,7 +53,7 @@ class ItemGroup(NestedSet, WebsiteGenerator):
         if first_parent == 'All Item Groups' or second_parent == 'All Item Groups':
             self.is_group = 1
 
-        new_item_group_code = frappe.db.sql("select item_group_code+1 from `tabItem Group` where parent ='{0}' order by item_group_code desc limit 1".format(self.parent_item_group))
+        new_item_group_code = frappe.db.sql("select item_group_code+1 from `tabItem Group` where parent_item_group ='{0}' order by item_group_code desc limit 1".format(self.parent_item_group))
         if new_item_group_code:
             new_item_group_code_final = new_item_group_code[0][0]
         else:
