@@ -60,6 +60,7 @@
   "open_to_different_skilled_and_experienced_candidates",
   "tools_section",
   "tool_request_item",
+  "is_uniform_needed_for_this_job",
   "salary_compensation_budget_section",
   "grade",
   "salary_structure",
@@ -572,11 +573,17 @@
    "fieldname": "is_height_mandatory",
    "fieldtype": "Check",
    "label": "Is Height Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_uniform_needed_for_this_job",
+   "fieldtype": "Check",
+   "label": "Is Uniform Needed for This Job"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-20 23:27:30.533437",
+ "modified": "2020-05-20 23:44:50.638409",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
