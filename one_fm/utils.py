@@ -14,6 +14,7 @@ from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
+from frappe.model.naming import set_name_by_naming_series
 from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import expire_allocation, create_leave_ledger_entry
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form, \
