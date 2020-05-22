@@ -2542,5 +2542,21 @@
   "property": "hidden",
   "property_type": "Check",
   "value": "1"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Item Group",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "sec_break_taxes",
+  "modified": "2020-05-22 15:48:53.806012",
+  "name": "Item Group-sec_break_taxes-hidden",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "hidden",
+  "property_type": "Check",
+  "value": "1"
  }
 ]
