@@ -534,6 +534,10 @@ def change_naming_series(doc, method):
 def warehouse_naming_series(doc, method):
     doc.name = doc.warehouse_code+' - '+doc.warehouse_name
 
+@frappe.whitelist(allow_guest=True)
+def item_group_naming_series(doc, method):
+    doc.name = doc.item_group_code+'-'+doc.item_group_name
+
 
 
 @frappe.whitelist(allow_guest=True)
@@ -546,6 +550,23 @@ def validate_get_warehouse_parent(doc, method):
 
     doc.warehouse_code = str(int(new_warehouse_code_final)).zfill(3)
 
+
+
+@frappe.whitelist(allow_guest=True)
+def validate_get_item_group_parent(doc, method):
+    first_parent = doc.parent_item_group
+    second_parent = frappe.db.get_value('Item Group', {"name": first_parent}, 'parent_item_group')
+
+    if first_parent == 'All Item Groups' or second_parent == 'All Item Groups':
+        doc.is_group = 1
+
+    new_item_group_code = frappe.db.sql("select item_group_code+1 from `tabItem Group` where parent_item_group ='{0}' order by item_group_code desc limit 1".format(doc.parent_item_group))
+    if new_item_group_code:
+        new_item_group_code_final = new_item_group_code[0][0]
+    else:
+        new_item_group_code_final = '1'
+
+    doc.item_group_code = str(int(new_item_group_code_final)).zfill(3)
 
 
 def validate_job_applicant(doc, method):

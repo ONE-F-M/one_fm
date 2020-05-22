@@ -109,6 +109,10 @@ doc_events = {
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
 		"before_insert": "one_fm.utils.validate_get_warehouse_parent"
+	},
+	"Item Group": {
+		"autoname": "one_fm.api.doc_events.item_group_naming_series",
+		"before_insert": "one_fm.utils.validate_get_item_group_parent"
 	}
 }
 
