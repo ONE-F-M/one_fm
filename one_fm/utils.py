@@ -538,6 +538,10 @@ def warehouse_naming_series(doc, method):
 def item_group_naming_series(doc, method):
     doc.name = doc.item_group_code+'-'+doc.item_group_name
 
+@frappe.whitelist(allow_guest=True)
+def item_naming_series(doc, method):
+    doc.name = doc.item_code
+
 
 
 @frappe.whitelist(allow_guest=True)
@@ -567,6 +571,17 @@ def validate_get_item_group_parent(doc, method):
         new_item_group_code_final = '1'
 
     doc.item_group_code = str(int(new_item_group_code_final)).zfill(3)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_item_id_series(parent_item_group, subitem_group, item_group):
+    previous_item_id = frappe.db.sql("select item_id from `tabItem` where parent_item_group='{0}' and subitem_group='{1}' and item_group='{2}' order by item_id desc".format(parent_item_group, subitem_group, item_group))
+    if previous_item_id:
+        return previous_item_id[0][0]
+    else:
+        return '0000'
+
+
 
 
 def validate_job_applicant(doc, method):

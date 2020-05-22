@@ -1,0 +1,19 @@
+{%if doc.item_code%}
+<div style="display: inline-block;float: left;padding: 5%;">
+	
+
+<div class="bar_code_print" id="bar_code_print" >
+    <img src="https://barcode.tec-it.com/barcode.ashx?code=Code128&multiplebarcodes=false&translate-esc=false&data={{doc.item_code}}&unit=Fit&dpi=96&imagetype=Gif&rotation=0&color=%23000000&bgcolor=%23ffffff&codepage=&qunit=Mm&quiet=0&eclevel=L" alt="">
+</div>
+<br>
+<input name="bar_b_print" type="button" class="bar_ipt" id="bar_ipt" value=" Print ">
+</div>
+<script type="text/javascript">
+$("#bar_ipt").click(function() {
+    var divToPrint = document.getElementById("bar_code_print");
+    newWin = window.open("");
+    newWin.document.write(divToPrint.outerHTML);
+    newWin.print();
+});
+</script>
+{%endif%}

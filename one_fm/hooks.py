@@ -113,6 +113,9 @@ doc_events = {
 	"Item Group": {
 		"autoname": "one_fm.api.doc_events.item_group_naming_series",
 		"before_insert": "one_fm.utils.validate_get_item_group_parent"
+	},
+	"Item": {
+		"autoname": "one_fm.api.doc_events.item_naming_series"
 	}
 }
 
