@@ -2,6 +2,17 @@
  {
   "docstatus": 0,
   "doctype": "Custom Script",
+  "dt": "Stock Entry",
+  "modified": "2020-05-22 16:27:03.963651",
+  "name": "Stock Entry-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on('Stock Entry', {\n\tsupplier_purchase_order: function(frm) {\n\n        cur_frm.doc.items = []\n        frappe.model.with_doc(\"Supplier Purchase Order\", frm.doc.supplier_purchase_order, function() {\n            var tabletransfer= frappe.model.get_doc(\"Supplier Purchase Order\", frm.doc.supplier_purchase_order)\n            frm.doc.items = []\n            frm.refresh_field(\"items\");\n            $.each(tabletransfer.items, function(index, row){\n                var d = frm.add_child(\"items\");\n                d.t_warehouse = tabletransfer.place_of_delivery;\n                d.item_code = row.item_code;\n                d.description = row.item_name;\n                d.qty = row.qty;\n                d.uom = row.uom;\n                d.basic_rate = row.unit_price;\n                frm.refresh_field(\"items\");\n            });  \n        });\n\n    },\n    onload: function(frm) {\n        frm.set_query(\"supplier_purchase_order\", function() {\n            return {\n                filters: [\n                    ['Supplier Purchase Order', 'docstatus', '=', 1]\n                ]\n            }\n        });\n\n\t}\n})"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
   "dt": "Supplier",
   "modified": "2020-05-21 18:45:54.006807",
   "name": "Supplier-Client",
