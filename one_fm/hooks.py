@@ -94,9 +94,6 @@ doc_events = {
 		"before_submit": "one_fm.utils.update_employee_hajj_status",
 		"validate": "one_fm.utils.validate_hajj_leave"
 	},
-	"UOM": {
-		"autoname": "one_fm.utils.change_naming_series"
-	},
 	"Employee": {
 		"on_update": "one_fm.one_fm.doctype.erf_request.erf_request.trigger_employee_exit"
 	},

@@ -525,11 +525,6 @@ def pam_authorized_signatory():
 
 
 
-
-@frappe.whitelist(allow_guest=True)
-def change_naming_series(doc, method):
-    doc.name = doc.uom_abbreviation
-
 @frappe.whitelist(allow_guest=True)
 def warehouse_naming_series(doc, method):
     doc.name = doc.warehouse_code+' - '+doc.warehouse_name
