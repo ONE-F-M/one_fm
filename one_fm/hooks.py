@@ -98,7 +98,8 @@ doc_events = {
 		"on_update": "one_fm.one_fm.doctype.erf_request.erf_request.trigger_employee_exit"
 	},
 	"Job Applicant": {
-		"validate": "one_fm.utils.validate_job_applicant"
+		"validate": "one_fm.utils.validate_job_applicant",
+		"after_insert": "one_fm.utils.after_insert_job_applicant"
 	},
 	"Shift Type": {
 		"autoname": "one_fm.api.doc_events.naming_series"
@@ -114,6 +115,16 @@ doc_events = {
 	"Item": {
 		"autoname": "one_fm.api.doc_events.item_naming_series"
 	}
+}
+
+standard_portal_menu_items = [
+	{"title": "Job Applications", "route": "/job-applications", "reference_doctype": "Job Applicant", "role": "Job Applicant"},
+	{"title": "Career History", "route": "/career-history", "reference_doctype": "Career History", "role": "Job Applicant"}
+]
+
+has_website_permission = {
+	"Job Applicant": "one_fm.utils.applicant_has_website_permission",
+	"Career History": "one_fm.one_fm.web_form.career_history.career_history.applicant_has_website_permission"
 }
 
 # doc_events = {
