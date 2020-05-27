@@ -580,19 +580,26 @@ def get_item_id_series(parent_item_group, subitem_group, item_group):
 
 
 def after_insert_job_applicant(doc, method):
-    website_user_for_job_applicant(doc)
+    website_user_for_job_applicant(doc.email_id, doc.one_fm_applicant_password, doc.one_fm_first_name, doc.one_fm_last_name)
 
-def website_user_for_job_applicant(doc):
-    if doc.email_id and not frappe.db.exists ("User", doc.email_id):
+@frappe.whitelist(allow_guest=True)
+def website_user_for_job_applicant(email_id, applicant_password, first_name, last_name=''):
+    if not frappe.db.exists ("User", email_id):
+        from frappe.utils import random_string
         user = frappe.get_doc({
             "doctype": "User",
-            "first_name": doc.one_fm_first_name,
-            "last_name": doc.one_fm_last_name,
-            "email": doc.email_id,
-            "user_type": "Website User"
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email_id,
+            "user_type": "Website User",
+            "send_welcome_email": False
         })
-        user.flags.ignore_permissions = True
+        user.flags.ignore_permissions=True
+        # user.reset_password_key=random_string(32)
         user.add_roles("Job Applicant")
+        from frappe.utils.password import update_password
+        update_password(user=user.name, pwd=applicant_password)
+        return user
 
 def validate_job_applicant(doc, method):
     set_job_applicant_fields(doc)
@@ -653,12 +660,16 @@ def set_required_documents(doc, method):
             filters['visa_type'] = ''
 
         from one_fm.one_fm.doctype.recruitment_document_checklist.recruitment_document_checklist import get_recruitment_document_checklist
-        document_checklist = get_recruitment_document_checklist(filters).recruitment_documents
-        for checklist in document_checklist:
-            doc_required = doc.append('one_fm_documents_required')
-            fields = ['document_required', 'required_when', 'or_required_when', 'type_of_copy', 'or_type_of_copy', 'not_mandatory']
-            for field in fields:
-                doc_required.set(field, checklist.get(field))
+        document_checklist_obj = get_recruitment_document_checklist(filters)
+        document_checklist = False
+        if document_checklist_obj and document_checklist_obj.recruitment_documents:
+            document_checklist = document_checklist_obj.recruitment_documents
+        if document_checklist:
+            for checklist in document_checklist:
+                doc_required = doc.append('one_fm_documents_required')
+                fields = ['document_required', 'required_when', 'or_required_when', 'type_of_copy', 'or_type_of_copy', 'not_mandatory']
+                for field in fields:
+                    doc_required.set(field, checklist.get(field))
 
 def set_job_applicant_fields(doc):
     doc.email_id = doc.one_fm_email_id
