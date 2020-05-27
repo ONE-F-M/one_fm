@@ -118,13 +118,11 @@ doc_events = {
 }
 
 standard_portal_menu_items = [
-	{"title": "Job Applications", "route": "/job-applications", "reference_doctype": "Job Applicant", "role": "Job Applicant"},
-	{"title": "Career History", "route": "/career-history", "reference_doctype": "Career History", "role": "Job Applicant"}
+	{"title": "Job Applications", "route": "/job-applications", "reference_doctype": "Job Applicant", "role": "Job Applicant"}
 ]
 
 has_website_permission = {
-	"Job Applicant": "one_fm.utils.applicant_has_website_permission",
-	"Career History": "one_fm.one_fm.web_form.career_history.career_history.applicant_has_website_permission"
+	"Job Applicant": "one_fm.utils.applicant_has_website_permission"
 }
 
 # doc_events = {
@@ -167,6 +165,7 @@ scheduler_events = {
 
 # Testing
 # -------
+
 
 fixtures = ["Custom Field","Property Setter","Workflow State","Workflow Action Master","Workflow","Custom Script","Print Format"]
 
