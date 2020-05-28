@@ -718,8 +718,8 @@ def set_average_score(doc, method):
             doc.one_fm_average_interview_score = total/no_of_interview
             if doc.one_fm_applicant_status == 'Draft':
                 doc.one_fm_applicant_status = 'Interview'
-        if doc.one_fm_career_history_score:
-            doc.one_fm_average_score = (total+doc.one_fm_career_history_score)/(no_of_interview+1)
+        else:
+            doc.one_fm_average_interview_score = total
 
 def set_job_applicant_status(doc, method):
     if doc.one_fm_applicant_status != 'Selected':
