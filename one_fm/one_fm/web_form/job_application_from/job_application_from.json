@@ -20,7 +20,7 @@
  "is_standard": 1,
  "login_required": 0,
  "max_attachment_size": 0,
- "modified": "2020-05-28 12:35:28.270939",
+ "modified": "2020-05-28 12:42:45.432295",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "job-application-from",
@@ -933,11 +933,12 @@
   {
    "allow_read_on_all_link_options": 0,
    "fieldname": "one_fm_educational_qualification",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "hidden": 0,
-   "label": "Educational Qualification",
+   "label": "What is Your Highest Educational Qualification",
    "max_length": 0,
    "max_value": 0,
+   "options": "\nPost Graduate\nMasters\nGraduate\nUndergraduate\nHigh School",
    "read_only": 0,
    "reqd": 0,
    "show_in_filter": 0
