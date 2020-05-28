@@ -660,8 +660,13 @@ def set_designation_skill(doc, skills):
 def set_required_documents(doc, method):
     if doc.one_fm_source_of_hire and not doc.one_fm_documents_required:
         filters = {}
-        filters['source_of_hire'] = doc.one_fm_source_of_hire
-        if doc.one_fm_source_of_hire == 'Local' and doc.one_fm_visa_type:
+        source_of_hire = 'Overseas'
+        if doc.one_fm_source_of_hire == 'Local':
+            source_of_hire = 'Local'
+        elif doc.one_fm_source_of_hire == 'Local and Overseas' and doc.one_fm_have_a_valid_visa_in_kuwait and doc.one_fm_visa_type:
+            source_of_hire = 'Local'
+        filters['source_of_hire'] = source_of_hire
+        if source_of_hire == 'Local' and doc.one_fm_visa_type:
             filters['visa_type'] = doc.one_fm_visa_type
         else:
             filters['visa_type'] = ''
