@@ -801,3 +801,10 @@ def applicant_has_website_permission(doc, ptype, user, verbose=False):
         return True
     else:
         return False
+
+@frappe.whitelist(allow_guest=True)
+def check_if_user_exist_as_desk_user(user):
+    user_exist = frappe.db.exists('User', user)
+    if user_exist:
+        return frappe.db.get_value('User', user_exist, 'user_type')
+    return False
