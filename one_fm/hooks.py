@@ -166,31 +166,33 @@ scheduler_events = {
 # Testing
 # -------
 
+# hiring_process_custom_fieldname_list = []
 
-fixtures = ["Custom Field","Property Setter","Workflow State","Workflow Action Master","Workflow","Custom Script","Print Format"]
-
-# fixtures = [
-#       {
-#         "dt": "Custom Field"
-#         # "filters": [["name", "in", ["Project-project_image","Project-site_section_01","Project-project_sites"]]]
-#       },
-#       {
-#         "dt": "Property Setter"
-#         # "filters": [["doc_type", "in", ["Lead"]]]
-#       },
-#       {
-#         "dt": "Workflow State"
-#       },
-#       {
-#         "dt": "Workflow Action Master"
-#       },
-#       {
-#         "dt": "Workflow"
-#       },
-#       {
-#         "dt": "Custom Script"
-#       }
-# ]
+fixtures = [
+	{
+		"dt": "Custom Field",
+		# 'filters': [['fieldname', 'in', ['one_fm_applicant_is_overseas_or_local', 'one_fm_is_transferable']]]
+	},
+	{
+		"dt": "Property Setter"
+	},
+	{
+		"dt": "Workflow State"
+	},
+	{
+		"dt": "Workflow Action Master"
+	},
+	{
+		"dt": "Workflow"
+	},
+	{
+		"dt": "Custom Script",
+		'filters': [['dt', 'in', ['Job Applicant', 'Job Opening', 'Job Offer', 'Item', 'Stock Entry', 'Warehouse', 'Supplier']]]
+	},
+	{
+		"dt": "Print Format"
+	}
+]
 
 # before_tests = "one_fm.install.before_tests"
 
