@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe import _
+from one_fm.utils import validate_applicant_overseas_transferable
 
 class OverlapError(frappe.ValidationError): pass
 class CareerHistory(Document):
@@ -22,6 +23,10 @@ class CareerHistory(Document):
 		self.validate_salary_hikes_exist_for_company()
 
 	def validate_with_applicant(self):
+		if self.job_applicant:
+			if frappe.db.get_value('Job Applicant', self.job_applicant, 'status') == 'Rejected':
+				frappe.throw(_('Applicant is Rejected'))
+			validate_applicant_overseas_transferable(self.job_applicant)
 		if not self.name:
 			# hack! if name is null, it could cause problems with !=
 			self.name = "New "+self.doctype
