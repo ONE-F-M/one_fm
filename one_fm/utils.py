@@ -580,10 +580,9 @@ def get_item_id_series(parent_item_group, subitem_group, item_group):
 
 
 def after_insert_job_applicant(doc, method):
-    website_user_for_job_applicant(doc.email_id, doc.one_fm_applicant_password, doc.one_fm_first_name, doc.one_fm_last_name)
+    website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)
 
-@frappe.whitelist(allow_guest=True)
-def website_user_for_job_applicant(email_id, applicant_password, first_name, last_name=''):
+def website_user_for_job_applicant(email_id, first_name, last_name='', applicant_password=False):
     if not frappe.db.exists ("User", email_id):
         from frappe.utils import random_string
         user = frappe.get_doc({
@@ -597,11 +596,13 @@ def website_user_for_job_applicant(email_id, applicant_password, first_name, las
         user.flags.ignore_permissions=True
         # user.reset_password_key=random_string(32)
         user.add_roles("Job Applicant")
-        from frappe.utils.password import update_password
-        update_password(user=user.name, pwd=applicant_password)
+        if applicant_password:
+            from frappe.utils.password import update_password
+            update_password(user=user.name, pwd=applicant_password)
         return user
 
 def validate_job_applicant(doc, method):
+    validate_transferable_field(doc)
     set_job_applicant_fields(doc)
     validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
@@ -610,6 +611,12 @@ def validate_job_applicant(doc, method):
         set_childs_for_application_web_form(doc, method)
     if doc.one_fm_applicant_status == "Shortlisted":
         create_job_offer_from_job_applicant(doc.name)
+
+def validate_transferable_field(doc):
+    if doc.one_fm_applicant_is_overseas_or_local != 'Local':
+        doc.one_fm_is_transferable = ''
+    if doc.one_fm_is_transferable == 'No':
+        doc.status = 'Rejected'
 
 def set_childs_for_application_web_form(doc, method):
     set_required_documents(doc, method)
@@ -653,8 +660,13 @@ def set_designation_skill(doc, skills):
 def set_required_documents(doc, method):
     if doc.one_fm_source_of_hire and not doc.one_fm_documents_required:
         filters = {}
-        filters['source_of_hire'] = doc.one_fm_source_of_hire
-        if doc.one_fm_source_of_hire == 'Local' and doc.one_fm_visa_type:
+        source_of_hire = 'Overseas'
+        if doc.one_fm_source_of_hire == 'Local':
+            source_of_hire = 'Local'
+        elif doc.one_fm_source_of_hire == 'Local and Overseas' and doc.one_fm_have_a_valid_visa_in_kuwait and doc.one_fm_visa_type:
+            source_of_hire = 'Local'
+        filters['source_of_hire'] = source_of_hire
+        if source_of_hire == 'Local' and doc.one_fm_visa_type:
             filters['visa_type'] = doc.one_fm_visa_type
         else:
             filters['visa_type'] = ''
@@ -789,3 +801,10 @@ def applicant_has_website_permission(doc, ptype, user, verbose=False):
         return True
     else:
         return False
+
+@frappe.whitelist(allow_guest=True)
+def check_if_user_exist_as_desk_user(user):
+    user_exist = frappe.db.exists('User', user)
+    if user_exist:
+        return frappe.db.get_value('User', user_exist, 'user_type')
+    return False
