@@ -602,6 +602,7 @@ def website_user_for_job_applicant(email_id, first_name, last_name='', applicant
         return user
 
 def validate_job_applicant(doc, method):
+    validate_transferable_field(doc)
     set_job_applicant_fields(doc)
     validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
@@ -610,6 +611,12 @@ def validate_job_applicant(doc, method):
         set_childs_for_application_web_form(doc, method)
     if doc.one_fm_applicant_status == "Shortlisted":
         create_job_offer_from_job_applicant(doc.name)
+
+def validate_transferable_field(doc):
+    if doc.one_fm_applicant_is_overseas_or_local != 'Local':
+        doc.one_fm_is_transferable = ''
+    if doc.one_fm_is_transferable == 'No':
+        doc.status = 'Rejected'
 
 def set_childs_for_application_web_form(doc, method):
     set_required_documents(doc, method)
