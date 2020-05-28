@@ -3,6 +3,13 @@
 
 frappe.ui.form.on('Career History', {
 	refresh: function(frm) {
+		frm.set_query('job_applicant', function () {
+			return {
+				filters: {
+					'status': ['not in', ['Rejected']]
+				}
+			};
+		});
 		set_company_options(frm);
 		set_promotions_and_salary_hike_field(frm);
 	},
