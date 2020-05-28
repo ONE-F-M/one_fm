@@ -27,8 +27,13 @@ def get_data():
                 {
 					"type": "doctype",
 					"name": "Best Reference",
-				},
-                {
+				}
+			]
+		},
+		{
+			"label": _("Recruitment Master"),
+			"items": [
+				{
 					"type": "doctype",
 					"name": "Recruitment Document Checklist",
 				},
@@ -40,18 +45,6 @@ def get_data():
                 {
 					"type": "doctype",
 					"name": "Visa Type",
-				},
-                {
-					"type": "doctype",
-					"name": "Agency",
-				},
-                {
-					"type": "doctype",
-					"name": "Agency Contract",
-				},
-                {
-					"type": "doctype",
-					"name": "Demand Letter",
 				},
                 {
 					"type": "doctype",
@@ -70,6 +63,23 @@ def get_data():
 					"type": "doctype",
 					"name": "Country Calling Code",
 				},
+			]
+		},
+		{
+			"label": _("Agency"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Agency",
+				},
+                {
+					"type": "doctype",
+					"name": "Agency Contract",
+				},
+                {
+					"type": "doctype",
+					"name": "Demand Letter",
+				}
 			]
 		}
 	]

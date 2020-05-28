@@ -11,6 +11,13 @@ frappe.ui.form.on('Interview Result', {
 				}
 			};
 		});
+		frm.set_query('job_applicant', function () {
+			return {
+				filters: {
+					'status': ['not in', ['Rejected']]
+				}
+			};
+		});
 		if(frm.is_new()){
 			frm.set_value('interview_date', frappe.datetime.now_datetime());
 		}

@@ -6,8 +6,12 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.utils import getdate
+from one_fm.utils import validate_applicant_overseas_transferable
 
 class InterviewResult(Document):
+	def validate(self):
+		self.validate_with_applicant()
+
 	def on_submit(self):
 		create_best_reference(self)
 		update_interview_score_of_applicant(self)
@@ -15,6 +19,12 @@ class InterviewResult(Document):
 	def on_cancel(self):
 		remove_best_reference(self)
 		update_interview_score_of_applicant(self, True)
+
+	def validate_with_applicant(self):
+		if self.job_applicant:
+			if frappe.db.get_value('Job Applicant', self.job_applicant, 'status') == 'Rejected':
+				frappe.throw(_('Applicant is Rejected'))
+			validate_applicant_overseas_transferable(self.job_applicant)
 
 def update_interview_score_of_applicant(doc, cancel=False):
 	if cancel:

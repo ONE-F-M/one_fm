@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe import _
+from frappe.utils import getdate
+from one_fm.utils import validate_applicant_overseas_transferable
 
 class OverlapError(frappe.ValidationError): pass
 class CareerHistory(Document):
@@ -20,8 +22,29 @@ class CareerHistory(Document):
 		self.validate_pormotions_and_salary_during_company()
 		self.validate_pormotions_exist_for_company()
 		self.validate_salary_hikes_exist_for_company()
+		self.calculate_career_history_score()
+
+	def calculate_career_history_score(self):
+		career_history_score = 0;
+		if self.number_promotions_and_salary_changes and self.total_years_of_experience:
+			the_factor = self.number_promotions_and_salary_changes/self.total_years_of_experience
+			if the_factor >= 0 and the_factor < 0.25:
+				career_history_score = 1
+			elif the_factor >= 0.25 and the_factor < 0.33:
+				career_history_score = 2
+			elif the_factor >= 0.33 and the_factor < 0.5:
+				career_history_score = 3
+			elif the_factor >= 0.5 and the_factor < 1:
+				career_history_score = 4
+			elif the_factor >= 1:
+				career_history_score = 5
+		self.career_history_score = career_history_score
 
 	def validate_with_applicant(self):
+		if self.job_applicant:
+			if frappe.db.get_value('Job Applicant', self.job_applicant, 'status') == 'Rejected':
+				frappe.throw(_('Applicant is Rejected'))
+			validate_applicant_overseas_transferable(self.job_applicant)
 		if not self.name:
 			# hack! if name is null, it could cause problems with !=
 			self.name = "New "+self.doctype
@@ -95,8 +118,23 @@ class CareerHistory(Document):
 
 def update_career_history_score_of_applicant(doc, delete=False):
 	job_applicant = frappe.get_doc('Job Applicant', doc.job_applicant)
-	job_applicant.one_fm_career_history_reference = doc.name if not delete else ''
-	job_applicant.one_fm_career_history_score = doc.career_history_score if not delete else ''
+	career_history_score_exists = False
+	if job_applicant.one_fm_job_applicant_score:
+		for score in job_applicant.one_fm_job_applicant_score:
+			if score.reference_dt == doc.doctype and score.reference_dn == doc.name:
+				career_history_score_exists = True
+				if delete:
+					frappe.delete_doc('Job Applicant Score', score.name)
+				else:
+					score.score = doc.career_history_score if doc.career_history_score else 0
+					score.date = getdate(doc.validated_by_recruiter_on)
+	if not career_history_score_exists:
+		interview_score = job_applicant.append('one_fm_job_applicant_score')
+		interview_score.interview = 'Career History'
+		interview_score.score = doc.career_history_score if doc.career_history_score else 0
+		interview_score.reference_dt = doc.doctype
+		interview_score.reference_dn = doc.name
+		interview_score.date = getdate(doc.validated_by_recruiter_on)
 	job_applicant.save(ignore_permissions=True)
 
 def validate_overlap(doc, child_doc, table):

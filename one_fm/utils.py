@@ -718,8 +718,8 @@ def set_average_score(doc, method):
             doc.one_fm_average_interview_score = total/no_of_interview
             if doc.one_fm_applicant_status == 'Draft':
                 doc.one_fm_applicant_status = 'Interview'
-        if doc.one_fm_career_history_score:
-            doc.one_fm_average_score = (total+doc.one_fm_career_history_score)/(no_of_interview+1)
+        else:
+            doc.one_fm_average_interview_score = total
 
 def set_job_applicant_status(doc, method):
     if doc.one_fm_applicant_status != 'Selected':
@@ -808,3 +808,22 @@ def check_if_user_exist_as_desk_user(user):
     if user_exist:
         return frappe.db.get_value('User', user_exist, 'user_type')
     return False
+
+def get_job_applicant_transferable_overseas(applicant):
+    job_applicant = frappe.get_doc('Job Applicant', applicant)
+    result = {'overseas': False, 'transferable': False}
+    if job_applicant.one_fm_applicant_is_overseas_or_local:
+        result['overseas'] = job_applicant.one_fm_applicant_is_overseas_or_local
+        if job_applicant.one_fm_is_transferable:
+            result['translatable'] = job_applicant.one_fm_is_transferable
+    return result
+
+def validate_applicant_overseas_transferable(applicant):
+    transferable_details = get_job_applicant_transferable_overseas(applicant)
+    if not transferable_details['overseas']:
+        frappe.throw(_('Mark the Applicant is Overseas or Local'))
+    elif transferable_details['overseas'] == 'Local':
+        if not transferable_details['transferable']:
+            frappe.throw(_('Mark the Applicant is Transferable or Not'))
+        if transferable_details['transferable'] == "No":
+            frappe.throw(_("Applicant is Not Transferable"))
