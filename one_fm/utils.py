@@ -580,10 +580,9 @@ def get_item_id_series(parent_item_group, subitem_group, item_group):
 
 
 def after_insert_job_applicant(doc, method):
-    website_user_for_job_applicant(doc.email_id, doc.one_fm_applicant_password, doc.one_fm_first_name, doc.one_fm_last_name)
+    website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)
 
-@frappe.whitelist(allow_guest=True)
-def website_user_for_job_applicant(email_id, applicant_password, first_name, last_name=''):
+def website_user_for_job_applicant(email_id, first_name, last_name='', applicant_password=False):
     if not frappe.db.exists ("User", email_id):
         from frappe.utils import random_string
         user = frappe.get_doc({
@@ -597,8 +596,9 @@ def website_user_for_job_applicant(email_id, applicant_password, first_name, las
         user.flags.ignore_permissions=True
         # user.reset_password_key=random_string(32)
         user.add_roles("Job Applicant")
-        from frappe.utils.password import update_password
-        update_password(user=user.name, pwd=applicant_password)
+        if applicant_password:
+            from frappe.utils.password import update_password
+            update_password(user=user.name, pwd=applicant_password)
         return user
 
 def validate_job_applicant(doc, method):
