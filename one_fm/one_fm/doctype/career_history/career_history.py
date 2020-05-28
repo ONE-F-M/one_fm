@@ -13,12 +13,22 @@ class CareerHistory(Document):
 		update_career_history_score_of_applicant(self)
 
 	def validate(self):
+		self.validate_with_applicant()
 		self.validate_dates()
 		set_totals_in_career_history_company(self)
 		self.validate_date_overlap_within_childs()
 		self.validate_pormotions_and_salary_during_company()
 		self.validate_pormotions_exist_for_company()
 		self.validate_salary_hikes_exist_for_company()
+
+	def validate_with_applicant(self):
+		if not self.name:
+			# hack! if name is null, it could cause problems with !=
+			self.name = "New "+self.doctype
+		career_history = frappe.db.exists('Career History', {'job_applicant': self.job_applicant, 'name': ['!=', self.name]})
+		if career_history:
+			frappe.throw(_("""Career History <b><a href="#Form/Career History/{0}">{0}</a></b> is exists against \
+				Job Applicant {1}.!""").format(career_history, self.applicant_name))
 
 	def on_trash(self):
 		update_career_history_score_of_applicant(self, True)

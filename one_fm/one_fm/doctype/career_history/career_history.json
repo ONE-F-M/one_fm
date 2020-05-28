@@ -8,6 +8,7 @@
  "field_order": [
   "naming_series",
   "job_applicant",
+  "applicant_name",
   "erf",
   "total_years_of_experience_str",
   "total_years_of_experience",
@@ -43,7 +44,8 @@
    "fieldname": "job_applicant",
    "fieldtype": "Link",
    "label": "Job Applicant",
-   "options": "Job Applicant"
+   "options": "Job Applicant",
+   "reqd": 1
   },
   {
    "fieldname": "career_history_company",
@@ -56,6 +58,7 @@
    "fetch_from": "job_applicant.one_fm_erf",
    "fieldname": "erf",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "ERF",
    "options": "ERF",
    "read_only": 1
@@ -129,6 +132,7 @@
   {
    "fieldname": "total_years_of_experience_str",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Total Years Of Experience",
    "read_only": 1
   },
@@ -172,10 +176,18 @@
    "fieldname": "validated_by_recruiter_on",
    "fieldtype": "Date",
    "label": "Validated By Recruiter On"
+  },
+  {
+   "fetch_from": "job_applicant.applicant_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant Name",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-05-18 14:17:58.238115",
+ "modified": "2020-05-25 10:17:55.925953",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",
@@ -219,5 +231,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "applicant_name"
 }

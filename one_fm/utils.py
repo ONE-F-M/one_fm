@@ -579,11 +579,121 @@ def get_item_id_series(parent_item_group, subitem_group, item_group):
 
 
 
+def after_insert_job_applicant(doc, method):
+    website_user_for_job_applicant(doc.email_id, doc.one_fm_applicant_password, doc.one_fm_first_name, doc.one_fm_last_name)
+
+@frappe.whitelist(allow_guest=True)
+def website_user_for_job_applicant(email_id, applicant_password, first_name, last_name=''):
+    if not frappe.db.exists ("User", email_id):
+        from frappe.utils import random_string
+        user = frappe.get_doc({
+            "doctype": "User",
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email_id,
+            "user_type": "Website User",
+            "send_welcome_email": False
+        })
+        user.flags.ignore_permissions=True
+        # user.reset_password_key=random_string(32)
+        user.add_roles("Job Applicant")
+        from frappe.utils.password import update_password
+        update_password(user=user.name, pwd=applicant_password)
+        return user
+
 def validate_job_applicant(doc, method):
+    set_job_applicant_fields(doc)
+    validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     set_average_score(doc, method)
+    if doc.is_new():
+        set_childs_for_application_web_form(doc, method)
     if doc.one_fm_applicant_status == "Shortlisted":
         create_job_offer_from_job_applicant(doc.name)
+
+def set_childs_for_application_web_form(doc, method):
+    set_required_documents(doc, method)
+    set_job_basic_skill(doc, method)
+    set_job_languages(doc, method)
+
+def set_job_languages(doc, method):
+    if not doc.one_fm_languages:
+        job = frappe.get_doc('Job Opening', doc.job_title)
+        if job.one_fm_languages:
+            set_languages(doc, job.one_fm_languages)
+        elif doc.one_fm_erf:
+            erf = frappe.get_doc('ERF', doc.one_fm_erf)
+            if erf.languages:
+                set_languages(doc, erf.languages)
+
+def set_languages(doc, languages):
+    for language in languages:
+        lang = doc.append('one_fm_languages')
+        lang.language = language.language
+        lang.language_name = language.language_name
+        lang.speak = 0
+        lang.read = 0
+        lang.write = 0
+
+def set_job_basic_skill(doc, method):
+    if not doc.one_fm_designation_skill:
+        job = frappe.get_doc('Job Opening', doc.job_title)
+        if job.one_fm_designation_skill:
+            set_designation_skill(doc, job.one_fm_designation_skill)
+        elif doc.one_fm_erf:
+            erf = frappe.get_doc('ERF', doc.one_fm_erf)
+            if erf.designation_skill:
+                set_designation_skill(doc, erf.designation_skill)
+
+def set_designation_skill(doc, skills):
+    for designation_skill in skills:
+        skill = doc.append('one_fm_designation_skill')
+        skill.skill = designation_skill.skill
+
+def set_required_documents(doc, method):
+    if doc.one_fm_source_of_hire and not doc.one_fm_documents_required:
+        filters = {}
+        filters['source_of_hire'] = doc.one_fm_source_of_hire
+        if doc.one_fm_source_of_hire == 'Local' and doc.one_fm_visa_type:
+            filters['visa_type'] = doc.one_fm_visa_type
+        else:
+            filters['visa_type'] = ''
+
+        from one_fm.one_fm.doctype.recruitment_document_checklist.recruitment_document_checklist import get_recruitment_document_checklist
+        document_checklist_obj = get_recruitment_document_checklist(filters)
+        document_checklist = False
+        if document_checklist_obj and document_checklist_obj.recruitment_documents:
+            document_checklist = document_checklist_obj.recruitment_documents
+        if document_checklist:
+            for checklist in document_checklist:
+                doc_required = doc.append('one_fm_documents_required')
+                fields = ['document_required', 'required_when', 'or_required_when', 'type_of_copy', 'or_type_of_copy', 'not_mandatory']
+                for field in fields:
+                    doc_required.set(field, checklist.get(field))
+
+def set_job_applicant_fields(doc):
+    doc.email_id = doc.one_fm_email_id
+
+def validate_mandatory_fields(doc):
+    field_list = [{'First Name':'one_fm_first_name'}, {'Last Name':'one_fm_last_name'}, {'Passport Number':'one_fm_passport_number'},
+                {'Place of Birth':'one_fm_place_of_birth'}, {'Email ID':'one_fm_email_id'},
+                {'Marital Status':'one_fm_marital_status'}, {'Passport Holder of':'one_fm_passport_holder_of'},
+                {'Passport Issued on':'one_fm_passport_issued'}, {'Passport Expires on ':'one_fm_passport_expire'},
+                {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
+                {'Date of Birth':'one_fm_date_of_birth'}, {'Educational Qualification':'one_fm_educational_qualification'},
+                {'University':'one_fm_university'}];
+    mandatory_fields = []
+    for fields in field_list:
+        for field in fields:
+            if not doc.get(fields[field]):
+                mandatory_fields.append(field)
+
+    if len(mandatory_fields) > 0:
+        message = 'Mandatory fields required in Job Applicant<br><br><ul>'
+        for mandatory_field in mandatory_fields:
+            message += '<li>' + mandatory_field +'</li>'
+        message += '</ul>'
+        frappe.throw(message)
 
 def set_average_score(doc, method):
     if doc.one_fm_job_applicant_score:
@@ -662,3 +772,20 @@ def set_other_benefits_to_terms(job_offer, erf):
     terms = job_offer.append('offer_terms')
     terms.offer_term = 'Probation Period'
     terms.value = '(100) working days'
+
+@frappe.whitelist(allow_guest=True)
+def get_job_opening(job_opening_id):
+    return frappe.get_doc('Job Opening', job_opening_id)
+
+@frappe.whitelist(allow_guest=True)
+def get_erf(erf_id):
+    return frappe.get_doc('ERF', erf_id)
+
+def get_applicant():
+	return frappe.get_value("Job Applicant",{"one_fm_email_id": frappe.session.user}, "name")
+
+def applicant_has_website_permission(doc, ptype, user, verbose=False):
+    if doc.name == get_applicant():
+        return True
+    else:
+        return False
