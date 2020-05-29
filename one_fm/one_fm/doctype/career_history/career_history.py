@@ -23,6 +23,12 @@ class CareerHistory(Document):
 		self.validate_pormotions_exist_for_company()
 		self.validate_salary_hikes_exist_for_company()
 		self.calculate_career_history_score()
+		self.career_history_score_action()
+
+	def career_history_score_action(self):
+		if self.career_history_score and self.career_history_score > 0 and self.career_history_score < 2.99:
+			if not self.pass_to_next_interview:
+				frappe.throw(_("Score is less than 2.99, Please Select Pass to Next Interview or Reject Applicant"))
 
 	def calculate_career_history_score(self):
 		career_history_score = 0;
@@ -39,6 +45,8 @@ class CareerHistory(Document):
 			elif the_factor >= 1:
 				career_history_score = 5
 		self.career_history_score = career_history_score
+		if career_history_score <= 0 and self.pass_to_next_interview:
+			self.pass_to_next_interview = ''
 
 	def validate_with_applicant(self):
 		if self.job_applicant:
@@ -135,6 +143,8 @@ def update_career_history_score_of_applicant(doc, delete=False):
 		interview_score.reference_dt = doc.doctype
 		interview_score.reference_dn = doc.name
 		interview_score.date = getdate(doc.validated_by_recruiter_on)
+	if doc.pass_to_next_interview == "Reject" and doc.career_history_score and doc.career_history_score > 0 and doc.career_history_score < 2.99:
+		job_applicant.status = 'Rejected' if not delete else 'Open'
 	job_applicant.save(ignore_permissions=True)
 
 def validate_overlap(doc, child_doc, table):

@@ -39,8 +39,33 @@ frappe.ui.form.on('Interview Result', {
 	},
 	work_experience_score: function(frm) {
     calculate_total_and_avg_score(frm);
+	},
+	pass_to_next_interview: function(frm) {
+		confirm_score_action(frm);
 	}
 });
+
+var confirm_score_action = function(frm) {
+	if(frm.doc.pass_to_next_interview){
+		let msg = __('Do You Need to Set the Value to {0}', [frm.doc.pass_to_next_interview])
+		frappe.confirm(
+			msg,
+			function(){
+				// Yes
+				if(frm.doc.pass_to_next_interview == 'Reject'){
+					frappe.msgprint(__('Applicant Will be Rejected on this Interview Submit.'));
+				}
+				if(frm.doc.pass_to_next_interview == 'Pass'){
+					frm.save();
+				}
+			},
+			function(){
+				// No
+				frm.set_value('pass_to_next_interview', '');
+			}
+		);
+	}
+};
 
 var set_experience_company_options = function(frm) {
   if(frm.doc.job_applicant){
