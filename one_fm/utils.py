@@ -609,6 +609,8 @@ def validate_job_applicant(doc, method):
     set_average_score(doc, method)
     if doc.is_new():
         set_childs_for_application_web_form(doc, method)
+    # if doc.user != 'Guest':
+    #     validate_mandatory_childs()
     if doc.one_fm_applicant_status == "Shortlisted":
         create_job_offer_from_job_applicant(doc.name)
 
@@ -693,7 +695,9 @@ def validate_mandatory_fields(doc):
                 {'Passport Issued on':'one_fm_passport_issued'}, {'Passport Expires on ':'one_fm_passport_expire'},
                 {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
                 {'Date of Birth':'one_fm_date_of_birth'}, {'Educational Qualification':'one_fm_educational_qualification'},
-                {'University':'one_fm_university'}];
+                {'University':'one_fm_university'}]
+
+    field_list.extend(get_mandatory_for_dependent_fields(doc))
     mandatory_fields = []
     for fields in field_list:
         for field in fields:
@@ -706,6 +710,49 @@ def validate_mandatory_fields(doc):
             message += '<li>' + mandatory_field +'</li>'
         message += '</ul>'
         frappe.throw(message)
+
+def get_mandatory_for_dependent_fields(doc):
+    field_list = []
+    field_list.extend(get_mandatory_fields_current_employment(doc))
+    field_list.extend(get_mandatory_fields_visa_details(doc))
+    field_list.extend(get_mandatory_fields_contact_details(doc))
+    field_list.extend(get_mandatory_fields_work_details(doc))
+    return field_list
+
+def get_mandatory_fields_work_details(doc):
+    if doc.one_fm_erf:
+        field_list = []
+        erf = frappe.get_doc('ERF', doc.one_fm_erf)
+        if erf.shift_working:
+            field_list.append({'Rotation Shift': 'one_fm_rotation_shift'})
+        if erf.night_shift:
+            field_list.append({'Night Shift': 'one_fm_night_shift'})
+        if erf.travel_required:
+            if erf.type_of_travel:
+                field_list.append({'Type of Travel': 'one_fm_type_of_travel'})
+            field_list.append({'Type of Driving License': 'one_fm_type_of_driving_license'})
+        return field_list
+
+def get_mandatory_fields_contact_details(doc):
+    if not doc.one_fm_is_agency_applying:
+        return [{'Country Code for Primary Contact Number': 'one_fm_country_code'},
+            {'Primary Contact Number': 'one_fm_contact_number'}]
+    return []
+
+def get_mandatory_fields_visa_details(doc):
+    if doc.one_fm_have_a_valid_visa_in_kuwait:
+        return [{'Visa Type': 'one_fm_visa_type'}, {'Civil ID Number': 'one_fm_cid_number'},
+            {'Civil ID Valid Till': 'one_fm_cid_expire'}]
+    return []
+
+def get_mandatory_fields_current_employment(doc):
+    if doc.one_fm_i_am_currently_working:
+        return [{'Current Employeer': 'one_fm_current_employer'}, {'Employment Start Date': 'one_fm_employment_start_date'},
+            {'Employment End Date': 'one_fm_employment_end_date'}, {'Current Job Title': 'one_fm_current_job_title'},
+            {'Current Salary in KWD': 'one_fm_current_salary'}, {'Country of Employment': 'one_fm_country_of_employment'},
+            {'Notice Period in Days': 'one_fm_notice_period_in_days'}
+        ]
+    return []
 
 def set_average_score(doc, method):
     if doc.one_fm_job_applicant_score:
