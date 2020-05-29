@@ -18,6 +18,7 @@
   "interview_template",
   "is_bulk",
   "get_best_reference",
+  "pass_to_next_interview",
   "section_break_4",
   "interview_question_result",
   "interview_sheet_general",
@@ -213,11 +214,18 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Is Bulk"
+  },
+  {
+   "depends_on": "eval: doc.average_score < 2.99",
+   "fieldname": "pass_to_next_interview",
+   "fieldtype": "Select",
+   "label": "Pass to Next Interview or Reject Applicant",
+   "options": "\nPass\nReject"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-19 17:42:58.349971",
+ "modified": "2020-05-29 23:01:38.655914",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview Result",
