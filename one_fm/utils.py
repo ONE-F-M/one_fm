@@ -609,8 +609,8 @@ def validate_job_applicant(doc, method):
     set_average_score(doc, method)
     if doc.is_new():
         set_childs_for_application_web_form(doc, method)
-    # if doc.user != 'Guest':
-    #     validate_mandatory_childs()
+    if frappe.session.user != 'Guest':
+        validate_mandatory_childs(doc)
     if doc.one_fm_applicant_status == "Shortlisted":
         create_job_offer_from_job_applicant(doc.name)
 
@@ -619,6 +619,17 @@ def validate_transferable_field(doc):
         doc.one_fm_is_transferable = ''
     if doc.one_fm_is_transferable == 'No':
         doc.status = 'Rejected'
+
+def validate_mandatory_childs(doc):
+    if doc.one_fm_languages:
+        for language in doc.one_fm_languages:
+            if not language.read or int(language.read) < 1 or not language.write or int(language.write) < 1 or not language.speak or int(language.speak) < 1:
+                frappe.throw(_("Language - Row {0}: Should Rate You Read, Write and Speak for {1}".format(language.idx, language.language_name)))
+
+    if doc.one_fm_designation_skill:
+        for skill in doc.one_fm_designation_skill:
+            if not skill.one_fm_proficiency or int(skill.one_fm_proficiency) < 1:
+                frappe.throw(_("Basic Skills - Row {0}: Should Rate Proficiency for Skill {1}".format(skill.idx, skill.skill)))
 
 def set_childs_for_application_web_form(doc, method):
     set_required_documents(doc, method)
