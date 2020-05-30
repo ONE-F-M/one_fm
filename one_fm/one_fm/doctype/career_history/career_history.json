@@ -10,12 +10,14 @@
   "job_applicant",
   "applicant_name",
   "erf",
+  "hiring_method",
   "total_years_of_experience_str",
   "total_years_of_experience",
   "column_break_5",
   "validated_by_recruiter_on",
   "number_promotions_and_salary_changes",
   "career_history_score",
+  "pass_to_next_interview",
   "career_history_company_section",
   "number_of_companies",
   "career_history_company",
@@ -184,10 +186,24 @@
    "in_list_view": 1,
    "label": "Applicant Name",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.career_history_score < 2.99 && doc.hiring_method != 'Bulk Recruitment' && doc.career_history_score != 0",
+   "fieldname": "pass_to_next_interview",
+   "fieldtype": "Select",
+   "label": "Pass to Next Interview or Reject Applicant",
+   "options": "\nPass\nReject"
+  },
+  {
+   "fetch_from": "erf.hiring_method",
+   "fieldname": "hiring_method",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Hiring Method"
   }
  ],
  "links": [],
- "modified": "2020-05-25 10:17:55.925953",
+ "modified": "2020-05-29 20:52:34.114954",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",
@@ -232,5 +248,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "applicant_name"
+ "title_field": "applicant_name",
+ "track_changes": 1
 }

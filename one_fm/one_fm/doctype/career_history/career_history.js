@@ -3,6 +3,13 @@
 
 frappe.ui.form.on('Career History', {
 	refresh: function(frm) {
+		frm.set_query('job_applicant', function () {
+			return {
+				filters: {
+					'status': ['not in', ['Rejected']]
+				}
+			};
+		});
 		set_company_options(frm);
 		set_promotions_and_salary_hike_field(frm);
 	},
@@ -14,8 +21,33 @@ frappe.ui.form.on('Career History', {
       frm.set_value('number_of_companies', 1);
     }
     set_career_history_company_item(frm);
-  }
+  },
+	pass_to_next_interview: function(frm) {
+		confirm_score_action(frm);
+	}
 });
+
+var confirm_score_action = function(frm) {
+	if(frm.doc.pass_to_next_interview){
+		let msg = __('Do You Need to Set the Value to {0}', [frm.doc.pass_to_next_interview])
+		frappe.confirm(
+			msg,
+			function(){
+				// Yes
+				if(frm.doc.pass_to_next_interview == 'Reject'){
+					frappe.msgprint(__('Applicant Will be Rejected on this Career History Save.'));
+				}
+				if(frm.doc.pass_to_next_interview == 'Pass'){
+					frm.save();
+				}
+			},
+			function(){
+				// No
+				frm.set_value('pass_to_next_interview', '');
+			}
+		);
+	}
+};
 
 frappe.ui.form.on('Career History Company', {
 	company_name: function(frm) {
