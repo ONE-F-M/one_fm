@@ -10,36 +10,36 @@ def get_data():
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
-					"name": "Operations Project",
-					"label": _("Operations Project")
+					"name": "Project",
+					"label": _("Project")
 				},
                 {
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
 					"name": "Operations Site",
-					"label": _("Operations Site")
+					"label": _("Site")
 				},
                 {
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
 					"name": "Operations Shift",
-					"label": _("Operations Shift")
+					"label": _("Shift")
 				},
                 {
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
-					"name": "Operations Post Template",
-					"label": _("Operations Post Template")
+					"name": "Post Type",
+					"label": _("Post Type")
 				},
                 {
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
 					"name": "Operations Post",
-					"label": _("Operations Post")
+					"label": _("Post")
 				},
                 {
 					"color": "grey",
@@ -56,8 +56,8 @@ def get_data():
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
-					"name": "Operations Task",
-					"label": _("Operations Task")
+					"name": "Task",
+					"label": _("Task")
 				},
                 {
 					"color": "grey",

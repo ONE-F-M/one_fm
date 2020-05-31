@@ -24,7 +24,7 @@ class MOM(Document):
 	def after_insert(self):
 		if self.issues == "Yes" and len(self.action) > 0:
 			for issue in self.action:
-				op_task = frappe.new_doc("Operations Task")
+				op_task = frappe.new_doc("Task")
 				op_task.subject = issue.subject
 				op_task.description = issue.description
 				op_task.priority = issue.priority

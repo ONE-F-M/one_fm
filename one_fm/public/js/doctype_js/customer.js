@@ -7,13 +7,13 @@ frappe.ui.form.on('Customer', {
 
 function dashboard_link_doctype (frm, doctype){
 
-    var parent = $('.form-dashboard-wrapper [data-doctype="Project"]').closest('div').parent();
+    let parent = $('.form-dashboard-wrapper [data-doctype="Project"]').closest('div').parent();
     
     parent.find('[data-doctype="'+doctype+'"]').remove();
 
     parent.append(frappe.render_template("dashboard_link_doctype", {doctype:doctype}));
 
-    var self = parent.find('[data-doctype="'+doctype+'"]');
+    let self = parent.find('[data-doctype="'+doctype+'"]');
 
     set_open_count(frm, doctype);
 
@@ -45,8 +45,8 @@ function dashboard_link_doctype (frm, doctype){
 
 function set_open_count (frm, doctype){
     
-    var method = '';
-    var links = {};
+    let method = '';
+    let links = {};
 
     if(doctype=="Operations Project"){
         method = 'one_fm.api.dashboard_utils.get_open_count';

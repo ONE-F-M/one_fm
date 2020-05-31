@@ -1,0 +1,55 @@
+{
+ "module": "Operations",
+ "modified": "2020-04-29 19:58:31.924691",
+ "sort_order": "DESC",
+ "sort_field": "modified",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "editable_grid": 1,
+ "field_order": [
+  "post_name",
+  "skills",
+  "designations"
+ ],
+ "name": "Post Type",
+ "permissions": [
+  {
+   "write": 1,
+   "read": 1,
+   "print": 1,
+   "create": 1,
+   "role": "System Manager",
+   "delete": 1,
+   "export": 1,
+   "email": 1,
+   "share": 1,
+   "report": 1
+  }
+ ],
+ "creation": "2020-04-29 19:47:30.454876",
+ "modified_by": "Administrator",
+ "track_changes": 1,
+ "quick_entry": 1,
+ "autoname": "field:post_name",
+ "fields": [
+  {
+   "fieldtype": "Data",
+   "label": "Post Name",
+   "unique": 1,
+   "fieldname": "post_name"
+  },
+  {
+   "fieldtype": "Table",
+   "options": "Post Skills",
+   "label": "Skills",
+   "fieldname": "skills"
+  },
+  {
+   "fieldtype": "Table",
+   "options": "Post Designations",
+   "label": "Designations",
+   "fieldname": "designations"
+  }
+ ],
+ "owner": "Administrator"
+}
