@@ -7,8 +7,8 @@ frappe.ui.form.on('MOM', {
 		let project = frm.doc.project;
 		if(site !== undefined && project !== undefined){
 			frm.clear_table("attendees");
+			get_poc_list(frm, "Project", project);
 			get_poc_list(frm, "Operations Site", site);
-			get_poc_list(frm, "Operations Project", project);
 		}
 	}
 });

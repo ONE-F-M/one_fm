@@ -1,12 +1,12 @@
 {
- "autoname": "field:post_name",
+ "autoname": "format:{post_name}-{gender}",
  "creation": "2020-05-02 16:31:15.111264",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "post_name",
-  "post_type",
+  "post_template",
   "column_break_4",
   "site_shift",
   "site",
@@ -81,6 +81,8 @@
    "default": "Both",
    "fieldname": "gender",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Gender",
    "options": "Both\nMale\nFemale"
   },
@@ -108,13 +110,13 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "post_type",
+   "fieldname": "post_template",
    "fieldtype": "Link",
    "label": "Post Type",
-   "options": "Post Type Template"
+   "options": "Post Type"
   }
  ],
- "modified": "2020-05-15 10:19:04.200044",
+ "modified": "2020-05-31 12:26:21.560577",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",

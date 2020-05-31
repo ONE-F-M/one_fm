@@ -1,7 +1,7 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Contractss', {
+frappe.ui.form.on('Contracts', {
 	client: function(frm) {
 		let client = frm.doc.client;
 		if(client != undefined){
@@ -16,7 +16,7 @@ frappe.ui.form.on('Contractss', {
 	}
 });
 
-frappe.ui.form.on('Contractss Addendum', {
+frappe.ui.form.on('Contract Addendum', {
 	end_date: function(frm, cdt, cdn) {
 		let doc = locals[cdt][cdn];
 	},
