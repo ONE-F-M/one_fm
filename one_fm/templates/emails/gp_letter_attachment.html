@@ -1,0 +1,40 @@
+
+<tr>
+    <td style="font-family: 'Cairo', sans-serif;color:#4b4b4c;" mc:edit="tm2-04" valign="top" >
+        <p>Dear Hussain, </p>
+        <p>Please attach GP Letter paper for each candidate shown in this table:</p><br>
+
+
+        <table style="color:#71746f;width:45%;" class="table">
+            <tr style="background-color: #eee;">
+                <td>Sr No.</td>
+                <td>Name</td>
+            </tr>
+            {%- for row in candidates -%}
+                <tr>
+                    <td>{{ row.idx }}</td>
+                    <td>{{ row.candidate }}</td>
+                </tr>
+            {%- endfor -%}
+        </table>
+
+        <br>
+        
+
+        <a href="{{ page_link }}" style="text-decoration:none; color:#FFF;background-color: #516ac4;border-radius: 12px;padding: 2%;margin: 150px;">Attach</a>
+
+
+
+        <br><br>
+
+
+        <p>Thank you.</p>
+        <p>Best regards.</p>
+
+    </td>
+</tr>
+
+
+<tr>
+    <td style="font-size:30px; line-height:30px;" valign="top" height="30" align="center">&nbsp;</td>
+</tr>

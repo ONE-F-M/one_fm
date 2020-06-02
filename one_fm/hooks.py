@@ -103,18 +103,18 @@ doc_events = {
 		"after_insert": "one_fm.utils.after_insert_job_applicant"
 	},
 	"Shift Type": {
-		"autoname": "one_fm.api.doc_events.naming_series"
+		"autoname": "one_fm.utils.naming_series"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
 		"before_insert": "one_fm.utils.validate_get_warehouse_parent"
 	},
 	"Item Group": {
-		"autoname": "one_fm.api.doc_events.item_group_naming_series",
+		"autoname": "one_fm.utils.item_group_naming_series",
 		"before_insert": "one_fm.utils.validate_get_item_group_parent"
 	},
 	"Item": {
-		"autoname": "one_fm.api.doc_events.item_naming_series"
+		"autoname": "one_fm.utils.item_naming_series"
 	},
 	"Employee Checkin": {
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
@@ -153,9 +153,15 @@ scheduler_events = {
 		'one_fm.utils.hooked_leave_allocation_builder',
 		'one_fm.utils.increase_daily_leave_balance'
 	],
+	"0 30 10 1/1 * ? *": [
+		'one_fm.utils.create_gp_letter_request'
+	],
+	"0 45 10 1/1 * ? *": [
+		'one_fm.utils.send_travel_agent_email'
+	],
 	"hourly": [
 		"one_fm.api.tasks.send_checkin_hourly_reminder",
-	],
+	]
 }
 
 # scheduler_events = {

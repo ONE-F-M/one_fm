@@ -22,6 +22,131 @@ from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_li
 import datetime
 
 
+
+def send_travel_agent_email():
+    gp_letters_request = frappe.db.sql_list("select name from `tabGP Letter Request` where (gp_status is NULL or gp_status='' or gp_status='Reject') and (supplier_name is not NULL or supplier_name!='') ")
+
+    for gp_letter_request in gp_letters_request:
+        gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request)
+        if gp_letter_doc.gp_status!='No Response':
+            if not gp_letter_doc.sent_date:
+                send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates)
+                
+                gp_letter_doc.sent_date = frappe.utils.now()
+                gp_letter_doc.save(ignore_permissions = True)
+            elif not gp_letter_doc.reminder1:
+                send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates)
+
+                gp_letter_doc.reminder1 = frappe.utils.now()
+                gp_letter_doc.save(ignore_permissions = True)
+            elif not gp_letter_doc.reminder2:
+                send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates)
+
+                gp_letter_doc.reminder2 = frappe.utils.now()
+                gp_letter_doc.save(ignore_permissions = True)
+            else:
+
+                gp_letter_doc.gp_status = 'No Response'
+                gp_letter_doc.save(ignore_permissions = True)
+
+                page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
+                msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
+                sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+                recipient = 'omar.ja93@gmail.com'
+                frappe.sendmail(sender=sender, recipients= recipient,
+                    content=msg, subject="GP Letter Request No Response", delayed=False)
+
+
+
+
+
+
+def send_gp_email(pid, candidates):
+    page_link = get_url("/gp_letter_request?pid=" + pid)
+    msg = frappe.render_template('one_fm/templates/emails/gp_letter_request.html', context={"page_link": page_link, "candidates": candidates})
+    sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+    recipient = 'omar.ja93@gmail.com'
+    frappe.sendmail(sender=sender, recipients= recipient,
+        content=msg, subject="Request for GP Letter", delayed=False)
+
+
+def create_gp_letter_request():
+    gp_letters = frappe.db.sql_list("select name from `tabGP Letter` where gp_letter_request_reference is NULL or gp_letter_request_reference='' ")
+    candidates=[]
+
+    for gp_letter in gp_letters:
+        gp_letter_doc = frappe.get_doc("GP Letter", gp_letter)
+
+        candidates.append(gp_letter_doc.candidate_name)
+
+    if len(candidates)>0:
+        supplier_category_val = ''
+        supplier_subcategory_val = ''
+        supplier_name_val = ''
+
+        services_item_group = frappe.db.sql("select name from `tabItem Group` where parent_item_group='All Item Groups' and item_group_name like '%Services%' ")
+        if services_item_group:
+            supplier_category_val = services_item_group[0][0]
+
+            travel_agent_group = frappe.db.sql("select name from `tabItem Group` where parent_item_group='{0}' and item_group_name like '%Travel Agent%' ".format(supplier_category_val))
+            if travel_agent_group:
+                supplier_subcategory_val = travel_agent_group[0][0]
+
+        supplier = frappe.db.get_single_value('GP Letter Request Setting', 'default_supplier')
+        if supplier:
+            supplier_name_val = supplier
+
+        doc = frappe.new_doc('GP Letter Request')
+        for candidate in candidates:
+            doc.append("gp_letter_candidates",{
+                "candidate": candidate
+            })
+        doc.supplier_category = supplier_category_val
+        doc.supplier_subcategory = supplier_subcategory_val
+        doc.supplier = supplier_name_val
+        doc.save(ignore_permissions = True)
+
+
+        import xlsxwriter 
+        workbook = xlsxwriter.Workbook('/home/frappe/frappe-bench/apps/one_fm/one_fm/{0}.xlsx'.format(doc.name)) 
+        worksheet = workbook.add_worksheet()
+        worksheet.write('A1', 'Sr.No')
+        worksheet.write('B1', 'Candidate Name In English')
+        worksheet.write('C1', 'Candidate Name In Arabic')
+        worksheet.write('D1', 'Passport Number')
+        worksheet.write('E1', 'Candidate Nationality in Arabic')
+        worksheet.write('F1', 'Company Name in Arabic')
+        worksheet.set_column('B:F', 22)
+
+
+        candidates_info=[]
+        count=1
+        for candidate in candidates:
+            candidates_info.append([count, candidate])
+            count += 1
+        
+        # candidates = ['1','Omhhar','عمر','12345','فلسطيني','ONE FM']
+
+        print(candidates_info)
+
+        row = 1
+        column = 0
+        for srno, candidate_english in candidates_info: 
+            worksheet.write(row, column, srno) 
+            worksheet.write(row, column+1, candidate_english) 
+            # column += 1
+            row += 1
+        workbook.close()
+
+
+        # for gp_letter in gp_letters:
+        #     gp_letter_doc = frappe.get_doc("GP Letter", gp_letter)
+        #     gp_letter_doc.gp_letter_request_reference = doc.name
+        #     gp_letter_doc.save(ignore_permissions = True)
+
+
+
+
 @frappe.whitelist(allow_guest=True)
 def paid_sick_leave_validation(doc, method):
     salary = get_salary(doc.employee)

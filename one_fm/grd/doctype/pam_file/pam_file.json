@@ -10,6 +10,7 @@
   "government_project",
   "main_pam_file",
   "license_trade_name_english",
+  "license_trade_name_arabic",
   "pam_file_governorate_arabic",
   "company_unified_number",
   "designation",
@@ -68,10 +69,16 @@
    "fieldtype": "Link",
    "label": "Select PAM File to be Main",
    "options": "PAM File"
+  },
+  {
+   "fetch_from": "license_trade_name_english.license_trade_name_arabic",
+   "fieldname": "license_trade_name_arabic",
+   "fieldtype": "Read Only",
+   "label": "License Trade Name (Arabic)"
   }
  ],
- "modified": "2020-04-20 11:37:56.924824",
- "modified_by": "abdullah@one-fm.com",
+ "modified": "2020-06-02 13:05:29.944854",
+ "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM File",
  "owner": "Administrator",

@@ -1,0 +1,44 @@
+{% extends "templates/web.html" %}
+	<header>
+		{%- block navbar -%}
+        	<div></div>
+        {%- endblock -%}
+	</header>
+
+	{% block page_content %}
+
+		<link rel="stylesheet" type="text/css" href="assets/one_fm/css/gp_letter_request/style.css">
+		<link type="text/css" rel="stylesheet" href="assets/one_fm/css/gp_letter_request/stylesheet.css">
+
+		<div class="employment_details">
+			<form id="gp_letter_form" method="post">
+				<h2 class="text-center">GP Letter Request</h2>
+				<p class="lead text-center">Waiting for your action</p>
+
+				<div class="form-group">
+		        	<label class="col-form-label">Status</label>
+					<div class="input-group">
+						
+
+						<select class="custom-select" name="gp_status" id="gp_status" required>
+						  <option selected disabled>Select an option</option>
+						  <option value="Accept">Accept</option>
+						  <option value="Reject">Reject</option>
+						</select>
+
+
+					</div>
+		        </div>
+
+				<div class="form-group">
+		            <button type="button" id="submit" class="btn btn-primary btn-block btn-lg"> Submit </button>
+		        </div>
+		    
+				<input type="hidden" id="pid" name="pid" value={{pid}}>
+		    </form>
+		</div>
+	{% endblock %}
+
+
+	{%- block footer -%}{%- endblock -%}
+
