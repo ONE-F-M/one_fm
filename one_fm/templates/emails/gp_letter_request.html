@@ -1,0 +1,41 @@
+
+<tr>
+    <td style="font-family: 'Cairo', sans-serif;color:#4b4b4c;" mc:edit="tm2-04" valign="top" >
+        <p>Dear Hussain, </p>
+        <p> Please find below Attached Documents for GP letter Request.</p><br>
+
+
+        <table style="color:#71746f;width:45%;" class="table">
+            <tr style="background-color: #eee;">
+                <td>Sr No.</td>
+                <td>Name</td>
+            </tr>
+            {%- for row in candidates -%}
+                <tr>
+                    <td>{{ row.idx }}</td>
+                    <td>{{ row.candidate }}</td>
+                </tr>
+            {%- endfor -%}
+        </table>
+
+        <br>
+        
+        <p>Please click on the Action Button to approve or reject this request.</p>
+        <br>
+        <a href="{{ page_link }}" style="text-decoration:none; color:#FFF;background-color: #516ac4;border-radius: 12px;padding: 2%;margin: 150px;">Action</a>
+
+
+
+        <br><br>
+
+
+        <p>Thank you.</p>
+        <p>Best regards.</p>
+
+    </td>
+</tr>
+
+
+<tr>
+    <td style="font-size:30px; line-height:30px;" valign="top" height="30" align="center">&nbsp;</td>
+</tr>

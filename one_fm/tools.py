@@ -16,6 +16,35 @@ from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 
 
+def test_excel():
+    import xlsxwriter 
+
+    workbook = xlsxwriter.Workbook('/home/frappe/frappe-bench/apps/one_fm/one_fm/hello.xlsx') 
+    
+    worksheet = workbook.add_worksheet() 
+    
+    worksheet.write('A1', 'Sr.No') 
+    worksheet.write('B1', 'Candidate Name In English') 
+    worksheet.write('C1', 'Candidate Name In Arabic') 
+    worksheet.write('D1', 'Passport Number')
+    worksheet.write('E1', 'Candidate Nationality in Arabic')
+    worksheet.write('F1', 'Company Name in Arabic')
+    
+    worksheet.set_column('B:F', 22)
+
+    candidates = ['1','Omhhar','عمر','12345','فلسطيني','ONE FM']
+
+    row = 1
+    column = 0
+
+    for candidate in candidates: 
+        worksheet.write(row, column, candidate) 
+        column += 1
+
+    row += 1
+
+    workbook.close()
+    print('Done')
 
 
 def add_uniform_item():
