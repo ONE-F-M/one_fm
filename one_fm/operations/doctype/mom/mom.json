@@ -30,7 +30,7 @@
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
-   "options": "Operations Project"
+   "options": "Project"
   },
   {
    "fieldname": "section_break_3",
@@ -85,7 +85,7 @@
    "fieldtype": "Column Break"
   }
  ],
- "modified": "2020-05-15 10:24:26.184734",
+ "modified": "2020-05-18 09:13:21.986704",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM",

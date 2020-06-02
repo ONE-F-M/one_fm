@@ -32,6 +32,7 @@ doctype_js = {
 	"Location" : "public/js/doctype_js/location.js",
 	"Customer" : "public/js/doctype_js/customer.js",
 	"Shift Type" : "public/js/doctype_js/shift_type.js",
+	"Project": "public/js/doctype_js/project.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -114,6 +115,12 @@ doc_events = {
 	},
 	"Item": {
 		"autoname": "one_fm.utils.item_naming_series"
+	},
+	"Employee Checkin": {
+		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
+	},
+	"Project": {
+		"on_update": "one_fm.api.doc_events.project_on_update"
 	}
 }
 
@@ -137,20 +144,24 @@ has_website_permission = {
 # ---------------
 
 scheduler_events = {
+	"15 * * * *": [
+		"one_fm.api.tasks.final_reminder",		
+	],
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
 		'one_fm.utils.hooked_leave_allocation_builder',
 		'one_fm.utils.increase_daily_leave_balance'
 	],
-	"cron": {
-		"0 30 10 1/1 * ? *": [
-			'one_fm.utils.create_gp_letter_request'
-		],
-		"0 45 10 1/1 * ? *": [
-			'one_fm.utils.send_travel_agent_email'
-		]
-	}
+	"0 30 10 1/1 * ? *": [
+		'one_fm.utils.create_gp_letter_request'
+	],
+	"0 45 10 1/1 * ? *": [
+		'one_fm.utils.send_travel_agent_email'
+	],
+	"hourly": [
+		"one_fm.api.tasks.send_checkin_hourly_reminder",
+	]
 }
 
 # scheduler_events = {

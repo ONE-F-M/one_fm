@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+import json
 from frappe.desk.notifications import get_filters_for
 
 @frappe.whitelist()
@@ -9,20 +10,11 @@ def get_open_count(doctype, name, links):
 	:param name: Reference Name
 	:param transactions: List of transactions (json/dict)
 	:param filters: optional filters (json/list)'''
-
 	frappe.has_permission(doc=frappe.get_doc(doctype, name), throw=True)
-
 	meta = frappe.get_meta(doctype)
 
-	links = frappe._dict({
-		'fieldname': 'customer',
-		'transactions': [
-			{
-				'label': _('Operations Project'),
-				'items': ['Operations Project']
-			},
-		]
-	})
+	links = frappe._dict(json.loads(links))
+
 	items = []
 	for group in links.transactions:
 		items.extend(group.get('items'))
@@ -54,5 +46,5 @@ def get_open_count(doctype, name, links):
 	module = frappe.get_meta_module(doctype)
 	if hasattr(module, 'get_timeline_data'):
 		out['timeline_data'] = module.get_timeline_data(doctype, name)
-	
+	# print(out)
 	return out
