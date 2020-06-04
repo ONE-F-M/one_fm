@@ -74,10 +74,10 @@
 .btn-start {
   text-align: center;
   cursor: pointer;
-  /* width: 100%; */
-  font-size: 16px;
+  width: 100%;
+  font-size: 14px;
   display: block;
-  margin: 10px auto;
+  margin: 5px auto;
 }
 
 /* a {
@@ -125,4 +125,13 @@ video {
   #profile-card .card {
     display: none;
   }
+}
+
+#button-controls {
+  display: none;
+}
+
+#startButton,
+#endButton {
+  display: none;
 }

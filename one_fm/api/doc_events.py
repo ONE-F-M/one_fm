@@ -5,35 +5,9 @@ import frappe
 from frappe import _
 from frappe.utils import cstr, cint, get_datetime
 from frappe.core.doctype.version.version import get_diff
-from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings
+from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
-
 import datetime
-import schedule, time
-import rq
-from redis import Redis
-from rq import Queue, Worker
-from rq.registry import StartedJobRegistry
-from frappe.utils.background_jobs import get_redis_conn
-from rq_scheduler import Scheduler
-
-# @frappe.whitelist()
-# def testing_scheduler():
-# 	conn = Redis()
-# 	print(conn)
-# 	queuee = Queue('foo', connection=conn)
-# 	queues = Queue.all(conn)
-# 	workers = Worker.all(conn)
-# 	utc_datetime = datetime.datetime.utcnow()
-# 	print(utc_datetime.strftime("%Y-%m-%d %H:%M:%S"))
-# 	print(get_datetime())
-# 	scheduler = Scheduler(queue=queuee)
-# 	# print(queuee.name, StartedJobRegistry)
-# 	scheduler.enqueue_at(get_datetime(), hello) # Date time should be in UTC
-
-# 	for queue in queues:
-# 		registry = StartedJobRegistry(queue=queue)
-# 		print(registry.get_job_ids())
 
 #Shift Type
 @frappe.whitelist()
@@ -52,14 +26,56 @@ def shift_after_insert(doc, method):
 
 
 #Employee Checkin
+def employee_checkin_validate(doc, method):
+	try:
+		perm_map = {
+			"IN" : "Arrive Late",
+			"OUT": "Leave Early"
+		}
+		checkin_time = get_datetime(doc.time)
+		shift_actual_timings = get_actual_start_end_datetime_of_shift(doc.employee, get_datetime(doc.time), True)
+		prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
+		if curr_shift:
+			existing_perm = frappe.db.exists("Shift Permission", {"date": curr_shift.start_datetime.strftime('%Y-%m-%d'), "employee": doc.employee, "permission_type": perm_map[doc.log_type], "workflow_state": "Approved"})
+			assignment = frappe.get_value("Shift Assignment", {"employee": doc.employee, "date": curr_shift.start_datetime.date(), "shift_type": curr_shift.shift_type.name}, "shift")
+			doc.operations_shift = assignment
+	
+		if shift_actual_timings[0] and shift_actual_timings[1]:
+			if existing_perm:
+				perm_doc = frappe.get_doc("Shift Permission", existing_perm)
+				permitted_time = get_datetime(perm_doc.date) + (perm_doc.arrival_time if doc.log_type == "IN" else perm_doc.leaving_time)
+				if doc.log_type == "IN" and (checkin_time <= permitted_time and checkin_time >= curr_shift.start_datetime):
+					doc.time = 	curr_shift.start_datetime
+					doc.skip_auto_attendance = 0
+					doc.shift_permission = existing_perm
+				elif doc.log_type == "OUT" and (checkin_time >= permitted_time and checkin_time <= curr_shift.start_datetime):
+					doc.time = 	curr_shift.end_datetime
+					doc.skip_auto_attendance = 0
+					doc.shift_permission = existing_perm
+	except Exception as e:
+		frappe.throw(frappe.get_traceback())
+
 @frappe.whitelist()
 def checkin_after_insert(doc, method):
-	shift_type = frappe.get_doc("Shift Type", doc.shift_type)
-	operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
-	supervisor_user = get_employee_user_id(operations_shift.supervisor)
+	# These are returned according to dates. Time is not taken into account
 	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
+	
+	# In case of back to back shift
+	if doc.shift_type:
+		shift_doc = frappe.get_doc("Shift Type", doc.shift_type)
+		curr_shift = frappe._dict({
+			'actual_start': doc.shift_actual_start,
+			'actual_end': doc.shift_actual_end, 
+			'end_datetime': doc.shift_end, 
+			'start_datetime': doc.shift_start, 
+			'shift_type': shift_doc
+		})
 
-	if curr_shift:	
+	if curr_shift:
+		shift_type = frappe.get_doc("Shift Type", curr_shift.shift_type.name)
+		operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
+		supervisor_user = get_employee_user_id(operations_shift.supervisor)
+
 		if doc.log_type == "IN" and doc.skip_auto_attendance == 0:
 			#EARLY: Checkin time is before [Shift Start - Variable Checkin time] 
 			if get_datetime(doc.time) < get_datetime(curr_shift.actual_start):
@@ -117,10 +133,15 @@ def checkin_after_insert(doc, method):
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 	else:
-		subject = _("{employee} has checked in on an unassigned shift.".format(employee=doc.employee_name))
-		message = _("{employee} has checked in on an unassigned shift".format(employee=doc.employee_name))
-		for_users = [supervisor_user]
-		create_notification_log(subject, message, for_users, doc)
+		# When no shift assigned, supervisor of active shift of the nearest site is sent a notification about unassigned checkin.
+		location = doc.device_id
+		supervisor = get_closest_location(doc.time, location)
+		if supervisor:
+			subject = _("{employee} has checked in on an unassigned shift.".format(employee=doc.employee_name))
+			message = _("{employee} has checked in on an unassigned shift".format(employee=doc.employee_name))
+			for_users = [supervisor]
+			create_notification_log(subject, message, for_users, doc)
+
 
 # Project
 @frappe.whitelist()
@@ -172,3 +193,47 @@ def get_recipients(doc):
 def get_employee_user_id(employee):
 	return frappe.get_value("Employee", {"name": employee}, "user_id")
 
+def get_closest_location(time, location):
+	time = get_datetime(time).strftime("%Y-%m-%d %H:%M")	
+	latitude, longitude = location.split(",")
+	# latitude, longitude = (13.039907,77.621564)  #
+	# time = get_datetime('2020-06-04 00:18:46').strftime("%Y-%m-%d %H:%M")
+
+	#Get the closest site according to the checkin location
+	site = frappe.db.sql("""
+    	SELECT
+			(((acos(
+				sin(( {latitude} * pi() / 180))
+				*
+				sin(( loc.latitude * pi() / 180)) + cos(( {latitude} * pi() /180 ))
+				*
+				cos(( loc.latitude  * pi() / 180)) * cos((( {longitude} - loc.longitude) * pi()/180))
+			))
+			* 180/pi()) * 60 * 1.1515 * 1.609344 * 1000
+			)AS distance, os.name FROM `tabLocation` AS loc, `tabOperations Site` AS os
+		WHERE os.site_location = loc.name ORDER BY distance ASC """.format(latitude=latitude, longitude=longitude), as_dict=1)
+	
+	site_name = site[0].name
+	# Unused for now
+	distance = site[0].distance
+
+	#Check for active shift at the closest site.
+	active_shift = frappe.db.sql("""
+		SELECT 
+			supervisor 
+		FROM `tabOperations Shift`
+		WHERE 
+			site="{site_name}" AND
+			CAST("{current_time}" as datetime) 
+			BETWEEN
+				CAST(start_time as datetime) 
+			AND 
+				IF(end_time < start_time, DATE_ADD(CAST(end_time as datetime), INTERVAL 1 DAY), CAST(end_time as datetime)) 
+			
+	""".format(current_time=time, site_name=site_name), as_dict=1)
+
+	if len(active_shift) > 0:
+		# Return supervisor user and distance
+		return get_employee_user_id(active_shift[0].supervisor)
+	else:
+		return ''
