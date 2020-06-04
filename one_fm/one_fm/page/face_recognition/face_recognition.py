@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import now_datetime, cstr, nowdate
 from scipy.spatial import distance as dist
 from imutils.video import FileVideoStream
 from imutils.video import VideoStream
@@ -57,25 +58,50 @@ def enroll():
 		frappe.log_error(frappe.get_traceback())
 		raise exc
 
+
 @frappe.whitelist()
 def verify():
 	try:
 		setup_directories()
+		log_type = frappe.local.form_dict['log_type']
+		skip_attendance = frappe.local.form_dict['skip_attendance']
+		latitude = frappe.local.form_dict['latitude']
+		longitude = frappe.local.form_dict['longitude']
+		timestamp = frappe.local.form_dict['timestamp']
+
 		files = frappe.request.files
 		file = files['file']
 		content = file.stream.read()
 		filename = file.filename	
 		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
+
 		with open(OUTPUT_IMAGE_PATH, "wb") as fh:
 				fh.write(content)
 				blinks, image = verify_face(OUTPUT_IMAGE_PATH)
 				if blinks > 0:
-					return 'Face Recognition Passed. End of Demo. Thank You!' if recognize_face(image) else frappe.throw(_('Face Recognition Failed. Please try again.'))
+					if recognize_face(image):
+						return check_in(log_type, skip_attendance, latitude, longitude, timestamp)
+					else:
+						frappe.throw(_('Face Recognition Failed. Please try again.'))	
 				else:
 					frappe.throw(_('Liveness Detection Failed. Please try again.'))
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		raise exc
+
+
+def check_in(log_type, skip_attendance, latitude, longitude, timestamp):
+	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+	checkin = frappe.new_doc("Employee Checkin")
+	checkin.employee = "HR-EMP-00002" if frappe.session.user == "Administrator" else employee
+	checkin.log_type = log_type
+	checkin.device_id = cstr(latitude)+","+cstr(longitude)
+	check_in.skip_auto_attendance = skip_attendance
+	checkin.time = now_datetime()
+	checkin.actual_time = now_datetime()
+	checkin.save()
+	frappe.db.commit()
+	return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
 
 
 def create_dataset(video):
@@ -164,7 +190,7 @@ def verify_face(video_path=None):
 	# define two constants, one for the eye aspect ratio to indicate
 	# blink and then a second constant for the number of consecutive
 	# frames the eye must be below the threshold
-	EYE_AR_THRESH = 0.29
+	EYE_AR_THRESH = 0.3
 	EYE_AR_CONSEC_FRAMES = 1
 	# initialize the frame counters and the total number of blinks
 	COUNTER = 0
@@ -322,3 +348,20 @@ def match_encodings(encodings, face_data):
 			return False
 	except Exception as identifier:
 		print(frappe.get_traceback())
+
+
+@frappe.whitelist()
+def check_existing():
+	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+	if not employee:
+		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
+	
+	logs = frappe.db.sql("""
+		select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
+	""".format(date=nowdate(), employee=employee), as_dict=1)
+	print(logs)
+	val = [log.log_type for log in logs]
+	if "OUT" in val:
+		return False
+	else:
+		return True

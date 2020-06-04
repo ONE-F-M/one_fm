@@ -12,6 +12,6 @@ function calculate_duration(frm){
     if(start_time !== undefined && end_time !== undefined){
         let duration = moment.duration(moment(end_time, 'HH:mm:ss').diff(moment(start_time, 'HH:mm:ss')));
         let hours = duration.asHours();
-        frappe.model.set_value(frm.doctype, frm.doc.name, "duration", hours);
+        frappe.model.set_value(frm.doctype, frm.doc.name, "duration", Math.abs(hours));
     }
 }

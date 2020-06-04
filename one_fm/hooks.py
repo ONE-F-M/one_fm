@@ -114,9 +114,10 @@ doc_events = {
 		"before_insert": "one_fm.utils.validate_get_item_group_parent"
 	},
 	"Item": {
-		"autoname": "one_fm.utils.item_naming_series"
+		"autoname": "one_fm.api.doc_events.item_naming_series"
 	},
 	"Employee Checkin": {
+		"validate": "one_fm.api.doc_events.employee_checkin_validate",
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
 	},
 	"Project": {

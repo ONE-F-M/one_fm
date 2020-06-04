@@ -40,7 +40,7 @@ def send_checkin_hourly_reminder():
 			recipients = [recipient[0] for recipient in recipients]
 
 			subject = _("Hourly Reminder: Please checkin")
-			message = _('<a class="btn btn-primary" href="/desk#face-recognition">CHECK IN</a>')
+			message = _('<a class="btn btn-warning" href="/desk#face-recognition">Hourly Check In</a>')
 			send_notification(subject, message, recipients)
 
 
@@ -49,7 +49,7 @@ def final_reminder():
 	shifts_list = get_active_shifts(now_time)
 
 	for shift in shifts_list:
-		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=15)).time()):
+		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=shift.notification_reminder_after_shift_start)).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 
 			recipients = frappe.db.sql("""
@@ -67,10 +67,11 @@ def final_reminder():
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			recipients = [recipient[0] for recipient in recipients]
 			subject = _("Final Reminder: Please checkin in the next five minutes.")
-			message = _('<a class="btn btn-primary" href="/desk#face-recognition">CHECK IN</a>')
+			
+			message = _('<a class="btn btn-success" href="/desk#face-recognition">Check In</a><a class="btn btn-primary btn-info" href="/desk#Form/Shift%20Permission/New%20Shift%20Permission%201">Request for Permission</a>')
 			send_notification(subject, message, recipients)
 		
-		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=15)).time()):
+		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=shift.notification_reminder_after_shift_end)).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			
 			recipients = frappe.db.sql("""
@@ -90,7 +91,7 @@ def final_reminder():
 			print(recipients)
 
 			subject = _("Final Reminder: Please checkout in the next five minutes.")
-			message = _('<a class="btn btn-primary" href="/desk#face-recognition">CHECK IN</a>')
+			message = _('<a class="btn btn-success" href="/desk#face-recognition">Check In</a>')
 			send_notification(subject, message, recipients)
 		
 
@@ -110,7 +111,7 @@ def send_notification(subject, message, recipients):
 def get_active_shifts(now_time):
 	return frappe.db.sql("""
 		SELECT 
-			name, start_time, end_time 
+			name, start_time, end_time, notification_reminder_after_shift_start 
 		FROM `tabShift Type`
 		WHERE 
 			CAST("{current_time}" as datetime) 
