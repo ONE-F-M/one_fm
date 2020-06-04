@@ -120,9 +120,9 @@ doc_events = {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
 	},
-	"Project": {
-		"on_update": "one_fm.api.doc_events.project_on_update"
-	}
+	# "Project": {
+	# 	"on_update": "one_fm.api.doc_events.project_on_update"
+	# }
 }
 
 standard_portal_menu_items = [
