@@ -16,18 +16,18 @@ class OperationsSite(Document):
 
 	def validate_user_role(self):
 		site_supervisor = self.get_employee_user_id(self.account_supervisor)
-		project_manager = self.get_project_manager()		
-		roles = frappe.get_roles(frappe.session.user)
+		# project_manager = self.get_project_manager()		
+		# roles = frappe.get_roles(frappe.session.user)
 
-		if "Operations Manager" not in roles and site_supervisor != frappe.session.user and project_manager != frappe.session.user:
-			frappe.throw(_("You don't have sufficient previliges to update this document."))
+		# if "Operations Manager" not in roles and site_supervisor != frappe.session.user and project_manager != frappe.session.user:
+		# 	frappe.throw(_("You don't have sufficient previliges to update this document."))
 
 	def on_update(self):
 		doc_before_save = self.get_doc_before_save()
-		changes = self.get_changes()
-		self.notify_changes()
-		self.update_permissions(doc_before_save)
-		self.notify_poc_changes(changes)
+		# changes = self.get_changes()
+		# self.notify_changes()
+		# self.update_permissions(doc_before_save)
+		# self.notify_poc_changes(changes)
 	
 
 	def get_changes(self):
