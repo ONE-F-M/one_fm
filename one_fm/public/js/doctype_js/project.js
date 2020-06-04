@@ -1,19 +1,20 @@
 frappe.ui.form.on('Project', {
     refresh: function(frm) {
+        if(!frm.doc.__islocal && frm.doc.project_type === "External"){
+            remove_existing();
+            let data_onefm = "Project Structure";
+            create_dashboard_section("Timesheet", data_onefm);
+            dashboard_link_doctype(frm, "Operations Site", data_onefm);
+            dashboard_link_doctype(frm, "Operations Shift", data_onefm);
+            
+            data_onefm = "Operations Action";
+            create_dashboard_section("Timesheet", data_onefm);
+            dashboard_link_doctype(frm, "MOM", data_onefm);
 
-        // remove_existing();
-        let data_onefm = "Project Structure";
-        create_dashboard_section("Timesheet", data_onefm);
-        dashboard_link_doctype(frm, "Operations Site", data_onefm);
-        dashboard_link_doctype(frm, "Operations Shift", data_onefm);
-        
-        data_onefm = "Operations Action";
-        create_dashboard_section("Timesheet", data_onefm);
-        dashboard_link_doctype(frm, "MOM", data_onefm);
-
-        data_onefm = "Communication";
-        create_dashboard_section("Timesheet", data_onefm);
-        dashboard_link_doctype(frm, "Contracts", data_onefm);
+            data_onefm = "Communication";
+            create_dashboard_section("Timesheet", data_onefm);
+            dashboard_link_doctype(frm, "Contracts", data_onefm);
+        }
     }
 });
 

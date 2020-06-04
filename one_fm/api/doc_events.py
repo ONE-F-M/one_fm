@@ -80,7 +80,9 @@ def checkin_after_insert(doc, method):
 			#EARLY: Checkin time is before [Shift Start - Variable Checkin time] 
 			if get_datetime(doc.time) < get_datetime(curr_shift.actual_start):
 				time_diff = get_datetime(curr_shift.start_datetime) - get_datetime(doc.time)
+				print(curr_shift, time_diff, doc.time)
 				hrs, mins, secs = cstr(time_diff).split(":")
+				print(hrs, mins, secs)
 				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 				subject = _("{employee} has checked in early by {delay}.".format(employee=doc.employee_name, delay=delay))
 				message = _("{employee} has checked in early by {delay}.".format(employee=doc.employee_name, delay=delay))
@@ -98,7 +100,9 @@ def checkin_after_insert(doc, method):
 			# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
 			elif get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
 				time_diff = get_datetime(doc.time) - get_datetime(doc.shift_start)
+				print(time_diff)
 				hrs, mins, secs = cstr(time_diff).split(":")
+				print(hrs, mins, secs)
 				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 				subject = _("{employee} has checked in late by {delay}.".format(employee=doc.employee_name, delay=delay))
 				message = _("{employee} has checked in late by {delay}.".format(employee=doc.employee_name, delay=delay))

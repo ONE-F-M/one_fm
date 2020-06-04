@@ -132,6 +132,8 @@ video {
 }
 
 #startButton,
-#endButton {
+#endButton,
+#enrollButton,
+#hourlyButton {
   display: none;
 }
