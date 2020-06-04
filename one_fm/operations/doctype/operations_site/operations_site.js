@@ -3,6 +3,15 @@
 
 frappe.ui.form.on('Operations Site', {
 	refresh: function(frm){
+		frm.set_query("project", function() {
+			return {
+				"filters": [
+					["Project", "project_type", "=", "External"],
+				]
+			}
+		});
+
+		// Remove and change it
 		let {changes_log} = frm.doc;
 		let changes = ``;
 		let ids = ``;

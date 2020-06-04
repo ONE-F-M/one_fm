@@ -44,8 +44,7 @@ function loadGoogleMap(frm){
         marker.setMap(map);
         map.setCenter({lat, lng});
         markers.push(marker);
-<<<<<<< Updated upstream
-=======
+
         if(radius){
             let geofence_circle = new google.maps.Circle({
                 strokeColor: '#FF0000',
@@ -59,7 +58,6 @@ function loadGoogleMap(frm){
             });
             circles.push(geofence_circle);
         }
->>>>>>> Stashed changes
     }
 } 
 
@@ -67,13 +65,9 @@ function clearMarkers(){
     for (var i = 0; i < markers.length; i++) {
         markers[i].setMap(null);
       }
-<<<<<<< Updated upstream
-}
-=======
 }
 function clearCircles(){
     for (var i = 0; i < circles.length; i++) {
         circles[i].setMap(null);
       }
 }
->>>>>>> Stashed changes

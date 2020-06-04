@@ -6,10 +6,17 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 	});
 
 	$(wrapper).find('.layout-main-section').empty().append(frappe.render_template('face_recognition'));
+
+	let preview = document.getElementById("preview");
+	let enroll_preview = document.getElementById("enroll_preview");
+	let startButton = document.getElementById("startButton");
+	let endButton = document.getElementById("endButton");
+	let hourlyButton = document.getElementById("hourlyButton");
+    let locationButton = document.getElementById("locationButton");
 	
 	frappe.db.get_value("Employee", {"user_id":frappe.session.user}, "*", function(r){
         if(r){
-            let {image, employee_name, company, department, designation} = r;
+            let {image, employee_name, company, department, designation, enrolled} = r;
             let card = `
             <div class="card">
                 <img src="${image}" alt="Profile" style="width:100%">
@@ -18,19 +25,19 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
                 <h5>${department}</h5>			
                 <h5>${designation}</h5>
             </div>`;
-            $('#profile-card').prepend(card);
+			$('#profile-card').prepend(card);
+			page.enrolled = enrolled;
+			if(!enrolled){
+				$(enrollButton).show();
+				$(endButton).hide();
+				$(startButton).hide();
+				$(hourlyButton).hide();
+			}
         }
 	})
-
-	let preview = document.getElementById("preview");
-	let enroll_preview = document.getElementById("enroll_preview");
-	let startButton = document.getElementById("startButton");
-	let endButton = document.getElementById("endButton");
-	let hourlyButton = document.getElementById("hourlyButton");
-    let locationButton = document.getElementById("locationButton");
     
     get_location(page);
-	check_existing(page, startButton, endButton);
+	check_existing(page, startButton, endButton, hourlyButton);
     locationButton.addEventListener("click", function() {
         get_location(page);
     }, false);	
@@ -59,7 +66,7 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 			video: {
 				width: { ideal: 1024 },
 				height: { ideal: 768 },
-				frameRate: {ideal: 10, max: 20},
+				frameRate: {ideal: 4},//, max: 20},
 				facingMode: 'user'
 			},
 			audio: false
@@ -139,16 +146,22 @@ function get_location(page){
     }
 }
 
-function check_existing(page, startButton, endButton){
+function check_existing(page){
 	frappe.xcall('one_fm.one_fm.page.face_recognition.face_recognition.check_existing')
 	.then(r =>{
 		if (!r.exc) {
 			// code snippet
-			if(r.message){
-				$(startButton).show();
+			if(r && page.enrolled){
+				$('#endButton').show();
+				$('#hourlyButton').show();
+				$('#enrollButton').hide();
+				$('#startButton').hide();
 			}
 			else{
-				$(endButton).show();
+				$('#endButton').hide();
+				$('#hourlyButton').show();
+				$('#enrollButton').hide();
+				$('#startButton').show();
 			}
 		}
 	})
@@ -234,6 +247,7 @@ function upload_file(file, method, log_type, skip_attendance){
 					r = JSON.parse(xhr.responseText);
 					console.log(r);
 					frappe.msgprint(__(r.message), __("Successful"));
+					window.location.reload();
 				} catch (e) {
 					r = xhr.responseText;
 				}
