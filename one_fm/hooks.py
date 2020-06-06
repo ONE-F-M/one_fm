@@ -30,7 +30,6 @@ app_include_js = [
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 doctype_js = {
 	"Location" : "public/js/doctype_js/location.js",
-	"Customer" : "public/js/doctype_js/customer.js",
 	"Shift Type" : "public/js/doctype_js/shift_type.js",
 	"Project": "public/js/doctype_js/project.js"
 }
@@ -211,6 +210,14 @@ fixtures = [
 	},
 	{
 		"dt": "Print Format"
+	},
+	{
+		"dt": "Role",
+		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Custom DocPerm",
+		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
 	}
 ]
 

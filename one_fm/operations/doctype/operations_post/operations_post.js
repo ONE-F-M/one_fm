@@ -35,11 +35,5 @@ frappe.ui.form.on('Operations Post', {
 
 
 frappe.ui.form.on('Operations Post', {
-	refresh: function(frm){
-		frm.set_query("sale_item", function() {
-			return {
-				query: "one_fm.api.api.set_item_query",
-			};
-		});
-	}
+	refresh: function(frm){}
 })
