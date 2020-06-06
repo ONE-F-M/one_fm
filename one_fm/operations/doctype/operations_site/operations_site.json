@@ -9,7 +9,6 @@
   "column_break_2",
   "project_name",
   "section_break_4",
-  "site_code",
   "site_name",
   "site_location",
   "column_break_7",
@@ -28,6 +27,7 @@
   "neighbours",
   "camerascctvcontrol_room",
   "poc_list_section",
+  "contact_html",
   "poc",
   "changes_log"
  ],
@@ -40,13 +40,6 @@
    "fieldname": "section_break_4",
    "fieldtype": "Section Break",
    "label": "Site Details"
-  },
-  {
-   "fieldname": "site_code",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Site Code"
   },
   {
    "fieldname": "site_name",
@@ -172,9 +165,14 @@
    "label": "Changes Log",
    "options": "Operations Changes",
    "read_only": 1
+  },
+  {
+   "fieldname": "contact_html",
+   "fieldtype": "HTML",
+   "label": "Contact Html"
   }
  ],
- "modified": "2020-06-04 04:03:09.747757",
+ "modified": "2020-06-06 18:42:57.650226",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Site",
@@ -189,18 +187,6 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "All",
    "share": 1,
    "write": 1
   }
