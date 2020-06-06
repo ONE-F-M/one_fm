@@ -75,7 +75,7 @@
   {
    "fieldname": "account_supervisor",
    "fieldtype": "Link",
-   "label": "Account Supervisor",
+   "label": "Site Supervisor",
    "options": "Employee"
   },
   {
@@ -149,7 +149,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Account Supervisor Name",
+   "label": "Supervisor Name",
    "read_only": 1
   },
   {
@@ -172,7 +172,7 @@
    "label": "Contact Html"
   }
  ],
- "modified": "2020-06-06 18:42:57.650226",
+ "modified": "2020-06-06 20:37:56.533222",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Site",
