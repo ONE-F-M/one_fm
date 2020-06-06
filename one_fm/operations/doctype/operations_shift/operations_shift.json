@@ -76,7 +76,7 @@
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
-   "label": "Supervisor",
+   "label": "Shift Supervisor",
    "options": "Employee"
   },
   {
@@ -130,7 +130,7 @@
    "fieldtype": "Column Break"
   }
  ],
- "modified": "2020-06-06 15:48:11.542692",
+ "modified": "2020-06-06 20:37:30.147061",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",

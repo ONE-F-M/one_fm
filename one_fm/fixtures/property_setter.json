@@ -1,6 +1,22 @@
 [
  {
   "default_value": null,
+  "doc_type": "Project",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "customer_details",
+  "modified": "2020-06-04 15:06:36.169082",
+  "name": "Project-customer_details-depends_on",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "property": "depends_on",
+  "property_type": "Data",
+  "value": "eval:doc.project_type==\"External\""
+ },
+ {
+  "default_value": null,
   "doc_type": "Shift Assignment",
   "docstatus": 0,
   "doctype": "Property Setter",
