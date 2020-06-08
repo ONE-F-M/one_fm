@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, cstr, nowdate
+from frappe.utils import now_datetime, cstr, nowdate, cint
 from scipy.spatial import distance as dist
 from imutils.video import FileVideoStream
 from imutils.video import VideoStream
@@ -70,7 +70,6 @@ def verify():
 		latitude = frappe.local.form_dict['latitude']
 		longitude = frappe.local.form_dict['longitude']
 		timestamp = frappe.local.form_dict['timestamp']
-
 		files = frappe.request.files
 		file = files['file']
 		content = file.stream.read()
@@ -98,9 +97,9 @@ def check_in(log_type, skip_attendance, latitude, longitude, timestamp):
 	checkin.employee = employee
 	checkin.log_type = log_type
 	checkin.device_id = cstr(latitude)+","+cstr(longitude)
-	check_in.skip_auto_attendance = skip_attendance
-	checkin.time = now_datetime()
-	checkin.actual_time = now_datetime()
+	checkin.skip_auto_attendance = cint(skip_attendance)
+	# checkin.time = now_datetime()
+	# checkin.actual_time = now_datetime()
 	checkin.save()
 	frappe.db.commit()
 	return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
@@ -380,12 +379,10 @@ def verify_face(video_path=None):
 
 def recognize_face(image):
 	try:
-		print(image)
 		ENCODINGS_PATH = frappe.utils.cstr(
 			frappe.local.site)+"/private/files/facial_recognition/"+frappe.session.user+".pickle"
 		# values should be "hog" or "cnn" . cnn is CPU and memory intensive.
 		DETECTION_METHOD = "hog"
-		print(ENCODINGS_PATH)
 
 		# load the known faces and embeddings
 		face_data = pickle.loads(open(ENCODINGS_PATH, "rb").read())
@@ -400,7 +397,6 @@ def recognize_face(image):
 		boxes = face_recognition.face_locations(rgb,
 												model=DETECTION_METHOD)
 		encodings = face_recognition.face_encodings(rgb, boxes)
-		print(encodings)
 
 		if not encodings:
 			return False
@@ -441,11 +437,7 @@ def check_existing():
 	logs = frappe.db.sql("""
 		select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
 	""".format(date=nowdate(), employee=employee), as_dict=1)
-	print(logs)
 	val = [log.log_type for log in logs]
-	print(not val)
-	print(len(val) == 0)
-	print(val and "OUT" in val)
 	if not val or (val and "OUT" in val):
 		return False	
 	else:
