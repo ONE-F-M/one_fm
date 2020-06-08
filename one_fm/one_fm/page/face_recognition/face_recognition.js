@@ -210,7 +210,7 @@ function send_log(log_type, skip_attendance){
         let recordedBlob = new Blob(recordedChunks, {
             type: "video/mp4",
         });
-        console.log(recordedBlob);
+        console.log(recordedBlob, skip_attendance);
         upload_file(recordedBlob, 'verify', log_type, skip_attendance);
     })
 }

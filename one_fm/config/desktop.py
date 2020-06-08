@@ -23,7 +23,7 @@ def get_data():
 			"module_name": "Operations",
 			"label": _("Operations"),
 			"color": "grey",
-			"icon": "octicon octicon-file-directory",
+			"icon": "fa fa-cogs",
 			"type": "module"
 		}
 	]

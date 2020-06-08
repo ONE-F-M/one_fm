@@ -5,7 +5,15 @@
  "engine": "InnoDB",
  "field_order": [
   "document_type",
-  "document_name"
+  "document_name",
+  "column_break_3",
+  "assigned_to",
+  "manager_name",
+  "section_break_6",
+  "list_of_fields",
+  "column_break_8",
+  "current_value",
+  "new_value"
  ],
  "fields": [
   {
@@ -19,9 +27,49 @@
    "fieldtype": "Dynamic Link",
    "label": "Docname",
    "options": "document_type"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Link",
+   "label": "Assigned to",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "assigned_to.employee_name",
+   "fieldname": "manager_name",
+   "fieldtype": "Data",
+   "label": "Manager Name"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "list_of_fields",
+   "fieldtype": "Select",
+   "label": "List of fields"
+  },
+  {
+   "fieldname": "current_value",
+   "fieldtype": "Data",
+   "label": "Current Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "new_value",
+   "fieldtype": "Data",
+   "label": "New Value"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2020-06-04 16:39:56.847783",
+ "modified": "2020-06-08 23:06:21.257265",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Change Request",

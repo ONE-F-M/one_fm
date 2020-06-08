@@ -3,6 +3,7 @@
 
 frappe.ui.form.on('Operations Site', {
 	refresh: function(frm){
+		quick_entry_shifts_and_posts(frm);
 		frm.set_query("project", function() {
 			return {
 				"filters": [
@@ -10,7 +11,7 @@ frappe.ui.form.on('Operations Site', {
 				]
 			}
 		});
-
+		
 		// Remove and change it
 		let {changes_log} = frm.doc;
 		let changes = ``;
@@ -49,6 +50,198 @@ frappe.ui.form.on('Operations Site', {
 		}			
 	},
 })
+
+function quick_entry_shifts_and_posts(frm){
+	if(!frm.doc.__islocal){
+		frm.add_custom_button(
+			'Add Posts in multiple shifts',
+			() => {
+				let post_dialog = new frappe.ui.Dialog({
+					'fields': [
+						{
+							'label': 'Select Shifts', 
+							'fieldname': 'shifts', 
+							'fieldtype': 'Table', 
+							'fields': [
+								{
+									fieldtype:'Link',
+									label: __('Operations Shift'),
+									fieldname:'shift',
+									in_list_view:1,
+									get_query: function(){
+										return {
+											"filters": [
+												["Operations Shift", "site", "=", frm.doc.name],
+											]
+										}
+									},
+									options: 'Operations Shift',
+									onchange:function(){}
+								},
+							],
+							get_data: function() {
+								return this.data;
+							},
+							data: [],
+						},
+						// {'fieldname': 'cb1', 'fieldtype': 'Column Break'},	
+						{'label': 'Post Location', 'fieldname': 'post_location', 'fieldtype': 'Select', 'options': 'Internal\nExternal'},
+						// {'fieldname': 'cb3', 'fieldtype': 'Column Break'},	
+						{'label': 'Gender', 'default': 'Both', 'fieldname': 'gender', 'fieldtype': 'Select', 'options': 'Male\nFemale\nBoth'},
+						// {'fieldname': 'cb4', 'fieldtype': 'Column Break'},	
+						{'fieldname': 'cb2', 'fieldtype': 'Column Break'},
+						{'label': 'Number of Posts', 'fieldname': 'qty', 'fieldtype': 'Int'},
+						{
+							'label': 'Post Names', 
+							'fieldname': 'post_names', 
+							'fieldtype': 'Table', 
+							'fields': [
+								{
+									fieldtype:'Data',
+									label: __('Post Name'),
+									fieldname:'post_name',
+									in_list_view:1,
+									get_query: function(){},
+									onchange:function(){}
+								},
+							],
+							get_data: function() {
+								return this.data;
+							},
+							data: [],
+						},	
+						{'label': 'Post Type', 'fieldname': 'post_template', 'fieldtype': 'Link', 'options': 'Post Type', onchange: function(){
+							let post_type = this.value;
+							if(post_type !== undefined){
+								frappe.call({
+									method:'frappe.client.get',
+									args: {
+										doctype: 'Post Type',
+										name: post_type,
+									},
+									callback: function(r) {
+										if(!r.exc) {
+											let {designations, skills} = r.message;
+											console.log(designations, skills);
+											post_dialog.fields_dict["skills"].grid.remove_all();
+											post_dialog.fields_dict["designations"].grid.remove_all();
+
+											skills.forEach((skill) => {
+												post_dialog.fields_dict["skills"].grid.df.data.push(skill);	
+											});
+											post_dialog.fields_dict["skills"].grid.refresh();
+
+											designations.forEach((designation) => {
+												post_dialog.fields_dict["designations"].grid.df.data.push(designation);	
+											});										
+											post_dialog.fields_dict["designations"].grid.refresh();
+
+										}
+									}
+								});
+							}
+						}},
+						{'label': 'Sale Item', 'fieldname': 'sale_item', 'fieldtype': 'Link', 'options':'Item'},
+						{'fieldname': 'sb', 'fieldtype': 'Section Break'},
+						{
+							'label': 'Skills', 
+							'fieldname': 'skills', 
+							'fieldtype': 'Table', 
+							'fields': [
+								{
+									fieldtype:'Link',
+									label: __('Skill'),
+									fieldname:'skill',
+									options: 'Skill',
+									in_list_view:1,
+									get_query: function(){},
+									onchange:function(){}
+								},
+								{
+									fieldtype:'Column Break',
+									fieldname:'cb1',
+									get_query: function(){},
+									onchange:function(){}
+								},
+								{
+									fieldtype:'Rating',
+									label: __('Minimum Proficiency Required'),
+									fieldname:'minimum_proficiency_required',
+									in_list_view:1,
+									get_query: function(){},
+									onchange:function(){}
+								},
+							],
+							data: [],
+							get_data: function() {
+								console.log(this);
+								return this.data;
+							},
+						},
+						{
+							'label': 'Designations', 
+							'fieldname': 'designations', 
+							'fieldtype': 'Table', 
+							'fields': [
+								{
+									fieldtype:'Link',
+									label: __('Designation'),
+									fieldname:'designation',
+									options: 'Designation',
+									in_list_view:1,
+									get_query: function(){},
+									onchange:function(){}
+								},
+								{
+									fieldtype:'Column Break',
+									fieldname:'cb1',
+									get_query: function(){},
+									onchange:function(){}
+								},
+								{
+									fieldtype:'Check',
+									label: __('Primary'),
+									fieldname:'primary',
+									in_list_view:1,
+									get_query: function(){},
+									onchange:function(){}
+								},
+							],
+							get_data: function() {
+								console.log(this);
+								return this.data;
+							},
+							data: [],
+						},
+						{'fieldname': 'sb1', 'fieldtype': 'Section Break'},
+						{'label': 'Post Description', 'fieldname': 'post_description', 'fieldtype': 'Small Text'},
+					],
+					primary_action: function(){
+						let values = post_dialog.get_values();
+						console.log(values);
+						let {qty, post_names} = values;
+						if(post_names === undefined || qty !== post_names.length){frappe.msgprint(__('Please make sure the number of posts and Post names are same.'))};
+						frappe.call({
+							method:'one_fm.operations.doctype.operations_site.operations_site.create_posts',
+							args: {
+								data: values,
+								site: frm.doc.name,
+								project: frm.doc.project
+							},
+							callback: function(r) {
+								if(!r.exc) {
+									post_dialog.hide();						
+								}
+							}
+						});
+					}
+				});
+				post_dialog.show();
+				post_dialog.$wrapper.find('.modal-dialog').css('width', '75%');
+			}
+		).addClass('btn-primary');
+	}
+}
 
 function changes_action(frm, action, ids){
 	frappe.call('one_fm.operations.doctype.operations_site.operations_site.changes_action', {
