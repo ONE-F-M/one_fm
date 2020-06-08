@@ -12,7 +12,7 @@ import datetime
 #Shift Type
 @frappe.whitelist()
 def naming_series(doc, method):
-	doc.name = doc.shift_type+"|"+doc.start_time+"-"+doc.end_time+"|"+cstr(doc.duration)+" hours"
+	doc.name = doc.name+"|"+doc.shift_type+"|"+doc.start_time+"-"+doc.end_time+"|"+cstr(doc.duration)+" hours"
 
 
 #Operations Shift
@@ -70,60 +70,63 @@ def checkin_after_insert(doc, method):
 			'start_datetime': doc.shift_start, 
 			'shift_type': shift_doc
 		})
-
 	if curr_shift:
 		shift_type = frappe.get_doc("Shift Type", curr_shift.shift_type.name)
 		operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
 		supervisor_user = get_employee_user_id(operations_shift.supervisor)
+		distance, radius = validate_location(doc)
+		message_suffix = _("Location logged is inside the site.") if distance <= radius else _("Location logged is {location}m outside the site location.").format(location=cstr(cint(distance)- radius))
 
 		if doc.log_type == "IN" and doc.skip_auto_attendance == 0:
 			#EARLY: Checkin time is before [Shift Start - Variable Checkin time] 
 			if get_datetime(doc.time) < get_datetime(curr_shift.actual_start):
 				time_diff = get_datetime(curr_shift.start_datetime) - get_datetime(doc.time)
-				print(curr_shift, time_diff, doc.time)
 				hrs, mins, secs = cstr(time_diff).split(":")
-				print(hrs, mins, secs)
-				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
-				subject = _("{employee} has checked in early by {delay}.".format(employee=doc.employee_name, delay=delay))
-				message = _("{employee} has checked in early by {delay}.".format(employee=doc.employee_name, delay=delay))
+				early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
+				subject = _("{employee} has checked in early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
+				message = _("{employee} has checked in early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
 			# ON TIME
 			elif get_datetime(doc.time) >= get_datetime(doc.shift_actual_start) and get_datetime(doc.time) <= (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
-				print(doc.time, doc.shift_actual_start, doc.time, cstr((get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period))))
-				subject = _("{employee} has checked in on time.".format(employee=doc.employee_name))
-				message = _("{employee} has checked in on time.".format(employee=doc.employee_name))
+				# print(doc.time, doc.shift_actual_start, doc.time, cstr((get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period))))
+				subject = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
+				message = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
 			# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
 			elif get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
 				time_diff = get_datetime(doc.time) - get_datetime(doc.shift_start)
-				print(time_diff)
 				hrs, mins, secs = cstr(time_diff).split(":")
-				print(hrs, mins, secs)
 				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
-				subject = _("{employee} has checked in late by {delay}.".format(employee=doc.employee_name, delay=delay))
-				message = _("{employee} has checked in late by {delay}.".format(employee=doc.employee_name, delay=delay))
+				subject = _("{employee} has checked in late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
+				message = _("{employee} has checked in late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
+
+		elif doc.log_type == "IN" and doc.skip_auto_attendance == 1:
+			subject = _("Hourly Report: {employee} checked in at {time}. {location}".format(employee=doc.employee_name, time=doc.time, location=message_suffix))
+			message = _("Hourly Report: {employee} checked in at {time}. {location}".format(employee=doc.employee_name, time=doc.time, location=message_suffix))
+			for_users = [supervisor_user]
+			create_notification_log(subject, message, for_users, doc)
 
 		elif doc.log_type == "OUT":
 			#EARLY: Checkout time is before [Shift End - Early grace exit time] 
 			if get_datetime(doc.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
 				time_diff = get_datetime(curr_shift.end_datetime) - get_datetime(doc.time)
 				hrs, mins, secs = cstr(time_diff).split(":")
-				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
-				subject = _("{employee} has checked out early by {delay}.".format(employee=doc.employee_name, delay=delay))
-				message = _("{employee} has checked out early by {delay}.".format(employee=doc.employee_name, delay=delay))
+				early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
+				subject = _("{employee} has checked out early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
+				message = _("{employee} has checked out early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
 			# ON TIME
 			elif get_datetime(doc.time) <= get_datetime(doc.shift_actual_end) and get_datetime(doc.time) >= (get_datetime(doc.shift_end) - timedelta(minutes=shift_type.early_exit_grace_period)):
-				subject = _("{employee} has checked out on time.".format(employee=doc.employee_name))
-				message = _("{employee} has checked out on time.".format(employee=doc.employee_name))
+				subject = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
+				message = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
@@ -132,8 +135,8 @@ def checkin_after_insert(doc, method):
 				time_diff = get_datetime(doc.time) - get_datetime(doc.shift_end)
 				hrs, mins, secs = cstr(time_diff).split(":")
 				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
-				subject = _("{employee} has checked out late by {delay}.".format(employee=doc.employee_name, delay=delay))
-				message = _("{employee} has checked out late by {delay}.".format(employee=doc.employee_name, delay=delay))
+				subject = _("{employee} has checked out late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
+				message = _("{employee} has checked out late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 	else:
@@ -141,10 +144,18 @@ def checkin_after_insert(doc, method):
 		location = doc.device_id
 		supervisor = get_closest_location(doc.time, location)
 		if supervisor:
-			subject = _("{employee} has checked in on an unassigned shift.".format(employee=doc.employee_name))
+			subject = _("{employee} has checked in on an unassigned shift".format(employee=doc.employee_name))
 			message = _("{employee} has checked in on an unassigned shift".format(employee=doc.employee_name))
 			for_users = [supervisor]
 			create_notification_log(subject, message, for_users, doc)
+
+def validate_location(doc):
+	checkin_lat, checkin_lng = doc.device_id.split(",") if doc.device_id else (0, 0)
+	site_name = frappe.get_value("Operations Shift", doc.operations_shift, "site")
+	site_location = frappe.get_value("Operations Site", site_name, "site_location")
+	site_lat, site_lng, radius = frappe.get_value("Location", site_location, ["latitude","longitude", "geofence_radius"] )
+	distance =  haversine(site_lat, site_lng, checkin_lat, checkin_lng)
+	return distance, radius
 
 
 # Project
@@ -200,8 +211,6 @@ def get_employee_user_id(employee):
 def get_closest_location(time, location):
 	time = get_datetime(time).strftime("%Y-%m-%d %H:%M")	
 	latitude, longitude = location.split(",")
-	# latitude, longitude = (13.039907,77.621564)  #
-	# time = get_datetime('2020-06-04 00:18:46').strftime("%Y-%m-%d %H:%M")
 
 	#Get the closest site according to the checkin location
 	site = frappe.db.sql("""
@@ -241,3 +250,25 @@ def get_closest_location(time, location):
 		return get_employee_user_id(active_shift[0].supervisor)
 	else:
 		return ''
+
+
+def haversine(ofc_lat, ofc_lng, emp_lat, emp_lng):
+	"""
+Calculate the great circle distance between two points
+on the earth (specified in decimal degrees)
+"""
+	from math import radians, cos, sin, asin, sqrt
+	# convert decimal degrees to radians
+	try:
+		lon1, lat1, lon2, lat2 = map(
+			radians, [float(ofc_lng), float(ofc_lat), float(emp_lng), float(emp_lat)])
+		# haversine formula
+		dlon = lon2 - lon1
+		dlat = lat2 - lat1
+		a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+		c = 2 * asin(sqrt(a))
+		r = 6371000  # Radius of earth in meters. Use 3956 for miles or 6371 for kilometres
+		return c * r
+	except Exception as e:
+		print(frappe.get_traceback())
+

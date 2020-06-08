@@ -1,7 +1,7 @@
 from datetime import timedelta
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, cstr, getdate, get_datetime, nowdate
+from frappe.utils import now_datetime, cstr, getdate, get_datetime, nowdate, cint
 import schedule, time
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 from datetime import timedelta, datetime
@@ -49,7 +49,7 @@ def final_reminder():
 	shifts_list = get_active_shifts(now_time)
 
 	for shift in shifts_list:
-		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=shift.notification_reminder_after_shift_start)).time()):
+		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 
 			recipients = frappe.db.sql("""
@@ -70,8 +70,8 @@ def final_reminder():
 			
 			message = _('<a class="btn btn-success" href="/desk#face-recognition">Check In</a><a class="btn btn-primary btn-info" href="/desk#Form/Shift%20Permission/New%20Shift%20Permission%201">Request for Permission</a>')
 			send_notification(subject, message, recipients)
-		
-		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=shift.notification_reminder_after_shift_end)).time()):
+
+		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			
 			recipients = frappe.db.sql("""

@@ -102,7 +102,7 @@ doc_events = {
 		"after_insert": "one_fm.utils.after_insert_job_applicant"
 	},
 	"Shift Type": {
-		"autoname": "one_fm.utils.naming_series"
+		"autoname": "one_fm.api.doc_events.naming_series"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -144,9 +144,11 @@ has_website_permission = {
 # ---------------
 
 scheduler_events = {
-	"15 * * * *": [
-		"one_fm.api.tasks.final_reminder",		
-	],
+	"cron": {
+		"15 * * * *": [
+			"one_fm.api.tasks.final_reminder",		
+		],
+	},
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
