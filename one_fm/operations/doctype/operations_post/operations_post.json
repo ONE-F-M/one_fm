@@ -1,5 +1,5 @@
 {
- "autoname": "format:{post_name}-{gender}",
+ "autoname": "format:{site_shift}|{post_name}-{gender}",
  "creation": "2020-05-02 16:31:15.111264",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -26,8 +26,7 @@
   {
    "fieldname": "post_name",
    "fieldtype": "Data",
-   "label": "Post Name",
-   "unique": 1
+   "label": "Post Name"
   },
   {
    "fieldname": "skills",
@@ -44,7 +43,6 @@
   {
    "fieldname": "site_shift",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Site Shift",
    "options": "Operations Shift"
@@ -116,7 +114,7 @@
    "options": "Post Type"
   }
  ],
- "modified": "2020-06-06 15:47:23.488752",
+ "modified": "2020-06-08 21:14:48.601500",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",
