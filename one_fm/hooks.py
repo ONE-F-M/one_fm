@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from . import __version__ as app_version
+import frappe
+from erpnext.hr.doctype.shift_request.shift_request import ShiftRequest
+from one_fm.api.doc_methods.shift_request import shift_request_submit
 
 app_name = "one_fm"
 app_title = "One Fm"
@@ -231,3 +234,6 @@ fixtures = [
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
+
+   
+ShiftRequest.on_submit = shift_request_submit 
