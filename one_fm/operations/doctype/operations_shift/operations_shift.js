@@ -31,14 +31,13 @@ frappe.ui.form.on('Operations Shift', {
 								data: [],
 							},	
 							{'fieldname': 'cb2', 'fieldtype': 'Column Break'},
-							// {'fieldname': 'sb2', 'fieldtype': 'Section Break'},
-							{'label': 'Post Template', 'fieldname': 'post_template', 'fieldtype': 'Link', 'options': 'Operations Post Template', onchange: function(){
+							{'label': 'Post Template', 'fieldname': 'post_template', 'fieldtype': 'Link', 'options': 'Post Type', onchange: function(){
 								let post_type = this.value;
 								if(post_type !== undefined){
 									frappe.call({
 										method:'frappe.client.get',
 										args: {
-											doctype: 'Operations Post Template',
+											doctype: 'Post Type',
 											name: post_type,
 										},
 										callback: function(r) {
@@ -63,11 +62,8 @@ frappe.ui.form.on('Operations Shift', {
 									});
 								}
 							}},
-							// {'fieldname': 'cb1', 'fieldtype': 'Column Break'},	
 							{'label': 'Post Location', 'fieldname': 'post_location', 'fieldtype': 'Select', 'options': 'Internal\nExternal'},
-							// {'fieldname': 'cb3', 'fieldtype': 'Column Break'},	
 							{'label': 'Gender', 'default': 'Both', 'fieldname': 'gender', 'fieldtype': 'Select', 'options': 'Male\nFemale\nBoth'},
-							// {'fieldname': 'cb4', 'fieldtype': 'Column Break'},	
 							{'label': 'Sale Item', 'fieldname': 'sale_item', 'fieldtype': 'Link', 'options':'Item'},
 							{'fieldname': 'sb', 'fieldtype': 'Section Break'},
 							{
@@ -157,11 +153,10 @@ frappe.ui.form.on('Operations Shift', {
 								},
 								callback: function(r) {
 									if(!r.exc) {
-
+									post_dialog.hide();
 									}
 								}
 							});
-							// post_dialog.hide();
 						}
 					});
 					post_dialog.show();

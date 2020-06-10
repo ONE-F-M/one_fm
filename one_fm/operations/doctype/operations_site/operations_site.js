@@ -36,13 +36,11 @@ frappe.ui.form.on('Operations Site', {
 							frappe.msgprint(__('Changes approved.'));
 							changes_action(frm, "Approved", ids);
 							window.close();
-							// frm.reload_doc();
 						},
 						function(){
 							frappe.msgprint(__('You have rejected the changes. They have been reverted.'));
 							changes_action(frm, "Rejected", ids);
 							window.close();
-							// frm.reload_doc();
 						}
 					)
 				}
@@ -84,11 +82,8 @@ function quick_entry_shifts_and_posts(frm){
 							},
 							data: [],
 						},
-						// {'fieldname': 'cb1', 'fieldtype': 'Column Break'},	
 						{'label': 'Post Location', 'fieldname': 'post_location', 'fieldtype': 'Select', 'options': 'Internal\nExternal'},
-						// {'fieldname': 'cb3', 'fieldtype': 'Column Break'},	
 						{'label': 'Gender', 'default': 'Both', 'fieldname': 'gender', 'fieldtype': 'Select', 'options': 'Male\nFemale\nBoth'},
-						// {'fieldname': 'cb4', 'fieldtype': 'Column Break'},	
 						{'fieldname': 'cb2', 'fieldtype': 'Column Break'},
 						{'label': 'Number of Posts', 'fieldname': 'qty', 'fieldtype': 'Int'},
 						{
