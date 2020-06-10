@@ -72,8 +72,7 @@ def checkin_after_insert(doc, method):
 		})
 	if curr_shift:
 		shift_type = frappe.get_doc("Shift Type", curr_shift.shift_type.name)
-		operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
-		supervisor_user = get_employee_user_id(operations_shift.supervisor)
+		supervisor_user = get_notification_user(doc)
 		distance, radius = validate_location(doc)
 		message_suffix = _("Location logged is inside the site.") if distance <= radius else _("Location logged is {location}m outside the site location.").format(location=cstr(cint(distance)- radius))
 
@@ -142,12 +141,34 @@ def checkin_after_insert(doc, method):
 	else:
 		# When no shift assigned, supervisor of active shift of the nearest site is sent a notification about unassigned checkin.
 		location = doc.device_id
-		supervisor = get_closest_location(doc.time, location)
+		# supervisor = get_closest_location(doc.time, location)
+		reporting_manager = frappe.get_value("Employee", {"user_id": doc.owner}, "reports_to")
+		supervisor = get_employee_user_id(reporting_manager)
 		if supervisor:
 			subject = _("{employee} has checked in on an unassigned shift".format(employee=doc.employee_name))
 			message = _("{employee} has checked in on an unassigned shift".format(employee=doc.employee_name))
 			for_users = [supervisor]
 			create_notification_log(subject, message, for_users, doc)
+
+
+def get_notification_user(doc):
+	"""
+		Shift > Site > Project > Reports to
+	"""
+	operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
+	if operations_shift.shift_supervisor:
+		return get_employee_user_id(operations_shift.shift_supervisor)
+	
+	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
+	if operations_site.site_supervisor:
+		return get_employee_user_id(operations_site.site_supervisor)
+
+	project = frappe.get_doc("Project", operations_site.project)
+	if project.account_manager:
+		return get_employee_user_id(project.account_manager)
+
+	reporting_manager = frappe.get_value("Employee", {"user_id": doc.owner}, "reports_to")
+	return get_employee_user_id(reporting_manager)
 
 def validate_location(doc):
 	checkin_lat, checkin_lng = doc.device_id.split(",") if doc.device_id else (0, 0)

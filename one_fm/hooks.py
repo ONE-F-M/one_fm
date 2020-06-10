@@ -148,7 +148,7 @@ has_website_permission = {
 
 scheduler_events = {
 	"cron": {
-		"15 * * * *": [
+		"5 * * * *": [
 			"one_fm.api.tasks.final_reminder",		
 		],
 	},

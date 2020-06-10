@@ -8,7 +8,7 @@ frappe.ui.form.on('Operations Post', {
 			frappe.call({
 				method:"frappe.client.get",
 				args: {
-					doctype: "Operations Post Template",
+					doctype: "Post Type",
 					name: post_template,
                 },
 				callback: function(r) {

@@ -16,7 +16,6 @@ frappe.ui.form.on('Location',{
         map.addListener('click', function(mapsMouseEvent) {
           clearMarkers();
           clearCircles();
-          console.log(mapsMouseEvent.latLng);
           frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'latitude', mapsMouseEvent.latLng.lat());
           frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'longitude',mapsMouseEvent.latLng.lng());
         });
@@ -38,7 +37,6 @@ function loadGoogleMap(frm){
     let lat = frm.doc.latitude === 19.0800 ? 29.338394 : frm.doc.latitude;
     let lng = frm.doc.longitude === 72.8961 ? 48.005958 : frm.doc.longitude;
     let radius = frm.doc.geofence_radius;
-    console.log(lat, lng, radius);
     if(lat !== undefined && lng !== undefined){
         let marker = new google.maps.Marker({
             position: {lat, lng},
@@ -58,7 +56,8 @@ function loadGoogleMap(frm){
                 fillOpacity: 0.35,
                 map: map,
                 center: {lat, lng},
-                radius: radius
+                radius: radius,
+                clickable: false
             });
             circles.push(geofence_circle);
         }
