@@ -1,19 +1,53 @@
 <div class="page-wrap">
     <div id="cover-spin"></div>
+
     <div class="col-md-3 col-xs-12" id="profile-card">
-        <button class="btn btn-sm btn-primary btn-start" id="enrollButton">
-            START ENROLLMENT
-        </button>
-        <button class="btn btn-sm btn-primary btn-start" id="startButton">
-            PROCEED TO CHECK IN
-        </button>
+        <div id="sync-location">
+            <div class="row">
+                <div class="col-xs-12">
+                    <button class="btn btn-sm btn-primary btn-start" id="locationButton">
+                        {%=__("Get Location") %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="button-controls">
+            <div class="row">
+                <div class="col-xs-12">
+                    <button class="btn btn-sm btn-primary btn-start" id="enrollButton">
+                        {%=__("Start Enrollment") %}
+                    </button>
+                </div>
+            </div>
+            <div class="row start">
+                <div class="col-xs-12">
+                    <button class="btn btn-sm btn-success btn-start" id="startButton">
+                        {%=__("Check In") %}
+                    </button>
+                </div>
+            </div>
+            <div class="row end">
+                <div class="col-xs-12">
+                    <button class="btn btn-sm btn-danger btn-start" id="endButton">
+                        {%=__("Check Out") %}
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <button class="btn btn-sm btn-warning btn-start" id="hourlyButton">
+                        {%=__("Hourly Check In") %}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="col-md-9 col-xs-12 enrollment" style="display:none">
         <div style="text-align:center">
             <div id="cues"></div>
             <video id="enroll_preview" autoplay muted text-center></video>
             <button class="btn btn-sm btn-primary btn-start" id="enroll">
-                ENROLL
+                {%=__("Enroll") %}
             </button>
         </div>
     </div>

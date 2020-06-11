@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from . import __version__ as app_version
+import frappe
+from erpnext.hr.doctype.shift_request.shift_request import ShiftRequest
+from one_fm.api.doc_methods.shift_request import shift_request_submit
 
 app_name = "one_fm"
 app_title = "One Fm"
@@ -30,7 +33,6 @@ app_include_js = [
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 doctype_js = {
 	"Location" : "public/js/doctype_js/location.js",
-	"Customer" : "public/js/doctype_js/customer.js",
 	"Shift Type" : "public/js/doctype_js/shift_type.js",
 	"Project": "public/js/doctype_js/project.js"
 }
@@ -103,7 +105,7 @@ doc_events = {
 		"after_insert": "one_fm.utils.after_insert_job_applicant"
 	},
 	"Shift Type": {
-		"autoname": "one_fm.utils.naming_series"
+		"autoname": "one_fm.api.doc_events.naming_series"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -114,14 +116,15 @@ doc_events = {
 		"before_insert": "one_fm.utils.validate_get_item_group_parent"
 	},
 	"Item": {
-		"autoname": "one_fm.utils.item_naming_series"
+		"autoname": "one_fm.api.doc_events.item_naming_series"
 	},
 	"Employee Checkin": {
+		"validate": "one_fm.api.doc_events.employee_checkin_validate",
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
 	},
-	"Project": {
-		"on_update": "one_fm.api.doc_events.project_on_update"
-	}
+	# "Project": {
+	# 	"on_update": "one_fm.api.doc_events.project_on_update"
+	# }
 }
 
 standard_portal_menu_items = [
@@ -144,9 +147,11 @@ has_website_permission = {
 # ---------------
 
 scheduler_events = {
-	"15 * * * *": [
-		"one_fm.api.tasks.final_reminder"
-	],
+	"cron": {
+		"5 * * * *": [
+			"one_fm.api.tasks.final_reminder",		
+		],
+	},
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
@@ -225,6 +230,14 @@ fixtures = [
 	},
 	{
 		"dt": "Print Format"
+	},
+	{
+		"dt": "Role",
+		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Custom DocPerm",
+		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
 	}
 ]
 
@@ -236,3 +249,6 @@ fixtures = [
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
+
+   
+ShiftRequest.on_submit = shift_request_submit 

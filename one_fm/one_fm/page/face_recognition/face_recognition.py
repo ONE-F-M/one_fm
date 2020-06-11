@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import now_datetime, cstr, nowdate, cint
 from scipy.spatial import distance as dist
 from imutils.video import FileVideoStream
 from imutils.video import VideoStream
@@ -10,6 +11,8 @@ import imutils
 import time
 import dlib
 import pickle, cv2, os
+from itertools import repeat
+import multiprocessing as mp
 from time import perf_counter
 from multiprocessing import Pool
 
@@ -52,25 +55,35 @@ def enroll():
 		with open(OUTPUT_VIDEO_PATH, "wb") as fh:
 				fh.write(content)
 				create_dataset(OUTPUT_VIDEO_PATH)
-
+		return _("Successfully Enrolled!")
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		raise exc
+
 
 @frappe.whitelist()
 def verify():
 	try:
 		setup_directories()
+		log_type = frappe.local.form_dict['log_type']
+		skip_attendance = frappe.local.form_dict['skip_attendance']
+		latitude = frappe.local.form_dict['latitude']
+		longitude = frappe.local.form_dict['longitude']
+		timestamp = frappe.local.form_dict['timestamp']
 		files = frappe.request.files
 		file = files['file']
 		content = file.stream.read()
 		filename = file.filename	
 		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
+
 		with open(OUTPUT_IMAGE_PATH, "wb") as fh:
 				fh.write(content)
 				blinks, image = verify_face(OUTPUT_IMAGE_PATH)
 				if blinks > 0:
-					return 'Face Recognition Passed. End of Demo. Thank You!' if recognize_face(image) else frappe.throw(_('Face Recognition Failed. Please try again.'))
+					if recognize_face(image):
+						return check_in(log_type, skip_attendance, latitude, longitude, timestamp)
+					else:
+						frappe.throw(_('Face Recognition Failed. Please try again.'))	
 				else:
 					frappe.throw(_('Liveness Detection Failed. Please try again.'))
 	except Exception as exc:
@@ -78,76 +91,167 @@ def verify():
 		raise exc
 
 
+def check_in(log_type, skip_attendance, latitude, longitude, timestamp):
+	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+	checkin = frappe.new_doc("Employee Checkin")
+	checkin.employee = employee
+	checkin.log_type = log_type
+	checkin.device_id = cstr(latitude)+","+cstr(longitude)
+	checkin.skip_auto_attendance = cint(skip_attendance)
+	# checkin.time = now_datetime()
+	# checkin.actual_time = now_datetime()
+	checkin.save()
+	frappe.db.commit()
+	return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
+
+
 def create_dataset(video):
 	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"
-	vs = FileVideoStream(video).start()
-	fileStream = True
+	# vs = FileVideoStream(video).start()
+	# fileStream = True
 	count = 0 
-	while True:
-		# if this is a file video stream, then we need to check if
-		# there any more frames left in the buffer to process
-		if fileStream and not vs.more():
-			break
+	# while True:
+	# 	# if this is a file video stream, then we need to check if
+	# 	# there any more frames left in the buffer to process
+	# 	if fileStream and not vs.more():
+	# 		break
 		
-		if not isinstance(vs.read(), np.ndarray):
-			break
+	# 	if not isinstance(vs.read(), np.ndarray):
+	# 		break
 
-		if vs.read() is None:
-			break
-		# grab the frame from the threaded video file stream, resize
-		# it, and convert it to grayscale
-		# channels)
-		frame = vs.read()
-		# print(frame)
-		cv2.imwrite(OUTPUT_DIRECTORY + "{0}.jpg".format(count+1), frame)
-		count = count + 1
+	# 	if vs.read() is None:
+	# 		break
+	# 	# grab the frame from the threaded video file stream, resize
+	# 	# it, and convert it to grayscale
+	# 	# channels)
+	# 	frame = vs.read()
+	# 	print(frame)
+	# 	cv2.imwrite(OUTPUT_DIRECTORY + "{0}.jpg".format(count+1), frame)
+	# 	count = count + 1
 	
-	print("execution_time", os.cpu_count())
-	print("execution_time", OUTPUT_DIRECTORY)
-	imagePaths = list(paths.list_images(OUTPUT_DIRECTORY))
+	cap = cv2.VideoCapture(video)
+	success, img = cap.read()
+	# fno = 0
+	while success:
+		cv2.imwrite(OUTPUT_DIRECTORY + "{0}.jpg".format(count+1), img)
+		count = count + 1
+		# read next frame
+		success, img = cap.read()
 
-	try:
-		start = perf_counter()
-		pool = Pool(os.cpu_count() - 1) # on 8 processors
-		pool.map(create_encodings, imagePaths)
-		end = perf_counter()
-		execution_time = (end - start)
-		print(execution_time)
-	finally: # To make sure processes are closed in the end, even if errors happen
-		pool.close()
-		pool.join()
+	create_encodings(OUTPUT_DIRECTORY)
+	doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+	print(doc.as_dict())
+	doc.enrolled = 1
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	# print("execution_time", os.cpu_count())
+	# print("execution_time", OUTPUT_DIRECTORY)
+	# imagePaths = list(paths.list_images(OUTPUT_DIRECTORY))
+
+	# create_encodings(imagePaths)
+	# try:
+	# 	start = perf_counter()
+	# 	# pool = Pool(os.cpu_count() - 1) # max cpus - 1
+	# 	OUTPUT_ENCODING_PATH_PREFIX = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"
+	# 	user_id = frappe.session.user
+	# 	#encodings file output path
+	# 	encoding_path = OUTPUT_ENCODING_PATH_PREFIX + user_id +".pickle"
+	# 	with mp.Manager() as manager:
+	# 		data = manager.dict(encodings=[])
+	# 		with manager.Pool() as pool:
+	# 			pool.starmap(create_encodings,zip(imagePaths, repeat(data), repeat(OUTPUT_ENCODING_PATH_PREFIX), repeat(user_id),repeat(encoding_path)))
+			
+	# 		print(data)
+	# 		f = open(encoding_path, "wb")
+	# 		f.write(pickle.dumps(dict(data)))
+	# 		f.close()
+	# 	# data = {}
+	# 	# pool.starmap(create_encodings,[imagePaths, data])
+		
+	# 	end = perf_counter()
+	# 	execution_time = (end - start)
+	# 	print(execution_time)
+	# 	doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+	# 	print(doc.as_dict())
+	# 	doc.enrolled = 1
+	# 	doc.save(ignore_permissions=True)
+	# 	frappe.db.commit()
+	# finally: # To make sure processes are closed in the end, even if errors happen
+	# 	# pool.close()
+	# 	# pool.join()
+	# 	pass
 
 
-def create_encodings(imagePaths, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
+# def create_encodings(imagePaths, data, OUTPUT_ENCODING_PATH_PREFIX, user_id, encoding_path, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
+# 	"""
+# 		directory : directory path containing dataset 
+# 	"""
+# 	# grab the paths to the input images in our dataset
+
+
+# 	# initialize the list of known encodings and known names
+# 	knownEncodings = []
+# 	knownNames = []
+
+# 	# extract the person name from the image path i.e User Id
+# 	# print("[INFO] processing image {}/{}".format(i + 1, len(imagePaths)))
+# 	name = imagePaths.split(os.path.sep)[-2]
+
+# 	# load the input image and convert it from BGR (OpenCV ordering)
+# 	# to dlib ordering (RGB)
+# 	image = cv2.imread(imagePaths)
+# 	rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+# 	# detect the (x, y)-coordinates of the bounding boxes
+# 	# corresponding to each face in the input image
+# 	boxes = face_recognition.face_locations(rgb, model=detection_method)
+
+# 	# compute the facial embedding for the face
+# 	encodings = face_recognition.face_encodings(rgb, boxes)
+# 	len(encodings) > 0 and data["encodings"].append(encodings[0])
+# 	# knownEncodings.append(encodings[0])
+
+# 	# dump the facial encodings + names to disk	
+# 	# data["encodings"].append(knownEncodings)
+
+def create_encodings(directory, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
 	"""
 		directory : directory path containing dataset 
 	"""
-	# grab the paths to the input images in our dataset
-
+	print(directory)
 	OUTPUT_ENCODING_PATH_PREFIX = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"
 	user_id = frappe.session.user
+	# grab the paths to the input images in our dataset
+	imagePaths = list(paths.list_images(directory))
+	print(imagePaths)
 	#encodings file output path
 	encoding_path = OUTPUT_ENCODING_PATH_PREFIX + user_id +".pickle"
 	# initialize the list of known encodings and known names
 	knownEncodings = []
-	knownNames = []
+	# knownNames = []
 
-	# extract the person name from the image path i.e User Id
-	# print("[INFO] processing image {}/{}".format(i + 1, len(imagePaths)))
-	name = imagePaths.split(os.path.sep)[-2]
+	for (i, imagePath) in enumerate(imagePaths):
+		# extract the person name from the image path i.e User Id
+		print("[INFO] processing image {}/{}".format(i + 1, len(imagePaths)))
+		name = imagePath.split(os.path.sep)[-2]
 
-	# load the input image and convert it from BGR (OpenCV ordering)
-	# to dlib ordering (RGB)
-	image = cv2.imread(imagePaths)
-	rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+		# load the input image and convert it from BGR (OpenCV ordering)
+		# to dlib ordering (RGB)
+		image = cv2.imread(imagePath)
+		rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-	# detect the (x, y)-coordinates of the bounding boxes
-	# corresponding to each face in the input image
-	boxes = face_recognition.face_locations(rgb, model=detection_method)
+		# detect the (x, y)-coordinates of the bounding boxes
+		# corresponding to each face in the input image
+		boxes = face_recognition.face_locations(rgb, model=detection_method)
 
-	# compute the facial embedding for the face
-	encodings = face_recognition.face_encodings(rgb, boxes)
-	len(encodings) > 0 and knownEncodings.append(encodings[0])
+		# compute the facial embedding for the face
+		encodings = face_recognition.face_encodings(rgb, boxes)
+
+		# loop over the encodings
+		for encoding in encodings:
+			# add each encoding + name to our set of known names and
+			# encodings
+			knownEncodings.append(encoding)
 
 	# dump the facial encodings + names to disk	
 	data = {"encodings": knownEncodings}
@@ -164,8 +268,8 @@ def verify_face(video_path=None):
 	# define two constants, one for the eye aspect ratio to indicate
 	# blink and then a second constant for the number of consecutive
 	# frames the eye must be below the threshold
-	EYE_AR_THRESH = 0.29
-	EYE_AR_CONSEC_FRAMES = 1
+	EYE_AR_THRESH = 0.3
+	EYE_AR_CONSEC_FRAMES = 2
 	# initialize the frame counters and the total number of blinks
 	COUNTER = 0
 	TOTAL = 0
@@ -322,3 +426,19 @@ def match_encodings(encodings, face_data):
 			return False
 	except Exception as identifier:
 		print(frappe.get_traceback())
+
+
+@frappe.whitelist()
+def check_existing():
+	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+	if not employee:
+		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
+	
+	logs = frappe.db.sql("""
+		select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
+	""".format(date=nowdate(), employee=employee), as_dict=1)
+	val = [log.log_type for log in logs]
+	if not val or (val and "OUT" in val):
+		return False	
+	else:
+		return True

@@ -25,7 +25,6 @@ def create_posts(data, site_shift, site, project):
 	try:
 		data = frappe._dict(json.loads(data))
 		post_names = data.post_names
-		print(type(post_names))
 		skills = data.skills
 		designations = data.designations
 		gender = data.gender
@@ -33,7 +32,7 @@ def create_posts(data, site_shift, site, project):
 		post_template = data.post_template
 		post_description = data.post_description
 		post_location = data.post_location
-		print(type(designations), len(skills), len(post_names))
+
 		for post_name in post_names:
 			operations_post = frappe.new_doc("Operations Post")
 			operations_post.post_name = post_name["post_name"]
@@ -46,7 +45,6 @@ def create_posts(data, site_shift, site, project):
 			operations_post.site = site
 			operations_post.project = project
 			for designation in designations:
-				print(type(designation), designation)
 				operations_post.append("designations",{
 					"designation": designation["designation"],
 					"primary": designation["primary"] if "primary" in designation else 0
