@@ -10,7 +10,7 @@ from frappe.utils import get_site_base_path
 from erpnext.hr.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils.csvutils import read_csv_content_from_uploaded_file, read_csv_content
-from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime
+from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime, add_to_date
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
@@ -20,54 +20,261 @@ from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form, \
     comma_or, get_fullname, add_years, add_months, add_days, nowdate,get_first_day,get_last_day, today
 import datetime
+from datetime import datetime, time
+from frappe import utils
+
+
+
+
+
+def check_grp_supervisor_submission_daily():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=1 and pam_visa_submitted_supervisor=0")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.pam_visa_reminder_supervisor = frappe.utils.now()
+        pam_visa_doc.save(ignore_permissions = True)
+
+        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
+        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Supervisor'})
+        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
+        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
+
+        frappe.sendmail(sender=sender, recipients= recipient,
+            content=msg, subject="PAM Visa Reminder",cc=cc, delayed=False)
+
+
+def check_grp_operator_submission_four_half():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_reminder2_done=1")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.pam_visa_reminder2_done = 0
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
+        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
+        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
+        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
+
+        frappe.sendmail(sender=sender, recipients= recipient,
+            content=msg, subject="PAM Visa Reminder",cc=cc, delayed=False)
+
+
+
+def check_grp_operator_submission_four():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_reminder2_start=1")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.pam_visa_reminder2 = frappe.utils.now()
+        pam_visa_doc.pam_visa_reminder2_start = 0
+        pam_visa_doc.pam_visa_reminder2_done = 1
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
+        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
+        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
+
+        frappe.sendmail(sender=sender, recipients= recipient,
+            content=msg, subject="PAM Visa Reminder", delayed=False)
+
+
+
+
+def check_grp_operator_submission_daily():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.pam_visa_reminder2_start = 1
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+
+
+
+
+def send_gp_letter_attachment_reminder2():
+    gp_letters_request = frappe.db.sql_list("select DISTINCT gp_letter_request_reference from `tabGP Letter` where (gp_letter_attachment is NULL or gp_letter_attachment='' ) ")
+
+    for gp_letter_request in gp_letters_request:
+        gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request)
+        if gp_letter_doc.upload_reminder1 and not gp_letter_doc.upload_reminder2:
+            after_three_days = add_days(gp_letter_doc.upload_reminder1, 3)
+
+            get_defferent = date_diff(gp_letter_doc.upload_reminder1, after_three_days)
+            if get_defferent>=0:
+
+                grd_name = frappe.db.get_single_value('GP Letter Request Setting', 'grd_name')
+                grd_number = frappe.db.get_single_value('GP Letter Request Setting', 'grd_number')
+                
+                msg = frappe.render_template('one_fm/templates/emails/gp_letter_attachment_reminder.html', context={"candidates": gp_letter_doc.gp_letter_candidates, "grd_name": grd_name, "grd_number": grd_number})
+                sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+                recipient = frappe.db.get_single_value('GP Letter Request Setting', 'travel_agent_email')
+                cc = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
+
+                frappe.sendmail(sender=sender, recipients= recipient,
+                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False)
+
+                gp_letter_doc.upload_reminder2 = frappe.utils.now()
+                gp_letter_doc.save(ignore_permissions = True)
+
+
+def send_gp_letter_attachment_reminder3():
+    gp_letters_request = frappe.db.sql_list("select DISTINCT gp_letter_request_reference from `tabGP Letter` where (gp_letter_attachment is NULL or gp_letter_attachment='' ) ")
+
+    for gp_letter_request in gp_letters_request:
+        gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request)
+        if gp_letter_doc.upload_reminder2 and not gp_letter_doc.upload_reminder3:
+
+            after_four_hour = add_to_date(gp_letter_doc.upload_reminder2, hours=4)
+ 
+            if get_datetime(frappe.utils.now())>=get_datetime(after_four_hour):
+                
+                grd_name = frappe.db.get_single_value('GP Letter Request Setting', 'grd_name')
+                grd_number = frappe.db.get_single_value('GP Letter Request Setting', 'grd_number')
+                
+                msg = frappe.render_template('one_fm/templates/emails/gp_letter_attachment_reminder.html', context={"candidates": gp_letter_doc.gp_letter_candidates, "grd_name": grd_name, "grd_number": grd_number})
+                sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+                recipient = frappe.db.get_single_value('GP Letter Request Setting', 'travel_agent_email')
+                cc = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
+
+                frappe.sendmail(sender=sender, recipients= recipient,
+                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False)
+
+                gp_letter_doc.upload_reminder3 = frappe.utils.now()
+                gp_letter_doc.save(ignore_permissions = True)
+
+
+def send_gp_letter_attachment_no_response():
+    gp_letters_request = frappe.db.sql_list("select DISTINCT gp_letter_request_reference from `tabGP Letter` where (gp_letter_attachment is NULL or gp_letter_attachment='' ) ")
+
+    for gp_letter_request in gp_letters_request:
+        gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request)
+        if gp_letter_doc.upload_reminder3 and not gp_letter_doc.upload_reminder4:
+
+            gp_letter_doc.upload_reminder4 = frappe.utils.now()
+            gp_letter_doc.save(ignore_permissions = True)
+
+            page_link = "http://206.189.228.82/desk#Form/GP Letter Request/" + gp_letter_request
+            # page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
+            msg = frappe.render_template('one_fm/templates/emails/gp_letter_attachment_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
+            sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+            recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
+            frappe.sendmail(sender=sender, recipients= recipient,
+                content=msg, subject="GP Letter Upload No Response", delayed=False)
 
 
 
 def send_travel_agent_email():
-    gp_letters_request = frappe.db.sql_list("select name from `tabGP Letter Request` where (gp_status is NULL or gp_status='' or gp_status='Reject') and (supplier_name is not NULL or supplier_name!='') ")
+    gp_letters_request = frappe.db.sql_list("select name from `tabGP Letter Request` where (gp_status is NULL or gp_status='' or gp_status='Reject') and (supplier is not NULL or supplier!='') ")
 
     for gp_letter_request in gp_letters_request:
         gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request)
         if gp_letter_doc.gp_status!='No Response':
             if not gp_letter_doc.sent_date:
-                send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates)
+                send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
                 
                 gp_letter_doc.sent_date = frappe.utils.now()
                 gp_letter_doc.save(ignore_permissions = True)
-            elif not gp_letter_doc.reminder1:
-                send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates)
+            # elif not gp_letter_doc.reminder1:
+            #     send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
 
-                gp_letter_doc.reminder1 = frappe.utils.now()
-                gp_letter_doc.save(ignore_permissions = True)
-            elif not gp_letter_doc.reminder2:
-                send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates)
+            #     gp_letter_doc.reminder1 = frappe.utils.now()
+            #     gp_letter_doc.save(ignore_permissions = True)
+            # elif not gp_letter_doc.reminder2:
+            #     send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
 
-                gp_letter_doc.reminder2 = frappe.utils.now()
-                gp_letter_doc.save(ignore_permissions = True)
-            else:
+            #     gp_letter_doc.reminder2 = frappe.utils.now()
+            #     gp_letter_doc.save(ignore_permissions = True)
+            # else:
 
-                gp_letter_doc.gp_status = 'No Response'
-                gp_letter_doc.save(ignore_permissions = True)
+            #     gp_letter_doc.gp_status = 'No Response'
+            #     gp_letter_doc.save(ignore_permissions = True)
 
-                page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
-                msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
-                sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-                recipient = 'omar.ja93@gmail.com'
-                frappe.sendmail(sender=sender, recipients= recipient,
-                    content=msg, subject="GP Letter Request No Response", delayed=False)
-
-
-
+            #     page_link = "http://206.189.228.82/desk#Form/GP Letter Request/" + gp_letter_request
+            #     # page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
+            #     msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
+            #     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+            #     recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
+            #     frappe.sendmail(sender=sender, recipients= recipient,
+            #         content=msg, subject="GP Letter Request No Response", delayed=False)
 
 
 
-def send_gp_email(pid, candidates):
-    page_link = get_url("/gp_letter_request?pid=" + pid)
+
+def send_gp_letter_reminder():
+    gp_letters_request = frappe.db.sql_list("select name from `tabGP Letter Request` where (gp_status is NULL or gp_status='' or gp_status='Reject') and (supplier is not NULL or supplier!='') ")
+
+    for gp_letter_request in gp_letters_request:
+        gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request)
+        if gp_letter_doc.gp_status!='No Response':
+            if gp_letter_doc.sent_date and not gp_letter_doc.reminder1:
+                after_three_hour = add_to_date(gp_letter_doc.sent_date, hours=3)
+                if get_datetime(frappe.utils.now())>=get_datetime(after_three_hour):
+                    send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
+
+                    gp_letter_doc.reminder1 = frappe.utils.now()
+                    gp_letter_doc.save(ignore_permissions = True)
+            if gp_letter_doc.reminder1 and not gp_letter_doc.reminder2:
+                after_three_hour = add_to_date(gp_letter_doc.reminder1, hours=3)
+                if get_datetime(frappe.utils.now())>=get_datetime(after_three_hour):
+                    send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
+
+                    gp_letter_doc.reminder2 = frappe.utils.now()
+                    gp_letter_doc.save(ignore_permissions = True)
+            if gp_letter_doc.reminder2:
+                after_three_hour = add_to_date(gp_letter_doc.reminder2, hours=3)
+                if get_datetime(frappe.utils.now())>=get_datetime(after_three_hour):
+                    send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
+
+                    gp_letter_doc.gp_status = 'No Response'
+                    gp_letter_doc.save(ignore_permissions = True)
+
+                    page_link = "http://206.189.228.82/desk#Form/GP Letter Request/" + gp_letter_request
+                    # page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
+                    msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
+                    sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+                    recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
+                    frappe.sendmail(sender=sender, recipients= recipient,
+                        content=msg, subject="GP Letter Request No Response", delayed=False)
+
+
+
+
+
+def send_gp_email(pid, candidates, gp_letter_request):
+    gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request)
+    page_link = "http://206.189.228.82/gp_letter_request?pid=" + pid
+    # page_link = get_url("/gp_letter_request?pid=" + pid)
     msg = frappe.render_template('one_fm/templates/emails/gp_letter_request.html', context={"page_link": page_link, "candidates": candidates})
     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-    recipient = 'omar.ja93@gmail.com'
+    recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
+
+    # my_attachments = [frappe.attach_print('GP Letter Request', gp_letter_request, file_name=gp_letter_doc.excel_sheet_attachment)]
+
+    site_name = cstr(frappe.local.site)
+    path = "/home/frappe/frappe-bench/sites/{0}/public/files/{1}.xlsx".format(site_name, gp_letter_request)
+
+    with open(path, "rb") as fileobj:
+        filedata = fileobj.read()
+
+    attachments = [{
+        'fname': cstr(gp_letter_request)+'.xlsx',
+        'fcontent': filedata
+    }]
+
     frappe.sendmail(sender=sender, recipients= recipient,
-        content=msg, subject="Request for GP Letter", delayed=False)
+        content=msg, subject="Request for GP Letter | {0}".format(gp_letter_request), attachments=attachments ,delayed=False)
 
 
 def create_gp_letter_request():
@@ -75,9 +282,10 @@ def create_gp_letter_request():
     candidates=[]
 
     for gp_letter in gp_letters:
-        gp_letter_doc = frappe.get_doc("GP Letter", gp_letter)
+        # gp_letter_doc = frappe.get_doc("GP Letter", gp_letter)
 
-        candidates.append(gp_letter_doc.candidate_name)
+        # candidates.append(gp_letter_doc.candidate_name)
+        candidates.append(gp_letter)
 
     if len(candidates)>0:
         supplier_category_val = ''
@@ -98,17 +306,23 @@ def create_gp_letter_request():
 
         doc = frappe.new_doc('GP Letter Request')
         for candidate in candidates:
+            gp_letter_doc = frappe.get_doc("GP Letter", candidate)
+
             doc.append("gp_letter_candidates",{
-                "candidate": candidate
+                "gp_letter": candidate,
+                "candidate": gp_letter_doc.candidate_name,
             })
+
+
         doc.supplier_category = supplier_category_val
         doc.supplier_subcategory = supplier_subcategory_val
         doc.supplier = supplier_name_val
         doc.save(ignore_permissions = True)
 
+        site_name = cstr(frappe.local.site)
 
         import xlsxwriter 
-        workbook = xlsxwriter.Workbook('/home/frappe/frappe-bench/apps/one_fm/one_fm/{0}.xlsx'.format(doc.name)) 
+        workbook = xlsxwriter.Workbook('/home/frappe/frappe-bench/sites/{0}/public/files/{1}.xlsx'.format(site_name, doc.name))
         worksheet = workbook.add_worksheet()
         worksheet.write('A1', 'Sr.No')
         worksheet.write('B1', 'Candidate Name In English')
@@ -119,30 +333,25 @@ def create_gp_letter_request():
         worksheet.set_column('B:F', 22)
 
 
-        candidates_info=[]
-        count=1
-        for candidate in candidates:
-            candidates_info.append([count, candidate])
-            count += 1
-        
-        # candidates = ['1','Omhhar','عمر','12345','فلسطيني','ONE FM']
-
-        print(candidates_info)
+        gp_letter_request_doc = frappe.get_doc("GP Letter Request", doc.name)
 
         row = 1
         column = 0
-        for srno, candidate_english in candidates_info: 
-            worksheet.write(row, column, srno) 
-            worksheet.write(row, column+1, candidate_english) 
+        for candidate in gp_letter_request_doc.gp_letter_candidates:
+            worksheet.write(row, column, candidate.idx)
+            worksheet.write(row, column+1, candidate.candidate)
             # column += 1
             row += 1
         workbook.close()
 
+        gp_letter_request_doc.excel_sheet_attachment = "/files/{0}.xlsx".format(doc.name)
+        gp_letter_request_doc.save(ignore_permissions = True)
 
-        # for gp_letter in gp_letters:
-        #     gp_letter_doc = frappe.get_doc("GP Letter", gp_letter)
-        #     gp_letter_doc.gp_letter_request_reference = doc.name
-        #     gp_letter_doc.save(ignore_permissions = True)
+
+        for gp_letter in gp_letters:
+            gp_letter_doc = frappe.get_doc("GP Letter", gp_letter)
+            gp_letter_doc.gp_letter_request_reference = doc.name
+            gp_letter_doc.save(ignore_permissions = True)
 
 
 
@@ -977,7 +1186,7 @@ def get_erf(erf_id):
     return frappe.get_doc('ERF', erf_id)
 
 def get_applicant():
-	return frappe.get_value("Job Applicant",{"one_fm_email_id": frappe.session.user}, "name")
+    return frappe.get_value("Job Applicant",{"one_fm_email_id": frappe.session.user}, "name")
 
 def applicant_has_website_permission(doc, ptype, user, verbose=False):
     if doc.name == get_applicant():

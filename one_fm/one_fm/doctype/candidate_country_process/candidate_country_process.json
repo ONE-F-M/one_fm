@@ -1,0 +1,59 @@
+{
+ "autoname": "CCP.###",
+ "creation": "2020-06-05 01:26:03.735490",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "agency",
+  "country_process",
+  "section_break_3",
+  "agency_process_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "agency",
+   "fieldtype": "Link",
+   "label": "Agency",
+   "options": "Agency"
+  },
+  {
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "agency_process_details",
+   "fieldtype": "Table",
+   "label": "Agency Process Details",
+   "options": "Candidate Country Process Details"
+  },
+  {
+   "fieldname": "country_process",
+   "fieldtype": "Link",
+   "label": "Country Process",
+   "options": "Country Process"
+  }
+ ],
+ "modified": "2020-06-05 01:47:14.474571",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Candidate Country Process",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -20,6 +20,11 @@
   "reminder2",
   "pid",
   "column_break_15",
+  "upload_reminder1",
+  "upload_reminder2",
+  "upload_reminder3",
+  "upload_reminder4",
+  "column_break_19",
   "gp_status",
   "accept_date",
   "excel_sheet_attachment",
@@ -134,10 +139,34 @@
    "label": "Status",
    "options": "\nAccept\nReject\nNo Response",
    "read_only": 1
+  },
+  {
+   "fieldname": "upload_reminder1",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Upload Reminder Date / Time"
+  },
+  {
+   "fieldname": "upload_reminder2",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Upload Reminder 2 Date / Time"
+  },
+  {
+   "fieldname": "upload_reminder3",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Upload Reminder 3 Date / Time"
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "upload_reminder4",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Upload Reminder 4 Date / Time"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-06-01 23:07:59.826592",
+ "modified": "2020-06-07 14:41:36.544136",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "GP Letter Request",
