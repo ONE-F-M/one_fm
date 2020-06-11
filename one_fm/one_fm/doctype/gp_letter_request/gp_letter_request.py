@@ -16,6 +16,11 @@ class GPLetterRequest(Document):
         if not self.pid :
             self.pid = frappe.generate_hash(length=30)
 
+
+    def generate_new_pid(self):
+        self.pid = frappe.generate_hash(length=30)
+
+
     def get_page_link(self):
         return get_url("/gp_letter_request?pid=" + self.pid)
 

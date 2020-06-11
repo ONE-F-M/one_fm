@@ -70,7 +70,26 @@ frappe.ui.form.on('GP Letter Request', {
         frm.set_value("sent_date", );
         frm.set_value("reminder1", );
         frm.set_value("reminder2", );
+        
+        frm.set_value("upload_reminder1", );
+        frm.set_value("upload_reminder2", );
+        frm.set_value("upload_reminder3", );
+        frm.set_value("upload_reminder4", );
+
         frm.set_value("gp_status", );
         frm.set_value("accept_date", );
+
+
+        frm.call({
+            method: "generate_new_pid",
+            doc: frm.doc,
+            callback: function(r) {
+                if(r.message){
+                    
+                }
+            }
+        })
+
+
     }
 });

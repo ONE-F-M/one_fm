@@ -4,19 +4,66 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "candidate"
+  "gp_letter",
+  "candidate",
+  "candidate_arabic",
+  "passport_number",
+  "nationality_arabic",
+  "company_arabic",
+  "gp_letter_attachment",
+  "gp_letter_attachment_date"
  ],
  "fields": [
   {
    "fieldname": "candidate",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Candidate",
-   "reqd": 1
+   "label": "Candidate Name In English"
+  },
+  {
+   "fieldname": "candidate_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Name In Arabic"
+  },
+  {
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "nationality_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Nationality in Arabic"
+  },
+  {
+   "fieldname": "company_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Company Name in Arabic"
+  },
+  {
+   "fieldname": "gp_letter_attachment",
+   "fieldtype": "Attach",
+   "label": "GP Letter Attachment"
+  },
+  {
+   "fieldname": "gp_letter",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "GP Letter",
+   "options": "GP Letter"
+  },
+  {
+   "fieldname": "gp_letter_attachment_date",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Attachment Date"
   }
  ],
  "istable": 1,
- "modified": "2020-05-30 16:07:32.042384",
+ "modified": "2020-06-09 13:21:19.628040",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "GP Letter Candidates",

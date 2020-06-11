@@ -13,16 +13,19 @@ frappe.ready(function () {
             	var content = ""
 
                 for (let i = 0; i < r.message.length; i++) {
-                	content+= "<div class='form-group'><label class='col-form-label'>"+r.message[i][1]+"</label><div class='input-group'><span class='input-group-addon'><i class='fa fa-file'></i></span><input type='file' name='"+r.message[i][0]+"' id='"+r.message[i][0]+"' class='form-control' required='required'></div></div>"
+                	content+= "<div class='form-group'><label class='col-form-label'>"+r.message[i][1]+"</label><div class='input-group'><span class='input-group-addon'><i class='fa fa-file'></i></span><input type='file' name='"+r.message[i][0]+"' id='"+r.message[i][0]+"' class='form-control' value='"+r.message[i][2]+"' required='required'></div></div>"
                 }
 
-                $("#attachments_fields").append(content)
+                // $("#attachments_fields").append(content)
+                $("#attachments_fields").html(content)
+
 
             }
         }
     });
 
-	$(':file').on('change', function() {
+	$('#attachment_form').on('change', ':file', function() {
+
 	    var $input = $(this);
       	var file_input = $input.get(0);
 
@@ -33,6 +36,7 @@ frappe.ready(function () {
 	    if(file_input.files.length) {
         	file_input.filedata = { "files_data" : [] };
    		}
+   		console.log(file_input.filedata)
 
    		window.file_reading = true;
 
@@ -81,8 +85,6 @@ frappe.ready(function () {
 		// form_data["GPL-000001"] = $('#GPL-000001').prop('filedata');
 		// form_data["GPL-000002"] = $('#GPL-000002').prop('filedata');
 
-		console.log(form_data)
-		console.log(qp_letter)
 
 	    frappe.call({
 			type: "PUT",
@@ -93,7 +95,7 @@ frappe.ready(function () {
 	        callback: function (r) {
 	            if(r.message){
 	                if(r.message ==='success'){
-	                    frappe.msgprint(__("Your application was sent"), title='Success', indicator='green')
+	                    frappe.msgprint(__("The GP Ticket's have been Submitted. Thank you!"), title='Success', indicator='green')
 
 	                }
 	                else{

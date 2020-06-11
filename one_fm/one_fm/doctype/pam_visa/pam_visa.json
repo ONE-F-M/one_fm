@@ -1,0 +1,394 @@
+{
+ "autoname": "PAMV-.#####",
+ "creation": "2020-06-10 09:43:24.305103",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "pam_visa_section15",
+  "pam_visa_reminder1",
+  "pam_visa_reminder2",
+  "column_break_4",
+  "pam_visa_submitted",
+  "pam_visa_reminder2_start",
+  "pam_visa_reminder2_done",
+  "pam_visa_section13",
+  "pam_visa_reminder_supervisor",
+  "column_break_10",
+  "pam_visa_submitted_supervisor",
+  "section_break_4",
+  "pam_visa_application",
+  "candidate_full_name",
+  "column_break_3",
+  "status",
+  "pam_file_number",
+  "column_break_6",
+  "reason_of_rejection",
+  "pam_designation",
+  "section_break_7",
+  "english_first_name",
+  "english_second_name",
+  "english_third_name",
+  "english_last_name",
+  "arabic_first_name",
+  "arabic_second_name",
+  "arabic_third_name",
+  "arabic_last_name",
+  "column_break_16",
+  "nationality",
+  "maritial_status",
+  "type",
+  "religion",
+  "place_of_birth",
+  "date_of_birth",
+  "practical_qualification",
+  "passport_number",
+  "column_break_25",
+  "passport_type",
+  "passport_nationality",
+  "date_of_issuance",
+  "date_of_expiry",
+  "passport_issuer",
+  "basic_salary",
+  "salary_type",
+  "pam_visa_application_submit_section",
+  "submit_date",
+  "pam_visa_application_section",
+  "pam_visa_application_status",
+  "pam_visa_application_date",
+  "attachment",
+  "column_break_41",
+  "pam_visa_application_rejection_reason",
+  "pam_visa_application_rejection_reason_details",
+  "pam_visa_section",
+  "pam_visa_status",
+  "pam_visa_date",
+  "column_break_47",
+  "pam_visa_rejected_reason",
+  "pam_visa_rejected_reason_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "pam_visa_application",
+   "fieldtype": "Data",
+   "label": "PAM Visa Application"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nApporved\nRejected"
+  },
+  {
+   "fieldname": "reason_of_rejection",
+   "fieldtype": "Data",
+   "label": "Reason of Rejection"
+  },
+  {
+   "fieldname": "candidate_full_name",
+   "fieldtype": "Data",
+   "label": "Candidate Full Name"
+  },
+  {
+   "fieldname": "pam_file_number",
+   "fieldtype": "Data",
+   "label": "PAM File Number"
+  },
+  {
+   "fieldname": "pam_designation",
+   "fieldtype": "Data",
+   "label": "PAM Designation"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "english_first_name",
+   "fieldtype": "Data",
+   "label": "English First Name"
+  },
+  {
+   "fieldname": "english_second_name",
+   "fieldtype": "Data",
+   "label": "English Second Name"
+  },
+  {
+   "fieldname": "english_third_name",
+   "fieldtype": "Data",
+   "label": "English Third Name"
+  },
+  {
+   "fieldname": "english_last_name",
+   "fieldtype": "Data",
+   "label": "English Last Name"
+  },
+  {
+   "fieldname": "arabic_first_name",
+   "fieldtype": "Data",
+   "label": "Arabic First Name"
+  },
+  {
+   "fieldname": "arabic_second_name",
+   "fieldtype": "Data",
+   "label": "Arabic Second Name"
+  },
+  {
+   "fieldname": "arabic_third_name",
+   "fieldtype": "Data",
+   "label": "Arabic Third Name"
+  },
+  {
+   "fieldname": "arabic_last_name",
+   "fieldtype": "Data",
+   "label": "Arabic Last Name"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
+  },
+  {
+   "fieldname": "maritial_status",
+   "fieldtype": "Data",
+   "label": "Maritial Status"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Data",
+   "label": "Type"
+  },
+  {
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "label": "Religion"
+  },
+  {
+   "fieldname": "place_of_birth",
+   "fieldtype": "Data",
+   "label": "Place of Birth"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Data",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "practical_qualification",
+   "fieldtype": "Data",
+   "label": "Practical Qualification"
+  },
+  {
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "column_break_25",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "passport_type",
+   "fieldtype": "Data",
+   "label": "Passport Type"
+  },
+  {
+   "fieldname": "passport_nationality",
+   "fieldtype": "Data",
+   "label": "Passport Nationality"
+  },
+  {
+   "fieldname": "date_of_issuance",
+   "fieldtype": "Data",
+   "label": "Date of Issuance"
+  },
+  {
+   "fieldname": "date_of_expiry",
+   "fieldtype": "Data",
+   "label": "Date of Expiry"
+  },
+  {
+   "fieldname": "passport_issuer",
+   "fieldtype": "Data",
+   "label": "Passport Issuer"
+  },
+  {
+   "fieldname": "basic_salary",
+   "fieldtype": "Data",
+   "label": "Basic Salary"
+  },
+  {
+   "fieldname": "salary_type",
+   "fieldtype": "Data",
+   "label": "Salary Type"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pam_visa_application_submit_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Visa Application Submit"
+  },
+  {
+   "fieldname": "submit_date",
+   "fieldtype": "Data",
+   "label": "Date / Time"
+  },
+  {
+   "fieldname": "pam_visa_application_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Visa Application"
+  },
+  {
+   "fieldname": "pam_visa_application_status",
+   "fieldtype": "Data",
+   "label": "Status"
+  },
+  {
+   "fieldname": "pam_visa_application_date",
+   "fieldtype": "Data",
+   "label": "Date / Time"
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "fieldname": "column_break_41",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pam_visa_application_rejection_reason",
+   "fieldtype": "Data",
+   "label": "Rejection Reason"
+  },
+  {
+   "fieldname": "pam_visa_application_rejection_reason_details",
+   "fieldtype": "Data",
+   "label": "Rejection Reason Details"
+  },
+  {
+   "fieldname": "pam_visa_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Visa"
+  },
+  {
+   "fieldname": "pam_visa_status",
+   "fieldtype": "Data",
+   "label": "Status"
+  },
+  {
+   "fieldname": "pam_visa_date",
+   "fieldtype": "Data",
+   "label": "Date / Time"
+  },
+  {
+   "fieldname": "column_break_47",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pam_visa_rejected_reason",
+   "fieldtype": "Data",
+   "label": "Rejection Reason"
+  },
+  {
+   "fieldname": "pam_visa_rejected_reason_details",
+   "fieldtype": "Data",
+   "label": "Rejection Reason Details"
+  },
+  {
+   "fieldname": "pam_visa_section15",
+   "fieldtype": "Section Break",
+   "label": "Pam Visa(GRD Operator)"
+  },
+  {
+   "fieldname": "pam_visa_reminder1",
+   "fieldtype": "Datetime",
+   "label": "Pam Visa Reminder1"
+  },
+  {
+   "fieldname": "pam_visa_reminder2",
+   "fieldtype": "Datetime",
+   "label": "Pam Visa Reminder2"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "pam_visa_submitted",
+   "fieldtype": "Check",
+   "label": "Pam Visa Submitted"
+  },
+  {
+   "default": "0",
+   "fieldname": "pam_visa_reminder2_start",
+   "fieldtype": "Check",
+   "label": "Pam Visa Reminder2 Start"
+  },
+  {
+   "default": "0",
+   "fieldname": "pam_visa_reminder2_done",
+   "fieldtype": "Check",
+   "label": "Pam Visa Reminder2 Done"
+  },
+  {
+   "fieldname": "pam_visa_section13",
+   "fieldtype": "Section Break",
+   "label": "Pam Visa(GRD Supervisor)"
+  },
+  {
+   "fieldname": "pam_visa_reminder_supervisor",
+   "fieldtype": "Datetime",
+   "label": "Pam Visa Reminder"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "pam_visa_submitted_supervisor",
+   "fieldtype": "Check",
+   "label": "Pam Visa Submitted"
+  }
+ ],
+ "modified": "2020-06-11 00:30:18.430648",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "PAM Visa",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

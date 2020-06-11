@@ -31,35 +31,48 @@ def verify_pid(pid):
 
 
 
+
+@frappe.whitelist(allow_guest=True)
+def validate_gp_letter_request_status(pid, gp_status):
+    gp_letter_request = frappe.get_list("GP Letter Request", filters = {"pid": pid}, fields = ["name", "gp_status", "accept_date"])
+    if gp_letter_request:
+        if gp_letter_request[0]['gp_status'] in ('Accept', 'Reject'):
+            frappe.msgprint("The request has been {0}ed on {1}/{2}".format(gp_letter_request[0]['gp_status'] ,gp_letter_request[0]['accept_date'].strftime("%Y-%m-%d"), gp_letter_request[0]['accept_date'].strftime("%H:%M")))
+            return 'false'
+        else:
+            frappe.msgprint("Please select an option!")
+
+
+
 @frappe.whitelist(allow_guest=True)
 def update_gp_letter_request_status(pid, gp_status):
 
     if gp_status not in ('Accept', 'Reject'):
         frappe.throw("Please select an option from above selection")
 
-    gp_letter_request = frappe.get_value("GP Letter Request", filters = {"pid": pid}, fieldname = ["name", "gp_status"])
+    gp_letter_request = frappe.get_list("GP Letter Request", filters = {"pid": pid}, fields = ["name", "gp_status", "accept_date"])
     if gp_letter_request:
-        if gp_letter_request[1] in ('Accept', 'Reject'):
-            frappe.msgprint("Your data is already sent!")
+        if gp_letter_request[0]['gp_status'] in ('Accept', 'Reject'):
+            frappe.msgprint("The request has been {0}ed on {1}/{2}".format(gp_letter_request[0]['gp_status'] ,gp_letter_request[0]['accept_date'].strftime("%Y-%m-%d"), gp_letter_request[0]['accept_date'].strftime("%H:%M")))
             return 'false'
 
         else:
-            gp_doc = frappe.get_doc("GP Letter Request", gp_letter_request[0])
+            gp_doc = frappe.get_doc("GP Letter Request", gp_letter_request[0]['name'])
             gp_doc.gp_status = gp_status
             gp_doc.accept_date = frappe.utils.now()
 
             if gp_status=='Reject':
-                gp_doc.supplier = ''
-                gp_doc.supplier_name = ''
+                gp_doc.supplier = None
+                gp_doc.supplier_name = None
 
             gp_doc.save(ignore_permissions=True)
             frappe.db.commit()
             frappe.msgprint("Your data has been successfully registered!")
 
-            gp_letters = frappe.db.get_list("GP Letter", filters = {"gp_letter_request_reference": gp_letter_request[0]}, fields = ["name"])
+            gp_letters = frappe.db.get_list("GP Letter", filters = {"gp_letter_request_reference": gp_letter_request[0]['name']}, fields = ["name"])
             for gp_letter in gp_letters:
                 doc = frappe.get_doc("GP Letter", gp_letter['name'])
-                request_doc = frappe.get_doc("GP Letter Request", gp_letter_request[0])
+                request_doc = frappe.get_doc("GP Letter Request", gp_letter_request[0]['name'])
 
                 doc.gp_status = gp_status
                 doc.gp_letter_request_date = frappe.utils.now()
@@ -74,25 +87,33 @@ def update_gp_letter_request_status(pid, gp_status):
 
 
             if gp_status=='Accept':
-                gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request[0])
+                gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request[0]['name'])
+                gp_letter_doc.upload_reminder1 = frappe.utils.now()
 
-                page_link = get_url("/gp_letter_attachment?pid=" + pid)
+                page_link = "http://206.189.228.82/gp_letter_attachment?pid=" + pid
+                # page_link = get_url("/gp_letter_attachment?pid=" + pid)
                 msg = frappe.render_template('one_fm/templates/emails/gp_letter_attachment.html', context={"page_link": page_link, "candidates": gp_letter_doc.gp_letter_candidates})
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-                recipient = 'omar.ja93@gmail.com'
+                recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
+
                 frappe.sendmail(sender=sender, recipients= recipient,
                     content=msg, subject="GP Letter Attachment", delayed=False)
+
+                gp_letter_doc.save(ignore_permissions=True)
+                frappe.db.commit()
+
             else:
                 
                 gp_letter_request = frappe.db.get_value("GP Letter Request", filters = {"pid": pid}, fieldname = "name")
 
-                page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
+                page_link = "http://206.189.228.82/desk#Form/GP Letter Request/" + cstr(gp_letter_request)
+                # page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
                 msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_rejected.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-                recipient = 'omar.ja93@gmail.com'
+
+                recipient = frappe.db.get_single_value('GP Letter Request Setting', 'travel_agent_email')
                 frappe.sendmail(sender=sender, recipients= recipient,
                     content=msg, subject="GP Letter Request Rejected", delayed=False)
-
 
 
             return 'success'

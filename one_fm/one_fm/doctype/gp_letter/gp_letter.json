@@ -18,6 +18,7 @@
   "gp_letter_info_section",
   "passport_attachment",
   "gp_letter_attachment",
+  "gp_letter_attachment_date",
   "column_break_12",
   "gp_status",
   "gp_letter_request_reference",
@@ -131,10 +132,16 @@
    "label": "Status",
    "options": "\nAccept\nReject",
    "read_only": 1
+  },
+  {
+   "fieldname": "gp_letter_attachment_date",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Attachment Date",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-06-01 20:55:17.945123",
+ "modified": "2020-06-09 12:55:34.163731",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "GP Letter",
@@ -149,6 +156,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest",
    "share": 1,
    "write": 1
   }

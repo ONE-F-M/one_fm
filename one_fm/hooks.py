@@ -145,23 +145,38 @@ has_website_permission = {
 
 scheduler_events = {
 	"15 * * * *": [
-		"one_fm.api.tasks.final_reminder",		
+		"one_fm.api.tasks.final_reminder"
 	],
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
 		'one_fm.utils.hooked_leave_allocation_builder',
-		'one_fm.utils.increase_daily_leave_balance'
-	],
-	"0 30 10 1/1 * ? *": [
-		'one_fm.utils.create_gp_letter_request'
-	],
-	"0 45 10 1/1 * ? *": [
-		'one_fm.utils.send_travel_agent_email'
+		'one_fm.utils.increase_daily_leave_balance',
+		'one_fm.utils.check_grp_operator_submission_daily'
 	],
 	"hourly": [
 		"one_fm.api.tasks.send_checkin_hourly_reminder",
-	]
+		'one_fm.utils.send_gp_letter_attachment_reminder3',
+		'one_fm.utils.send_gp_letter_reminder'
+	],
+	"cron": {
+		"30 10 * * *": [
+			'one_fm.utils.create_gp_letter_request'
+		],
+		"45 10 * * *": [
+			'one_fm.utils.send_travel_agent_email'
+		],
+		"0 4 * * *": [
+			'one_fm.utils.check_grp_operator_submission_four'
+		],
+		"30 4 * * *": [
+			'one_fm.utils.check_grp_operator_submission_four_half'
+		],
+		"0 8 * * *": [
+			'one_fm.utils.send_gp_letter_attachment_reminder2',
+			'one_fm.utils.send_gp_letter_attachment_no_response'
+		]
+	}
 }
 
 # scheduler_events = {
