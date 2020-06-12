@@ -31,7 +31,7 @@ frappe.ui.form.on('Operations Shift', {
 								data: [],
 							},	
 							{'fieldname': 'cb2', 'fieldtype': 'Column Break'},
-							{'label': 'Post Template', 'fieldname': 'post_template', 'fieldtype': 'Link', 'options': 'Post Type', onchange: function(){
+							{'label': 'Post Type', 'fieldname': 'post_template', 'fieldtype': 'Link', 'options': 'Post Type', onchange: function(){
 								let post_type = this.value;
 								if(post_type !== undefined){
 									frappe.call({
