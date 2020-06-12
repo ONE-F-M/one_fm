@@ -68,7 +68,7 @@ def final_reminder():
 			recipients = [recipient[0] for recipient in recipients]
 			subject = _("Final Reminder: Please checkin in the next five minutes.")
 			
-			message = _('<a class="btn btn-success" href="/desk#face-recognition">Check In</a><a class="btn btn-primary btn-info" href="/desk#Form/Shift%20Permission/New%20Shift%20Permission%201">Request for Permission</a>')
+			message = _('<a class="btn btn-success" href="/desk#face-recognition">Check In</a><a class="btn btn-primary btn-info" href="/desk#Form/Shift%20Permission/New%20Shift%20Permission%201">Planning to arrive late?</a>')
 			send_notification(subject, message, recipients)
 
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
@@ -91,7 +91,7 @@ def final_reminder():
 			print(recipients)
 
 			subject = _("Final Reminder: Please checkout in the next five minutes.")
-			message = _('<a class="btn btn-success" href="/desk#face-recognition">Check In</a>')
+			message = _('<a class="btn btn-success" href="/desk#face-recognition">Check Out</a>')
 			send_notification(subject, message, recipients)
 		
 

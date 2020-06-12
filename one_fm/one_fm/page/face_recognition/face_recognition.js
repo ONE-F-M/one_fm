@@ -175,7 +175,7 @@ function send_log(log_type, skip_attendance){
         video: {
             width: { ideal: 1024 },
             height: { ideal: 768 },
-            frameRate: {ideal: 30, max: 30},
+            frameRate: {ideal: 5, max: 10},
             facingMode: 'user'
         },
         audio: false

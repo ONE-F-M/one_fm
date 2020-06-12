@@ -156,16 +156,17 @@ def get_notification_user(doc):
 		Shift > Site > Project > Reports to
 	"""
 	operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
-	if operations_shift.shift_supervisor:
-		return get_employee_user_id(operations_shift.shift_supervisor)
+	if operations_shift.supervisor:
+		return get_employee_user_id(operations_shift.supervisor)
 	
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-	if operations_site.site_supervisor:
-		return get_employee_user_id(operations_site.site_supervisor)
+	if operations_site.account_supervisor:
+		return get_employee_user_id(operations_site.account_supervisor)
 
-	project = frappe.get_doc("Project", operations_site.project)
-	if project.account_manager:
-		return get_employee_user_id(project.account_manager)
+	if operations_site.project:
+		project = frappe.get_doc("Project", operations_site.project)
+		if project.account_manager:
+			return get_employee_user_id(project.account_manager)
 
 	reporting_manager = frappe.get_value("Employee", {"user_id": doc.owner}, "reports_to")
 	return get_employee_user_id(reporting_manager)
