@@ -147,11 +147,6 @@ has_website_permission = {
 # ---------------
 
 scheduler_events = {
-	"cron": {
-		"5 * * * *": [
-			"one_fm.api.tasks.final_reminder",		
-		],
-	},
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
@@ -165,6 +160,10 @@ scheduler_events = {
 		'one_fm.utils.send_gp_letter_reminder'
 	],
 	"cron": {
+		"0/5 * * * *": [
+			"one_fm.api.tasks.supervisor_reminder",		
+			"one_fm.api.tasks.final_reminder",
+		],
 		"30 10 * * *": [
 			'one_fm.utils.create_gp_letter_request'
 		],
