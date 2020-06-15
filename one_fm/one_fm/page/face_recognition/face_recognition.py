@@ -269,7 +269,7 @@ def verify_face(video_path=None):
 	# blink and then a second constant for the number of consecutive
 	# frames the eye must be below the threshold
 	EYE_AR_THRESH = 0.3
-	EYE_AR_CONSEC_FRAMES = 2
+	EYE_AR_CONSEC_FRAMES = 1
 	# initialize the frame counters and the total number of blinks
 	COUNTER = 0
 	TOTAL = 0

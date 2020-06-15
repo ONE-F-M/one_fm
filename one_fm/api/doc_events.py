@@ -24,7 +24,6 @@ def shift_after_insert(doc, method):
 	elif doc.start_time > doc.end_time:
 		pass 
 
-
 #Employee Checkin
 def employee_checkin_validate(doc, method):
 	try:
@@ -89,7 +88,6 @@ def checkin_after_insert(doc, method):
 
 			# ON TIME
 			elif get_datetime(doc.time) >= get_datetime(doc.shift_actual_start) and get_datetime(doc.time) <= (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
-				# print(doc.time, doc.shift_actual_start, doc.time, cstr((get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period))))
 				subject = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
 				message = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
 				for_users = [supervisor_user]
