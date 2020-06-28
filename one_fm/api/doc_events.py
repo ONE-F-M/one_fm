@@ -9,6 +9,7 @@ from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_sh
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 import datetime
 
+
 #Shift Type
 @frappe.whitelist()
 def naming_series(doc, method):
@@ -56,6 +57,7 @@ def employee_checkin_validate(doc, method):
 
 @frappe.whitelist()
 def checkin_after_insert(doc, method):
+	print("CALLED CHECKIN AFTER INSERT")
 	# These are returned according to dates. Time is not taken into account
 	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
 	
@@ -69,9 +71,10 @@ def checkin_after_insert(doc, method):
 			'start_datetime': doc.shift_start, 
 			'shift_type': shift_doc
 		})
+	# print("72", prev_shift.end_datetime, curr_shift.end_datetime, next_shift.end_datetime)
 	if curr_shift:
 		shift_type = frappe.get_doc("Shift Type", curr_shift.shift_type.name)
-		supervisor_user = get_notification_user(doc)
+		supervisor_user = get_notification_user(doc, doc.employee)
 		distance, radius = validate_location(doc)
 		message_suffix = _("Location logged is inside the site.") if distance <= radius else _("Location logged is {location}m outside the site location.").format(location=cstr(cint(distance)- radius))
 
@@ -110,8 +113,16 @@ def checkin_after_insert(doc, method):
 			create_notification_log(subject, message, for_users, doc)
 
 		elif doc.log_type == "OUT":
+			# Automatic checkout
+			if not doc.device_id:
+				from one_fm.api.tasks import send_notification
+				subject = _("Automated Checkout: {employee} forgot to checkout.".format(employee=doc.employee_name))
+				message = _('<a class="btn btn-primary" href="/desk#Form/Employee Checkin/{name}">Review check out</a>&nbsp; <br><div class="btn btn-primary btn-danger no-punch-out" id="{name}">Issue Penalty</div>'.format(name=doc.name))
+				for_users = [supervisor_user]
+				print("124", doc.employee, supervisor_user)
+				send_notification(subject, message, for_users)
 			#EARLY: Checkout time is before [Shift End - Early grace exit time] 
-			if get_datetime(doc.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
+			elif doc.device_id and get_datetime(doc.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
 				time_diff = get_datetime(curr_shift.end_datetime) - get_datetime(doc.time)
 				hrs, mins, secs = cstr(time_diff).split(":")
 				early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
@@ -121,14 +132,14 @@ def checkin_after_insert(doc, method):
 				create_notification_log(subject, message, for_users, doc)
 
 			# ON TIME
-			elif get_datetime(doc.time) <= get_datetime(doc.shift_actual_end) and get_datetime(doc.time) >= (get_datetime(doc.shift_end) - timedelta(minutes=shift_type.early_exit_grace_period)):
+			elif doc.device_id and get_datetime(doc.time) <= get_datetime(doc.shift_actual_end) and get_datetime(doc.time) >= (get_datetime(doc.shift_end) - timedelta(minutes=shift_type.early_exit_grace_period)):
 				subject = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
 				message = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
 			# LATE: Checkin time is after [Shift End + Variable checkout time]
-			elif get_datetime(doc.time) > get_datetime(doc.shift_actual_end):
+			elif doc.device_id and get_datetime(doc.time) > get_datetime(doc.shift_actual_end):
 				time_diff = get_datetime(doc.time) - get_datetime(doc.shift_end)
 				hrs, mins, secs = cstr(time_diff).split(":")
 				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
@@ -149,24 +160,33 @@ def checkin_after_insert(doc, method):
 			create_notification_log(subject, message, for_users, doc)
 
 
-def get_notification_user(doc):
+def get_notification_user(doc, employee=None):
 	"""
 		Shift > Site > Project > Reports to
 	"""
 	operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
+	print(operations_shift.supervisor, operations_shift.name)
 	if operations_shift.supervisor:
-		return get_employee_user_id(operations_shift.supervisor)
+		supervisor = get_employee_user_id(operations_shift.supervisor)
+		if supervisor != doc.owner:
+			return supervisor
 	
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
+	print(operations_site.account_supervisor, operations_site.name)
 	if operations_site.account_supervisor:
-		return get_employee_user_id(operations_site.account_supervisor)
-
+		account_supervisor = get_employee_user_id(operations_site.account_supervisor)
+		if account_supervisor != doc.owner:
+			return account_supervisor
+	
 	if operations_site.project:
 		project = frappe.get_doc("Project", operations_site.project)
+		print(project.account_manager, project.name)
 		if project.account_manager:
-			return get_employee_user_id(project.account_manager)
-
-	reporting_manager = frappe.get_value("Employee", {"user_id": doc.owner}, "reports_to")
+			account_manager = get_employee_user_id(project.account_manager)
+			if account_manager != doc.owner:
+				return account_manager
+	reporting_manager = frappe.get_value("Employee", {"name": employee}, "reports_to")
+	print("191", employee, doc.owner, reporting_manager)
 	return get_employee_user_id(reporting_manager)
 
 def validate_location(doc):
@@ -234,7 +254,7 @@ def get_closest_location(time, location):
 
 	#Get the closest site according to the checkin location
 	site = frappe.db.sql("""
-    	SELECT
+		SELECT
 			(((acos(
 				sin(( {latitude} * pi() / 180))
 				*
