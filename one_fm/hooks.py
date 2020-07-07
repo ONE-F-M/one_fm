@@ -157,7 +157,10 @@ scheduler_events = {
 		'one_fm.utils.pam_authorized_signatory',
 		'one_fm.utils.hooked_leave_allocation_builder',
 		'one_fm.utils.increase_daily_leave_balance',
-		'one_fm.utils.check_grp_operator_submission_daily'
+		'one_fm.utils.check_grp_operator_submission_daily',
+		'one_fm.utils.check_grp_supervisor_submission_daily',
+		'one_fm.utils.check_pam_visa_approval_submission_daily',
+		'one_fm.utils.check_upload_original_visa_submission_daily'
 	],
 	"hourly": [
 		"one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -180,6 +183,27 @@ scheduler_events = {
 		"0 8 * * *": [
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response'
+		],
+		"0 9 * * *": [
+			'one_fm.utils.check_upload_tasriah_submission_nine'
+		],
+		"0 11 * * *": [
+			'one_fm.utils.check_upload_tasriah_reminder1'
+		],
+		"0 10 * * *": [
+			'one_fm.utils.check_upload_tasriah_reminder2'
+		],
+		"30 6 * * *": [
+			'one_fm.utils.check_pam_visa_approval_submission_six_half'
+		],
+		"0 7 * * *": [
+			'one_fm.utils.check_pam_visa_approval_submission_seven'
+		],
+		"30 12 * * *": [
+			'one_fm.utils.check_upload_original_visa_submission_reminder1'
+		],
+		"0 13 * * *": [
+			'one_fm.utils.check_upload_original_visa_submission_reminder2'
 		]
 	}
 }

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56.457" height="61.067" viewBox="0 0 56.457 61.067">
+  <g id="service5" transform="translate(-753.825 -2653.978)">
+    <g id="Group_44" data-name="Group 44">
+      <g id="Group_41" data-name="Group 41">
+        <rect id="Rectangle_8" data-name="Rectangle 8" width="9.127" height="34.827" transform="translate(806.387 2693.563) rotate(-180)" fill="#4c5157"/>
+        <path id="Path_32" data-name="Path 32" d="M761.889,2672H773.3a10.547,10.547,0,0,1,10.547,10.547v11.021h-9.127v-10.935a1.506,1.506,0,0,0-1.506-1.507H761.889Z" fill="#4c5157"/>
+        <path id="Path_33" data-name="Path 33" d="M783.85,2683.36v15.961a6.705,6.705,0,0,0,6.705,6.7h0a6.705,6.705,0,0,0,6.705-6.7V2683.36h9.148V2699.2a15.843,15.843,0,0,1-15.842,15.843h0a15.843,15.843,0,0,1-15.843-15.843V2683.36Z" fill="#4c5157"/>
+        <rect id="Rectangle_9" data-name="Rectangle 9" width="16.919" height="5.618" transform="translate(787.746 2693.563) rotate(-180)" fill="#929698"/>
+        <rect id="Rectangle_10" data-name="Rectangle 10" width="16.919" height="5.618" transform="translate(810.283 2693.563) rotate(-180)" fill="#929698"/>
+        <rect id="Rectangle_11" data-name="Rectangle 11" width="16.919" height="5.618" transform="translate(810.283 2659.596) rotate(-180)" fill="#929698"/>
+      </g>
+      <g id="Group_43" data-name="Group 43">
+        <g id="Group_42" data-name="Group 42">
+          <circle id="Ellipse_3" data-name="Ellipse 3" cx="5.472" cy="5.472" r="5.472" transform="translate(753.825 2684.006)" fill="#fff"/>
+          <path id="Path_34" data-name="Path 34" d="M759.3,2680.938l4.294,5.154-6.979,1.358-1.437-1.564Z" fill="#fff"/>
+        </g>
+      </g>
+    </g>
+    <rect id="Rectangle_12" data-name="Rectangle 12" width="5.494" height="9.127" transform="translate(764.792 2681.121) rotate(-180)" fill="#929698"/>
+  </g>
+</svg>

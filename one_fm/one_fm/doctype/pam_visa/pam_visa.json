@@ -9,6 +9,7 @@
   "pam_visa_reminder1",
   "pam_visa_reminder2",
   "column_break_4",
+  "grd_operator_status",
   "pam_visa_submitted",
   "pam_visa_reminder2_start",
   "pam_visa_reminder2_done",
@@ -16,15 +17,41 @@
   "pam_visa_reminder_supervisor",
   "column_break_10",
   "pam_visa_submitted_supervisor",
+  "section_tasriah_09",
+  "upload_tasriah_reminder1",
+  "upload_tasriah_reminder2",
+  "upload_tasrih_col",
+  "upload_tasriah_status",
+  "tasriah",
+  "upload_tasriah_submitted",
+  "upload_tasriah_reminder2_start",
+  "upload_tasriah_reminder2_done",
   "section_break_4",
   "pam_visa_application",
   "candidate_full_name",
+  "visa_application_rejected",
   "column_break_3",
   "status",
   "pam_file_number",
   "column_break_6",
   "reason_of_rejection",
   "pam_designation",
+  "pam_visa_approval_section",
+  "pam_visa_approval_reminder1",
+  "pam_visa_approval_reminder2",
+  "pam_visa_approval_col",
+  "pam_visa_approval_status",
+  "pam_visa_approval_submitted",
+  "pam_visa_approval_reminder2_start",
+  "pam_visa_approval_reminder2_done",
+  "original_visa_section",
+  "upload_original_visa_reminder1",
+  "upload_original_visa_reminder2",
+  "original_visa_col",
+  "upload_original_visa_status",
+  "upload_original_visa_submitted",
+  "upload_original_visa_reminder2_start",
+  "upload_original_visa_reminder2_done",
   "section_break_7",
   "english_first_name",
   "english_second_name",
@@ -174,7 +201,7 @@
   },
   {
    "fieldname": "date_of_birth",
-   "fieldtype": "Data",
+   "fieldtype": "Date",
    "label": "Date of Birth"
   },
   {
@@ -203,12 +230,12 @@
   },
   {
    "fieldname": "date_of_issuance",
-   "fieldtype": "Data",
+   "fieldtype": "Date",
    "label": "Date of Issuance"
   },
   {
    "fieldname": "date_of_expiry",
-   "fieldtype": "Data",
+   "fieldtype": "Date",
    "label": "Date of Expiry"
   },
   {
@@ -241,7 +268,7 @@
   },
   {
    "fieldname": "submit_date",
-   "fieldtype": "Data",
+   "fieldtype": "Datetime",
    "label": "Date / Time"
   },
   {
@@ -256,7 +283,7 @@
   },
   {
    "fieldname": "pam_visa_application_date",
-   "fieldtype": "Data",
+   "fieldtype": "Datetime",
    "label": "Date / Time"
   },
   {
@@ -290,7 +317,7 @@
   },
   {
    "fieldname": "pam_visa_date",
-   "fieldtype": "Data",
+   "fieldtype": "Datetime",
    "label": "Date / Time"
   },
   {
@@ -367,9 +394,165 @@
    "fieldname": "pam_visa_submitted_supervisor",
    "fieldtype": "Check",
    "label": "Pam Visa Submitted"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "grd_operator_status",
+   "fieldtype": "Select",
+   "label": "GRD Operator Status",
+   "options": "Pending\nDone\nNo Response",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_tasriah_09",
+   "fieldtype": "Section Break",
+   "label": "Upload Tasriah(GRD Operator)"
+  },
+  {
+   "fieldname": "upload_tasriah_reminder1",
+   "fieldtype": "Datetime",
+   "label": "Upload Tasriah Reminder1"
+  },
+  {
+   "fieldname": "upload_tasriah_reminder2",
+   "fieldtype": "Datetime",
+   "label": "Upload Tasriah Reminder2"
+  },
+  {
+   "fieldname": "upload_tasrih_col",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "upload_tasriah_status",
+   "fieldtype": "Select",
+   "label": "Upload Tasriah Status",
+   "options": "Pending\nDone\nNo Response",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "upload_tasriah_submitted",
+   "fieldtype": "Check",
+   "label": "Upload Tasriah Submitted"
+  },
+  {
+   "default": "0",
+   "fieldname": "upload_tasriah_reminder2_start",
+   "fieldtype": "Check",
+   "label": "Upload Tasriah Reminder2 Start"
+  },
+  {
+   "default": "0",
+   "fieldname": "upload_tasriah_reminder2_done",
+   "fieldtype": "Check",
+   "label": "Upload Tasriah Reminder2 Done"
+  },
+  {
+   "fieldname": "tasriah",
+   "fieldtype": "Attach",
+   "label": "Tasriah"
+  },
+  {
+   "default": "0",
+   "fieldname": "visa_application_rejected",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Visa Application Rejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pam_visa_approval_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Visa Approval(GRD Operator)"
+  },
+  {
+   "fieldname": "pam_visa_approval_reminder1",
+   "fieldtype": "Datetime",
+   "label": "PAM Visa Approval Reminder1"
+  },
+  {
+   "fieldname": "pam_visa_approval_reminder2",
+   "fieldtype": "Datetime",
+   "label": "PAM Visa Approval Reminder2"
+  },
+  {
+   "fieldname": "pam_visa_approval_col",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "pam_visa_approval_status",
+   "fieldtype": "Select",
+   "label": "PAM Visa Approval Status",
+   "options": "Pending\nDone\nNo Response",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "pam_visa_approval_submitted",
+   "fieldtype": "Check",
+   "label": "PAM Visa Approval Submitted"
+  },
+  {
+   "default": "0",
+   "fieldname": "pam_visa_approval_reminder2_start",
+   "fieldtype": "Check",
+   "label": "PAM Visa Approval Reminder2 Start"
+  },
+  {
+   "default": "0",
+   "fieldname": "pam_visa_approval_reminder2_done",
+   "fieldtype": "Check",
+   "label": "PAM Visa Approval Reminder2 Done"
+  },
+  {
+   "fieldname": "original_visa_section",
+   "fieldtype": "Section Break",
+   "label": "Upload Original Visa(GRD Operator)"
+  },
+  {
+   "fieldname": "upload_original_visa_reminder1",
+   "fieldtype": "Datetime",
+   "label": "Upload Original Visa Reminder1"
+  },
+  {
+   "fieldname": "upload_original_visa_reminder2",
+   "fieldtype": "Datetime",
+   "label": "Upload Original Visa Reminder2"
+  },
+  {
+   "fieldname": "original_visa_col",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "upload_original_visa_status",
+   "fieldtype": "Select",
+   "label": "Upload Original Visa Status",
+   "options": "Pending\nDone\nNo Response",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "upload_original_visa_submitted",
+   "fieldtype": "Check",
+   "label": "Upload Original Visa Submitted"
+  },
+  {
+   "default": "0",
+   "fieldname": "upload_original_visa_reminder2_start",
+   "fieldtype": "Check",
+   "label": "Upload Original Visa Reminder2 Start"
+  },
+  {
+   "default": "0",
+   "fieldname": "upload_original_visa_reminder2_done",
+   "fieldtype": "Check",
+   "label": "Upload Original Visa Reminder2 Done"
   }
  ],
- "modified": "2020-06-11 00:30:18.430648",
+ "modified": "2020-07-01 00:11:03.511110",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "PAM Visa",
