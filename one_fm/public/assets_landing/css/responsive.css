@@ -1,0 +1,258 @@
+@media (min-width:1400px) {
+	.container, .container-sm, .container-md, .container-lg, .container-xl {
+		max-width: 1550px;
+	}
+	.main_menu {
+		margin-left: 50px;
+	}
+	.main_menu > li > a{
+		font-size: 17px;
+	}
+	.logo-site img {
+		width: 130px;
+	}
+	.home_title h1{
+		font-size: 40px;
+	}
+	.home_title p, .home_title a, .link, .client-title p, .job-info a{
+		font-size: 18px;
+	}
+	.ab-title h1{
+		font-size: 40px;
+	}
+	.ab-title p {
+		font-size: 18px;
+		line-height: 30px;
+	}
+	.txt-serv h4{
+		font-size: 21px;
+	}
+	.txt-serv p {
+		font-size: 16px;
+		line-height: 25px;
+		overflow: hidden;
+	}
+	.client-title h1{
+		font-size: 40px;
+	}
+	.job-info h5{
+		font-size: 23px;
+	}
+	.job-info p {
+		font-size: 16px;
+		margin-bottom: 80px;
+	}
+	.job-note p {
+		line-height: 28px;
+		color: #fff;
+		font-size: 18px;
+	}
+	.title-contact h5{
+		font-size: 25px;
+	}
+	.title-contact p {
+		color: #fff;
+		margin-bottom: 15px;
+		line-height: 25px;
+		font-size: 17px;
+	}
+	.form-contact .form-group input, .form-contact .form-group textarea{
+		font-size: 16px;
+	}
+	.txt-footer p {
+		color: #fff;
+		line-height: 25px;
+		font-size: 16px;
+	}
+	.txt-footer ul li{
+		font-size: 15px;
+	}
+	.section_home:after {
+		top: 150px;
+		right: 360px;
+	}
+	.section_about:after {
+		left: 120px;
+		width: 970px;
+	}
+	#header.fixed-header {
+		padding: 25px 0;
+	}
+	#header.fixed-header .logo-site {
+		width: 130px;
+	}
+	.sec-counter {
+		transform: translateX(-50%);
+	}
+    .job-note h5::after {
+        right: 510px;
+    }
+    .section_jobs {
+        padding: 170px 0 0;
+    }
+}
+@media screen and (max-width: 1170px)  {
+	
+}
+@media screen and (max-width: 657px){
+
+}
+@media screen and (max-width: 991px) {
+	.head_right{
+		display: none;
+	}
+	.hamburger{
+		display: block;
+	}
+    body {
+        overflow: auto;
+    }
+	.social_links{
+		display: table;
+		margin: 20px auto;
+		float: none;
+	}
+	.section_services{
+		padding: 10px 0 0;
+		height: auto;
+	}
+	.last {
+		margin-bottom: 70px;
+	}
+	.section_client::after{
+		top: 500px;
+		width: 100%;
+		height: 400px;
+	}
+	.faq_item{
+		padding: 0;
+	}
+	.section_faq{
+		padding: 60px 0;
+	}
+	.main_menu{
+		display: none;
+	}
+	.sec-client{
+		height: 250px;
+	}
+    .section_client video {
+        width: 100%;
+    }
+    .section_client:before {
+        width: 100%;
+        z-index: 1;
+    }
+	.sec-counter {
+	    position: initial;
+	}
+    .counter {
+        justify-content: center;
+        margin-top: 50px;
+    }
+    .number-count:nth-child(2), .number-count:nth-child(4) {
+        margin-right: 0
+    }
+    .line::before {
+        left: 130px;
+    }
+    .line::after {
+        left: 85px;
+    }
+    .section_client .container {
+        position: relative;
+        z-index: 5;
+    }
+    .number-count {
+        position: relative;
+    }
+	.job-info {
+		height: 200px;
+	}
+	.section_jobs::after {
+		width: 350px;
+		bottom: 120px;
+	}
+	.home_title h1 {
+		font-size: 25px;
+	}
+	.txt-footer {
+		margin-right: 0;
+		margin-bottom: 20px;
+		width: 50%;
+	}
+	.box-footer{
+		flex-wrap: wrap;
+	}
+	.contact-map{
+		display: none;
+	}
+}
+@media screen and (max-width: 767px) {
+	.home_title {
+		position: unset;
+		width: 100%;
+		margin-top: 25px;
+	}
+	.home_txt img {
+		width: 100%;
+	}
+	.home_txt {
+		position: unset;
+	}
+	.flex-home {
+		flex-direction: column;
+	}
+	.home_title a {
+		text-align: left;
+	}
+	#header{
+		background-color:rgb(19, 18, 19);
+	}
+	.section_about {
+		padding: 40px 0 ;
+		min-height: auto;
+	}
+	.section_home{
+		min-height: 10vh;
+	}
+    .section_about:after {
+        left: 0;
+        width: 100%;
+    }
+    .section_home:after {
+        display: none;
+    }
+    .ab-img img{
+        width: 100%
+    }
+    .ab-img {
+        height: auto;
+    }
+	.link{
+		height: 100px;
+	}
+	.ab-img {
+		justify-content: center;
+		margin-top: 40px;
+	}
+}
+
+@media screen and (max-width: 575px) {
+	.home_txt > h2{
+		font-size: 24px;
+	}
+	.buttons_store{
+		margin-top: 30px;
+	}
+}
+@media screen and (max-width: 380px) {
+	.buttons_store > li > a{
+		border:2px solid transparent;
+		font-size: 15px;
+		padding: 8px 13px;
+	}
+	.buttons_store > li > a > i{
+		margin-right: 6px;
+	}
+}

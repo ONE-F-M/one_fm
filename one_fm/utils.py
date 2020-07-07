@@ -27,6 +27,190 @@ from frappe import utils
 
 
 
+
+def check_upload_original_visa_submission_reminder2():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.upload_original_visa_reminder2_done = 0
+        pam_visa_doc.upload_original_visa_status = 'No Response'
+        pam_visa_doc.upload_original_visa_reminder2 = frappe.utils.now()
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
+        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
+        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
+
+        frappe.sendmail(sender=sender, recipients= recipient,
+            content=msg, subject="PAM Visa Reminder", delayed=False)
+
+
+
+def check_upload_original_visa_submission_reminder1():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_start=1")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.upload_original_visa_reminder1 = frappe.utils.now()
+        pam_visa_doc.upload_original_visa_reminder2_start = 0
+        pam_visa_doc.upload_original_visa_reminder2_done = 1
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
+        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
+        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
+        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
+
+        frappe.sendmail(sender=sender, recipients= recipient,
+            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
+
+
+
+
+
+def check_upload_original_visa_submission_daily():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_start=0 and upload_original_visa_reminder2_done=0 and upload_original_visa_status!='No Response' and pam_visa_approval_submitted=1")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.upload_original_visa_reminder2_start = 1
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+
+
+
+def check_pam_visa_approval_submission_seven():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_approval_submitted=0 and pam_visa_approval_reminder2_done=1")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.pam_visa_approval_reminder2_done = 0
+        pam_visa_doc.pam_visa_approval_status = 'No Response'
+        pam_visa_doc.pam_visa_approval_reminder2 = frappe.utils.now()
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
+        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
+        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
+
+        frappe.sendmail(sender=sender, recipients= recipient,
+            content=msg, subject="PAM Visa Reminder", delayed=False)
+
+
+
+
+def check_pam_visa_approval_submission_six_half():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_approval_submitted=0 and pam_visa_approval_reminder2_start=1")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.pam_visa_approval_reminder1 = frappe.utils.now()
+        pam_visa_doc.pam_visa_approval_reminder2_start = 0
+        pam_visa_doc.pam_visa_approval_reminder2_done = 1
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
+        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
+        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
+        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
+
+        frappe.sendmail(sender=sender, recipients= recipient,
+            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
+
+
+
+
+
+def check_pam_visa_approval_submission_daily():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_approval_submitted=0 and pam_visa_approval_reminder2_start=0 and pam_visa_approval_reminder2_done=0 and pam_visa_approval_status!='No Response' and status='Apporved'")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.pam_visa_approval_reminder2_start = 1
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+
+def check_upload_tasriah_reminder2():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_tasriah_submitted=0 and upload_tasriah_reminder2_done=1")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.upload_tasriah_reminder2_done = 0
+        pam_visa_doc.upload_tasriah_status = 'No Response'
+        pam_visa_doc.upload_tasriah_reminder2 = frappe.utils.now()
+        pam_visa_doc.save(ignore_permissions = True)
+
+        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
+        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
+        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
+
+        frappe.sendmail(sender=sender, recipients= recipient,
+            content=msg, subject="PAM Visa Reminder", delayed=False)
+
+
+
+
+
+def check_upload_tasriah_reminder1():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_tasriah_submitted=0 and upload_tasriah_reminder2_start=1")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+        pam_visa_doc.upload_tasriah_reminder1 = frappe.utils.now()
+        pam_visa_doc.upload_tasriah_reminder2_start = 0
+        pam_visa_doc.upload_tasriah_reminder2_done = 1
+        pam_visa_doc.save(ignore_permissions = True)
+
+
+        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
+        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
+        sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
+        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
+
+        frappe.sendmail(sender=sender, recipients= recipient,
+            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
+
+
+
+
+
+def check_upload_tasriah_submission_nine():
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted_supervisor=1 and upload_tasriah_submitted=0 and upload_tasriah_reminder2_start=0 and upload_tasriah_reminder2_done=0 and upload_tasriah_status!='No Response'")
+
+    for pam_visa in pam_visas:
+        pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
+
+        after_two_days = add_days(pam_visa_doc.pam_visa_reminder_supervisor, 2)
+
+        get_defferent = date_diff(frappe.utils.now(), after_two_days)
+
+        if get_defferent>=0:
+            pam_visa_doc.upload_tasriah_reminder2_start = 1
+            pam_visa_doc.save(ignore_permissions = True)
+
+
+
+
+
 def check_grp_supervisor_submission_daily():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=1 and pam_visa_submitted_supervisor=0")
 
@@ -39,19 +223,20 @@ def check_grp_supervisor_submission_daily():
         # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Supervisor'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
-        cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
+        recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
         frappe.sendmail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder",cc=cc, delayed=False)
+            content=msg, subject="PAM Visa Reminder", delayed=False)
 
 
 def check_grp_operator_submission_four_half():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_reminder2_done=1")
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0 and pam_visa_reminder2_done=1")
 
     for pam_visa in pam_visas:
         pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
         pam_visa_doc.pam_visa_reminder2_done = 0
+        pam_visa_doc.grd_operator_status = 'No Response'
+        pam_visa_doc.pam_visa_reminder2 = frappe.utils.now()
         pam_visa_doc.save(ignore_permissions = True)
 
 
@@ -68,11 +253,11 @@ def check_grp_operator_submission_four_half():
 
 
 def check_grp_operator_submission_four():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_reminder2_start=1")
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0 and pam_visa_reminder2_start=1")
 
     for pam_visa in pam_visas:
         pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
-        pam_visa_doc.pam_visa_reminder2 = frappe.utils.now()
+        pam_visa_doc.pam_visa_reminder1 = frappe.utils.now()
         pam_visa_doc.pam_visa_reminder2_start = 0
         pam_visa_doc.pam_visa_reminder2_done = 1
         pam_visa_doc.save(ignore_permissions = True)
@@ -91,14 +276,12 @@ def check_grp_operator_submission_four():
 
 
 def check_grp_operator_submission_daily():
-    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0")
+    pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0 and pam_visa_reminder2_start=0 and pam_visa_reminder2_done=0 and grd_operator_status!='No Response'")
 
     for pam_visa in pam_visas:
         pam_visa_doc = frappe.get_doc("PAM Visa", pam_visa)
         pam_visa_doc.pam_visa_reminder2_start = 1
         pam_visa_doc.save(ignore_permissions = True)
-
-
 
 
 
@@ -111,7 +294,9 @@ def send_gp_letter_attachment_reminder2():
         if gp_letter_doc.upload_reminder1 and not gp_letter_doc.upload_reminder2:
             after_three_days = add_days(gp_letter_doc.upload_reminder1, 3)
 
-            get_defferent = date_diff(gp_letter_doc.upload_reminder1, after_three_days)
+            get_defferent = date_diff(getdate(nowdate()), after_three_days)
+            # if get_datetime(frappe.utils.now())>=get_datetime(after_three_days):
+
             if get_defferent>=0:
 
                 grd_name = frappe.db.get_single_value('GP Letter Request Setting', 'grd_name')
