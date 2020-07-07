@@ -34,7 +34,8 @@ app_include_js = [
 doctype_js = {
 	"Location" : "public/js/doctype_js/location.js",
 	"Shift Type" : "public/js/doctype_js/shift_type.js",
-	"Project": "public/js/doctype_js/project.js"
+	"Project": "public/js/doctype_js/project.js",
+	"Notification Log": "public/js/doctype_js/notification_log.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -147,11 +148,6 @@ has_website_permission = {
 # ---------------
 
 scheduler_events = {
-	"cron": {
-		"5 * * * *": [
-			"one_fm.api.tasks.final_reminder",		
-		],
-	},
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
@@ -163,11 +159,16 @@ scheduler_events = {
 		'one_fm.utils.check_upload_original_visa_submission_daily'
 	],
 	"hourly": [
-		"one_fm.api.tasks.send_checkin_hourly_reminder",
+		# "one_fm.api.tasks.send_checkin_hourly_reminder",
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
 		'one_fm.utils.send_gp_letter_reminder'
 	],
 	"cron": {
+		"0/5 * * * *": [
+			"one_fm.api.tasks.supervisor_reminder",		
+			"one_fm.api.tasks.final_reminder",
+			"one_fm.api.tasks.automatic_checkout"
+		],
 		"30 10 * * *": [
 			'one_fm.utils.create_gp_letter_request'
 		],
@@ -234,7 +235,7 @@ scheduler_events = {
 fixtures = [
 	{
 		"dt": "Custom Field",
-		# 'filters': [['fieldname', 'in', ['one_fm_applicant_is_overseas_or_local', 'one_fm_is_transferable']]]
+		# 'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]	
 	},
 	{
 		"dt": "Property Setter"
