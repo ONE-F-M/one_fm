@@ -5,6 +5,8 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "section_break_1",
+  "candidate_country_process",
   "pam_visa_section15",
   "pam_visa_reminder1",
   "pam_visa_reminder2",
@@ -63,8 +65,8 @@
   "arabic_last_name",
   "column_break_16",
   "nationality",
-  "maritial_status",
-  "type",
+  "marital_status",
+  "gender",
   "religion",
   "place_of_birth",
   "date_of_birth",
@@ -108,8 +110,9 @@
   },
   {
    "fieldname": "reason_of_rejection",
-   "fieldtype": "Data",
-   "label": "Reason of Rejection"
+   "fieldtype": "Select",
+   "label": "Reason of Rejection",
+   "options": "\nThe Name Entered is Invalid\nThe Attachment  not Found ( GP Letter )\nThe Passport Copy attached was Clear\nOther reasons for rejection"
   },
   {
    "fieldname": "candidate_full_name",
@@ -180,19 +183,10 @@
    "label": "Nationality"
   },
   {
-   "fieldname": "maritial_status",
-   "fieldtype": "Data",
-   "label": "Maritial Status"
-  },
-  {
-   "fieldname": "type",
-   "fieldtype": "Data",
-   "label": "Type"
-  },
-  {
    "fieldname": "religion",
-   "fieldtype": "Data",
-   "label": "Religion"
+   "fieldtype": "Select",
+   "label": "Religion",
+   "options": "\nChristian\nHindu\nIslam\nParsi"
   },
   {
    "fieldname": "place_of_birth",
@@ -220,13 +214,15 @@
   },
   {
    "fieldname": "passport_type",
-   "fieldtype": "Data",
-   "label": "Passport Type"
+   "fieldtype": "Select",
+   "label": "Passport Type",
+   "options": "\nDiplomat\nNormal"
   },
   {
    "fieldname": "passport_nationality",
-   "fieldtype": "Data",
-   "label": "Passport Nationality"
+   "fieldtype": "Link",
+   "label": "Passport Nationality",
+   "options": "Country"
   },
   {
    "fieldname": "date_of_issuance",
@@ -245,7 +241,7 @@
   },
   {
    "fieldname": "basic_salary",
-   "fieldtype": "Data",
+   "fieldtype": "Currency",
    "label": "Basic Salary"
   },
   {
@@ -550,9 +546,33 @@
    "fieldname": "upload_original_visa_reminder2_done",
    "fieldtype": "Check",
    "label": "Upload Original Visa Reminder2 Done"
+  },
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "candidate_country_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Candidate Country Process",
+   "options": "Candidate Country Process",
+   "reqd": 1
+  },
+  {
+   "fieldname": "marital_status",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "\nSingle\nMarried\nDivorced\nWidowed"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
   }
  ],
- "modified": "2020-07-01 00:11:03.511110",
+ "modified": "2020-07-14 23:32:36.428026",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "PAM Visa",

@@ -3,8 +3,18 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-# import frappe
+import frappe
 from frappe.model.document import Document
 
 class CandidateCountryProcess(Document):
-	pass
+    def get_candidate_passport_number(self):
+        if self.candidate_country_process:
+            candidate_country_process_doc = frappe.get_doc("Candidate Country Process", self.candidate_country_process)
+            candidate_country_process_doc.status = "Failes"
+            candidate_country_process_doc.save(ignore_permissions=True)
+
+
+        job_applicant_name = frappe.get_value("Job Offer", {"name": self.applicant}, "job_applicant")
+
+        doc = frappe.get_doc("Job Applicant", job_applicant_name)
+        return doc.one_fm_passport_number

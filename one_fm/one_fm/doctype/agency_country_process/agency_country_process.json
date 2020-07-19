@@ -1,14 +1,66 @@
 {
- "creation": "2020-01-10 14:56:14.520517",
+ "autoname": "ACP.###",
+ "creation": "2020-07-07 16:09:20.080308",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "agency",
+  "agency_name",
+  "phone_type",
+  "country_code",
+  "phone_number",
+  "column_break_6",
   "country",
-  "processes",
+  "city",
+  "state",
+  "extension_number",
+  "column_break_11",
+  "address_1",
+  "address_2",
+  "address_3",
+  "postal_code",
+  "section_break_3",
+  "agency_process_details",
   "total_duration"
  ],
  "fields": [
+  {
+   "fieldname": "agency",
+   "fieldtype": "Link",
+   "label": "Agency",
+   "options": "Agency",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "agency.agency",
+   "fieldname": "agency_name",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Agency Name"
+  },
+  {
+   "fieldname": "phone_type",
+   "fieldtype": "Select",
+   "label": "Phone Type",
+   "options": "\nOffice\nMobile",
+   "reqd": 1
+  },
+  {
+   "fieldname": "country_code",
+   "fieldtype": "Data",
+   "label": "Country Code"
+  },
+  {
+   "fieldname": "phone_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone Number"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
   {
    "fieldname": "country",
    "fieldtype": "Link",
@@ -17,26 +69,81 @@
    "options": "Country"
   },
   {
-   "fieldname": "processes",
+   "fieldname": "city",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Processes"
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State"
+  },
+  {
+   "fieldname": "extension_number",
+   "fieldtype": "Data",
+   "label": "Extension Number"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "address_1",
+   "fieldtype": "Data",
+   "label": "Address 1"
+  },
+  {
+   "fieldname": "address_2",
+   "fieldtype": "Data",
+   "label": "Address 2"
+  },
+  {
+   "fieldname": "address_3",
+   "fieldtype": "Data",
+   "label": "Address 3"
+  },
+  {
+   "fieldname": "postal_code",
+   "fieldtype": "Data",
+   "label": "Postal Code"
+  },
+  {
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "agency_process_details",
+   "fieldtype": "Table",
+   "label": "Agency Process Details",
+   "options": "Agency Process Details"
   },
   {
    "fieldname": "total_duration",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Total Duration"
+   "fieldtype": "Float",
+   "label": "Total Duration",
+   "read_only": 1
   }
  ],
- "istable": 1,
- "modified": "2020-01-10 14:57:35.974880",
+ "modified": "2020-07-07 16:09:50.061043",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Agency Country Process",
  "owner": "Administrator",
- "permissions": [],
- "quick_entry": 1,
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

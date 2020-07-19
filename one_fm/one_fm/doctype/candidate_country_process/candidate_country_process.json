@@ -5,17 +5,26 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "applicant",
+  "candidate_name",
+  "candidate_passport_number",
+  "column_break_4",
+  "status",
+  "agency_country_process",
   "agency",
-  "country_process",
+  "agency_name",
+  "erf",
   "section_break_3",
   "agency_process_details"
  ],
  "fields": [
   {
+   "fetch_from": "country_process.agency",
    "fieldname": "agency",
    "fieldtype": "Link",
    "label": "Agency",
-   "options": "Agency"
+   "options": "Agency",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_3",
@@ -28,13 +37,61 @@
    "options": "Candidate Country Process Details"
   },
   {
-   "fieldname": "country_process",
+   "fieldname": "applicant",
    "fieldtype": "Link",
-   "label": "Country Process",
-   "options": "Country Process"
+   "in_list_view": 1,
+   "label": "Applicant",
+   "options": "Job Offer"
+  },
+  {
+   "fetch_from": "applicant.applicant_name",
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "candidate_passport_number",
+   "fieldtype": "Data",
+   "label": "Candidate Passport Number",
+   "read_only": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nApproved\nRejected\nFailes"
+  },
+  {
+   "fetch_from": "country_process.agency_name",
+   "fieldname": "agency_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Agency Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "erf",
+   "fieldtype": "Data",
+   "label": "ERF"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "agency_country_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Agency Country Process",
+   "options": "Agency Country Process",
+   "reqd": 1
   }
  ],
- "modified": "2020-06-05 01:47:14.474571",
+ "modified": "2020-07-07 17:29:37.793567",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process",

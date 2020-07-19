@@ -1,5 +1,4 @@
 {
- "actions": [],
  "autoname": "AG-.####",
  "creation": "2020-01-10 14:29:46.733063",
  "doctype": "DocType",
@@ -25,9 +24,7 @@
   "attach_copy_of_agency_license",
   "verify_copy_of_agency_license",
   "attachments_cb",
-  "passport_copy_of_agency_signatory",
-  "section_break_12",
-  "agency_country_process"
+  "passport_copy_of_agency_signatory"
  ],
  "fields": [
   {
@@ -40,6 +37,7 @@
   {
    "fieldname": "country",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Country",
    "options": "Country",
    "reqd": 1
@@ -59,18 +57,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "section_break_12",
-   "fieldtype": "Section Break",
-   "hidden": 1,
-   "label": "License"
-  },
-  {
-   "fieldname": "agency_country_process",
-   "fieldtype": "Table",
-   "label": "Agency Country Process",
-   "options": "Agency Country Process"
-  },
-  {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
   },
@@ -83,7 +69,6 @@
   {
    "fieldname": "agency_job_application_passcode",
    "fieldtype": "Password",
-   "in_list_view": 1,
    "label": "Agency Job Application Passcode",
    "reqd": 1
   },
@@ -155,12 +140,12 @@
   {
    "fieldname": "company_email",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Company Email",
    "options": "Email"
   }
  ],
- "links": [],
- "modified": "2020-05-07 08:24:48.386480",
+ "modified": "2020-07-07 16:11:39.438465",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Agency",
