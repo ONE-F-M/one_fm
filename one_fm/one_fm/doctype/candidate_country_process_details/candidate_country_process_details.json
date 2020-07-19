@@ -7,11 +7,18 @@
   "process_name",
   "responsible",
   "total_duration",
-  "attachement",
-  "notes",
-  "actual_date",
+  "column_break_4",
+  "item",
+  "amount",
+  "section_break_7",
+  "doctype_ref",
+  "proof_of_payment",
+  "column_break_10",
+  "status",
   "expected_date",
-  "status"
+  "actual_date",
+  "section_break_14",
+  "notes"
  ],
  "fields": [
   {
@@ -22,26 +29,21 @@
   },
   {
    "fieldname": "responsible",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Responsible"
+   "label": "Responsible",
+   "options": "Agency\nGRD"
   },
   {
+   "description": "Days",
    "fieldname": "total_duration",
-   "fieldtype": "Data",
+   "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Total Duration"
   },
   {
-   "fieldname": "attachement",
-   "fieldtype": "Attach",
-   "in_list_view": 1,
-   "label": "Attachement"
-  },
-  {
    "fieldname": "notes",
-   "fieldtype": "Data",
-   "in_list_view": 1,
+   "fieldtype": "Text Editor",
    "label": "Notes"
   },
   {
@@ -55,13 +57,52 @@
    "label": "Expected Date"
   },
   {
+   "default": "Pending",
    "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nApproved\nRejected\nFailed"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "item",
    "fieldtype": "Data",
-   "label": "Status"
+   "label": "Item"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "doctype_ref",
+   "fieldtype": "Data",
+   "label": "Doctype Ref"
+  },
+  {
+   "fieldname": "proof_of_payment",
+   "fieldtype": "Data",
+   "label": "Proof of Payment"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break"
   }
  ],
  "istable": 1,
- "modified": "2020-06-05 01:46:54.301541",
+ "modified": "2020-07-07 13:54:04.594807",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process Details",

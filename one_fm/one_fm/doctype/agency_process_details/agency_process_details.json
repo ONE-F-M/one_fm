@@ -7,6 +7,7 @@
   "process_name",
   "responsible",
   "total_duration",
+  "column_break_4",
   "attachement",
   "notes"
  ],
@@ -19,31 +20,39 @@
   },
   {
    "fieldname": "responsible",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Responsible"
+   "label": "Responsible",
+   "options": "Agency\nGRD"
   },
   {
+   "description": "Days",
    "fieldname": "total_duration",
-   "fieldtype": "Data",
+   "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Total Duration"
   },
   {
+   "default": "0",
    "fieldname": "attachement",
-   "fieldtype": "Attach",
+   "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Attachement"
+   "label": "Requires Attachment"
   },
   {
+   "default": "0",
    "fieldname": "notes",
-   "fieldtype": "Data",
+   "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Notes"
+   "label": "Requires Notes"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
- "modified": "2020-01-10 15:03:01.140371",
+ "modified": "2020-07-07 12:39:00.755439",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Agency Process Details",

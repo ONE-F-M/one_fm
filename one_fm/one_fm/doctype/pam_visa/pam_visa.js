@@ -2,7 +2,17 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('PAM Visa', {
-	refresh: function(frm) {
+	candidate_country_process: function(frm) {
+
+        frappe.call({
+            method: "get_applicant_data",
+            doc: cur_frm.doc,
+            callback: function(r) { 
+                if(r.message){
+                    cur_frm.refresh_fields()
+                }
+            }
+        });
 
 	},
 	pam_visa_submitted: function(frm) {
