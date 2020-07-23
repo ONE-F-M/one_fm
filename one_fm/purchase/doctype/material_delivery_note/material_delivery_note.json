@@ -1,0 +1,165 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-06-16 23:08:22.608889",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "request_for_material",
+  "column_break_3",
+  "purchase_receipt",
+  "request_for_material_details_section",
+  "type",
+  "required_date",
+  "project",
+  "project_details",
+  "employee",
+  "employee_name",
+  "column_break_10",
+  "department",
+  "warehouse",
+  "items_section",
+  "items",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "MDN-.YYYY.-"
+  },
+  {
+   "fieldname": "request_for_material",
+   "fieldtype": "Link",
+   "label": "Request for Material",
+   "options": "Request for Material"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Material Delivery Note",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "request_for_material.type",
+   "fieldname": "type",
+   "fieldtype": "Data",
+   "label": "Type",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "request_for_material.schedule_date",
+   "fieldname": "required_date",
+   "fieldtype": "Date",
+   "label": "Required Date on Request",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "request_for_material.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "request_for_material.project_details",
+   "fieldname": "project_details",
+   "fieldtype": "Small Text",
+   "label": "Project Details",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "request_for_material.employee",
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "request_for_material.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "request_for_material.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "request_for_material.warehouse",
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Required Warehouse",
+   "options": "Warehouse",
+   "read_only": 1
+  },
+  {
+   "fieldname": "request_for_material_details_section",
+   "fieldtype": "Section Break",
+   "label": "Request for Material Details"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "items_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Material Delivery Note Item"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "purchase_receipt",
+   "fieldtype": "Link",
+   "label": "Purchase Receipt",
+   "options": "Purchase Receipt"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-07-23 18:25:43.101289",
+ "modified_by": "Administrator",
+ "module": "Purchase",
+ "name": "Material Delivery Note",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

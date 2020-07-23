@@ -124,7 +124,7 @@ frappe.ui.form.on('Request for Material', {
 	},
 	make_request_for_quotation: function(frm) {
 		frappe.model.open_mapped_doc({
-			method: "one_fm.one_fm.doctype.request_for_material.request_for_material.make_request_for_quotation",
+			method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_request_for_quotation",
 			frm: frm,
 			run_link_triggers: true
 		});
@@ -135,7 +135,7 @@ frappe.ui.form.on('Request for Material', {
 		}
 		else{
 			frappe.model.open_mapped_doc({
-				method: "one_fm.one_fm.doctype.request_for_material.request_for_material.make_request_for_purchase",
+				method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_request_for_purchase",
 				frm: frm
 			});
 		}
@@ -146,7 +146,7 @@ frappe.ui.form.on('Request for Material', {
 		}
 		else{
 			frappe.model.open_mapped_doc({
-				method: "one_fm.one_fm.doctype.request_for_material.request_for_material.make_stock_entry",
+				method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_stock_entry",
 				frm: frm
 			});
 		}
@@ -203,6 +203,9 @@ frappe.ui.form.on("Request for Material Item", {
 		const item = locals[doctype][name];
 		item.rate = 0;
 		set_schedule_date(frm);
+		if(!item.item_code){
+			frappe.model.set_value(item.doctype, item.name, 'actual_item_name', '');
+		}
 		// frm.events.get_item_data(frm, item);
 	},
 

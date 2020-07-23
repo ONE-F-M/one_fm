@@ -4,7 +4,6 @@
  "autoname": "naming_series:",
  "creation": "2020-06-02 07:48:21.946737",
  "doctype": "DocType",
- "document_type": "Document",
  "engine": "InnoDB",
  "field_order": [
   "type_section",
@@ -84,10 +83,9 @@
    "fieldname": "material_request_type",
    "fieldtype": "Select",
    "hidden": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Type",
-   "options": "Purchase"
+   "options": "Purchase",
+   "print_hide": 1
   },
   {
    "depends_on": "eval:doc.material_request_type==\"Customer Provided\"",
@@ -180,7 +178,6 @@
    "label": "Scan Barcode"
   },
   {
-   "allow_bulk_edit": 1,
    "allow_on_submit": 1,
    "fieldname": "items",
    "fieldtype": "Table",
@@ -296,12 +293,14 @@
    "fieldtype": "Select",
    "label": "Type",
    "options": "\nIndividual\nProject Mobilization",
+   "print_hide": 1,
    "reqd": 1
   },
   {
    "depends_on": "eval: doc.type == 'Individual'",
    "fieldname": "employee",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee"
   },
@@ -323,6 +322,7 @@
    "fetch_if_empty": 1,
    "fieldname": "department",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Department",
    "options": "Department",
    "read_only": 1
@@ -331,6 +331,7 @@
    "depends_on": "eval: doc.type=='Project Mobilization'",
    "fieldname": "project",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Project",
    "options": "Project"
   },
@@ -342,6 +343,7 @@
   {
    "fieldname": "warehouse",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "To Warehouse",
    "options": "Warehouse",
    "reqd": 1
@@ -402,9 +404,9 @@
  "icon": "fa fa-ticket",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-06-20 09:45:21.481740",
+ "modified": "2020-07-23 17:33:02.756497",
  "modified_by": "Administrator",
- "module": "One Fm",
+ "module": "Purchase",
  "name": "Request for Material",
  "owner": "Administrator",
  "permissions": [
