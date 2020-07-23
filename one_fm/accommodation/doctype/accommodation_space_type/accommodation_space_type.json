@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "autoname": "field:space_type",
+ "creation": "2020-07-08 21:19:12.627912",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "space_type",
+  "bed_space_available"
+ ],
+ "fields": [
+  {
+   "fieldname": "space_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Space Type",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "default": "0",
+   "fieldname": "bed_space_available",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Bed Space Available"
+  }
+ ],
+ "links": [],
+ "modified": "2020-07-08 22:24:35.749917",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Space Type",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

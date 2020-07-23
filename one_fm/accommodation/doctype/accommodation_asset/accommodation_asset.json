@@ -1,0 +1,133 @@
+{
+ "actions": [],
+ "creation": "2020-07-03 11:32:53.512646",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "asset_item",
+  "reference_code",
+  "condition",
+  "brand",
+  "model",
+  "serial_number",
+  "column_break_8",
+  "notes",
+  "asset_image",
+  "warranty_and_service_section",
+  "warranty",
+  "warranty_valid_till_date",
+  "warranty_document",
+  "column_break_13",
+  "service_contract",
+  "service_contract_vilid_till_date",
+  "service_contract_document"
+ ],
+ "fields": [
+  {
+   "fieldname": "asset_item",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Asset Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reference_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reference Code"
+  },
+  {
+   "fieldname": "condition",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Condition",
+   "options": "\nNew\nGood\nBad",
+   "reqd": 1
+  },
+  {
+   "fieldname": "brand",
+   "fieldtype": "Data",
+   "label": "Brand"
+  },
+  {
+   "fieldname": "model",
+   "fieldtype": "Data",
+   "label": "Model"
+  },
+  {
+   "fieldname": "serial_number",
+   "fieldtype": "Data",
+   "label": "Serial Number"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Notes"
+  },
+  {
+   "fieldname": "asset_image",
+   "fieldtype": "Attach Image",
+   "label": "Asset Image"
+  },
+  {
+   "fieldname": "warranty_and_service_section",
+   "fieldtype": "Section Break",
+   "label": "Warranty and Service"
+  },
+  {
+   "fieldname": "warranty",
+   "fieldtype": "Select",
+   "label": "Warranty",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.warranty=='Yes'",
+   "fieldname": "warranty_valid_till_date",
+   "fieldtype": "Date",
+   "label": "Warranty Valid Till Date"
+  },
+  {
+   "depends_on": "eval:doc.warranty=='Yes'",
+   "fieldname": "warranty_document",
+   "fieldtype": "Attach",
+   "label": "Warranty Document"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "service_contract",
+   "fieldtype": "Select",
+   "label": "Service Contract",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.service_contract=='Yes'",
+   "fieldname": "service_contract_vilid_till_date",
+   "fieldtype": "Date",
+   "label": "Service Contract Vilid Till Date"
+  },
+  {
+   "depends_on": "eval:doc.service_contract=='Yes'",
+   "fieldname": "service_contract_document",
+   "fieldtype": "Attach",
+   "label": "Service Contract Document"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-07-08 20:39:01.489223",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Asset",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

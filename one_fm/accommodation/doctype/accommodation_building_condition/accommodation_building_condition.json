@@ -1,0 +1,54 @@
+{
+ "actions": [],
+ "creation": "2020-07-03 11:20:54.766228",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "type",
+  "particulars",
+  "condition",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "\nPlumbing\nElectrical\nCivil\nMISC",
+   "reqd": 1
+  },
+  {
+   "fieldname": "particulars",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Particulars",
+   "reqd": 1
+  },
+  {
+   "fieldname": "condition",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Condition",
+   "options": "\nNew\nGood\nBad",
+   "reqd": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Notes"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-07-08 20:39:02.543179",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Building Condition",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
