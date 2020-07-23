@@ -25,5 +25,12 @@ def get_data():
 			"color": "grey",
 			"icon": "fa fa-cogs",
 			"type": "module"
+		},
+		{
+			"module_name": "Purchase",
+			"label": _("Purchase"),
+			"color": "grey",
+			"icon": "fa fa-cogs",
+			"type": "module"
 		}
 	]
