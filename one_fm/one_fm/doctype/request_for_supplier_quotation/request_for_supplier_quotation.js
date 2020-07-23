@@ -27,7 +27,7 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 
 	refresh: function(frm, cdt, cdn) {
 		if (frm.doc.docstatus === 1) {
-			
+
 			frm.add_custom_button(__("Send Supplier Emails"), function() {
 				frappe.call({
 					method: "send_supplier_quotation_emails",
@@ -53,17 +53,17 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 					"fieldtype": "Select",
 					"label": __("Get Suppliers By"),
 					"fieldname": "search_type",
-					"options": ["Supplier Group"],
-					"default": "Supplier Group",
+					"options": ["Item Group"],
+					"default": "Item Group",
 					"reqd": 1
 				},
 				{
 					"fieldtype": "Link",
-					"label": __("Supplier Group"),
+					"label": __("Item Group"),
 					"fieldname": "supplier_group",
 					"options": "Item Group",
 					"reqd": 0,
-					"depends_on": "eval:doc.search_type == 'Supplier Group'",
+					"depends_on": "eval:doc.search_type == 'Item Group'",
 					"filters": {'is_group': 1,'parent_item_group': ["!=", 'All Item Groups'],'name': ["!=", 'All Item Groups']},
 				},
 				// {
@@ -105,9 +105,11 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 			dialog.hide();
 
 			//Remove blanks
-			for (var j = 0; j < frm.doc.suppliers.length; j++) {
-				if(!frm.doc.suppliers[j].hasOwnProperty("supplier")) {
-					frm.get_field("suppliers").grid.grid_rows[j].remove();
+			if(frm.doc.suppliers){
+				for (var j = 0; j < frm.doc.suppliers.length; j++) {
+					if(!frm.doc.suppliers[j].hasOwnProperty("supplier")) {
+						frm.get_field("suppliers").grid.grid_rows[j].remove();
+					}
 				}
 			}
 
@@ -132,6 +134,9 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 						}
 					}
 				}
+				else{
+					frappe.msgprint(__("There are No Supplier having the Item Group {0}",[args.supplier_group]))
+				}
 				frm.refresh_field("suppliers");
 			}
 
@@ -146,7 +151,7 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 				});
 			}
 		});
-		
+
 		// dialog.fields_dict.get_suppliers.$input.click(function() {
 		// 	var args = dialog.get_values();
 		// 	if(!args) return;
@@ -158,7 +163,7 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 		// 			args: {
 		// 				'supplier_group': args.supplier_group,
 		// 			},
-		// 			callback: function(r) { 
+		// 			callback: function(r) {
 		// 				if(r.message){
 		// 					var content_head = "<table style='width:100%;' class='table table-striped' id='selected_supliers'><thead><tr><th>Supplier</th><th>Selected</th></tr></thead><tbody>"
 		// 					var content=''
@@ -179,7 +184,7 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 		//             }
 		// 		});
 		// 	}
-			
+
 		// });
 
 
@@ -194,7 +199,7 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 		// 			args: {
 		// 				'supplier_group': args.supplier_group,
 		// 			},
-		// 			callback: function(r) { 
+		// 			callback: function(r) {
 		// 				if(r.message){
 		// 					var content_head = "<table style='width:100%;' class='table table-striped' id='selected_supliers'><thead><tr><th>Supplier</th><th>Selected</th></tr></thead><tbody>"
 		// 					var content=''
@@ -215,7 +220,7 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 		//             }
 		// 		});
 		// 	}
-			
+
 		// });
 
 		dialog.show();
@@ -241,4 +246,3 @@ frappe.ui.form.on("Request for Supplier Quotation Supplier",{
 		})
 	}
 })
-

@@ -1,0 +1,38 @@
+{
+ "actions": [],
+ "creation": "2020-07-08 21:46:37.366593",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "space_type",
+  "total_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "space_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Space Type",
+   "options": "Accommodation Space Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Total Number",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-07-08 21:46:37.366593",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Unit Space Type",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

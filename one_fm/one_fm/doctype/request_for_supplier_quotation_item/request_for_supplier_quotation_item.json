@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "RFSQI.#######",
  "creation": "2020-04-19 15:14:11.006196",
  "doctype": "DocType",
@@ -12,7 +13,9 @@
   "qty",
   "uom",
   "col_break2",
-  "schedule_date"
+  "schedule_date",
+  "request_for_material",
+  "request_for_material_item"
  ],
  "fields": [
   {
@@ -83,11 +86,25 @@
    "in_list_view": 1,
    "label": "Required Date",
    "reqd": 1
+  },
+  {
+   "fieldname": "request_for_material",
+   "fieldtype": "Link",
+   "label": "Request for Material",
+   "options": "Request for Material",
+   "read_only": 1
+  },
+  {
+   "fieldname": "request_for_material_item",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Request for Material Item"
   }
  ],
  "istable": 1,
- "modified": "2020-04-28 13:11:15.149568",
- "modified_by": "omar.ja93@gmail.com",
+ "links": [],
+ "modified": "2020-06-04 20:58:05.270893",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Request for Supplier Quotation Item",
  "owner": "omar.ja93@gmail.com",

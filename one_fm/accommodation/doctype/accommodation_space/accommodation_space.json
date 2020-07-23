@@ -1,0 +1,192 @@
+{
+ "actions": [],
+ "autoname": "format:{accommodation_unit}-{####}",
+ "creation": "2020-07-08 21:57:16.286991",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "accommodation",
+  "type",
+  "accommodation_unit",
+  "column_break_3",
+  "accommodation_space_type",
+  "bed_space_available",
+  "beds_section",
+  "bed_space_type",
+  "single_bed_capacity",
+  "column_break_11",
+  "double_bed_capacity",
+  "extra_single_bed_capacity",
+  "extra_double_bed_capacity",
+  "objects_section",
+  "accommodation_objects",
+  "measurements_section",
+  "length",
+  "width",
+  "height",
+  "column_break_10",
+  "area",
+  "volume"
+ ],
+ "fields": [
+  {
+   "fetch_from": "accommodation_unit.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "label": "Accommodation",
+   "options": "Accommodation"
+  },
+  {
+   "fetch_from": "accommodation.type",
+   "fieldname": "type",
+   "fieldtype": "Link",
+   "label": "Type",
+   "options": "Accommodation Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "accommodation_unit",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Accommodation Unit",
+   "options": "Accommodation Unit"
+  },
+  {
+   "fieldname": "accommodation_space_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Accommodation Space Type",
+   "options": "Accommodation Space Type"
+  },
+  {
+   "fieldname": "measurements_section",
+   "fieldtype": "Section Break",
+   "label": "Measurements"
+  },
+  {
+   "fieldname": "length",
+   "fieldtype": "Float",
+   "label": "Length in Metre"
+  },
+  {
+   "fieldname": "width",
+   "fieldtype": "Float",
+   "label": "Width in Metre"
+  },
+  {
+   "fieldname": "height",
+   "fieldtype": "Float",
+   "label": "Height in Meter"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "area",
+   "fieldtype": "Float",
+   "label": "Area in Square Metre ",
+   "read_only": 1
+  },
+  {
+   "fieldname": "volume",
+   "fieldtype": "Float",
+   "label": "Volume in Cubic Metre",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "bed_space_available",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Bed Space Available",
+   "read_only": 1
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fieldname": "beds_section",
+   "fieldtype": "Section Break",
+   "label": "Bed Details"
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fieldname": "bed_space_type",
+   "fieldtype": "Link",
+   "label": "Bed Space Type",
+   "options": "Bed Space Type"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fetch_from": "bed_space_type.single_bed_capacity",
+   "fetch_if_empty": 1,
+   "fieldname": "single_bed_capacity",
+   "fieldtype": "Int",
+   "label": "Single Bed Capacity"
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fetch_from": "bed_space_type.double_bed_capacity",
+   "fetch_if_empty": 1,
+   "fieldname": "double_bed_capacity",
+   "fieldtype": "Int",
+   "label": "Double Bed Capacity"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "bed_space_type.extra_single_bed_capacity",
+   "fetch_if_empty": 1,
+   "fieldname": "extra_single_bed_capacity",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Extra Single Bed Capacity"
+  },
+  {
+   "fetch_from": "bed_space_type.extra_double_bed_capacity",
+   "fieldname": "extra_double_bed_capacity",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Extra Double Bed Capacity"
+  },
+  {
+   "fieldname": "objects_section",
+   "fieldtype": "Section Break",
+   "label": "Objects"
+  },
+  {
+   "fieldname": "accommodation_objects",
+   "fieldtype": "Table",
+   "options": "Accommodation Space Object"
+  }
+ ],
+ "links": [],
+ "modified": "2020-07-10 11:03:00.427147",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Space",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

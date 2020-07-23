@@ -1,0 +1,250 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-07-03 11:01:40.876027",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "accommodation",
+  "column_break_3",
+  "receiving_date",
+  "accommodation_details_section",
+  "first_party_lessee",
+  "company_person_first_name",
+  "company_person_middle_name",
+  "company_person_last_name",
+  "company_person_primary_contact",
+  "company_person_secondary_contact",
+  "company_person_email",
+  "company_person_civil_id",
+  "company_person_civil_id_attach",
+  "authorization_letter_from_one_fm",
+  "column_break_16",
+  "second_party_lesser",
+  "authorised_person_first_name",
+  "authorised_person_middle_name",
+  "authorised_person_last_name",
+  "authorised_person_primary_contact",
+  "authorised_person_secondary_contact",
+  "authorised_person_email",
+  "authorised_person_civil_id",
+  "authorised_person_civil_id_attach",
+  "authorization_letter_from_landlord",
+  "building_condition_section",
+  "building_conditions",
+  "accommodation_asset_section",
+  "accommodation_assets",
+  "accommodation_meter_reading_section",
+  "accommodation_meter_readings",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "ARF-.YYYY.-"
+  },
+  {
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Accommodation",
+   "options": "Accommodation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "receiving_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Receiving Date"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accommodation_details_section",
+   "fieldtype": "Section Break",
+   "label": "Party Details"
+  },
+  {
+   "fieldname": "first_party_lessee",
+   "fieldtype": "Heading",
+   "label": "First Party (Lessee)"
+  },
+  {
+   "fieldname": "company_person_first_name",
+   "fieldtype": "Data",
+   "label": "Company Person First Name"
+  },
+  {
+   "fieldname": "company_person_middle_name",
+   "fieldtype": "Data",
+   "label": "Company Person Middle Name"
+  },
+  {
+   "fieldname": "company_person_last_name",
+   "fieldtype": "Data",
+   "label": "Company Person Last Name"
+  },
+  {
+   "fieldname": "company_person_primary_contact",
+   "fieldtype": "Data",
+   "label": "Company Person Primary Contact"
+  },
+  {
+   "fieldname": "company_person_secondary_contact",
+   "fieldtype": "Data",
+   "label": "Company Person Secondary Contact"
+  },
+  {
+   "fieldname": "company_person_email",
+   "fieldtype": "Data",
+   "label": "Company Person Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "company_person_civil_id",
+   "fieldtype": "Data",
+   "label": "Company Person CIVIL ID"
+  },
+  {
+   "fieldname": "company_person_civil_id_attach",
+   "fieldtype": "Attach",
+   "label": "Company Person CIVIL ID attach"
+  },
+  {
+   "fieldname": "authorization_letter_from_one_fm",
+   "fieldtype": "Attach",
+   "label": "Authorization Letter From ONE FM "
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "second_party_lesser",
+   "fieldtype": "Heading",
+   "label": "Second Party (Lesser)"
+  },
+  {
+   "fieldname": "authorised_person_first_name",
+   "fieldtype": "Data",
+   "label": "Authorised Person First Name"
+  },
+  {
+   "fieldname": "authorised_person_middle_name",
+   "fieldtype": "Data",
+   "label": "Authorised Person Middle Name"
+  },
+  {
+   "fieldname": "authorised_person_last_name",
+   "fieldtype": "Data",
+   "label": "Authorised Person Last Name"
+  },
+  {
+   "fieldname": "authorised_person_primary_contact",
+   "fieldtype": "Data",
+   "label": "Authorised Person Primary Contact"
+  },
+  {
+   "fieldname": "authorised_person_secondary_contact",
+   "fieldtype": "Data",
+   "label": "Authorised Person Secondary Contact"
+  },
+  {
+   "fieldname": "authorised_person_email",
+   "fieldtype": "Data",
+   "label": "Authorised Person Email"
+  },
+  {
+   "fieldname": "authorised_person_civil_id",
+   "fieldtype": "Data",
+   "label": "Authorised Person CIVIL ID"
+  },
+  {
+   "fieldname": "authorised_person_civil_id_attach",
+   "fieldtype": "Attach",
+   "label": "Authorised Person CIVIL ID Attach"
+  },
+  {
+   "fieldname": "authorization_letter_from_landlord",
+   "fieldtype": "Attach",
+   "label": "Authorization Letter From Landlord"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "building_condition_section",
+   "fieldtype": "Section Break",
+   "label": "Building Condition"
+  },
+  {
+   "fieldname": "building_conditions",
+   "fieldtype": "Table",
+   "label": "Building Conditions",
+   "options": "Accommodation Building Condition"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accommodation_asset_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation Asset"
+  },
+  {
+   "fieldname": "accommodation_assets",
+   "fieldtype": "Table",
+   "label": "Accommodation Assets",
+   "options": "Accommodation Asset"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accommodation_meter_reading_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation Meter Reading"
+  },
+  {
+   "fieldname": "accommodation_meter_readings",
+   "fieldtype": "Table",
+   "label": "Accommodation Meter Readings",
+   "options": "Accommodation Meter Reading"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Accommodation Receiving Form",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-07-08 22:29:38.685200",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Receiving Form",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "accommodation"
+}

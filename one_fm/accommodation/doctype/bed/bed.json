@@ -1,0 +1,267 @@
+{
+ "actions": [],
+ "autoname": "format:{accommodation_space}-{####}",
+ "creation": "2020-07-10 09:42:41.792223",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "accommodation",
+  "governate",
+  "area",
+  "location",
+  "type",
+  "accommodation_unit",
+  "column_break_3",
+  "status",
+  "accommodation_space_type",
+  "accommodation_space",
+  "beds_section",
+  "bed_space_type",
+  "bed_type",
+  "column_break_11",
+  "gender",
+  "objects_section",
+  "accommodation_objects",
+  "occupancy_details_section",
+  "is_occupied",
+  "employee",
+  "local_or_overseas",
+  "passport_number",
+  "full_name",
+  "civil_id",
+  "nationality",
+  "religion",
+  "column_break_24",
+  "contact_number",
+  "email",
+  "visa_number",
+  "comments"
+ ],
+ "fields": [
+  {
+   "fetch_from": "accommodation_space.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Accommodation",
+   "options": "Accommodation"
+  },
+  {
+   "fetch_from": "accommodation.type",
+   "fieldname": "type",
+   "fieldtype": "Link",
+   "label": "Type",
+   "options": "Accommodation Type",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation_space.accommodation_unit",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_unit",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Accommodation Unit",
+   "options": "Accommodation Unit"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Vacant",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "\nBooked\nBooked Temporary\nOccupied\nUnder Maintenance\nBlocked\nVacant"
+  },
+  {
+   "fetch_from": "accommodation_space.accommodation_space_type",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_space_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Space Type",
+   "options": "Accommodation Space Type"
+  },
+  {
+   "fieldname": "accommodation_space",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Accommodation Space",
+   "options": "Accommodation Space",
+   "reqd": 1
+  },
+  {
+   "fieldname": "beds_section",
+   "fieldtype": "Section Break",
+   "label": "Bed Details"
+  },
+  {
+   "fetch_from": "accommodation_space.bed_space_type",
+   "fetch_if_empty": 1,
+   "fieldname": "bed_space_type",
+   "fieldtype": "Link",
+   "label": "Bed Space Type",
+   "options": "Bed Space Type"
+  },
+  {
+   "fetch_if_empty": 1,
+   "fieldname": "bed_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Bed Type",
+   "options": "\nSingle\nDouble"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_if_empty": 1,
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fieldname": "objects_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Objects"
+  },
+  {
+   "fieldname": "accommodation_objects",
+   "fieldtype": "Table",
+   "options": "Accommodation Space Object"
+  },
+  {
+   "depends_on": "eval:doc.status=='Occupied' || doc.status=='Booked' || doc.status=='Booked Temporary'",
+   "fieldname": "occupancy_details_section",
+   "fieldtype": "Section Break",
+   "label": "Occupancy Details"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_occupied",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Occupied"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "local_or_overseas",
+   "fieldtype": "Select",
+   "label": "Local or Overseas",
+   "options": "\nLocal\nOverseas"
+  },
+  {
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name"
+  },
+  {
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality"
+  },
+  {
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "label": "Religion"
+  },
+  {
+   "fieldname": "column_break_24",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "visa_number",
+   "fieldtype": "Data",
+   "label": "Visa Number"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Comments"
+  },
+  {
+   "fetch_from": "accommodation.area",
+   "fieldname": "area",
+   "fieldtype": "Data",
+   "label": "Area",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation.accommodation_location",
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Location",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation.governate",
+   "fieldname": "governate",
+   "fieldtype": "Data",
+   "label": "Governate",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2020-07-15 10:16:12.054887",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Bed",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "accommodation_space"
+}

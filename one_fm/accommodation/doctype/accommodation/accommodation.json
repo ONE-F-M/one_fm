@@ -1,0 +1,563 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-06-30 11:00:45.749769",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "accommodation",
+  "column_break_4",
+  "type",
+  "ownership_section_section",
+  "ownership",
+  "column_break_8",
+  "owner_type",
+  "owner_details_section",
+  "owner_contact",
+  "owner_contact_html",
+  "column_break_18",
+  "area",
+  "block",
+  "avenue",
+  "street",
+  "house",
+  "building",
+  "floor",
+  "office",
+  "section_break_16",
+  "legal_representative_contact",
+  "legal_representative_contact_html",
+  "representative_position",
+  "column_break_25",
+  "legal_authorization_section",
+  "is_legal_authorization_available",
+  "legal_authorization_contact",
+  "legal_authorization_contact_html",
+  "authorized_person_civil_id",
+  "authorization_document",
+  "authorization_other_document",
+  "column_break_44",
+  "authorization_area",
+  "authorization_block",
+  "authorization_avenue",
+  "authorization_street",
+  "authorization_house",
+  "primary_point_of_contact_section",
+  "primary_point_of_contact",
+  "other_primary_point_of_contact",
+  "other_primary_point_of_contact_html",
+  "column_break_56",
+  "documents_section",
+  "ownership_document",
+  "contract_document",
+  "other_document",
+  "column_break_30",
+  "representative_civil_id_pdf",
+  "representative_authorized_signature",
+  "owner_civil_id_pdf",
+  "accommodation_address_section",
+  "governate",
+  "accommodation_country",
+  "accommodation_area",
+  "accommodation_block",
+  "column_break_76",
+  "accommodation_street",
+  "accommodation_avenue",
+  "accommodation_building_number",
+  "accommodation_paci_number",
+  "accommodation_location_section",
+  "accommodation_location",
+  "accommodation_geolocation",
+  "contract_details_section",
+  "contract_start_date",
+  "contract_end_date",
+  "is_grace_period_available",
+  "column_break_86",
+  "grace_period_start_date",
+  "grace_period_end_date",
+  "accommodation_description_section",
+  "total_no_of_floor",
+  "total_no_of_accommodation_unit",
+  "total_no_of_bed_space",
+  "column_break_93",
+  "total_no_of_basement",
+  "total_no_of_shop",
+  "total_space",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "ACC-"
+  },
+  {
+   "fieldname": "accommodation",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Accommodation Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Accommodation Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ownership_section_section",
+   "fieldtype": "Section Break",
+   "label": "Ownership"
+  },
+  {
+   "fieldname": "ownership",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Ownership",
+   "options": "\nOwned by ONE FM\nRental"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.ownership=='Rental'",
+   "fieldname": "owner_type",
+   "fieldtype": "Select",
+   "label": "Owner Type",
+   "options": "\nPersonal\nCompany"
+  },
+  {
+   "depends_on": "eval: doc.ownership=='Rental'",
+   "fieldname": "owner_details_section",
+   "fieldtype": "Section Break",
+   "label": "Owner Details"
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "area",
+   "fieldtype": "Data",
+   "label": "Area"
+  },
+  {
+   "fieldname": "block",
+   "fieldtype": "Data",
+   "label": "Block"
+  },
+  {
+   "fieldname": "avenue",
+   "fieldtype": "Data",
+   "label": "Avenue"
+  },
+  {
+   "fieldname": "street",
+   "fieldtype": "Data",
+   "label": "Street"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Personal'",
+   "fieldname": "house",
+   "fieldtype": "Data",
+   "label": "House"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Company'",
+   "fieldname": "building",
+   "fieldtype": "Data",
+   "label": "Building"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Company'",
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "label": "Floor"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Company'",
+   "fieldname": "office",
+   "fieldtype": "Data",
+   "label": "Office"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Company'",
+   "fieldname": "section_break_16",
+   "fieldtype": "Section Break",
+   "label": "Legal Representative"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Company'",
+   "fieldname": "representative_position",
+   "fieldtype": "Data",
+   "label": "Position"
+  },
+  {
+   "depends_on": "eval:doc.owner_type=='Personal'",
+   "fieldname": "legal_authorization_section",
+   "fieldtype": "Section Break",
+   "label": "Legal Authorization"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_legal_authorization_available",
+   "fieldtype": "Check",
+   "label": "Is Legal Authorization Available"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorized_person_civil_id",
+   "fieldtype": "Attach",
+   "label": "CIVIL ID"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_document",
+   "fieldtype": "Attach",
+   "label": " Authorization Document"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_other_document",
+   "fieldtype": "Attach",
+   "label": " Other Document"
+  },
+  {
+   "fieldname": "column_break_44",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_area",
+   "fieldtype": "Data",
+   "label": "Area"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_block",
+   "fieldtype": "Data",
+   "label": "Block"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_avenue",
+   "fieldtype": "Data",
+   "label": "Avenue"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_street",
+   "fieldtype": "Data",
+   "label": "Street"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_house",
+   "fieldtype": "Data",
+   "label": "House"
+  },
+  {
+   "depends_on": "eval: doc.ownership=='Rental'",
+   "fieldname": "primary_point_of_contact_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_56",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "documents_section",
+   "fieldtype": "Section Break",
+   "label": "Documents"
+  },
+  {
+   "fieldname": "ownership_document",
+   "fieldtype": "Attach",
+   "label": "Ownership Document"
+  },
+  {
+   "fieldname": "contract_document",
+   "fieldtype": "Attach",
+   "label": "Contract Document"
+  },
+  {
+   "fieldname": "other_document",
+   "fieldtype": "Attach",
+   "label": "Other Document"
+  },
+  {
+   "fieldname": "column_break_30",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Company'",
+   "fieldname": "representative_civil_id_pdf",
+   "fieldtype": "Attach",
+   "label": "Representative CIVIL ID"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Company'",
+   "fieldname": "representative_authorized_signature",
+   "fieldtype": "Attach",
+   "label": "Representative Authorized Signature "
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Personal'",
+   "fieldname": "owner_civil_id_pdf",
+   "fieldtype": "Attach",
+   "label": "Owner CIVIL ID"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accommodation_address_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation Address"
+  },
+  {
+   "default": "Kuwait",
+   "fieldname": "accommodation_country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "accommodation_area",
+   "fieldtype": "Data",
+   "label": "Area"
+  },
+  {
+   "fieldname": "accommodation_block",
+   "fieldtype": "Data",
+   "label": "Block"
+  },
+  {
+   "fieldname": "accommodation_street",
+   "fieldtype": "Data",
+   "label": "Street"
+  },
+  {
+   "fieldname": "column_break_76",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "accommodation_avenue",
+   "fieldtype": "Data",
+   "label": "Avenue"
+  },
+  {
+   "fieldname": "accommodation_building_number",
+   "fieldtype": "Data",
+   "label": "Building Number"
+  },
+  {
+   "fieldname": "accommodation_paci_number",
+   "fieldtype": "Data",
+   "label": "PACI Number"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accommodation_location_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation Location"
+  },
+  {
+   "fieldname": "accommodation_location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Location"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "contract_details_section",
+   "fieldtype": "Section Break",
+   "label": "Contract Details"
+  },
+  {
+   "fieldname": "contract_start_date",
+   "fieldtype": "Date",
+   "label": "Contract Start Date"
+  },
+  {
+   "fieldname": "contract_end_date",
+   "fieldtype": "Date",
+   "label": "Contract End Date"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_grace_period_available",
+   "fieldtype": "Check",
+   "label": "Is Grace Period Available"
+  },
+  {
+   "fieldname": "column_break_86",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "is_grace_period_available",
+   "fieldname": "grace_period_start_date",
+   "fieldtype": "Date",
+   "label": "Grace Period Start Date"
+  },
+  {
+   "depends_on": "is_grace_period_available",
+   "fieldname": "grace_period_end_date",
+   "fieldtype": "Date",
+   "label": "Grace Period End Date"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accommodation_description_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation Description"
+  },
+  {
+   "fieldname": "column_break_93",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_no_of_basement",
+   "fieldtype": "Int",
+   "label": "Total No of Basement"
+  },
+  {
+   "fieldname": "total_no_of_shop",
+   "fieldtype": "Int",
+   "label": "Total No of Shop"
+  },
+  {
+   "fieldname": "total_space",
+   "fieldtype": "Float",
+   "label": "Total Space in m2"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Accommodation",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_no_of_floor",
+   "fieldtype": "Int",
+   "label": "Total No of Floor"
+  },
+  {
+   "fieldname": "total_no_of_accommodation_unit",
+   "fieldtype": "Int",
+   "label": "Total No of Accommodation Unit"
+  },
+  {
+   "fieldname": "total_no_of_bed_space",
+   "fieldtype": "Int",
+   "label": "Total No of Bed Space"
+  },
+  {
+   "fieldname": "owner_contact_html",
+   "fieldtype": "HTML",
+   "label": "Owner Contact Html"
+  },
+  {
+   "fieldname": "owner_contact",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Owner Contact",
+   "options": "Contact",
+   "read_only": 1
+  },
+  {
+   "fieldname": "legal_representative_contact_html",
+   "fieldtype": "HTML",
+   "label": "Legal Representative Contact Html"
+  },
+  {
+   "fieldname": "column_break_25",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "primary_point_of_contact",
+   "fieldtype": "Select",
+   "label": "Primary Point of Contact",
+   "options": "\nOwner\nLegal Authorized\nLegal Representative\nOther"
+  },
+  {
+   "depends_on": "eval:doc.primary_point_of_contact=='Other'",
+   "fieldname": "other_primary_point_of_contact",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Other Primary Point of Contact"
+  },
+  {
+   "depends_on": "eval:doc.primary_point_of_contact=='Other'",
+   "fieldname": "other_primary_point_of_contact_html",
+   "fieldtype": "HTML",
+   "label": "Other Primary Point of Contact Html"
+  },
+  {
+   "fieldname": "legal_representative_contact",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Legal Representative Contact"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "legal_authorization_contact",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Legal Authorization Contact"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "legal_authorization_contact_html",
+   "fieldtype": "HTML",
+   "label": "Legal Authorization Contact Html"
+  },
+  {
+   "fieldname": "governate",
+   "fieldtype": "Select",
+   "label": "Governate",
+   "options": "\nAhmadi\nMobarak Al Kabir\nHawally\nJahra\nCapital"
+  },
+  {
+   "fieldname": "accommodation_geolocation",
+   "fieldtype": "Geolocation",
+   "label": "Geolocation"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-07-13 07:44:03.897318",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "accommodation"
+}

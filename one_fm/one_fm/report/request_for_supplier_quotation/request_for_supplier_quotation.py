@@ -20,6 +20,8 @@ def execute(filters=None):
 def get_columns(filters):
     return [
         _("Request for Supplier Quotation") + ":Link/Request for Supplier Quotation:150",
+        _("Request for Material") + ":Link/Request for Material:150",
+        _("Request for Purchase") + ":Link/Request for Purchase:150",
         _("Transaction Date") + ":Date:150",
         _("Status") + "::250"
         ]
@@ -43,7 +45,7 @@ def get_conditions(filters):
 def get_data(filters):
     conditions = get_conditions(filters)
     data=[]
-    li_list=frappe.db.sql("""select name, transaction_date, docstatus, workflow_state from `tabRequest for Supplier Quotation` where 1=1 {0} """.format(conditions),as_dict=1)
+    li_list=frappe.db.sql("""select name, request_for_material, request_for_purchase, transaction_date, docstatus, workflow_state from `tabRequest for Supplier Quotation` where 1=1 {0} """.format(conditions),as_dict=1)
     pending_state = ''
 
     for purchase in li_list:
@@ -55,6 +57,8 @@ def get_data(filters):
 
         row = [
             purchase.name,
+            purchase.request_for_material,
+            purchase.request_for_purchase,
             purchase.transaction_date,
             pending_state if purchase.docstatus==0 else 'Submitted' if purchase.docstatus==1 else 'Rejected'
         ]

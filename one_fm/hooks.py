@@ -117,7 +117,7 @@ doc_events = {
 		"before_insert": "one_fm.utils.validate_get_item_group_parent"
 	},
 	"Item": {
-		"autoname": "one_fm.api.doc_events.item_naming_series"
+		"autoname": "one_fm.utils.item_naming_series"
 	},
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
@@ -165,7 +165,7 @@ scheduler_events = {
 	],
 	"cron": {
 		"0/5 * * * *": [
-			"one_fm.api.tasks.supervisor_reminder",		
+			"one_fm.api.tasks.supervisor_reminder",
 			"one_fm.api.tasks.final_reminder",
 			"one_fm.api.tasks.automatic_checkout"
 		],
@@ -235,7 +235,7 @@ scheduler_events = {
 fixtures = [
 	{
 		"dt": "Custom Field",
-		# 'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]	
+		# 'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
 	},
 	{
 		"dt": "Property Setter"
@@ -275,5 +275,5 @@ fixtures = [
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
 
-   
-ShiftRequest.on_submit = shift_request_submit 
+
+ShiftRequest.on_submit = shift_request_submit

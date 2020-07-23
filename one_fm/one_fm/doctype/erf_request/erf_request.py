@@ -58,6 +58,12 @@ def create_erf_request(trigger_dt, trigger_dn):
 def send_email(doc, recipients):
 	page_link = get_url("/desk#Form/ERF Request/" + doc.name)
 	message = "<p>Please Review the ERF Request <a href='{0}'>{1}</a> and take action.</p>".format(page_link, doc.name)
+	if doc.status == 'Accepted':
+		if frappe.db.exists('Email Template', {'name': 'Approved ERF Request'}):
+			email_template = frappe.get_doc("Email Template", 'Approved ERF Request')
+			if email_template:
+				context = doc.as_dict()
+				message += frappe.render_template(email_template.response, context)
 	if doc.status == 'Declined' and doc.reason_for_decline:
 		message = "<p>ERF Request <a href='{0}'>{1}</a> is Declined due to {2}</p>".format(page_link, doc.name, doc.reason_for_decline)
 	frappe.sendmail(

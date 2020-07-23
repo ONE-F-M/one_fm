@@ -19,7 +19,7 @@ def execute(filters=None):
 
 def get_columns(filters):
     return [
-        _("Purchase Request") + ":Link/Purchase Request:150",
+        _("Request for Purchase") + ":Link/Request for Purchase:150",
         _("Request for Quotation") + ":Link/Request for Quotation:150",
         _("Requested By") + ":Link/Employee:150",
         _("Requester Name") + "::200",

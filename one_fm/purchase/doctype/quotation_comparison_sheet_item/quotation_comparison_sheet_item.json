@@ -1,0 +1,131 @@
+{
+ "actions": [],
+ "autoname": "QCSI.#######",
+ "creation": "2020-06-05 22:03:23.548529",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_name",
+  "quantity",
+  "description",
+  "col_break2",
+  "qty",
+  "uom",
+  "schedule_date",
+  "request_for_material",
+  "request_for_material_item",
+  "quotation_item",
+  "quotation",
+  "quotation_remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Item Name",
+   "oldfieldname": "item_name",
+   "oldfieldtype": "Data",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Description",
+   "oldfieldname": "description",
+   "oldfieldtype": "Small Text",
+   "print_width": "300px",
+   "reqd": 1,
+   "width": "300px"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Section Break"
+  },
+  {
+   "bold": 1,
+   "columns": 2,
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Quantity",
+   "oldfieldname": "qty",
+   "oldfieldtype": "Currency",
+   "print_width": "60px",
+   "reqd": 1,
+   "width": "60px"
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "label": "UOM",
+   "oldfieldname": "uom",
+   "oldfieldtype": "Link",
+   "options": "UOM",
+   "print_width": "100px",
+   "reqd": 1,
+   "width": "100px"
+  },
+  {
+   "fieldname": "col_break2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 2,
+   "default": "Today",
+   "fieldname": "schedule_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Required Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "request_for_material",
+   "fieldtype": "Link",
+   "label": "Request For Material",
+   "options": "Request for Material",
+   "read_only": 1
+  },
+  {
+   "fieldname": "request_for_material_item",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Request For Material Item"
+  },
+  {
+   "fetch_from": "quotation_item.parent",
+   "fieldname": "quotation",
+   "fieldtype": "Link",
+   "label": "Quotation",
+   "options": "Quotation From Supplier"
+  },
+  {
+   "fieldname": "quotation_remarks",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Quotation Remarks"
+  },
+  {
+   "fieldname": "quotation_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Quotation Item",
+   "options": "Quotation From Supplier Item"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-07-23 18:18:42.216326",
+ "modified_by": "Administrator",
+ "module": "Purchase",
+ "name": "Quotation Comparison Sheet Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
