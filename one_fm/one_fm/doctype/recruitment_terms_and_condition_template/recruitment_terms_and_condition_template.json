@@ -32,7 +32,7 @@
   }
  ],
  "links": [],
- "modified": "2020-05-05 11:46:19.046308",
+ "modified": "2020-07-23 20:20:04.526791",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Recruitment Terms and Condition Template",
@@ -47,6 +47,30 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
    "share": 1,
    "write": 1
   }
