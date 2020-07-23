@@ -1392,7 +1392,7 @@ def get_job_applicant_transferable_overseas(applicant):
     if job_applicant.one_fm_applicant_is_overseas_or_local:
         result['overseas'] = job_applicant.one_fm_applicant_is_overseas_or_local
         if job_applicant.one_fm_is_transferable:
-            result['translatable'] = job_applicant.one_fm_is_transferable
+            result['transferable'] = job_applicant.one_fm_is_transferable
     return result
 
 def validate_applicant_overseas_transferable(applicant):
