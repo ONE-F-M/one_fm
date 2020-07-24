@@ -4,23 +4,29 @@ from frappe import _
 def get_data():
 	return [
 		{
-			"label": _("Purchasing"),
+			"label": _("One FM Purchasing"),
 			"icon": "fa fa-star",
 			"items": [
 				{
 					"type": "doctype",
-					"name": "Item Request",
+					"name": "Request for Material",
 					"onboard": 1,
-					"dependencies": ["Employee"],
-					"description": _("Item Request given to Employee."),
 				},
 				{
 					"type": "doctype",
-					"name": "Stock Check",
+					"name": "Request for Purchase",
 					"onboard": 1,
-					"dependencies": ["Item","Item Group"],
-					"description": _("Stock Check."),
 				},
+				{
+					"type": "doctype",
+					"name": "Quotation Comparison Sheet",
+					"onboard": 1,
+				},
+				{
+					"type": "doctype",
+					"name": "Quotation From Supplier",
+					"onboard": 1,
+				}
 			]
 		},
 	]
