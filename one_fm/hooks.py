@@ -251,7 +251,8 @@ fixtures = [
 	},
 	{
 		"dt": "Custom Script",
-		'filters': [['dt', 'in', ['Job Applicant', 'Job Opening', 'Job Offer', 'Item', 'Stock Entry', 'Warehouse', 'Supplier']]]
+		'filters': [['dt', 'in', ['Job Applicant', 'Job Opening', 'Job Offer', 'Item', 'Stock Entry', 'Warehouse', 'Supplier',
+		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
 	},
 	{
 		"dt": "Print Format"

@@ -2,6 +2,50 @@
  {
   "docstatus": 0,
   "doctype": "Custom Script",
+  "dt": "Purchase Order",
+  "modified": "2020-07-25 20:19:57.770639",
+  "name": "Purchase Order-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on('Purchase Order', {\n\trefresh: function(frm) {\n\t\thide_tax_fields(frm);\n\t\thide_subscription_section(frm);\n\t\tset_field_property_for_documents(frm);\n\t\tset_field_property_for_other_documents(frm);\n\t},\n\tset_warehouse: function(frm){\n\t\tif(frm.doc.set_warehouse){\n\t\t\tfrappe.call({\n\t\t\t\tmethod: 'one_fm.purchase.utils.get_warehouse_contact_details',\n\t\t\t\targs: {'warehouse': frm.doc.set_warehouse},\n\t\t\t\tcallback: function(r) {\n\t\t\t\t\tvar contact = r.message;\n\t\t\t\t\tif(contact){\n\t\t\t\t\t\tif(contact[0]){\n\t\t\t\t\t\t\tfrm.set_value('one_fm_warehouse_contact_person', contact[0].contact_display);\n\t\t\t\t\t\t\tfrm.set_value('one_fm_contact_person_email', contact[0].contact_email);\n\t\t\t\t\t\t\tfrm.set_value('one_fm_contact_person_phone', contact[0].contact_mobile);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tfrm.set_value('one_fm_warehouse_location', contact[1]);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\t},\n\tone_fm_type_of_purchase: function(frm) {\n\t\tset_field_property_for_documents(frm);\n\t},\n\tone_fm_other_documents_required: function(frm) {\n\t\tset_field_property_for_other_documents(frm);\n\t}\n});\n\nvar set_field_property_for_other_documents = function(frm) {\n\tif(frm.doc.one_fm_other_documents_required && frm.doc.one_fm_other_documents_required == 'Yes'){\n\t\tfrm.set_df_property('one_fm_details_of_other_documents', 'reqd', true);\n\t}\n\telse{\n\t\tfrm.set_df_property('one_fm_details_of_other_documents', 'reqd', false);\n\t\tfrm.set_value('one_fm_details_of_other_documents', '');\n\t}\n};\n\nvar set_field_property_for_documents = function(frm) {\n\tif(frm.doc.one_fm_type_of_purchase && frm.doc.one_fm_type_of_purchase == \"Import\"){\n\t\tfrm.set_df_property('one_fm_certificate_of_origin_required', 'reqd', true);\n\t\tfrm.set_df_property('one_fm_other_documents_required', 'reqd', true);\n\t}\n\telse{\n\t\tfrm.set_df_property('one_fm_certificate_of_origin_required', 'reqd', false);\n\t\tfrm.set_df_property('one_fm_other_documents_required', 'reqd', false);\n\t\tfrm.set_value('one_fm_certificate_of_origin_required', '');\n\t\tfrm.set_value('one_fm_other_documents_required', '');\n\t}\n};\n\nvar hide_tax_fields = function(frm) {\n\tlet field_list = ['tax_category', 'section_break_52', 'taxes_and_charges', 'taxes', 'sec_tax_breakup', 'totals'];\n\tfield_list.forEach((field, i) => {\n\t\tfrm.set_df_property(field, 'hidden', true);\n\t});\n};\n\nvar hide_subscription_section = function(frm) {\n\tfrm.set_df_property('subscription_section', 'hidden', true);\n};\n"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
+  "dt": "Purchase Receipt",
+  "modified": "2020-07-25 20:19:19.729266",
+  "name": "Purchase Receipt-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on('Purchase Receipt', {\n\trefresh(frm) {\n\t\tif(frm.doc.docstatus == 1){\n\t\t    frm.add_custom_button(__(\"Material Delivery Note\"),\n\t\t        () => frm.events.make_material_delivery_note(frm), __('Create'));\n\t\t}\n\t},\n\tmake_material_delivery_note: function(frm) {\n\t\tfrappe.model.open_mapped_doc({\n\t\t\tmethod: \"one_fm.purchase.utils.make_material_delivery_note\",\n\t\t\tfrm: frm,\n\t\t\trun_link_triggers: true\n\t\t});\n\t}\n})\n"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
+  "dt": "Payment Entry",
+  "modified": "2020-07-25 20:22:10.707850",
+  "name": "Payment Entry-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on('Payment Entry', {\n\trefresh(frm) {\n\t\tset_payment_details_for_po(frm);\n\t},\n\tparty(frm) {\n\t\tset_party_bank_account(frm);\n\t},\n\tone_fm_mode_of_payment_type(frm) {\n\t\tset_party_bank_account(frm);\n\t}\n});\n\nvar set_payment_details_for_po = function(frm) {\n\tif(frm.doc.references && frm.doc.references.length > 0){\n\t\tif(frm.doc.references[0].reference_doctype == 'Purchase Order'){\n\t\t\tfrappe.call({\n\t\t\t\tmethod: 'one_fm.purchase.utils.get_payment_details_for_po',\n\t\t\t\targs: {'po': frm.doc.references[0].reference_name},\n\t\t\t\tcallback: function(r) {\n\t\t\t\t\tif(r && r.message){\n\t\t\t\t\t\tlet data = r.message;\n\t\t\t\t\t\tif(data.mode_of_payment){\n\t\t\t\t\t\t\tfrm.set_value('mode_of_payment', data.mode_of_payment);\n\t\t\t\t\t\t\tset_party_bank_account(frm);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tif(data.payment_amount){\n\t\t\t\t\t\t\tfrm.set_value('paid_amount', data.payment_amount);\n\t\t\t\t\t\t\tfrappe.model.set_value(frm.doc.references[0].doctype, frm.doc.references[0].name, 'allocated_amount', data.payment_amount);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tfrm.refresh_field('references');\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\t}\n};\n\nvar set_party_bank_account = function(frm) {\n\tif(frm.doc.party_type && frm.doc.party && frm.doc.one_fm_mode_of_payment_type == 'Bank'){\n\t\tfrappe.db.get_value('Bank Account', {'party_type': frm.doc.party_type, 'party': frm.doc.party}, 'name', function(r) {\n\t\t\tfrm.set_value('party_bank_account', r.name);\n\t\t});\n\t}\n};\n"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
+  "dt": "Payment Request",
+  "modified": "2020-07-25 20:21:31.843737",
+  "name": "Payment Request-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on('Payment Request', {\n\trefresh(frm) {\n\t\tset_payment_details_for_po(frm);\n\t}\n});\n\nvar set_payment_details_for_po = function(frm) {\n\tif(frm.doc.reference_doctype == 'Purchase Order'){\n\t\tfrappe.call({\n\t\t\tmethod: 'one_fm.purchase.utils.get_payment_details_for_po',\n\t\t\targs: {'po': frm.doc.reference_name},\n\t\t\tcallback: function(r) {\n\t\t\t\tif(r && r.message){\n\t\t\t\t\tlet data = r.message;\n\t\t\t\t\tif(data.mode_of_payment){\n\t\t\t\t\t\tfrm.set_value('mode_of_payment', data.mode_of_payment);\n\t\t\t\t\t}\n\t\t\t\t\tif(data.payment_amount){\n\t\t\t\t\t\tfrm.set_value('grand_total', data.payment_amount)\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\t}\n};\n"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
   "dt": "Item",
   "modified": "2020-05-22 18:40:36.980697",
   "name": "Item-Client",
