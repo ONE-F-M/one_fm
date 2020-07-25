@@ -123,6 +123,9 @@ doc_events = {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
 	},
+	"Purchase Receipt": {
+		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt"
+	},
 	# "Project": {
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	# }
