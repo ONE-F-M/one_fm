@@ -44,7 +44,7 @@
    "fieldname": "site_shift",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Site Shift",
+   "label": "Shift",
    "options": "Operations Shift"
   },
   {
@@ -114,7 +114,7 @@
    "options": "Post Type"
   }
  ],
- "modified": "2020-06-08 21:14:48.601500",
+ "modified": "2020-07-07 12:50:53.286118",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",

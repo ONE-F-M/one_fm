@@ -1,0 +1,210 @@
+{
+ "autoname": "PI-.######",
+ "creation": "2020-06-13 18:37:36.613900",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "issuing_time",
+  "column_break_2",
+  "location",
+  "section_break_6",
+  "penalty_location",
+  "penalty_occurence_time",
+  "shift",
+  "pull_as_current",
+  "column_break_10",
+  "site",
+  "project",
+  "site_location",
+  "section_break_4",
+  "employees",
+  "penalty_details_section",
+  "penalty_issuance_details",
+  "penalty_issuer_details_section",
+  "issuing_employee",
+  "column_break_19",
+  "employee_name",
+  "column_break_21",
+  "designation",
+  "amended_from",
+  "different_location"
+ ],
+ "fields": [
+  {
+   "default": "now",
+   "fieldname": "issuing_time",
+   "fieldtype": "Datetime",
+   "label": "Issuing time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "label": "Location",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break",
+   "label": "Employee List"
+  },
+  {
+   "fieldname": "employees",
+   "fieldtype": "Table",
+   "label": "Employees",
+   "options": "Penalty Issuance Employees"
+  },
+  {
+   "fieldname": "penalty_details_section",
+   "fieldtype": "Section Break",
+   "label": "Penalty Details"
+  },
+  {
+   "fetch_from": "shift.site",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Site",
+   "options": "Operations Site",
+   "reqd": 1
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Shift",
+   "options": "Operations Shift",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.docstatus<1",
+   "fieldname": "pull_as_current",
+   "fieldtype": "Button",
+   "label": "Pull As Current"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "site.site_location",
+   "fieldname": "site_location",
+   "fieldtype": "Data",
+   "label": "Site Location"
+  },
+  {
+   "fetch_from": "shift.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break",
+   "label": "Penalty Time and Location"
+  },
+  {
+   "description": "Place where penalty occured",
+   "fieldname": "penalty_location",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Penalty Location",
+   "reqd": 1
+  },
+  {
+   "default": "now",
+   "fieldname": "penalty_occurence_time",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Penalty Occurence Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "penalty_issuance_details",
+   "fieldtype": "Table",
+   "label": "Penalty Issuance Details",
+   "options": "Penalty Issuance Details"
+  },
+  {
+   "fieldname": "penalty_issuer_details_section",
+   "fieldtype": "Section Break",
+   "label": "Penalty Issuer Details"
+  },
+  {
+   "fieldname": "issuing_employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "issuing_employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "issuing_employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Data",
+   "label": "Designation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Penalty Issuance",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "different_location",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "different_location",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2020-07-02 14:38:40.952537",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Penalty Issuance",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

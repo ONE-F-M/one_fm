@@ -21,7 +21,7 @@ class OperationsShift(Document):
 		start_time = get_datetime(self.start_time) + timedelta(minutes=shift_type.notification_reminder_after_shift_start)
 
 @frappe.whitelist()
-def create_posts(data, site_shift, site, project):
+def create_posts(data, site_shift, site, project=None):
 	try:
 		data = frappe._dict(json.loads(data))
 		post_names = data.post_names

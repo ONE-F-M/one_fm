@@ -8,7 +8,7 @@ frappe.call('frappe.client.get_value', {
         var script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}`;
         script.defer = true;
-        script.async = true;
+        // script.async = true;
     
         // Attach your callback function to the `window` object
         window.initMap = function() {

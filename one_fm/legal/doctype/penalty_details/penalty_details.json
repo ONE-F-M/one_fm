@@ -1,0 +1,117 @@
+{
+ "creation": "2020-06-16 19:02:22.679306",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "penalty_code",
+  "column_break_2",
+  "penalty_description_english",
+  "column_break_4",
+  "penalty_description_arabic",
+  "section_break_6",
+  "first_occurence",
+  "column_break_8",
+  "second_occurence",
+  "column_break_10",
+  "third_occurence",
+  "column_break_12",
+  "fourth_occurence",
+  "column_break_14",
+  "fifth_occurence"
+ ],
+ "fields": [
+  {
+   "fieldname": "penalty_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Penalty Code"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "penalty_description_english",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Penalty Description English",
+   "options": "Penalty Type"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "penalty_description_english.penalty_name_arabic",
+   "fieldname": "penalty_description_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Penalty Description Arabic"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "In days",
+   "fieldname": "first_occurence",
+   "fieldtype": "Float",
+   "label": "First Occurence"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "In days",
+   "fieldname": "second_occurence",
+   "fieldtype": "Float",
+   "label": "Second Occurence"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "In days",
+   "fieldname": "third_occurence",
+   "fieldtype": "Float",
+   "label": "Third Occurence"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "In days",
+   "fieldname": "fourth_occurence",
+   "fieldtype": "Float",
+   "label": "Fourth Occurence"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "In days",
+   "fieldname": "fifth_occurence",
+   "fieldtype": "Float",
+   "label": "Fifth Occurence"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-07-22 16:54:16.688662",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Penalty Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

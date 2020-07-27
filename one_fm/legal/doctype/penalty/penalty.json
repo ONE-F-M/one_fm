@@ -1,0 +1,285 @@
+{
+ "autoname": "recipient_employee.-.###",
+ "creation": "2020-06-30 22:34:06.601533",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "penalty_issuance",
+  "column_break_4",
+  "legal_investigation_code",
+  "penalty_issuance_details_section",
+  "penalty_issuance_time",
+  "column_break_10",
+  "location",
+  "penalty_issuer_details_section",
+  "issuer_employee",
+  "column_break_14",
+  "issuer_name",
+  "column_break_16",
+  "issuer_designation",
+  "recipient_details_section",
+  "recipient_employee",
+  "recipient_user",
+  "column_break_18",
+  "recipient_name",
+  "column_break_20",
+  "recipient_designation",
+  "penalty_time_and_location_section",
+  "penalty_occurence_time",
+  "penalty_location",
+  "shift",
+  "column_break_22",
+  "site",
+  "site_location",
+  "project",
+  "section_break_26",
+  "penalty_details",
+  "rejection_reason_section",
+  "reason_for_rejection",
+  "retries",
+  "verified"
+ ],
+ "fields": [
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "legal_investigation_code",
+   "fieldtype": "Link",
+   "label": "Legal Investigation Code",
+   "options": "Legal Investigation",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "penalty_issuance_details_section",
+   "fieldtype": "Section Break",
+   "label": "Issuance Details"
+  },
+  {
+   "fieldname": "penalty_issuance_time",
+   "fieldtype": "Datetime",
+   "label": "Time of Issue",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "penalty_issuer_details_section",
+   "fieldtype": "Section Break",
+   "label": "Issuer Details"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "penalty_time_and_location_section",
+   "fieldtype": "Section Break",
+   "label": "Time & Location"
+  },
+  {
+   "fieldname": "penalty_location",
+   "fieldtype": "Data",
+   "label": "Location",
+   "read_only": 1
+  },
+  {
+   "fieldname": "penalty_occurence_time",
+   "fieldtype": "Datetime",
+   "label": "Occurence Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Link",
+   "label": "Shift",
+   "options": "Operations Shift",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_22",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fieldname": "site_location",
+   "fieldtype": "Link",
+   "label": "Site Location",
+   "options": "Location",
+   "read_only": 1
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_26",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "penalty_issuance",
+   "fieldtype": "Link",
+   "label": "Penalty Issuance Code",
+   "options": "Penalty Issuance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "label": "Location",
+   "read_only": 1
+  },
+  {
+   "fieldname": "penalty_details",
+   "fieldtype": "Table",
+   "label": "Penalty Details",
+   "options": "Penalty Issuance Details",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issuer_employee",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Issuer Employee Id",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issuer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Issuer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issuer_designation",
+   "fieldtype": "Data",
+   "label": "Issuer Designation",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "recipient_details_section",
+   "fieldtype": "Section Break",
+   "label": "Recipient Details"
+  },
+  {
+   "fieldname": "recipient_employee",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Recipient Employee Id",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recipient_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Recipient Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recipient_designation",
+   "fieldtype": "Data",
+   "label": "Recipient Designation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recipient_user",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Recipient User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rejection_reason_section",
+   "fieldtype": "Section Break",
+   "label": "Rejection Reason"
+  },
+  {
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason for Rejection",
+   "read_only": 1
+  },
+  {
+   "default": "3",
+   "fieldname": "retries",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Retries",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "verified",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Verified",
+   "read_only": 1
+  }
+ ],
+ "modified": "2020-07-23 20:52:56.314822",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Penalty",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "search_fields": "issuer_name, recipient_name",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
