@@ -32,5 +32,12 @@ def get_data():
 			"color": "grey",
 			"icon": "fa fa-cogs",
 			"type": "module"
+		},
+		{
+			"module_name": "Legal",
+			"label": _("Legal"),
+			"color": "grey",
+			"icon": "fa fa-gavel",
+			"type": "module"
 		}
 	]

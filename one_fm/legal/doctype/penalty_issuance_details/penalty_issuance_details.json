@@ -1,0 +1,86 @@
+{
+ "creation": "2020-06-17 13:50:12.179698",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "penalty_type",
+  "column_break_2",
+  "penalty_type_arabic",
+  "column_break_4",
+  "occurence",
+  "column_break_6",
+  "deduction",
+  "section_break_4",
+  "exact_notes",
+  "attachments"
+ ],
+ "fields": [
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "exact_notes",
+   "fieldtype": "Small Text",
+   "label": "Exact Notes on Penalty"
+  },
+  {
+   "fieldname": "penalty_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Penalty Type",
+   "options": "Penalty Type"
+  },
+  {
+   "fetch_from": "penalty_type.penalty_name_arabic",
+   "fieldname": "penalty_type_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Penalty Type Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attachments",
+   "fieldtype": "Attach"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Determined based on previous occurences (in days)",
+   "fieldname": "occurence",
+   "fieldtype": "Data",
+   "label": "Occurence",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "In days",
+   "fieldname": "deduction",
+   "fieldtype": "Float",
+   "label": "Deduction",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-07-23 20:39:20.773665",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Penalty Issuance Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

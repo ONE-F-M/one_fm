@@ -133,6 +133,7 @@ def create_dataset(video):
 	success, img = cap.read()
 	# fno = 0
 	while success:
+		img = cv2.resize(img, (0, 0), fx=0.25, fy=0.25)
 		cv2.imwrite(OUTPUT_DIRECTORY + "{0}.jpg".format(count+1), img)
 		count = count + 1
 		# read next frame
@@ -238,8 +239,10 @@ def create_encodings(directory, detection_method="hog"):# detection_method can b
 		# load the input image and convert it from BGR (OpenCV ordering)
 		# to dlib ordering (RGB)
 		image = cv2.imread(imagePath)
-		rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
+		# rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+		print(image)	
+		print(type(image), image[:, :, ::-1])
+		rgb =  image[:, :, ::-1]
 		# detect the (x, y)-coordinates of the bounding boxes
 		# corresponding to each face in the input image
 		boxes = face_recognition.face_locations(rgb, model=detection_method)

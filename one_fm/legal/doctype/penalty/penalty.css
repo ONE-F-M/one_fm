@@ -1,0 +1,5 @@
+video#preview {
+  margin: auto;
+  display: block;
+  width: 80%;
+}
