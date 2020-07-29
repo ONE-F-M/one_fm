@@ -1,0 +1,73 @@
+{
+ "actions": [],
+ "creation": "2020-07-28 11:11:40.087475",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "erf_settings_section",
+  "erf_approver",
+  "unplanned_erf_approver",
+  "column_break_5",
+  "performance_profile_resource",
+  "performance_profile_guid"
+ ],
+ "fields": [
+  {
+   "fieldname": "erf_settings_section",
+   "fieldtype": "Section Break",
+   "label": "ERF Settings"
+  },
+  {
+   "fieldname": "unplanned_erf_approver",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Unplanned ERF Approver",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "performance_profile_resource",
+   "fieldtype": "Attach",
+   "label": "Resource to Create Performance Profile"
+  },
+  {
+   "fieldname": "performance_profile_guid",
+   "fieldtype": "Attach",
+   "label": "Guid to Create Performance Profile"
+  },
+  {
+   "fieldname": "erf_approver",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "ERF Approver",
+   "options": "User",
+   "reqd": 1
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2020-07-29 09:34:45.527837",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Hiring Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
