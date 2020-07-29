@@ -14,13 +14,17 @@ class ERFRequest(Document):
 			self.department_manager = frappe.session.user
 
 	def on_submit(self):
-		manager_users = get_manager_users()
-		name_of_users = []
-		for manager_user in manager_users:
-			name_of_users.append(frappe.db.get_value('User', manager_user, 'full_name'))
-		if manager_users:
-			send_email(self, manager_users)
-			frappe.msgprint(_('{0}, Will Notified By Email.').format(name_of_users[0]))
+		self.notify_approver()
+
+	def notify_approver(self):
+		erf_approver = False
+		if self.reason_for_request == "UnPlanned":
+			erf_approver = frappe.db.get_value('Hiring Settings', None, 'unplanned_erf_approver')
+		else:
+			erf_approver = frappe.db.get_value('Hiring Settings', None, 'erf_approver')
+		if erf_approver:
+			send_email(self, [erf_approver])
+			frappe.msgprint(_('{0}, Will Notified By Email.').format(frappe.db.get_value('User', erf_approver, 'full_name')))
 
 	def on_update_after_submit(self):
 		self.validate_with_erf()
