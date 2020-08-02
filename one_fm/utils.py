@@ -301,7 +301,7 @@ def send_gp_letter_attachment_reminder2():
 
                 grd_name = frappe.db.get_single_value('GP Letter Request Setting', 'grd_name')
                 grd_number = frappe.db.get_single_value('GP Letter Request Setting', 'grd_number')
-                
+
                 msg = frappe.render_template('one_fm/templates/emails/gp_letter_attachment_reminder.html', context={"candidates": gp_letter_doc.gp_letter_candidates, "grd_name": grd_name, "grd_number": grd_number})
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                 recipient = frappe.db.get_single_value('GP Letter Request Setting', 'travel_agent_email')
@@ -322,12 +322,12 @@ def send_gp_letter_attachment_reminder3():
         if gp_letter_doc.upload_reminder2 and not gp_letter_doc.upload_reminder3:
 
             after_four_hour = add_to_date(gp_letter_doc.upload_reminder2, hours=4)
- 
+
             if get_datetime(frappe.utils.now())>=get_datetime(after_four_hour):
-                
+
                 grd_name = frappe.db.get_single_value('GP Letter Request Setting', 'grd_name')
                 grd_number = frappe.db.get_single_value('GP Letter Request Setting', 'grd_number')
-                
+
                 msg = frappe.render_template('one_fm/templates/emails/gp_letter_attachment_reminder.html', context={"candidates": gp_letter_doc.gp_letter_candidates, "grd_name": grd_name, "grd_number": grd_number})
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                 recipient = frappe.db.get_single_value('GP Letter Request Setting', 'travel_agent_email')
@@ -368,7 +368,7 @@ def send_travel_agent_email():
         if gp_letter_doc.gp_status!='No Response':
             if not gp_letter_doc.sent_date:
                 send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
-                
+
                 gp_letter_doc.sent_date = frappe.utils.now()
                 gp_letter_doc.save(ignore_permissions = True)
             # elif not gp_letter_doc.reminder1:
@@ -506,7 +506,7 @@ def create_gp_letter_request():
 
         site_name = cstr(frappe.local.site)
 
-        import xlsxwriter 
+        import xlsxwriter
         workbook = xlsxwriter.Workbook('/home/frappe/frappe-bench/sites/{0}/public/files/{1}.xlsx'.format(site_name, doc.name))
         worksheet = workbook.add_worksheet()
         worksheet.write('A1', 'Sr.No')
@@ -1094,31 +1094,6 @@ def get_item_id_series(parent_item_group, subitem_group, item_group):
         return previous_item_id[0][0]
     else:
         return '0000'
-
-
-
-
-def after_insert_job_applicant(doc, method):
-    website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)
-
-def website_user_for_job_applicant(email_id, first_name, last_name='', applicant_password=False):
-    if not frappe.db.exists ("User", email_id):
-        from frappe.utils import random_string
-        user = frappe.get_doc({
-            "doctype": "User",
-            "first_name": first_name,
-            "last_name": last_name,
-            "email": email_id,
-            "user_type": "Website User",
-            "send_welcome_email": False
-        })
-        user.flags.ignore_permissions=True
-        # user.reset_password_key=random_string(32)
-        user.add_roles("Job Applicant")
-        if applicant_password:
-            from frappe.utils.password import update_password
-            update_password(user=user.name, pwd=applicant_password)
-        return user
 
 def validate_job_applicant(doc, method):
     validate_transferable_field(doc)
