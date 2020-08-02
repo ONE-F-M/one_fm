@@ -20,8 +20,10 @@ frappe.ui.form.on('ERF20', {
 		set_night_shift_btn(frm);
 		set_shift_hours_btn(frm);
 		set_travel_required_btn(frm);
+		set_open_to_different_btn(frm);
 		set_performance_profile_html(frm);
 		document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
+		set_performance_profile_resource_btn(frm);
 	},
 	validate: function(frm) {
 		if(frm.doc.gender_height_requirement){
@@ -85,6 +87,9 @@ frappe.ui.form.on('ERF20', {
 	night_shift: function(frm) {
 		set_night_shift_btn(frm);
 	},
+	open_to_different: function(frm) {
+		set_open_to_different_btn(frm);
+	},
 	create_project_for_recruiter: function(frm) {
 		create_project(frm);
 	},
@@ -98,8 +103,48 @@ frappe.ui.form.on('ERF20', {
 	},
 	project: function(frm) {
 		set_project_details_to_erf(frm);
+	},
+	save_me: function(frm) {
+		frm.save();
+	},
+	save_me1: function(frm) {
+		frm.save();
+	},
+	save_me2: function(frm) {
+		frm.save();
+	},
+	save_me3: function(frm) {
+		frm.save();
+	},
+	save_me4: function(frm) {
+		frm.save();
 	}
 });
+
+var set_performance_profile_resource_btn = function(frm) {
+	if(!frm.is_new() && frm.doc.docstatus<1){
+		frm.add_custom_button(__('Get Hand book'), function(){
+			resource_btn_action('one_fm.hiring.utils.get_performance_profile_resource', 'Hand book');
+		}, "Performance Profile Resources");
+		frm.add_custom_button(__('Get Guid'), function(){
+			resource_btn_action('one_fm.hiring.utils.get_performance_profile_guid', 'Guid');
+		}, "Performance Profile Resources");
+	}
+	function resource_btn_action(method, label) {
+		frappe.call({
+			method: method,
+			callback: function(r) {
+				if(r.message){
+					// window.open(r.message, '_blank');
+					window.open(r.message, '_self');
+				}
+				else{
+					frappe.msgprint(__("There is no {0} configured in Hiring Settings.", [label]))
+				}
+			}
+		});
+	}
+};
 
 var set_project_details_to_erf = function(frm) {
 	if(frm.doc.project){
@@ -226,32 +271,19 @@ var set_performance_profile_html = function(frm) {
 	$wrapper.html(performance_profile_html);
 };
 
+var set_open_to_different_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.open_to_different == 'Yes' ? true: false, 'open_to_different_html', 'open_to_different', 'Would you be open to see applicants with a track record of doing these types of work even if the person had a different mix of skills, exp ?');
+};
+
 var set_travel_required_btn = function(frm) {
-	var $wrapper = frm.fields_dict.travel_required_html.$wrapper;
-	var selected = 'btn-primary';
-	var travel_required_html = `<div><label class="control-label" style="padding-right: 0px;">Is Travelling A critial Aspect Of The Job Requirment?</label></div><div>
-		<button class="btn btn-default btn-xs ${frm.doc.travel_required ? selected: ''} travel_required_btn_html" type="button" data='Yes'>Yes</button>
-		<button class="btn btn-default btn-xs ${!frm.doc.travel_required ? selected: ''} travel_required_btn_html" type="button" data='No'>No</button>
-	</div>`;
-	$wrapper
-		.html(travel_required_html);
-	$wrapper.on('click', '.travel_required_btn_html', function() {
-		var $btn = $(this);
-		$wrapper.find('.travel_required_btn_html').removeClass('btn-primary');
-		$btn.addClass('btn-primary');
-		frm.set_value('travel_required', $btn.attr('data')=='Yes'? true:false);
-	});
+	yes_no_html_buttons(frm, frm.doc.travel_required, 'travel_required_html', 'travel_required', 'Is Travelling A critial Aspect Of The Job Requirment?');
 };
 
 var set_shift_hours_btn = function(frm) {
 	var $wrapper = frm.fields_dict.shift_hours_html.$wrapper;
 	var selected = 'btn-primary';
 	var val = frm.doc.shift_hours;
-	if(!frm.doc.shift_hours){
-		val = 'None';
-		frm.set_df_property('shift_hours', 'hidden', true);
-	}
-	else if(val != 12 && val != 8 && val != 9){
+	if(val != 12 && val != 8 && val != 9){
 		val = 'Custom';
 		frm.set_df_property('shift_hours', 'hidden', false);
 	}
@@ -263,60 +295,56 @@ var set_shift_hours_btn = function(frm) {
 		<button class="btn btn-default btn-xs ${val=="9" ? selected: ''} shift_hours_btn_html" type="button" data-shift_hours='9'>9</button>
 		<button class="btn btn-default btn-xs ${val=="8" ? selected: ''} shift_hours_btn_html" type="button" data-shift_hours='8'>8</button>
 		<button class="btn btn-default btn-xs ${val=="Custom" ? selected: ''} shift_hours_btn_html" type="button" data-shift_hours='Custom'>Custom</button>
-		<button class="btn btn-default btn-xs ${val=="None" ? selected: ''} shift_hours_btn_html" type="button" data-shift_hours='None'>None</button>
-		</div>`;
+	</div>`;
 	$wrapper
 		.html(shift_hours_html);
 	$wrapper.on('click', '.shift_hours_btn_html', function() {
-		var $btn = $(this);
-		$wrapper.find('.shift_hours_btn_html').removeClass('btn-primary');
-		$btn.addClass('btn-primary');
-		if($btn.attr('data-shift_hours') == 'Custom'){
-			frm.set_df_property('shift_hours', 'hidden', false);
-			frm.set_value('shift_hours', '');
-		}
-		else if($btn.attr('data-shift_hours') == 'None'){
-			frm.set_df_property('shift_hours', 'hidden', true);
-			frm.set_value('shift_hours', '');
-		}
-		else{
-			frm.set_df_property('shift_hours', 'hidden', true);
-			frm.set_value('shift_hours', $btn.attr('data-shift_hours'));
+		if(frm.doc.docstatus == 0){
+			var $btn = $(this);
+			$wrapper.find('.shift_hours_btn_html').removeClass('btn-primary');
+			$btn.addClass('btn-primary');
+			if($btn.attr('data-shift_hours') == 'Custom'){
+				frm.set_df_property('shift_hours', 'hidden', false);
+				frm.set_value('shift_hours', '');
+			}
+			else{
+				frm.set_df_property('shift_hours', 'hidden', true);
+				frm.set_value('shift_hours', $btn.attr('data-shift_hours'));
+			}
 		}
 	});
 };
 
 var set_shift_working_btn = function(frm) {
-	var $wrapper = frm.fields_dict.shift_working_html.$wrapper;
-	var selected = 'btn-primary';
-	var shift_working_html = `<div><label class="control-label" style="padding-right: 0px;">Will The Employee Work In Shifts?</label></div><div>
-		<button class="btn btn-default btn-xs ${frm.doc.shift_working ? selected: ''} shift_working_btn_html" type="button" data='Yes'>Yes</button>
-		<button class="btn btn-default btn-xs ${!frm.doc.shift_working ? selected: ''} shift_working_btn_html" type="button" data='No'>No</button>
-	</div>`;
-	$wrapper
-		.html(shift_working_html);
-	$wrapper.on('click', '.shift_working_btn_html', function() {
-		var $btn = $(this);
-		$wrapper.find('.shift_working_btn_html').removeClass('btn-primary');
-		$btn.addClass('btn-primary');
-		frm.set_value('shift_working', $btn.attr('data')=='Yes'? true:false);
-	});
+	yes_no_html_buttons(frm, frm.doc.shift_working, 'shift_working_html', 'shift_working', 'Will The Employee Work In Shifts?');
 };
 
 var set_night_shift_btn = function(frm) {
-	var $wrapper = frm.fields_dict.night_shift_html.$wrapper;
+	yes_no_html_buttons(frm, frm.doc.night_shift, 'night_shift_html', 'night_shift', 'Will The Employee Work In Night Shifts?');
+};
+
+var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
+	var $wrapper = frm.fields_dict[html_field].$wrapper;
 	var selected = 'btn-primary';
-	var night_shift_html = `<div><label class="control-label" style="padding-right: 0px;">Will The Employee Work In Night Shifts?</label></div><div>
-		<button class="btn btn-default btn-xs ${frm.doc.night_shift ? selected: ''} night_shift_btn_html" type="button" data='Yes'>Yes</button>
-		<button class="btn btn-default btn-xs ${!frm.doc.night_shift ? selected: ''} night_shift_btn_html" type="button" data='No'>No</button>
+	var field_btn_html = field_name+'_btn_html';
+	var field_html = `<div><label class="control-label" style="padding-right: 0px;">${label}</label></div><div>
+		<button class="btn btn-default btn-xs ${val ? selected: ''} ${field_btn_html}" type="button" data='Yes'>Yes</button>
+		<button class="btn btn-default btn-xs ${!val ? selected: ''} ${field_btn_html}" type="button" data='No'>No</button>
 	</div>`;
 	$wrapper
-		.html(night_shift_html);
-	$wrapper.on('click', '.night_shift_btn_html', function() {
-		var $btn = $(this);
-		$wrapper.find('.night_shift_btn_html').removeClass('btn-primary');
-		$btn.addClass('btn-primary');
-		frm.set_value('night_shift', $btn.attr('data')=='Yes'? true:false);
+		.html(field_html);
+	$wrapper.on('click', '.'+field_btn_html, function() {
+		if(frm.doc.docstatus == 0){
+			var $btn = $(this);
+			$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
+			$btn.addClass('btn-primary');
+			if(field_name == 'open_to_different'){
+				frm.set_value(field_name, $btn.attr('data'));
+			}
+			else{
+				frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
+			}
+		}
 	});
 };
 

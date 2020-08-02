@@ -4,6 +4,18 @@ from __future__ import unicode_literals
 import frappe
 from frappe.utils import get_url
 
+@frappe.whitelist()
+def get_performance_profile_resource():
+    file_path = frappe.db.get_value('Hiring Settings', None, 'performance_profile_resource')
+    if file_path:
+        return get_url(file_path)
+
+@frappe.whitelist()
+def get_performance_profile_guid():
+    file_path = frappe.db.get_value('Hiring Settings', None, 'performance_profile_guid')
+    if file_path:
+        return get_url(file_path)
+
 def after_insert_job_applicant(doc, method):
     website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)
     notify_recruiter_and_requester_from_job_applicant(doc, method)

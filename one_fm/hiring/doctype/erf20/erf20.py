@@ -12,19 +12,20 @@ from frappe import _
 class ERF20(Document):
 	def validate(self):
 		self.manage_assigned_recruiter()
-		self.set_erf_code()
 		self.validate_date()
 		self.validate_languages()
 		self.set_other_benefits()
 		self.validate_type_of_license()
 		self.set_salary_structure_from_grade()
 		self.set_salary_details()
-		self.validate_total_required_candidates()
 		self.calculate_salary_per_person()
 		self.calculate_total_cost_in_salary()
 		self.calculate_benefit_cost_to_company()
 		self.calculate_total_cost_to_company()
 		self.validate_type_of_travel()
+
+	def after_insert(self):
+		frappe.db.set_value(self.doctype, self.name, 'erf_code', self.name)
 
 	def validate_type_of_travel(self):
 		if self.travel_required and not self.type_of_travel:
@@ -95,9 +96,6 @@ class ERF20(Document):
 		if self.expected_date_of_deployment < today():
 			frappe.throw(_("Expected Date of Deployment cannot be before Today"))
 
-	def set_erf_code(self):
-		self.erf_code = self.name
-
 	def manage_assigned_recruiter(self):
 		if not self.need_to_assign_more_recruiter:
 			self.secondary_recruiter_assigned = ''
@@ -108,6 +106,7 @@ class ERF20(Document):
 		assign_recruiter_to_project_task(self)
 
 	def on_submit(self):
+		self.validate_total_required_candidates()
 		self.erf_finalized = today()
 		self.validate_recruiter_assigned()
 		self.notify_approver()

@@ -26,6 +26,7 @@
   "vacation_days",
   "governorate",
   "location_of_work",
+  "save_me",
   "column_break_14",
   "travel_required_html",
   "travel_required",
@@ -39,25 +40,28 @@
   "candidates_required_section",
   "is_height_mandatory",
   "gender_height_requirement",
+  "save_me1",
   "education_and_other_requirements_section",
   "education_qualification",
   "specialization",
   "certification",
   "minimum_experience_required",
-  "maximum_experience_required",
+  "save_me2",
   "column_break_30",
   "driving_license_required",
   "type_of_license",
   "language_and_basic_skill_section",
   "languages",
   "designation_skill",
-  "open_to_different_skilled_and_experienced_candidates",
+  "open_to_different_html",
+  "open_to_different",
+  "save_me3",
   "tools_section",
   "tool_request_item",
   "is_uniform_needed_for_this_job",
+  "save_me4",
   "performance_profile_section",
   "performance_profile_html",
-  "okr_hand_book_attach",
   "column_break_52",
   "schedule_for_okr_workshop_with_recruiter",
   "okr_workshop_with",
@@ -204,15 +208,13 @@
    "description": "30 Days Month",
    "fieldname": "off_days",
    "fieldtype": "Int",
-   "label": "Off Days In a Month",
-   "reqd": 1
+   "label": "Off Days In a Month"
   },
   {
    "default": "30",
    "fieldname": "vacation_days",
    "fieldtype": "Int",
-   "label": "Vacation Days In an Year",
-   "reqd": 1
+   "label": "Vacation Days In an Year"
   },
   {
    "default": "0",
@@ -267,8 +269,7 @@
   {
    "fieldname": "gender_height_requirement",
    "fieldtype": "Table",
-   "options": "ERF Gender Height Requirement",
-   "reqd": 1
+   "options": "ERF Gender Height Requirement"
   },
   {
    "collapsible": 1,
@@ -280,8 +281,7 @@
    "fieldname": "education_qualification",
    "fieldtype": "Select",
    "label": "Minimum Educational Qualification",
-   "options": "\nGraduate\nPost Graduate\nUnder Graduate\nHigh School",
-   "reqd": 1
+   "options": "\nGraduate\nPost Graduate\nUnder Graduate\nHigh School"
   },
   {
    "fieldname": "specialization",
@@ -297,13 +297,7 @@
   {
    "fieldname": "minimum_experience_required",
    "fieldtype": "Int",
-   "label": "Minimum Relevant Experience Required (In Years)",
-   "reqd": 1
-  },
-  {
-   "fieldname": "maximum_experience_required",
-   "fieldtype": "Int",
-   "label": "Maximum Experience Required (In Years)"
+   "label": "Minimum Relevant Experience Required (In Years)"
   },
   {
    "fieldname": "column_break_30",
@@ -326,15 +320,13 @@
    "fieldname": "languages",
    "fieldtype": "Table",
    "label": "Languages",
-   "options": "Employee Language Requirement",
-   "reqd": 1
+   "options": "Employee Language Requirement"
   },
   {
    "fieldname": "designation_skill",
    "fieldtype": "Table",
    "label": "Skills",
-   "options": "Designation Skill",
-   "reqd": 1
+   "options": "Designation Skill"
   },
   {
    "fieldname": "performance_profile",
@@ -342,13 +334,6 @@
    "label": "Performance Profile",
    "options": "OKR Performance Profile",
    "permlevel": 1
-  },
-  {
-   "default": "Yes",
-   "fieldname": "open_to_different_skilled_and_experienced_candidates",
-   "fieldtype": "Select",
-   "label": "Would you be open to see applicants with a track record of doing these types of work even if the person had a different mix of skills, exp ?",
-   "options": "Yes\nNo"
   },
   {
    "fieldname": "hiring_method",
@@ -366,8 +351,7 @@
   {
    "fieldname": "tool_request_item",
    "fieldtype": "Table",
-   "options": "ERF Tool Request Item",
-   "reqd": 1
+   "options": "ERF Tool Request Item"
   },
   {
    "default": "0",
@@ -580,7 +564,7 @@
   {
    "fieldname": "okr_workshop_with",
    "fieldtype": "Link",
-   "label": "Select Recruiter For a Quick Workshop",
+   "label": "Select HR For a Quick Workshop",
    "options": "User"
   },
   {
@@ -622,14 +606,47 @@
    "read_only": 1
   },
   {
-   "fieldname": "okr_hand_book_attach",
-   "fieldtype": "Attach",
-   "label": "Read through the handbook Our recruiter will help you complete in the lou addler way"
+   "fieldname": "open_to_different_html",
+   "fieldtype": "HTML",
+   "label": "Open to Different Skilled and Experienced Candidates"
+  },
+  {
+   "default": "Yes",
+   "fieldname": "open_to_different",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Would you be open to see applicants with a track record of doing these types of work even if the person had a different mix of skills, exp ?",
+   "options": "Yes\nNo"
+  },
+  {
+   "fieldname": "save_me",
+   "fieldtype": "Button",
+   "label": "Save"
+  },
+  {
+   "fieldname": "save_me1",
+   "fieldtype": "Button",
+   "label": "Save"
+  },
+  {
+   "fieldname": "save_me2",
+   "fieldtype": "Button",
+   "label": "Save"
+  },
+  {
+   "fieldname": "save_me3",
+   "fieldtype": "Button",
+   "label": "Save"
+  },
+  {
+   "fieldname": "save_me4",
+   "fieldtype": "Button",
+   "label": "Save"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-07-28 12:54:22.367979",
+ "modified": "2020-07-30 10:25:51.962765",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "ERF20",
