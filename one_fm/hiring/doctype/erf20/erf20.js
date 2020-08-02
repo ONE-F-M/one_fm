@@ -267,8 +267,30 @@ var set_performance_profile_html = function(frm) {
 	<li style="font-size: 12px; color: #8d99a6;">Product Manager: Working with engineering, sales and operations prepare a product launch plan for the (product) within 90 days. Within (days) identify all critical design and test issues needed to ensure an on time product release to manufacturing.</li>
 	<li style="font-size: 12px; color: #8d99a6;">Call Center Rep: with 30 days be in a position to handle 4-5 simoultaneous in-bound calls fully resolving 90% of calls within 4-5 Minutes</li>
 	</ol>
+	</div>
+	<div>
+	<button class="btn btn-default btn-xs performance_profile_guid_btn" type="button">Guid</button>
 	</div>`;
 	$wrapper.html(performance_profile_html);
+	$wrapper.on('click', '.performance_profile_guid_btn', function() {
+		if(frm.doc.docstatus == 0){
+			performance_profile_guid_html();
+		}
+	});
+};
+
+var performance_profile_guid_html = function() {
+	var dialog = new frappe.ui.Dialog({
+		title: __("Guid"),
+		fields: [
+			{
+				"fieldtype": "HTML",
+				"fieldname": "guid_html"
+			}
+		]
+	});
+	dialog.fields_dict.guid_html.$wrapper.html(frappe.render_template('guid_html'));
+	dialog.show();
 };
 
 var set_open_to_different_btn = function(frm) {
