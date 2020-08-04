@@ -1,19 +1,21 @@
 frappe.listview_settings['Job Applicant'] = {
 	filters:[["status","!=","Rejected"]],
 	onload: function(listview) {
-		short_list_applicant(listview);
+		update_applicant_status(listview, 'Filter Applicants', 'Filter {0} applicants ?', 'Applicant Filtered');
+		update_applicant_status(listview, 'Schedule Interview', 'Schedule Interview for {0} applicants ?', 'Interview Scheduled');
+		update_applicant_status(listview, 'Shortlist', 'Shortlist {0} applicants ?', 'Shortlisted');
 		reject_applicat_directly(listview);
 	}
 };
 
-var short_list_applicant = function(listview) {
-	listview.page.add_action_item(__("Shortlist"), function() {
+var update_applicant_status = function(listview, btn_label, confirm_msg, status) {
+	listview.page.add_action_item(__(btn_label), function() {
 		const docnames = listview.get_checked_items(true).map(docname => docname.toString());
 		frappe.confirm(
-			__('Shortlist {0} applicants ?', [docnames.length]),
+			__(confirm_msg, [docnames.length]),
 			function(){
 				// Yes
-				listview.call_for_selected_items('one_fm.hiring.utils.update_applicant_status', { status_field: 'one_fm_applicant_status', status: "Shortlisted" });
+				listview.call_for_selected_items('one_fm.hiring.utils.update_applicant_status', { status_field: 'one_fm_applicant_status', status: status });
 				listview.refresh();
 			},
 			function(){
