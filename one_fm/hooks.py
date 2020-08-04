@@ -37,6 +37,7 @@ doctype_js = {
 	"Project": "public/js/doctype_js/project.js",
 	"Notification Log": "public/js/doctype_js/notification_log.js",
 }
+doctype_list_js = {"Job Applicant" : "public/js/doctype_js/job_applicant_list.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -233,7 +234,19 @@ scheduler_events = {
 # Testing
 # -------
 
-# hiring_process_custom_fieldname_list = []
+# from one_fm.purchase.custom_field_list import get_custom_field_name_list
+# my_custom_fieldname_list = get_custom_field_name_list(['Job Applicant'])
+# fixtures = [
+# 	{
+# 		"dt": "Custom Field",
+# 		'filters': [['name', 'in', my_custom_fieldname_list]]
+# 	},
+# 	{
+# 		"dt": "Custom Script",
+# 		'filters': [['dt', 'in', ['Job Applicant', 'Job Opening', 'Job Offer', 'Item', 'Stock Entry', 'Warehouse', 'Supplier',
+# 		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
+# 	}
+# ]
 
 fixtures = [
 	{
