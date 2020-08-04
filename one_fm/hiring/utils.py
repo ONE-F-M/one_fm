@@ -70,3 +70,12 @@ def update_job_offer_from_applicant(jo, status):
     job_offer = frappe.get_doc('Job Offer', jo)
     job_offer.status = status
     job_offer.save()
+
+@frappe.whitelist()
+def update_applicant_status(names, status_field, status, reason_for_rejection=False):
+    names = json.loads(names)
+    for name in names:
+        job_applicant = frappe.get_doc("Job Applicant", name)
+        job_applicant.set(status_field, status)
+        job_applicant.one_fm_reason_for_rejection = reason_for_rejection if reason_for_rejection else ''
+        job_applicant.save()
