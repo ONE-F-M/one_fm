@@ -67,5 +67,17 @@ def get_data():
 					"label": _("MOM")
 				},
 			]
+		},
+		{
+			"label": _("Roster"),
+			"items": [
+				{
+					"color": "grey",
+					"icon": "octicon octicon-key",
+					"type": "doctype",
+					"name": "Roster",
+					"label": _("Roster")
+				},
+			]
 		}        
 	]
