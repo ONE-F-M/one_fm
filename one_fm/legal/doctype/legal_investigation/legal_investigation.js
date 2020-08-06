@@ -3,6 +3,7 @@
 
 frappe.ui.form.on('Legal Investigation', {
 	refresh: function(frm){
+		// set_lead_filters(frm);
 		if(!frm.doc.__islocal){
 			set_employee_filters(frm);
 			frm.set_df_property("session_summary", "read_only", true);
@@ -15,7 +16,25 @@ frappe.ui.form.on('Legal Investigation', {
 	end_date: function(frm) {
 		validate_dates(frm);
 	},
+	investigation_lead: function(frm){
+		if(frm.doc.investigation_lead){
+			frappe.db.get_value("Employee", {"name": frm.doc.investigation_lead}, ["user_id"])
+			.then(res => {
+				console.log(res);
+				frm.set_value("lead_user", res.message.user_id);
+			})
+		}
+	}
 });
+function set_lead_filters(frm){
+	frm.set_query("investigation_lead", function() {
+        return {
+            "filters": {
+                "department": "Legal - ONEFM",
+            }
+        };
+    });
+}
 
 function set_employee_filters(frm){
 	let {doctype, name} = frm.doc;

@@ -27,7 +27,17 @@ app_include_js = [
 # web_include_js = "/assets/one_fm/js/one_fm.js"
 
 # include js in page
-# page_js = {"page" : "public/js/file.js"}
+page_js = {"roster" : [
+	# "public/js/roster_js/jquery-ui.min.js",
+	"public/js/roster_js/bootstrap-datepicker.min.js",
+	"public/js/roster_js/bootstrap-notify.min.js",
+	"public/js/roster_js/select2.min.js",
+	"public/js/roster_js/jquery.dataTables.min.js",
+	"public/js/roster_js/jquery.validate.min.js",
+	"public/js/roster_js/additional-methods.min.js",
+	"public/js/roster_js/rosteringmodalvalidation.js"
+	]
+}
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
@@ -168,6 +178,9 @@ scheduler_events = {
 		'one_fm.utils.send_gp_letter_reminder'
 	],
 	"cron": {
+		"0/1 * * * *": [
+			"one_fm.legal.doctype.penalty.penalty.automatic_accept",
+		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.supervisor_reminder",
 			"one_fm.api.tasks.final_reminder",

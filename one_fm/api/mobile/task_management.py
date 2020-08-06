@@ -7,45 +7,53 @@ from frappe.utils.html_utils import clean_html
 
 @frappe.whitelist()
 def get_tasks():
-	user, user_roles, user_employee = get_current_user_details()
-	print(user, user_employee)
-	tasks = frappe.db.sql("""
-		SELECT
-			name, subject, project, description, status
-		FROM `tabTask`
-		WHERE
-			name IN
-		(SELECT
-			reference_name FROM `tabToDo`
-		WHERE
-			reference_type="Task" AND owner="{0}" AND status<>"Cancelled")
-		""".format(user), as_dict=1)
-	
-	print(tasks)
-	return tasks
-
+	try:
+		user, user_roles, user_employee = get_current_user_details()
+		print(user, user_employee)
+		tasks = frappe.db.sql("""
+			SELECT
+				name, subject, project, description, status
+			FROM `tabTask`
+			WHERE
+				name IN
+			(SELECT
+				reference_name FROM `tabToDo`
+			WHERE
+				reference_type="Task" AND owner="{0}" AND status<>"Cancelled")
+			""".format(user), as_dict=1)
+		
+		print(tasks)
+		return tasks
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def complete_task(task_name):
-	task = frappe.get_doc("Task", task_name)
-	task.status = "Completed"
-	task.save()
-
+	try:
+		task = frappe.get_doc("Task", task_name)
+		task.status = "Completed"
+		task.save()
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def reopen_task(task_name):
-	task = frappe.get_doc("Task", task_name)
-	task.status = "Open"
-	task.progress = 0
-	task.save()
-
+	try:
+		task = frappe.get_doc("Task", task_name)
+		task.status = "Open"
+		task.progress = 0
+		task.save()
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def add_task_comment(task_name, content):
-	user, user_roles, user_employee = get_current_user_details()
-	print(task_name, content, user)
-	add_comment("Task", task_name, content, user)
-
+	try:
+		user, user_roles, user_employee = get_current_user_details()
+		print(task_name, content, user)
+		add_comment("Task", task_name, content, user)
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def assign_task(task_name, employee):

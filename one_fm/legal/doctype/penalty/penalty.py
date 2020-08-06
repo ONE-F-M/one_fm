@@ -9,7 +9,7 @@ import cv2
 import base64
 from frappe import _
 import pickle, face_recognition
-from frappe.utils import cint, getdate, add_to_date, get_link_to_form
+from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datetime
 
 class Penalty(Document):
 	def after_insert(self):
@@ -103,11 +103,11 @@ def reject_penalty(rejection_reason, docname):
 	penalty.save(ignore_permissions=True)
 	frappe.db.commit()
 
-def send_email_to_legal(penalty):
+def send_email_to_legal(penalty, message=None):
 	legal = "legal@one-fm.com"
 	link = get_link_to_form(penalty.doctype, penalty.name)
 	subject = _("Review Penalty: {penalty}".format(penalty=penalty.name))
-	message = _("Face verification did not match while accepting the penalty.<br> Please review and take necessary action.<br> Link: {link}".format(link=link))
+	message = _("Face verification did not match while accepting the penalty.<br> Please review and take necessary action.<br> Link: {link}".format(link=link)) if not message else message
 	frappe.sendmail([legal], subject=subject, message=message, reference_doctype=penalty.doctype, reference_name=penalty.name)
 
 
@@ -177,3 +177,16 @@ def match_encodings(encodings, face_data):
 def create_legal_inv(doctype, docname):
 	doc = frappe.get_doc(doctype, docname)
 	doc.create_legal_investigation()
+
+
+def automatic_accept():
+	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
+	print(now_datetime().strftime("%Y-%m-%d %H:%M"), time)
+	docs = frappe.get_all("Penalty", {"penalty_issuance_time": time, "workflow_state": "Penalty Issued"})
+
+	for doc in docs:
+		penalty = frappe.get_doc("Penalty", doc.name)
+		penalty.verified = 0
+		penalty.workflow_state = "Penalty Accepted"
+		penalty.save(ignore_permissions=True)
+		send_email_to_legal(penalty, _("Penalty was accepted after 48 hours automatically. Please review."))
