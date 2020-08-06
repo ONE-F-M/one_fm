@@ -8,9 +8,20 @@
   "column_break_2",
   "employee_name",
   "column_break_4",
+  "designation",
+  "column_break_6",
   "penalty_type",
   "section_break_6",
-  "investigation_results"
+  "investigation_results",
+  "use_penalty_details",
+  "section_break_9",
+  "penalty_location",
+  "penalty_occurence_time",
+  "shift",
+  "column_break_13",
+  "site",
+  "project",
+  "site_location"
  ],
  "fields": [
   {
@@ -50,10 +61,71 @@
    "fieldname": "investigation_results",
    "fieldtype": "Small Text",
    "label": "Investigation Results"
+  },
+  {
+   "default": "1",
+   "fieldname": "use_penalty_details",
+   "fieldtype": "Check",
+   "label": "Use details from Penalty"
+  },
+  {
+   "depends_on": "eval:doc.use_penalty_details == 0",
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "penalty_location",
+   "fieldtype": "Data",
+   "label": "Penalty Location"
+  },
+  {
+   "fieldname": "penalty_occurence_time",
+   "fieldtype": "Datetime",
+   "label": "Penalty Occurence Time"
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Link",
+   "label": "Shift",
+   "options": "Operations Shift"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "shift.site",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "fetch_from": "shift.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fetch_from": "site.site_location",
+   "fieldname": "site_location",
+   "fieldtype": "Data",
+   "label": "Site Location"
+  },
+  {
+   "fetch_from": "employee_id.designation",
+   "fieldname": "designation",
+   "fieldtype": "Data",
+   "label": "Designation"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
- "modified": "2020-07-09 15:28:33.333701",
+ "modified": "2020-07-27 20:55:21.440055",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Legal Investigation Penalty",
