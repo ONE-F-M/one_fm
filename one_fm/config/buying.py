@@ -29,4 +29,16 @@ def get_data():
 				}
 			]
 		},
+		{
+			"label": _("Settings"),
+			"icon": "fa fa-star",
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Purchase Settings",
+					"onboard": 1,
+					"label": _("One FM Purchase Settings")
+				}
+			]
+		},
 	]
