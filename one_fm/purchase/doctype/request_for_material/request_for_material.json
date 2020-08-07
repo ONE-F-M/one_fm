@@ -20,6 +20,8 @@
   "schedule_date",
   "company",
   "priority",
+  "request_for_material_accepter",
+  "request_for_material_approver",
   "type_details_section",
   "project",
   "project_details",
@@ -111,7 +113,7 @@
    "no_copy": 1,
    "oldfieldname": "status",
    "oldfieldtype": "Select",
-   "options": "\nDraft\nApproved\nRejected\nStopped\nCancelled\nPending\nPartially Ordered\nOrdered\nIssued\nTransferred\nReceived",
+   "options": "\nDraft\nAccepted\nApproved\nRejected\nStopped\nCancelled\nPending\nPartially Ordered\nOrdered\nIssued\nTransferred\nReceived",
    "print_hide": 1,
    "print_width": "100px",
    "read_only": 1,
@@ -123,7 +125,8 @@
    "depends_on": "eval:doc.status == 'Rejected'",
    "fieldname": "reason_for_rejection",
    "fieldtype": "Small Text",
-   "label": "Reason For Rejection"
+   "label": "Reason For Rejection",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_2",
@@ -147,7 +150,8 @@
    "allow_on_submit": 1,
    "fieldname": "schedule_date",
    "fieldtype": "Date",
-   "label": "Required Date"
+   "label": "Required Date",
+   "reqd": 1
   },
   {
    "fieldname": "company",
@@ -399,12 +403,26 @@
    "fieldtype": "Select",
    "label": "Priority",
    "options": "\nHigh\nMedium\nLow"
+  },
+  {
+   "fieldname": "request_for_material_accepter",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Request for Material Accepter",
+   "options": "User"
+  },
+  {
+   "fieldname": "request_for_material_approver",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Request for Material Approver",
+   "options": "User"
   }
  ],
  "icon": "fa fa-ticket",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-07-23 17:33:02.756497",
+ "modified": "2020-08-07 19:23:52.394690",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
@@ -465,6 +483,19 @@
    "read": 1,
    "report": 1,
    "role": "Purchase User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
    "share": 1,
    "submit": 1,
    "write": 1

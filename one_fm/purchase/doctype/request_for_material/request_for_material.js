@@ -37,12 +37,11 @@ frappe.ui.form.on('Request for Material', {
 	refresh: function(frm) {
 		frm.events.make_custom_buttons(frm);
 		if(frm.doc.docstatus == 1){
-			frm.set_df_property('status', 'read_only', false);
-			if(frm.doc.status == "Approved"){
+			if(frappe.session.user == frm.doc.request_for_material_accepter){
 				frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
 			}
 		}
-		let status = ['Draft', 'Approved', 'Rejected'];
+		let status = ['Draft', 'Accepted', 'Approved', 'Rejected'];
 		if(status.includes(frm.doc.status) && frm.doc.docstatus == 1){
 			frm.set_df_property('status', 'options', status);
 		}
@@ -77,6 +76,60 @@ frappe.ui.form.on('Request for Material', {
 		// if (frm.doc.docstatus == 1 && frm.doc.status == 'Stopped') {
 		// 	frm.add_custom_button(__('Re-open'), () => frm.events.update_status(frm, 'Submitted'));
 		// }
+
+		if (frm.doc.docstatus == 1){
+			if(frappe.session.user==frm.doc.request_for_material_accepter && frm.doc.status == "Draft"){
+				frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_approve_request_for_material(frm, 'Accepted')).addClass('btn-primary');
+				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_material(frm, 'Rejected')).addClass('btn-danger');
+			}
+			if(frappe.session.user==frm.doc.request_for_material_approver && frm.doc.status == "Accepted"){
+				frm.add_custom_button(__('Approve'), () => frm.events.confirm_accept_approve_request_for_material(frm, 'Approved')).addClass('btn-primary');
+				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_material(frm, 'Rejected')).addClass('btn-danger');
+			}
+		}
+	},
+	reject_request_for_material: function(frm, status) {
+		var d = new frappe.ui.Dialog({
+			title : __("Reject Request for Material"),
+			fields : [{
+				fieldtype: "Small Text",
+				label: "Reason for Rejection",
+				fieldname: "reason_for_rejection",
+				reqd : 1
+			}],
+			primary_action_label: __("Reject"),
+			primary_action: function(){
+				frm.events.accept_approve_reject_request_for_material(frm, status, d.get_value('reason_for_rejection'));
+				d.hide();
+			},
+		});
+		d.show();
+	},
+	confirm_accept_approve_request_for_material: function(frm, status) {
+		let msg_status = 'Approve';
+		if(status != 'Approved'){
+			msg_status = status == 'Accepted' ? 'Accept': 'Reject'
+		}
+		frappe.confirm(
+			__('Do You Want to {0} this Request for Material', [msg_status]),
+			function(){
+				// Yes
+				frm.events.accept_approve_reject_request_for_material(frm, status, false);
+			},
+			function(){} // No
+		);
+	},
+	accept_approve_reject_request_for_material: function(frm, status, reason_for_rejection) {
+		frappe.call({
+			doc: frm.doc,
+			method: 'accept_approve_reject_request_for_material',
+			args: {status: status, reason_for_rejection: reason_for_rejection},
+			callback(r) {
+				if (!r.exc) {
+					frm.reload_doc();
+				}
+			}
+		});
 	},
 	update_status: function(frm, stop_status) {
 		frappe.call({
