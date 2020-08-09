@@ -1,0 +1,56 @@
+{
+ "actions": [],
+ "creation": "2020-08-06 12:14:21.145625",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "request_for_material_section",
+  "request_for_material_accepter",
+  "request_for_material_approver"
+ ],
+ "fields": [
+  {
+   "fieldname": "request_for_material_section",
+   "fieldtype": "Section Break",
+   "label": "Request for Material"
+  },
+  {
+   "fieldname": "request_for_material_approver",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Request for Material Approver",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "request_for_material_accepter",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Request for Material Accepter",
+   "options": "User",
+   "reqd": 1
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2020-08-06 20:04:08.375872",
+ "modified_by": "Administrator",
+ "module": "Purchase",
+ "name": "Purchase Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

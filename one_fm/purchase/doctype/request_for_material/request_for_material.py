@@ -6,13 +6,58 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import flt
+from frappe.utils import flt, get_url
 from frappe import _
 
 class RequestforMaterial(Document):
+	def on_submit(self):
+		self.notify_request_for_material_accepter()
+
+	def notify_request_for_material_accepter(self):
+		if self.request_for_material_accepter:
+			page_link = get_url("/desk#Form/Request for Material/" + self.name)
+			message = "<p>Please Review and Accept or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
+			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
+			send_email(self, [self.request_for_material_accepter], message, subject)
+
+	def accept_approve_reject_request_for_material(self, status, reason_for_rejection=None):
+		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
+			page_link = get_url("/desk#Form/Request for Material/" + self.name)
+			# Notify Requester
+			self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
+
+			# Notify Approver
+			if status == 'Accepted' and frappe.session.user == self.request_for_material_accepter and self.request_for_material_approver:
+				message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
+				subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
+				send_email(self, [self.request_for_material_approver], message, subject)
+
+			# Notify Accepter
+			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
+				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
+
+			self.status = status
+			self.reason_for_rejection = reason_for_rejection
+			self.save()
+			self.reload()
+
+	def notify_requester_accepter(self, page_link, status, recipients, reason_for_rejection=None):
+		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
+		if status == 'Rejected' and reason_for_rejection:
+			message += " due to {0}".format(reason_for_rejection)
+		subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
+		send_email(self, recipients, message, subject)
+
 	def validate(self):
 		self.set_title()
 		self.validate_details_against_type()
+		self.set_request_for_material_accepter_and_approver()
+
+	def set_request_for_material_accepter_and_approver(self):
+		if not self.request_for_material_accepter:
+			self.request_for_material_accepter = frappe.db.get_value('Purchase Settings', None, 'request_for_material_accepter')
+		if not self.request_for_material_approver:
+			self.request_for_material_approver = frappe.db.get_value('Purchase Settings', None, 'request_for_material_approver')
 
 	def validate_details_against_type(self):
 		if self.type:
@@ -84,6 +129,15 @@ class RequestforMaterial(Document):
 						format(_(self.doctype), self.name),
 					frappe.InvalidStatusError
 				)
+
+def send_email(doc, recipients, message, subject):
+	frappe.sendmail(
+		recipients= recipients,
+		subject=subject,
+		message=message,
+		reference_doctype=doc.doctype,
+		reference_name=doc.name
+	)
 
 @frappe.whitelist()
 def update_status(name, status):
