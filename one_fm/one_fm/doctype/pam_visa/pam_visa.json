@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "PAMV-.#####",
  "creation": "2020-06-10 09:43:24.305103",
  "doctype": "DocType",
@@ -8,24 +9,27 @@
   "section_break_1",
   "candidate_country_process",
   "pam_visa_section15",
-  "pam_visa_reminder1",
-  "pam_visa_reminder2",
-  "column_break_4",
   "grd_operator_status",
   "pam_visa_submitted",
+  "attach_pam_visa_submitted",
+  "cb_1",
+  "pam_visa_submitted_date_time",
+  "pam_visa_reminder1",
+  "pam_visa_reminder2",
   "pam_visa_reminder2_start",
   "pam_visa_reminder2_done",
   "pam_visa_section13",
-  "pam_visa_reminder_supervisor",
-  "column_break_10",
   "pam_visa_submitted_supervisor",
+  "column_break_10",
+  "pam_visa_submitted_supervisor_date_time",
+  "pam_visa_reminder_supervisor",
   "section_tasriah_09",
+  "upload_tasriah_status",
+  "upload_tasriah_submitted",
+  "tasriah",
+  "upload_tasrih_col",
   "upload_tasriah_reminder1",
   "upload_tasriah_reminder2",
-  "upload_tasrih_col",
-  "upload_tasriah_status",
-  "tasriah",
-  "upload_tasriah_submitted",
   "upload_tasriah_reminder2_start",
   "upload_tasriah_reminder2_done",
   "section_break_4",
@@ -39,19 +43,20 @@
   "reason_of_rejection",
   "pam_designation",
   "pam_visa_approval_section",
-  "pam_visa_approval_reminder1",
-  "pam_visa_approval_reminder2",
-  "pam_visa_approval_col",
   "pam_visa_approval_status",
   "pam_visa_approval_submitted",
+  "pam_visa_approval_col",
+  "pam_visa_approval_reminder1",
+  "pam_visa_approval_reminder2",
   "pam_visa_approval_reminder2_start",
   "pam_visa_approval_reminder2_done",
   "original_visa_section",
-  "upload_original_visa_reminder1",
-  "upload_original_visa_reminder2",
-  "original_visa_col",
   "upload_original_visa_status",
   "upload_original_visa_submitted",
+  "original_visa_col",
+  "attach_original_visa_submitted",
+  "upload_original_visa_reminder1",
+  "upload_original_visa_reminder2",
   "upload_original_visa_reminder2_start",
   "upload_original_visa_reminder2_done",
   "section_break_7",
@@ -136,42 +141,50 @@
   {
    "fieldname": "english_first_name",
    "fieldtype": "Data",
-   "label": "English First Name"
+   "label": "English First Name",
+   "read_only": 1
   },
   {
    "fieldname": "english_second_name",
    "fieldtype": "Data",
-   "label": "English Second Name"
+   "label": "English Second Name",
+   "read_only": 1
   },
   {
    "fieldname": "english_third_name",
    "fieldtype": "Data",
-   "label": "English Third Name"
+   "label": "English Third Name",
+   "read_only": 1
   },
   {
    "fieldname": "english_last_name",
    "fieldtype": "Data",
-   "label": "English Last Name"
+   "label": "English Last Name",
+   "read_only": 1
   },
   {
    "fieldname": "arabic_first_name",
    "fieldtype": "Data",
-   "label": "Arabic First Name"
+   "label": "Arabic First Name",
+   "read_only": 1
   },
   {
    "fieldname": "arabic_second_name",
    "fieldtype": "Data",
-   "label": "Arabic Second Name"
+   "label": "Arabic Second Name",
+   "read_only": 1
   },
   {
    "fieldname": "arabic_third_name",
    "fieldtype": "Data",
-   "label": "Arabic Third Name"
+   "label": "Arabic Third Name",
+   "read_only": 1
   },
   {
    "fieldname": "arabic_last_name",
    "fieldtype": "Data",
-   "label": "Arabic Last Name"
+   "label": "Arabic Last Name",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_16",
@@ -180,33 +193,39 @@
   {
    "fieldname": "nationality",
    "fieldtype": "Data",
-   "label": "Nationality"
+   "label": "Nationality",
+   "read_only": 1
   },
   {
    "fieldname": "religion",
    "fieldtype": "Select",
    "label": "Religion",
-   "options": "\nChristian\nHindu\nIslam\nParsi"
+   "options": "\nChristian\nHindu\nIslam\nParsi",
+   "read_only": 1
   },
   {
    "fieldname": "place_of_birth",
    "fieldtype": "Data",
-   "label": "Place of Birth"
+   "label": "Place of Birth",
+   "read_only": 1
   },
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth"
+   "label": "Date of Birth",
+   "read_only": 1
   },
   {
    "fieldname": "practical_qualification",
    "fieldtype": "Data",
-   "label": "Practical Qualification"
+   "label": "Practical Qualification",
+   "read_only": 1
   },
   {
    "fieldname": "passport_number",
    "fieldtype": "Data",
-   "label": "Passport Number"
+   "label": "Passport Number",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_25",
@@ -216,38 +235,45 @@
    "fieldname": "passport_type",
    "fieldtype": "Select",
    "label": "Passport Type",
-   "options": "\nDiplomat\nNormal"
+   "options": "\nDiplomat\nNormal",
+   "read_only": 1
   },
   {
    "fieldname": "passport_nationality",
    "fieldtype": "Link",
    "label": "Passport Nationality",
-   "options": "Country"
+   "options": "Country",
+   "read_only": 1
   },
   {
    "fieldname": "date_of_issuance",
    "fieldtype": "Date",
-   "label": "Date of Issuance"
+   "label": "Date of Issuance",
+   "read_only": 1
   },
   {
    "fieldname": "date_of_expiry",
    "fieldtype": "Date",
-   "label": "Date of Expiry"
+   "label": "Date of Expiry",
+   "read_only": 1
   },
   {
    "fieldname": "passport_issuer",
    "fieldtype": "Data",
-   "label": "Passport Issuer"
+   "label": "Passport Issuer",
+   "read_only": 1
   },
   {
    "fieldname": "basic_salary",
    "fieldtype": "Currency",
-   "label": "Basic Salary"
+   "label": "Basic Salary",
+   "read_only": 1
   },
   {
    "fieldname": "salary_type",
    "fieldtype": "Data",
-   "label": "Salary Type"
+   "label": "Salary Type",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_3",
@@ -338,11 +364,13 @@
   {
    "fieldname": "pam_visa_reminder1",
    "fieldtype": "Datetime",
+   "hidden": 1,
    "label": "Pam Visa Reminder1"
   },
   {
    "fieldname": "pam_visa_reminder2",
    "fieldtype": "Datetime",
+   "hidden": 1,
    "label": "Pam Visa Reminder2"
   },
   {
@@ -350,25 +378,23 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "0",
    "fieldname": "pam_visa_submitted",
    "fieldtype": "Check",
-   "label": "Pam Visa Submitted"
+   "label": "PAM Visa Submitted"
   },
   {
    "default": "0",
    "fieldname": "pam_visa_reminder2_start",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Pam Visa Reminder2 Start"
   },
   {
    "default": "0",
    "fieldname": "pam_visa_reminder2_done",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Pam Visa Reminder2 Done"
   },
   {
@@ -379,6 +405,7 @@
   {
    "fieldname": "pam_visa_reminder_supervisor",
    "fieldtype": "Datetime",
+   "hidden": 1,
    "label": "Pam Visa Reminder"
   },
   {
@@ -389,7 +416,7 @@
    "default": "0",
    "fieldname": "pam_visa_submitted_supervisor",
    "fieldtype": "Check",
-   "label": "Pam Visa Submitted"
+   "label": "PAM Visa Submitted"
   },
   {
    "default": "Pending",
@@ -407,11 +434,13 @@
   {
    "fieldname": "upload_tasriah_reminder1",
    "fieldtype": "Datetime",
+   "hidden": 1,
    "label": "Upload Tasriah Reminder1"
   },
   {
    "fieldname": "upload_tasriah_reminder2",
    "fieldtype": "Datetime",
+   "hidden": 1,
    "label": "Upload Tasriah Reminder2"
   },
   {
@@ -436,12 +465,14 @@
    "default": "0",
    "fieldname": "upload_tasriah_reminder2_start",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Upload Tasriah Reminder2 Start"
   },
   {
    "default": "0",
    "fieldname": "upload_tasriah_reminder2_done",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Upload Tasriah Reminder2 Done"
   },
   {
@@ -465,11 +496,13 @@
   {
    "fieldname": "pam_visa_approval_reminder1",
    "fieldtype": "Datetime",
+   "hidden": 1,
    "label": "PAM Visa Approval Reminder1"
   },
   {
    "fieldname": "pam_visa_approval_reminder2",
    "fieldtype": "Datetime",
+   "hidden": 1,
    "label": "PAM Visa Approval Reminder2"
   },
   {
@@ -494,12 +527,14 @@
    "default": "0",
    "fieldname": "pam_visa_approval_reminder2_start",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "PAM Visa Approval Reminder2 Start"
   },
   {
    "default": "0",
    "fieldname": "pam_visa_approval_reminder2_done",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "PAM Visa Approval Reminder2 Done"
   },
   {
@@ -510,11 +545,13 @@
   {
    "fieldname": "upload_original_visa_reminder1",
    "fieldtype": "Datetime",
+   "hidden": 1,
    "label": "Upload Original Visa Reminder1"
   },
   {
    "fieldname": "upload_original_visa_reminder2",
    "fieldtype": "Datetime",
+   "hidden": 1,
    "label": "Upload Original Visa Reminder2"
   },
   {
@@ -539,12 +576,14 @@
    "default": "0",
    "fieldname": "upload_original_visa_reminder2_start",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Upload Original Visa Reminder2 Start"
   },
   {
    "default": "0",
    "fieldname": "upload_original_visa_reminder2_done",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Upload Original Visa Reminder2 Done"
   },
   {
@@ -563,16 +602,47 @@
    "fieldname": "marital_status",
    "fieldtype": "Select",
    "label": "Marital Status",
-   "options": "\nSingle\nMarried\nDivorced\nWidowed"
+   "options": "\nSingle\nMarried\nDivorced\nWidowed",
+   "read_only": 1
   },
   {
    "fieldname": "gender",
    "fieldtype": "Link",
    "label": "Gender",
-   "options": "Gender"
+   "options": "Gender",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pam_visa_submitted_date_time",
+   "fieldtype": "Datetime",
+   "label": "Submitted Date and Time",
+   "read_only": 1
+  },
+  {
+   "depends_on": "pam_visa_submitted",
+   "fieldname": "attach_pam_visa_submitted",
+   "fieldtype": "Attach",
+   "label": "Attach PAM Visa Submitted"
+  },
+  {
+   "fieldname": "pam_visa_submitted_supervisor_date_time",
+   "fieldtype": "Datetime",
+   "label": "Submitted Date and Time",
+   "read_only": 1
+  },
+  {
+   "depends_on": "upload_original_visa_submitted",
+   "fieldname": "attach_original_visa_submitted",
+   "fieldtype": "Attach",
+   "label": "Attach Original Visa Submitted"
   }
  ],
- "modified": "2020-07-14 23:32:36.428026",
+ "links": [],
+ "modified": "2020-08-07 22:46:17.637742",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "PAM Visa",
