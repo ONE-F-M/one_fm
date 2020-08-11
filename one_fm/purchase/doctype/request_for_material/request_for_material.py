@@ -19,6 +19,7 @@ class RequestforMaterial(Document):
 			message = "<p>Please Review and Accept or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
 			send_email(self, [self.request_for_material_accepter], message, subject)
+			create_notification_log(subject, message, [self.request_for_material_accepter], self)
 
 	def accept_approve_reject_request_for_material(self, status, reason_for_rejection=None):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
@@ -31,6 +32,7 @@ class RequestforMaterial(Document):
 				message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
 				subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
 				send_email(self, [self.request_for_material_approver], message, subject)
+				create_notification_log(subject, message, [self.request_for_material_approver], self)
 
 			# Notify Accepter
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
@@ -47,6 +49,7 @@ class RequestforMaterial(Document):
 			message += " due to {0}".format(reason_for_rejection)
 		subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
 		send_email(self, recipients, message, subject)
+		create_notification_log(subject, message, recipients, self)
 
 	def validate(self):
 		self.set_title()
@@ -138,6 +141,17 @@ def send_email(doc, recipients, message, subject):
 		reference_doctype=doc.doctype,
 		reference_name=doc.name
 	)
+
+def create_notification_log(subject, message, for_users, reference_doc):
+	for user in for_users:
+		doc = frappe.new_doc('Notification Log')
+		doc.subject = subject
+		doc.email_content = message
+		doc.for_user = user
+		doc.document_type = reference_doc.doctype
+		doc.document_name = reference_doc.name
+		doc.from_user = reference_doc.modified_by
+		doc.insert(ignore_permissions=True)
 
 @frappe.whitelist()
 def update_status(name, status):
