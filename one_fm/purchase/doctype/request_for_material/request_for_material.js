@@ -257,9 +257,9 @@ frappe.ui.form.on("Request for Material Item", {
 		item.rate = 0;
 		set_schedule_date(frm);
 		if(!item.item_code){
-			frappe.model.set_value(item.doctype, item.name, 'actual_item_name', '');
+			frappe.model.set_value(item.doctype, item.name, 'item_name', '');
 		}
-		// frm.events.get_item_data(frm, item);
+		frm.events.get_item_data(frm, item);
 	},
 
 	schedule_date: function(frm, cdt, cdn) {
