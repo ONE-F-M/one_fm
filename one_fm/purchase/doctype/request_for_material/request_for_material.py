@@ -236,6 +236,8 @@ def make_request_for_purchase(source_name, target_doc=None):
 		"Request for Material Item": {
 			"doctype": "Request for Purchase Item",
 			"field_map": [
+				["requested_description", "description"],
+				["requested_item_name", "item_name"],
 				["name", "request_for_material_item"],
 				["parent", "request_for_material"]
 			]
