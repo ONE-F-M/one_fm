@@ -7,10 +7,14 @@ import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from frappe.utils import today, get_url
+from frappe.utils.user import get_user_fullname
 from frappe import _
 
 class ERF20(Document):
 	def validate(self):
+		if self.is_new() and not self.erf_requested_by:
+			self.erf_requested_by = frappe.session.user
+			self.erf_requested_by_name = get_user_fullname(self.erf_requested_by)
 		self.manage_assigned_recruiter()
 		self.validate_date()
 		self.validate_languages()
@@ -281,3 +285,7 @@ def create_event_for_okr_workshop(schedule_date, shared_with):
 	frappe.share.add('Event', event.name, shared_with, write=1, share=1,
 		flags={"ignore_share_permission": True})
 	return event
+
+@frappe.whitelist()
+def set_user_fullname(user):
+	return get_user_fullname(user)

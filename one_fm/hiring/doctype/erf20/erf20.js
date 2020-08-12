@@ -3,6 +3,9 @@
 
 frappe.ui.form.on('ERF20', {
 	refresh: function(frm) {
+		if(frm.is_new()){
+			frm.set_value('erf_requested_by', frappe.session.user);
+		}
 		if(frm.doc.docstatus==0){
 			frm.set_intro(__("All fields are Mandatory."), 'yellow');
 		}
@@ -25,6 +28,20 @@ frappe.ui.form.on('ERF20', {
 		document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
 		set_performance_profile_resource_btn(frm);
 	},
+	erf_requested_by: function(frm) {
+		frm.set_value('erf_requested_by_name', '');
+		if(frm.doc.erf_requested_by){
+			frappe.call({
+				method: 'one_fm.hiring.doctype.erf20.erf20.set_user_fullname',
+				args: {'user': frm.doc.erf_requested_by},
+				callback: function(r) {
+					if(r && r.message){
+						frm.set_value('erf_requested_by_name', r.message);
+					}
+				}
+			});
+		}
+	},
 	validate: function(frm) {
 		if(frm.doc.gender_height_requirement){
 			frm.doc.gender_height_requirement.forEach((item, i) => {
@@ -34,6 +51,13 @@ frappe.ui.form.on('ERF20', {
 	},
 	onload: function(frm) {
 		set_other_benefits(frm);
+		if(frm.doc.docstatus ==0 && !frm.doc.okr_workshop_with){
+			frappe.db.get_value('Hiring Settings', '', 'hr_for_a_quick_workshop', function(r) {
+				if(r && r.hr_for_a_quick_workshop){
+					frm.set_value('okr_workshop_with', r.hr_for_a_quick_workshop);
+				}
+			})
+		}
 	},
 	number_of_candidates_required: function(frm) {
     calculate_total_cost_in_salary(frm);
@@ -257,26 +281,72 @@ var create_project = function(frm) {
 
 var set_performance_profile_html = function(frm) {
 	var $wrapper = frm.fields_dict.performance_profile_html.$wrapper;
+	$wrapper.empty();
 	var performance_profile_html = `<div>
-	<p style="font-size: 12px; color: #8d99a6;">You are the Hiring ManagerExplaing Performance Profile "process of Success"</p>
-
-	<p style="font-size: 12px; color: #8d99a6;">You could write below in brief what the hired person will require to do - Like Eg.</p>
-	<p style="font-size: 12px; color: #8d99a6;">STAR Examples:</p>
-	<ol>
-	<li style="font-size: 12px; color: #8d99a6;">Project Accountant: Upgrade the international consolidations process by Q3 to ensure the preliminary close  figures are within 1-2% variance of the final close</li>
-	<li style="font-size: 12px; color: #8d99a6;">Product Manager: Working with engineering, sales and operations prepare a product launch plan for the (product) within 90 days. Within (days) identify all critical design and test issues needed to ensure an on time product release to manufacturing.</li>
-	<li style="font-size: 12px; color: #8d99a6;">Call Center Rep: with 30 days be in a position to handle 4-5 simoultaneous in-bound calls fully resolving 90% of calls within 4-5 Minutes</li>
-	</ol>
-	</div>
-	<div>
-	<button class="btn btn-default btn-xs performance_profile_guid_btn" type="button">Guid</button>
+	<p style="font-size: 12px; color: #8d99a6;">
+		Dear, ${frm.doc.erf_requested_by_name?frm.doc.erf_requested_by_name:''} you are the hiring manager for
+		${frm.doc.designation?frm.doc.designation: 'the Designation'}.
+		To get an Excellent Hire we will follow the Adlers tried and tested formula of Performance-Based Hiring.
+		This starts with creating a performance-based Job Description.
+		Here's a Worksheet on Performance base Job Description  - <button class="btn btn-default btn-xs performance_profile_guid_btn" type="button">Guid</button>
+	</p>
+	<p style="font-size: 12px; color: #8d99a6;">
+		You may also <button class="btn btn-default btn-xs performance_profile_hand_book_btn" type="button">download a handbook</button> so you can be prepared for the workshop.
+	</p>
+	<p style="font-size: 12px; color: #8d99a6;">
+		You could write below in brief what the hired person will require to do.
+		<button class="btn btn-default btn-xs performance_profile_star_eg_btn" type="button">Click here to get STAR Examples</button>
+	</p>
 	</div>`;
 	$wrapper.html(performance_profile_html);
+	$wrapper.on('click', '.performance_profile_hand_book_btn', function() {
+		if(frm.doc.docstatus == 0){
+			frappe.call({
+				method: 'one_fm.hiring.utils.get_performance_profile_resource',
+				callback: function(r) {
+					if(r.message){
+						// window.open(r.message, '_blank');
+						window.open(r.message, '_self');
+					}
+					else{
+						frappe.msgprint(__("There is no Hand book configured in Hiring Settings."));
+					}
+				}
+			});
+		}
+	});
 	$wrapper.on('click', '.performance_profile_guid_btn', function() {
 		if(frm.doc.docstatus == 0){
 			performance_profile_guid_html();
 		}
 	});
+	$wrapper.on('click', '.performance_profile_star_eg_btn', function() {
+		if(frm.doc.docstatus == 0){
+			performance_profile_star_eg_html();
+		}
+	});
+};
+
+var performance_profile_star_eg_html = function() {
+	var dialog = new frappe.ui.Dialog({
+		title: __("STAR Examples"),
+		fields: [
+			{
+				"fieldtype": "HTML",
+				"fieldname": "star_eg_html"
+			}
+		]
+	});
+	let star_eg_html = `
+		<p style="font-size: 12px; color: #8d99a6;">STAR Examples:</p>
+		<ol>
+		<li style="font-size: 12px; color: #8d99a6;">Project Accountant: Upgrade the international consolidations process by Q3 to ensure the preliminary close  figures are within 1-2% variance of the final close</li>
+		<li style="font-size: 12px; color: #8d99a6;">Product Manager: Working with engineering, sales and operations prepare a product launch plan for the (product) within 90 days. Within (days) identify all critical design and test issues needed to ensure an on time product release to manufacturing.</li>
+		<li style="font-size: 12px; color: #8d99a6;">Call Center Rep: with 30 days be in a position to handle 4-5 simoultaneous in-bound calls fully resolving 90% of calls within 4-5 Minutes</li>
+		</ol>
+	`
+	dialog.fields_dict.star_eg_html.$wrapper.html(star_eg_html);
+	dialog.show();
 };
 
 var performance_profile_guid_html = function() {
@@ -298,7 +368,7 @@ var set_open_to_different_btn = function(frm) {
 };
 
 var set_travel_required_btn = function(frm) {
-	yes_no_html_buttons(frm, frm.doc.travel_required, 'travel_required_html', 'travel_required', 'Is Travelling A critial Aspect Of The Job Requirment?');
+	yes_no_html_buttons(frm, frm.doc.travel_required, 'travel_required_html', 'travel_required', 'Is Travel a primary/critial Job Need?');
 };
 
 var set_shift_hours_btn = function(frm) {
