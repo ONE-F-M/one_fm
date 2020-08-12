@@ -26,7 +26,8 @@ custom_fields = {
         'one_fm_travel_required', 'one_fm_type_of_travel', 'one_fm_other_details_cb', 'one_fm_driving_license_required',
         'one_fm_type_of_license', 'one_fm_is_uniform_needed_for_this_job', 'one_fm_education_qualification',
         'designation_abbreviation', 'performance_profile_details'],
-    'Job Applicant': ['one_fm_reason_for_rejection', 'one_fm_applicant_status']
+    'Job Applicant': ['one_fm_reason_for_rejection', 'one_fm_applicant_status', 'one_fm_designation',
+        'one_fm_current_employer_website_link']
 }
 
 def get_custom_field_name_list(doctype_list):
