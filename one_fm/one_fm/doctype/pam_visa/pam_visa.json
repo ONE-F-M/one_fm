@@ -8,57 +8,6 @@
  "field_order": [
   "section_break_1",
   "candidate_country_process",
-  "pam_visa_section15",
-  "grd_operator_status",
-  "pam_visa_submitted",
-  "attach_pam_visa_submitted",
-  "cb_1",
-  "pam_visa_submitted_date_time",
-  "pam_visa_reminder1",
-  "pam_visa_reminder2",
-  "pam_visa_reminder2_start",
-  "pam_visa_reminder2_done",
-  "pam_visa_section13",
-  "pam_visa_submitted_supervisor",
-  "column_break_10",
-  "pam_visa_submitted_supervisor_date_time",
-  "pam_visa_reminder_supervisor",
-  "section_tasriah_09",
-  "upload_tasriah_status",
-  "upload_tasriah_submitted",
-  "tasriah",
-  "upload_tasrih_col",
-  "upload_tasriah_reminder1",
-  "upload_tasriah_reminder2",
-  "upload_tasriah_reminder2_start",
-  "upload_tasriah_reminder2_done",
-  "section_break_4",
-  "pam_visa_application",
-  "candidate_full_name",
-  "visa_application_rejected",
-  "column_break_3",
-  "status",
-  "pam_file_number",
-  "column_break_6",
-  "reason_of_rejection",
-  "pam_designation",
-  "pam_visa_approval_section",
-  "pam_visa_approval_status",
-  "pam_visa_approval_submitted",
-  "pam_visa_approval_col",
-  "pam_visa_approval_reminder1",
-  "pam_visa_approval_reminder2",
-  "pam_visa_approval_reminder2_start",
-  "pam_visa_approval_reminder2_done",
-  "original_visa_section",
-  "upload_original_visa_status",
-  "upload_original_visa_submitted",
-  "original_visa_col",
-  "attach_original_visa_submitted",
-  "upload_original_visa_reminder1",
-  "upload_original_visa_reminder2",
-  "upload_original_visa_reminder2_start",
-  "upload_original_visa_reminder2_done",
   "section_break_7",
   "english_first_name",
   "english_second_name",
@@ -85,15 +34,58 @@
   "passport_issuer",
   "basic_salary",
   "salary_type",
-  "pam_visa_application_submit_section",
-  "submit_date",
-  "pam_visa_application_section",
+  "pam_visa_section15",
+  "grd_operator_status",
+  "pam_visa_submitted",
+  "attach_pam_visa_submitted",
+  "cb_1",
+  "pam_visa_submitted_date_time",
+  "pam_visa_reminder1",
+  "pam_visa_reminder2",
+  "pam_visa_reminder2_start",
+  "pam_visa_reminder2_done",
+  "pam_visa_section13",
+  "pam_visa_submitted_supervisor",
+  "column_break_10",
+  "pam_visa_submitted_supervisor_date_time",
+  "pam_visa_reminder_supervisor",
+  "section_tasriah_09",
+  "upload_tasriah_status",
+  "upload_tasriah_submitted",
+  "tasriah",
+  "upload_tasrih_col",
+  "upload_tasriah_reminder1",
+  "upload_tasriah_reminder2",
+  "upload_tasriah_reminder2_start",
+  "upload_tasriah_reminder2_done",
+  "section_break_4",
+  "pam_visa_application",
+  "visa_application_rejected",
+  "pam_file_number",
+  "pam_designation",
+  "column_break_3",
   "pam_visa_application_status",
   "pam_visa_application_date",
-  "attachment",
-  "column_break_41",
+  "column_break_6",
   "pam_visa_application_rejection_reason",
   "pam_visa_application_rejection_reason_details",
+  "pam_visa_approval_section",
+  "pam_visa_approval_status",
+  "pam_visa_approval_submitted",
+  "pam_visa_approval_col",
+  "pam_visa_approval_reminder1",
+  "pam_visa_approval_reminder2",
+  "pam_visa_approval_reminder2_start",
+  "pam_visa_approval_reminder2_done",
+  "original_visa_section",
+  "upload_original_visa_status",
+  "upload_original_visa_submitted",
+  "original_visa_col",
+  "attach_original_visa_submitted",
+  "upload_original_visa_reminder1",
+  "upload_original_visa_reminder2",
+  "upload_original_visa_reminder2_start",
+  "upload_original_visa_reminder2_done",
   "pam_visa_section",
   "pam_visa_status",
   "pam_visa_date",
@@ -108,23 +100,6 @@
    "label": "PAM Visa Application"
   },
   {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "\nApporved\nRejected"
-  },
-  {
-   "fieldname": "reason_of_rejection",
-   "fieldtype": "Select",
-   "label": "Reason of Rejection",
-   "options": "\nThe Name Entered is Invalid\nThe Attachment  not Found ( GP Letter )\nThe Passport Copy attached was Clear\nOther reasons for rejection"
-  },
-  {
-   "fieldname": "candidate_full_name",
-   "fieldtype": "Data",
-   "label": "Candidate Full Name"
-  },
-  {
    "fieldname": "pam_file_number",
    "fieldtype": "Data",
    "label": "PAM File Number"
@@ -135,8 +110,10 @@
    "label": "PAM Designation"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_7",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Applicant Details"
   },
   {
    "fieldname": "english_first_name",
@@ -284,24 +261,10 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "pam_visa_application_submit_section",
-   "fieldtype": "Section Break",
-   "label": "PAM Visa Application Submit"
-  },
-  {
-   "fieldname": "submit_date",
-   "fieldtype": "Datetime",
-   "label": "Date / Time"
-  },
-  {
-   "fieldname": "pam_visa_application_section",
-   "fieldtype": "Section Break",
-   "label": "PAM Visa Application"
-  },
-  {
    "fieldname": "pam_visa_application_status",
-   "fieldtype": "Data",
-   "label": "Status"
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nApproved\nRejected"
   },
   {
    "fieldname": "pam_visa_application_date",
@@ -309,20 +272,13 @@
    "label": "Date / Time"
   },
   {
-   "fieldname": "attachment",
-   "fieldtype": "Attach",
-   "label": "Attachment"
-  },
-  {
-   "fieldname": "column_break_41",
-   "fieldtype": "Column Break"
-  },
-  {
+   "depends_on": "eval: doc.pam_visa_application_status == 'Rejected'",
    "fieldname": "pam_visa_application_rejection_reason",
    "fieldtype": "Data",
    "label": "Rejection Reason"
   },
   {
+   "depends_on": "eval: doc.pam_visa_application_status == 'Rejected'",
    "fieldname": "pam_visa_application_rejection_reason_details",
    "fieldtype": "Data",
    "label": "Rejection Reason Details"
@@ -334,8 +290,9 @@
   },
   {
    "fieldname": "pam_visa_status",
-   "fieldtype": "Data",
-   "label": "Status"
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nApproved\nRejected"
   },
   {
    "fieldname": "pam_visa_date",
@@ -347,11 +304,13 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval: doc.pam_visa_status == 'Rejected'",
    "fieldname": "pam_visa_rejected_reason",
    "fieldtype": "Data",
    "label": "Rejection Reason"
   },
   {
+   "depends_on": "eval: doc.pam_visa_status == 'Rejected'",
    "fieldname": "pam_visa_rejected_reason_details",
    "fieldtype": "Data",
    "label": "Rejection Reason Details"
@@ -375,7 +334,8 @@
   },
   {
    "fieldname": "section_break_4",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "PAM Visa Application"
   },
   {
    "default": "0",
@@ -400,7 +360,8 @@
   {
    "fieldname": "pam_visa_section13",
    "fieldtype": "Section Break",
-   "label": "Pam Visa(GRD Supervisor)"
+   "label": "Pam Visa(GRD Supervisor)",
+   "permlevel": 1
   },
   {
    "fieldname": "pam_visa_reminder_supervisor",
@@ -416,7 +377,8 @@
    "default": "0",
    "fieldname": "pam_visa_submitted_supervisor",
    "fieldtype": "Check",
-   "label": "PAM Visa Submitted"
+   "label": "PAM Visa Submitted",
+   "permlevel": 1
   },
   {
    "default": "Pending",
@@ -632,6 +594,7 @@
    "fieldname": "pam_visa_submitted_supervisor_date_time",
    "fieldtype": "Datetime",
    "label": "Submitted Date and Time",
+   "permlevel": 1,
    "read_only": 1
   },
   {
@@ -642,7 +605,7 @@
   }
  ],
  "links": [],
- "modified": "2020-08-07 22:46:17.637742",
+ "modified": "2020-08-13 08:49:22.354054",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "PAM Visa",
@@ -657,6 +620,42 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PAM Operator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PAM Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PAM Supervisor",
    "share": 1,
    "write": 1
   }
