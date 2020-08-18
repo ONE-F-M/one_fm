@@ -1,0 +1,37 @@
+{
+ "actions": [],
+ "creation": "2020-08-13 10:11:14.227130",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "required_document",
+  "attach"
+ ],
+ "fields": [
+  {
+   "fieldname": "required_document",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Required Document",
+   "options": "Recruitment Document Required",
+   "reqd": 1
+  },
+  {
+   "fieldname": "attach",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Attach"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-08-13 10:11:14.227130",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Work Permit Required Documents",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -1,0 +1,30 @@
+{
+ "actions": [],
+ "creation": "2020-08-13 10:18:02.530309",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "required_document"
+ ],
+ "fields": [
+  {
+   "fieldname": "required_document",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Document Required",
+   "options": "Recruitment Document Required",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-08-13 11:05:50.173363",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Work Permit Document",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
