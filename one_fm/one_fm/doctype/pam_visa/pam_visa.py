@@ -8,11 +8,12 @@ from frappe.model.document import Document
 
 class PAMVisa(Document):
     def validate(self):
-        if self.status == 'Rejected' and self.visa_application_rejected==0:
-            self.visa_application_rejected = 1
-            frappe.get_doc({
-                "doctype":"PAM Visa"
-            }).insert(ignore_permissions=True)
+        # if self.status == 'Rejected' and self.visa_application_rejected==0:
+        #     self.visa_application_rejected = 1
+        #     frappe.get_doc({
+        #         "doctype":"PAM Visa"
+        #     }).insert(ignore_permissions=True)
+        pass
 
     def get_applicant_data(self):
         if self.candidate_country_process:
@@ -43,7 +44,7 @@ class PAMVisa(Document):
             self.date_of_expiry = doc.one_fm_passport_expire
             self.passport_issuer = doc.one_fm_passport_holder_of
             self.basic_salary = doc.one_fm_current_salary
-            # self.salary_type =
+            self.salary_type = "Monthly"
 
             self.candidate_full_name = doc.applicant_name
 

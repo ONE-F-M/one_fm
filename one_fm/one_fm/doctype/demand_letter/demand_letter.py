@@ -17,7 +17,7 @@ def get_valid_demand_letter(agency, date=today()):
 		from
 			`tabDemand Letter`
 		where
-			docstatus=1 and (%(date_given) between date_of_issue and valid_till_date) and agency=%(agency)s
+			docstatus=1 and (%(date_given)s between date_of_issue and valid_till_date) and agency=%(agency)s
 	"""
 	demand_letter = frappe.db.sql(query.format(),{"date_given": getdate(date), "agency": agency}, as_dict = 1)
 	return demand_letter if demand_letter else False

@@ -8,6 +8,7 @@
   "erf_settings_section",
   "erf_approver",
   "unplanned_erf_approver",
+  "hr_for_a_quick_workshop",
   "column_break_5",
   "performance_profile_resource",
   "performance_profile_guid"
@@ -47,11 +48,17 @@
    "label": "ERF Approver",
    "options": "User",
    "reqd": 1
+  },
+  {
+   "fieldname": "hr_for_a_quick_workshop",
+   "fieldtype": "Link",
+   "label": "HR For a Quick Workshop to Create Performance Profile",
+   "options": "User"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2020-07-29 09:34:45.527837",
+ "modified": "2020-08-12 10:40:24.773739",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

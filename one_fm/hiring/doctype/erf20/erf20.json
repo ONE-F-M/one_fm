@@ -17,6 +17,7 @@
   "reason_for_decline",
   "column_break_3",
   "erf_requested_by",
+  "erf_requested_by_name",
   "erf_code",
   "erf_initiation",
   "erf_finalized",
@@ -62,6 +63,7 @@
   "save_me4",
   "performance_profile_section",
   "performance_profile_html",
+  "help_hr_to_create_okr",
   "column_break_52",
   "schedule_for_okr_workshop_with_recruiter",
   "okr_workshop_with",
@@ -208,7 +210,8 @@
    "description": "30 Days Month",
    "fieldname": "off_days",
    "fieldtype": "Int",
-   "label": "Off Days In a Month"
+   "label": "Off Days In a Month",
+   "read_only": 1
   },
   {
    "default": "30",
@@ -642,11 +645,23 @@
    "fieldname": "save_me4",
    "fieldtype": "Button",
    "label": "Save"
+  },
+  {
+   "fieldname": "erf_requested_by_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "description": "1. What does the person hire need to accomplish primarily in the first 3 months to be accounted for as an excellent hire.\n<br>\n2. What is the Value Add This Job will give the Hire? For Eg, New skill learning, relaxed job anything.\n\n ",
+   "fieldname": "help_hr_to_create_okr",
+   "fieldtype": "Small Text",
+   "label": "You can also help the HR Prepare -By filling the below"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-07-30 10:25:51.962765",
+ "modified": "2020-08-12 10:32:48.480480",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "ERF20",

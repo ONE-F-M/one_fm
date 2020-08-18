@@ -18,7 +18,7 @@ def get_valid_agency_contract(agency, date=today()):
 		from
 			`tabAgency Contract`
 		where
-			docstatus=1 and (%(date_given) between contact_start_date and contact_start_date) and agency=%(agency)s
+			docstatus=1 and (%(date_given)s between contract_start_date and contract_end_date) and agency=%(agency)s
 	"""
 	contract = frappe.db.sql(query.format(),{"date_given": getdate(date), "agency": agency}, as_dict = 1)
 	return contract if contract else False

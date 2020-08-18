@@ -1,0 +1,88 @@
+{
+ "actions": [],
+ "autoname": "field:template",
+ "creation": "2020-08-13 10:19:14.948637",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "template",
+  "work_permit_type",
+  "recruitment_document_section",
+  "work_permit_document"
+ ],
+ "fields": [
+  {
+   "fieldname": "template",
+   "fieldtype": "Data",
+   "label": "Template",
+   "unique": 1
+  },
+  {
+   "fieldname": "work_permit_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Work Permit Type",
+   "options": "\nRenewal Overseas\nRenewal Kuwaiti\nNew Overseas\nNew Kuwait\nTransfer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "recruitment_document_section",
+   "fieldtype": "Section Break",
+   "label": "Recruitment Documents"
+  },
+  {
+   "fieldname": "work_permit_document",
+   "fieldtype": "Table",
+   "label": "Work Permit Document",
+   "options": "Work Permit Document",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2020-08-13 10:19:14.948637",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Work Permit Required Documents Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
