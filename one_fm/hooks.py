@@ -47,7 +47,6 @@ doctype_js = {
 	"Project": "public/js/doctype_js/project.js",
 	"Notification Log": "public/js/doctype_js/notification_log.js",
 	"Sales Invoice": "public/js/doctype_js/sales_invoice.js"
-	
 }
 doctype_list_js = {"Job Applicant" : "public/js/doctype_js/job_applicant_list.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
