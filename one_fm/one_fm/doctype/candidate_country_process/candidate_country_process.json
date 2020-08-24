@@ -1,25 +1,30 @@
 {
+ "actions": [],
  "autoname": "CCP.###",
  "creation": "2020-06-05 01:26:03.735490",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "applicant",
+  "job_offer",
+  "job_applicant",
   "candidate_name",
-  "candidate_passport_number",
-  "column_break_4",
+  "passport_number",
+  "erf",
   "status",
-  "agency_country_process",
+  "column_break_4",
+  "start_date",
   "agency",
   "agency_name",
-  "erf",
+  "agency_country_process",
+  "current_process_id",
   "section_break_3",
-  "agency_process_details"
+  "agency_process_details",
+  "amended_from"
  ],
  "fields": [
   {
-   "fetch_from": "country_process.agency",
+   "fetch_from": "job_offer.agency",
    "fieldname": "agency",
    "fieldtype": "Link",
    "label": "Agency",
@@ -37,24 +42,11 @@
    "options": "Candidate Country Process Details"
   },
   {
-   "fieldname": "applicant",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Applicant",
-   "options": "Job Offer"
-  },
-  {
-   "fetch_from": "applicant.applicant_name",
+   "fetch_from": "job_offer.applicant_name",
    "fieldname": "candidate_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Candidate Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "candidate_passport_number",
-   "fieldtype": "Data",
-   "label": "Candidate Passport Number",
    "read_only": 1
   },
   {
@@ -63,10 +55,11 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected\nFailes"
+   "options": "Pending\nApproved\nRejected\nFailes",
+   "read_only": 1
   },
   {
-   "fetch_from": "country_process.agency_name",
+   "fetch_from": "agency.agency",
    "fieldname": "agency_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -74,9 +67,12 @@
    "read_only": 1
   },
   {
+   "fetch_from": "job_offer.one_fm_erf",
    "fieldname": "erf",
-   "fieldtype": "Data",
-   "label": "ERF"
+   "fieldtype": "Link",
+   "label": "ERF",
+   "options": "ERF",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_4",
@@ -89,9 +85,57 @@
    "label": "Agency Country Process",
    "options": "Agency Country Process",
    "reqd": 1
+  },
+  {
+   "fieldname": "job_offer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Job Offer",
+   "options": "Job Offer"
+  },
+  {
+   "fetch_from": "job_offer.job_applicant",
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fetch_from": "job_offer.one_fm_offer_accepted_date",
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Candidate Country Process",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "current_process_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Current Process ID"
   }
  ],
- "modified": "2020-07-07 17:29:37.793567",
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-08-23 13:05:46.850075",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Candidate Country Process",
