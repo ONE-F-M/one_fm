@@ -75,7 +75,7 @@ class RequestforMaterial(Document):
 	def set_title(self):
 		'''Set title as comma separated list of items'''
 		# if not self.title:
-		items = ', '.join([d.item_name for d in self.items][:3])
+		items = ', '.join([d.requested_item_name for d in self.items][:3])
 		self.title = _('Material Request for {0}').format(items)[:100]
 
 	def on_update_after_submit(self):

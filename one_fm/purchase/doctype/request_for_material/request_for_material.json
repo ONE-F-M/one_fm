@@ -296,7 +296,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "\nIndividual\nProject Mobilization",
+   "options": "\nIndividual\nProject",
    "print_hide": 1,
    "reqd": 1
   },
@@ -332,7 +332,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval: doc.type=='Project Mobilization'",
+   "depends_on": "eval: doc.type=='Project'",
    "fieldname": "project",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -340,7 +340,7 @@
    "options": "Project"
   },
   {
-   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project Mobilization'",
+   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project'",
    "fieldname": "type_details_section",
    "fieldtype": "Section Break"
   },
@@ -381,7 +381,7 @@
    "label": "Technical Remarks"
   },
   {
-   "depends_on": "eval: doc.type=='Project Mobilization'",
+   "depends_on": "eval: doc.type=='Project'",
    "fieldname": "project_details",
    "fieldtype": "Small Text",
    "label": "Project Details"
@@ -422,7 +422,7 @@
  "icon": "fa fa-ticket",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-08-07 19:23:52.394690",
+ "modified": "2020-08-24 09:07:30.663644",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
