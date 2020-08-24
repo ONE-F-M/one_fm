@@ -138,6 +138,9 @@ doc_events = {
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt"
 	},
+	"ToDo": {
+		"after_insert": "one_fm.grd.utils.todo_after_insert"
+	},
 	# "Project": {
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	# }

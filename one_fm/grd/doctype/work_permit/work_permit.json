@@ -8,14 +8,15 @@
  "field_order": [
   "naming_series",
   "employee",
+  "pam_file",
+  "pam_file_number",
   "company_trade_name_arabic",
   "contract_file_number",
   "authorized_signatory_name_arabic",
-  "work_permit_application_type",
   "column_break_8",
+  "work_permit_application_type",
   "work_permit_type",
   "date_of_application",
-  "pam_file_number",
   "issuer_number",
   "employee_details_section",
   "first_name",
@@ -108,11 +109,13 @@
    "read_only": 1
   },
   {
+   "fetch_from": "pam_file.license_trade_name_arabic",
    "fieldname": "company_trade_name_arabic",
    "fieldtype": "Data",
    "label": "Company Trade Name Arabic"
   },
   {
+   "fetch_from": "pam_file.contract_file_number",
    "fieldname": "contract_file_number",
    "fieldtype": "Data",
    "label": "Contract File Number"
@@ -123,10 +126,10 @@
    "label": "Authorized Signatory Name Arabic"
   },
   {
+   "fetch_from": "pam_file.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Link",
-   "label": "PAM File Number",
-   "options": "PAM File"
+   "fieldtype": "Data",
+   "label": "PAM File Number"
   },
   {
    "fieldname": "issuer_number",
@@ -353,7 +356,8 @@
    "fieldtype": "Link",
    "label": "GRD Operator",
    "no_copy": 1,
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_49",
@@ -365,7 +369,8 @@
    "label": "GRD Supervisor",
    "no_copy": 1,
    "options": "User",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "default": "No",
@@ -506,11 +511,17 @@
    "fieldtype": "Select",
    "label": "Work Permit Application Type",
    "options": "\nOnline\nOffline"
+  },
+  {
+   "fieldname": "pam_file",
+   "fieldtype": "Link",
+   "label": "PAM File",
+   "options": "PAM File"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-08-15 13:01:05.569614",
+ "modified": "2020-08-23 14:14:01.021633",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
@@ -589,6 +600,18 @@
    "report": 1,
    "role": "Accounts User",
    "share": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
   }
  ],
  "sort_field": "modified",

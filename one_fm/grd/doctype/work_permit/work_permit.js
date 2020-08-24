@@ -28,26 +28,59 @@ frappe.ui.form.on('Work Permit', {
 	},
 	work_permit_type: function(frm) {
 		set_required_documents(frm);
+	},
+	employee: function(frm) {
+		set_required_documents(frm);
+	},
+	refresh: function(frm) {
+		set_grd_supervisor(frm);
+	},
+	pam_file: function(frm) {
+		set_authorized_signatory_name_arabic(frm);
 	}
 });
 
-var set_required_documents = function(frm) {
-	frm.clear_table("documents_required");
-	if(frm.doc.work_permit_type){
+var set_authorized_signatory_name_arabic = function(frm) {
+	if(frm.doc.pam_file){
 		frappe.call({
 			method: 'frappe.client.get',
 			args: {
-				doctype: "Work Permit Required Documents Template",
-				filters: {'work_permit_type':frm.doc.work_permit_type}
+				doctype: "PAM Authorized Signatory List",
+				filters: { pam_file_name: frm.doc.pam_file }
 			},
 			callback: function(r) {
-				if(r.message && r.message.work_permit_document){
-					var doc_list = r.message.work_permit_document;
-					doc_list.forEach((item, i) => {
-						let child_item = frappe.model.add_child(frm.doc, 'Work Permit Required Documents', 'documents_required');
-						frappe.model.set_value(child_item.doctype, child_item.name, 'required_document', item.required_document);
-					});
+				if(r && r.message && r.message.authorized_signatory && r.message.authorized_signatory.length > 0){
+					let authorized_signatory = r.message.authorized_signatory[0];
+					frm.set_value('authorized_signatory_name_arabic', authorized_signatory.authorized_signatory_name_arabic);
 				}
+				else{
+					frm.set_value('authorized_signatory_name_arabic', '');
+				}
+			}
+		});
+	}
+	else{
+		frm.set_value('authorized_signatory_name_arabic', '');
+	}
+};
+
+var set_grd_supervisor = function(frm) {
+	if(frm.is_new()){
+		frappe.db.get_value('GRD Settings', {name: 'GRD Settings'}, 'default_grd_supervisor', function(r) {
+			if(r && r.default_grd_supervisor){
+				frm.set_value('grd_supervisor', r.default_grd_supervisor);
+			}
+		});
+	}
+};
+
+var set_required_documents = function(frm) {
+	frm.clear_table("documents_required");
+	if(frm.doc.work_permit_type && frm.doc.employee){
+		frappe.call({
+			doc: frm.doc,
+			method: 'get_required_documents',
+			callback: function(r) {
 				frm.refresh_field('documents_required');
 			},
 			freeze: true,
