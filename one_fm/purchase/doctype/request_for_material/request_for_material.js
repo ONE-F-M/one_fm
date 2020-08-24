@@ -45,6 +45,16 @@ frappe.ui.form.on('Request for Material', {
 		if(status.includes(frm.doc.status) && frm.doc.docstatus == 1){
 			frm.set_df_property('status', 'options', status);
 		}
+		frm.set_query('warehouse', function () {
+			if(frm.doc.type == 'Project'){
+				return {
+					filters: {
+						'one_fm_project': frm.doc.project,
+						'is_group': 0
+					}
+				};
+			}
+		});
 	},
 	make_custom_buttons: function(frm) {
 		if (frm.doc.docstatus == 1 && frm.doc.status == 'Approved') {

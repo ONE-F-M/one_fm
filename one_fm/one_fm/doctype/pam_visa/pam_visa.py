@@ -5,22 +5,13 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
+from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import update_candidate_country_process
 
 class PAMVisa(Document):
-    def validate(self):
-        # if self.status == 'Rejected' and self.visa_application_rejected==0:
-        #     self.visa_application_rejected = 1
-        #     frappe.get_doc({
-        #         "doctype":"PAM Visa"
-        #     }).insert(ignore_permissions=True)
-        pass
-
     def get_applicant_data(self):
         if self.candidate_country_process:
             candidate_country_process_doc = frappe.get_doc("Candidate Country Process", self.candidate_country_process)
-            job_applicant_name = frappe.get_value("Job Offer", {"name": candidate_country_process_doc.applicant}, "job_applicant")
-
-            doc = frappe.get_doc("Job Applicant", job_applicant_name)
+            doc = frappe.get_doc("Job Applicant", candidate_country_process_doc.job_applicant)
             self.english_first_name = doc.one_fm_first_name
             self.english_second_name = doc.one_fm_second_name
             self.english_third_name = doc.one_fm_third_name

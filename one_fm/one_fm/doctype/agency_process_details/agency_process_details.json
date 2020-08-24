@@ -1,58 +1,77 @@
 {
+ "actions": [],
  "creation": "2020-01-10 15:00:38.935747",
  "doctype": "DocType",
- "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "process_name",
   "responsible",
-  "total_duration",
+  "duration_in_days",
   "column_break_4",
-  "attachement",
-  "notes"
+  "attachment_required",
+  "notes_required",
+  "reference_type",
+  "reference_complete_status_field",
+  "reference_complete_status_value"
  ],
  "fields": [
   {
    "fieldname": "process_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Process Name"
+   "label": "Process Name",
+   "reqd": 1
   },
   {
    "fieldname": "responsible",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Responsible",
-   "options": "Agency\nGRD"
-  },
-  {
-   "description": "Days",
-   "fieldname": "total_duration",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Total Duration"
-  },
-  {
-   "default": "0",
-   "fieldname": "attachement",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Requires Attachment"
-  },
-  {
-   "default": "0",
-   "fieldname": "notes",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Requires Notes"
+   "options": "\nAgency\nGRD",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "duration_in_days",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Duration in Days"
+  },
+  {
+   "default": "0",
+   "fieldname": "attachment_required",
+   "fieldtype": "Check",
+   "label": "Attachment Required"
+  },
+  {
+   "fieldname": "reference_type",
+   "fieldtype": "Link",
+   "label": "Reference Type",
+   "options": "DocType"
+  },
+  {
+   "default": "0",
+   "fieldname": "notes_required",
+   "fieldtype": "Check",
+   "label": "Notes Required"
+  },
+  {
+   "fieldname": "reference_complete_status_field",
+   "fieldtype": "Data",
+   "label": "Reference Complete Status Field"
+  },
+  {
+   "fieldname": "reference_complete_status_value",
+   "fieldtype": "Data",
+   "label": "Reference Complete Status Value"
   }
  ],
  "istable": 1,
- "modified": "2020-07-07 12:39:00.755439",
+ "links": [],
+ "modified": "2020-08-23 00:11:16.994337",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Agency Process Details",
