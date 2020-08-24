@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "ACP.###",
  "creation": "2020-07-07 16:09:20.080308",
  "doctype": "DocType",
@@ -7,20 +8,15 @@
  "field_order": [
   "agency",
   "agency_name",
-  "phone_type",
-  "country_code",
-  "phone_number",
-  "column_break_6",
+  "column_break_3",
   "country",
-  "city",
-  "state",
-  "extension_number",
-  "column_break_11",
-  "address_1",
-  "address_2",
-  "address_3",
-  "postal_code",
+  "country_code",
+  "address_and_contact_section",
+  "address_html",
+  "column_break_18",
+  "contact_html",
   "section_break_3",
+  "agency_country_process_template",
   "agency_process_details",
   "total_duration"
  ],
@@ -40,73 +36,18 @@
    "label": "Agency Name"
   },
   {
-   "fieldname": "phone_type",
-   "fieldtype": "Select",
-   "label": "Phone Type",
-   "options": "\nOffice\nMobile",
-   "reqd": 1
-  },
-  {
+   "fetch_from": "country.code",
    "fieldname": "country_code",
    "fieldtype": "Data",
    "label": "Country Code"
   },
   {
-   "fieldname": "phone_number",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Phone Number"
-  },
-  {
-   "fieldname": "column_break_6",
-   "fieldtype": "Column Break"
-  },
-  {
+   "fetch_from": "agency.country",
    "fieldname": "country",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Country",
    "options": "Country"
-  },
-  {
-   "fieldname": "city",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "City"
-  },
-  {
-   "fieldname": "state",
-   "fieldtype": "Data",
-   "label": "State"
-  },
-  {
-   "fieldname": "extension_number",
-   "fieldtype": "Data",
-   "label": "Extension Number"
-  },
-  {
-   "fieldname": "column_break_11",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "address_1",
-   "fieldtype": "Data",
-   "label": "Address 1"
-  },
-  {
-   "fieldname": "address_2",
-   "fieldtype": "Data",
-   "label": "Address 2"
-  },
-  {
-   "fieldname": "address_3",
-   "fieldtype": "Data",
-   "label": "Address 3"
-  },
-  {
-   "fieldname": "postal_code",
-   "fieldtype": "Data",
-   "label": "Postal Code"
   },
   {
    "fieldname": "section_break_3",
@@ -123,9 +64,39 @@
    "fieldtype": "Float",
    "label": "Total Duration",
    "read_only": 1
+  },
+  {
+   "fieldname": "address_html",
+   "fieldtype": "HTML",
+   "label": "Address Html"
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contact_html",
+   "fieldtype": "HTML",
+   "label": "contact html"
+  },
+  {
+   "fieldname": "address_and_contact_section",
+   "fieldtype": "Section Break",
+   "label": "Address and Contact"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "agency_country_process_template",
+   "fieldtype": "Link",
+   "label": "Agency Country Process Template",
+   "options": "Agency Country Process Template"
   }
  ],
- "modified": "2020-07-07 16:09:50.061043",
+ "links": [],
+ "modified": "2020-08-19 11:32:55.205190",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Agency Country Process",
