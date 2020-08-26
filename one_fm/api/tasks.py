@@ -79,7 +79,7 @@ def final_reminder():
 				message = _("""
 					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
 					<a class="btn btn-primary" href="/desk#Form/Shift%20Permission/New%20Shift%20Permission%201">Planning to arrive late?</a>&nbsp;
-					<br><div class="btn btn-primary btn-danger punch-in" id="punch-error">Punch in not working?</div>""")
+					""")
 				send_notification(subject, message, recipients)
 
 		# shift_end is equal to now time - notification reminder in mins
@@ -108,9 +108,7 @@ def final_reminder():
 				recipients = [recipient[0] for recipient in recipients if recipient[0]]
 	
 				subject = _("Final Reminder: Please checkout in the next five minutes.")
-				message = _("""
-					<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>&nbsp;
-					<br><div class="btn btn-primary btn-danger punch-out" id="punch-error">Punch out not working?</div>""")
+				message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 				send_notification(subject, message, recipients)
 		
 def supervisor_reminder():
@@ -123,7 +121,7 @@ def supervisor_reminder():
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.employee_name, emp.reports_to, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
+				SELECT DISTINCT emp.name, emp.employee_id, emp.employee_name, emp.reports_to, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee=emp.name 
 				AND tSA.date="{date}"
@@ -144,8 +142,8 @@ def supervisor_reminder():
 					op_shift =  frappe.get_doc("Operations Shift", recipient.shift)
 					for_user = get_notification_user(op_shift) if get_notification_user(op_shift) else get_employee_user_id(recipient.reports_to)	
 					if for_user is not None:
-						subject = _("Checkin Report: {employee} has not checked in yet.<br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}'>Issue Penalty</div>".format(employee=recipient.employee_name))
-						message = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
+						subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
+						message = _("{name} has not checked in yet. <br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(name=recipient.employee_name, shift=recipient.shift, date=cstr(now_time), employee=recipient.name))
 						send_notification(subject, message, [for_user])
 
 		#Send notification to supervisor of those who haven't checked out
@@ -265,3 +263,36 @@ def automatic_checkout():
 					checkin.save()
 				
 			frappe.db.commit()
+
+@frappe.whitelist()
+def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_location):
+	issuing_employee = frappe.get_value("Employee", {"user_id": issuing_user})
+	penalty = frappe.get_value("Penalty Type", {"penalty_code" : penalty_code})
+	site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
+	site_location = frappe.get_value("Operations Site", site, "site_location")
+	
+	employee_id, employee_name, designation = frappe.get_value("Employee", employee, ["name", "employee_name", "designation"])
+
+	penalty_issuance = frappe.new_doc("Penalty Issuance")
+	penalty_issuance.issuing_time = now_datetime()
+	penalty_issuance.location = penalty_location
+	penalty_issuance.penalty_location = penalty
+	penalty_issuance.penalty_occurence_time = date
+	penalty_issuance.shift = shift
+	penalty_issuance.site = site
+	penalty_issuance.project = project
+	penalty_issuance.site_location = site_location
+	penalty_issuance.append("employees", {
+		"employee_id": employee_id,
+		"employee_name": employee_name,
+		"designation": designation,
+	})
+	penalty_issuance.append("penalty_issuance_details",{
+		"penalty_type": penalty,
+		"exact_notes": penalty
+	})
+	penalty_issuance.issuing_employee = issuing_employee
+	# penalty_issuance.employee_name = self.lead_name
+	penalty_issuance.flags.ignore_permissions = True
+	penalty_issuance.insert()
+	penalty_issuance.submit()
