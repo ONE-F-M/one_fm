@@ -1,0 +1,86 @@
+{
+ "allow_rename": 1,
+ "autoname": "field:checkpoint_name",
+ "creation": "2020-07-06 17:40:03.390855",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "checkpoint_name",
+  "project_name",
+  "site_name",
+  "location_name",
+  "checkpoint_notes",
+  "column_break_8",
+  "checkpoint_code",
+  "checkpoint_qr"
+ ],
+ "fields": [
+  {
+   "fieldname": "checkpoint_name",
+   "fieldtype": "Data",
+   "label": "Checkpoint Name",
+   "unique": 1
+  },
+  {
+   "fieldname": "checkpoint_qr",
+   "fieldtype": "Data",
+   "label": "Checkpoint QR"
+  },
+  {
+   "fieldname": "checkpoint_code",
+   "fieldtype": "Read Only",
+   "label": "Checkpoint Code"
+  },
+  {
+   "fieldname": "project_name",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "site_name",
+   "fieldtype": "Link",
+   "label": "Site ",
+   "options": "Operations Site"
+  },
+  {
+   "fieldname": "location_name",
+   "fieldtype": "Link",
+   "label": "Checkpoint Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "checkpoint_notes",
+   "fieldtype": "Data",
+   "label": "Checkpoint Notes"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "modified": "2020-07-07 19:34:30.962286",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Checkpoints",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
