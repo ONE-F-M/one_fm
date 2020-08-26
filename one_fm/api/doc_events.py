@@ -3,7 +3,7 @@ import itertools
 
 import frappe
 from frappe import _
-from frappe.utils import cstr, cint, get_datetime
+from frappe.utils import cstr, cint, get_datetime, getdate
 from frappe.core.doctype.version.version import get_diff
 from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
@@ -37,8 +37,9 @@ def employee_checkin_validate(doc, method):
 		prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
 		if curr_shift:
 			existing_perm = frappe.db.exists("Shift Permission", {"date": curr_shift.start_datetime.strftime('%Y-%m-%d'), "employee": doc.employee, "permission_type": perm_map[doc.log_type], "workflow_state": "Approved"})
-			assignment = frappe.get_value("Shift Assignment", {"employee": doc.employee, "date": curr_shift.start_datetime.date(), "shift_type": curr_shift.shift_type.name}, "shift")
+			assignment, shift_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "date": curr_shift.start_datetime.date(), "shift_type": curr_shift.shift_type.name}, ["shift", "shift_type"])
 			doc.operations_shift = assignment
+			doc.shift_type = shift_type
 	
 		if shift_actual_timings[0] and shift_actual_timings[1]:
 			if existing_perm:
@@ -102,7 +103,7 @@ def checkin_after_insert(doc, method):
 				hrs, mins, secs = cstr(time_diff).split(":")
 				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 				subject = _("{employee} has checked in late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
-				message = _("{employee} has checked in late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
+				message = _("{employee_name} has checked in late by {delay}. {location} <br><br><div class='btn btn-primary btn-danger late-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name,shift=doc.shift, date=cstr(doc.time), employee=doc.employee, delay=delay, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
@@ -117,7 +118,7 @@ def checkin_after_insert(doc, method):
 			if not doc.device_id:
 				from one_fm.api.tasks import send_notification
 				subject = _("Automated Checkout: {employee} forgot to checkout.".format(employee=doc.employee_name))
-				message = _('<a class="btn btn-primary" href="/desk#Form/Employee Checkin/{name}">Review check out</a>&nbsp; <br><div class="btn btn-primary btn-danger no-punch-out" id="{name}">Issue Penalty</div>'.format(name=doc.name))
+				message = _('<a class="btn btn-primary" href="/desk#Form/Employee Checkin/{name}">Review check out</a>&nbsp;'.format(name=doc.name))
 				for_users = [supervisor_user]
 				print("124", doc.employee, supervisor_user)
 				send_notification(subject, message, for_users)
@@ -127,7 +128,7 @@ def checkin_after_insert(doc, method):
 				hrs, mins, secs = cstr(time_diff).split(":")
 				early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 				subject = _("{employee} has checked out early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
-				message = _("{employee} has checked out early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
+				message = _("{employee_name} has checked out early by {early}. {location} <br><br><div class='btn btn-primary btn-danger early-punch-out' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name, shift=doc.shift, date=cstr(doc.time), employee=doc.employee_name, early=early, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 

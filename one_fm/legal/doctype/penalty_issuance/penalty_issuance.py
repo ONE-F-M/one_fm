@@ -21,7 +21,7 @@ class PenaltyIssuance(Document):
 		if self.different_location:
 			subject = _("Penalty Issuance Review")
 			message = _("Please review the penalty issuance. The penalty location details were added manually by the supervisor.")
-			recipient = ["k.sharma@armor-services.com"]
+			recipient = ["legal@one-fm.com"]
 			frappe.sendmail(recipient, subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
 
 	def issue_penalty(self):
@@ -66,7 +66,7 @@ class PenaltyIssuance(Document):
 				})	
 			penalty.save()
 			assign_to({
-				"assign_to": "k.sharma@armor-services.com", #user_id,
+				"assign_to": user_id,
 				"doctype": penalty.doctype,
 				"name": penalty.name,
 				"description": "Penalty Issued by {employee_id}:{issuer}.".format(employee_id=self.issuing_employee, issuer=self.employee_name)
@@ -74,6 +74,7 @@ class PenaltyIssuance(Document):
 		frappe.db.commit()
 
 	def get_occurence(self, employee_id, penalty_type):
+		print(employee_id, penalty_type)
 		penalties = frappe.db.sql("""
 			SELECT PID.parent, DATE(P.penalty_occurence_time) as penalty_date
 			FROM `tabPenalty Issuance Details` PID, `tabPenalty` P 
@@ -85,10 +86,12 @@ class PenaltyIssuance(Document):
 			ORDER BY P.penalty_occurence_time ASC
 		""".format(penalty_type=penalty_type, emp=employee_id), as_dict=1)
 		#AND P.workflow_state="Penalty Accepted"
-		
 		#Start and end penalty duration date
 		year, month, date = cstr(getdate(self.penalty_occurence_time)).split("-")
-		start_year, start_month, start_date = cstr(penalties[0].penalty_date).split("-")
+		if len(penalties) > 0:
+			start_year, start_month, start_date = cstr(penalties[0].penalty_date).split("-")
+		else:
+			start_year, start_month, start_date = cstr(getdate(self.penalty_occurence_time)).split("-")
 
 		penalty_duration_start = year+"-"+start_month+"-"+start_date
 		penalty_duration_end = cstr(add_to_date(year+"-"+start_month+"-"+start_date, years=1))

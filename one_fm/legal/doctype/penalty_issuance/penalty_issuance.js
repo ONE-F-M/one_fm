@@ -121,7 +121,7 @@ function set_employee_filters(frm){
 }
 
 function set_issuing_employee(frm){
-    frappe.db.get_value("Employee", {"user_id": "k.sharma@armor-services.com"}, ["name", "employee_name","designation"])
+    frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name", "employee_name","designation"])
     .then(res => {
         if(res.message){
             console.log(res);

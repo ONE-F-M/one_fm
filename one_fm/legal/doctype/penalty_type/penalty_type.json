@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "penalty_code",
   "penalty_name",
   "penalty_name_arabic"
  ],
@@ -20,9 +21,15 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Penalty Name Arabic"
+  },
+  {
+   "fieldname": "penalty_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Penalty Code"
   }
  ],
- "modified": "2020-06-16 19:13:01.860858",
+ "modified": "2020-08-24 10:55:43.444445",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty Type",
