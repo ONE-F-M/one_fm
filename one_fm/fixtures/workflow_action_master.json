@@ -2,6 +2,16 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2020-07-01 01:12:00.411674",
+  "name": "Accept",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Accept"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2020-02-01 11:07:36.096023",
   "name": "Approval Request",
   "parent": null,
@@ -68,5 +78,25 @@
   "parentfield": null,
   "parenttype": null,
   "workflow_action_name": "Review"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2020-07-27 18:21:12.104104",
+  "name": "Start Investigation",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Start Investigation"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2020-07-27 18:41:41.753166",
+  "name": "Complete Investigation",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Complete Investigation"
  }
 ]

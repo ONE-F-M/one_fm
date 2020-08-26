@@ -3,6 +3,42 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
+  "modified": "2020-07-01 04:00:56.134953",
+  "name": "Penalty Issued",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Primary",
+  "workflow_state_name": "Penalty Issued"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-07-01 04:00:26.745588",
+  "name": "Penalty Accepted",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Success",
+  "workflow_state_name": "Penalty Accepted"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-07-01 04:00:33.560893",
+  "name": "Penalty Rejected",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Danger",
+  "workflow_state_name": "Penalty Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
   "modified": "2020-03-31 21:12:42.009435",
   "name": "Requested",
   "parent": null,
@@ -250,5 +286,29 @@
   "parenttype": null,
   "style": "",
   "workflow_state_name": "Review by Projects Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-07-27 18:44:45.055503",
+  "name": "Investigation Started",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Primary",
+  "workflow_state_name": "Investigation Started"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-07-27 18:17:11.356174",
+  "name": "Investigation Completed",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Success",
+  "workflow_state_name": "Investigation Completed"
  }
 ]
