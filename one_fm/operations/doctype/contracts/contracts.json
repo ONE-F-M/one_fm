@@ -5,11 +5,64 @@
  "engine": "InnoDB",
  "field_order": [
   "client",
-  "renewal_count",
-  "column_break_2",
   "project",
+  "monthly_working_days",
+  "column_break_4",
+  "commercial_registration",
+  "customer_address",
+  "address_display",
+  "renewal_count",
+  "section_break_8",
+  "finance_poc_name",
+  "finance_poc_number",
+  "column_break_11",
+  "legal_poc_name",
+  "legal_poc_number",
+  "column_break_13",
+  "operation_poc_name",
+  "operation_poc_number",
+  "section_break_15",
+  "signature",
+  "column_break_20",
+  "paci",
+  "column_break_21",
+  "commercial_license",
+  "section_break_20",
+  "start_date",
+  "end_date",
+  "due_date",
+  "column_break_27",
+  "invoice_output_format",
+  "invoice_frequency",
+  "section_break_26",
+  "is_public_holiday_rate",
+  "public_holiday_rate",
+  "column_break_33",
+  "is_flat_rate",
+  "public_holiday_rate_for_flat",
+  "section_break_35",
+  "items",
+  "section_break_28",
+  "freequency",
+  "assets",
+  "section_break_30",
+  "is_attendance_for_invoice",
+  "is_invoice_for_project",
+  "is_invoice_for_site",
+  "column_break_38",
+  "is_po_for_invoice",
+  "use_portal_for_invoice",
+  "section_break_36",
+  "bank_account",
+  "bank_name",
+  "iban",
+  "iban_certificate",
+  "column_break_43",
+  "mode_of_payment",
   "section_break_4",
-  "addendums"
+  "addendums",
+  "section_break_55",
+  "password_management"
  ],
  "fields": [
   {
@@ -19,12 +72,9 @@
    "options": "Customer"
   },
   {
-   "fieldname": "column_break_2",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "project",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Project",
    "options": "Project"
   },
@@ -43,9 +93,300 @@
    "fieldtype": "Data",
    "label": "Renewal Count",
    "read_only": 1
+  },
+  {
+   "fieldname": "commercial_registration",
+   "fieldtype": "Data",
+   "label": "Commercial Registration"
+  },
+  {
+   "fieldname": "customer_address",
+   "fieldtype": "Link",
+   "label": "Customer Address",
+   "options": "Address"
+  },
+  {
+   "fieldname": "address_display",
+   "fieldtype": "Small Text",
+   "label": "Address",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break",
+   "label": "POC"
+  },
+  {
+   "fieldname": "finance_poc_name",
+   "fieldtype": "Data",
+   "label": "Finance POC Name"
+  },
+  {
+   "fieldname": "finance_poc_number",
+   "fieldtype": "Data",
+   "label": "Finance POC Number"
+  },
+  {
+   "fieldname": "legal_poc_name",
+   "fieldtype": "Data",
+   "label": "Legal POC Name"
+  },
+  {
+   "fieldname": "legal_poc_number",
+   "fieldtype": "Data",
+   "label": "Legal POC Number"
+  },
+  {
+   "fieldname": "operation_poc_name",
+   "fieldtype": "Data",
+   "label": "Operation POC Name"
+  },
+  {
+   "fieldname": "operation_poc_number",
+   "fieldtype": "Data",
+   "label": "Operation POC Number"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_15",
+   "fieldtype": "Section Break",
+   "label": "Attatchments"
+  },
+  {
+   "fieldname": "paci",
+   "fieldtype": "Attach",
+   "label": "PACI"
+  },
+  {
+   "fieldname": "commercial_license",
+   "fieldtype": "Attach",
+   "label": "Commercial License"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Attach",
+   "label": "Authorized Signature"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_20",
+   "fieldtype": "Section Break",
+   "label": "Terms"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Contract Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Contract End Date"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Select",
+   "label": "Invoice Due Date",
+   "options": "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28"
+  },
+  {
+   "fieldname": "invoice_output_format",
+   "fieldtype": "Select",
+   "label": "Invoice Output Format",
+   "options": "\nMonthly\nDaily\nHourly"
+  },
+  {
+   "fieldname": "invoice_frequency",
+   "fieldtype": "Select",
+   "label": "Invoice Frequency",
+   "options": "\nMonthly\nQuarterly"
+  },
+  {
+   "fieldname": "section_break_26",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Contract Item"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_28",
+   "fieldtype": "Section Break",
+   "label": "Contract Assets"
+  },
+  {
+   "fieldname": "assets",
+   "fieldtype": "Table",
+   "label": "Assets",
+   "options": "Contract Asset"
+  },
+  {
+   "fieldname": "section_break_30",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_attendance_for_invoice",
+   "fieldtype": "Check",
+   "label": "Is Require Attendance/Timesheet With Each Invoice"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_invoice_for_project",
+   "fieldtype": "Check",
+   "label": "Is Require Invoice For Each Project"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_invoice_for_site",
+   "fieldtype": "Check",
+   "label": "Is Require Invoice For Each Site"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_po_for_invoice",
+   "fieldtype": "Check",
+   "label": "Is Require PO For Each Invoice Submission"
+  },
+  {
+   "default": "0",
+   "fieldname": "use_portal_for_invoice",
+   "fieldtype": "Check",
+   "label": "Use Customer's Online Portal To Submit Invoice"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_36",
+   "fieldtype": "Section Break",
+   "label": "Bank Details"
+  },
+  {
+   "fieldname": "bank_name",
+   "fieldtype": "Data",
+   "label": "Customer Bank Name"
+  },
+  {
+   "fieldname": "iban_certificate",
+   "fieldtype": "Attach",
+   "label": "IBAN Certificate"
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "label": "Mode Of Payment",
+   "options": "Mode of Payment"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_27",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_43",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_38",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "monthly_working_days",
+   "fieldtype": "Int",
+   "label": "Monthly Working Days"
+  },
+  {
+   "fieldname": "freequency",
+   "fieldtype": "Select",
+   "label": "Freequency",
+   "options": "\nPO based\nMonthly"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_public_holiday_rate",
+   "fieldtype": "Check",
+   "label": "Is Public Holiday Rate"
+  },
+  {
+   "fieldname": "column_break_33",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_flat_rate",
+   "fieldtype": "Check",
+   "label": "Is Flat Rate"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_35",
+   "fieldtype": "Section Break",
+   "label": "Contract Items"
+  },
+  {
+   "depends_on": "eval:doc.is_public_holiday_rate == 1",
+   "fieldname": "public_holiday_rate",
+   "fieldtype": "Float",
+   "label": "Public Holiday Rate",
+   "precision": "3"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_55",
+   "fieldtype": "Section Break",
+   "label": "More Information"
+  },
+  {
+   "fieldname": "password_management",
+   "fieldtype": "Link",
+   "label": "Password Management",
+   "options": "Password Management",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.is_flat_rate == 1",
+   "fieldname": "public_holiday_rate_for_flat",
+   "fieldtype": "Float",
+   "label": "Public Holiday Rate"
+  },
+  {
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "options": "Bank Account"
+  },
+  {
+   "fieldname": "iban",
+   "fieldtype": "Data",
+   "label": "IBAN"
   }
  ],
- "modified": "2020-06-06 15:47:48.880227",
+ "modified": "2020-08-27 13:57:38.980941",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
@@ -67,5 +408,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "client",
  "track_changes": 1
 }
