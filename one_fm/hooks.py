@@ -58,7 +58,7 @@ doctype_list_js = {"Job Applicant" : "public/js/doctype_js/job_applicant_list.js
 
 # application home page (will override Website Settings)
 # home_page = "login"
-home_page = "domain_transfer"
+home_page = "landing_page"
 
 # website user home page (by Role)
 # role_home_page = {
