@@ -1,0 +1,241 @@
+{
+ "creation": "2020-08-31 19:39:53.406596",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "category",
+  "amended_from",
+  "employee",
+  "one_fm_civil_id",
+  "birth_date",
+  "centeralized_number",
+  "gender",
+  "place_of_birth",
+  "first_name_arabic",
+  "second_name_arabic",
+  "third_name_arabic",
+  "last_name_arabic",
+  "first_name_english",
+  "second_name_english",
+  "third_name_english",
+  "last_name_english",
+  "passport_number",
+  "passport_type",
+  "passport_issue_date",
+  "passport_expiry_date",
+  "nationality",
+  "designation",
+  "company_pam_file_number",
+  "company_centralized_number",
+  "company_trade_name",
+  "company_email_id",
+  "paci_number",
+  "governante",
+  "company_location",
+  "company_block_number",
+  "company_street_name",
+  "company_building_name",
+  "company_contact_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "options": "First Time\nTransfer\nRenewal\nCancellation"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "MOI Residency Jawazat",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "birth_date",
+   "fieldtype": "Data",
+   "label": "Birth Date"
+  },
+  {
+   "fieldname": "centeralized_number",
+   "fieldtype": "Data",
+   "label": "Centeralized Number"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Data",
+   "label": "Gender"
+  },
+  {
+   "fieldname": "place_of_birth",
+   "fieldtype": "Data",
+   "label": "Place of Birth"
+  },
+  {
+   "fieldname": "first_name_arabic",
+   "fieldtype": "Data",
+   "label": "First Name Arabic"
+  },
+  {
+   "fieldname": "second_name_arabic",
+   "fieldtype": "Data",
+   "label": "Second Name Arabic"
+  },
+  {
+   "fieldname": "third_name_arabic",
+   "fieldtype": "Data",
+   "label": "Third Name Arabic"
+  },
+  {
+   "fieldname": "last_name_arabic",
+   "fieldtype": "Data",
+   "label": "Last Name Arabic"
+  },
+  {
+   "fieldname": "first_name_english",
+   "fieldtype": "Data",
+   "label": "First Name English"
+  },
+  {
+   "fieldname": "second_name_english",
+   "fieldtype": "Data",
+   "label": "Second Name English"
+  },
+  {
+   "fieldname": "third_name_english",
+   "fieldtype": "Data",
+   "label": "Third Name English"
+  },
+  {
+   "fieldname": "last_name_english",
+   "fieldtype": "Data",
+   "label": "Last Name English"
+  },
+  {
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "passport_type",
+   "fieldtype": "Data",
+   "label": "Passport Type"
+  },
+  {
+   "fieldname": "passport_issue_date",
+   "fieldtype": "Data",
+   "label": "Passport Issue Date"
+  },
+  {
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Data",
+   "label": "Passport Expiry Date"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Data",
+   "label": "Designation"
+  },
+  {
+   "fieldname": "company_pam_file_number",
+   "fieldtype": "Data",
+   "label": "Company PAM File Number"
+  },
+  {
+   "fieldname": "company_centralized_number",
+   "fieldtype": "Data",
+   "label": "Company Centralized Number"
+  },
+  {
+   "fieldname": "company_trade_name",
+   "fieldtype": "Data",
+   "label": "Company Trade Name"
+  },
+  {
+   "fieldname": "company_email_id",
+   "fieldtype": "Data",
+   "label": "Company Email ID"
+  },
+  {
+   "fieldname": "paci_number",
+   "fieldtype": "Data",
+   "label": "PACI Number"
+  },
+  {
+   "fieldname": "governante",
+   "fieldtype": "Data",
+   "label": "Governante"
+  },
+  {
+   "fieldname": "company_location",
+   "fieldtype": "Data",
+   "label": "Company Location"
+  },
+  {
+   "fieldname": "company_block_number",
+   "fieldtype": "Data",
+   "label": "Company Block Number"
+  },
+  {
+   "fieldname": "company_street_name",
+   "fieldtype": "Data",
+   "label": "Company Street Name"
+  },
+  {
+   "fieldname": "company_building_name",
+   "fieldtype": "Data",
+   "label": "Company Building Name"
+  },
+  {
+   "fieldname": "company_contact_number",
+   "fieldtype": "Data",
+   "label": "Company Contact Number"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "one_fm_civil_id",
+   "fieldtype": "Read Only",
+   "label": "Civil ID Number",
+   "options": "Employee"
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2020-08-31 20:06:06.650117",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "MOI Residency Jawazat",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}
