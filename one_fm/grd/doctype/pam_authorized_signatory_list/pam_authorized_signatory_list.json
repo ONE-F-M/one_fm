@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "PAS-.YYYY.-.MM.-.######",
  "creation": "2019-12-15 22:16:03.398590",
  "doctype": "DocType",
@@ -7,8 +8,13 @@
  "field_order": [
   "pam_file_name",
   "pam_file_number",
+  "column_break_3",
+  "issuer_number",
+  "section_break_5",
   "authorized_signatory",
+  "section_break_7",
   "estimation_expiry_date",
+  "column_break_9",
   "authorized_signatory_expiry_date"
  ],
  "fields": [
@@ -42,9 +48,31 @@
    "in_list_view": 1,
    "label": "Authorized Signatory Expiry Date",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "issuer_number",
+   "fieldtype": "Data",
+   "label": "Issuer Number"
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2019-12-27 18:27:40.035332",
+ "links": [],
+ "modified": "2020-09-01 09:04:50.977677",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Authorized Signatory List",
