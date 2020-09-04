@@ -52,9 +52,11 @@ var set_authorized_signatory_name_arabic = function(frm) {
 				if(r && r.message && r.message.authorized_signatory && r.message.authorized_signatory.length > 0){
 					let authorized_signatory = r.message.authorized_signatory[0];
 					frm.set_value('authorized_signatory_name_arabic', authorized_signatory.authorized_signatory_name_arabic);
+					frm.set_value('issuer_number', r.message.issuer_number);
 				}
 				else{
 					frm.set_value('authorized_signatory_name_arabic', '');
+					frm.set_value('issuer_number', '');
 				}
 			}
 		});

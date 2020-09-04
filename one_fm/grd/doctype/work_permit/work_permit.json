@@ -3,7 +3,6 @@
  "autoname": "naming_series:",
  "creation": "2020-08-13 08:46:25.338850",
  "doctype": "DocType",
- "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
@@ -12,23 +11,30 @@
   "pam_file_number",
   "company_trade_name_arabic",
   "contract_file_number",
-  "authorized_signatory_name_arabic",
   "column_break_8",
+  "authorized_signatory_name_arabic",
+  "issuer_number",
   "work_permit_application_type",
   "work_permit_type",
   "date_of_application",
-  "issuer_number",
+  "previous_company_details_section",
+  "previous_company_trade_name_in_arabic",
+  "previous_company_authorized_signatory_name_arabic",
+  "previous_company_pam_file_number",
+  "previous_company_contract_file_number",
+  "cb_previous",
+  "previous_company_issuer_number",
+  "inform_pervious_company",
+  "inform_pervious_company_date_and_time",
   "employee_details_section",
   "first_name",
-  "first_name_in_arabic",
-  "column_break_22",
   "second_name",
-  "second_name_in_arabic",
-  "column_break_17",
   "third_name",
-  "third_name_in_arabic",
-  "column_break_20",
   "last_name",
+  "column_break_22",
+  "first_name_in_arabic",
+  "second_name_in_arabic",
+  "third_name_in_arabic",
   "last_name_in_arabic",
   "section_break_21",
   "date_of_birth",
@@ -67,9 +73,11 @@
   "work_permit_approved_by",
   "work_permit_approved_on",
   "work_permit_status",
+  "reason_for_rejection",
   "work_permit_expiry_date",
   "section_break_61",
   "notify_finance_user",
+  "amount_to_pay",
   "payment_transferred_from_finance_dept",
   "payment_done",
   "column_break_65",
@@ -224,24 +232,28 @@
   },
   {
    "depends_on": "first_name",
+   "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_in_arabic",
    "fieldtype": "Data",
    "label": "First Name in Arabic"
   },
   {
    "depends_on": "second_name",
+   "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_in_arabic",
    "fieldtype": "Data",
    "label": "Second Name in Arabic"
   },
   {
    "depends_on": "third_name",
+   "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name_in_arabic",
    "fieldtype": "Data",
    "label": "Third Name in Arabic"
   },
   {
    "depends_on": "last_name",
+   "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_in_arabic",
    "fieldtype": "Data",
    "label": "Last Name in Arabic"
@@ -324,14 +336,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_17",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_20",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "column_break_33",
    "fieldtype": "Column Break"
   },
@@ -376,7 +380,7 @@
    "default": "No",
    "fieldname": "work_permit_submitted",
    "fieldtype": "Select",
-   "label": "Work Permit Submitted",
+   "label": "GRD Operator Submitted Work Permit",
    "no_copy": 1,
    "options": "\nYes\nNo",
    "read_only": 1
@@ -410,7 +414,7 @@
    "default": "No",
    "fieldname": "work_permit_approved",
    "fieldtype": "Select",
-   "label": "Work Permit Approved",
+   "label": "GRD Supervisor Approved Work Permit",
    "no_copy": 1,
    "options": "\nYes\nNo",
    "permlevel": 1
@@ -450,6 +454,8 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.work_permit_status=='Approved'",
    "fieldname": "work_permit_expiry_date",
    "fieldtype": "Date",
    "label": "Work Permit Expiry Date",
@@ -477,6 +483,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "collapsible": 1,
    "collapsible_depends_on": "eval: doc.work_permit_status=='Approved'",
    "fieldname": "section_break_61",
@@ -517,11 +524,81 @@
    "fieldtype": "Link",
    "label": "PAM File",
    "options": "PAM File"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
+   "fieldname": "previous_company_details_section",
+   "fieldtype": "Section Break",
+   "label": "Previous Company Details"
+  },
+  {
+   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
+   "fieldname": "previous_company_trade_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Previous Company Trade Name in Arabic"
+  },
+  {
+   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
+   "fieldname": "previous_company_authorized_signatory_name_arabic",
+   "fieldtype": "Data",
+   "label": "Previous Company Authorized Signatory Name Arabic"
+  },
+  {
+   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
+   "fieldname": "previous_company_pam_file_number",
+   "fieldtype": "Data",
+   "label": "Previous Company PAM File Number"
+  },
+  {
+   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
+   "fieldname": "previous_company_contract_file_number",
+   "fieldtype": "Data",
+   "label": "Previous Company Contract File Number"
+  },
+  {
+   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
+   "fieldname": "previous_company_issuer_number",
+   "fieldtype": "Data",
+   "label": "Previous Company Issuer Number"
+  },
+  {
+   "fieldname": "cb_previous",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "No",
+   "fieldname": "inform_pervious_company",
+   "fieldtype": "Select",
+   "label": "Inform Pervious Company",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.inform_pervious_company == 'Yes'",
+   "fieldname": "inform_pervious_company_date_and_time",
+   "fieldtype": "Datetime",
+   "label": "Inform Pervious Company Date and Time"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.work_permit_status=='Approved'",
+   "fieldname": "amount_to_pay",
+   "fieldtype": "Currency",
+   "label": "Amount to Pay",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.work_permit_status=='Rejected'",
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Data",
+   "label": "Reason for Rejection",
+   "permlevel": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-08-23 14:14:01.021633",
+ "modified": "2020-09-01 11:02:12.251620",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
@@ -543,6 +620,8 @@
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -585,7 +664,6 @@
   {
    "email": 1,
    "export": 1,
-   "permlevel": 1,
    "print": 1,
    "read": 1,
    "report": 1,
@@ -595,6 +673,7 @@
   {
    "email": 1,
    "export": 1,
+   "permlevel": 1,
    "print": 1,
    "read": 1,
    "report": 1,
