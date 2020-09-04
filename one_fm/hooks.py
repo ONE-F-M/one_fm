@@ -141,6 +141,9 @@ doc_events = {
 	"ToDo": {
 		"after_insert": "one_fm.grd.utils.todo_after_insert"
 	},
+	"Contact": {
+		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
+	},
 	# "Project": {
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	# }

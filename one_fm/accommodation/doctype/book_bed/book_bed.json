@@ -6,6 +6,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "find_nearest_accommodation_section",
   "naming_series",
   "governate",
   "area",
@@ -156,10 +157,16 @@
    "fieldtype": "Select",
    "label": "Booking Status",
    "options": "\nBooked\nBooked Temporary\nCancelled"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "find_nearest_accommodation_section",
+   "fieldtype": "Section Break",
+   "label": "Find Nearest Accommodation"
   }
  ],
  "links": [],
- "modified": "2020-07-15 10:33:14.989579",
+ "modified": "2020-09-04 20:24:25.838330",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Book Bed",

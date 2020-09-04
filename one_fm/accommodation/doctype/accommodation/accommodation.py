@@ -8,8 +8,16 @@ import functools
 from frappe.model.document import Document
 
 class Accommodation(Document):
+	def autoname(self):
+		self.name = get_latest_accommodation_code(self)
+
 	def onload(self):
 		set_contact_list(self)
+
+def get_latest_accommodation_code(doc):
+	accommodation_code = frappe.db.sql("select name+1 from `tabAccommodation` order by name desc limit 1")
+	new_accommodation_code = accommodation_code[0][0] if accommodation_code else 1
+	return str(int(new_accommodation_code)).zfill(2)
 
 def set_contact_list(doc):
 	contact_list_fields = {
