@@ -1,0 +1,156 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-08-31 09:34:49.596148",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company",
+  "party",
+  "column_break_2",
+  "posting_date",
+  "company_bank",
+  "company_bank_account",
+  "account",
+  "section_break_5",
+  "get_todays_residency_payment_details",
+  "references",
+  "total_amount",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "RPR-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "no_copy": 1,
+   "options": "RPR-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "party",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Supplier",
+   "options": "Supplier"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date"
+  },
+  {
+   "depends_on": "company_bank_account",
+   "fetch_from": "company_bank_account.bank",
+   "fieldname": "company_bank",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Bank",
+   "options": "Bank"
+  },
+  {
+   "fieldname": "company_bank_account",
+   "fieldtype": "Link",
+   "label": "Company Bank Account",
+   "options": "Bank Account"
+  },
+  {
+   "depends_on": "company_bank_account",
+   "fetch_from": "company_bank_account.account",
+   "fieldname": "account",
+   "fieldtype": "Data",
+   "label": "Account"
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_bulk_edit": 1,
+   "fieldname": "references",
+   "fieldtype": "Table",
+   "label": "Residency Payment Request Reference",
+   "options": "Residency Payment Request Reference",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Residency Payment Request",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.docstatus == 0",
+   "fieldname": "get_todays_residency_payment_details",
+   "fieldtype": "Button",
+   "label": "Get Todays Residency Payment Details"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-09-04 15:34:40.790649",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Residency Payment Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
