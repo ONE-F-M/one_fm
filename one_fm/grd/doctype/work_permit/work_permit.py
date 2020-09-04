@@ -58,17 +58,18 @@ class WorkPermit(Document):
 		set_required_documents(self)
 
 def set_required_documents(doc):
-	document_list_template = frappe.get_doc('Work Permit Required Documents Template', {'work_permit_type':doc.work_permit_type})
-	employee = frappe.get_doc('Employee', doc.employee)
-	if document_list_template and document_list_template.work_permit_document:
-		for wpd in document_list_template.work_permit_document:
-			documents_required = doc.append('documents_required')
-			documents_required.required_document = wpd.required_document
-			if employee.one_fm_employee_documents:
-				for ed in employee.one_fm_employee_documents:
-					if wpd.required_document == ed.document_name and ed.attach:
-						documents_required.attach = ed.attach
-		frappe.db.commit()
+	if frappe.db.exists('Work Permit Required Documents Template', {'work_permit_type':doc.work_permit_type}):
+		document_list_template = frappe.get_doc('Work Permit Required Documents Template', {'work_permit_type':doc.work_permit_type})
+		employee = frappe.get_doc('Employee', doc.employee)
+		if document_list_template and document_list_template.work_permit_document:
+			for wpd in document_list_template.work_permit_document:
+				documents_required = doc.append('documents_required')
+				documents_required.required_document = wpd.required_document
+				if employee.one_fm_employee_documents:
+					for ed in employee.one_fm_employee_documents:
+						if wpd.required_document == ed.document_name and ed.attach:
+							documents_required.attach = ed.attach
+			frappe.db.commit()
 
 @frappe.whitelist()
 def get_employee_data_for_work_permit(employee_name):

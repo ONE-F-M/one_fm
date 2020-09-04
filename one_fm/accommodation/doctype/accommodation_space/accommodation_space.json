@@ -1,14 +1,18 @@
 {
  "actions": [],
- "autoname": "format:{accommodation_unit}-{####}",
  "creation": "2020-07-08 21:57:16.286991",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "title",
   "accommodation",
+  "accommodation_name",
   "type",
   "accommodation_unit",
+  "floor",
+  "accommodation_unit_code",
+  "accommodation_space_code",
   "column_break_3",
   "accommodation_space_type",
   "bed_space_available",
@@ -127,7 +131,8 @@
    "fetch_if_empty": 1,
    "fieldname": "single_bed_capacity",
    "fieldtype": "Int",
-   "label": "Single Bed Capacity"
+   "label": "Bed Capacity",
+   "read_only": 1
   },
   {
    "depends_on": "bed_space_available",
@@ -135,6 +140,7 @@
    "fetch_if_empty": 1,
    "fieldname": "double_bed_capacity",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Double Bed Capacity"
   },
   {
@@ -165,10 +171,44 @@
    "fieldname": "accommodation_objects",
    "fieldtype": "Table",
    "options": "Accommodation Space Object"
+  },
+  {
+   "fieldname": "accommodation_space_code",
+   "fieldtype": "Data",
+   "label": "Accommodation Space Code",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation_unit.accommodation_unit_code",
+   "fieldname": "accommodation_unit_code",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Accommodation Unit Code"
+  },
+  {
+   "fetch_from": "accommodation_unit.floor",
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "label": "Floor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title"
+  },
+  {
+   "fetch_from": "accommodation.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_name",
+   "fieldtype": "Data",
+   "label": "Accommodation Name",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-07-10 11:03:00.427147",
+ "modified": "2020-09-04 14:08:48.996334",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",
@@ -188,5 +228,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "title"
 }

@@ -1,14 +1,16 @@
 {
  "actions": [],
- "autoname": "format:{accommodation}-{type}-{####}",
  "creation": "2020-07-08 21:46:54.394374",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "title",
   "accommodation",
+  "accommodation_name",
   "type",
   "floor",
+  "accommodation_unit_code",
   "column_break_3",
   "accommodation_unit_id",
   "paci",
@@ -29,7 +31,8 @@
    "fieldname": "floor",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Floor"
+   "label": "Floor",
+   "options": "\nB\n0\n1\n2"
   },
   {
    "fieldname": "column_break_3",
@@ -69,10 +72,30 @@
    "fieldname": "accommodation_unit_id",
    "fieldtype": "Data",
    "label": "Number"
+  },
+  {
+   "fieldname": "accommodation_unit_code",
+   "fieldtype": "Data",
+   "label": "Accommodation Unit Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title"
+  },
+  {
+   "fetch_from": "accommodation.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_name",
+   "fieldtype": "Data",
+   "label": "Accommodation Name",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-07-08 22:23:51.845301",
+ "modified": "2020-09-04 14:04:52.427064",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Unit",
@@ -92,5 +115,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "title"
 }

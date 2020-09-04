@@ -58,7 +58,7 @@ doctype_list_js = {"Job Applicant" : "public/js/doctype_js/job_applicant_list.js
 
 # application home page (will override Website Settings)
 # home_page = "login"
-home_page = "domain_transfer"
+home_page = "landing_page"
 
 # website user home page (by Role)
 # role_home_page = {
@@ -140,6 +140,9 @@ doc_events = {
 	},
 	"ToDo": {
 		"after_insert": "one_fm.grd.utils.todo_after_insert"
+	},
+	"Contact": {
+		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	# "Project": {
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"

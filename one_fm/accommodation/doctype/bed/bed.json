@@ -1,17 +1,20 @@
 {
  "actions": [],
- "autoname": "format:{accommodation_space}-{####}",
  "creation": "2020-07-10 09:42:41.792223",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "title",
   "accommodation",
+  "accommodation_name",
   "governate",
   "area",
   "location",
   "type",
   "accommodation_unit",
+  "floor",
+  "bed_code",
   "column_break_3",
   "status",
   "accommodation_space_type",
@@ -110,11 +113,9 @@
    "options": "Bed Space Type"
   },
   {
-   "fetch_if_empty": 1,
    "fieldname": "bed_type",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Bed Type",
    "options": "\nSingle\nDouble"
   },
@@ -239,10 +240,37 @@
    "fieldtype": "Data",
    "label": "Governate",
    "read_only": 1
+  },
+  {
+   "fieldname": "bed_code",
+   "fieldtype": "Data",
+   "label": "Bed Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title"
+  },
+  {
+   "fetch_from": "accommodation.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Accommodation Name"
+  },
+  {
+   "fetch_from": "accommodation_unit.floor",
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "label": "Floor",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-07-15 10:16:12.054887",
+ "modified": "2020-09-04 20:22:04.543963",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
@@ -263,5 +291,5 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "accommodation_space"
+ "title_field": "title"
 }

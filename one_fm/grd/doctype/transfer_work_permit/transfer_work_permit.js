@@ -1,31 +1,7 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Work Permit', {
-	nationality: function(frm) {
-		frappe.call({
-			method: 'one_fm.grd.doctype.work_permit.work_permit.get_employee_data_for_work_permit',
-			args: {'employee_name': frm.doc.employee},
-			callback: function(r) {
-				if(r && r.message){
-					if(frm.doc.nationality == 'Kuwaiti'){
-						frm.set_value('work_permit_type', 'Renewal Kuwaiti');
-					}
-					else{
-						frm.set_value('work_permit_type', 'Renewal Overseas');
-					}
-				}
-				else{
-					if(frm.doc.nationality == 'Kuwaiti'){
-						frm.set_value('work_permit_type', 'New Kuwaiti');
-					}
-					else{
-						frm.set_value('work_permit_type', 'New Overseas');
-					}
-				}
-			}
-		});
-	},
+frappe.ui.form.on('Transfer Work Permit', {
 	work_permit_type: function(frm) {
 		set_required_documents(frm);
 	},

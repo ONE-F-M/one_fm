@@ -1,12 +1,10 @@
 {
  "actions": [],
- "autoname": "naming_series:",
  "creation": "2020-06-30 11:00:45.749769",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "naming_series",
   "accommodation",
   "column_break_4",
   "type",
@@ -88,13 +86,6 @@
   "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Series",
-   "options": "ACC-"
-  },
   {
    "fieldname": "accommodation",
    "fieldtype": "Data",
@@ -538,7 +529,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-07-13 07:44:03.897318",
+ "modified": "2020-09-04 20:13:21.721062",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",
