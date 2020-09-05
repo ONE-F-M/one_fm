@@ -8,7 +8,7 @@
  "field_order": [
   "find_nearest_accommodation_section",
   "naming_series",
-  "governate",
+  "governorate",
   "area",
   "column_break_4",
   "location",
@@ -40,15 +40,10 @@
    "options": "BB-.YYYY.-####"
   },
   {
-   "fieldname": "governate",
-   "fieldtype": "Select",
-   "label": "Governate",
-   "options": "\nAhmadi\nMobarak Al Kabir\nHawally\nJahra\nCapital"
-  },
-  {
    "fieldname": "area",
-   "fieldtype": "Data",
-   "label": "Area"
+   "fieldtype": "Link",
+   "label": "Area",
+   "options": "Governorate Area"
   },
   {
    "fieldname": "location",
@@ -163,10 +158,16 @@
    "fieldname": "find_nearest_accommodation_section",
    "fieldtype": "Section Break",
    "label": "Find Nearest Accommodation"
+  },
+  {
+   "fieldname": "governorate",
+   "fieldtype": "Link",
+   "label": "Governorate",
+   "options": "Governorate"
   }
  ],
  "links": [],
- "modified": "2020-09-04 20:24:25.838330",
+ "modified": "2020-09-05 15:17:27.134796",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Book Bed",

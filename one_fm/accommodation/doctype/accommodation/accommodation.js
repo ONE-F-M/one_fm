@@ -4,6 +4,27 @@
 frappe.ui.form.on('Accommodation', {
 	refresh: function(frm) {
 		set_contact_html(frm);
+		frm.set_query('area', function () {
+			return {
+				filters: {
+					'governorate': frm.doc.governorate
+				}
+			};
+		});
+		frm.set_query('authorization_area', function () {
+			return {
+				filters: {
+					'governorate': frm.doc.authorization_governorate
+				}
+			};
+		});
+		frm.set_query('accommodation_area', function () {
+			return {
+				filters: {
+					'governorate': frm.doc.accommodation_governorate
+				}
+			};
+		});
 	}
 });
 
