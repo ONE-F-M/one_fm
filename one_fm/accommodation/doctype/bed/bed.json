@@ -6,19 +6,19 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
+  "accommodation_space",
   "accommodation",
   "accommodation_name",
   "governate",
   "area",
   "location",
-  "type",
-  "accommodation_unit",
   "floor",
   "bed_code",
   "column_break_3",
   "status",
   "accommodation_space_type",
-  "accommodation_space",
+  "type",
+  "accommodation_unit",
   "beds_section",
   "bed_space_type",
   "bed_type",
@@ -47,15 +47,16 @@
    "fetch_if_empty": 1,
    "fieldname": "accommodation",
    "fieldtype": "Link",
+   "hidden": 1,
    "in_standard_filter": 1,
    "label": "Accommodation",
    "options": "Accommodation"
   },
   {
-   "fetch_from": "accommodation.type",
+   "fetch_from": "accommodation_space.type",
    "fieldname": "type",
    "fieldtype": "Link",
-   "label": "Type",
+   "label": "Accommodation Type",
    "options": "Accommodation Type",
    "read_only": 1
   },
@@ -66,7 +67,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Accommodation Unit",
-   "options": "Accommodation Unit"
+   "options": "Accommodation Unit",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_3",
@@ -89,7 +91,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Space Type",
-   "options": "Accommodation Space Type"
+   "options": "Accommodation Space Type",
+   "read_only": 1
   },
   {
    "fieldname": "accommodation_space",
@@ -220,7 +223,7 @@
    "label": "Comments"
   },
   {
-   "fetch_from": "accommodation.area",
+   "fetch_from": "accommodation.accommodation_area",
    "fieldname": "area",
    "fieldtype": "Data",
    "label": "Area",
@@ -244,8 +247,8 @@
   {
    "fieldname": "bed_code",
    "fieldtype": "Data",
-   "label": "Bed Code",
-   "read_only": 1
+   "hidden": 1,
+   "label": "Bed Code"
   },
   {
    "fieldname": "title",
@@ -258,8 +261,8 @@
    "fetch_if_empty": 1,
    "fieldname": "accommodation_name",
    "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Accommodation Name"
+   "label": "Accommodation Name",
+   "read_only": 1
   },
   {
    "fetch_from": "accommodation_unit.floor",
@@ -270,7 +273,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-04 20:22:04.543963",
+ "modified": "2020-09-05 13:54:44.401565",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",

@@ -6,20 +6,20 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
+  "accommodation_unit",
+  "accommodation_unit_code",
   "accommodation",
   "accommodation_name",
   "type",
-  "accommodation_unit",
   "floor",
-  "accommodation_unit_code",
   "accommodation_space_code",
   "column_break_3",
   "accommodation_space_type",
   "bed_space_available",
   "beds_section",
   "bed_space_type",
-  "single_bed_capacity",
   "column_break_11",
+  "single_bed_capacity",
   "double_bed_capacity",
   "extra_single_bed_capacity",
   "extra_double_bed_capacity",
@@ -39,14 +39,16 @@
    "fetch_if_empty": 1,
    "fieldname": "accommodation",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Accommodation",
-   "options": "Accommodation"
+   "options": "Accommodation",
+   "read_only": 1
   },
   {
-   "fetch_from": "accommodation.type",
+   "fetch_from": "accommodation_unit.type",
    "fieldname": "type",
    "fieldtype": "Link",
-   "label": "Type",
+   "label": "Accommodation Type",
    "options": "Accommodation Type",
    "read_only": 1
   },
@@ -55,7 +57,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Accommodation Unit",
-   "options": "Accommodation Unit"
+   "options": "Accommodation Unit",
+   "reqd": 1
   },
   {
    "fieldname": "accommodation_space_type",
@@ -208,7 +211,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-04 14:08:48.996334",
+ "modified": "2020-09-05 12:28:20.168673",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",

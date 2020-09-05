@@ -12,7 +12,7 @@ def get_data():
 			"label": _("One Fm")
 		},
 		{
-		"module_name": "GRD",
+			"module_name": "GRD",
 			"category": "Modules",
 			"label": _("GRD"),
 			"color": "#2ecc71",
@@ -39,5 +39,13 @@ def get_data():
 			"color": "grey",
 			"icon": "fa fa-gavel",
 			"type": "module"
-		}
+		},
+		{
+			"module_name": "Accommodation",
+			"category": "Modules",
+			"label": _("Accommodation"),
+			"color": "#2ecc71",
+			"icon": "octicon octicon-organization",
+			"type": "module"
+		},
 	]
