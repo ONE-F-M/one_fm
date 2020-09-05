@@ -35,4 +35,4 @@ def get_latest_accommodation_space_code(doc):
 	"""
 	accommodation_space_code = frappe.db.sql(query.format(doc.accommodation, doc.accommodation_unit))
 	new_accommodation_space_code = accommodation_space_code[0][0] if accommodation_space_code else 1
-	return str(int(new_accommodation_space_code)).zfill(1)
+	return str(int(new_accommodation_space_code))[-1]

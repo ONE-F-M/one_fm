@@ -60,13 +60,11 @@
    "label": "Total Flat Space in m2"
   },
   {
-   "fetch_from": "accommodation.type",
    "fieldname": "type",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Type",
-   "options": "Accommodation Type",
-   "read_only": 1
+   "options": "Accommodation Type"
   },
   {
    "fieldname": "accommodation_unit_id",
@@ -76,6 +74,7 @@
   {
    "fieldname": "accommodation_unit_code",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Accommodation Unit Code",
    "read_only": 1
   },
@@ -95,7 +94,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-04 14:04:52.427064",
+ "modified": "2020-09-05 13:22:37.526276",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Unit",
@@ -114,6 +113,7 @@
    "write": 1
   }
  ],
+ "search_fields": "accommodation_unit_code",
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "title"
