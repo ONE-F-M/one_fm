@@ -16,6 +16,7 @@
   "owner_contact",
   "owner_contact_html",
   "column_break_18",
+  "governorate",
   "area",
   "block",
   "avenue",
@@ -37,6 +38,7 @@
   "authorization_document",
   "authorization_other_document",
   "column_break_44",
+  "authorization_governorate",
   "authorization_area",
   "authorization_block",
   "authorization_avenue",
@@ -56,8 +58,8 @@
   "representative_authorized_signature",
   "owner_civil_id_pdf",
   "accommodation_address_section",
-  "governate",
   "accommodation_country",
+  "accommodation_governorate",
   "accommodation_area",
   "accommodation_block",
   "column_break_76",
@@ -140,8 +142,9 @@
   },
   {
    "fieldname": "area",
-   "fieldtype": "Data",
-   "label": "Area"
+   "fieldtype": "Link",
+   "label": "Area",
+   "options": "Governorate Area"
   },
   {
    "fieldname": "block",
@@ -231,8 +234,9 @@
   {
    "depends_on": "is_legal_authorization_available",
    "fieldname": "authorization_area",
-   "fieldtype": "Data",
-   "label": "Area"
+   "fieldtype": "Link",
+   "label": "Area",
+   "options": "Governorate Area"
   },
   {
    "depends_on": "is_legal_authorization_available",
@@ -324,8 +328,9 @@
   },
   {
    "fieldname": "accommodation_area",
-   "fieldtype": "Data",
-   "label": "Area"
+   "fieldtype": "Link",
+   "label": "Area",
+   "options": "Governorate Area"
   },
   {
    "fieldname": "accommodation_block",
@@ -516,19 +521,31 @@
    "label": "Legal Authorization Contact Html"
   },
   {
-   "fieldname": "governate",
-   "fieldtype": "Select",
-   "label": "Governate",
-   "options": "\nAhmadi\nMobarak Al Kabir\nHawally\nJahra\nCapital"
-  },
-  {
    "fieldname": "accommodation_geolocation",
    "fieldtype": "Geolocation",
    "label": "Geolocation"
+  },
+  {
+   "fieldname": "governorate",
+   "fieldtype": "Link",
+   "label": "Governorate",
+   "options": "Governorate"
+  },
+  {
+   "fieldname": "authorization_governorate",
+   "fieldtype": "Link",
+   "label": "Governorate",
+   "options": "Governorate"
+  },
+  {
+   "fieldname": "accommodation_governorate",
+   "fieldtype": "Link",
+   "label": "Governorate",
+   "options": "Governorate"
   }
  ],
  "links": [],
- "modified": "2020-09-05 10:54:49.902627",
+ "modified": "2020-09-05 15:16:08.727027",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",

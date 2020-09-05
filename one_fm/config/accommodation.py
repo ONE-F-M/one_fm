@@ -27,5 +27,30 @@ def get_data():
 					"onboard": 1,
 				},
 			]
+		},
+		{
+			"label": _("Master"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Accommodation Type"
+				},
+				{
+					"type": "doctype",
+					"name": "Accommodation Space Type"
+				},
+				{
+					"type": "doctype",
+					"name": "Bed Space Type"
+				},
+				{
+					"type": "doctype",
+					"name": "Governorate"
+				},
+				{
+					"type": "doctype",
+					"name": "Governorate Area"
+				}
+			]
 		}
 	]

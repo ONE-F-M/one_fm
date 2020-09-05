@@ -9,7 +9,7 @@
   "accommodation_space",
   "accommodation",
   "accommodation_name",
-  "governate",
+  "governorate",
   "area",
   "location",
   "floor",
@@ -225,8 +225,9 @@
   {
    "fetch_from": "accommodation.accommodation_area",
    "fieldname": "area",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Area",
+   "options": "Governorate Area",
    "read_only": 1
   },
   {
@@ -235,13 +236,6 @@
    "fieldtype": "Link",
    "label": "Location",
    "options": "Location",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "accommodation.governate",
-   "fieldname": "governate",
-   "fieldtype": "Data",
-   "label": "Governate",
    "read_only": 1
   },
   {
@@ -270,10 +264,18 @@
    "fieldtype": "Data",
    "label": "Floor",
    "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation.governate",
+   "fieldname": "governorate",
+   "fieldtype": "Link",
+   "label": "Governorate",
+   "options": "Governorate",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-09-05 13:54:44.401565",
+ "modified": "2020-09-05 15:17:59.905677",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
