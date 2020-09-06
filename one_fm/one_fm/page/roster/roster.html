@@ -1,0 +1,1166 @@
+﻿<!-- ============================================================== -->
+<!-- Main section start -->
+<!-- ============================================================== -->
+<div class="layoutSidenav_content" data-view="roster">
+    <div class="bg-white d-none d-md-block">
+        <ul class="nav nav-tabs nav-justified rostercustomtab">
+            <li class="active cursorpointer"><a class="redirect_route" data-route="roster">
+                    <span><i class="fas fa-tasks"></i></span><span class="pl10">Rostering</span></a>
+            </li>
+            <li class="cursorpointer"><a class="redirect_route" data-route="staff">
+                    <span><i class="fas fa-users"></i></span><span class="pl10">Staff</span></a>
+            </li>
+
+            <li class="cursorpointer"><a class="redirect_route" data-route="reports"><span>
+                        <i class="fas fa-chart-line"></i></span><span class="pl10">Reports</span></a>
+            </li>
+        </ul>
+    </div>
+    <div class="tab-content mt30 ml30 mr30 mb30 bg-white">
+        <div class="container-fluid pl-0 pr-0  pt15">
+            <div class="d-flex justify-content-between align-items-center pl30 pr30 ">
+                <div class="">
+                    <div class="font20 cardheadercolor fontw600 textchange d-inline-block mr10">Rostering</div>
+                </div>
+                <div class="d-none d-md-inline-block">
+                    <ul
+                        class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab rosteringheadingtab">
+                        <li class="active maintabclick"><a class="residenavli rosterviewclick" id="">Roster View</a>
+                        </li>
+                        <li class="maintabclick"><a class="residenavli postviewclick" id="">Post View</a></li>
+                    </ul>
+                </div>
+                <div class="text-md-right">
+                    <a href="#" class="responsivebluebtnright"><i class="fas fa-print"></i></a>
+                </div>
+            </div>
+            <div class="d-md-none pt30 pb30 pl30 pr30 ">
+                <div class="">
+                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                        <li class="active maintabclick"><a class="residenavli rosterviewclick" id="">Roster
+                                View</a></li>
+                        <li class="maintabclick"><a class="residenavli postviewclick" id="">Post View</a></li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+        <div class="container-fluid pl30 pr30 d-none filterhideshow lightbluedtbg mt30">
+            <div class="row py-4 py-md-4 py-lg-0">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0">
+                    <a href="#" class="responsivebluebtn ml-0" data-target="#dayoffmodal" data-toggle="modal">Day
+                        Off</a>
+                    <a href="#" class="responsivebluebtn" data-target="#leaveabsentmodal" data-toggle="modal">Leaves
+                    </a>
+                    <a href="#" class="responsivebluebtn" data-target="#assignchangemodal" data-toggle="modal">Schedule
+                        / Change Post</a>
+                    <a href="#" class="responsivebluebtn" data-target="#unassignchangemodal"
+                        data-toggle="modal">Unschedule / Post Staff</a>
+
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid pl30 pr30 d-none Postfilterhideshow lightbluedtbg mt30">
+            <div class="row py-4 py-md-0">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0">
+                    <a href="#" class="responsivebluebtn ml-0 editpostclassclick" data-target="#addpostmodal"
+                        data-toggle="modal">Edit Post</a>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid borderradius8 pt30 pl30 pr30 pb30 bg-white">
+            <div class="row">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-2 pr-md-0">
+                    <div class="dateblock" class="input-group date">
+                        <div id="datepicker" class="input-group date">
+                        </div>
+                    </div>
+                    <div class="font18 pt30 pb10 cardheadercolor">Filter</div>
+                    <div class="listoffilter">
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <select class="form-control select2plg" id="rosteringprojectselect"
+                                    name="rosteringprojectselect">
+                                    <option value="">Select Project</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <select class="form-control select2plg" id="rosteringsiteselect"
+                                    name="rosteringsiteselect">
+                                    <option value="">Select Site</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <select class="form-control select2plg" id="rosteringshiftselect"
+                                    name="rosteringshiftselect">
+                                    <option value="">Select Shift</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <select class="form-control select2plg" id="rosteringdepartmentselect"
+                                    name="rosteringdepartmentselect">
+                                    <option value="">Select Department</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <select class="form-control select2plg" id="rosteringpostselect"
+                                    name="rosteringpostselect">
+                                    <option value="">Select Post type</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="font18 pb10 cardheadercolor">Options</div>
+                    <div class="listoffilter dateblock rosterviewfilterbg">
+
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show all staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkAllStaff">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show scheduled
+                                        Staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkschedule">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unScheduled
+                                        Staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkunschedule">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show assigned
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkassgined">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unassigned
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkunassgined">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="listoffilter dateblock postviewfilterbg d-none">
+
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show Active
+                                        Posts</span>
+                                    <input type="checkbox" class="selectallcheckbox" name="chkpostActivePost"
+                                        id="chkpostActivePost">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show Inactive
+                                        Posts</span>
+                                    <input type="checkbox" class="selectallcheckbox" name="chkpostCancelPost"
+                                        id="chkpostCancelPost">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="font18 pb10 pt30 cardheadercolor">Legend</div>
+                    <div class="listoffilter rosterviewfilterbg">
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview lightgreenbox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Day done according to plan</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview yellowboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Present with deviations (early punch out or
+                                        late punch in)</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview redboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Absent</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview greyboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Staff day off</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview blueboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Planned day</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview borderbox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Day to be planned</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview purplebox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Leaves (SL-sick leave, AL-annual leave,
+                                        EL-emergency leave…. etc)</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="listoffilter postviewfilterbg d-none ">
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview darkblackox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Post Not Planned</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview blueboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Post Planned</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview greyboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Post Off</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview yellowboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Post Suspended</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview redboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Post Cancelled</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-8 col-md-8 col-lg-10 pl-md-5 pt-4 pt-md-0">
+                    <!--ROSTER AND POST VIEW HERE-->
+                    <div id="partialcalenderview">
+                        <div class="cardheadercolor rosterMonth border-0 shadow-0">
+                            <div
+                                class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
+                                <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
+                                    <div class="font20 cardheadercolor fontw600 textchange calendertitlechange">Month of
+                                        April 1-30, 2020</div>
+                                    <div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
+                                        <div class="">
+                                            <ul
+                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                                                <li class="active calenderlink"><a href="#" class="residenavli active"
+                                                        id="monthviewclick">Month</a></li>
+                                                <li class="calenderlink"><a href="#" class="residenavli"
+                                                        id="weekviewclick">Week</a></li>
+                                            </ul>
+                                        </div>
+                                        <div class="ml20">
+                                            <ul
+                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                                                <li class=""><a href="#" class="residenavli customarrowtab bg-white"
+                                                        style="background:#fff !important"
+                                                        onClick="decrementMonth();"><i
+                                                            class="fas fa-chevron-left"></i></a></li>
+                                                <li class="bordertableft"><a href="#"
+                                                        class="residenavli customarrowtab bg-white"
+                                                        style="background:#fff !important"
+                                                        onClick="incrementMonth();"><i
+                                                            class="fas fa-chevron-right"></i></a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0" id="tableviewchange">
+                                <div class="table-responsive table-bordered">
+                                    <table id="calenderviewtable"
+                                        class="mb-0 table table-striped customcarddetailtable structuredetaildatatable"
+                                        style="width:100%">
+                                        <thead>
+                                            <tr class="rosterViewTH">
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cardheadercolor postMonth border-0 shadow-0 d-none">
+                            <div
+                                class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
+                                <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
+                                    <div class="font20 cardheadercolor fontw600 textchange calendertitlechange">Month of
+                                        April 1-30, 2020</div>
+                                    <div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
+                                        <div class="">
+                                            <ul
+                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                                                <li class="active calenderlink">
+                                                    <a href="#" class="residenavli active postmonthviewclick">Month</a>
+                                                </li>
+                                                <li class="calenderlink">
+                                                    <a href="#" class="residenavli postweekviewclick">Week</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="ml20">
+                                            <ul
+                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                                                <li class=""><a href="#" class="residenavli customarrowtab bg-white"
+                                                        style="background:#fff !important" onclick="decrementMonth()"><i
+                                                            class="fas fa-chevron-left"></i></a></li>
+                                                <li class="bordertableft"><a href="#"
+                                                        class="residenavli customarrowtab bg-white"
+                                                        style="background:#fff !important" onclick="incrementMonth()"><i
+                                                            class="fas fa-chevron-right"></i></a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0" id="tableviewchange">
+                                <div class="table-responsive table-bordered">
+                                    <table id="calenderviewtable"
+                                        class="mb-0 table table-striped customcarddetailtable structuredetaildatatable"
+                                        style="width:100%">
+                                        <thead>
+                                            <tr class="rosterViewTH">
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cardheadercolor postWeek border-0 shadow-0 d-none">
+                            <div
+                                class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
+                                <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
+                                    <div class="font20 cardheadercolor fontw600 textchange calenderweektitlechange">
+                                        Month of April 1-30, 2020
+                                    </div>
+                                    <div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
+                                        <div class="">
+                                            <ul
+                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                                                <li class="calenderlink">
+                                                    <a href="#" class="residenavli active postmonthviewclick">Month</a>
+                                                </li>
+                                                <li class="active  calenderlink">
+                                                    <a href="#" class="residenavli postweekviewclick">Week</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="ml20">
+                                            <ul
+                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                                                <li class=""><a href="#" class="residenavli customarrowtab bg-white"
+                                                        style="background:#fff !important"
+                                                        onclick="rosterweekdecrement()"><i
+                                                            class="fas fa-chevron-left"></i></a></li>
+                                                <li class="bordertableft"><a href="#"
+                                                        class="residenavli customarrowtab bg-white"
+                                                        style="background:#fff !important"
+                                                        onclick="rosterweekincrement()"><i
+                                                            class="fas fa-chevron-right"></i></a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive table-bordered">
+                                    <table id="calenderweekviewtable"
+                                        class="mb-0 table table-striped customcarddetailtable structuredetaildatatable"
+                                        style="width:100%">
+                                        <thead>
+                                            <tr class="rosterViewTH">
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            <!-- <tr class="colorclass">
+                                                <td>
+                                                    <label class="checkboxcontainer simplecheckbox mx-4"><span
+                                                            class="lightgrey font16 customfontweight fontw400">Post
+                                                            6</span><input type="checkbox" name="selectallcheckbox"
+                                                            class="selectallcheckbox"><span
+                                                            class="checkmark"></span></label>
+
+                                                </td>
+                                                <td>
+                                                    <div class="hoverselectclass tablebox bluebox text-center"
+                                                        dataselectid="ps1"></div>
+                                                </td>
+                                                <td>
+                                                    <div class="hoverselectclass tablebox bluebox text-center"
+                                                        dataselectid="ps2"></div>
+                                                </td>
+                                                <td>
+                                                    <div class="hoverselectclass tablebox bluebox text-center"
+                                                        dataselectid="ps3"></div>
+                                                </td>
+                                                <td>
+                                                    <div class="hoverselectclass tablebox bluebox text-center"
+                                                        dataselectid="ps4"></div>
+                                                </td>
+                                                <td>
+                                                    <div class="hoverselectclass tablebox bluebox text-center"
+                                                        dataselectid="ps5"></div>
+                                                </td>
+                                                <td>
+                                                    <div class="hoverselectclass tablebox bluebox text-center"
+                                                        dataselectid="ps6"></div>
+                                                </td>
+                                                <td>
+                                                    <div class="hoverselectclass tablebox bluebox text-center"
+                                                        dataselectid="ps7"></div>
+                                                </td>
+                                                <td></td>
+                                            </tr> -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ============================================================== -->
+<!-- Main srction end -->
+<!-- ============================================================== -->
+<div class="modal custommobmodal" id="dayoffmodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    aria-modal="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header pt10 pb10 pl20 pr20 modalheader d-flex align-items-center">
+                <div class="font16 fontw500">Day Off</div>
+                <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
+                </button>
+            </div>
+            <div class="modal-body pl20 pt20 pr20 pb20">
+                <form id="dayoffformmodal" name="dayoffformmodal">
+                    <div class="row mb30" id="chkDayOnly">
+                        <div class="col-sm-12 col-xs-12">
+                            <label class="checkboxcontainer simplecheckbox">
+                                <span class="cardtitlecolor font16 customfontweight fontw400">This day only</span>
+                                <input type="checkbox" class="selectallcheckbox">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="row mb30" id="chkSelectedDayOnly">
+                        <div class="col-sm-12 col-xs-12">
+                            <label class="checkboxcontainer simplecheckbox">
+                                <span class="cardtitlecolor font16 customfontweight fontw400">Selected days only</span>
+                                <input type="checkbox" class="selectallcheckbox">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="divRepeat">
+
+                        <div class="row">
+                            <div class="col-sm-12 col-xs-12">
+                                <label for="" class="font16 mb8 fontw600">Repeat</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 col-xs-12">
+                                <label for="" class="font16 mb8 fontw500">Every</label>
+                            </div>
+                        </div>
+                        <div class="row mb20">
+                            <div class="col-sm-12 col-md-12 custompageselecttype">
+                                <select class="form-control select2plg" id="txtselectdayoff" name="txtselectdayoff">
+                                    <option value="">Please select</option>
+                                    <option value="0">Monday</option>
+                                    <option value="1">Tuesday</option>
+                                    <option value="2">Wednesday</option>
+                                    <option value="3">Thuseday</option>
+                                    <option value="3">Friday</option>
+                                    <option value="3">Saturday</option>
+                                    <option value="3">Sunday</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb30">
+                            <div class="col-sm-12 col-md-12">
+                                <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                    <input type="radio" class="custom-control-input" id="txtdayoffweek"
+                                        name="txtdayoffradio">
+                                    <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                        for="txtdayoffweek">Week</label>
+                                </div>
+                                <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                    <input type="radio" class="custom-control-input" id="txtdayoffweek1"
+                                        name="txtdayoffradio">
+                                    <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                        for="txtdayoffweek1">2 Week</label>
+                                </div>
+                                <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                    <input type="radio" class="custom-control-input" id="txtdayoffweek2"
+                                        name="txtdayoffradio">
+                                    <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                        for="txtdayoffweek2">3 Week</label>
+                                </div>
+                                <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                    <input type="radio" class="custom-control-input" id="txtdayoffweek3"
+                                        name="txtdayoffradio">
+                                    <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                        for="txtdayoffweek3">Month</label>
+                                </div>
+                                <div class="custom-control custom-radio shadow-none d-inline-block pt-2">
+                                    <input type="radio" class="custom-control-input" id="txtdayoffweek4"
+                                        name="txtdayoffradio">
+                                    <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                        for="txtdayoffweek4">Every 16 of the Month</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 col-xs-12">
+                                <label for="" class="font16 mb8 fontw600">End</label>
+                            </div>
+                        </div>
+                        <div class="row mb8">
+                            <div class="col-sm-12 col-md-12">
+                                <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                    <input type="radio" class="custom-control-input" id="txtdayoffradionever"
+                                        name="txtendradio" value="1">
+                                    <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                        for="txtdayoffradionever">Never</label>
+                                </div>
+                                <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                    <input type="radio" class="custom-control-input" id="txtdayoffradioafter"
+                                        name="txtendradio" value="2">
+                                    <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                        for="txtdayoffradioafter">After Events</label>
+                                </div>
+                                <div class="custom-control custom-radio shadow-none d-inline-block pt-2">
+                                    <input type="radio" class="custom-control-input" id="txtdayoffradiobefore"
+                                        name="txtendradio" value="3">
+                                    <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                        for="txtdayoffradiobefore">Before</label>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="row d-none selecteventblock">
+                            <div class="col-sm-12 col-md-12 custompageselecttype">
+                                <label for="" class="font16 mb8">Events</label>
+                                <select class="form-control select2plg" id="" name="">
+                                    <option value="">Please select</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row d-none selectdateblock">
+                            <div class="col-sm-12 col-md-12">
+                                <label for="" class="font16 mb8">Date</label>
+                                <div id="datepickerend" class="input-group date" data-date-format="mm-dd-yyyy">
+                                    <input class="form-control" type="text" id="txtinputdate" name="txtinputdate"
+                                        readonly />
+                                    <span class="input-group-addon inputgroupcalendar"><i
+                                            class="far fa-calendar-alt"></i></span>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <div class="row text-center w-100">
+                    <div class="col-12 text-center text-md-right">
+                        <a onclick="dayoffmodalclick()" id="dayoffmodalid" href="#"
+                            class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn">Save</a>
+                        <a href="#" data-dismiss="modal"
+                            class="text-center d-inline-block modalbtn greythemebg font16 ml18">Close</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal custommobmodal" id="leaveabsentmodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    aria-modal="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header pt10 pb10 pl20 pr20 modalheader d-flex align-items-center">
+                <div class="font16 fontw500">Leaves </div>
+                <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
+                </button>
+            </div>
+
+            <div class="modal-body pl20 pt20 pr20 pb20">
+                <form id="leaveabsentformmodal" name="leaveabsentformmodal">
+                    <div class="row">
+                        <div class="col-sm-12 col-xs-12">
+                            <label for="" class="font16 mb10 fontw500">Type of leave</label>
+                        </div>
+                    </div>
+                    <div class="row mb20">
+                        <div class="col-sm-12 col-md-12 custompageselecttype">
+                            <select class="form-control select2plg" id="txtleaveinput" name="txtleaveinput">
+                                <option value="">Please select</option>
+                                <option value="0">SL</option>
+                                <option value="1">AL</option>
+                                <option value="2">EL</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb20">
+                        <div class="col-sm-12 col-md-12">
+                            <label for="" class="font16 mb8 fontw500">Start date</label>
+                            <div id="leavedatepicker" class="input-group date" data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtleavestartinputdate"
+                                    name="txtleavestartinputdate" readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12 col-md-12">
+                            <label for="" class="font16 mb8 fontw500">End date</label>
+                            <div id="enddatepicker" class="input-group date" data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtleaveendinputdate"
+                                    name="txtleaveendinputdate" readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <div class="row text-center w-100">
+                    <div class="col-12 text-center text-md-right">
+                        <a onclick="leaveabsentmodalclick()" id="leaveabsentmodalid" href="#"
+                            class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn">Save</a>
+                        <a href="#" data-dismiss="modal"
+                            class="text-center d-inline-block modalbtn greythemebg font16 ml18">Close</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal custommobmodal" id="assignchangemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    aria-modal="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header pt10 pb10 pl20 pr20 modalheader d-flex align-items-center">
+                <div class="font16 fontw500">Schedule / Change Post</div>
+                <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
+                </button>
+            </div>
+            <div class="modal-body pl20 pt20 pr20 pb20">
+                <form id="assignformmodal" name="assignformmodal">
+                    <div class="row">
+                        <div class="col-sm-12 col-xs-12">
+                            <label for="" class="font16 mb10 fontw500">Chose post type</label>
+                        </div>
+                    </div>
+                    <div class="row mb20">
+                        <div class="col-sm-12 col-md-12 custompageselecttype">
+                            <select class="form-control select2plg" id="txtposttype" name="txtposttype">
+                                <option value="">Please select</option>
+                                <option value="0">SO</option>
+                                <option value="1">SG</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb20" id="divStartDate">
+                        <div class="col-sm-12 col-md-12">
+                            <label for="" class="font16 mb8 fontw500">Start date</label>
+                            <div id="datepickerpoststartdate" class="input-group date" data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtpoststartdate" name="txtpoststartdate"
+                                    readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb20" id="divEndDate">
+                        <div class="col-sm-12 col-md-12">
+                            <label for="" class="font16 mb8 fontw500 d-flex justify-content-between">
+                                <label>End date</label>
+                                <label class="checkboxcontainer simplecheckbox d-block"><span
+                                        class="lightgrey font16 customfontweight fontw400">Never</span><input
+                                        type="checkbox" name="neverselectallcheckbox" class="selectallcheckbox"><span
+                                        class="checkmark"></span></label>
+
+
+                            </label>
+                            <div id="datepickerpostenddate" class="input-group date" data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtpostenddate" name="txtpostenddate"
+                                    readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="divSetDayOff">
+                        <div class="row">
+                            <div class="col-sm-12 col-xs-12">
+                                <label for="" class="font16 mb10 fontw500">Set day off</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12 custompageselecttype">
+                                <select class="form-control select2plg" id="txtsetdayoff" name="txtsetdayoff">
+                                    <option value="">Please Select</option>
+                                    <option value="0">Monday</option>
+                                    <option value="1">Tuesday</option>
+                                    <option value="2">Wednesday</option>
+                                    <option value="3">Thuseday</option>
+                                    <option value="3">Friday</option>
+                                    <option value="3">Saturday</option>
+                                    <option value="3">Sunday</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <div class="row text-center w-100">
+                    <div class="col-12 text-center text-md-right">
+                        <a onclick="assignchangemodalclick()" id="assignchangemodalid" href="#"
+                            class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn">Save</a>
+                        <a href="#" data-dismiss="modal"
+                            class="text-center d-inline-block modalbtn greythemebg font16 ml18">Close</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal custommobmodal" id="unassignchangemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    aria-modal="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header pt10 pb10 pl20 pr20 modalheader d-flex align-items-center">
+                <div class="font16 fontw500">Unschedule / Post Staff</div>
+                <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
+                </button>
+            </div>
+            <div class="modal-body pl20 pt20 pr20 pb20">
+                <form id="unassignformmodal" name="unassignformmodal">
+                    <div class="row mb20">
+                        <div class="col-sm-12 col-md-12">
+                            <label for="datepickerunassignstartdate" class="font16 mb8 fontw500">Start date</label>
+                            <div id="datepickerunassignstartdate" class="input-group date"
+                                data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtinputunassignstart"
+                                    name="txtinputunassignstart" readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12 col-md-12">
+                            <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                <input type="radio" class="custom-control-input" id="txtinputunassignnever"
+                                    name="txtinputunassignradio" value="1">
+                                <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                    for="txtinputunassignnever">Never</label>
+                            </div>
+                            <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                <input type="radio" class="custom-control-input" id="txtinputunassignenddate"
+                                    name="txtinputunassignradio" value="2">
+                                <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                    for="txtinputunassignenddate">End date</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row d-none unassigndateblock mt20">
+                        <div class="col-sm-12 col-md-12">
+                            <label for="" class="font16 mb8 fontw500">Date</label>
+                            <div id="datepickerunassigndate" class="input-group date" data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtinputunssignselectdate"
+                                    name="txtinputunssignselectdate" readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <div class="row text-center w-100">
+                    <div class="col-12 text-center text-md-right">
+                        <a onclick="unassignchangemodalclick()" id="unassignchangemodalid" href="#"
+                            class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn">Save</a>
+                        <a href="#" data-dismiss="modal"
+                            class="text-center d-inline-block modalbtn greythemebg font16 ml18">Close</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal custommobmodal" id="addpostmodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    aria-modal="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header pt10 pb10 pl20 pr20 modalheader d-flex align-items-center">
+                <div class="font16 fontw500 postmodaltitlechange">Edit Post</div>
+                <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
+                </button>
+            </div>
+            <div class="modal-body pl20 pt20 pr20 pb20">
+                <form id="addpostformmodal" name="addpostformmodal">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-12 custompageselecttype">
+                            <select class="form-control" id="postcalendertype" name="postcalendertype">
+                                <option value="">Please select</option>
+                                <option value="0" class="selPost">Post Off</option>
+                                <option value="1" class="selPost">Suspend Post</option>
+                                <option value="2" class="selPost">Cancel Post</option>
+                                <option value="3" id="selRetrive">Retreive Post</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row cancelpostcalenderdiv mt20 d-none">
+                        <div class="col-sm-12 col-xs-12">
+                            <label for="" class="font16 mb8 fontw500">From</label>
+                        </div>
+                        <div class="col-sm-12 col-md-12 mb20">
+                            <div id="datepickercancelfromdate" class="input-group date" data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtpostfromcanceldate"
+                                    name="txtpostfromcanceldate" readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row retrivepostcalenderdiv mt20 d-none">
+                        <div class="col-sm-12 col-xs-12">
+                            <label for="" class="font16 mb8 fontw500">From</label>
+                        </div>
+                        <div class="col-sm-12 col-md-12 mb20">
+                            <div id="datepickerRetrivefromdate" class="input-group date" data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtpostfromRetrivedate"
+                                    name="txtpostfromRetrivedate" readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row postoffdiv mt20 d-none">
+                        <div class="col-sm-12 col-md-12  mb20">
+                            <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                <input type="radio" class="custom-control-input" id="postcalenderpaidradio"
+                                    name="postcalenderpaidname" value="1">
+                                <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                    for="postcalenderpaidradio">Paid</label>
+                            </div>
+                            <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                <input type="radio" class="custom-control-input" id="postcalenderunpaidradio"
+                                    name="postcalenderpaidname" value="1">
+                                <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                    for="postcalenderunpaidradio">Unpaid</label>
+                            </div>
+                        </div>
+                        <div class="col-sm-12 col-xs-12">
+                            <label for="" class="font16 mb8 fontw500">Repeat</label>
+                        </div>
+                        <div class="col-sm-12 col-xs-12 custompageselecttype">
+                            <select class="form-control select2plg" id="postcalenderrepeatpost"
+                                name="postcalenderrepeatpost">
+                                <option value="">Please select</option>
+                                <option value="0">Does not repeat</option>
+                                <option value="1">Daily</option>
+                                <option value="2">Weekly on wednesday</option>
+                                <option value="3">Monthly on the third Wednesday</option>
+                                <option value="4">Annually on may 20</option>
+                                <option value="5">Every weekday(Monday to Friday)</option>
+                                <option value="6">Custom recurrence</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-xs-12 customreccurdiv mt20 d-none">
+                            <div class="row">
+                                <div class="col-sm-12 col-xs-12">
+                                    <label for="" class="font16 mb8 fontw500">Repeat Every</label>
+                                </div>
+                                <div class="col-sm-6 col-xs-6  mb20 custompageselecttype pr-2">
+                                    <select class="form-control select2plg" id="postcalenderrepeatno"
+                                        name="postcalenderrepeatno">
+                                        <option value="">Please select</option>
+                                        <option value="0">1</option>
+                                        <option value="1">2</option>
+                                        <option value="2">3</option>
+                                        <option value="3">4</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-6 col-xs-6 mb20 custompageselecttype pl-2">
+                                    <select class="form-control select2plg" id="postcalenderrepeatweek"
+                                        name="postcalenderrepeatweek">
+                                        <option value="">Please select</option>
+                                        <option value="0">Week</option>
+                                        <option value="1">Month</option>
+                                        <option value="2">Year</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb20">
+                                <div class="col-sm-12 col-xs-12">
+                                    <label for="" class="font16 mb8 fontw500">Repeat on</label>
+                                </div>
+                                <div class="col-sm-12 col-xs-12 custompageselecttype">
+                                    <select class="form-control select2plg" id="postcalenderrepeatday"
+                                        name="postcalenderrepeatday">
+                                        <option value="">Please select</option>
+                                        <option value="0">Monday</option>
+                                        <option value="1">Tuesday</option>
+                                        <option value="2">Wednesday</option>
+                                        <option value="3">Thuseday</option>
+                                        <option value="3">Friday</option>
+                                        <option value="3">Saturday</option>
+                                        <option value="3">Sunday</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12 col-xs-12">
+                                    <label for="" class="font16 mb8 fontw500">End</label>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12 col-md-12">
+                                    <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                        <input type="radio" class="custom-control-input" id="postcalenderrepeatnever"
+                                            name="txtnaverradio" value="0">
+                                        <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                            for="postcalenderrepeatnever">Never</label>
+                                    </div>
+                                    <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                        <input type="radio" class="custom-control-input" id="postcalenderrepeatafter"
+                                            name="txtnaverradio" value="1">
+                                        <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                            for="postcalenderrepeatafter">On</label>
+                                    </div>
+                                    <div class="custom-control custom-radio shadow-none d-inline-block pt-2">
+                                        <input type="radio" class="custom-control-input" id="postcalenderrepeatbefore"
+                                            name="txtnaverradio" value="2">
+                                        <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                            for="postcalenderrepeatbefore">After</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt20 oneventdate d-none">
+                                <div class="col-sm-12 col-md-12">
+                                    <div id="datepickeron" class="input-group date" data-date-format="mm-dd-yyyy">
+                                        <input class="form-control" type="text" id="txtpostondate" name="txtpostondate"
+                                            readonly />
+                                        <span class="input-group-addon inputgroupcalendar"><i
+                                                class="far fa-calendar-alt"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt20 aftereventdate d-none">
+                                <div class="col-sm-12 col-md-12">
+                                    <div id="datepickerafter" class="input-group date" data-date-format="mm-dd-yyyy">
+                                        <input class="form-control" type="text" id="txtpostafterdate"
+                                            name="txtpostafterdate" readonly />
+                                        <span class="input-group-addon inputgroupcalendar"><i
+                                                class="far fa-calendar-alt"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row suspendpostdiv mt20 d-none">
+                        <div class="col-sm-12 col-md-12  mb20">
+                            <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                <input type="radio" class="custom-control-input" id="postcalendersuspaidradio"
+                                    name="postsuspendpaidname" value="1">
+                                <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                    for="postcalendersuspaidradio">Paid</label>
+                            </div>
+                            <div class="custom-control custom-radio shadow-none d-inline-block mr14">
+                                <input type="radio" class="custom-control-input" id="postcalendersusunpaidradio"
+                                    name="postsuspendpaidname" value="1">
+                                <label class="custom-control-label font16 cardtitlecolor pl6 fontw500"
+                                    for="postcalendersusunpaidradio">Unpaid</label>
+                            </div>
+                        </div>
+                        <div class="col-sm-12 col-xs-12">
+                            <label for="" class="font16 mb8 fontw500">From</label>
+                        </div>
+                        <div class="col-sm-12 col-md-12 mb20">
+                            <div id="datepickerfromdate" class="input-group date" data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtpostfromdate" name="txtpostfromdate"
+                                    readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-12 col-xs-12">
+                            <label for="" class="font16 mb8 fontw500">To</label>
+                        </div>
+                        <div class="col-sm-12 col-md-12 mb20">
+                            <div id="datepickertodate" class="input-group date" data-date-format="mm-dd-yyyy">
+                                <input class="form-control" type="text" id="txtposttodate" name="txtposttodate"
+                                    readonly />
+                                <span class="input-group-addon inputgroupcalendar"><i
+                                        class="far fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-12 col-xs-12">
+                            <label class="checkboxcontainer simplecheckbox">
+                                <span class="cardtitlecolor font16 customfontweight fontw400">Never</span>
+                                <input type="checkbox" class="selectallcheckbox">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <div class="row text-center w-100">
+                    <div class="col-12 text-center text-md-right">
+                        <a onclick="addpostmodalclick()" id="addpostmodalid" href="#"
+                            class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn">Save</a>
+                        <a href="#" data-dismiss="modal"
+                            class="text-center d-inline-block modalbtn greythemebg font16 ml18">Close</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal custommobmodal" id="deletepostmodal" tabindex="-1" role="dialog" aria-labelledby="userunassigned"
+    aria-modal="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header pt10 pb-0 pl10 pr10 modalheader d-flex align-items-center border-bottom-0">
+                <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
+                </button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="img-block custommobrescard text-center" style="">
+                    <span class="">
+                        <img src="images/Warning.svg" class="img_responsive">
+                    </span>
+                </div>
+                <div class="lightmodalbg mt20 mb26">
+                    <div class="modaltextcolor font20 text-center fontw600 py-1">Are you sure you want to Delete?</div>
+                </div>
+                <div class="mt20 mb20">
+                    <div class="d-md-flex justify-content-md-center pl-4 pl-md-0">
+                        <label class="checkboxcontainer simplecheckbox">
+                            <span class="cardtitlecolor font18 customfontweight fontw400">Includind all
+                                recurrences</span>
+                            <input type="checkbox" class="selectallcheckbox">
+                            <span class="checkmark"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer modalfooterborder pt10 pb10">
+                <div class="row text-center w-100">
+                    <div class="col-12 text-center">
+                        <a onclick="addpostdeletemodalclick()" data-dismiss="modal"
+                            class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn continuebtn">Continue</a>
+                        <a href="#" data-dismiss="modal"
+                            class="text-center d-inline-block modalbtn greythemebg font16 ml18">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal custommobmodal" id="addemployeemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    aria-modal="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header pt10 pb10 pl20 pr20 modalheader d-flex align-items-center">
+                <div class="font16 fontw500 postmodaltitlechange">Add Employee</div>
+                <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
+                </button>
+            </div>
+            <div class="modal-body pl20 pt20 pr20 pb20">
+                <form id="addpostformmodal" name="addpostformmodal">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-12 custompageselecttype multiselectselect">
+                            <select class="form-control" id="addemployeeselect" multiple="multiple"
+                                name="addemployeeselect[]">
+
+                                <option value="0">Alex M</option>
+                                <option value="1">Mohhamad M</option>
+                                <option value="2">Robin R</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <div class="row text-center w-100">
+                    <div class="col-12 text-center text-md-right">
+                        <a onclick="addpostmodalclick()" id="addpostmodalid" href="#"
+                            class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn">Save</a>
+                        <a href="#" data-dismiss="modal"
+                            class="text-center d-inline-block modalbtn greythemebg font16 ml18">Close</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="sidenav-backdrop"></div>
+<div class="drawer-backdrop" id="drawershow"></div>

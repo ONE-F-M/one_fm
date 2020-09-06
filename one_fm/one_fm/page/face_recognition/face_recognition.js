@@ -14,6 +14,7 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 	let hourlyButton = document.getElementById("hourlyButton");
     let locationButton = document.getElementById("locationButton");
 	let errorButton = document.getElementById("errorButton");
+	let enrollButton = document.getElementById("enrollButton");
 
 	frappe.db.get_value("Employee", {"user_id":frappe.session.user}, "*", function(r){
         if(r){
@@ -68,8 +69,8 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 		show_cues();
 		navigator.mediaDevices.getUserMedia({
 			video: {
-				width: { ideal: 1024 },
-				height: { ideal: 768 },
+				width: { ideal: 640 },
+				height: { ideal: 360 },
 				frameRate: {ideal: 4},//, max: 20},
 				facingMode: 'user'
 			},
@@ -304,8 +305,8 @@ function send_log(log_type, skip_attendance){
     countdown();		
     navigator.mediaDevices.getUserMedia({
         video: {
-            width: { ideal: 1024 },
-            height: { ideal: 768 },
+            width: { ideal: 640 },
+            height: { ideal: 360 },
             frameRate: {ideal: 5, max: 10},
             facingMode: 'user'
         },

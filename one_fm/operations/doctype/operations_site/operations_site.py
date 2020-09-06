@@ -203,7 +203,7 @@ def cleanup_logs(parent, ids):
 
 
 @frappe.whitelist()
-def create_posts(data, site, project):
+def create_posts(data, site, project=None):
 	try:
 		data = frappe._dict(json.loads(data))
 		post_names = data.post_names

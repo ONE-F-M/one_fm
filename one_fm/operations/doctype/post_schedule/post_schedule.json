@@ -9,6 +9,8 @@
   "post_type",
   "column_break_2",
   "shift",
+  "site",
+  "project",
   "section_break_4",
   "date",
   "column_break_6",
@@ -49,6 +51,7 @@
    "fieldname": "date",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Date"
   },
   {
@@ -58,6 +61,8 @@
   {
    "fieldname": "post_status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Post Status",
    "options": "\nPlanned\nPost Off\nSuspended\nCancelled"
   },
@@ -86,12 +91,30 @@
    "fetch_from": "post.post_template",
    "fieldname": "post_type",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Post Type",
    "options": "Post Type",
    "read_only": 1
+  },
+  {
+   "fetch_from": "shift.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift.site",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1
   }
  ],
- "modified": "2020-07-16 22:07:02.728371",
+ "modified": "2020-09-03 22:18:07.599870",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Schedule",

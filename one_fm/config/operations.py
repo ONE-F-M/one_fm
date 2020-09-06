@@ -75,7 +75,7 @@ def get_data():
 					"color": "grey",
 					"icon": "octicon octicon-key",
 					"type": "doctype",
-					"name": "Roster",
+					"name": "Employee Schedule",
 					"label": _("Roster")
 				},
 			]

@@ -1,0 +1,436 @@
+<style>
+    .disableselectclass {
+        pointer-events: none;
+    }
+</style>
+
+<div class="cardheadercolor border-0 shadow-0">
+    <div
+        class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
+        <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
+            <div class="font20 cardheadercolor fontw600 textchange calendertitlechange">Month of April 1-30, 2020</div>
+            <div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
+                <div class="">
+                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                        <li class="active calenderlink"><a href="#" class="residenavli active"
+                                id="postmonthviewclick">Month</a></li>
+                        <li class="calenderlink"><a href="#" class="residenavli" id="postweekviewclick">Week</a></li>
+                    </ul>
+                </div>
+                <div class="ml20">
+                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                        <li class=""><a href="#" class="residenavli customarrowtab bg-white"
+                                style="background:#fff !important" onclick="decrementMonth()"><i
+                                    class="fas fa-chevron-left"></i></a></li>
+                        <li class="bordertableft"><a href="#" class="residenavli customarrowtab bg-white"
+                                style="background:#fff !important" onclick="incrementMonth()"><i
+                                    class="fas fa-chevron-right"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0" id="tableviewchange">
+        <div class="table-responsive table-bordered">
+            <table id="calenderviewtable"
+                class="mb-0 table table-striped customcarddetailtable structuredetaildatatable" style="width:100%">
+                <thead>
+                    <tr id="rosterViewTH">
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr class="colorclass">
+                        <td>
+                            <label class="checkboxcontainer simplecheckbox mx-4"><span
+                                    class="lightgrey font16 customfontweight fontw400">Post 1</span><input
+                                    type="checkbox" name="selectallcheckbox" class="selectallcheckbox"><span
+                                    class="checkmark"></span></label>
+
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf1"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf2"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf3"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf4"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf5"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf6"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf7"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf8"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf9"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf10"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf11"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf12"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf13"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf14"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf15"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf16"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf17"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf18"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf19"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf20"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf21"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf22"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf23"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf24"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf25"></div>
+                        </td>
+
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf26"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf27"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf28"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf29"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf30"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox d-flex justify-content-center align-items-center so"
+                                dataselectid="pf31"></div>
+                        </td>
+
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        GetHeaders(0);
+        /*prevent to scroll to top*/
+        $(`a[href="#"]`).click(function (e) {
+            e.preventDefault();
+        });
+        /*prevent to scroll to top*/
+
+        /*on checkbox select change*/
+        $(`input[name="selectallcheckbox"]`).on("change", function () {
+
+            if ($(this).is(":checked")) {
+
+                $(this).parent().parent().parent().children("td").children().not("label").removeClass("hoverselectclass");
+                $(this).parent().parent().parent().children("td").children().not("label").addClass("selectclass");
+                $(this).parent().parent().parent().children("td").children().not("label").addClass("disableselectclass");
+                $(".Postfilterhideshow").removeClass("d-none");
+
+            }
+            else {
+                $(this).parent().parent().parent().children("td").children().not("label").addClass("hoverselectclass");
+                $(this).parent().parent().parent().children("td").children().not("label").removeClass("selectclass");
+                $(this).parent().parent().parent().children("td").children().not("label").removeClass("disableselectclass");
+                $(".Postfilterhideshow").addClass("d-none");
+            }
+            $(".selectclass").map(function () {
+                /*console.log($(this).attr("dataselectid"));*/
+                if (($(this).attr("dataselectid") != undefined) && ($(this).attr("dataselectid") != null) && ($(this).attr("dataselectid") != "")) {
+                    if (isMonth == 1) {
+                        classgrt.push($(this).attr("dataselectid"));
+                    }
+                    else {
+                        classgrtw.push($(this).attr("dataselectid"));
+                    }
+                }
+            });
+            if ($(this).parent().parent().parent().children("td").children().hasClass("redboxcolor")) {
+                /*select2-results__option*/
+                /*var last = $("#select2-postcalendertype-results .select2-results__option[aria-selected=false]:last-child");*/
+                /* $("#select2-postcalendertype-results .select2-results__option:last-child").css("display", "block !imortant");*/
+                /*$("#select2-postcalendertype-results .select2-results__option:last-child").addClass("mydisplay");*/
+                $("#selRetrive").show();
+                $(".selPost").hide();
+            }
+            else {
+                /*$("#select2-postcalendertype-results .select2-results__option:last-child").css("display", "none");*/
+                $("#selRetrive").hide();
+                $(".selPost").show();
+            }
+
+        });
+        /*on checkbox select change*/
+
+        /*table custom accordian*/
+        $(".clickablerow").click(function () {
+            $(this).parent().next().toggleClass("show");
+
+            if ($(this).parent().next().hasClass("show")) {
+                $(this).attr("aria-expanded", "true");
+            }
+            else {
+                $(this).attr("aria-expanded", "false");
+            }
+            $(".clickablerow").not(this).attr("aria-expanded", "false");
+            $(".clickablerow").not(this).parent().next().removeClass("show");
+        });
+        /*table custom accordian*/
+
+        /*add array on each of data select from calender*/
+        $(".hoverselectclass").on("click", function () {
+            $(this).toggleClass("selectclass");
+            /* If the id is not already in the array, add it. If it is, remove it*/
+
+            classgrt.indexOf(this.getAttribute("dataselectid")) === -1 ? classgrt.push(this.getAttribute("dataselectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("dataselectid")), 1);
+
+            if (classgrt.join(",") === "") {
+                $(".Postfilterhideshow").addClass("d-none");
+            }
+            else {
+                $(".Postfilterhideshow").removeClass("d-none");
+            }
+            /* populate the input with the array items separated with a comma*/
+        });
+        /*add array on each of data select from calender    */
+
+        /*initialized select2 plugin*/
+        $(".select2plg").select2();
+        /*initialized select2 plugin*/
+
+        /*week view click jquery*/
+        $("#postweekviewclick").click(function () {
+            partialviewgetpostWeekviewdata1();
+        });
+        /*week view click jquery*/
+
+        /*function call*/
+        GetTodaySelectedDate();
+    });
+
+
+    /*on next month title display on arrow click*/
+    function incrementMonth() {
+        calendarSettings1.date.add(1, "Months");
+        GetHeaders(1);
+        displayCalendar(calendarSettings1);
+    }
+    /*on next month title display on arrow click*/
+    /*on previous month title display on arrow click*/
+    function decrementMonth() {
+        calendarSettings1.date.subtract(1, "Months");
+        GetHeaders(1);
+        displayCalendar(calendarSettings1);
+    }
+    /*on previous month title display on arrow click*/
+
+    /*display title of calender ex: Month of Jul 1 - 31, 2020*/
+
+    var calendarSettings1 = {
+        date: moment().set("date", 4),
+        today: moment()
+    }
+
+    function displayCalendar(calendarSettings1) {
+        const calendar = document.querySelector(".calendertitlechange")
+        const calendarTitle = calendarSettings1.date.format("MMM");
+        const calendaryear = calendarSettings1.date.format("YYYY");
+        const daysInMonth = calendarSettings1.date.endOf("Month").date();
+        calendar.innerHTML = ""
+        calendar.innerHTML = " Month of <span> " + calendarTitle + " </span> 1 - <span>" + daysInMonth + "</span>, " + calendaryear + "";
+
+    }
+    /*display title of calender ex: Month of Jul 1 - 31, 2020*/
+
+    /*call function for dsiaply date on right calender*/
+    displayCalendar(calendarSettings1);
+    /*call function for dsiaply date on right calender*/
+
+
+    /*ajax call get post week view */
+    /*function partialviewgetpostWeekviewdata1() {
+        $.ajax({
+            type: "Get",
+            url: "PostCalenderWeekView.html",
+            success: function (data) {
+                $("#partialcalenderview").html("");
+                $("#partialcalenderview").html(data);
+                $(".Postfilterhideshow").addClass("d-none");
+            }
+        });
+    }*/
+    /*ajax call get post week view */
+
+    /*function for changing roster date*/
+    function ChangeRosteringDate(seldate, this1) {
+        var date = calendarSettings1.today.format("DD");
+        var month = calendarSettings1.date.format("MM") - 1;
+        var year = calendarSettings1.date.format("YYYY");
+        var d1 = new Date(year, month, date)
+        /*var today = new Date(calendarSettings1.today);*/
+        $(this1).parent().children().removeClass("hightlightedtable")
+        $(this1).addClass("hightlightedtable");
+        $("#datepicker").datepicker("update", new Date(year, month, seldate));
+    }
+    /*function for changing roster date*/
+
+    /*function for dynamic set calender header data on right calender*/
+    function GetHeaders(IsMonthSet) {
+        var thHTML = "";
+        var thStartHTML = `<th class="">Post Type / Days</th>`;
+        var thEndHTML = "<th>Total</th>";
+
+        var selectedMonth;
+        if (IsMonthSet == 0) {
+            var today = new Date();
+
+            var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            var lastDate = moment(lastDay);
+            var getdateres = moment(new Date()).format("DD");
+            var dataHTML = "";
+            for (var i = 1; i <= lastDate.format("DD"); i++) {
+                var calDate = moment(new Date(today.getFullYear(), today.getMonth(), i));
+                var todayDay = calDate.format("ddd");
+                var todayDaydate = calDate.format("DD");
+                var th = "";// "<th id="data-day_" + i + "" onclick="ChangeRosteringDate(" + i + ",this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";
+                if (todayDay == 'Fri' || todayDay == 'Sat') {
+                    th = `<th id="data-day_${i}" class="greytablebg"  onclick="ChangeRosteringDate(${i} ,this)">${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                }
+                else if (todayDaydate === getdateres) {
+                    th = `<th id="data-day_${i}" class="hightlightedtable"  onclick="ChangeRosteringDate(${i} ,this)">${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                    /*th = '<th id="data-day_' + i + '" class="hightlightedtable"  onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';*/
+                }
+                else {
+                    th = `<th id="data-day_${i}" onclick="ChangeRosteringDate(${i} ,this)">${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                    /*th = '<th id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';*/
+                }
+                dataHTML = dataHTML + th;
+            }
+            thHTML = thStartHTML + dataHTML + thEndHTML;
+
+            selectedMonth = today.getMonth();
+
+            $("#rosterViewTH").html("");
+            $("#rosterViewTH").html(thHTML);
+        }
+        else {
+            var today = new Date(calendarSettings1.date);
+            var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            var lastDate = moment(lastDay);
+            var dataHTML = "";
+            for (var i = 1; i <= lastDate.format("DD"); i++) {
+                var calDate = moment(new Date(today.getFullYear(), today.getMonth(), i));
+                var todayDay = calDate.format("ddd");
+
+                var th = "";// "<th id="data-day_" + i + "" onclick="ChangeRosteringDate(" + i + ",this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";
+                if (todayDay == "Fri" || todayDay == "Sat") {
+                    th = `<th id="data-day_${i}" class="greytablebg"  onclick="ChangeRosteringDate(${i} ,this)">${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                    /*th = "<th id="data - day_" + i + "" class="greytablebg"  onclick="ChangeRosteringDate(" + i + ", this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";*/
+                }
+                else {
+                    th = `<th id="data-day_${i}" onclick="ChangeRosteringDate(${i} ,this)">${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                }
+                dataHTML = dataHTML + th;
+
+            }
+            thHTML = thStartHTML + dataHTML + thEndHTML;
+            /*GetTodaySelectedDate()*/
+            selectedMonth = today.getMonth();
+
+            $("#rosterViewTH").html("");
+            $("#rosterViewTH").html(thHTML);
+
+        }
+
+        var month = moment(new Date()).format("MM");
+        var month1 = calendarSettings1.date.format("MM");
+        if (month == month1) { GetTodaySelectedDate(); }
+
+    }
+    /*function for dynamic set calender header data on right calender*/
+
+    /*function for highlight today calender date in header*/
+    function GetTodaySelectedDate() {
+        var tdate = calendarSettings1.today.format("DD");
+        /*$("#calenderviewtable th").removeClass("hightlightedtable");*/
+        $("#data-day_" + tdate).addClass("hightlightedtable");
+    }
+      /*function for highlight today calender date in header*/
+
+</script>

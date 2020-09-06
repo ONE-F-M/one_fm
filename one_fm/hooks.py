@@ -29,13 +29,14 @@ app_include_js = [
 # include js in page
 page_js = {"roster" : [
 	# "public/js/roster_js/jquery-ui.min.js",
-	"public/js/roster_js/bootstrap-datepicker.min.js",
+	# "public/js/roster_js/bootstrap-datepicker.min.js",
 	"public/js/roster_js/bootstrap-notify.min.js",
 	"public/js/roster_js/select2.min.js",
 	"public/js/roster_js/jquery.dataTables.min.js",
 	"public/js/roster_js/jquery.validate.min.js",
 	"public/js/roster_js/additional-methods.min.js",
-	"public/js/roster_js/rosteringmodalvalidation.js"
+	"public/js/roster_js/rosteringmodalvalidation.js",
+	"public/js/roster_js/flatpickr.min.js"
 	]
 }
 

@@ -1,0 +1,1088 @@
+<!-- ============================================================== -->
+<!-- Main section start -->
+<!-- ============================================================== -->
+<div class="layoutSidenav_content" data-view="card">
+    <div class="bg-white d-none d-md-block">
+        <ul class="nav nav-tabs nav-justified rostercustomtab">
+            <li class="cursorpointer">
+                <a class="redirect_route" data-route="roster">
+                    <span><i class="fas fa-tasks"></i></span>
+                    <span class="pl10">Rostering</span>
+                </a>
+            </li>
+            <li class="active cursorpointer">
+                <a class="redirect_route" data-route="staff">
+                    <span><i class="fas fa-users"></i></span>
+                    <span class="pl10">Staff</span>
+                </a>
+            </li>
+            <li class="cursorpointer">
+                <a class="redirect_route" data-route="reports">
+                    <span><i class="fas fa-chart-line"></i></span>
+                    <span class="pl10">Reports</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <!--for mobile filter sidedrawer start-->
+    <div class="container-fluid d-md-none">
+        <div class="row">
+            <div class="col-xs-12 pl20 pt20 pr20 col-sm-12 col-md-12 col-lg-12">
+                <span class="font20 cardheadercolor fontw600 textchange">Staff Management</span>
+                <div class="pt10 font16 lightgrey hideshowprjname d-none">Rostering Application</div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 pl20 pt20 pb20 pr20 col-sm-12 col-md-12 col-lg-12">
+                <div class="input-group">
+                    <input type="search" class="serach-textbox form-control" placeholder="Search"
+                        id="inputtextsearch" />
+                    <div class="input-group-append">
+                        <button class="btn customtoggledrp dropdown-toggle" type="button" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-caret-down"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right customdropdownmob pt-3 pb-2 px-2">
+                            <div class="pl14 mb8"><span class="font16 cardtitlecolor fontw600">Search By</span></div>
+                            <div class="pl14 mb8">
+                                <div class="form-group mb-0">
+                                    <div class="custom-control custom-radio shadow-none">
+                                        <input type="radio" class="custom-control-input" id="txtbyclient"
+                                            name="searchbybtn">
+                                        <label class="custom-control-label font16 cardtitlecolor pl10 "
+                                            for="txtbyclient">Client</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pl14 mb8">
+                                <div class="form-group mb-0">
+                                    <div class="custom-control custom-radio shadow-none">
+                                        <input type="radio" class="custom-control-input" id="txtbycompany"
+                                            name="searchbybtn">
+                                        <label class="custom-control-label font16 cardtitlecolor pl10 "
+                                            for="txtbycompany">Company Id</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pl14  mb8">
+                                <div class="form-group mb-0">
+                                    <div class="custom-control custom-radio shadow-none">
+                                        <input type="radio" class="custom-control-input" id="txtbyproject"
+                                            name="searchbybtn">
+                                        <label class="custom-control-label font16 cardtitlecolor pl10 "
+                                            for="txtbyproject">Project</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pl14  mb8">
+                                <div class="form-group mb-0">
+                                    <div class="custom-control custom-radio shadow-none">
+                                        <input type="radio" class="custom-control-input" id="txtforsite"
+                                            name="searchbybtn">
+                                        <label class="custom-control-label font16 cardtitlecolor pl10 "
+                                            for="txtforsite">Site</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pl14  mb8">
+                                <div class="form-group mb-0">
+                                    <div class="custom-control custom-radio shadow-none">
+                                        <input type="radio" class="custom-control-input" id="txtbyclientname"
+                                            name="searchbybtn">
+                                        <label class="custom-control-label font16 cardtitlecolor pl10 "
+                                            for="txtbyclientname">Name</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 pl20 pb20 pr20 col-sm-12 col-md-12 col-lg-12">
+                <div class="restabbar pl30 plsm-0">
+                    <ul class="nav nav-tabs nav-justified rostercustomstafftab d-flex">
+                        <li class="w-100 ">
+                            <a data-route="staff" class="redirect_route residenavli ">
+                                <img src="images/Listicon.svg" class="togglescreenbtnimg svg icon" />
+                            </a>
+                        </li>
+                        <li class="w-100  active">
+                            <a data-route="staffcard" class="redirect_route residenavli active">
+                                <img src="images/cardicon.svg" class="togglescreenbtnimg svg icon" />
+                            </a>
+                        </li>
+                    </ul>
+                    <a href="#"
+                        class="bgcolorblue unassignallbtn d-none  w-100 mt-3  borderradius4 text-center pt8 pb8 btnunassignonclick px-4">
+                        <span class="whitecolor font16 text-center my-2">Assign to all</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="row " style="background:#e7edfb">
+            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 pl-0 pr-0 ">
+                <div class="d-lg-flex custommobheight d-flex align-items-center ml20 mainclassfilter ">
+                    <label class="checkboxcontainer simplecheckbox"><span
+                            class="lightgrey font16 customfontweight fontw400">Select All</span><input type="checkbox"
+                            name="staffselectallcheckbox" class="staffselectallcheckbox"><span
+                            class="checkmark"></span></label>
+
+                    <a class="ml16 unassignedbtn d-none" data-target="#userunassigned" data-toggle="modal">
+                        <img src="images/icon/Unassigned.svg" class="responiconfa">
+                    </a>
+                    <a class="ml16 assignedbtn d-none">
+                        <img src="images/icon/Assigned.svg" class="responiconfa">
+                    </a>
+                    <a class="ml16 editbtn d-none">
+                        <!-- data-toggle="modal" data-target="#cardeditusermodal"> -->
+                        <img src="images/icon/edti.svg" class="responiconfa">
+                    </a>
+                </div>
+            </div>
+            <div class="col-2 col-lg-4 col-md-4 col-sm-4 col-xs-4 pl-0 pr-0">
+                <div class="sidedrawer" style="right: -200px; opacity: 1; z-index: 2;">
+                    <div id="nav">
+                        <div id="menu" style=""><i class="fas fa-filter iconresponsiveerrow" aria-hidden="true"
+                                style="color: #fff !important"></i></div>
+                        <div id="menuclose" style="display: none;"><i
+                                class="fa fa-chevron-right iconresponsiveerrow sidearrowres" aria-hidden="true"></i>
+                        </div>
+                    </div>
+                    <div class="sidebackground">
+                        <div class="sidedrawer-body">
+                            <div class="card m-0 vh-100" style="border:none !important">
+                                <div class="card-header filtercloseclick"
+                                    style="box-shadow:none !important;border-bottom:none !important">
+                                    <div class="cardHeadingText" style="font-size: 18px !important;">Filters</div>
+                                </div>
+                                <div class="container-fluid responsiveoverflowfilter mx-0">
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12 ">
+                                            <div class="lightbluecolor font16 cursorpointer mt-4  mr20 d-none allfilters"
+                                                id="" onclick="clearallfilter()">
+                                                <span><i class="fas fa-times"></i></span>
+                                                <span class="pl8 d-md-none d-lg-inline">Clear All Filter</span>
+                                            </div>
+                                            <div class="mb-4 mt-4 mb-lg-0 mlsm-0 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres filtertextget assigneddrpval"
+                                                            id="mobview">Assigned</div>
+                                                    </a>
+                                                    <div class="dropdown-menu dropdown-menu-left customselect customredropdown"
+                                                        onclick="filteassignget()">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronclient">Assigned</a>
+                                                            <a class="dropdown-item filteronclient">Unassigned</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="clearassignfilter()">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0  ml-0 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Company</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Company 1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Company 2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Company 3</a>
+                                                            <a class="dropdown-item filteronserviceboard">Company 4</a>
+                                                            <a class="dropdown-item filteronserviceboard">Company 5</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard(this)">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Project</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Project 1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Project 2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Project 3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard(this)">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Site</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Site 1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Site 2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Site 3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard(this)">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Shift</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Shift 1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Shift 2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Shift 3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard(this)">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Department</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Department
+                                                                1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Department
+                                                                2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Department
+                                                                3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard(this)">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+                                            <div class="mb-4 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres"> Designation</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Designation
+                                                                1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Designation
+                                                                2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Designation
+                                                                3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard(this)">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--for mobile filter sidedrawer end-->
+    <div class="tab-content mt30 ml30 mr30 mb30 ">
+        <div class="container-fluid borderradius8 pt30 pl30 pr30 pb-0 bg-white">
+            <div class="row d-none d-md-block d-lg-flex">
+                <div class="col-xs-12 col-sm-12 col-md-3 col-lg-3">
+                    <span class="font20 cardheadercolor fontw600 textchange">Staff Management</span>
+                    <div class="pt6 font16 lightgrey hideshowprjname d-none">Rostering Application</div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-9 col-lg-9 mt-0 mt-md-3 mt-lg-0">
+                    <div class="d-md-flex justify-content-md-between justify-content-lg-end">
+                        <div class="searchbox">
+                            <input type="search" class="serach-textbox form-control" placeholder="Search" />
+                            <div class="radiobutton d-md-flex pt10">
+                                <div class=""><span class="font16 cardtitlecolor">Search By:</span></div>
+                                <div class="pl10">
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-radio shadow-none">
+                                            <input type="radio" class="custom-control-input" id="txtsearchbyclient"
+                                                name="searchbyradiobtn" value="1">
+                                            <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
+                                                for="txtsearchbyclient">Client</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pl20 plsm-0">
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-radio shadow-none">
+                                            <input type="radio" class="custom-control-input" id="txtsearchbycompany"
+                                                name="searchbyradiobtn" value="1">
+                                            <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
+                                                for="txtsearchbycompany">Company Id</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pl20 plsm-0">
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-radio shadow-none">
+                                            <input type="radio" class="custom-control-input" id="txtsearchbyproject"
+                                                name="searchbyradiobtn" value="1">
+                                            <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
+                                                for="txtsearchbyproject">Project</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pl20 plsm-0">
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-radio shadow-none">
+                                            <input type="radio" class="custom-control-input" id="txtsearchbysite"
+                                                name="searchbyradiobtn" value="1">
+                                            <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
+                                                for="txtsearchbysite">Site</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pl20 plsm-0">
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-radio shadow-none">
+                                            <input type="radio" class="custom-control-input" id="txtsearchbyname"
+                                                name="searchbyradiobtn" value="1">
+                                            <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
+                                                for="txtsearchbyname">Name</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="restabbar pl20 plsm-0">
+                            <div class="d-flex">
+                                <ul class="nav nav-tabs nav-justified rostercustomstafftab">
+                                    <li class="">
+                                        <a data-route="staff" class="redirect_route residenavli">
+                                            <img src="images/Listicon.svg" class="togglescreenbtnimg svg icon" />
+                                        </a>
+                                    </li>
+                                    <li class="active">
+                                        <a data-route="staffcard" class="redirect_route residenavli active">
+                                            <img src="images/cardicon.svg" class="togglescreenbtnimg svg icon" />
+                                        </a>
+                                    </li>
+                                </ul>
+                                <a href="#"
+                                    class="bgcolorblue textchangeadd unassignallbtn  borderradius4 d-none text-center pt8 pb8 px-4 btnunassignonclick">
+                                    <span class="whitecolor font16 text-center my-2">Assign to all</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row pt22 pb22 d-none d-md-flex">
+                <div class="col-xs-12 col-md-12">
+                    <div
+                        class="d-lg-flex lightbluedtbg borderradius4 pt8 pb8 pl20 pr20 justify-content-md-between align-items-md-center ipadclassremove">
+                        <div class="d-lg-flex d-md-flex align-items-center mainclassfilter heightipad">
+                            <label class="checkboxcontainer simplecheckbox"><span
+                                    class="lightgrey font16 customfontweight fontw400">Select All</span><input
+                                    type="checkbox" class="staffselectallcheckbox"><span
+                                    class="checkmark"></span></label>
+                            <a class="ml10 customiconhover unassignedbtn d-none" data-target="#userunassigned"
+                                data-toggle="modal">
+                                <img src="images/icon/Unassigned.svg" class="responiconfa">
+                            </a>
+                            <a class="ml10 customiconhover assignedbtn d-none">
+                                <img src="images/icon/Assigned.svg" class="responiconfa">
+                            </a>
+                            <a class="ml10 customiconhover editbtn d-none">
+                                <!-- data-toggle="modal" data-target="#cardeditusermodal"> -->
+                                <img src="images/icon/edti.svg" class="responiconfa">
+                            </a>
+                        </div>
+                        <div
+                            class="d-lg-flex d-md-flex align-items-center justify-content-md-end ipadpadd mt-0 mt-md-2 mt-lg-0">
+                            <div class="lightbluecolor font16 cursorpointer mb-2 mb-lg-0 mr20 allfilters d-none" id=""
+                                onclick="clearallfilter()">
+                                <span><i class="fas fa-times"></i></span>
+                                <span class="pl8 d-md-none d-lg-inline">Clear All Filter</span>
+                            </div>
+                            <div class="mb-2 mb-lg-0 mlsm-0 customiconhover">
+                                <div class="btn-group">
+                                    <a href="#"
+                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon clienttypeassign"
+                                        id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <div class="dropdowncustomres filtertextget assigneddrpval" id="desktopview">
+                                            Assigned</div>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right customselect customredropdown "
+                                        onclick="filteassignget();">
+                                        <div class="customdropdownheight" data-filter-type="assigned">
+                                            <a class="dropdown-item filteronclient">Assigned</a>
+                                            <a class="dropdown-item filteronclient">Unassigned</a>
+                                        </div>
+                                        <div class="border-top text-right px-4 py-4">
+                                            <a class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                onclick="clearassignfilter()">
+                                                Clear Filter
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2 mb-lg-0 plsm-0 ml20 customiconhover">
+                                <div class="btn-group">
+                                    <a href="#"
+                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon " id=""
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <div class="dropdowncustomres">Company</div>
+                                    </a>
+                                    <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                        <div class="customdropdownheight company-dropdown" data-filter-type="company">
+                                        </div>
+                                        <div class="border-top text-right px-4 py-4">
+                                            <a class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                onclick="ClearServiceBoard(this)" data-filter-type="company">
+                                                Clear Filter
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                <div class="btn-group">
+                                    <a href="#"
+                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon " id=""
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <div class="dropdowncustomres">Project</div>
+                                    </a>
+                                    <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                        <div class="customdropdownheight project-dropdown" data-filter-type="project">
+                                        </div>
+                                        <div class="border-top text-right px-4 py-4">
+                                            <a class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                onclick="ClearServiceBoard(this)" data-filter-type="project">
+                                                Clear Filter
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                <div class="btn-group">
+                                    <a href="#"
+                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon " id=""
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <div class="dropdowncustomres">Site</div>
+                                    </a>
+                                    <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                        <div class="customdropdownheight site-dropdown" data-filter-type="site">
+                                        </div>
+                                        <div class="border-top text-right px-4 py-4">
+                                            <a class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                onclick="ClearServiceBoard(this)" data-filter-type="site">
+                                                Clear Filter
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                <div class="btn-group">
+                                    <a href="#"
+                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon " id=""
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <div class="dropdowncustomres">Shift</div>
+                                    </a>
+                                    <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                        <div class="customdropdownheight shift-dropdown" data-filter-type="shift">
+                                        </div>
+                                        <div class="border-top text-right px-4 py-4">
+                                            <a class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                onclick="ClearServiceBoard(this)" data-filter-type="shift">
+                                                Clear Filter
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                <div class="btn-group">
+                                    <a href="#"
+                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon " id=""
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <div class="dropdowncustomres">Department</div>
+                                    </a>
+                                    <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                        <div class="customdropdownheight department-dropdown"
+                                            data-filter-type="department">
+                                        </div>
+                                        <div class="border-top text-right px-4 py-4">
+                                            <a class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                onclick="ClearServiceBoard(this)" data-filter-type="department">
+                                                Clear Filter
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                <div class="btn-group">
+                                    <a href="#"
+                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon " id=""
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <div class="dropdowncustomres">Designation</div>
+                                    </a>
+                                    <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                        <div class="customdropdownheight designation-dropdown"
+                                            data-filter-type="designation">
+                                        </div>
+                                        <div class="border-top text-right px-4 py-4">
+                                            <a class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                onclick="ClearServiceBoard(this)" data-filter-type="designation">
+                                                Clear Filter
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row staff-card-wrapper">
+            </div>
+        </div>
+    </div>
+    <!-- ============================================================== -->
+    <!-- Main srction end -->
+    <!-- ============================================================== -->
+    <!-- ============================================================== -->
+    <!-- modal section start -->
+    <!-- ============================================================== -->
+
+    <div class="modal custommobmodal" id="userunassigned" tabindex="-1" role="dialog" aria-labelledby="userunassigned"
+        aria-modal="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header pt10 pb-0 pl10 pr10 modalheader d-flex align-items-center border-bottom-0">
+
+                    <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="img-block custommobrescard text-center" style="">
+                        <span class="">
+                            <img src="images/Warning.svg" class="img_responsive">
+                        </span>
+
+                    </div>
+                    <div class="lightmodalbg mt20 mb26">
+                        <div class="modaltextcolor font30 text-center fontw600 py-1">Are you sure you want to
+                            Unassigned?
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer modalfooterborder pt10 pb10">
+                    <div class="row text-center w-100">
+                        <div class="col-12 text-center">
+                            <a onclick="" data-dismiss="modal"
+                                class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn continuebtn">Continue</a>
+                            <a href="" data-dismiss="modal"
+                                class="text-center d-inline-block modalbtn greythemebg font16 ml18">Cancel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal custommobmodal" id="cardeditusermodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+        aria-modal="true">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header pt10 pb10 pl20 pr20 modalheader d-flex align-items-center">
+                    <div class="font16 fontw500">Edit</div>
+                    <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
+                    </button>
+                </div>
+
+                <div class="modal-body pl20 pt20 pr20 pb20">
+                    <form id="editformmodal" name="editformmodal">
+                        <div class="row">
+                            <div class="col-sm-12 col-xs-12">
+                                <label for="" class="font16 mb8">Project Name</label>
+                            </div>
+                        </div>
+                        <div class="row mb30">
+                            <div class="col-sm-12 col-md-12 custompageselecttype">
+                                <select class="form-control select2plg" id="txtproject" name="txtproject">
+                                    <option value="">Please Select</option>
+                                    <option value="0">Project 1</option>
+                                    <option value="1">Project 2</option>
+                                    <option value="2">Project 3</option>
+                                </select>
+
+                            </div>
+                        </div>
+                        <div class="row mb30">
+                            <div class="col-sm-12 col-md-12 custompageselecttype">
+                                <select class="form-control select2plg" id="txtsite" name="txtsite">
+                                    <option value="">Please Select</option>
+                                    <option value="0">site 1</option>
+                                    <option value="1">site 2</option>
+                                    <option value="2">site 3</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb30">
+                            <div class="col-sm-12 col-md-12 custompageselecttype">
+                                <select class="form-control select2plg" id="txtshift" name="txtshift">
+                                    <option value="">Please Select</option>
+                                    <option value="0">shift 1</option>
+                                    <option value="1">shift 2</option>
+                                    <option value="2">shift 3</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb20 pt-3 pt-md-0">
+                            <div class="col-sm-12 col-md-12">
+                                <div class="d-flex">
+                                    <div class="">
+                                        <div class="form-group mb-0">
+                                            <div class="custom-control custom-radio shadow-none">
+                                                <input type="radio" class="custom-control-input" id="modaldateid"
+                                                    name="editstaffradio" value="1">
+                                                <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
+                                                    for="modaldateid">Date</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="pl20">
+                                        <div class="form-group mb-0">
+                                            <div class="custom-control custom-radio shadow-none">
+                                                <input type="radio" class="custom-control-input" id="txtimmediately"
+                                                    name="editstaffradio" value="1">
+                                                <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
+                                                    for="txtimmediately">Immediately</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="row">
+                            <div class="col-sm-12 col-xs-12">
+                                <label for="" class="font16 mb8">Date</label>
+                            </div>
+                            <div class="col-sm-12 col-md-12">
+                                <div id="datepicker" class="input-group date" data-date-format="mm-dd-yyyy">
+                                    <input class="form-control" type="text" id="txtinputdate" name="txtinputdate"
+                                        readonly />
+                                    <span class="input-group-addon inputgroupcalendar"><i
+                                            class="far fa-calendar-alt"></i></span>
+                                </div>
+
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <div class="row text-center w-100">
+                        <div class="col-12 text-center text-md-right">
+                            <a onclick="editproject()" id="savemodalid" href="#"
+                                class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn">Save</a>
+                            <a href="#" data-dismiss="modal"
+                                class="text-center d-inline-block modalbtn greythemebg font16 ml18">Close</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- ============================================================== -->
+    <!--modal section start -->
+    <!-- ============================================================== -->
+    <div id="sidenav-backdrop"></div>
+    <div class="drawer-backdrop" id="drawershow"></div>
+    <script>
+        $(".content.page-container").find(".redirect_route").on("click", function (e) {
+            console.log(e, this);
+            let template = $(this).attr("data-route");
+            $(".content.page-container").empty().append(frappe.render_template(template));
+            load_js(cur_page.page.page);
+        });
+        setup_staff_filters();
+        setup_staff_filters_data();
+        /*select2 plugin initialization*/
+        $(".select2plg").select2();
+        /*select2 plugin initialization*/
+
+        /*slide toggle and side drawer for mobile device*/
+        $("#sidebarToggle").on("click", function (e) {
+            e.preventDefault();
+            $("body").toggleClass("sb-sidenav-toggled");
+        });
+
+        if (screen.availWidth <= 767) {
+            $(".desktopviewpatientconnect").remove();
+            $(".mobileviewpatientconnect").css("overflow-y", "hidden");
+            $(".filtercloseclick").click(function () {
+                $(".sidedrawer").animate({ right: -201, opacity: 1 }, 130);
+                $(".sidedrawer").css("z-index", "2");
+                $("#drawershow").removeClass("show");
+                $("#menu").show();
+                $("body").css("overflow-y", "auto");
+                $("#menuclose").hide();
+            });
+            $("#menu").click(function () {
+                $(".sidedrawer").animate({ right: 0, opacity: 1 }, 130);
+                $("#drawershow").addClass("show");
+                $(".sidedrawer").css("z-index", "999");
+                $("#menuclose").show();
+                $("body").css("overflow-y", "hidden");
+                $(this).hide();
+                $("#drawershow").click(function () {
+                    $(".sidedrawer").animate({ right: -201, opacity: 1 }, 130);
+                    $(".sidedrawer").css("z-index", "2");
+                    $("#drawershow").removeClass("show");
+                    $("#menu").show();
+                    $("body").css("overflow-y", "auto");
+                    $("#menuclose").hide();
+                });
+            });
+            $("#menuclose").click(function () {
+                $(".sidedrawer").animate({ right: -200, opacity: 1 }, 130);
+                $(".sidedrawer").css("z-index", "2");
+                $("#drawershow").removeClass("show");
+                $("#menu").show();
+                $("body").css("overflow-y", "auto");
+                $(this).hide();
+            });
+        }
+        else {
+
+        }
+        /*slide toggle and side drawer for mobile device*/
+
+        /*jquery for the svg img change on hover, active , this jquery not working simple .html page it required http, https*/
+        jQuery("img.svg").each(function () {
+            var $img = jQuery(this);
+            var imgID = $img.attr("id");
+            var imgClass = $img.attr("class");
+            var imgURL = $img.attr("src");
+            jQuery.get(imgURL, function (data) {
+                /* Get the SVG tag, ignore the rest*/
+                var $svg = jQuery(data).find("svg");
+                /* Add replaced image"s ID to the new SVG*/
+                if (typeof imgID !== "undefined") {
+                    $svg = $svg.attr("id", imgID);
+                }
+                /* Add replaced image"s classes to the new SVG*/
+                if (typeof imgClass !== "undefined") {
+                    $svg = $svg.attr("class", imgClass + " replaced-svg");
+                }
+                /* Remove any invalid XML tags as per http://validator.w3.org*/
+                $svg = $svg.removeAttr("xmlns:a");
+                /* Check if the viewport is set, if the viewport is not set the SVG wont"t scale.*/
+                if (!$svg.attr("viewBox") && $svg.attr("height") && $svg.attr("width")) {
+                    $svg.attr("viewBox", "0 0 " + $svg.attr("height") + " " + $svg.attr("width"))
+                }
+                /* Replace image with new SVG*/
+                $img.replaceWith($svg);
+            }, "xml");
+        });
+        /*jquery for the svg img change, this jquery not working simple .html page it required http, https*/
+
+        /* jquery for filer start */
+
+
+        /*on select all checkbox on checkbox this click*/
+        $(".staffselectallcheckbox").change(function () {
+            var valuegetchk = $(this).is(":checked");
+            if (valuegetchk === true) {
+                $(`input[type="checkbox"]`).prop("checked", true);
+                assignedfilter(0);
+            }
+            else {
+                $(`input[type="checkbox"]`).prop("checked", false);
+                assignedfilter(1);
+            }
+        });
+        /*on select all checkbox on checkbox this click*/
+
+        /*indivisual card checkbox select*/
+        $(".cardviewcheckbox").change(function () {
+            var getdatatableval = $(this).is(":checked");
+            if (getdatatableval === true) {
+                assignedfilter(0);
+            }
+            else {
+
+                assignedfilter(1);
+            }
+        });
+
+        /*indivisual card checkbox select*/
+        /* jquery for filer end */
+
+
+        /*notification display on button*/
+        $(".continuebtn").click(function () {
+            notificationmsg("Success!!", "Unssigned successfully.");
+        });
+
+
+        $(".assignedbtn").on("click", function () {
+            notificationmsg("Success!!", "Assigned successfully.");
+
+        });
+        /*notification display on button*/
+
+        /*datepicker initialization*/
+        $(function () {
+            var datePicker = $("#datepicker").datepicker({
+                autoclose: true,
+                todayHighlight: true,
+                format: "dd/mm/yyyy",
+                orientation: "auto top",
+            }).on("show", function () {
+                var getwidth = $("#datepicker").width();
+                $(".datepicker-dropdown").css("width", getwidth);
+            });
+            var t;
+            $("#cardeditusermodal").on(
+                "DOMMouseScroll mousewheel scroll",
+                function () {
+                    window.clearTimeout(t);
+                    t = window.setTimeout(function () {
+                        $("#datepicker").datepicker("place");
+                    }, 0);
+                }
+            );
+
+        });
+        /*datepicker initialization  */
+
+        /*dropdown for assign set text on hide show clear filter text
+        $(".customredropdown .customdropdownheight .dropdown-item").click(function () {
+            var text = $(this).html();
+            console.log($(this));
+            $(this).closest(".btn-group").find(".dropdown-toggle .dropdowncustomres").html(text);
+            if (text === "Assigned") {
+
+                $(".hideshowprjname").addClass("d-none");
+                $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
+                $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
+            }
+            else {
+
+                $(".hideshowprjname").removeClass("d-none");
+                $(".btnunassignonclick").removeClass("d-none").addClass("d-block");
+                $(".rostercustomstafftab").addClass("d-none").removeClass("d-flex");
+            }
+        });
+        dropdown for assign set text on hide show clear filter text*/
+
+        /*clear fill form value on modal close */
+        $(".modal").on("hidden.bs.modal", function () {
+            $("form").validate().resetForm();
+            $("form").trigger("reset");
+            $(".select2plg").val(null).trigger("change");
+        });
+
+
+
+
+        /* edit project notification*/
+        function editproject() {
+            if ($("#editformmodal").valid()) {
+                $(".modal").modal("hide");
+                notificationmsg("Success!!", "");
+            }
+        }
+        /* edit project notification*/
+
+
+        /*function for assign dropdown filter */
+        /*function assignedfilter(value1) {
+            var filtervale = $("#desktopview.filtertextget").text();
+            var functionmainvalue = value1;
+
+            if (filtervale === "Assigned" && functionmainvalue === 0) {
+                $(".unassignedbtn").removeClass("d-none");
+                $(".assignedbtn").addClass("d-none");
+                $(".editbtn").removeClass("d-none");
+                $(".mainclassfilter").removeClass("d-none");
+                $(".allfilters").addClass("d-none");
+
+
+
+            }
+            else if (filtervale === "Unassigned" && functionmainvalue === 0) {
+                $(".unassignedbtn").addClass("d-none");
+                $(".assignedbtn").removeClass("d-none");
+                $(".editbtn").removeClass("d-none");
+                $(".mainclassfilter").removeClass("d-none");
+                $(".allfilters").addClass("d-none");
+
+
+            }
+
+            else {
+                $(".unassignedbtn").addClass("d-none");
+                $(".assignedbtn").addClass("d-none");
+                $(".editbtn").addClass("d-none");
+            }
+        }*/
+        /*function for assign dropdown filter */
+
+        /*function for assign dropdown clear button filter */
+        function clearassignfilter() {
+            $(".assigneddrpval").html("");
+            $(".assigneddrpval").html("Assigned");
+            $(".hideshowprjname").addClass("d-none");
+            $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
+            $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
+        }
+        /*function for assign dropdown clear button filter */
+
+        /*show (Assign to all) button on unassign option click on assign dropdown*/
+        function filteassignget() {
+            $(".allfilters").removeClass("d-none");
+        }
+        /*show (Assign to all) button on unassign option click on assign dropdown*/
+
+
+        /*clear dropdown value */
+        function clearallfilter() {
+            $(".allfilters").removeClass("d-none");
+            $(".allfilters").addClass("d-none");
+            $(".assigneddrpval").html("");
+            $(".assigneddrpval").html("Assigned");
+            $(".hideshowprjname").addClass("d-none");
+            $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
+            $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
+        }
+        /*clear dropdown value */
+
+        /*function for notification call and pass parameter*/
+        function notificationmsg(title, message) {
+
+            var titletxt = title;
+            var messagetxt = message;
+            $.notify({
+                /* options*/
+                title: "<strong>" + titletxt + "</strong>",
+                message: messagetxt,
+                icon: "far fa-check-circle notifycolor",
+                target: "_blank"
+            },
+                {
+                    element: "body",
+                    type: "success",
+                    showProgressbar: false,
+                    placement: {
+                        from: "top",
+                        align: "right"
+                    },
+                    offset: 20,
+                    spacing: 10,
+                    z_index: 1080,
+                    delay: 3300,
+                    timer: 500,
+                    url_target: "_blank",
+                    mouse_over: null,
+                    animate: {
+                        enter: "animated fadeInDown",
+                        exit: "animated fadeOutRight"
+                    },
+                    onShow: null,
+                    onShown: null,
+                    onClose: null,
+                    onClosed: null,
+                    icon_type: "class",
+                });
+        }
+        render_staff("card");
+        $(".editbtn").on("click", function () {
+            staff_edit_dialog();
+        })
+    </script>

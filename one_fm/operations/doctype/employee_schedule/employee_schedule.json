@@ -1,0 +1,158 @@
+{
+ "autoname": "format:{date}/{employee}",
+ "creation": "2020-05-12 15:44:18.133872",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "department",
+  "column_break_3",
+  "date",
+  "employee_availability",
+  "post_type",
+  "post_abbrv",
+  "section_break_2",
+  "shift",
+  "shift_type",
+  "column_break_6",
+  "site",
+  "project",
+  "attendance_status_section",
+  "attended_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Shift",
+   "options": "Operations Shift"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_availability",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Employee Availability",
+   "options": "Working\nDay Off\nSick Leave\nAnnual Leave\nEmergency Leave",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.employee_availability==\"Working\"",
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attended_status",
+   "fieldtype": "Select",
+   "label": "Attended Status",
+   "options": "\nPlanned and worked actual hours\nDeviation in schedule with acceptable excuse\nDeviation in schedule without excuse",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift.shift_type",
+   "fieldname": "shift_type",
+   "fieldtype": "Link",
+   "label": "Shift Type",
+   "options": "Shift Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "post_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Post Type",
+   "options": "Post Type"
+  },
+  {
+   "fieldname": "attendance_status_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Status"
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Data",
+   "label": "Department"
+  },
+  {
+   "fetch_from": "shift.site",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "post_type.post_abbrv",
+   "fieldname": "post_abbrv",
+   "fieldtype": "Data",
+   "label": "Post Abbreviation",
+   "read_only": 1
+  }
+ ],
+ "modified": "2020-09-01 23:09:10.924020",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Employee Schedule",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
