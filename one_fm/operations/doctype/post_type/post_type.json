@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "post_name",
+  "post_abbrv",
   "skills",
   "designations"
  ],
@@ -27,9 +28,14 @@
    "fieldtype": "Table",
    "label": "Designations",
    "options": "Post Designations"
+  },
+  {
+   "fieldname": "post_abbrv",
+   "fieldtype": "Data",
+   "label": "Post Abbreviation"
   }
  ],
- "modified": "2020-06-06 15:48:22.750832",
+ "modified": "2020-09-01 23:06:49.582513",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Type",

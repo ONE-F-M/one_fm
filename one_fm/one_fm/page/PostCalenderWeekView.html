@@ -1,0 +1,356 @@
+<style>
+    .disableselectclass {
+        pointer-events: none;
+    }
+</style>
+
+<div class="cardheadercolor border-0 shadow-0">
+    <div
+        class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
+        <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
+            <div class="font20 cardheadercolor fontw600 textchange calenderweektitlechange">Month of April 1-30, 2020
+            </div>
+            <div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
+                <div class="">
+                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                        <li class="calenderlink"><a href="#" class="residenavli active"
+                                id="postmonthviewclick">Month</a></li>
+                        <li class="active  calenderlink"><a href="#" class="residenavli" id="postweekviewclick">Week</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="ml20">
+                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                        <li class=""><a href="#" class="residenavli customarrowtab bg-white"
+                                style="background:#fff !important" onclick="rosterweekdecrement()"><i
+                                    class="fas fa-chevron-left"></i></a></li>
+                        <li class="bordertableft"><a href="#" class="residenavli customarrowtab bg-white"
+                                style="background:#fff !important" onclick="rosterweekincrement()"><i
+                                    class="fas fa-chevron-right"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive table-bordered">
+            <table id="calenderweekviewtable"
+                class="mb-0 table table-striped customcarddetailtable structuredetaildatatable" style="width:100%">
+                <thead>
+                    <tr id="rosterViewTH">
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr class="colorclass">
+                        <td>
+                            <label class="checkboxcontainer simplecheckbox mx-4"><span
+                                    class="lightgrey font16 customfontweight fontw400">Post 6</span><input
+                                    type="checkbox" name="selectallcheckbox" class="selectallcheckbox"><span
+                                    class="checkmark"></span></label>
+
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox text-center" dataselectid="ps1"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox text-center" dataselectid="ps2"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox text-center" dataselectid="ps3"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox text-center" dataselectid="ps4"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox text-center" dataselectid="ps5"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox text-center" dataselectid="ps6"></div>
+                        </td>
+                        <td>
+                            <div class="hoverselectclass tablebox bluebox text-center" dataselectid="ps7"></div>
+                        </td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        GetWeekHeaders(0);
+
+        //prevent to scroll to top
+        $(`a[href="#"]`).click(function (e) {
+            e.preventDefault();
+        });
+        //prevent to scroll to top
+
+        //on checkbox select change
+        $(`input[name="selectallcheckbox"]`).on("change", function () {
+
+            if ($(this).is(":checked")) {
+
+                $(this).parent().parent().parent().children("td").children().not("label").addClass("selectclass");
+                $(this).parent().parent().parent().children("td").children().not("label").addClass("disableselectclass");
+                $(".Postfilterhideshow").removeClass("d-none");
+
+
+            }
+            else {
+                $(this).parent().parent().parent().children("td").children().not("label").removeClass("selectclass");
+                $(this).parent().parent().parent().children("td").children().not("label").removeClass("disableselectclass");
+                $(".Postfilterhideshow").addClass("d-none");
+            }
+            $(".selectclass").map(function () {
+                //console.log($(this).attr("dataselectid"));
+                if (($(this).attr("dataselectid") != undefined) && ($(this).attr("dataselectid") != null) && ($(this).attr("dataselectid") != "")) {
+                    if (isMonth == 1) {
+                        classgrt.push($(this).attr("dataselectid"));
+                    }
+                    else {
+                        classgrtw.push($(this).attr("dataselectid"));
+                    }
+                }
+            });
+
+            if ($(this).parent().parent().parent().children("td").children().hasClass("redboxcolor")) {
+                //select2-results__option
+                //var last = $("#select2-postcalendertype-results .select2-results__option[aria-selected=false]:last-child");
+                // $("#select2-postcalendertype-results .select2-results__option:last-child").css("display", "block !imortant");
+                //$("#select2-postcalendertype-results .select2-results__option:last-child").addClass("mydisplay");
+                $("#selRetrive").show();
+                $(".selPost").hide();
+            }
+            else {
+                //$("#select2-postcalendertype-results .select2-results__option:last-child").css("display", "none");
+                $("#selRetrive").hide();
+                $(".selPost").show();
+            }
+        });
+        //on checkbox select change
+
+        //table custom accordian
+        $(".clickablerow").click(function () {
+            $(this).parent().next().toggleClass("show");
+
+            if ($(this).parent().next().hasClass("show")) {
+                $(this).attr("aria-expanded", "true");
+            }
+            else {
+                $(this).attr("aria-expanded", "false");
+            }
+            $(".clickablerow").not(this).attr("aria-expanded", "false");
+            $(".clickablerow").not(this).parent().next().removeClass("show");
+        });
+        //table custom accordian
+
+
+
+        //add array on each of data select from calender
+        $(".hoverselectclass").on("click", function () {
+            $(this).toggleClass("selectclass");
+            // If the id is not already in the array, add it. If it is, remove it
+
+            classgrt.indexOf(this.getAttribute("dataselectid")) === -1 ? classgrt.push(this.getAttribute("dataselectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("dataselectid")), 1);
+
+            console.log(classgrt.join(","));
+
+            if (classgrt.join(",") === "") {
+                $(".Postfilterhideshow").addClass("d-none");
+            }
+            else {
+                //if (screen.availWidth <= 767) {
+                //    setTimeout(function () {
+                //        $("html, body").animate({
+                //            scrollTop: $(".Postfilterhideshow").offset().top - 100
+                //        }, 2000);
+                //    }, 2000);
+                //}
+                $(".Postfilterhideshow").removeClass("d-none");
+            }
+            // populate the input with the array items separated with a comma
+        });
+        //add array on each of data select from calender
+
+        //post month view display call
+        $("#postmonthviewclick").click(function () {
+            partialviewPostgetMonthviewdata();
+        });
+        //post month view display call
+    });
+
+    //ajax call for post monthview data
+    function partialviewPostgetMonthviewdata() {
+        $.ajax({
+            type: "Get",
+            url: "PostCalenderMonthView.html",
+            success: function (data) {
+                console.log(data);
+                $("#partialcalenderview").html("");
+                $("#partialcalenderview").html(data);
+                $(".Postfilterhideshow").addClass("d-none");
+            }
+        });
+    }
+    //ajax call for post monthview data
+
+
+
+    //function for dynamic set calender header data on right calender
+    function GetWeekHeaders(IsMonthSet) {
+        var thHTML = "";
+        var thStartHTML = `<th class="">Post Type / Days</th>`;
+        var thEndHTML = "<th>Total</th>";
+        var selectedMonth;
+        if (IsMonthSet == 0) {
+            var today = new Date();
+
+            var firstDay = new Date(startOfWeek(today));
+            var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate() + 6);
+            var lastDate = moment(lastDay);
+            var getdateres = moment(new Date()).format("DD");
+
+            //console.log(lastDate.format("DD"));
+            var dataHTML = "";
+            var calDate = moment(new Date(firstDay));//moment(new Date(firstDay.getFullYear(), firstDay.getMonth(), i));
+            for (var i = 1; i <= 7; i++) {
+
+                // var calDate = moment(new Date(firstDay.getFullYear(), firstDay.getMonth(), i));
+                var todayDay = calDate.format("ddd");
+                var weekNumber = getWeekOfMonth(calDate.toDate());
+                var todayDaydate = calDate.format("DD");
+                var th = "";
+                if (todayDay == 'Fri' || todayDay == 'Sat') {
+                    th = `<th id="data-day_${i}" class="greytablebg"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                }
+                else if (todayDaydate === getdateres) {
+                    th = `<th id="data-day_${i}" class="hightlightedtable"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                }
+                else {
+                    th = `<th id="data-day_${i}"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                }
+                dataHTML = dataHTML + th;
+                calDate = calDate.add(1, "Days");
+            }
+            thHTML = thStartHTML + dataHTML + thEndHTML;
+
+            selectedMonth = today.getMonth();
+
+            $("#rosterViewTH").html("");
+            $("#rosterViewTH").html(thHTML);
+        }
+        else {
+
+            var strcalDate = weekCalendarSettings.date;
+            var today = new Date(startOfWeek(strcalDate.toDate()));
+            var firstDay = new Date(weekCalendarSettings.date.toDate());
+            var lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, firstDay.getDate() + 7);
+            var lastDate = moment(lastDay);
+            var dataHTML = "";
+            var calDate = moment(new Date(firstDay));
+            for (var i = 1; i <= 7; i++) {
+
+                var todayDay = calDate.format("ddd");
+                var weekNumber = getWeekOfMonth(calDate.toDate());
+                var th = "";
+                if (todayDay == 'Fri' || todayDay == 'Sat') {
+                    th = `<th id="data-day_${i}" class="greytablebg"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                }
+                else {
+                    th = `<th id="data-day_${i}"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+                }
+                dataHTML = dataHTML + th;
+
+                calDate = calDate.add(1, "Days");
+            }
+            thHTML = thStartHTML + dataHTML + thEndHTML;
+            selectedMonth = today.getMonth();
+            console.log(dataHTML);
+            $("#rosterViewTH").html("");
+            $("#rosterViewTH").html(thHTML);
+
+        }
+        var month = moment(new Date()).format("MM");
+        var month1 = weekCalendarSettings.date.format("MM");
+        if (month == month1) { GetTodaySelectedDate(); }
+
+    }
+    //function for dynamic set calender header data on right calender
+
+
+    //function for start week of month
+    function startOfWeek(date) {
+        var diff = date.getDate() - date.getDay() + (date.getDay() === 0 ? -6 : 0);
+
+        return new Date(date.setDate(diff));
+
+    }
+    //function for start week of month
+
+
+    //function for get week of month
+    function getWeekOfMonth(date) {
+        let adjustedDate = date.getDate() + date.getDay();
+        let prefixes = ["0", "1", "2", "3", "4", "5"];
+        return (parseInt(prefixes[0 | adjustedDate / 7]) + 1);
+    }
+    //function for get week of month
+
+
+
+    //function for get selected date
+    function GetTodaySelectedDate() {
+        var tdate = weekCalendarSettings.today.format("DD");
+        //$("#calenderviewtable th").removeClass("hightlightedtable");
+        $("#data-day_" + tdate).addClass("hightlightedtable");
+    }
+    //function for get selected date
+
+    //on next month title display on arrow click
+    function rosterweekincrement() {
+        weekCalendarSettings.date.add(1, "Weeks").subtract(6, "days");
+        GetWeekHeaders(1);
+        displayWeekCalendar(weekCalendarSettings);
+    }
+    //on next month title display on arrow click
+
+    //on previous month title display on arrow click
+    function rosterweekdecrement() {
+        weekCalendarSettings.date.subtract(1, "Weeks").subtract(7, "days");
+        GetWeekHeaders(1);
+        displayWeekCalendar(weekCalendarSettings);
+    }
+    //on previous month title display on arrow click
+
+    //display title of calender ex: Month of Jul 1 - 31, 2020
+
+    window.weekCalendarSettings = {
+        date: moment().startOf("isoweek"),
+        today: moment()
+    }
+
+    function displayWeekCalendar(weekCalendarSettings) {
+        if (!page) {
+            page = cur_page.page.page;
+        }
+        let element = get_wrapper_element();
+        const weekcalendar = $(element).find('.calenderweektitlechange')[0];
+        /*const weekcalendar = document.querySelector(".calenderweektitlechange")*/
+        const startcalendarmonth = weekCalendarSettings.date.startOf("week").format("MMM");
+        const endcalendarmonth = weekCalendarSettings.date.endOf("week").format("MMM");
+        const calendaryear = weekCalendarSettings.date.format("YYYY");
+        const startofday = weekCalendarSettings.date.startOf("week").date();
+        const endofday = weekCalendarSettings.date.endOf("week").date();
+        console.log(startofday);
+        console.log(endofday);
+        weekcalendar.innerHTML = ""
+        weekcalendar.innerHTML = "Month of <span> " + startcalendarmonth + "</span> <span> " + startofday + "</span> - <span> " + endcalendarmonth + " </span> <span> " + endofday + "</span>, " + calendaryear + "";
+
+    }
+    displayWeekCalendar(weekCalendarSettings);
+      //display title of calender ex: Month of Jul 1 - 31, 2020
+
+</script>

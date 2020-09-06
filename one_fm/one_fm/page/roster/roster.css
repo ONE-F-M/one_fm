@@ -1,0 +1,62 @@
+@import url("css/all.min.css");
+/* @import url("css/jquery-ui.min.css"); */
+@import url("css/jquery.dataTables.min.css");
+/* @import url("css/datepicker.min.css"); */
+@import url("css/select2.min.css");
+@import url("css/site.css");
+@import url("css/responsivedatatable.css");
+@import url("css/main.css");
+@import url("css/material_blue.css");
+
+body[data-route="roster"] .page-container {
+  margin-top: 0px;
+}
+
+body[data-route="roster"] .collapse {
+  visibility: visible;
+}
+body[data-route="roster"] table {
+  margin: 0px;
+}
+
+body[data-route="roster"] .flatpickr-calendar {
+  width: inherit;
+}
+
+body[data-route="roster"] .postname {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body[data-route="roster"] .simplecheckbox .tooltiptext {
+  visibility: hidden;
+  width: 300px;
+  background-color: #c7c7c7;
+  color: #444;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -90px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+body[data-route="roster"] .simplecheckbox .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -60px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #c7c7c7 transparent transparent transparent;
+}
+
+body[data-route="roster"] .simplecheckbox:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
