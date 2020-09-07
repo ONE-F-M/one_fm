@@ -84,8 +84,7 @@
   "column_break_93",
   "total_no_of_basement",
   "total_no_of_shop",
-  "total_space",
-  "amended_from"
+  "total_space"
  ],
  "fields": [
   {
@@ -437,15 +436,6 @@
    "label": "Total Space in m2"
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Accommodation",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "total_no_of_floor",
    "fieldtype": "Int",
    "label": "Total No of Floor"
@@ -458,7 +448,8 @@
   {
    "fieldname": "total_no_of_bed_space",
    "fieldtype": "Int",
-   "label": "Total No of Bed Space"
+   "label": "Total No of Bed Space",
+   "read_only": 1
   },
   {
    "fieldname": "owner_contact_html",
@@ -545,7 +536,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-05 15:16:08.727027",
+ "modified": "2020-09-06 15:42:06.737783",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",

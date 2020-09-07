@@ -5,10 +5,20 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
+from frappe import _
 
 class AccommodationUnit(Document):
 	def validate(self):
 		self.set_title()
+
+	def before_insert(self):
+		self.validate_no_of_accommodation_unit()
+
+	def validate_no_of_accommodation_unit(self):
+		allowed_no_of_unit = frappe.db.get_value('Accommodation', self.accommodation, 'total_no_of_accommodation_unit')
+		if frappe.db.count('Accommodation Unit', {'accommodation': self.accommodation}) >= allowed_no_of_unit:
+			frappe.throw(_("Only {0} Accommodation Unit is allowed in Accommodation {1}"
+				.format(allowed_no_of_unit, self.accommodation_name)))
 
 	def set_title(self):
 		self.title = '-'.join([self.accommodation_name, self.type, 'Floor'+self.floor])

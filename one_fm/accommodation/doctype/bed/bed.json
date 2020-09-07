@@ -112,8 +112,10 @@
    "fetch_if_empty": 1,
    "fieldname": "bed_space_type",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Bed Space Type",
-   "options": "Bed Space Type"
+   "options": "Bed Space Type",
+   "read_only": 1
   },
   {
    "fieldname": "bed_type",
@@ -242,7 +244,8 @@
    "fieldname": "bed_code",
    "fieldtype": "Data",
    "hidden": 1,
-   "label": "Bed Code"
+   "label": "Bed Code",
+   "no_copy": 1
   },
   {
    "fieldname": "title",
@@ -275,7 +278,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-05 15:17:59.905677",
+ "modified": "2020-09-07 06:59:07.676317",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
