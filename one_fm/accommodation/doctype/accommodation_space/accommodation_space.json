@@ -65,7 +65,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Accommodation Space Type",
-   "options": "Accommodation Space Type"
+   "options": "Accommodation Space Type",
+   "reqd": 1
   },
   {
    "fieldname": "measurements_section",
@@ -179,6 +180,7 @@
    "fieldname": "accommodation_space_code",
    "fieldtype": "Data",
    "label": "Accommodation Space Code",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -211,7 +213,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-05 12:28:20.168673",
+ "modified": "2020-09-07 06:46:54.039221",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",

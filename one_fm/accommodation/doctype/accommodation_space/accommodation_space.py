@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
+from frappe import _
 
 class AccommodationSpace(Document):
 	def validate(self):
@@ -13,6 +14,21 @@ class AccommodationSpace(Document):
 	def set_title(self):
 		self.title = '-'.join([self.accommodation_name, self.type,
 			'Floor'+self.floor, self.accommodation_space_type, self.accommodation_space_code])
+
+	def before_insert(self):
+		self.validate_no_of_accommodation_space()
+
+	def validate_no_of_accommodation_space(self):
+		allowed_no = frappe.db.get_value('Accommodation Unit Space Type', {'parent': self.accommodation_unit,
+			'space_type': self.accommodation_space_type}, 'total_number')
+		if not allowed_no:
+			frappe.throw(_("No {0} is Configured in Accommodation Unit {1}"
+				.format(self.accommodation_space_type, self.accommodation_unit)))
+		elif frappe.db.count('Accommodation Space',
+			{'accommodation_unit': self.accommodation_unit,
+				'accommodation_space_type': self.accommodation_space_type}) >= allowed_no:
+			frappe.throw(_("Only {0} {1} is allowed in Accommodation Unit {2}"
+				.format(allowed_no, self.accommodation_space_type, self.accommodation_unit)))
 
 	def autoname(self):
 		self.set_accommodation_space_code()

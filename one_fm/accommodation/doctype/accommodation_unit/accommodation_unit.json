@@ -15,8 +15,8 @@
   "accommodation_unit_id",
   "paci",
   "description_section",
-  "flat_space_details",
-  "total_flat_space"
+  "space_details",
+  "total_space"
  ],
  "fields": [
   {
@@ -32,7 +32,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Floor",
-   "options": "\nB\n0\n1\n2"
+   "options": "\n0\n1\n2",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_3",
@@ -50,21 +51,12 @@
    "label": "Description"
   },
   {
-   "fieldname": "flat_space_details",
-   "fieldtype": "Table",
-   "options": "Accommodation Unit Space Type"
-  },
-  {
-   "fieldname": "total_flat_space",
-   "fieldtype": "Float",
-   "label": "Total Flat Space in m2"
-  },
-  {
    "fieldname": "type",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Type",
-   "options": "Accommodation Type"
+   "options": "Accommodation Type",
+   "reqd": 1
   },
   {
    "fieldname": "accommodation_unit_id",
@@ -76,6 +68,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Accommodation Unit Code",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -91,10 +84,20 @@
    "fieldtype": "Data",
    "label": "Accommodation Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "space_details",
+   "fieldtype": "Table",
+   "options": "Accommodation Unit Space Type"
+  },
+  {
+   "fieldname": "total_space",
+   "fieldtype": "Float",
+   "label": "Total Flat Space in m2"
   }
  ],
  "links": [],
- "modified": "2020-09-05 13:22:37.526276",
+ "modified": "2020-09-07 06:59:22.441914",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Unit",
