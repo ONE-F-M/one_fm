@@ -269,7 +269,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "accommodation.governate",
+   "fetch_from": "accommodation.accommodation_governorate",
    "fieldname": "governorate",
    "fieldtype": "Link",
    "label": "Governorate",
@@ -278,7 +278,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-07 06:59:07.676317",
+ "modified": "2020-09-07 07:07:12.053474",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
