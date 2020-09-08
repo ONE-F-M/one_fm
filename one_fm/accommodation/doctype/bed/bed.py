@@ -20,7 +20,7 @@ class Bed(Document):
 		self.validate_no_of_bed()
 
 	def validate_no_of_bed(self):
-		allowed_no = frappe.db.get_value('Accommodation Space', self.accommodation_space, 'single_bed_capacity')
+		allowed_no = frappe.db.get_value('Bed Space Type', self.bed_space_type, 'single_bed_capacity')
 		if not allowed_no:
 			frappe.throw(_("No Bed Space is Configured in Accommodation Space {0}"
 				.format(self.accommodation_space)))
