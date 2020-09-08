@@ -16,6 +16,15 @@
   "owner_details_section",
   "owner_contact",
   "owner_contact_html",
+  "owner_first_name",
+  "owner_middle_name",
+  "owner_last_name",
+  "owner_contact_1",
+  "owner_contact_2",
+  "owner_email_id",
+  "owner_civil_id",
+  "owner_civil_id_attach",
+  "ownership_document",
   "column_break_18",
   "governorate",
   "area",
@@ -29,12 +38,26 @@
   "section_break_16",
   "legal_representative_contact",
   "legal_representative_contact_html",
+  "representative_name",
+  "representative_phone",
+  "representative_fax",
+  "representative_email",
+  "representative_civil_id",
   "representative_position",
   "column_break_25",
+  "representative_civil_id_attach",
+  "representative_authorized_signature",
   "legal_authorization_section",
   "is_legal_authorization_available",
   "legal_authorization_contact",
   "legal_authorization_contact_html",
+  "authorization_first_name",
+  "authorization_middle_name",
+  "authorization_last_name",
+  "authorization_contact_1",
+  "authorization_contact_2",
+  "authorization_email_id",
+  "authorization_civil_id",
   "authorized_person_civil_id",
   "authorization_document",
   "authorization_other_document",
@@ -49,26 +72,28 @@
   "primary_point_of_contact",
   "other_primary_point_of_contact",
   "other_primary_point_of_contact_html",
+  "point_of_contact_first_name",
+  "point_of_contact_middle_name",
+  "point_of_contact_last_name",
   "column_break_56",
+  "point_of_contact_contact_1",
+  "point_of_contact_contact_2",
+  "point_of_contact_email_id",
+  "point_of_contact_civl_id",
   "documents_section",
-  "ownership_document",
   "contract_document",
-  "other_document",
   "column_break_30",
-  "representative_civil_id_pdf",
-  "representative_authorized_signature",
-  "owner_civil_id_pdf",
+  "other_document",
   "accommodation_address_section",
   "accommodation_country",
   "accommodation_governorate",
   "accommodation_area",
   "accommodation_block",
-  "column_break_76",
   "accommodation_street",
   "accommodation_avenue",
   "accommodation_building_number",
   "accommodation_paci_number",
-  "accommodation_location_section",
+  "column_break_76",
   "accommodation_location",
   "accommodation_geolocation",
   "contract_details_section",
@@ -274,7 +299,7 @@
   {
    "fieldname": "documents_section",
    "fieldtype": "Section Break",
-   "label": "Documents"
+   "label": "Contractual Documents"
   },
   {
    "fieldname": "ownership_document",
@@ -297,21 +322,9 @@
   },
   {
    "depends_on": "eval: doc.owner_type == 'Company'",
-   "fieldname": "representative_civil_id_pdf",
-   "fieldtype": "Attach",
-   "label": "Representative CIVIL ID"
-  },
-  {
-   "depends_on": "eval: doc.owner_type == 'Company'",
    "fieldname": "representative_authorized_signature",
    "fieldtype": "Attach",
-   "label": "Representative Authorized Signature "
-  },
-  {
-   "depends_on": "eval: doc.owner_type == 'Personal'",
-   "fieldname": "owner_civil_id_pdf",
-   "fieldtype": "Attach",
-   "label": "Owner CIVIL ID"
+   "label": "Authorized Signatory Document "
   },
   {
    "collapsible": 1,
@@ -363,14 +376,9 @@
    "label": "PACI Number"
   },
   {
-   "collapsible": 1,
-   "fieldname": "accommodation_location_section",
-   "fieldtype": "Section Break",
-   "label": "Accommodation Location"
-  },
-  {
    "fieldname": "accommodation_location",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Location",
    "options": "Location"
   },
@@ -456,6 +464,7 @@
   {
    "fieldname": "owner_contact_html",
    "fieldtype": "HTML",
+   "hidden": 1,
    "label": "Owner Contact Html"
   },
   {
@@ -469,6 +478,7 @@
   {
    "fieldname": "legal_representative_contact_html",
    "fieldtype": "HTML",
+   "hidden": 1,
    "label": "Legal Representative Contact Html"
   },
   {
@@ -492,6 +502,7 @@
    "depends_on": "eval:doc.primary_point_of_contact=='Other'",
    "fieldname": "other_primary_point_of_contact_html",
    "fieldtype": "HTML",
+   "hidden": 1,
    "label": "Other Primary Point of Contact Html"
   },
   {
@@ -511,6 +522,7 @@
    "depends_on": "is_legal_authorization_available",
    "fieldname": "legal_authorization_contact_html",
    "fieldtype": "HTML",
+   "hidden": 1,
    "label": "Legal Authorization Contact Html"
   },
   {
@@ -525,6 +537,7 @@
    "options": "Governorate"
   },
   {
+   "depends_on": "is_legal_authorization_available",
    "fieldname": "authorization_governorate",
    "fieldtype": "Link",
    "label": "Governorate",
@@ -543,10 +556,175 @@
    "in_list_view": 1,
    "label": "Code",
    "read_only": 1
+  },
+  {
+   "fieldname": "owner_first_name",
+   "fieldtype": "Data",
+   "label": "First Name"
+  },
+  {
+   "fieldname": "owner_middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name"
+  },
+  {
+   "fieldname": "owner_last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "owner_contact_1",
+   "fieldtype": "Data",
+   "label": "Contact 1"
+  },
+  {
+   "fieldname": "owner_contact_2",
+   "fieldtype": "Data",
+   "label": "Contact 2"
+  },
+  {
+   "fieldname": "owner_email_id",
+   "fieldtype": "Data",
+   "label": "Email ID",
+   "options": "Email"
+  },
+  {
+   "fieldname": "owner_civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Personal'",
+   "fieldname": "owner_civil_id_attach",
+   "fieldtype": "Attach",
+   "label": "CIVIL ID"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_first_name",
+   "fieldtype": "Data",
+   "label": "First Name"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_contact_1",
+   "fieldtype": "Data",
+   "label": "Contact 1"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_contact_2",
+   "fieldtype": "Data",
+   "label": "Contact 2"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_email_id",
+   "fieldtype": "Data",
+   "label": "Email ID",
+   "options": "Email"
+  },
+  {
+   "depends_on": "is_legal_authorization_available",
+   "fieldname": "authorization_civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "depends_on": "eval:doc.owner_type == 'Company'",
+   "fieldname": "representative_phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "depends_on": "eval:doc.owner_type == 'Company'",
+   "fieldname": "representative_fax",
+   "fieldtype": "Data",
+   "label": "Fax"
+  },
+  {
+   "depends_on": "eval:doc.owner_type == 'Company'",
+   "fieldname": "representative_email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "depends_on": "eval:doc.owner_type == 'Company'",
+   "fieldname": "representative_civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "depends_on": "eval:doc.owner_type == 'Company'",
+   "fieldname": "representative_name",
+   "fieldtype": "Data",
+   "label": "Name"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Company'",
+   "fieldname": "representative_civil_id_attach",
+   "fieldtype": "Attach",
+   "label": "CIVIL ID"
+  },
+  {
+   "depends_on": "eval:doc.primary_point_of_contact=='Other'",
+   "fieldname": "point_of_contact_first_name",
+   "fieldtype": "Data",
+   "label": "First Name"
+  },
+  {
+   "depends_on": "eval:doc.primary_point_of_contact=='Other'",
+   "fieldname": "point_of_contact_middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name"
+  },
+  {
+   "depends_on": "eval:doc.primary_point_of_contact=='Other'",
+   "fieldname": "point_of_contact_last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "depends_on": "eval:doc.primary_point_of_contact=='Other'",
+   "fieldname": "point_of_contact_contact_1",
+   "fieldtype": "Data",
+   "label": "Contact 1"
+  },
+  {
+   "depends_on": "eval:doc.primary_point_of_contact=='Other'",
+   "fieldname": "point_of_contact_contact_2",
+   "fieldtype": "Data",
+   "label": "Contact 2"
+  },
+  {
+   "depends_on": "eval:doc.primary_point_of_contact=='Other'",
+   "fieldname": "point_of_contact_email_id",
+   "fieldtype": "Data",
+   "label": "Email ID",
+   "options": "Email"
+  },
+  {
+   "depends_on": "eval:doc.primary_point_of_contact=='Other'",
+   "fieldname": "point_of_contact_civl_id",
+   "fieldtype": "Data",
+   "label": "CIVL ID"
   }
  ],
  "links": [],
- "modified": "2020-09-07 09:42:53.049236",
+ "modified": "2020-09-08 10:48:18.836522",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",
