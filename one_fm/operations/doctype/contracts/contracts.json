@@ -1,4 +1,5 @@
 {
+ "autoname": "format:{client}-{project}-{start_date}",
  "creation": "2020-04-28 11:07:30.373279",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -13,20 +14,16 @@
   "address_display",
   "renewal_count",
   "section_break_8",
-  "finance_poc_name",
-  "finance_poc_number",
-  "column_break_11",
-  "legal_poc_name",
-  "legal_poc_number",
-  "column_break_13",
-  "operation_poc_name",
-  "operation_poc_number",
+  "contact_html",
+  "poc",
   "section_break_15",
   "signature",
   "column_break_20",
   "paci",
   "column_break_21",
   "commercial_license",
+  "column_break_24",
+  "contract",
   "section_break_20",
   "start_date",
   "end_date",
@@ -39,7 +36,6 @@
   "public_holiday_rate",
   "column_break_33",
   "is_flat_rate",
-  "public_holiday_rate_for_flat",
   "section_break_35",
   "items",
   "section_break_28",
@@ -56,7 +52,6 @@
   "bank_account",
   "bank_name",
   "iban",
-  "iban_certificate",
   "column_break_43",
   "mode_of_payment",
   "section_break_4",
@@ -115,37 +110,7 @@
    "collapsible": 1,
    "fieldname": "section_break_8",
    "fieldtype": "Section Break",
-   "label": "POC"
-  },
-  {
-   "fieldname": "finance_poc_name",
-   "fieldtype": "Data",
-   "label": "Finance POC Name"
-  },
-  {
-   "fieldname": "finance_poc_number",
-   "fieldtype": "Data",
-   "label": "Finance POC Number"
-  },
-  {
-   "fieldname": "legal_poc_name",
-   "fieldtype": "Data",
-   "label": "Legal POC Name"
-  },
-  {
-   "fieldname": "legal_poc_number",
-   "fieldtype": "Data",
-   "label": "Legal POC Number"
-  },
-  {
-   "fieldname": "operation_poc_name",
-   "fieldtype": "Data",
-   "label": "Operation POC Name"
-  },
-  {
-   "fieldname": "operation_poc_number",
-   "fieldtype": "Data",
-   "label": "Operation POC Number"
+   "label": "POC List"
   },
   {
    "collapsible": 1,
@@ -221,6 +186,7 @@
    "label": "Contract Assets"
   },
   {
+   "depends_on": "eval:doc.freequency == 'Monthly'",
    "fieldname": "assets",
    "fieldtype": "Table",
    "label": "Assets",
@@ -269,12 +235,8 @@
   {
    "fieldname": "bank_name",
    "fieldtype": "Data",
-   "label": "Customer Bank Name"
-  },
-  {
-   "fieldname": "iban_certificate",
-   "fieldtype": "Attach",
-   "label": "IBAN Certificate"
+   "label": "Customer Bank Name",
+   "read_only": 1
   },
   {
    "fieldname": "mode_of_payment",
@@ -287,10 +249,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_13",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "column_break_20",
    "fieldtype": "Column Break"
   },
@@ -300,10 +258,6 @@
   },
   {
    "fieldname": "column_break_43",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_11",
    "fieldtype": "Column Break"
   },
   {
@@ -368,13 +322,6 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "depends_on": "eval:doc.is_flat_rate == 1",
-   "fieldname": "public_holiday_rate_for_flat",
-   "fieldtype": "Float",
-   "label": "Public Holiday Rate"
-  },
-  {
    "fieldname": "bank_account",
    "fieldtype": "Link",
    "label": "Bank Account",
@@ -383,11 +330,32 @@
   {
    "fieldname": "iban",
    "fieldtype": "Data",
-   "label": "IBAN"
+   "label": "IBAN",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_24",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contract",
+   "fieldtype": "Attach",
+   "label": "Contract"
+  },
+  {
+   "fieldname": "contact_html",
+   "fieldtype": "HTML",
+   "label": "Contact Html"
+  },
+  {
+   "fieldname": "poc",
+   "fieldtype": "Table",
+   "label": "POC",
+   "options": "POC"
   }
  ],
- "modified": "2020-08-27 13:57:38.980941",
- "modified_by": "Administrator",
+ "modified": "2020-09-08 09:38:36.749171",
+ "modified_by": "a.yayalil@armor-services.com",
  "module": "Operations",
  "name": "Contracts",
  "owner": "Administrator",
@@ -406,6 +374,7 @@
   }
  ],
  "quick_entry": 1,
+ "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "client",

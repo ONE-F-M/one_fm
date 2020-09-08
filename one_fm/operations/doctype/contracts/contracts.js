@@ -11,7 +11,7 @@ frappe.ui.form.on('Contracts', {
 					title: __("Online Portal Credentials"),
 					fields: [
 						{"fieldname":"url", "fieldtype":"Data", "label":__("URL"),
-							reqd: 1},
+							"default" : "https://",reqd: 1},
 						{"fieldname":"user_name", "fieldtype":"Data", "label":__("User Name"),
 							reqd: 1},
 						{"fieldname":"password", "fieldtype":"Password", "label":__("Password"),
@@ -27,7 +27,7 @@ frappe.ui.form.on('Contracts', {
 				d.show()
 			}
 			else{
-				msgprint('Password Managemet is already exist for this contract');
+				msgprint('Password Management is already exist for this contract');
 			}
 		}
 	},
@@ -59,6 +59,24 @@ frappe.ui.form.on('Contracts', {
 					}
 				};
 			});
+			frm.set_query("customer_address", function() {
+				return {
+					"filters": {
+						"link_doctype": 'Customer',
+						"link_name": client
+					}
+				};
+			});
+			frm.refresh_field("customer_address");
+			frm.set_query("bank_account", function() {
+				return {
+					"filters": {
+						"party_type": 'Customer',
+						"party": client
+					}
+				};
+			});
+			frm.refresh_field("bank_account");
 		}
 		else{
 			frm.set_query("project", function() {
@@ -87,8 +105,79 @@ frappe.ui.form.on('Contracts', {
 		if(frm.doc.customer_address){
 			erpnext.utils.get_address_display(frm, 'customer_address', 'address_display')
 		}
+	},
+	bank_account:function(frm){
+		if(frm.doc.bank_account){
+			frappe.call({
+				method: 'frappe.client.get_value',
+				args:{
+					'doctype':'Bank Account',
+					'filters':{
+						'name': frm.doc.bank_account
+					},
+					'fieldname':[
+						'bank',
+						'iban'
+					]
+				},
+				callback:function(s){
+					if (!s.exc) {
+						frm.set_value("bank_name",s.message.bank);
+						frm.set_value("iban",s.message.iban);
+						frm.refresh_field("bank_name");
+						frm.refresh_field("iban");
+					}
+				}
+			});
+		}
 	}
 });
+
+frappe.ui.form.on('POC', {
+	form_render: function(frm, cdt, cdn) {
+		let doc = locals[cdt][cdn];
+		if(doc.poc !== undefined){
+			get_contact(doc);
+		}
+	},
+	poc: function(frm, cdt, cdn){
+		let doc = locals[cdt][cdn];
+		if(doc.poc !== undefined){
+			get_contact(doc);
+		}
+	}
+});
+
+function get_contact(doc){
+	let operations_site_poc = doc.poc;
+	frappe.call({
+		method: 'frappe.client.get',
+		args: {
+			doctype: 'Contact',
+			name: operations_site_poc
+		},
+		callback: function(r) {
+			if(!r.exc) {
+				set_contact(r.message);
+			}
+		}
+	});
+}
+
+function set_contact(doc){
+	let {email_ids, phone_nos} = doc;
+	console.log(email_ids, phone_nos);
+	let contact_details = ``;
+	for(let i=0; i<email_ids.length;i++){
+		contact_details += `<p>Email: ${email_ids[i].email_id}</p>\n`;
+	}
+
+	for(let j=0; j<phone_nos.length;j++){
+		contact_details += `<p>Phone: ${phone_nos[j].phone}</p>\n`;
+	}
+	console.log(contact_details);
+	$('div[data-fieldname="contact_html"]').empty().append(`<div class="address-box">${contact_details}</div>`);
+}
 
 frappe.ui.form.on('Contract Addendum', {
 	end_date: function(frm, cdt, cdn) {
