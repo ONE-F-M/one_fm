@@ -10,10 +10,23 @@ from frappe import _
 class AccommodationSpace(Document):
 	def validate(self):
 		self.set_title()
+		self.update_bed_status()
+
+	def update_bed_status(self):
+		if self.bed_space_available and self.beds:
+			for bed in self.beds:
+				frappe.db.set_value('Bed', bed.bed, 'disabled', bed.disabled)
+
+	def on_update(self):
+		self.create_beds_in_space()
+
+	def after_insert(self):
+		self.set("beds", [])
+		self.create_beds_in_space()
 
 	def set_title(self):
 		self.title = '-'.join([self.accommodation_name, self.type,
-			'Floor'+self.floor, self.accommodation_space_type, self.accommodation_space_code])
+			self.floor_name+' Floor', self.accommodation_space_type, self.accommodation_space_code])
 
 	def before_insert(self):
 		self.validate_no_of_accommodation_space()
@@ -38,6 +51,17 @@ class AccommodationSpace(Document):
 		if not self.accommodation_space_code:
 			self.accommodation_space_code = self.accommodation_unit_code+get_latest_accommodation_space_code(self)
 
+	def create_beds_in_space(self):
+		if self.bed_space_available and self.bed_space_type and self.single_bed_capacity:
+			beds_to_create = self.single_bed_capacity - (len(self.beds) if self.beds else 0)
+			if beds_to_create > 0:
+				for x in range(beds_to_create):
+					bed = frappe.new_doc('Bed')
+					bed.accommodation_space = self.name
+					bed.save(ignore_permissions=True)
+					bed_in_space = self.append('beds')
+					bed_in_space.bed = bed.name
+
 def get_latest_accommodation_space_code(doc):
 	query = """
 		select
@@ -52,3 +76,21 @@ def get_latest_accommodation_space_code(doc):
 	accommodation_space_code = frappe.db.sql(query.format(doc.accommodation, doc.accommodation_unit))
 	new_accommodation_space_code = accommodation_space_code[0][0] if accommodation_space_code else 1
 	return str(int(new_accommodation_space_code))[-1]
+
+def filter_floor(doctype, txt, searchfield, start, page_len, filters):
+	query = """
+		select
+			floor_name
+		from
+			`tabAccommodation Unit`
+		where
+			accommodation = %(accommodation)s and floor_name like %(txt)s
+			limit %(start)s, %(page_len)s"""
+	return frappe.db.sql(query,
+		{
+			'accommodation': filters.get("accommodation"),
+			'start': start,
+			'page_len': page_len,
+			'txt': "%%%s%%" % txt
+		}
+	)

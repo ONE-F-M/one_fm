@@ -13,8 +13,67 @@ frappe.ui.form.on('Accommodation Space', {
 	},
 	height: function(frm) {
 		calculate_area_and_volume(frm);
+	},
+	refresh: function(frm){
+		set_filters(frm);
+	},
+	accommodation_unit: function(frm) {
+		set_space_type_filter(frm);
 	}
 });
+
+var set_space_type_filter = function(frm) {
+	if(frm.doc.accommodation_unit){
+		frappe.call({
+			method: 'frappe.client.get',
+			args: {
+				doctype: 'Accommodation Unit',
+				filters: {name: frm.doc.accommodation_unit}
+			},
+			callback: function(r){
+				var space_types = [];
+				if(r && r.message && r.message.space_details){
+					r.message.space_details.forEach((item, i) => {
+						space_types[i] = item.space_type;
+					});
+				}
+				frm.set_query('accommodation_space_type', function () {
+					return {
+						filters: {
+							'name': ['in', space_types]
+						}
+					};
+				});
+			}
+		});
+	}
+	else{
+		frm.set_query('accommodation_space_type', function () {
+			return {
+				filters: {
+					'name': ['in', []]
+				}
+			};
+		});
+	}
+};
+
+var set_filters = function(frm) {
+	frm.set_query('accommodation_unit', function () {
+		return {
+			filters: {
+				'accommodation': frm.doc.accommodation,
+				'floor_name': frm.doc.floor_name
+			}
+		};
+	});
+	frm.set_query("floor_name", function() {
+		return {
+			query: "one_fm.accommodation.doctype.accommodation_space.accommodation_space.filter_floor",
+			filters: {'accommodation': frm.doc.accommodation}
+		}
+	});
+};
 
 var calculate_area_and_volume = function(frm) {
 	let area = 0;

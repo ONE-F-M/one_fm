@@ -9,23 +9,27 @@ def get_data():
 				{
 					"type": "doctype",
 					"name": "Accommodation",
-					"onboard": 1,
+					"label": _("Accommodation List"),
+					"onboard": 1
 				},
 				{
 					"type": "doctype",
 					"name": "Accommodation Unit",
-					"onboard": 1,
+					"label": _("Units List"),
+					"onboard": 1
 				},
 				{
 					"type": "doctype",
 					"name": "Accommodation Space",
-					"onboard": 1,
+					"label": _("Spces List"),
+					"onboard": 1
 				},
 				{
 					"type": "doctype",
 					"name": "Bed",
-					"onboard": 1,
-				},
+					"label": _("Beds List"),
+					"onboard": 1
+				}
 			]
 		},
 		{

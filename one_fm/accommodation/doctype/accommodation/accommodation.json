@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "accommodation_code",
   "accommodation",
   "column_break_4",
   "type",
@@ -358,6 +359,7 @@
   {
    "fieldname": "accommodation_paci_number",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "PACI Number"
   },
   {
@@ -533,10 +535,18 @@
    "fieldtype": "Link",
    "label": "Governorate",
    "options": "Governorate"
+  },
+  {
+   "fieldname": "accommodation_code",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "Code",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-09-06 15:42:06.737783",
+ "modified": "2020-09-07 09:42:53.049236",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",
@@ -557,5 +567,5 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "accommodation"
+ "title_field": "accommodation_code"
 }

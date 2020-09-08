@@ -9,7 +9,8 @@ from frappe import _
 
 class Bed(Document):
 	def validate(self):
-		self.set_title()
+		# self.set_title()
+		pass
 
 	def set_title(self):
 		self.title = '-'.join([self.accommodation_name, self.type,

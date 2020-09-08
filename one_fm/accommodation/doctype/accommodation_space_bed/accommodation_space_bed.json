@@ -1,0 +1,40 @@
+{
+ "actions": [],
+ "creation": "2020-09-08 08:21:28.732005",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "bed",
+  "disabled"
+ ],
+ "fields": [
+  {
+   "fieldname": "bed",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Bed",
+   "options": "Bed",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Disabled"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-09-08 09:02:37.035639",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Space Bed",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
