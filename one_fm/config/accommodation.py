@@ -21,7 +21,7 @@ def get_data():
 				{
 					"type": "doctype",
 					"name": "Accommodation Space",
-					"label": _("Spces List"),
+					"label": _("Space List"),
 					"onboard": 1
 				},
 				{
