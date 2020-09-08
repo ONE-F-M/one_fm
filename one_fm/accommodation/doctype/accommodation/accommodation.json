@@ -16,6 +16,7 @@
   "owner_details_section",
   "owner_contact",
   "owner_contact_html",
+  "company_name",
   "owner_first_name",
   "owner_middle_name",
   "owner_last_name",
@@ -558,16 +559,19 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval: doc.owner_type == 'Personal'",
    "fieldname": "owner_first_name",
    "fieldtype": "Data",
    "label": "First Name"
   },
   {
+   "depends_on": "eval: doc.owner_type == 'Personal'",
    "fieldname": "owner_middle_name",
    "fieldtype": "Data",
    "label": "Middle Name"
   },
   {
+   "depends_on": "eval: doc.owner_type == 'Personal'",
    "fieldname": "owner_last_name",
    "fieldtype": "Data",
    "label": "Last Name"
@@ -721,10 +725,16 @@
    "fieldname": "point_of_contact_civl_id",
    "fieldtype": "Data",
    "label": "CIVL ID"
+  },
+  {
+   "depends_on": "eval: doc.owner_type == 'Company'",
+   "fieldname": "company_name",
+   "fieldtype": "Data",
+   "label": "Company Name"
   }
  ],
  "links": [],
- "modified": "2020-09-08 12:30:12.123017",
+ "modified": "2020-09-08 13:37:32.788321",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",
