@@ -21,7 +21,7 @@ class AccommodationUnit(Document):
 				.format(allowed_no_of_unit, self.accommodation_name)))
 
 	def set_title(self):
-		self.title = '-'.join([self.accommodation_name, self.type, 'Floor'+self.floor])
+		self.title = '-'.join([self.accommodation_name, self.type, self.floor_name+' Floor'])
 
 	def autoname(self):
 		self.set_accommodation_unit_code()

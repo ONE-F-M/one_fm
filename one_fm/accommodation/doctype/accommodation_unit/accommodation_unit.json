@@ -9,10 +9,11 @@
   "accommodation",
   "accommodation_name",
   "type",
+  "floor_name",
   "floor",
   "accommodation_unit_code",
   "column_break_3",
-  "accommodation_unit_id",
+  "owner_reference_number",
   "paci",
   "description_section",
   "space_details",
@@ -28,12 +29,11 @@
    "reqd": 1
   },
   {
+   "fetch_from": "floor_name.floor",
    "fieldname": "floor",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Floor",
-   "options": "\n0\n1\n2",
-   "reqd": 1
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Floor"
   },
   {
    "fieldname": "column_break_3",
@@ -59,15 +59,9 @@
    "reqd": 1
   },
   {
-   "fieldname": "accommodation_unit_id",
-   "fieldtype": "Data",
-   "label": "Number"
-  },
-  {
    "fieldname": "accommodation_unit_code",
    "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Accommodation Unit Code",
+   "label": "Unit Code",
    "no_copy": 1,
    "read_only": 1
   },
@@ -94,10 +88,23 @@
    "fieldname": "total_space",
    "fieldtype": "Float",
    "label": "Total Flat Space in m2"
+  },
+  {
+   "fieldname": "owner_reference_number",
+   "fieldtype": "Data",
+   "label": "Owner Reference Number"
+  },
+  {
+   "fieldname": "floor_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Floor",
+   "options": "Floor",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2020-09-07 06:59:22.441914",
+ "modified": "2020-09-07 10:57:11.919055",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Unit",
@@ -118,6 +125,5 @@
  ],
  "search_fields": "accommodation_unit_code",
  "sort_field": "modified",
- "sort_order": "DESC",
- "title_field": "title"
+ "sort_order": "DESC"
 }

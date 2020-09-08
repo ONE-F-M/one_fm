@@ -19,6 +19,7 @@
   "accommodation_space_type",
   "type",
   "accommodation_unit",
+  "disabled",
   "beds_section",
   "bed_space_type",
   "bed_type",
@@ -275,10 +276,17 @@
    "label": "Governorate",
    "options": "Governorate",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Disabled"
   }
  ],
  "links": [],
- "modified": "2020-09-07 07:07:12.053474",
+ "modified": "2020-09-08 09:20:03.155170",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
