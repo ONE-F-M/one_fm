@@ -13,16 +13,17 @@ class AccommodationSpace(Document):
 		self.update_bed_status()
 
 	def update_bed_status(self):
-		if self.bed_space_available and self.beds:
-			for bed in self.beds:
-				frappe.db.set_value('Bed', bed.bed, 'disabled', bed.disabled)
-
-	def on_update(self):
-		self.create_beds_in_space()
+		if self.bed_space_available:
+			if not self.is_new():
+				self.create_beds_in_space()
+			if self.beds:
+				for bed in self.beds:
+					frappe.db.set_value('Bed', bed.bed, 'disabled', bed.disabled)
 
 	def after_insert(self):
 		self.set("beds", [])
 		self.create_beds_in_space()
+		self.save(ignore_permissions=True)
 
 	def set_title(self):
 		self.title = '-'.join([self.accommodation_name, self.type,
@@ -58,9 +59,12 @@ class AccommodationSpace(Document):
 				for x in range(beds_to_create):
 					bed = frappe.new_doc('Bed')
 					bed.accommodation_space = self.name
+					bed.disabled = False
+					bed.bed_space_type = self.bed_space_type
 					bed.save(ignore_permissions=True)
 					bed_in_space = self.append('beds')
 					bed_in_space.bed = bed.name
+					bed_in_space.disabled = bed.disabled
 
 def get_latest_accommodation_space_code(doc):
 	query = """
