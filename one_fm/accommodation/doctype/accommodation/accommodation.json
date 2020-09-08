@@ -724,7 +724,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-08 10:48:18.836522",
+ "modified": "2020-09-08 12:30:12.123017",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",
@@ -743,6 +743,7 @@
    "write": 1
   }
  ],
+ "search_fields": "accommodation",
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "accommodation_code"

@@ -19,6 +19,16 @@ class Bed(Document):
 	def before_insert(self):
 		self.validate_no_of_bed()
 
+	def after_insert(self):
+		self.update_no_of_bed_in_accommodation()
+
+	def on_trash(self):
+		self.update_no_of_bed_in_accommodation()
+
+	def update_no_of_bed_in_accommodation(self):
+		frappe.db.set_value('Accommodation', self.accommodation,
+			'total_no_of_bed_space' ,frappe.db.count('Bed', {'accommodation': self.accommodation}))
+
 	def validate_no_of_bed(self):
 		allowed_no = frappe.db.get_value('Bed Space Type', self.bed_space_type, 'single_bed_capacity')
 		if not allowed_no:
