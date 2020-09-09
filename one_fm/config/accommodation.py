@@ -29,6 +29,12 @@ def get_data():
 					"name": "Bed",
 					"label": _("Beds List"),
 					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Book Bed",
+					"label": _("Book Bed"),
+					"onboard": 1
 				}
 			]
 		},

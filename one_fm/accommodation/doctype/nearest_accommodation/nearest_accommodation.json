@@ -7,6 +7,9 @@
  "field_order": [
   "accommodation",
   "accommodation_name",
+  "governorate",
+  "column_break_4",
+  "area",
   "vacant_bed"
  ],
  "fields": [
@@ -14,8 +17,9 @@
    "fieldname": "accommodation",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Accommodation",
+   "label": "Code",
    "options": "Accommodation",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -24,18 +28,40 @@
    "fieldname": "accommodation_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Accommodation Name"
+   "label": "Name",
+   "read_only": 1
   },
   {
    "fieldname": "vacant_bed",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Vacant Bed"
+   "label": "Vacant Bed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "governorate",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Governorate",
+   "options": "Governorate",
+   "read_only": 1
+  },
+  {
+   "fieldname": "area",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Area",
+   "options": "Governorate Area",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-07-15 08:59:58.231215",
+ "modified": "2020-09-09 09:35:48.825666",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Nearest Accommodation",

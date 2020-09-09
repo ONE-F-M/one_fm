@@ -29,7 +29,13 @@
   "bed",
   "passport_number",
   "employee",
-  "booking_status"
+  "booking_status",
+  "column_break_25",
+  "full_name",
+  "nationality",
+  "religion",
+  "contact_number",
+  "email"
  ],
  "fields": [
   {
@@ -37,7 +43,7 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Series",
-   "options": "BB-.YYYY.-####"
+   "options": "BB-.YYYY.-\nTBB-.YYYY.-"
   },
   {
    "fieldname": "area",
@@ -72,6 +78,7 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "availability_section",
    "fieldtype": "Section Break",
    "label": "Availability"
@@ -133,8 +140,10 @@
   {
    "fieldname": "bed",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Bed",
-   "options": "Bed"
+   "options": "Bed",
+   "reqd": 1
   },
   {
    "fieldname": "passport_number",
@@ -150,8 +159,10 @@
   {
    "fieldname": "booking_status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Booking Status",
-   "options": "\nBooked\nBooked Temporary\nCancelled"
+   "options": "\nBooked\nTemporary Booking\nCancelled",
+   "reqd": 1
   },
   {
    "collapsible": 1,
@@ -164,10 +175,45 @@
    "fieldtype": "Link",
    "label": "Governorate",
    "options": "Governorate"
+  },
+  {
+   "fieldname": "column_break_25",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "label": "Religion",
+   "read_only": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-09-05 15:17:27.134796",
+ "modified": "2020-09-09 10:46:33.531529",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Book Bed",

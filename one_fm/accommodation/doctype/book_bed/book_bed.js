@@ -22,8 +22,23 @@ frappe.ui.form.on('Book Bed', {
 	},
 	get_nearest_accommodations: function(frm) {
 		get_accommodations(frm);
+	},
+	passport_number: function(frm) {
+		set_employee_details(frm)
 	}
 });
+
+var set_employee_details = function(frm) {
+	frappe.call({
+		method: 'get_employee_details',
+		doc: frm.doc,
+		callback: function(r) {
+			frm.refresh_fields();
+		},
+		freeze: true,
+		freeze_message: __("Fetching Employee Data ....")
+	})
+};
 
 var get_accommodations = function(frm) {
 	frm.clear_table('nearest_accommodations');
@@ -38,6 +53,8 @@ var get_accommodations = function(frm) {
 					var nearest_accommodation = frm.add_child('nearest_accommodations');
 					nearest_accommodation.accommodation = accommodation.name;
 					nearest_accommodation.accommodation_name = accommodation.accommodation;
+					nearest_accommodation.governorate = accommodation.accommodation_governorate;
+					nearest_accommodation.area = accommodation.accommodation_area;
 					nearest_accommodation.vacant_bed = accommodation.vacant_bed
 				});
 			}
@@ -78,7 +95,9 @@ var set_filter_for_accommodation = function(frm) {
 	if(frm.doc.nearest_accommodations){
 		let accommodation_list = [];
 		frm.doc.nearest_accommodations.forEach((accommodation, i) => {
-			accommodation_list[i] = accommodation.accommodation;
+			if(accommodation.vacant_bed != 'No Vacant Bed'){
+				accommodation_list[i] = accommodation.accommodation;
+			}
 		});
 		frm.set_query('accommodation', function () {
 			return {
@@ -111,10 +130,11 @@ var check_bed_availability = function(frm) {
 					var available_bed = frm.add_child('available_beds');
 					available_bed.bed = bed.name;
 					available_bed.bed_type = bed.bed_type;
+					available_bed.gender = bed.gender;
 					available_bed.accommodation = bed.accommodation;
 					available_bed.area = bed.area;
 					available_bed.location = bed.location;
-					available_bed.governate = bed.governate;
+					available_bed.governorate = bed.governorate;
 				});
 			}
 			else{
@@ -129,6 +149,7 @@ var check_bed_availability = function(frm) {
 var get_bed_filters = function(frm) {
 	var filters = {};
 	filters['status'] = 'Vacant';
+	filters['disabled'] = false;
 	if(frm.doc.accommodation){
 		filters['accommodation'] = frm.doc.accommodation;
 	}
@@ -147,11 +168,11 @@ var get_bed_filters = function(frm) {
 var get_accommodation_filters = function(frm) {
 	var filters = {};
 	// filters['docstatus'] = 1;
-	if(frm.doc.governate){
-		filters['governate'] = frm.doc.governate;
+	if(frm.doc.governorate){
+		filters['accommodation_governorate'] = frm.doc.governorate;
 	}
 	if(frm.doc.area){
-		filters['area'] = frm.doc.area;
+		filters['accommodation_area'] = frm.doc.area;
 	}
 	return filters
 };

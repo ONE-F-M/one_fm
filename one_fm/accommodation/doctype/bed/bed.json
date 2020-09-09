@@ -286,7 +286,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-09 07:54:39.112753",
+ "modified": "2020-09-09 09:57:55.401873",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
@@ -305,7 +305,7 @@
    "write": 1
   }
  ],
- "search_fields": "accommodation_name",
+ "search_fields": "accommodation_name, governorate, area, bed_type, gender, status",
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "title"
