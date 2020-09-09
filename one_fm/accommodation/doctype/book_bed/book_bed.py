@@ -8,7 +8,21 @@ from frappe.model.document import Document
 from six import string_types
 
 class BookBed(Document):
-	pass
+	def before_insert(self):
+		if self.booking_status == "Temporary Booking":
+			self.naming_series = "TBB-.YYYY.-"
+
+	def get_employee_details(self):
+		if self.passport_number:
+			employee_id = frappe.db.exists('Employee', {'passport_number': self.passport_number})
+			if employee_id:
+				employee = frappe.get_doc('Employee', employee_id)
+				self.employee = employee.name
+				self.full_name = employee.employee_name
+				self.nationality = employee.one_fm_nationality
+				self.religion = employee.one_fm_religion
+				self.email = employee.personal_email
+				self.contact_number = employee.cell_number
 
 @frappe.whitelist()
 def get_accommodation_bed_space(filters):
@@ -21,7 +35,7 @@ def get_nearest_accommodation(filters, location=False):
 	filters = json.loads(filters)
 	accommodation_list = frappe.get_all('Accommodation', filters=filters, fields=["*"])
 	for accommodation in accommodation_list:
-		filters = {'status': 'Vacant', 'accommodation': accommodation.name}
+		filters = {'status': 'Vacant', 'accommodation': accommodation.name, 'disabled': False}
 		accommodation_bed_space = get_accommodation_bed_space(filters)
 		if accommodation_bed_space and len(accommodation_bed_space) > 0:
 			accommodation['vacant_bed'] = len(accommodation_bed_space)
