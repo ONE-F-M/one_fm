@@ -217,14 +217,14 @@
                             <div class="col-sm-12 col-md-12 custompageselecttype mb10">
                                 <div class="d-flex">
                                     <div class="legendboxview borderbox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Day to be planned</div>
+                                    <div class="pl10 font16 cardtitlecolor">Unplanned Day</div>
                                 </div>
                             </div>
                             <div class="col-sm-12 col-md-12 custompageselecttype mb10">
                                 <div class="d-flex">
                                     <div class="legendboxview purplebox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Leaves (SL-sick leave, AL-annual leave,
-                                        EL-emergency leave…. etc)</div>
+                                    <div class="pl10 font16 cardtitlecolor">Leaves (SL-Sick Leave, AL-Annual Leave,
+                                        EL-Emergency Leave)</div>
                                 </div>
                             </div>
 
@@ -278,10 +278,10 @@
                                         <div class="">
                                             <ul
                                                 class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-                                                <li class="active calenderlink"><a href="#" class="residenavli active"
-                                                        id="monthviewclick">Month</a></li>
-                                                <li class="calenderlink"><a href="#" class="residenavli"
-                                                        id="weekviewclick">Week</a></li>
+                                                <li class="active calenderlink"><a href="#"
+                                                        class="residenavli active monthviewclick">Month</a></li>
+                                                <li class="calenderlink"><a href="#"
+                                                        class="residenavli weekviewclick">Week</a></li>
                                             </ul>
                                         </div>
                                         <div class="ml20">
@@ -304,6 +304,63 @@
                             <div class="card-body p-0" id="tableviewchange">
                                 <div class="table-responsive table-bordered">
                                     <table id="calenderviewtable"
+                                        class="mb-0 table table-striped customcarddetailtable structuredetaildatatable"
+                                        style="width:100%">
+                                        <thead>
+                                            <tr class="rosterViewTH">
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cardheadercolor rosterWeek border-0 shadow-0 d-none">
+                            <div
+                                class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
+                                <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
+                                    <div class="font20 cardheadercolor fontw600 textchange calenderweektitlechange">
+                                        Month of April 1-30, 2020
+                                    </div>
+                                    <div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
+                                        <div class="">
+                                            <ul
+                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                                                <li class="calenderlink">
+                                                    <a href="#" class="residenavli active monthviewclick">Month</a>
+                                                </li>
+                                                <li class="active  calenderlink">
+                                                    <a href="#" class="residenavli weekviewclick">Week</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="ml20">
+                                            <ul
+                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                                                <li class="">
+                                                    <a href="#" class="residenavli customarrowtab bg-white"
+                                                        style="background:#fff !important"
+                                                        onclick="rosterweekdecrement()">
+                                                        <i class="fas fa-chevron-left"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="bordertableft">
+                                                    <a href="#" class="residenavli customarrowtab bg-white"
+                                                        style="background:#fff !important"
+                                                        onclick="rosterweekincrement()">
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive table-bordered">
+                                    <table id="calenderweekviewtable"
                                         class="mb-0 table table-striped customcarddetailtable structuredetaildatatable"
                                         style="width:100%">
                                         <thead>
@@ -413,45 +470,6 @@
                                         </thead>
 
                                         <tbody>
-                                            <!-- <tr class="colorclass">
-                                                <td>
-                                                    <label class="checkboxcontainer simplecheckbox mx-4"><span
-                                                            class="lightgrey font16 customfontweight fontw400">Post
-                                                            6</span><input type="checkbox" name="selectallcheckbox"
-                                                            class="selectallcheckbox"><span
-                                                            class="checkmark"></span></label>
-
-                                                </td>
-                                                <td>
-                                                    <div class="hoverselectclass tablebox bluebox text-center"
-                                                        dataselectid="ps1"></div>
-                                                </td>
-                                                <td>
-                                                    <div class="hoverselectclass tablebox bluebox text-center"
-                                                        dataselectid="ps2"></div>
-                                                </td>
-                                                <td>
-                                                    <div class="hoverselectclass tablebox bluebox text-center"
-                                                        dataselectid="ps3"></div>
-                                                </td>
-                                                <td>
-                                                    <div class="hoverselectclass tablebox bluebox text-center"
-                                                        dataselectid="ps4"></div>
-                                                </td>
-                                                <td>
-                                                    <div class="hoverselectclass tablebox bluebox text-center"
-                                                        dataselectid="ps5"></div>
-                                                </td>
-                                                <td>
-                                                    <div class="hoverselectclass tablebox bluebox text-center"
-                                                        dataselectid="ps6"></div>
-                                                </td>
-                                                <td>
-                                                    <div class="hoverselectclass tablebox bluebox text-center"
-                                                        dataselectid="ps7"></div>
-                                                </td>
-                                                <td></td>
-                                            </tr> -->
                                         </tbody>
                                     </table>
                                 </div>
@@ -847,7 +865,7 @@
         </div>
     </div>
 </div>
-<div class="modal custommobmodal" id="addpostmodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+<!-- <div class="modal custommobmodal" id="addpostmodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
     aria-modal="true">
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
@@ -1079,7 +1097,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 <div class="modal custommobmodal" id="deletepostmodal" tabindex="-1" role="dialog" aria-labelledby="userunassigned"
     aria-modal="true">
     <div class="modal-dialog">

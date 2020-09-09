@@ -28,6 +28,20 @@ def get_tasks():
 		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
+def add_task(subject, project, site, shift, description):
+	try:
+		task = frappe.new_doc("Task")
+		task.subject = subject
+		task.project = project
+		task.description = description
+		task.site = site
+		task.shift = shift
+		task.save()
+		return task
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
+
+@frappe.whitelist()
 def complete_task(task_name):
 	try:
 		task = frappe.get_doc("Task", task_name)
@@ -54,6 +68,19 @@ def add_task_comment(task_name, content):
 		add_comment("Task", task_name, content, user)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
+
+@frappe.whitelist()
+def get_task_comments(task_name):
+	try:
+		user, user_roles, user_employee = get_current_user_details()
+		print(task_name, user)
+		comments = frappe.get_list("Comment", {"reference_doctype": "Task", "reference_name": task_name, "comment_type": "Comment"}, "*")
+		print(comments)
+		return comments
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
+
+
 
 @frappe.whitelist()
 def assign_task(task_name, employee):

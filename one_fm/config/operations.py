@@ -78,6 +78,32 @@ def get_data():
 					"name": "Employee Schedule",
 					"label": _("Roster")
 				},
+				{
+					"color": "grey",
+					"icon": "octicon octicon-key",
+					"type": "doctype",
+					"name": "Post Schedule",
+					"label": _("Post Schedule")
+				},
 			]
-		}        
+		},
+		{
+			"label": _("Reports"),
+			"items": [
+				{
+					"color": "grey",
+					"icon": "octicon octicon-key",
+					"type": "doctype",
+					"name": "Shift Report",
+					"label": _("Shift Report")
+				},
+				{
+					"color": "grey",
+					"icon": "octicon octicon-key",
+					"type": "doctype",
+					"name": "Post Handover",
+					"label": _("Post Handover")
+				},
+			]
+		}     
 	]
