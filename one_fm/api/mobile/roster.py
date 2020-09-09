@@ -3,48 +3,40 @@ from frappe import _
 from frappe.utils import getdate, cint
 from frappe.client import get_list
 import json
+from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view, get_roster_view as _get_roster_view
 
 @frappe.whitelist()
-def get_roster(date, project=None, site=None, department=None, shift=None, post_type=None):
+def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None):
 	try:
-		user, user_roles, user_employee = get_current_user_details()
-		if user_employee:
-			if "Shift Supervisor" in user_roles:
-				get_shift_supervisor_data(date, user_employee)
-			if "Site Supervisor" in user_roles:
-				get_site_supervisor_data(date, user_employee)
-			if "Project Manager" in user_roles:
-				get_project_manager_data(date, user_employee)
-			if "Operations Manager" in user_roles:
-				get_operations_manager_data(date, user_employee)
+		return _get_roster_view(start_date, end_date, all, assigned, scheduled, project, site, shift, department, post_type)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
 
-def get_shift_supervisor_data(start_date, user_employee, shift=None, post_type=None):
-	try:
-		#Post Type > Employees
-		filters = {"supervisor": user_employee}
-		if shift:
-			filters.update({"shift": shift})
-		shifts_list = frappe.get_list("Operations Shift", filters)
-		for shift in shifts_list:
-			return frappe.get_list("Roster", {"date": start_date, "shift": shift}, ["employee_name", "availability", "post_type", "shift", "date"])
-	except Exception as e:
-		return frappe.utils.response.report_error(e.http_status_code)
+# def get_shift_supervisor_data(start_date, user_employee, shift=None, post_type=None):
+# 	try:
+# 		#Post Type > Employees
+# 		filters = {"supervisor": user_employee}
+# 		if shift:
+# 			filters.update({"shift": shift})
+# 		shifts_list = frappe.get_list("Operations Shift", filters)
+# 		for shift in shifts_list:
+# 			return frappe.get_list("Roster", {"date": start_date, "shift": shift}, ["employee_name", "availability", "post_type", "shift", "date"])
+# 	except Exception as e:
+# 		return frappe.utils.response.report_error(e.http_status_code)
 
-def get_site_supervisor_data(start_date, user_employee, site=None, department=None, shift=None, post_type=None):
-	filters = {"account_supervisor": user_employee}
-	if site:
-		filters.update({"name": site})
-	sites_list = frappe.get_list("Operations Site", filters)
+# def get_site_supervisor_data(start_date, user_employee, site=None, department=None, shift=None, post_type=None):
+# 	filters = {"account_supervisor": user_employee}
+# 	if site:
+# 		filters.update({"name": site})
+# 	sites_list = frappe.get_list("Operations Site", filters)
 	
 
-def get_project_manager_data(start_date, user_employee, project=None, site=None, department=None, shift=None, post_type=None):
-	pass
+# def get_project_manager_data(start_date, user_employee, project=None, site=None, department=None, shift=None, post_type=None):
+# 	pass
 
-def get_operations_manager_data(start_date, user_employee, project=None, site=None, department=None, shift=None, post_type=None):
-	pass
+# def get_operations_manager_data(start_date, user_employee, project=None, site=None, department=None, shift=None, post_type=None):
+# 	pass
 
 
 @frappe.whitelist()
@@ -64,18 +56,18 @@ def get_weekly_staff_roster(start_date, end_date):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
+@frappe.whitelist()
 def get_current_user_details():
 	user = frappe.session.user
 	user_roles = frappe.get_roles(user)
-	user_employee = frappe.get_value("Employee", {"user_id": user})
+	user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_name", "image", "enrolled"], as_dict=1)
 	return user, user_roles, user_employee
 
 
 @frappe.whitelist()
-def get_post_view(start_date, end_date, project=None, site=None, shift=None, department=None, post_type=None):
+def get_post_view(start_date, end_date,  project=None, site=None, shift=None, post_type=None, active_posts=1):
 	try:
-		start_date = getdate(start_date)
-		end_date = getdate(end_date)
+		return _get_post_view(start_date, end_date, project, site, shift, post_type, active_posts)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
@@ -240,5 +232,14 @@ def get_post_types(shift=None):
 
 		return []
 
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
+
+
+
+@frappe.whitelist()
+def get_post_details(post_name):
+	try:
+		return frappe.get_value("Operations Post", post_name, "*")
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
