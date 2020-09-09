@@ -39,7 +39,7 @@
   "section_break_35",
   "items",
   "section_break_28",
-  "freequency",
+  "frequency",
   "assets",
   "section_break_30",
   "is_attendance_for_invoice",
@@ -186,7 +186,7 @@
    "label": "Contract Assets"
   },
   {
-   "depends_on": "eval:doc.freequency == 'Monthly'",
+   "depends_on": "eval:doc.frequency == 'Monthly'",
    "fieldname": "assets",
    "fieldtype": "Table",
    "label": "Assets",
@@ -274,12 +274,6 @@
    "label": "Monthly Working Days"
   },
   {
-   "fieldname": "freequency",
-   "fieldtype": "Select",
-   "label": "Freequency",
-   "options": "\nPO based\nMonthly"
-  },
-  {
    "default": "0",
    "fieldname": "is_public_holiday_rate",
    "fieldtype": "Check",
@@ -352,9 +346,15 @@
    "fieldtype": "Table",
    "label": "POC",
    "options": "POC"
+  },
+  {
+   "fieldname": "frequency",
+   "fieldtype": "Select",
+   "label": "Frequency",
+   "options": "\nPO based\nMonthly"
   }
  ],
- "modified": "2020-09-08 11:18:52.132196",
+ "modified": "2020-09-09 22:36:12.943142",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
