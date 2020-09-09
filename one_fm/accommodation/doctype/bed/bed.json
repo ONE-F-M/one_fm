@@ -49,6 +49,7 @@
    "fieldname": "accommodation",
    "fieldtype": "Link",
    "hidden": 1,
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Accommodation",
    "options": "Accommodation"
@@ -66,8 +67,9 @@
    "fetch_if_empty": 1,
    "fieldname": "accommodation_unit",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Accommodation Unit",
+   "label": "Unit",
    "options": "Accommodation Unit",
    "read_only": 1
   },
@@ -89,7 +91,6 @@
    "fetch_if_empty": 1,
    "fieldname": "accommodation_space_type",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Space Type",
    "options": "Accommodation Space Type",
@@ -98,7 +99,6 @@
   {
    "fieldname": "accommodation_space",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Accommodation Space",
    "options": "Accommodation Space",
    "reqd": 1
@@ -113,7 +113,6 @@
    "fetch_if_empty": 1,
    "fieldname": "bed_space_type",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Bed Space Type",
    "options": "Bed Space Type",
    "read_only": 1
@@ -266,6 +265,7 @@
    "fetch_from": "accommodation_unit.floor",
    "fieldname": "floor",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Floor",
    "read_only": 1
   },
@@ -286,7 +286,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-09 09:57:55.401873",
+ "modified": "2020-09-09 10:55:10.268117",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
@@ -307,6 +307,5 @@
  ],
  "search_fields": "accommodation_name, governorate, area, bed_type, gender, status",
  "sort_field": "modified",
- "sort_order": "DESC",
- "title_field": "title"
+ "sort_order": "DESC"
 }

@@ -44,6 +44,7 @@
    "fetch_if_empty": 1,
    "fieldname": "accommodation",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Accommodation",
    "options": "Accommodation",
    "reqd": 1
@@ -255,7 +256,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-09 07:53:24.782713",
+ "modified": "2020-09-09 10:51:04.721012",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",
