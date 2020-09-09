@@ -19,8 +19,10 @@
   "bed_space_available",
   "bed_details_section",
   "bed_space_type",
+  "bed_type",
   "column_break_11",
   "single_bed_capacity",
+  "gender",
   "double_bed_capacity",
   "extra_single_bed_capacity",
   "extra_double_bed_capacity",
@@ -235,10 +237,25 @@
    "fieldtype": "Table",
    "label": "Beds",
    "options": "Accommodation Space Bed"
+  },
+  {
+   "default": "Single",
+   "depends_on": "bed_space_available",
+   "fieldname": "bed_type",
+   "fieldtype": "Select",
+   "label": "Bed Type",
+   "options": "\nSingle\nDouble"
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
   }
  ],
  "links": [],
- "modified": "2020-09-08 09:02:22.586209",
+ "modified": "2020-09-09 07:53:24.782713",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",
@@ -257,6 +274,7 @@
    "write": 1
   }
  ],
+ "search_fields": "accommodation_name, floor_name, accommodation_unit_code",
  "sort_field": "modified",
  "sort_order": "DESC"
 }

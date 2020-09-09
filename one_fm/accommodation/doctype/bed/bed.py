@@ -10,7 +10,24 @@ from frappe import _
 class Bed(Document):
 	def validate(self):
 		# self.set_title()
-		pass
+		self.update_bed_in_space()
+
+	def update_bed_in_space(self):
+		bed_in_space = frappe.db.exists('Accommodation Space Bed', {'bed': self.name})
+		if bed_in_space:
+			query = """
+				update
+					`tabAccommodation Space Bed`
+				set
+					disabled=%(disabled)s, bed_type=%(bed_type)s, gender=%(gender)s
+				where
+					bed=%(bed)s and name=%(bed_in_space)s
+			"""
+			filters = {
+				'disabled': self.disabled, 'gender': self.gender,
+				'bed_type': self.bed_type, 'bed': self.name, 'bed_in_space': bed_in_space
+			}
+			frappe.db.sql(query, filters)
 
 	def set_title(self):
 		self.title = '-'.join([self.accommodation_name, self.type,

@@ -18,7 +18,20 @@ class AccommodationSpace(Document):
 				self.create_beds_in_space()
 			if self.beds:
 				for bed in self.beds:
-					frappe.db.set_value('Bed', bed.bed, 'disabled', bed.disabled)
+					if self.bed_type and not bed.bed_type:
+						bed.bed_type = self.bed_type
+					if self.gender and not bed.gender:
+						bed.gender = self.gender
+					query = """
+						update
+							tabBed
+						set
+							disabled=%(disabled)s, bed_type=%(bed_type)s, gender=%(gender)s
+						where
+							name=%(bed)s
+					"""
+					filters = {'disabled': bed.disabled, 'gender': bed.gender, 'bed_type': bed.bed_type, 'bed': bed.bed}
+					frappe.db.sql(query, filters)
 
 	def after_insert(self):
 		self.set("beds", [])
@@ -61,10 +74,14 @@ class AccommodationSpace(Document):
 					bed.accommodation_space = self.name
 					bed.disabled = False
 					bed.bed_space_type = self.bed_space_type
+					bed.bed_type = self.bed_type
+					bed.gender = self.gender
 					bed.save(ignore_permissions=True)
 					bed_in_space = self.append('beds')
 					bed_in_space.bed = bed.name
 					bed_in_space.disabled = bed.disabled
+					bed_in_space.bed_type = bed.bed_type
+					bed_in_space.gender = bed.gender
 
 def get_latest_accommodation_space_code(doc):
 	query = """
