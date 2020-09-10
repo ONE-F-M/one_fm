@@ -49,7 +49,9 @@
   "minimum_experience_required",
   "save_me2",
   "column_break_30",
+  "driving_license_required_html",
   "driving_license_required",
+  "type_of_license_html",
   "type_of_license",
   "language_and_basic_skill_section",
   "languages",
@@ -64,7 +66,6 @@
   "performance_profile_section",
   "performance_profile_html",
   "help_hr_to_create_okr",
-  "column_break_52",
   "schedule_for_okr_workshop_with_recruiter",
   "okr_workshop_with",
   "okr_workshop_submit_to_hr",
@@ -85,6 +86,15 @@
   "salary_per_person",
   "total_cost_in_salary",
   "column_break_44",
+  "provide_health_insurance_html",
+  "provide_health_insurance",
+  "provide_mobile_with_line_html",
+  "provide_mobile_with_line",
+  "provide_company_insurance_html",
+  "provide_company_insurance",
+  "provide_salary_advance_html",
+  "provide_salary_advance",
+  "amount_in_advance",
   "other_benefits",
   "benefit_cost_to_company",
   "total_cost_to_company",
@@ -310,12 +320,14 @@
    "default": "0",
    "fieldname": "driving_license_required",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Is Kuwait Driving License a Mandatory Requirement"
   },
   {
    "depends_on": "driving_license_required",
    "fieldname": "type_of_license",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Type of License",
    "options": "\nLight\nHeavy\nMotor Bike\nInshaya"
   },
@@ -399,7 +411,8 @@
   },
   {
    "fieldname": "column_break_44",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "label": "Other Benefits"
   },
   {
    "fieldname": "recruiter_assigned",
@@ -425,6 +438,7 @@
   {
    "fieldname": "other_benefits",
    "fieldtype": "Table",
+   "hidden": 1,
    "label": "Other Benefits",
    "options": "ERF Employee Benefit",
    "permlevel": 1
@@ -433,6 +447,7 @@
    "default": "0",
    "fieldname": "benefit_cost_to_company",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Benefit Cost to Company",
    "permlevel": 1,
    "read_only": 1
@@ -440,6 +455,7 @@
   {
    "fieldname": "total_cost_to_company",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Total Cost to Company",
    "permlevel": 1,
    "read_only": 1
@@ -556,10 +572,6 @@
    "label": "Performance Profile HTML"
   },
   {
-   "fieldname": "column_break_52",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "schedule_for_okr_workshop_with_recruiter",
    "fieldtype": "Datetime",
    "label": "Set a Date With Our Recruiter For a Quick Workshop"
@@ -567,6 +579,7 @@
   {
    "fieldname": "okr_workshop_with",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Select HR For a Quick Workshop",
    "options": "User"
   },
@@ -657,11 +670,75 @@
    "fieldname": "help_hr_to_create_okr",
    "fieldtype": "Small Text",
    "label": "You can also help the HR Prepare -By filling the below"
+  },
+  {
+   "fieldname": "driving_license_required_html",
+   "fieldtype": "HTML",
+   "label": "Is Kuwait Driving License a Mandatory Requirement"
+  },
+  {
+   "fieldname": "type_of_license_html",
+   "fieldtype": "HTML",
+   "label": "Type of License"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_company_insurance",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Provide Company Insurance"
+  },
+  {
+   "fieldname": "provide_company_insurance_html",
+   "fieldtype": "HTML",
+   "label": "Provide Company Insurance HTML"
+  },
+  {
+   "fieldname": "provide_health_insurance_html",
+   "fieldtype": "HTML",
+   "label": "Provide Health Insurance HTML"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_health_insurance",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Provide Health Insurance"
+  },
+  {
+   "fieldname": "provide_mobile_with_line_html",
+   "fieldtype": "HTML",
+   "label": "Provide Mobile with Line HTML"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_mobile_with_line",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Provide Mobile with Line"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_salary_advance",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Provide Salary Advance"
+  },
+  {
+   "depends_on": "provide_salary_advance",
+   "fieldname": "amount_in_advance",
+   "fieldtype": "Currency",
+   "label": "Amount in Advance"
+  },
+  {
+   "fieldname": "provide_salary_advance_html",
+   "fieldtype": "HTML",
+   "label": "Provide Salary Advance HTML"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-08-12 10:32:48.480480",
+ "modified": "2020-09-10 11:17:14.075493",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "ERF20",
