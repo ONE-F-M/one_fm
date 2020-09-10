@@ -120,7 +120,6 @@
   {
    "fieldname": "bed_type",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Bed Type",
    "options": "\nSingle\nDouble"
   },
@@ -132,6 +131,7 @@
    "fetch_if_empty": 1,
    "fieldname": "gender",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Gender",
    "options": "Gender"
   },
@@ -286,7 +286,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-09 10:55:10.268117",
+ "modified": "2020-09-10 06:51:58.913670",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
