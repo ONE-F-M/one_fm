@@ -12,12 +12,25 @@ class BookBed(Document):
 		if self.booking_status == "Temporary Booking":
 			self.naming_series = "TBB-.YYYY.-"
 
+	def on_update(self):
+		self.update_bed_status()
+
+	def update_bed_status(self):
+		status = self.booking_status if self.booking_status != 'Cancelled' else 'Vacant'
+		frappe.db.set_value('Bed', self.bed, 'status', status)
+
 	def get_employee_details(self):
+		filters = {}
 		if self.passport_number:
-			employee_id = frappe.db.exists('Employee', {'passport_number': self.passport_number})
+			filters['passport_number'] = self.passport_number
+		if self.civil_id:
+			filters['one_fm_civil_id'] = self.civil_id
+		if self.employee:
+			filters['name'] = self.employee
+		if filters and len(filters)>0:
+			employee_id = frappe.db.exists('Employee', filters)
 			if employee_id:
 				employee = frappe.get_doc('Employee', employee_id)
-				self.employee = employee.name
 				self.full_name = employee.employee_name
 				self.nationality = employee.one_fm_nationality
 				self.religion = employee.one_fm_religion

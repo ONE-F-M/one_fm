@@ -25,6 +25,12 @@ frappe.ui.form.on('Book Bed', {
 	},
 	passport_number: function(frm) {
 		set_employee_details(frm)
+	},
+	civil_id: function(frm) {
+		set_employee_details(frm)
+	},
+	employee: function(frm) {
+		set_employee_details(frm)
 	}
 });
 
