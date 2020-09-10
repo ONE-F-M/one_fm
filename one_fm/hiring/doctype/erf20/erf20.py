@@ -280,16 +280,19 @@ def get_project_details(project):
 	return {'location_list': location_list}
 
 @frappe.whitelist()
-def create_event_for_okr_workshop(schedule_date, shared_with):
-	page_link = get_url("/desk#Form/ERF20/" + doc.name)
-	message = "<p>For a Quick Workshop to Create Performance Profile for New ERF <a href='{0}'>{1}</a></p>".format(page_link, doc.name)
+def create_event_for_okr_workshop(schedule_date, shared_with, docname=False):
+	message = "For a Quick Workshop to Create Performance Profile for New ERF"
+	if docname:
+		page_link = get_url("/desk#Form/ERF20/" + docname)
+		message = "<p>{0} <a href='{1}'>{2}</a></p>".format(message, page_link, docname)
+
 	frappe.sendmail(
 		recipients = shared_with,
 		sender = frappe.db.get_value('User', frappe.session.user, 'email'),
 		subject = _("For a Quick Workshop to Create Performance Profile"),
 		message = _(message)
 	)
-	frappe.msgprint(_("Email sent to {0}").format(contact))
+	frappe.msgprint(_("Email sent to {0}").format(shared_with))
 	event = frappe.new_doc('Event')
 	event.subject = 'Test Subject'
 	event.event_category = 'Meeting'

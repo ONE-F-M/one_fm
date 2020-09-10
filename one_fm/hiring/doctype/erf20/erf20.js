@@ -210,12 +210,16 @@ var set_filter_for_location = function(frm, location_list) {
 
 var create_event_for_okr_workshop = function(frm) {
 	if(frm.doc.schedule_for_okr_workshop_with_recruiter && frm.doc.okr_workshop_with){
+		var filters = {
+			'schedule_date': frm.doc.schedule_for_okr_workshop_with_recruiter,
+			'shared_with': frm.doc.okr_workshop_with
+		}
+		if (!frm.is_new){
+			filters['docname'] = frm.doc.name
+		}
 		frappe.call({
 			method: 'one_fm.hiring.doctype.erf20.erf20.create_event_for_okr_workshop',
-			args: {
-				'schedule_date': frm.doc.schedule_for_okr_workshop_with_recruiter,
-				'shared_with': frm.doc.okr_workshop_with
-			},
+			args: filters,
 			callback: function(r) {
 				if(r.message){
 					frm.set_value('event_for_okr_workshop', r.message.name);
