@@ -60,7 +60,6 @@
   {
    "fieldname": "accommodation_unit",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Unit",
    "options": "Accommodation Unit",
    "reqd": 1
@@ -114,7 +113,7 @@
    "fieldname": "bed_space_available",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Bed Space Available",
+   "label": "Bed Available",
    "read_only": 1
   },
   {
@@ -126,6 +125,7 @@
    "depends_on": "bed_space_available",
    "fieldname": "bed_space_type",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Bed Space Type",
    "options": "Bed Space Type"
   },
@@ -256,7 +256,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-09 10:51:04.721012",
+ "modified": "2020-09-10 06:48:09.600799",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",

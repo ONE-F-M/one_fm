@@ -92,6 +92,7 @@
   {
    "fieldname": "owner_reference_number",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Owner Reference Number"
   },
   {
@@ -104,7 +105,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-09 07:54:02.977943",
+ "modified": "2020-09-10 06:45:01.995994",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Unit",

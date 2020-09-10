@@ -27,13 +27,19 @@
   "available_beds",
   "book_bed_section",
   "bed",
+  "column_break_22",
+  "booking_status",
+  "section_break_24",
+  "local_overseas",
+  "civil_id",
+  "column_break_25",
   "passport_number",
   "employee",
-  "booking_status",
-  "column_break_25",
+  "section_break_30",
   "full_name",
   "nationality",
   "religion",
+  "column_break_35",
   "contact_number",
   "email"
  ],
@@ -146,22 +152,23 @@
    "reqd": 1
   },
   {
+   "depends_on": "local_overseas",
    "fieldname": "passport_number",
    "fieldtype": "Data",
    "label": "Passport Number"
   },
   {
+   "depends_on": "eval:doc.local_overseas=='Local'",
    "fieldname": "employee",
-   "fieldtype": "Link",
-   "label": "Employee",
-   "options": "Employee"
+   "fieldtype": "Data",
+   "label": "ONE FM ID Number"
   },
   {
    "fieldname": "booking_status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Booking Status",
-   "options": "\nBooked\nTemporary Booking\nCancelled",
+   "options": "\nBooked\nTemporary Booked\nCancelled",
    "reqd": 1
   },
   {
@@ -210,10 +217,39 @@
    "fieldtype": "Data",
    "label": "Contact Number",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_22",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_24",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "local_overseas",
+   "fieldtype": "Select",
+   "label": "Local/Overseas",
+   "options": "\nOverseas\nLocal",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.local_overseas=='Local'",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "fieldname": "section_break_30",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_35",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2020-09-09 10:46:33.531529",
+ "modified": "2020-09-10 07:22:54.845811",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Book Bed",
