@@ -11,6 +11,12 @@ from frappe.utils.user import get_user_fullname
 from frappe import _
 
 class ERF20(Document):
+	def onload(self):
+		if self.docstatus == 0 and not self.okr_workshop_with:
+			self.okr_workshop_with = frappe.db.get_value('Hiring Settings', None, 'hr_for_a_quick_workshop')
+		if self.okr_workshop_with:
+			self.set_onload('okr_workshop_with_full_name', get_user_fullname(self.okr_workshop_with))
+
 	def validate(self):
 		if self.is_new() and not self.erf_requested_by:
 			self.erf_requested_by = frappe.session.user
@@ -18,7 +24,7 @@ class ERF20(Document):
 		self.manage_assigned_recruiter()
 		self.validate_date()
 		self.validate_languages()
-		self.set_other_benefits()
+		# self.set_other_benefits()
 		self.validate_type_of_license()
 		self.set_salary_structure_from_grade()
 		self.set_salary_details()
@@ -275,6 +281,15 @@ def get_project_details(project):
 
 @frappe.whitelist()
 def create_event_for_okr_workshop(schedule_date, shared_with):
+	page_link = get_url("/desk#Form/ERF20/" + doc.name)
+	message = "<p>For a Quick Workshop to Create Performance Profile for New ERF <a href='{0}'>{1}</a></p>".format(page_link, doc.name)
+	frappe.sendmail(
+		recipients = shared_with,
+		sender = frappe.db.get_value('User', frappe.session.user, 'email'),
+		subject = _("For a Quick Workshop to Create Performance Profile"),
+		message = _(message)
+	)
+	frappe.msgprint(_("Email sent to {0}").format(contact))
 	event = frappe.new_doc('Event')
 	event.subject = 'Test Subject'
 	event.event_category = 'Meeting'
