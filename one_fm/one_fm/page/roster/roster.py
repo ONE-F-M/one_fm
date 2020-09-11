@@ -4,6 +4,8 @@ import itertools
 import pandas as pd
 import numpy as np
 import time
+from frappe import _
+import json
 
 @frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, project=None, site=None, shift=None, department=None, designation=None):
@@ -53,7 +55,6 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, project=None, si
 	print(data)
 	return data
 
-
 @frappe.whitelist(allow_guest=True)
 def get_staff_filters_data():
 	company = frappe.get_list("Company", limit_page_length=9999)
@@ -71,7 +72,6 @@ def get_staff_filters_data():
 		"departments": departments,
 		"designations": designations
 	}
-
 
 @frappe.whitelist(allow_guest=True)
 def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None):
@@ -145,8 +145,6 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 
 	return master_data
 
-
-
 @frappe.whitelist(allow_guest=True)
 def get_post_view(start_date, end_date,  project=None, site=None, shift=None, post_type=None, active_posts=1):
 	filters = {}
@@ -194,3 +192,52 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 	print(master_data)
 
 	return master_data
+
+@frappe.whitelist()
+def get_filtered_post_types(doctype, txt, searchfield, start, page_len, filters):
+	shift = filters.get('shift')
+	return frappe.db.sql("""
+		select distinct post_template
+		from `tabOperations Post` 
+		where site_shift="{shift}"
+	""".format(shift=shift))
+	
+@frappe.whitelist()
+def schedule_staff(employees, shift, site, post_type, project=None):
+	try:
+		# print(employees, shift, site, post_type, project)
+		for employee in json.loads(employees):
+			# print(employee["employee"], employee["date"])
+			if frappe.db.exists("Employee Schedule", {"employee": employee["employee"], "date": employee["date"]}):
+				roster = frappe.get_doc("Employee Schedule", {"employee": employee["employee"], "date": employee["date"]})
+			else:
+				roster = frappe.new_doc("Employee Schedule")
+				roster.employee = employee["employee"]
+				roster.date = employee["date"]
+			roster.shift = shift
+			roster.employee_availability = "Working"
+			roster.post_type = post_type
+			print(roster.as_dict())
+			roster.save(ignore_permissions=True)
+		return True
+	except Exception as e:
+		frappe.log_error(e)
+		frappe.throw(_(e))
+
+
+@frappe.whitelist(allow_guest=True)
+def unschedule_staff(employee, start_date, end_date=None, never_end=0):
+	try:
+		if never_end:
+			rosters = frappe.get_all("Employee Schedule", {"date": ('>=', start_date)})
+			for roster in rosters:
+				frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
+
+		for date in	pd.date_range(start=start_date, end=end_date):
+			if frappe.db.exists("Employee Schedule", {"employee": employee, "date":  cstr(date.date())}):
+				roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date":  cstr(date.date())})
+				frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
+
+	except Exception as e:
+		print(e)
+		return frappe.utils.response.report_error(e.http_status_code)
