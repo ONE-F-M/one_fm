@@ -26,12 +26,12 @@
    "fieldname": "unit_rate",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Unit Rate",
+   "label": "Hourly Unit Rate",
    "options": "currency"
   }
  ],
  "istable": 1,
- "modified": "2020-08-20 21:10:29.877573",
+ "modified": "2020-09-08 11:19:43.374025",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",
