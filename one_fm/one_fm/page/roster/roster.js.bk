@@ -203,8 +203,8 @@ function load_js(page){
 						default: date,
 						onchange:function(){
 							let cancel_from_date = d.get_value('cancel_from_date');
-							if(cancel_from_date && moment(cancel_from_date).isBefore(moment(frappe.datetime.nowdate()))){
-								// d.set_value('cancel_from_date', date);
+							if(cancel_from_date && moment(cancel_from_date).isBefore(moment())){
+								d.set_value('cancel_from_date', date);
 								frappe.throw(__("Cancel From date cannot be before today."));
 							}
 						}
@@ -218,12 +218,6 @@ function load_js(page){
 						label: 'Paid',
 						fieldname: 'post_off_paid',
 						fieldtype: 'Check',
-						onchange: function(){
-							let val = d.get_value('post_off_paid');
-							if(val){
-								d.set_value('post_off_unpaid', 0);
-							}
-						}
 					},			
 					{
 						fieldname: 'cb7',
@@ -233,12 +227,6 @@ function load_js(page){
 						label: 'Unpaid',
 						fieldname: 'post_off_unpaid',
 						fieldtype: 'Check',
-						onchange: function(){
-							let val = d.get_value('post_off_unpaid');
-							if(val){
-								d.set_value('post_off_paid', 0);
-							}
-						}
 					},
 					{
 						fieldname: 'sb5',
@@ -260,12 +248,6 @@ function load_js(page){
 						label: 'Paid',
 						fieldname: 'suspend_paid',
 						fieldtype: 'Check',
-						onchange: function(){
-							let val = d.get_value('suspend_paid');
-							if(val){
-								d.set_value('suspend_unpaid', 0);
-							}
-						}
 					},	
 					{
 						label: 'Suspend From Date',
@@ -274,8 +256,8 @@ function load_js(page){
 						default: date,
 						onchange:function(){
 							let suspend_from_date = d.get_value('suspend_from_date');
-							if(suspend_from_date && moment(suspend_from_date).isBefore(moment(frappe.datetime.nowdate()))){
-								// d.set_value('suspend_from_date', date);
+							if(suspend_from_date && moment(suspend_from_date).isBefore(moment())){
+								d.set_value('suspend_from_date', date);
 								frappe.throw(__("Suspend From Date cannot be before today."));
 							}
 						}
@@ -294,12 +276,6 @@ function load_js(page){
 						label: 'Unpaid',
 						fieldname: 'suspend_unpaid',
 						fieldtype: 'Check',
-						onchange: function(){
-							let val = d.get_value('suspend_unpaid');
-							if(val){
-								d.set_value('suspend_paid', 0);
-							}
-						}
 					},	
 					{
 						label: 'Suspend Till Date',
@@ -308,8 +284,8 @@ function load_js(page){
 						default: date,
 						onchange:function(){
 							let suspend_to_date = d.get_value('suspend_to_date');
-							if(suspend_to_date && moment(suspend_to_date).isBefore(moment(frappe.datetime.nowdate()))){
-								// d.set_value('suspend_to_date', date);
+							if(suspend_to_date && moment(suspend_to_date).isBefore(moment())){
+								d.set_value('suspend_to_date', date);
 								frappe.throw(__("Suspend To Date cannot be before today."));
 							}
 						}
@@ -380,9 +356,421 @@ function load_js(page){
 		page.postMonth = get_post_data;
 		//function call
 		GetTodaySelectedDate();
+		//on checkbox select change
+		$(`input[name="selectallcheckbox"]`).on("change", function () {
 
+			if ($(this).is(":checked")) {
+
+				$(this).parent().parent().parent().children("td").children().not("label").not(".bluebox").not(".greybox").not(".purplebox").not(".borderbox").addClass("selectclass");
+				var month = calendarSettings1.date.format("MM");
+				var year = calendarSettings1.date.format("YYYY");
+				$(".filterhideshow").removeClass("d-none");
+				$("#txtpoststartdate").val("01/" + month + "/" + year);
+				$("#txtpostenddate").val("");
+
+			}
+			else {
+				$(this).parent().parent().parent().children("td").children().not("label").not(".bluebox").not(".greybox").not(".purplebox").not(".borderbox").removeClass("selectclass");
+				$(".filterhideshow").addClass("d-none");
+				$("#txtpoststartdate").val("");
+			}
+			$("#divStartDate").removeClass("d-none");
+			$("#divEndDate").removeClass("d-none");
+			$(".selectclass").map(function () {
+				//console.log($(this).attr("data-selectid"));
+				if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
+					if (isMonth == 1) {
+						classgrt.push($(this).attr("data-selectid"));
+					}
+					else {
+						classgrtw.push($(this).attr("data-selectid"));
+					}
+				}
+			});
+		});
+		//on checkbox select change
 	}	
 
+
+	
+    $(function () {
+        var datePicker = $("#datepickeron").datepicker({
+            autoclose: true,
+			todayHighlight: true,
+			language: 'en',
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickeron").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#addpostmodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickeron").datepicker("place");
+                }, 0);
+            }
+        );
+
+    });
+    $(function () {
+        var datePicker = $("#datepickerafter").datepicker({
+            autoclose: true,
+			todayHighlight: true,
+			language: 'en',
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickerafter").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#addpostmodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickerafter").datepicker("place");
+                }, 0);
+            }
+        );
+
+    });
+    $(function () {
+        var datePicker = $("#datepickerfromdate").datepicker({
+            autoclose: true,
+			language: 'en',
+            startDate: new Date(),
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickerfromdate").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#addpostmodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickerfromdate").datepicker("place");
+                }, 0);
+            }
+        );
+
+    });
+    $(function () {
+        var datePicker = $("#datepickertodate").datepicker({
+            autoclose: true,
+			language: 'en',
+            todayHighlight: true,
+            startDate: new Date(),
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickertodate").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#addpostmodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickertodate").datepicker("place");
+                }, 0);
+            }
+        );
+    });
+    $(function () {
+        var datePicker = $("#datepickercancelfromdate").datepicker({
+            autoclose: true,
+			language: 'en',
+            startDate: new Date(),
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickercancelfromdate").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#addpostmodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickercancelfromdate").datepicker("place");
+                }, 0);
+            }
+        );
+    });
+
+
+    $(function () {
+        var datePicker = $("#datepickerRetrivefromdate").datepicker({
+            autoclose: true,
+			language: 'en',
+            startDate: new Date(),
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickerRetrivefromdate").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#addpostmodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickerRetrivefromdate").datepicker("place");
+                }, 0);
+            }
+        );
+    });
+
+    $(`input[name="txtnaverradio"]`).click(function () {
+        var radioValue = $(this).val();
+        if (radioValue === "0") {
+            $(".oneventdate").addClass("d-none");
+            $(".aftereventdate").addClass("d-none");
+        }
+        else if (radioValue === "1") {
+            $(".oneventdate").removeClass("d-none");
+            $(".aftereventdate").addClass("d-none");
+        }
+        else {
+            $(".oneventdate").addClass("d-none");
+            $(".aftereventdate").removeClass("d-none");
+        }
+    });
+    $("#postcalendertype").change(function () {
+        var getreccuval1 = $(this).children("option:selected").val();
+        if (getreccuval1 === "0") {
+            $(".postoffdiv").removeClass("d-none");
+            $(".suspendpostdiv").addClass("d-none");
+            $(".cancelpostcalenderdiv").addClass("d-none");
+        }
+        else if (getreccuval1 === "1") {
+            $(".postoffdiv").addClass("d-none");
+            $(".suspendpostdiv").removeClass("d-none");
+            $(".cancelpostcalenderdiv").addClass("d-none");
+        }
+        else if (getreccuval1 === "2") {
+            $(".postoffdiv").addClass("d-none");
+            $(".suspendpostdiv").addClass("d-none");
+            $(".cancelpostcalenderdiv").removeClass("d-none");
+        }
+        else if (getreccuval1 === "3") {
+            $(".postoffdiv").addClass("d-none");
+            $(".suspendpostdiv").addClass("d-none");
+            $(".cancelpostcalenderdiv").removeClass("d-none");
+        }
+        else {
+            $(".postoffdiv").addClass("d-none");
+            $(".suspendpostdiv").addClass("d-none");
+            $(".cancelpostcalenderdiv").addClass("d-none");
+        }
+
+    });
+    $("#postcalenderrepeatpost").change(function () {
+        var getreccuval = $(this).children("option:selected").val();
+        if (getreccuval === "6") {
+            $(".customreccurdiv").removeClass("d-none");
+        }
+        else {
+            $(".customreccurdiv").addClass("d-none");
+        }
+    });
+    //for dayoff modal
+    $(`input[name="txtendradio"]`).click(function () {
+        var dayoffradiovalue = $(this).val();
+        if (dayoffradiovalue === "1") {
+            $(".selecteventblock ").addClass("d-none");
+            $(".selectdateblock").addClass("d-none");
+        }
+        else if (dayoffradiovalue === "2") {
+            $(".selecteventblock").removeClass("d-none");
+            $(".selectdateblock").addClass("d-none");
+        }
+        else {
+            $(".selecteventblock").addClass("d-none");
+            $(".selectdateblock").removeClass("d-none");
+        }
+    });
+    $(`input[name="txtinputunassignradio"]`).click(function () {
+        var unassignradiovalue = $(this).val();
+        if (unassignradiovalue === "1") {
+            $(".unassigndateblock ").addClass("d-none");
+
+        }
+        else {
+            $(".unassigndateblock").removeClass("d-none");
+
+        }
+    });
+    $(function () {
+        var datePicker = $("#datepickerend").datepicker({
+            autoclose: true,
+			language: 'en',
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickerend").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#dayoffmodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickerend").datepicker("place");
+                }, 0);
+            }
+        );
+
+    });
+    //date picker for modal popup
+    $(function () {
+        var datePicker = $("#leavedatepicker").datepicker({
+            autoclose: true,
+			language: 'en',
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#leavedatepicker").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#leaveabsentmodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#leavedatepicker").datepicker("place");
+                }, 0);
+            }
+        );
+    });
+    $(function () {
+        var datePicker = $("#enddatepicker").datepicker({
+            autoclose: true,
+			language: 'en',
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#enddatepicker").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#leaveabsentmodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#enddatepicker").datepicker("place");
+                }, 0);
+            }
+        );
+    });
+    $(function () {
+        var datePicker = $("#datepickerpoststartdate").datepicker({
+            autoclose: true,
+			language: 'en',
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickerpoststartdate").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#assignchangemodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickerpoststartdate").datepicker("place");
+                }, 0);
+            }
+        );
+    });
+    $(function () {
+        var datePicker = $("#datepickerpostenddate").datepicker({
+            autoclose: true,
+			language: 'en',
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickerpostenddate").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#assignchangemodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickerpostenddate").datepicker("place");
+                }, 0);
+            }
+        );
+    });
+    $(function () {
+        var datePicker = $("#datepickerunassignstartdate").datepicker({
+            autoclose: true,
+			language: 'en',
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickerunassignstartdate").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#unassignchangemodal ").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickerunassignstartdate").datepicker("place");
+                }, 0);
+            }
+        );
+    });
+    $(function () {
+        var datePicker = $("#datepickerunassigndate").datepicker({
+            autoclose: true,
+			language: 'en',
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepickerunassigndate").width();
+            $(".datepicker-dropdown").css("width", getwidth);
+        });
+        var t;
+        $("#unassignchangemodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepickerunassigndate").datepicker("place");
+                }, 0);
+            }
+        );
+    });
     $(".modal").on("hidden.bs.modal", function () {
         $("#dayoffmodal").trigger("reset");
         $("#dayoffmodal").validate().resetForm();
@@ -441,7 +829,7 @@ function load_js(page){
             classgrtw = [];
         }
     });
-	// Show Active Post value change
+
     $(`input[name="chkpostActivePost"]`).on("change", function () {
 
         if ($(this).is(":checked")) {
@@ -465,7 +853,7 @@ function load_js(page){
         }
 
     });
-	// Show InActive Post value change
+
     $(`input[name="chkpostCancelPost"]`).on("change", function () {
 
         if ($(this).is(":checked")) {
@@ -707,149 +1095,89 @@ function bind_events(page){
 
 	/*on checkbox select change*/
 	$('.postWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
+
 		if ($(this).is(":checked")) {
-			$(this).parent().parent().parent().children("td").children().not("label").each(function(i,v){
-				console.log(v);
-				let date = $(v).attr('data-date');
-				if(moment(date).isAfter(moment())){
-					$(v).addClass("selectclass");
-				}
-			});
+
 			$(this).parent().parent().parent().children("td").children().not("label").removeClass("hoverselectclass");
-			// $(this).parent().parent().parent().children("td").children().not("label").addClass("selectclass");
-			// $(this).parent().parent().parent().children("td").children().not("label").addClass("disableselectclass");
+			$(this).parent().parent().parent().children("td").children().not("label").addClass("selectclass");
+			$(this).parent().parent().parent().children("td").children().not("label").addClass("disableselectclass");
 			$(".Postfilterhideshow").removeClass("d-none");
 
 		}
 		else {
 			$(this).parent().parent().parent().children("td").children().not("label").addClass("hoverselectclass");
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
-			})
 			$(this).parent().parent().parent().children("td").children().not("label").removeClass("selectclass");
-			// $(this).parent().parent().parent().children("td").children().not("label").removeClass("disableselectclass");
+			$(this).parent().parent().parent().children("td").children().not("label").removeClass("disableselectclass");
 			$(".Postfilterhideshow").addClass("d-none");
 		}
 		$(".selectclass").map(function () {
+			/*console.log($(this).attr("data-selectid"));*/
 			if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
 				if (isMonth == 1) {
-					// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 					classgrt.push($(this).attr("data-selectid"));
 				}
 				else {
-					// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 					classgrtw.push($(this).attr("data-selectid"));
 				}
 			}
 		});
+		if ($(this).parent().parent().parent().children("td").children().hasClass("redboxcolor")) {
+			/*select2-results__option*/
+			/*var last = $("#select2-postcalendertype-results .select2-results__option[aria-selected=false]:last-child");*/
+			/* $("#select2-postcalendertype-results .select2-results__option:last-child").css("display", "block !imortant");*/
+			/*$("#select2-postcalendertype-results .select2-results__option:last-child").addClass("mydisplay");*/
+			$("#selRetrive").show();
+			$(".selPost").hide();
+		}
+		else {
+			/*$("#select2-postcalendertype-results .select2-results__option:last-child").css("display", "none");*/
+			$("#selRetrive").hide();
+			$(".selPost").show();
+		}
+
 	});
 	/*on checkbox select change*/
 	/*on checkbox select change*/
 	$('.postMonth').find(`input[name="selectallcheckbox"]`).on("change", function () {
+
 		if ($(this).is(":checked")) {
-			$(this).parent().parent().parent().children("td").children().not("label").each(function(i,v){
-				let date = $(v).attr('data-date');
-				if(moment(date).isAfter(moment())){
-					$(v).addClass("selectclass");
-				}
-			});
+
 			$(this).parent().parent().parent().children("td").children().not("label").removeClass("hoverselectclass");
-			// $(this).parent().parent().parent().children("td").children().not("label").addClass("selectclass");
+			$(this).parent().parent().parent().children("td").children().not("label").addClass("selectclass");
+			$(this).parent().parent().parent().children("td").children().not("label").addClass("disableselectclass");
 			$(".Postfilterhideshow").removeClass("d-none");
+
 		}
 		else {
 			$(this).parent().parent().parent().children("td").children().not("label").addClass("hoverselectclass");
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
-			})
 			$(this).parent().parent().parent().children("td").children().not("label").removeClass("selectclass");
+			$(this).parent().parent().parent().children("td").children().not("label").removeClass("disableselectclass");
 			$(".Postfilterhideshow").addClass("d-none");
 		}
 		$(".selectclass").map(function () {
+			/*console.log($(this).attr("data-selectid"));*/
 			console.log(($(this).attr("data-selectid")));
 			if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
 				if (isMonth == 1) {
-					// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 					classgrt.push($(this).attr("data-selectid"));
 				}
 				else {
-					// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 					classgrtw.push($(this).attr("data-selectid"));
 				}
 			}
 		});
+		if ($(this).parent().parent().parent().children("td").children().hasClass("redboxcolor")) {
+			$("#selRetrive").show();
+			$(".selPost").hide();
+		}
+		else {
+			/*$("#select2-postcalendertype-results .select2-results__option:last-child").css("display", "none");*/
+			$("#selRetrive").hide();
+			$(".selPost").show();
+		}
 
 	});
 	/*on checkbox select change*/
-	//on checkbox select change
-	$('.rosterWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
-		console.log($(this));
-		if ($(this).is(":checked")) {
-
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				let [employee, date] = $(v).attr('data-selectid').split('|');
-				if(moment(date).isAfter(moment())){
-					$(v).addClass("selectclass");
-				}
-			});
-			$(".filterhideshow").removeClass("d-none");
-
-		}
-		else {
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
-			})
-			$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
-			$(".filterhideshow").addClass("d-none");
-		}
-		$(".selectclass").map(function () {
-			if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-				if (isMonth == 1) {
-					// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-					classgrt.push($(this).attr("data-selectid"));
-				}
-				else {
-					// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-					classgrtw.push($(this).attr("data-selectid"));
-				}
-			}
-		});
-	});
-	//on checkbox select change
-	//on checkbox select change
-	$('.rosterMonth').find(`input[name="selectallcheckbox"]`).on("change", function () {
-		if ($(this).is(":checked")) {
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				let [employee, date] = $(v).attr('data-selectid').split('|');
-				if(moment(date).isAfter(moment())){
-					$(v).addClass("selectclass");
-				}
-			})
-			$(".filterhideshow").removeClass("d-none");
-		}
-		else {
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
-			})
-			$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
-			$(".filterhideshow").addClass("d-none");
-		}
-		console.log($(".selectclass"));
-		$(".selectclass").map(function () {
-			console.log($(this).attr("data-selectid"));
-			if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-				if (isMonth == 1) {
-					classgrt.push($(this).attr("data-selectid"));
-					// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-				}
-				else {
-					classgrtw.push($(this).attr("data-selectid"));
-					// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-				}
-			}
-		});
-	});
-	//on checkbox select change
 	//on checkbox select change
 	$("input[name='selectallcheckboxes']").on("change", function () {
 		
@@ -893,23 +1221,6 @@ function bind_events(page){
 			
 	});
 	//on checkbox select change
-
-	$('.dayoff').on('click', function(){
-		// unschedule_staff
-	});
-
-	$('.scheduleleave').on('click', function(){
-		schedule_leave(page);		
-	});
-
-	$('.changepost').on('click', function(){
-		schedule_change_post(page);		
-		change_post(page);		
-	});
-
-	$('.assignchangemodal').on('click', function(){
-		unschedule_staff(page);
-	});
 }
 
 
@@ -929,8 +1240,6 @@ function bind_events(page){
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function get_roster_data(page){
-	classgrt = [];
-	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, department, post_type} = page.filters;
 	console.log(start_date, end_date, project, site, shift, department, post_type);
@@ -985,11 +1294,13 @@ function get_roster_data(page){
 			let emp_row = `
 			<tr data-name="${employee_key}">
 				<td>
+					<div class="d-flex">
 					<label class="checkboxcontainer simplecheckbox">
 						<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
 						<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
 						<span class="checkmark"></span>
 					</label>
+					</div>
 				</td>
 			</tr>
 			`;
@@ -1048,8 +1359,6 @@ function get_roster_data(page){
 }
 
 function get_roster_week_data(page){
-	classgrt = [];
-	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, department, post_type} = page.filters;
 	console.log(start_date, end_date, project, site, shift, department, post_type);
@@ -1104,11 +1413,13 @@ function get_roster_week_data(page){
 			let emp_row = `
 			<tr data-name="${employee_key}">
 				<td>
+					<div class="d-flex">
 					<label class="checkboxcontainer simplecheckbox">
 						<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
 						<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
 						<span class="checkmark"></span>
 					</label>
+					</div>
 				</td>
 			</tr>
 			`;
@@ -1166,8 +1477,6 @@ function get_roster_week_data(page){
 }
 
 function get_post_data(page){
-	classgrt = [];
-	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, post_type} = page.filters;
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view',{start_date, end_date, project, site, shift, post_type})
@@ -1209,7 +1518,7 @@ function get_post_data(page){
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
 							data-selectid="${post+'|'+date}"
-							data-date="${date}"
+							data-data="${date}"
 							data-project="${project}"
 							data-site="${site}"
 							data-shift="${shift}"
@@ -1225,7 +1534,7 @@ function get_post_data(page){
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center so"
 							data-selectid="${post_name+'|'+start_date.format('YYYY-MM-DD')}"	
-							data-date="${start_date.format('YYYY-MM-DD')}"
+							data-data="${start_date.format('YYYY-MM-DD')}"
 							data-post="${post_name}"
 						</div>
 					</td>`;
@@ -1240,8 +1549,6 @@ function get_post_data(page){
 }
 
 function get_post_week_data(page){
-	classgrt = [];
-	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, post_type} = page.filters;
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view',{start_date, end_date, project, site, shift, post_type})
@@ -1283,7 +1590,7 @@ function get_post_week_data(page){
 					<td>
 						<div class="hoverselectclass tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
 							data-selectid="${post+'|'+date}"
-							data-date="${date}"
+							data-data="${date}"
 							data-project="${project}"
 							data-site="${site}"
 							data-shift="${shift}"
@@ -1299,7 +1606,7 @@ function get_post_week_data(page){
 					<td>
 						<div class="hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
 							data-selectid="${post_name+'|'+start_date.format('YYYY-MM-DD')}"	
-							data-date="${start_date.format('YYYY-MM-DD')}"
+							data-data="${start_date.format('YYYY-MM-DD')}"
 							data-post="${post_name}"
 						</div>
 					</td>`;
@@ -2709,6 +3016,7 @@ function staff_edit_dialog(){
 			show_alert(d.get_values());
 		}
 	});
+	// d.fields_dict.ht.$wrapper.html('Hello World');
 	d.show();
 }
 
@@ -2886,84 +3194,31 @@ function displayWeekCalendar(weekCalendarSettings, page) {
 
 }
 
-function unschedule_staff(page){
-	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
+function unschedule_staff(){
 	let d = new frappe.ui.Dialog({
 		'title': 'Unschedule Staff',
 		'fields': [
-			{'label': 'Start Date','fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1,'default': date, onchange:function(){
+			{'label': 'Start Date','fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1,'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1') , onchange:function(){
 				let start_date = d.get_value('start_date');
-				if(start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
-					// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
+				if(start_date && moment(start_date).isSameOrBefore(moment())){
+					d.set_value('start_date', frappe.datetime.add_days(frappe.datetime.nowdate(), '1'));
 					frappe.throw(__("Start Date cannot be before today."));
 				}
 			}},
 			{'fieldtype': 'Section Break'},
-			{'label': 'Never End','fieldname': 'never_end', 'fieldtype': 'Check', onchange: function(){
-				let val = d.get_value('never_end');
-				if(val){
-					d.set_value('select_end', 0);
-				}
-			}},
+			{'label': 'Never End','fieldname': 'never_end', 'fieldtype': 'Check',},
 			{'fieldtype': 'Column Break'},
-			{'label': 'Select End Date','fieldname': 'select_end', 'fieldtype': 'Check',onchange: function(){
-				let val = d.get_value('select_end');
-				if(val){
-					d.set_value('never_end', 0);
-				}
-			}},
+			{'label': 'Select End Date','fieldname': 'select_end', 'fieldtype': 'Check'},
 			{'fieldtype': 'Section Break', 'depends_on': "eval:this.get_value('select_end') == 1"},
-			{'label': 'End Date','fieldname': 'end_date', 'fieldtype': 'Date', 'default': date,  onchange:function(){
+			{'label': 'End Date','fieldname': 'end_date', 'fieldtype': 'Date', onchange:function(){
 				let end_date = d.get_value('end_date');
 				let start_date = d.get_value('start_date')
-				if(end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
-					// d.set_value('end_date', undefined);
+				if(end_date && moment(end_date).isSameOrBefore(moment())){
+					d.set_value('end_date', undefined);
 					frappe.throw(__("End Date cannot be before today."));
 				}
-				if(start_date && end_date && moment(end_date).isBefore(moment(frappe.datetime.nowdate()))){
-					// d.set_value('end_date', undefined);
-					frappe.throw(__("End Date cannot be before Start Date."));
-				}
-			}}
-		],
-		primary_action: function(){
-			let {start_date, end_date, never_end} = d.get_values();
-			let employee = "HR-EMP-00002";	
-			frappe.xcall('one_fm.one_fm.page.roster.roster.unschedule_staff',
-			{employee, start_date, end_date, never_end})
-			.then(res => {
-				console.log(res)
-				d.hide();
-				let element = get_wrapper_element().slice(1);
-				page[element](page);
-			});
-		}
-	});
-	d.show();
-}
-
-function schedule_leave(page){
-	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
-	let d = new frappe.ui.Dialog({
-		'title': 'Leaves',
-		'fields': [
-			{'label': 'Type of Leave', 'fieldname': 'leave_type', 'fieldtype': 'Select', 'reqd': 1,'options': '\nSL\nAL\nEL'},
-			{'label': 'Start Date','fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1, 'default': date, onchange:function(){
-				let start_date = d.get_value('start_date');
-				if(start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
-					// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
-					frappe.throw(__("Start Date cannot be before today."));
-				}
-			}},
-			{'label': 'End Date','fieldname': 'end_date', 'fieldtype': 'Date','reqd': 1, 'default': date, onchange:function(){
-				let end_date = d.get_value('end_date');
-				let start_date = d.get_value('start_date')
-				if(end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
-					// d.set_value('end_date', undefined);
-					frappe.throw(__("End Date cannot be before today."));
-				}
-				if(start_date && end_date && moment(end_date).isBefore(moment(frappe.datetime.nowdate()))){
-					// d.set_value('end_date', undefined);
+				if(start_date && end_date && moment(end_date).isBefore(moment())){
+					d.set_value('end_date', undefined);
 					frappe.throw(__("End Date cannot be before Start Date."));
 				}
 			}}
@@ -2971,17 +3226,45 @@ function schedule_leave(page){
 		primary_action: function(){
 			d.hide();
 			show_alert(d.get_values());
-
-			let element = get_wrapper_element().slice(1);
-			page[element](page);
-
 		}
 	});
 	d.show();
 }
 
-function change_post(page){
-	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
+function schedule_leave(){
+	let d = new frappe.ui.Dialog({
+		'title': 'Leaves',
+		'fields': [
+			{'label': 'Type of Leave', 'fieldname': 'leave_type', 'fieldtype': 'Select', 'reqd': 1,'options': '\nSL\nAL\nEL'},
+			{'label': 'Start Date','fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1, 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'), onchange:function(){
+				let start_date = d.get_value('start_date');
+				if(start_date && moment(start_date).isSameOrBefore(moment())){
+					d.set_value('start_date', frappe.datetime.add_days(frappe.datetime.nowdate(), '1'));
+					frappe.throw(__("Start Date cannot be before today."));
+				}
+			}},
+			{'label': 'End Date','fieldname': 'end_date', 'fieldtype': 'Date','reqd': 1, onchange:function(){
+				let end_date = d.get_value('end_date');
+				let start_date = d.get_value('start_date')
+				if(end_date && moment(end_date).isSameOrBefore(moment())){
+					d.set_value('end_date', undefined);
+					frappe.throw(__("End Date cannot be before today."));
+				}
+				if(start_date && end_date && moment(end_date).isBefore(moment())){
+					d.set_value('end_date', undefined);
+					frappe.throw(__("End Date cannot be before Start Date."));
+				}
+			}}
+		],
+		primary_action: function(){
+			d.hide();
+			show_alert(d.get_values());
+		}
+	});
+	d.show();
+}
+
+function change_post(){
 	let d = new frappe.ui.Dialog({
 		'title': 'Change Post',
 		'fields': [
@@ -2995,33 +3278,22 @@ function change_post(page){
 			}},	
 		],
 		primary_action: function(){
-			d.hide();			
-			let element = get_wrapper_element().slice(1);
-			page[element](page);
-
+			d.hide();
+			show_alert(d.get_values());
 		}
 	});
 	d.show();
 }
 
-function schedule_change_post(page){
-	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
-	// let employee = "HR-EMP-00002";	
-	let employees =  [];
-	let selected = [... new Set(classgrt)];
-	selected.forEach(function(i){
-		let [employee, date] = i.split("|");
-		employees.push({employee, date}) 
-	})
+function schedule_change_post(){
 	let d = new frappe.ui.Dialog({
 		'title': 'Schedule/Change Post',
 		'fields': [
 			{'label': 'Shift', 'fieldname': 'shift', 'fieldtype': 'Link', 'options': 'Operations Shift', 'reqd': 1, onchange:function(){
-				let name = d.get_value('shift');
-				if(name){
-					frappe.db.get_value("Operations Shift",name,["site", "project"])
+				let site_shift = d.get_value('shift');
+				if(site_shift){
+					frappe.db.get_value("Operations Post",{site_shift},["site", "project"])
 					.then(res => {
-						console.log(res);
 						let {site, project} = res.message;
 						d.set_value('site', site);
 						d.set_value('project', project);
@@ -3036,38 +3308,25 @@ function schedule_change_post(page){
 					filters: {"shift": d.get_value('shift')}
 				};
 			}},
-			// {'label': 'Start Date','fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1, 'default': date, 
-			// 	onchange:function(){
-			// 		let start_date = moment(d.get_value('start_date'));
-			// 		console.log(start_date, frappe.datetime.nowdate());
-			// 		if(start_date && start_date.isSameOrBefore(moment(frappe.datetime.nowdate()))){
-			// 			frappe.throw(__("Start Date cannot be before today."));
-			// 		}
-			// 	}
-			// },
-			// {'label': 'End Date','fieldname': 'end_date', 'fieldtype': 'Date', 'reqd': 1, 'default': date,  
-			// 	onchange:function(){
-			// 		let start_date = d.get_value('start_date');
-			// 		let end_date = d.get_value('end_date');
-			// 		if(end_date && moment(end_date).isBefore(moment(frappe.datetime.nowdate()))){
-			// 			frappe.throw(__("End Date cannot be before today."));
-			// 		}
-			// 		if(start_date && end_date && moment(end_date).isBefore(start_date)){
-			// 			frappe.throw(__("End Date cannot be before Start date."));
-			// 		}
-			// 	}
-			// }	
+			{'label': 'Start Date','fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1, 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'), onchange:function(){
+				let start_date = d.get_value('start_date');
+				if(start_date && moment(start_date).isSameOrBefore(moment())){
+					d.set_value('start_date', frappe.datetime.add_days(frappe.datetime.nowdate(), '1'));
+					frappe.throw(__("Start Date cannot be before today."));
+				}
+			}},
+			{'label': 'End Date','fieldname': 'end_date', 'fieldtype': 'Date', 'reqd': 1,  onchange:function(){
+				let end_date = d.get_value('end_date');
+				let start_date = d.get_value('start_date')
+				if(start_date && end_date && moment(end_date).isBefore(moment())){
+					d.set_value('end_date', undefined);
+					frappe.throw(__("End Date cannot be before Start Date."));
+				}
+			}}	
 		],
 		primary_action: function(){
-			let {shift, site, post_type, project} = d.get_values();
-			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-			{employees, shift, site, project, post_type})
-			.then(res => {
-				console.log(res)
-				d.hide();
-				let element = get_wrapper_element().slice(1);
-				page[element](page);
-			});
+			d.hide();
+			show_alert(d.get_values());
 		}
 	});
 	d.show();
