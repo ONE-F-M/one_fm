@@ -12,12 +12,16 @@ class BookBed(Document):
 		if self.booking_status == "Temporary Booking":
 			self.naming_series = "TBB-.YYYY.-"
 
-	def on_update(self):
+	def after_insert(self):
 		self.update_bed_status()
 
 	def update_bed_status(self):
 		status = self.booking_status if self.booking_status != 'Cancelled' else 'Vacant'
-		frappe.db.set_value('Bed', self.bed, 'status', status)
+		if self.book_for == 'Single':
+			frappe.db.set_value('Bed', self.bed, 'status', status)
+		elif self.book_for == 'Bulk' and slef.bulk_book_bed:
+			for bed in self.bulk_book_bed:
+				frappe.db.set_value('Bed', bed.bed, 'status', status)
 
 	def get_employee_details(self):
 		filters = {}

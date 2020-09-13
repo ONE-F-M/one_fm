@@ -1,0 +1,98 @@
+{
+ "actions": [],
+ "creation": "2020-09-12 07:30:58.572888",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "bed",
+  "bed_type",
+  "gender",
+  "column_break_4",
+  "accommodation",
+  "governorate",
+  "area",
+  "location",
+  "booking_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "bed",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Bed",
+   "options": "Bed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bed_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Bed Type",
+   "options": "\nSingle\nDouble",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Gender",
+   "options": "Gender",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "label": "Accommodation",
+   "options": "Accommodation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation.governate",
+   "fetch_if_empty": 1,
+   "fieldname": "governorate",
+   "fieldtype": "Link",
+   "label": "Governorate",
+   "options": "Governorate",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation.area",
+   "fetch_if_empty": 1,
+   "fieldname": "area",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Area",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation.accommodation_location",
+   "fetch_if_empty": 1,
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Location",
+   "read_only": 1
+  },
+  {
+   "fieldname": "booking_status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Booking Status"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-09-12 07:49:24.851758",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Bulk Book Bed",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
