@@ -170,7 +170,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Booking Status",
-   "options": "\nBooked\nTemporary Booked\nCancelled",
+   "options": "\nPermanent Booking\nTemporary Booking\nCancelled",
    "reqd": 1
   },
   {
@@ -277,7 +277,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-13 23:52:23.950562",
+ "modified": "2020-09-14 01:10:25.712992",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Book Bed",

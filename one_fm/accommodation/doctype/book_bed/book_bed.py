@@ -17,6 +17,10 @@ class BookBed(Document):
 
 	def update_bed_status(self):
 		status = self.booking_status if self.booking_status != 'Cancelled' else 'Vacant'
+		if self.booking_status == 'Temporary Booking':
+			status = 'Temporarily Booked'
+		elif self.booking_status == 'Permanent Booking':
+			status = 'Booked'
 		if self.book_for == 'Single':
 			frappe.db.set_value('Bed', self.bed, 'status', status)
 		elif self.book_for == 'Bulk' and slef.bulk_book_bed:

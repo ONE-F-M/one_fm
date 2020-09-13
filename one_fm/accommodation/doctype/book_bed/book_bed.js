@@ -43,8 +43,23 @@ frappe.ui.form.on('Book Bed', {
 	},
 	booking_status: function(frm) {
 		set_bulk_bed_book(frm);
+	},
+	local_overseas: function(frm) {
+		set_booking_status(frm);
 	}
 });
+
+var set_booking_status = function(frm) {
+	frm.set_value('booking_status', '');
+	if(frm.doc.local_overseas){
+		if(frm.doc.local_overseas == 'Local'){
+			frm.set_value('booking_status', 'Permanent Booking');
+		}
+		else if(frm.doc.local_overseas == 'Overseas'){
+			frm.set_value('booking_status', 'Temporary Booking');
+		}
+	}
+};
 
 var validate_no_of_employees_with_availble_bed = function(frm) {
 	if(frm.doc.no_of_employees){
