@@ -17,6 +17,10 @@ class BookBed(Document):
 
 	def update_bed_status(self):
 		status = self.booking_status if self.booking_status != 'Cancelled' else 'Vacant'
+		if self.booking_status == 'Temporary Booking':
+			status = 'Temporarily Booked'
+		elif self.booking_status == 'Permanent Booking':
+			status = 'Booked'
 		if self.book_for == 'Single':
 			frappe.db.set_value('Bed', self.bed, 'status', status)
 		elif self.book_for == 'Bulk' and slef.bulk_book_bed:
@@ -40,6 +44,24 @@ class BookBed(Document):
 				self.religion = employee.one_fm_religion
 				self.email = employee.personal_email
 				self.contact_number = employee.cell_number
+			else:
+				self.get_job_applicant_details()
+
+	def get_job_applicant_details(self):
+		filters = {}
+		if self.passport_number:
+			filters['one_fm_passport_number'] = self.passport_number
+		if self.civil_id:
+			filters['one_fm_civil_id'] = self.civil_id
+		if filters and len(filters)>0:
+			job_applicant_id = frappe.db.exists('Job Applicant', filters)
+			if job_applicant_id:
+				job_applicant = frappe.get_doc('Job Applicant', job_applicant_id)
+				self.full_name = job_applicant.applicant_name
+				# self.nationality = job_applicant.one_fm_nationality
+				self.religion = job_applicant.one_fm_religion
+				self.email = job_applicant.one_fm_email_id
+				self.contact_number = job_applicant.one_fm_contact_number
 
 @frappe.whitelist()
 def get_accommodation_bed_space(filters):

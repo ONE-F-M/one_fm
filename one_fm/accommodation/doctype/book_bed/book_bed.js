@@ -43,15 +43,28 @@ frappe.ui.form.on('Book Bed', {
 	},
 	booking_status: function(frm) {
 		set_bulk_bed_book(frm);
+	},
+	local_overseas: function(frm) {
+		set_booking_status(frm);
 	}
 });
+
+var set_booking_status = function(frm) {
+	frm.set_value('booking_status', '');
+	if(frm.doc.local_overseas){
+		if(frm.doc.local_overseas == 'Local'){
+			frm.set_value('booking_status', 'Permanent Booking');
+		}
+		else if(frm.doc.local_overseas == 'Overseas'){
+			frm.set_value('booking_status', 'Temporary Booking');
+		}
+	}
+};
 
 var validate_no_of_employees_with_availble_bed = function(frm) {
 	if(frm.doc.no_of_employees){
 		let available_beds = (frm.doc.available_beds ? frm.doc.available_beds.length : 0);
-		console.log(available_beds);
 		if(frm.doc.no_of_employees > available_beds){
-			console.log("DDDD");
 			frappe.throw(__('We have only {0} Available Beds.', [available_beds]));
 		}
 	}
@@ -103,7 +116,7 @@ var set_employee_details = function(frm) {
 		},
 		freeze: true,
 		freeze_message: __("Fetching Employee Data ....")
-	})
+	});
 };
 
 var get_accommodations = function(frm) {
@@ -219,7 +232,9 @@ var check_bed_availability = function(frm) {
 			set_filter_for_bed(frm);
 			frm.refresh_fields();
 			frm.fields_dict["available_beds"].grid.frm.$wrapper.find('.grid-footer').hide();
-		}
+		},
+		freeze: true,
+		freeze_message: __('Checking Availability...')
 	});
 };
 
