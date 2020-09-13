@@ -1,0 +1,38 @@
+{
+ "actions": [],
+ "creation": "2020-04-24 09:53:21.105729",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "number_of_paid_sick_leave",
+  "percentage_of_allocation_reduction"
+ ],
+ "fields": [
+  {
+   "fieldname": "number_of_paid_sick_leave",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Number of Paid Sick Leave",
+   "reqd": 1
+  },
+  {
+   "fieldname": "percentage_of_allocation_reduction",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Percentage of Allocation Reduction",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-09-14 00:36:17.201001",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Annual Leave Allocation Reduction",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "creation": "2020-07-08 21:46:54.394374",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -105,7 +106,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-10 06:45:01.995994",
+ "modified": "2020-09-12 08:34:53.658281",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Unit",

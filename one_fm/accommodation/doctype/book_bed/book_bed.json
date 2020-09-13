@@ -26,7 +26,9 @@
   "available_beds_section",
   "available_beds",
   "book_bed_section",
+  "book_for",
   "bed",
+  "no_of_employees",
   "column_break_22",
   "booking_status",
   "section_break_24",
@@ -41,7 +43,9 @@
   "religion",
   "column_break_35",
   "contact_number",
-  "email"
+  "email",
+  "section_break_39",
+  "bulk_book_bed"
  ],
  "fields": [
   {
@@ -135,8 +139,7 @@
   {
    "fieldname": "available_beds",
    "fieldtype": "Table",
-   "options": "Available Bed",
-   "read_only": 1
+   "options": "Available Bed"
   },
   {
    "fieldname": "book_bed_section",
@@ -148,8 +151,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Bed",
-   "options": "Bed",
-   "reqd": 1
+   "options": "Bed"
   },
   {
    "depends_on": "local_overseas",
@@ -223,6 +225,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.book_for=='Single'",
    "fieldname": "section_break_24",
    "fieldtype": "Section Break"
   },
@@ -246,10 +249,35 @@
   {
    "fieldname": "column_break_35",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "Single",
+   "fieldname": "book_for",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Book for",
+   "options": "\nSingle\nBulk"
+  },
+  {
+   "fieldname": "no_of_employees",
+   "fieldtype": "Int",
+   "label": "No of Employees"
+  },
+  {
+   "depends_on": "eval:doc.book_for == 'Bulk'",
+   "fieldname": "section_break_39",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.book_for=='Bulk'",
+   "fieldname": "bulk_book_bed",
+   "fieldtype": "Table",
+   "options": "Bulk Book Bed",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-09-10 07:22:54.845811",
+ "modified": "2020-09-13 23:52:23.950562",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Book Bed",

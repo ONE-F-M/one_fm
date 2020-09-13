@@ -1,0 +1,47 @@
+{
+ "actions": [],
+ "creation": "2020-04-08 13:27:31.302961",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "salary_deduction_percentage",
+  "threshold_days",
+  "salary_component"
+ ],
+ "fields": [
+  {
+   "fieldname": "salary_deduction_percentage",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Salary Deduction Percentage",
+   "reqd": 1
+  },
+  {
+   "fieldname": "threshold_days",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Threshold Days",
+   "reqd": 1
+  },
+  {
+   "fieldname": "salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Salary Component",
+   "options": "Salary Component",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-09-14 00:37:43.228607",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Leave Payment Breakdown",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

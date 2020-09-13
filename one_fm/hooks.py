@@ -45,6 +45,7 @@ page_js = {"roster" : [
 doctype_js = {
 	"Location" : "public/js/doctype_js/location.js",
 	"Shift Type" : "public/js/doctype_js/shift_type.js",
+	"Leave Type" : "public/js/doctype_js/leave_type.js",
 	"Project": "public/js/doctype_js/project.js",
 	"Notification Log": "public/js/doctype_js/notification_log.js",
 	"Sales Invoice": "public/js/doctype_js/sales_invoice.js",

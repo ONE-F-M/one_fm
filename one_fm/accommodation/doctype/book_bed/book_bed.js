@@ -4,6 +4,8 @@
 frappe.ui.form.on('Book Bed', {
 	refresh: function(frm) {
 		set_filter_for_bed(frm);
+		manage_book_for(frm);
+		frm.fields_dict["available_beds"].grid.frm.$wrapper.find('.grid-footer').hide();
 	},
 	check_availability: function(frm) {
 		check_bed_availability(frm);
@@ -31,8 +33,66 @@ frappe.ui.form.on('Book Bed', {
 	},
 	employee: function(frm) {
 		set_employee_details(frm)
+	},
+	book_for: function(frm) {
+		manage_book_for(frm);
+	},
+	no_of_employees: function(frm) {
+		validate_no_of_employees_with_availble_bed(frm);
+		set_bulk_bed_book(frm);
+	},
+	booking_status: function(frm) {
+		set_bulk_bed_book(frm);
 	}
 });
+
+var validate_no_of_employees_with_availble_bed = function(frm) {
+	if(frm.doc.no_of_employees){
+		let available_beds = (frm.doc.available_beds ? frm.doc.available_beds.length : 0);
+		console.log(available_beds);
+		if(frm.doc.no_of_employees > available_beds){
+			console.log("DDDD");
+			frappe.throw(__('We have only {0} Available Beds.', [available_beds]));
+		}
+	}
+};
+
+var set_bulk_bed_book = function(frm) {
+	if(frm.doc.no_of_employees && frm.doc.booking_status && frm.doc.available_beds){
+		frm.clear_table('bulk_book_bed');
+		frm.doc.available_beds.forEach((item, i) => {
+			if(i < frm.doc.no_of_employees){
+				var bulk_book_bed = frm.add_child('bulk_book_bed');
+				bulk_book_bed.bed = item.bed
+				bulk_book_bed.bed_type = item.bed_type
+				bulk_book_bed.gender = item.gender
+				bulk_book_bed.accommodation = item.accommodation
+				bulk_book_bed.governorate = item.governorate
+				bulk_book_bed.area = item.area
+				bulk_book_bed.location = item.location
+				bulk_book_bed.booking_status = frm.doc.booking_status
+			}
+		});
+	}
+	frm.refresh_fields();
+};
+
+var manage_book_for = function(frm) {
+	if(frm.doc.book_for == 'Single'){
+		frm.set_df_property('no_of_employees', 'hidden', true);
+		frm.set_df_property('no_of_employees', 'reqd', false);
+		frm.set_df_property('bed', 'hidden', false);
+		frm.set_df_property('bed', 'reqd', true);
+	}
+	else{
+		frm.set_df_property('bed', 'hidden', true);
+		frm.set_df_property('bed', 'reqd', false);
+		if(frm.doc.book_for == 'Bulk'){
+			frm.set_df_property('no_of_employees', 'hidden', false);
+			frm.set_df_property('no_of_employees', 'reqd', true);
+		}
+	}
+};
 
 var set_employee_details = function(frm) {
 	frappe.call({
@@ -146,8 +206,19 @@ var check_bed_availability = function(frm) {
 			else{
 				frappe.msgprint(__("No Vacant Bed Available.!!"))
 			}
+			frm.fields_dict["available_beds"].grid.frm.$wrapper.on('click', '.grid-row-check', (e) => {
+				frm.set_value('bed', '');
+				if(frm.fields_dict["available_beds"].grid.frm.$wrapper.find('.grid-body .grid-row-check:checked:first').length){
+					frm.fields_dict["available_beds"].grid.frm.$wrapper.find('.grid-remove-rows').hide();
+					let selected_bed = frm.get_field('available_beds').grid.get_selected_children();
+					if(selected_bed.length > 0){
+						frm.set_value('bed', selected_bed[0].bed);
+					}
+				}
+			});
 			set_filter_for_bed(frm);
 			frm.refresh_fields();
+			frm.fields_dict["available_beds"].grid.frm.$wrapper.find('.grid-footer').hide();
 		}
 	});
 };
