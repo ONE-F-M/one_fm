@@ -63,6 +63,7 @@
   {
    "fieldname": "designation",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Designation",
    "options": "Designation",
    "reqd": 1
@@ -155,7 +156,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-19 21:52:36.662325",
+ "modified": "2020-09-14 09:56:54.778691",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF Request",

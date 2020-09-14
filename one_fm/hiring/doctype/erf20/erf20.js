@@ -210,16 +210,9 @@ var set_filter_for_location = function(frm, location_list) {
 
 var create_event_for_okr_workshop = function(frm) {
 	if(frm.doc.schedule_for_okr_workshop_with_recruiter && frm.doc.okr_workshop_with){
-		var filters = {
-			'schedule_date': frm.doc.schedule_for_okr_workshop_with_recruiter,
-			'shared_with': frm.doc.okr_workshop_with
-		}
-		if (!frm.is_new){
-			filters['docname'] = frm.doc.name
-		}
 		frappe.call({
-			method: 'one_fm.hiring.doctype.erf20.erf20.create_event_for_okr_workshop',
-			args: filters,
+			doc: frm.doc,
+			method: 'create_event_for_okr_workshop',
 			callback: function(r) {
 				if(r.message){
 					frm.set_value('event_for_okr_workshop', r.message.name);
@@ -296,9 +289,12 @@ var set_performance_profile_html = function(frm) {
 	<p style="font-size: 12px; color: #8d99a6;">
 		Dear, ${frm.doc.erf_requested_by_name?frm.doc.erf_requested_by_name:''} you are the hiring manager for
 		${frm.doc.designation?frm.doc.designation: 'the Designation'}.
-		To get an Excellent Hire we will follow the Adlers tried and tested formula of Performance-Based Hiring.
+		To get an Excellent Hire we will follow the
+		<button class="btn btn-default btn-xs adlers_btn" type="button">Adlers</button>
+		tried and tested formula of Performance-Based Hiring.
 		This starts with creating a performance-based Job Description.
-		Here's a Worksheet on Performance base Job Description  - <button class="btn btn-default btn-xs performance_profile_guid_btn" type="button">Guide</button>
+		Here's a Worksheet on Performance base Job Description  -
+		<button class="btn btn-default btn-xs performance_profile_guid_btn" type="button">Guide</button>
 	</p>
 	<p style="font-size: 12px; color: #8d99a6;">
 		You may also <button class="btn btn-default btn-xs performance_profile_hand_book_btn" type="button">download a handbook</button> so you can be prepared for the workshop.
@@ -306,6 +302,18 @@ var set_performance_profile_html = function(frm) {
 	<p style="font-size: 12px; color: #8d99a6;">
 		You could write below in brief what the hired person will require to do.
 		<button class="btn btn-default btn-xs performance_profile_star_eg_btn" type="button">Click here to get STAR Examples</button>
+	</p>
+	<p style="font-size: 12px; color: #8d99a6;">
+		You can also help the HR Prepare -By filling the below
+		<ol>
+			<li style="font-size: 12px; color: #8d99a6;">
+				What does the person hire need to accomplish primarily in the first 3 months to be accounted for as an
+				excellent hire.
+			</li>
+			<li style="font-size: 12px; color: #8d99a6;">
+				What is the Value Add This Job will give the Hire? For Eg, New skill learning, relaxed job anything.
+			</li>
+		</ol>
 	</p>
 	</div>`;
 	$wrapper.html(performance_profile_html);
@@ -328,6 +336,11 @@ var set_performance_profile_html = function(frm) {
 	$wrapper.on('click', '.performance_profile_guid_btn', function() {
 		if(frm.doc.docstatus == 0){
 			performance_profile_guid_html();
+		}
+	});
+	$wrapper.on('click', '.adlers_btn', function() {
+		if(frm.doc.docstatus == 0){
+			set_adlers_html();
 		}
 	});
 	$wrapper.on('click', '.performance_profile_star_eg_btn', function() {
@@ -356,6 +369,29 @@ var performance_profile_star_eg_html = function() {
 		</ol>
 	`
 	dialog.fields_dict.star_eg_html.$wrapper.html(star_eg_html);
+	dialog.show();
+};
+
+var set_adlers_html = function() {
+	var dialog = new frappe.ui.Dialog({
+		title: __("Adlers"),
+		fields: [
+			{
+				"fieldtype": "HTML",
+				"fieldname": "adlers_html"
+			}
+		]
+	});
+	let adlers_html = `
+		<p style="font-size: 12px; color: #8d99a6;">
+		Lou Adler is the CEO and founder of The Adler Group – a training and search firm helping companies implement
+		Performance-based Hiring℠. Adler is the author of the Amazon top-10 best-seller, Hire With Your Head
+		(John Wiley & Sons, 3rd Edition, 2007). His most recent book has just been published, The Essential Guide for
+		Hiring & Getting Hired (Workbench, 2013). He is also the author of the award-winning Nightingale-Conant audio
+		program, Talent Rules! Using Performance-based Hiring to Build Great. https://louadlergroup.com/
+		</p>
+	`
+	dialog.fields_dict.adlers_html.$wrapper.html(adlers_html);
 	dialog.show();
 };
 
@@ -756,14 +792,13 @@ var manage_type_of_license = function(frm) {
 };
 
 var manage_provide_salary_advance = function(frm) {
-	// set_provide_salary_advance_btn(frm);
-	if(frm.doc.provide_salary_advance){
-		frm.set_df_property('amount_in_advance', 'reqd', true);
-	}
-	else{
-		frm.set_df_property('amount_in_advance', 'reqd', false);
-		frm.set_value('amount_in_advance', '');
-	}
+	// if(frm.doc.provide_salary_advance){
+	// 	frm.set_df_property('amount_in_advance', 'reqd', true);
+	// }
+	// else{
+	// 	frm.set_df_property('amount_in_advance', 'reqd', false);
+	// 	frm.set_value('amount_in_advance', '');
+	// }
 };
 
 var manage_type_of_travel = function(frm) {

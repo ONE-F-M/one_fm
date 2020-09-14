@@ -666,10 +666,8 @@
    "read_only": 1
   },
   {
-   "description": "1. What does the person hire need to accomplish primarily in the first 3 months to be accounted for as an excellent hire.\n<br>\n2. What is the Value Add This Job will give the Hire? For Eg, New skill learning, relaxed job anything.\n\n ",
    "fieldname": "help_hr_to_create_okr",
-   "fieldtype": "Small Text",
-   "label": "You can also help the HR Prepare -By filling the below"
+   "fieldtype": "Small Text"
   },
   {
    "fieldname": "driving_license_required_html",
@@ -728,6 +726,7 @@
    "depends_on": "provide_salary_advance",
    "fieldname": "amount_in_advance",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Amount in Advance"
   },
   {
@@ -738,7 +737,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-09-10 11:17:14.075493",
+ "modified": "2020-09-14 11:17:39.069568",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "ERF20",
