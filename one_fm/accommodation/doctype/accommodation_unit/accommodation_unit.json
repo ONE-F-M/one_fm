@@ -19,7 +19,10 @@
   "unit_qr",
   "description_section",
   "space_details",
-  "total_space"
+  "total_space",
+  "accommodation_meter_reading_section",
+  "water_and_electricity_consumption_billed_by",
+  "accommodation_meter_readings"
  ],
  "fields": [
   {
@@ -110,10 +113,29 @@
    "fieldname": "unit_qr",
    "fieldtype": "Data",
    "label": "Unit QR"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accommodation_meter_reading_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation Unit Meter Reading"
+  },
+  {
+   "fieldname": "water_and_electricity_consumption_billed_by",
+   "fieldtype": "Select",
+   "label": "Water and Electricity Consumption Billed By",
+   "options": "\nThe Company\nThe Owner"
+  },
+  {
+   "depends_on": "eval:doc.water_and_electricity_consumption_billed_by == 'The Company'",
+   "fieldname": "accommodation_meter_readings",
+   "fieldtype": "Table",
+   "label": "Accommodation Unit Meter Readings",
+   "options": "Accommodation Meter Reading"
   }
  ],
  "links": [],
- "modified": "2020-09-14 20:33:10.381706",
+ "modified": "2020-09-14 20:53:56.157514",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Unit",

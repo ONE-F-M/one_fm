@@ -101,6 +101,9 @@
   "column_break_76",
   "accommodation_location",
   "accommodation_geolocation",
+  "accommodation_meter_reading_section",
+  "water_and_electricity_consumption_billed_by",
+  "accommodation_meter_readings",
   "contract_details_section",
   "contract_start_date",
   "contract_end_date",
@@ -762,10 +765,29 @@
    "fieldname": "qr_code_section",
    "fieldtype": "Section Break",
    "label": "QR Code"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accommodation_meter_reading_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation Meter Reading"
+  },
+  {
+   "depends_on": "eval:doc.water_and_electricity_consumption_billed_by == 'The Company'",
+   "fieldname": "accommodation_meter_readings",
+   "fieldtype": "Table",
+   "label": "Accommodation Meter Readings",
+   "options": "Accommodation Meter Reading"
+  },
+  {
+   "fieldname": "water_and_electricity_consumption_billed_by",
+   "fieldtype": "Select",
+   "label": "Water and Electricity Consumption Billed By",
+   "options": "\nThe Company\nThe Owner"
   }
  ],
  "links": [],
- "modified": "2020-09-14 20:33:53.897554",
+ "modified": "2020-09-14 20:54:05.116847",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",
