@@ -18,8 +18,9 @@ class ERF20(Document):
 			self.set_onload('okr_workshop_with_full_name', get_user_fullname(self.okr_workshop_with))
 
 	def validate(self):
-		if self.is_new() and not self.erf_requested_by:
+		if not self.erf_requested_by:
 			self.erf_requested_by = frappe.session.user
+		if not self.erf_requested_by_name and self.erf_requested_by:
 			self.erf_requested_by_name = get_user_fullname(self.erf_requested_by)
 		self.manage_assigned_recruiter()
 		self.validate_date()
@@ -156,6 +157,9 @@ class ERF20(Document):
 		if self.need_to_assign_more_recruiter and not self.secondary_recruiter_assigned:
 			frappe.throw(_('If You Need Assign One More Recruiter, Please fill the Secondary Recruiter Assigned.!'))
 
+	def create_event_for_okr_workshop(self):
+		return set_event_for_okr_workshop(self)
+
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
 	job_opening.job_title = erf.erf_code+'-'+erf.designation+'-'+erf.department
@@ -279,28 +283,28 @@ def get_project_details(project):
 			location_list.append(operation_site.site_location)
 	return {'location_list': location_list}
 
-@frappe.whitelist()
-def create_event_for_okr_workshop(schedule_date, shared_with, docname=False):
-	message = "For a Quick Workshop to Create Performance Profile for New ERF"
-	if docname:
-		page_link = get_url("/desk#Form/ERF20/" + docname)
-		message = "<p>{0} <a href='{1}'>{2}</a></p>".format(message, page_link, docname)
+def set_event_for_okr_workshop(doc):
+	message = """
+		Dear {0},<br/>
+		{1}, would want conduct a Performance Profile workshop on {2},
+		you may please contact {1} to confirm the schedule.
+	""".format(get_user_fullname(doc.okr_workshop_with), doc.erf_requested_by_name, doc.schedule_for_okr_workshop_with_recruiter)
 
 	frappe.sendmail(
-		recipients = shared_with,
+		recipients = doc.okr_workshop_with,
 		sender = frappe.db.get_value('User', frappe.session.user, 'email'),
 		subject = _("For a Quick Workshop to Create Performance Profile"),
 		message = _(message)
 	)
-	frappe.msgprint(_("Email sent to {0}").format(shared_with))
+	frappe.msgprint(_("Email sent to {0}").format(doc.okr_workshop_with))
 	event = frappe.new_doc('Event')
 	event.subject = 'Test Subject'
 	event.event_category = 'Meeting'
 	event.event_type = 'Private'
-	event.starts_on = schedule_date
+	event.starts_on = doc.schedule_for_okr_workshop_with_recruiter
 	event.save(ignore_permissions=True)
 	# Share the event to get notified by email.
-	frappe.share.add('Event', event.name, shared_with, write=1, share=1,
+	frappe.share.add('Event', event.name, doc.okr_workshop_with, write=1, share=1,
 		flags={"ignore_share_permission": True})
 	return event
 
