@@ -27,6 +27,7 @@ function load_js(page){
 
 	setup_filters(page);
 	setup_staff_filters(page);
+	setup_topbar_events(page);
     //postcalendertype
     $("#selRetrive").hide();
     $(this).scrollTop(0);
@@ -634,6 +635,24 @@ function load_js(page){
 
 }
 
+function setup_topbar_events(page){
+	$('.dayoff').on('click', function(){
+		// unschedule_staff
+	});
+
+	$('.scheduleleave').on('click', function(){
+		schedule_leave(page);		
+	});
+
+	$('.changepost').on('click', function(){
+		schedule_change_post(page);		
+		change_post(page);		
+	});
+
+	$('.assignchangemodal').on('click', function(){
+		unschedule_staff(page);
+	});
+}
 
 function bind_events(page){
 	//add array on each of data select from calender
@@ -894,22 +913,6 @@ function bind_events(page){
 	});
 	//on checkbox select change
 
-	$('.dayoff').on('click', function(){
-		// unschedule_staff
-	});
-
-	$('.scheduleleave').on('click', function(){
-		schedule_leave(page);		
-	});
-
-	$('.changepost').on('click', function(){
-		schedule_change_post(page);		
-		change_post(page);		
-	});
-
-	$('.assignchangemodal').on('click', function(){
-		unschedule_staff(page);
-	});
 }
 
 
@@ -1009,6 +1012,11 @@ function get_roster_data(page){
 					'Emergency Leave': 'purplebox',
 					'Annual Leave': 'purplebox'
 				}
+				let leavemap = {
+					'Sick Leave': 'SL',
+					'Annual Leave': 'AL',
+					'Emergency Leave': 'EL'
+				}
 				let {employee, employee_name, date, post_type, post_abbrv, employee_availability, shift} = employees_data[employee_key][i];
 				// console.log(employee, employee_name, date, post_type, post_abbrv, employee_availability, shift);
 				
@@ -1019,7 +1027,13 @@ function get_roster_data(page){
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
 							data-selectid="${employee+"|"+date+"|"+post_type+"|"+shift+"|"+employee_availability}">${post_abbrv}</div>
 					</td>`;	
-				}else{
+				} else if(employee_availability && !post_abbrv){
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee+"|"+date+"|"+employee_availability}">${leavemap[employee_availability]}</div>
+					</td>`;	
+				} else {
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
@@ -1128,17 +1142,28 @@ function get_roster_week_data(page){
 					'Emergency Leave': 'purplebox',
 					'Annual Leave': 'purplebox'
 				}
+				let leavemap = {
+					'Sick Leave': 'SL',
+					'Annual Leave': 'AL',
+					'Emergency Leave': 'EL'
+				}
 				let {employee, employee_name, date, post_type, post_abbrv, employee_availability, shift} = employees_data[employee_key][i];
 				console.log(date, moment().isBefore(moment(date)));
 				
-				if(post_abbrv){
+				if(employee_availability && post_abbrv){
 					j++;
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
 							data-selectid="${employee+"|"+date+"|"+post_type+"|"+shift+"|"+employee_availability}">${post_abbrv}</div>
 					</td>`;	
-				}else{
+				}else if(employee_availability && !post_abbrv){
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee+"|"+date+"|"+employee_availability}">${leavemap[employee_availability]}</div>
+					</td>`;	
+				} else {
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
@@ -2887,6 +2912,12 @@ function displayWeekCalendar(weekCalendarSettings, page) {
 }
 
 function unschedule_staff(page){
+	let employees =  [];
+	let selected = [... new Set(classgrt)];
+	selected.forEach(function(i){
+		let [employee, date] = i.split("|");
+		employees.push({employee, date}) 
+	})
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
 	let d = new frappe.ui.Dialog({
 		'title': 'Unschedule Staff',
@@ -2928,9 +2959,8 @@ function unschedule_staff(page){
 		],
 		primary_action: function(){
 			let {start_date, end_date, never_end} = d.get_values();
-			let employee = "HR-EMP-00002";	
 			frappe.xcall('one_fm.one_fm.page.roster.roster.unschedule_staff',
-			{employee, start_date, end_date, never_end})
+			{employees, start_date, end_date, never_end})
 			.then(res => {
 				console.log(res)
 				d.hide();
@@ -2943,11 +2973,17 @@ function unschedule_staff(page){
 }
 
 function schedule_leave(page){
+	let employees =  [];
+	let selected = [... new Set(classgrt)];
+	selected.forEach(function(i){
+		let [employee, date] = i.split("|");
+		employees.push({employee, date}) 
+	})
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
 	let d = new frappe.ui.Dialog({
 		'title': 'Leaves',
 		'fields': [
-			{'label': 'Type of Leave', 'fieldname': 'leave_type', 'fieldtype': 'Select', 'reqd': 1,'options': '\nSL\nAL\nEL'},
+			{'label': 'Type of Leave', 'fieldname': 'leave_type', 'fieldtype': 'Select', 'reqd': 1,'options': '\nSick Leave\nAnnual Leave\nEmergency Leave'},
 			{'label': 'Start Date','fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1, 'default': date, onchange:function(){
 				let start_date = d.get_value('start_date');
 				if(start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
@@ -2969,12 +3005,15 @@ function schedule_leave(page){
 			}}
 		],
 		primary_action: function(){
-			d.hide();
-			show_alert(d.get_values());
-
-			let element = get_wrapper_element().slice(1);
-			page[element](page);
-
+			let {leave_type, start_date, end_date} = d.get_values();
+			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_leave',
+			{employees, leave_type, start_date, end_date})
+			.then(res => {
+				console.log(res)
+				d.hide();
+				let element = get_wrapper_element().slice(1);
+				page[element](page);
+			});
 		}
 	});
 	d.show();
@@ -3061,7 +3100,7 @@ function schedule_change_post(page){
 		primary_action: function(){
 			let {shift, site, post_type, project} = d.get_values();
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-			{employees, shift, site, project, post_type})
+			{employees, shift, post_type})
 			.then(res => {
 				console.log(res)
 				d.hide();

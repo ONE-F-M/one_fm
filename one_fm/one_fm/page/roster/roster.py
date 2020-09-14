@@ -203,10 +203,11 @@ def get_filtered_post_types(doctype, txt, searchfield, start, page_len, filters)
 	""".format(shift=shift))
 	
 @frappe.whitelist()
-def schedule_staff(employees, shift, site, post_type, project=None):
+def schedule_staff(employees, shift, post_type):
 	try:
 		# print(employees, shift, site, post_type, project)
 		for employee in json.loads(employees):
+			print(getdate(employee["date"]).strftime('%A'))
 			# print(employee["employee"], employee["date"])
 			if frappe.db.exists("Employee Schedule", {"employee": employee["employee"], "date": employee["date"]}):
 				roster = frappe.get_doc("Employee Schedule", {"employee": employee["employee"], "date": employee["date"]})
@@ -224,19 +225,44 @@ def schedule_staff(employees, shift, site, post_type, project=None):
 		frappe.log_error(e)
 		frappe.throw(_(e))
 
+@frappe.whitelist()
+def schedule_leave(employees, leave_type, start_date, end_date):
+	try:
+		for employee in json.loads(employees):
+			for date in	pd.date_range(start=start_date, end=end_date):
+				print(employee["employee"], date.date())
+				if frappe.db.exists("Employee Schedule", {"employee": employee["employee"], "date": employee["date"]}):
+					roster = frappe.get_doc("Employee Schedule", {"employee": employee["employee"], "date": employee["date"]})
+					roster.shift = None
+					roster.shift_type = None
+					roster.project = None
+					roster.site = None
+				else:
+					roster = frappe.new_doc("Employee Schedule")
+					roster.employee = employee["employee"]
+					roster.date = employee["date"]
+				roster.employee_availability = leave_type
+				roster.save(ignore_permissions=True)
+	except Exception as e:
+		print(e)
+		return frappe.utils.response.report_error(e.http_status_code)
+
 
 @frappe.whitelist(allow_guest=True)
-def unschedule_staff(employee, start_date, end_date=None, never_end=0):
+def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 	try:
-		if never_end:
-			rosters = frappe.get_all("Employee Schedule", {"date": ('>=', start_date)})
-			for roster in rosters:
-				frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
-
-		for date in	pd.date_range(start=start_date, end=end_date):
-			if frappe.db.exists("Employee Schedule", {"employee": employee, "date":  cstr(date.date())}):
-				roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date":  cstr(date.date())})
-				frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
+		print(employees, start_date, never_end)
+		for employee in json.loads(employees):
+			if never_end:
+				print(never_end, start_date)
+				rosters = frappe.get_all("Employee Schedule", {"employee": employee["employee"],"date": ('>=', start_date)})
+				for roster in rosters:
+					frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
+			for date in	pd.date_range(start=start_date, end=end_date):
+				print(employee["employee"], date.date())
+				if frappe.db.exists("Employee Schedule", {"employee": employee["employee"], "date":  cstr(date.date())}):
+					roster = frappe.get_doc("Employee Schedule", {"employee": employee["employee"], "date":  cstr(date.date())})
+					frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
 
 	except Exception as e:
 		print(e)

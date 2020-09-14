@@ -80,8 +80,6 @@ def get_task_comments(task_name):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
-
-
 @frappe.whitelist()
 def assign_task(task_name, employee):
 	try:
@@ -95,7 +93,6 @@ def assign_task(task_name, employee):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 	
-
 @frappe.whitelist()
 def edit_task(task_name, description):
 	try:
@@ -108,7 +105,6 @@ def edit_task(task_name, description):
 		return {"message": _("Successful")} 
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-
 
 @frappe.whitelist()
 def delete_task(task_name):
