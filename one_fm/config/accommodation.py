@@ -35,6 +35,11 @@ def get_data():
 					"name": "Book Bed",
 					"label": _("Book Bed"),
 					"onboard": 1
+				},
+				{
+					"type": "doctype",
+					"name": "Accommodation Checkin",
+					"label"; _("Accommodation Checkin")
 				}
 			]
 		},

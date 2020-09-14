@@ -39,11 +39,14 @@ class BookBed(Document):
 			employee_id = frappe.db.exists('Employee', filters)
 			if employee_id:
 				employee = frappe.get_doc('Employee', employee_id)
+				self.employee = employee.name
 				self.full_name = employee.employee_name
 				self.nationality = employee.one_fm_nationality
 				self.religion = employee.one_fm_religion
 				self.email = employee.personal_email
 				self.contact_number = employee.cell_number
+				self.civil_id = employee.one_fm_civil_id
+				self.passport_number = employee.passport_number
 			else:
 				self.get_job_applicant_details()
 
@@ -60,6 +63,8 @@ class BookBed(Document):
 				self.full_name = job_applicant.applicant_name
 				# self.nationality = job_applicant.one_fm_nationality
 				self.religion = job_applicant.one_fm_religion
+				self.civil_id = job_applicant.one_fm_civil_id
+				self.passport_number = job_applicant.one_fm_passport_number
 				self.email = job_applicant.one_fm_email_id
 				self.contact_number = job_applicant.one_fm_contact_number
 

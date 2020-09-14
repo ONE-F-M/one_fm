@@ -13,6 +13,7 @@
   "governorate",
   "area",
   "location",
+  "floor_name",
   "floor",
   "bed_code",
   "column_break_3",
@@ -21,6 +22,8 @@
   "type",
   "accommodation_unit",
   "disabled",
+  "qr_code_section",
+  "bed_qr",
   "beds_section",
   "bed_space_type",
   "bed_type",
@@ -266,9 +269,8 @@
    "fetch_from": "accommodation_unit.floor",
    "fieldname": "floor",
    "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Floor",
-   "read_only": 1
+   "hidden": 1,
+   "label": "Floor"
   },
   {
    "fetch_from": "accommodation.accommodation_governorate",
@@ -284,10 +286,32 @@
    "fieldtype": "Check",
    "in_standard_filter": 1,
    "label": "Disabled"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "qr_code_section",
+   "fieldtype": "Section Break",
+   "label": "QR CODE"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "bed_qr",
+   "fieldtype": "Data",
+   "label": "Bed QR"
+  },
+  {
+   "fetch_from": "accommodation_unit.floor_name",
+   "fieldname": "floor_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Floor",
+   "options": "Floor",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-09-14 01:11:54.695383",
+ "modified": "2020-09-14 23:37:41.114564",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",

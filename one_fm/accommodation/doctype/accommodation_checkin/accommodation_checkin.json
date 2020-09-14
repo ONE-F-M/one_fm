@@ -1,0 +1,211 @@
+{
+ "actions": [],
+ "creation": "2020-09-14 21:04:36.126422",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "type",
+  "employee",
+  "column_break_2",
+  "booking_reference",
+  "checkin_reference",
+  "section_break_4",
+  "full_name",
+  "passport_number",
+  "column_break_7",
+  "civil_id",
+  "one_fm_employee_id",
+  "bed_details_section",
+  "accommodation",
+  "floor",
+  "accommodation_unit",
+  "bed",
+  "column_break_14",
+  "comments",
+  "section_break_19",
+  "new_or_current_resident",
+  "column_break_21",
+  "employee_own_asset_related_to_accommodation",
+  "asset_section",
+  "print_asset_receiving_declaration",
+  "attach_asset_receiving_declaration",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name"
+  },
+  {
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "fieldname": "one_fm_employee_id",
+   "fieldtype": "Data",
+   "label": "ONE FM Employee ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bed_details_section",
+   "fieldtype": "Section Break",
+   "label": "Bed Details"
+  },
+  {
+   "fetch_from": "bed.accommodation",
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "label": "Accommodation",
+   "options": "Accommodation"
+  },
+  {
+   "fetch_from": "bed.floor_name",
+   "fieldname": "floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Floor"
+  },
+  {
+   "fetch_from": "bed.accommodation_unit",
+   "fieldname": "accommodation_unit",
+   "fieldtype": "Link",
+   "label": "Accommodation Unit",
+   "options": "Accommodation Unit"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "bed",
+   "fieldtype": "Link",
+   "label": "Bed",
+   "options": "Bed"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Accommodation Checkin",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.type=='IN'",
+   "fieldname": "booking_reference",
+   "fieldtype": "Link",
+   "label": "Booking Reference",
+   "options": "Book Bed"
+  },
+  {
+   "fieldname": "new_or_current_resident",
+   "fieldtype": "Select",
+   "label": "New/Current Resident",
+   "options": "\nNew Resident\nCurrent Resident"
+  },
+  {
+   "default": "IN",
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Type",
+   "options": "\nIN\nOUT"
+  },
+  {
+   "depends_on": "eval:doc.type=='OUT'",
+   "fieldname": "checkin_reference",
+   "fieldtype": "Link",
+   "label": "Checkin Reference",
+   "options": "Accommodation Checkin"
+  },
+  {
+   "fieldname": "section_break_19",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.new_or_current_resident=='Current Resident'",
+   "fieldname": "employee_own_asset_related_to_accommodation",
+   "fieldtype": "Select",
+   "label": "Employee Own Asset Related to Accommodation",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.new_or_current_resident == \"New Resident\" || (doc.new_or_current_resident == 'Current Resident' && doc.employee_own_asset_related_to_accommodation == \"Yes\")",
+   "fieldname": "asset_section",
+   "fieldtype": "Section Break",
+   "label": "Asset Details"
+  },
+  {
+   "depends_on": "eval:doc.new_or_current_resident == \"New Resident\" || (doc.new_or_current_resident == 'Current Resident' && doc.employee_own_asset_related_to_accommodation == \"Yes\")",
+   "fieldname": "print_asset_receiving_declaration",
+   "fieldtype": "Button",
+   "label": "Print Asset Receiving Declaration"
+  },
+  {
+   "depends_on": "eval:doc.new_or_current_resident == \"New Resident\" || (doc.new_or_current_resident == 'Current Resident' && doc.employee_own_asset_related_to_accommodation == \"Yes\")",
+   "fieldname": "attach_asset_receiving_declaration",
+   "fieldtype": "Attach",
+   "label": "Attach Asset Receiving Declaration"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-09-15 00:59:18.141666",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Checkin",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

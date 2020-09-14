@@ -18,6 +18,7 @@
   "accommodation_unit_code",
   "accommodation_space_type",
   "bed_space_available",
+  "space_qr",
   "bed_details_section",
   "bed_space_type",
   "bed_type",
@@ -254,10 +255,16 @@
    "fieldtype": "Link",
    "label": "Gender",
    "options": "Gender"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "space_qr",
+   "fieldtype": "Data",
+   "label": "Space QR"
   }
  ],
  "links": [],
- "modified": "2020-09-12 08:35:11.650969",
+ "modified": "2020-09-14 20:34:48.938903",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",
