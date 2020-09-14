@@ -39,7 +39,7 @@ def get_data():
 				{
 					"type": "doctype",
 					"name": "Accommodation Checkin",
-					"label"; _("Accommodation Checkin")
+					"label": _("Accommodation Checkin")
 				}
 			]
 		},
