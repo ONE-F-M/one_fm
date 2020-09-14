@@ -1,11 +1,12 @@
 import frappe
 from frappe import _
-from frappe.utils import getdate, cint
+from frappe.utils import getdate, cint, cstr
 from frappe.client import get_list
 import json
+import pandas as pd
 from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view, get_roster_view as _get_roster_view
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None):
 	try:
 		return _get_roster_view(start_date, end_date, all, assigned, scheduled, project, site, shift, department, post_type)
@@ -39,11 +40,11 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 # 	pass
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_weekly_staff_roster(start_date, end_date):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
-		user_employee = "HR-EMP-00026"
+		# user_employee = "HR-EMP-00026"
 	
 		roster = frappe.db.sql("""
 			SELECT shift, employee, date, employee_availability, post_type
@@ -63,8 +64,7 @@ def get_current_user_details():
 	user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_name", "image", "enrolled"], as_dict=1)
 	return user, user_roles, user_employee
 
-
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_post_view(start_date, end_date,  project=None, site=None, shift=None, post_type=None, active_posts=1):
 	try:
 		return _get_post_view(start_date, end_date, project, site, shift, post_type, active_posts)
@@ -105,7 +105,6 @@ def edit_post(post_type, shift, post_status, date_list, paid=0, repeat=None):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
-
 @frappe.whitelist()
 def get_unassigned_project_employees(project, date, limit_start=None, limit_page_length=20):
 	try:
@@ -114,7 +113,6 @@ def get_unassigned_project_employees(project, date, limit_start=None, limit_page
 			limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)	
-
 
 @frappe.whitelist()
 def get_assigned_employees(shift, date, limit_start=None, limit_page_length=20):
@@ -125,36 +123,35 @@ def get_assigned_employees(shift, date, limit_start=None, limit_page_length=20):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
-@frappe.whitelist(allow_guest=True)
-def unschedule_staff(employee, date_list):
-	try:
-		date_list = json.loads(date_list)
-		for date in date_list:
-			if frappe.db.exists("Roster", {"employee": employee, "date": date}):
-				roster = frappe.get_doc("Roster", {"employee": employee, "date": date})
-				frappe.delete_doc("Roster", roster.name, ignore_permissions=True)
+# @frappe.whitelist(allow_guest=True)
+# def unschedule_staff(employee, date_list):
+# 	try:
+# 		date_list = json.loads(date_list)
+# 		for date in date_list:
+# 			if frappe.db.exists("Roster", {"employee": employee, "date": date}):
+# 				roster = frappe.get_doc("Roster", {"employee": employee, "date": date})
+# 				frappe.delete_doc("Roster", roster.name, ignore_permissions=True)
 
-	except Exception as e:
-		print(e)
-		return frappe.utils.response.report_error(e.http_status_code)
+# 	except Exception as e:
+# 		print(e)
+# 		return frappe.utils.response.report_error(e.http_status_code)
 
-
-@frappe.whitelist(allow_guest=True)
-def schedule_staff(employee, shift, post_type, date_list, day_off=[]):
-	try:
-		date_list = json.loads(date_list)
-		for date in date_list:
-			if frappe.db.exists("Roster", {"employee": employee, "date": date}):
-				roster = frappe.get_doc("Roster", {"employee": employee, "date": date})
-			else:
-				roster = frappe.new_doc("Roster")
-				roster.employee = employee
-				roster.date = date
-			roster.shift = shift
-			roster.post_type = post_type
-			roster.save(ignore_permissions=True)
-	except Exception as e:
-		return frappe.utils.response.report_error(e.http_status_code)
+# @frappe.whitelist(allow_guest=True)
+# def schedule_staff(employee, shift, post_type, date_list, day_off=None):
+# 	try:
+# 		date_list = json.loads(date_list)
+# 		for date in date_list:
+# 			if frappe.db.exists("Roster", {"employee": employee, "date": date}):
+# 				roster = frappe.get_doc("Roster", {"employee": employee, "date": date})
+# 			else:
+# 				roster = frappe.new_doc("Roster")
+# 				roster.employee = employee
+# 				roster.date = date
+# 			roster.shift = shift
+# 			roster.post_type = post_type
+# 			roster.save(ignore_permissions=True)
+# 	except Exception as e:
+# 		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def get_assigned_projects(employee_id):
@@ -168,7 +165,6 @@ def get_assigned_projects(employee_id):
 		return []
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-
 	
 @frappe.whitelist()
 def get_assigned_sites(employee_id, project=None):
@@ -188,7 +184,6 @@ def get_assigned_sites(employee_id, project=None):
 	
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-
 	
 @frappe.whitelist()
 def get_assigned_shifts(employee_id, site=None):
@@ -235,11 +230,99 @@ def get_post_types(shift=None):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
-
-
 @frappe.whitelist()
 def get_post_details(post_name):
 	try:
 		return frappe.get_value("Operations Post", post_name, "*")
 	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
+
+
+@frappe.whitelist(allow_guest=True)
+def unschedule_staff(employee, start_date, end_date=None, never_end=0):
+	try:
+		if never_end:
+			rosters = frappe.get_all("Employee Schedule", {"employee": employee,"date": ('>=', start_date)})
+			for roster in rosters:
+				frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
+			return True
+		else:
+			for date in	pd.date_range(start=start_date, end=end_date):
+				if frappe.db.exists("Employee Schedule", {"employee": employee, "date":  cstr(date.date())}):
+					roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date":  cstr(date.date())})
+					frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
+			return True
+	except Exception as e:
+		print(e)
+		return frappe.utils.response.report_error(e.http_status_code)
+
+
+@frappe.whitelist(allow_guest=True)
+def schedule_staff(employee, shift, post_type, start_date, end_date=None, never=0, day_off=None):
+	try:
+		print(getdate(start_date).strftime('%A'))
+		# print(employee, shift, post_type, start_date, end_date=None, never=0, day_off=None)
+		if never:
+			end_date = cstr(getdate().year) + '-12-31'
+			print(end_date)
+			for date in	pd.date_range(start=start_date, end=end_date):
+				if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
+					roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date": cstr(date.date())})
+				else:
+					roster = frappe.new_doc("Employee Schedule")
+					roster.employee = employee
+					roster.date = cstr(date.date())
+				
+				if day_off and date.date().strftime('%A') == day_off:
+					roster.employee_availability = "Day Off"				
+				else:
+					roster.employee_availability = "Working"
+					roster.shift = shift
+					roster.post_type = post_type
+				print(roster.as_dict())
+				roster.save(ignore_permissions=True)
+			return True
+		else:		
+			for date in	pd.date_range(start=start_date, end=end_date):
+				if frappe.db.exists("Employee Schedule", {"employee": employee, "date":  cstr(date.date())}):
+					roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date":  cstr(date.date())})
+				else:
+					roster = frappe.new_doc("Employee Schedule")
+					roster.employee = employee
+					roster.date =  cstr(date.date())
+				if day_off and date.date().strftime('%A') == day_off:
+					roster.employee_availability = "Day Off"				
+				else:
+					roster.employee_availability = "Working"
+					roster.shift = shift
+					roster.post_type = post_type
+					roster.post_type = post_type
+				print(roster.as_dict())
+				roster.save(ignore_permissions=True)
+			return True
+	except Exception as e:
+		frappe.log_error(e)
+		frappe.throw(_(e))
+
+
+@frappe.whitelist(allow_guest=True)
+def schedule_leave(employee, leave_type, start_date, end_date):
+	try:
+		for date in	pd.date_range(start=start_date, end=end_date):
+			print(employee, date.date())
+			if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
+				roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date":  cstr(date.date())})
+				roster.shift = None
+				roster.shift_type = None
+				roster.project = None
+				roster.site = None
+			else:
+				roster = frappe.new_doc("Employee Schedule")
+				roster.employee = employee
+				roster.date =  cstr(date.date())
+			roster.employee_availability = leave_type
+			roster.save(ignore_permissions=True)
+		return True
+	except Exception as e:
+		print(e)
 		return frappe.utils.response.report_error(e.http_status_code)
