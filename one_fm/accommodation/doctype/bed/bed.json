@@ -13,6 +13,7 @@
   "governorate",
   "area",
   "location",
+  "floor_name",
   "floor",
   "bed_code",
   "column_break_3",
@@ -268,9 +269,8 @@
    "fetch_from": "accommodation_unit.floor",
    "fieldname": "floor",
    "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Floor",
-   "read_only": 1
+   "hidden": 1,
+   "label": "Floor"
   },
   {
    "fetch_from": "accommodation.accommodation_governorate",
@@ -299,10 +299,19 @@
    "fieldname": "bed_qr",
    "fieldtype": "Data",
    "label": "Bed QR"
+  },
+  {
+   "fetch_from": "accommodation_unit.floor_name",
+   "fieldname": "floor_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Floor",
+   "options": "Floor",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-09-14 20:38:13.316047",
+ "modified": "2020-09-14 23:37:41.114564",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
