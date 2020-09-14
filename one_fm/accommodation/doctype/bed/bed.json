@@ -21,6 +21,8 @@
   "type",
   "accommodation_unit",
   "disabled",
+  "qr_code_section",
+  "bed_qr",
   "beds_section",
   "bed_space_type",
   "bed_type",
@@ -284,10 +286,23 @@
    "fieldtype": "Check",
    "in_standard_filter": 1,
    "label": "Disabled"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "qr_code_section",
+   "fieldtype": "Section Break",
+   "label": "QR CODE"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "bed_qr",
+   "fieldtype": "Data",
+   "label": "Bed QR"
   }
  ],
  "links": [],
- "modified": "2020-09-14 01:11:54.695383",
+ "modified": "2020-09-14 20:38:13.316047",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",

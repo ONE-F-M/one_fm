@@ -9,6 +9,8 @@
   "accommodation",
   "column_break_4",
   "type",
+  "qr_code_section",
+  "accommodation_qr",
   "ownership_section_section",
   "ownership",
   "column_break_8",
@@ -747,10 +749,23 @@
    "fieldname": "company_fax",
    "fieldtype": "Data",
    "label": "Fax"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "accommodation_qr",
+   "fieldtype": "Data",
+   "label": "Accommodation QR Code"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "qr_code_section",
+   "fieldtype": "Section Break",
+   "label": "QR Code"
   }
  ],
  "links": [],
- "modified": "2020-09-08 13:48:45.143369",
+ "modified": "2020-09-14 20:33:53.897554",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",

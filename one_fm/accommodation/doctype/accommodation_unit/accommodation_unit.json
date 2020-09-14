@@ -16,6 +16,7 @@
   "column_break_3",
   "owner_reference_number",
   "paci",
+  "unit_qr",
   "description_section",
   "space_details",
   "total_space"
@@ -103,10 +104,16 @@
    "label": "Floor",
    "options": "Floor",
    "reqd": 1
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "unit_qr",
+   "fieldtype": "Data",
+   "label": "Unit QR"
   }
  ],
  "links": [],
- "modified": "2020-09-12 08:34:53.658281",
+ "modified": "2020-09-14 20:33:10.381706",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Unit",
