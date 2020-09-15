@@ -49,7 +49,8 @@ doctype_js = {
 	"Project": "public/js/doctype_js/project.js",
 	"Notification Log": "public/js/doctype_js/notification_log.js",
 	"Sales Invoice": "public/js/doctype_js/sales_invoice.js",
-	"Delivery Note": "public/js/doctype_js/delivery_note.js"
+	"Delivery Note": "public/js/doctype_js/delivery_note.js",
+	"Job Applicant": "public/js/doctype_js/job_applicant.js"
 }
 doctype_list_js = {"Job Applicant" : "public/js/doctype_js/job_applicant_list.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -290,7 +291,7 @@ fixtures = [
 	},
 	{
 		"dt": "Custom Script",
-		'filters': [['dt', 'in', ['Job Applicant', 'Job Opening', 'Job Offer', 'Item', 'Stock Entry', 'Warehouse', 'Supplier',
+		'filters': [['dt', 'in', ['Job Opening', 'Job Offer', 'Item', 'Stock Entry', 'Warehouse', 'Supplier',
 		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
 	},
 	{

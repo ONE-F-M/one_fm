@@ -1105,7 +1105,7 @@ def validate_job_applicant(doc, method):
         set_childs_for_application_web_form(doc, method)
     if frappe.session.user != 'Guest':
         validate_mandatory_childs(doc)
-    if doc.one_fm_applicant_status == "Shortlisted":
+    if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
         create_job_offer_from_job_applicant(doc.name)
 
 def validate_transferable_field(doc):
