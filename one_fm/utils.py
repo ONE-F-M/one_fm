@@ -1105,7 +1105,7 @@ def validate_job_applicant(doc, method):
         set_childs_for_application_web_form(doc, method)
     if frappe.session.user != 'Guest':
         validate_mandatory_childs(doc)
-    if doc.one_fm_applicant_status == "Shortlisted":
+    if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
         create_job_offer_from_job_applicant(doc.name)
 
 def validate_transferable_field(doc):
@@ -1305,6 +1305,7 @@ def set_erf_details(job_offer, erf):
     set_other_benefits_to_terms(job_offer, erf)
 
 def set_salary_details(job_offer, erf):
+    job_offer.one_fm_provide_salary_advance = erf.provide_salary_advance
     total_amount = 0
     for salary in erf.salary_details:
         total_amount += salary.amount
@@ -1314,11 +1315,19 @@ def set_salary_details(job_offer, erf):
     job_offer.one_fm_job_offer_total_salary = total_amount
 
 def set_other_benefits_to_terms(job_offer, erf):
-    if erf.other_benefits:
-        for benefit in erf.other_benefits:
+    # if erf.other_benefits:
+    #     for benefit in erf.other_benefits:
+    #         terms = job_offer.append('offer_terms')
+    #         terms.offer_term = benefit.benefit
+    #         terms.value = 'Company Provided'
+    options = [{'provide_mobile_with_line':'Mobile with Line'}, {'provide_health_insurance':'Health Insurance'},
+        {'provide_company_insurance': 'Company Insurance'}]
+    for option in options:
+        if erf.get(option):
             terms = job_offer.append('offer_terms')
-            terms.offer_term = benefit.benefit
+            terms.offer_term = options[option]
             terms.value = 'Company Provided'
+
     terms_list = ['Kuwait Visa processing Fees', 'Kuwait Residency Fees', 'Kuwait insurance Fees']
     for term in terms_list:
         terms = job_offer.append('offer_terms')

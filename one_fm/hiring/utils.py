@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.utils import get_url
 import json
+from frappe import _
 
 @frappe.whitelist()
 def get_performance_profile_resource():
@@ -79,3 +80,49 @@ def update_applicant_status(names, status_field, status, reason_for_rejection=Fa
         job_applicant.set(status_field, status)
         job_applicant.one_fm_reason_for_rejection = reason_for_rejection if reason_for_rejection else ''
         job_applicant.save()
+
+@frappe.whitelist()
+def add_remove_salary_advance(names, dialog):
+    names = json.loads(names)
+    job_offer_list = []
+    for name in names:
+        job_offer = frappe.get_doc("Job Offer", name)
+        if not job_offer.one_fm_notified_finance_department:
+            args = json.loads(dialog)
+            job_offer.one_fm_provide_salary_advance = args['one_fm_provide_salary_advance']
+            if job_offer.one_fm_provide_salary_advance:
+                job_offer.one_fm_salary_advance_amount = args['one_fm_salary_advance_amount']
+            job_offer.save(ignore_permissions=True)
+            if args['notify_finance_department']:
+                job_offer_list.append(job_offer)
+
+    if job_offer_list and len(job_offer_list) > 0:
+        notify_finance_job_offer_salary_advance(job_offer_list=job_offer_list)
+
+# Notify Daily
+@frappe.whitelist()
+def notify_finance_job_offer_salary_advance(job_offer_id=None, job_offer_list=None):
+    if not job_offer_list:
+        if job_offer_id:
+            filters = {'name': job_offer_id}
+        else:
+            filters = {
+                'one_fm_provide_salary_advance': 1, 'one_fm_salary_advance_paid': 0,
+                'one_fm_salary_advance_amount': ['>', 0], 'one_fm_notified_finance_department': 0
+            }
+        job_offer_list = frappe.db.get_list('Job Offer', filters, ['name', 'one_fm_salary_advance_amount'])
+    recipient = frappe.db.get_value('Hiring Settings', None, 'notify_finance_department_for_job_offer_salary_advance')
+
+    if recipient and job_offer_list and len(job_offer_list)>0:
+        message = "<p>Job Offer listed below needs Advance Salary</p><ol>"
+        for job_offer in job_offer_list:
+            frappe.db.set_value('Job Offer', job_offer.name, 'one_fm_notified_finance_department', True)
+            page_link = get_url("/desk#Form/Job Offer/"+job_offer.name)
+            message += "<li><a href='{0}'>{1}</a>: {2}</li>".format(page_link, job_offer.name, job_offer.one_fm_salary_advance_amount)
+        message += "<ol>"
+        frappe.sendmail(
+            recipients=[recipient],
+            subject=_('Advance Salary for Job Offer'),
+            message=message,
+            header=['Payment Request for Job Offer Advance Salary', 'yellow'],
+        )

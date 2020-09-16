@@ -136,6 +136,7 @@ class ERF20(Document):
 		assign_recruiter_to_project_task(self)
 		self.notify_recruiter_and_requester()
 		if self.status == 'Accepted':
+			self.notify_gsd_department()
 			create_job_opening_from_erf(self)
 
 	def notify_recruiter_and_requester(self):
@@ -150,6 +151,45 @@ class ERF20(Document):
 			if self.erf_requested_by == self.recruiter_assigned:
 				msg = _('{0} Will be Notified By Email.').format(self.erf_requested_by)
 			frappe.msgprint(msg)
+
+	def notify_gsd_department(self):
+		gsd_department = frappe.db.get_value('Hiring Settings', None, 'notify_gsd_on_erf_approval')
+		if gsd_department:
+			message = """
+				<p>ERF is Approved for the Position {0}</p>
+				<p>Details:
+					<ol>
+						<li>Project: {1}</li>
+						<li>Grade: {2}</li>
+						<li>Number of Employees: {3}</li>
+						<li>Position: {0}</li>
+					</ol>
+				</p>
+			""".format(self.designation, self.project, self.grade, self.number_of_candidates_required)
+			message += """
+			<p>
+				<table class="table table-bordered table-hover">
+					<thead>
+						<tr>
+							<td><b>Gender</b></td>
+							<td><b>Nationality</b></td>
+							<td><b>Quantity</b></td>
+						</tr>
+					</thead>
+					<tbody>
+			"""
+			for item in self.gender_height_requirement:
+				message += "<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>".format(item.gender, item.nationality,
+					item.number)
+			message += "</tbody></table></p>"
+			frappe.sendmail(
+				recipients= [gsd_department],
+				subject='{0} ERF for {1}'.format(self.status, self.designation),
+				message=message,
+				reference_doctype=self.doctype,
+				reference_name=self.name
+			)
+			frappe.msgprint(_('GSD Department Will be Notified By Email.'))
 
 	def validate_recruiter_assigned(self):
 		if not self.recruiter_assigned:
@@ -284,11 +324,16 @@ def get_project_details(project):
 	return {'location_list': location_list}
 
 def set_event_for_okr_workshop(doc):
-	message = """
-		Dear {0},<br/>
-		{1}, would want conduct a Performance Profile workshop on {2},
-		you may please contact {1} to confirm the schedule.
-	""".format(get_user_fullname(doc.okr_workshop_with), doc.erf_requested_by_name, doc.schedule_for_okr_workshop_with_recruiter)
+	message = "Dear {0},<br/>".format(get_user_fullname(doc.okr_workshop_with))
+	if doc.help_hr_to_create_okr:
+		message += """{0} has suggested the following for the performance profile of {1} Position.
+		<br/>{2}<br/>Also,<br/>""".format(doc.erf_requested_by_name, doc.designation, doc.help_hr_to_create_okr)
+	message += """
+		{0}, would want conduct a Performance Profile workshop on {1},
+		you may please contact {0} to confirm the schedule.
+		<br/>
+		Email: {2}
+	""".format(doc.erf_requested_by_name, doc.schedule_for_okr_workshop_with_recruiter, doc.erf_requested_by)
 
 	frappe.sendmail(
 		recipients = doc.okr_workshop_with,
