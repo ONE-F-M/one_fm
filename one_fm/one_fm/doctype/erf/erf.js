@@ -1,18 +1,56 @@
-// Copyright (c) 2020, omar jaber and contributors
+// Copyright (c) 2020, one fm and contributors
 // For license information, please see license.txt
 
 frappe.ui.form.on('ERF', {
 	refresh: function(frm) {
-		frm.set_query('erf_request', function () {
+		if(frm.is_new()){
+			frm.set_value('erf_requested_by', frappe.session.user);
+		}
+		if(frm.doc.docstatus==0){
+			frm.set_intro(__("All fields are Mandatory."), 'yellow');
+		}
+		else{
+			frm.set_intro(__(""));
+		}
+		frm.set_query('project', function () {
 			return {
 				filters: {
-					'docstatus': 1,
-					'status': 'Accepted',
-					'department_manager': frappe.user.name,
-					'erf_created': false
+					'project_type': 'External'
 				}
 			};
 		});
+		set_shift_working_btn(frm);
+		set_driving_license_required_btn(frm);
+		set_provide_health_insurance_btn(frm);
+		set_provide_mobile_with_line_btn(frm);
+		set_provide_company_insurance_btn(frm);
+		set_provide_salary_advance_btn(frm);
+		set_type_of_license_btn(frm);
+		set_night_shift_btn(frm);
+		set_shift_hours_btn(frm);
+		set_travel_required_btn(frm);
+		set_open_to_different_btn(frm);
+		set_performance_profile_html(frm);
+		document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
+		set_performance_profile_resource_btn(frm);
+		if(frm.doc.__onload && 'okr_workshop_with_full_name' in frm.doc.__onload){
+			frm.set_df_property('schedule_for_okr_workshop_with_recruiter', 'label',
+				__('Set a Date With {0} For a Quick Workshop',[frm.doc.__onload.okr_workshop_with_full_name]))
+		}
+	},
+	erf_requested_by: function(frm) {
+		frm.set_value('erf_requested_by_name', '');
+		if(frm.doc.erf_requested_by){
+			frappe.call({
+				method: 'one_fm.one_fm.doctype.erf.erf.set_user_fullname',
+				args: {'user': frm.doc.erf_requested_by},
+				callback: function(r) {
+					if(r && r.message){
+						frm.set_value('erf_requested_by_name', r.message);
+					}
+				}
+			});
+		}
 	},
 	validate: function(frm) {
 		if(frm.doc.gender_height_requirement){
@@ -22,9 +60,9 @@ frappe.ui.form.on('ERF', {
 		}
 	},
 	onload: function(frm) {
-		set_other_benefits(frm);
+		// set_other_benefits(frm);
 	},
-	total_no_of_candidates_required: function(frm) {
+	number_of_candidates_required: function(frm) {
     calculate_total_cost_in_salary(frm);
     set_required_quantity_grd(frm);
 	},
@@ -32,12 +70,13 @@ frappe.ui.form.on('ERF', {
     calculate_total_cost_in_salary(frm);
   },
   designation: function(frm) {
-    set_basic_skill_from_designation(frm);
+		set_default_details_form_designation(frm);
   },
 	working_days: function(frm) {
 		set_off_days(frm);
 	},
 	travel_required: function(frm) {
+		set_travel_required_btn(frm);
 		manage_type_of_travel(frm);
 	},
 	driving_license_required: function(frm) {
@@ -48,9 +87,6 @@ frappe.ui.form.on('ERF', {
 	},
 	salary_structure: function(frm) {
 		set_salary_details(frm);
-	},
-	erf_request: function(frm) {
-		set_erf_request_details(frm);
 	},
 	status: function(frm) {
 		set_reason_for_decline_reqd(frm);
@@ -71,8 +107,439 @@ frappe.ui.form.on('ERF', {
 	},
 	is_height_mandatory: function(frm) {
 		set_is_hieght_mandatory_in_table(frm);
+	},
+	shift_working: function(frm) {
+		set_shift_working_btn(frm);
+	},
+	night_shift: function(frm) {
+		set_night_shift_btn(frm);
+	},
+	open_to_different: function(frm) {
+		set_open_to_different_btn(frm);
+	},
+	create_project_for_recruiter: function(frm) {
+		create_project(frm);
+	},
+	okr_workshop_submit_to_hr: function(frm) {
+		create_event_for_okr_workshop(frm);
+	},
+	recruiter_assigned: function(frm) {
+		if(frm.doc.recruiter_assigned && !frm.doc.project_for_recruiter){
+			document.querySelectorAll('[data-fieldname = "create_project_for_recruiter"]')[1].classList.add('btn-primary');
+		}
+	},
+	project: function(frm) {
+		set_project_details_to_erf(frm);
+	},
+	save_me: function(frm) {
+		frm.save();
+	},
+	save_me1: function(frm) {
+		frm.save();
+	},
+	save_me2: function(frm) {
+		frm.save();
+	},
+	save_me3: function(frm) {
+		frm.save();
+	},
+	save_me4: function(frm) {
+		frm.save();
+	},
+	provide_salary_advance: function(frm) {
+		manage_provide_salary_advance(frm);
 	}
 });
+
+var set_performance_profile_resource_btn = function(frm) {
+	if(!frm.is_new() && frm.doc.docstatus<1){
+		frm.add_custom_button(__('Get Hand book'), function(){
+			resource_btn_action('one_fm.hiring.utils.get_performance_profile_resource', 'Hand book');
+		}, "Performance Profile Resources");
+		frm.add_custom_button(__('Get Guide'), function(){
+			resource_btn_action('one_fm.hiring.utils.get_performance_profile_guid', 'Guide');
+		}, "Performance Profile Resources");
+	}
+	function resource_btn_action(method, label) {
+		frappe.call({
+			method: method,
+			callback: function(r) {
+				if(r.message){
+					window.open(r.message, '_blank');
+					// window.open(r.message, '_self');
+				}
+				else{
+					frappe.msgprint(__("There is no {0} configured in Hiring Settings.", [label]))
+				}
+			}
+		});
+	}
+};
+
+var set_project_details_to_erf = function(frm) {
+	if(frm.doc.project){
+		frappe.call({
+			method: 'one_fm.one_fm.doctype.erf.erf.get_project_details',
+			args: {'project': frm.doc.project},
+			callback: function(r) {
+				if(r.message){
+					var project = r.message;
+					if(project.location_list){
+						set_filter_for_location(frm, project.location_list);
+						if(project.location_list.length == 1){
+							frm.set_value('location_of_work', project.location_list[0]);
+						}
+					}
+				}
+			},
+			freeze: true,
+			freeze_message: __('Fetching Data from Project to Set Default Data')
+		});
+	}
+};
+
+var set_filter_for_location = function(frm, location_list) {
+	frm.set_query('location_of_work', function () {
+		return {
+			filters: {
+				'name': ['in', location_list]
+			}
+		};
+	});
+};
+
+var create_event_for_okr_workshop = function(frm) {
+	if(frm.doc.schedule_for_okr_workshop_with_recruiter && frm.doc.okr_workshop_with){
+		frappe.call({
+			doc: frm.doc,
+			method: 'create_event_for_okr_workshop',
+			callback: function(r) {
+				if(r.message){
+					frm.set_value('event_for_okr_workshop', r.message.name);
+					frm.save();
+				}
+				else{
+					frm.set_value('event_for_okr_workshop', '');
+				}
+			},
+			freeze: true,
+			freeze_message: __('Submit to HR, Creating event...')
+		});
+	}
+};
+
+var create_project = function(frm) {
+	var doc = frm.doc;
+	var dialog = new frappe.ui.Dialog({
+		title: __("Create Project"),
+		fields: [
+			{
+				"fieldtype": "Data",
+				"label": __("Project Name"),
+				"fieldname": "project_name",
+				"reqd": 1
+			},
+			{
+				"fieldtype": "Link",
+				"label": __("Project Template"),
+				"fieldname": "project_template",
+				"options": "Project Template"
+			},
+			{"fieldtype": "Column Break"},
+			{
+				"fieldtype": "Date",
+				"label": __("Expected Start Date"),
+				"fieldname": "expected_start_date"
+			}
+		]
+	});
+	dialog.set_primary_action(__('Create'), function() {
+		var data = dialog.get_values();
+		if(!data) return;
+		frappe.call({
+			method: "frappe.client.save",
+			args: {
+				doc: {
+					doctype: 'Project',
+					project_name: data.project_name,
+					project_full_name: data.project_name,
+					project_template: data.project_template,
+					expected_start_date: data.expected_start_date
+				}
+			},
+			callback:function(r){
+				if(r.message){
+					dialog.hide();
+					frappe.show_alert(__("Project {0} Created.", [r.message.name]));
+					frm.set_value('project_for_recruiter', r.message.name);
+					frm.save();
+				}
+			},
+			freeze: true,
+			freeze_message: __("Creating Project..")
+		});
+	})
+	dialog.show();
+};
+
+var set_performance_profile_html = function(frm) {
+	var $wrapper = frm.fields_dict.performance_profile_html.$wrapper;
+	$wrapper.empty();
+	var performance_profile_html = `<div>
+	<p style="font-size: 12px; color: #8d99a6;">
+		Dear, ${frm.doc.erf_requested_by_name?frm.doc.erf_requested_by_name:''} you are the hiring manager for
+		${frm.doc.designation?frm.doc.designation: 'the Designation'}.
+		To get an Excellent Hire we will follow the
+		<button class="btn btn-default btn-xs adlers_btn" type="button">Adlers</button>
+		tried and tested formula of Performance-Based Hiring.
+		This starts with creating a performance-based Job Description.
+		Here's a Worksheet on Performance base Job Description  -
+		<button class="btn btn-default btn-xs performance_profile_guid_btn" type="button">Guide</button>
+	</p>
+	<p style="font-size: 12px; color: #8d99a6;">
+		You may also <button class="btn btn-default btn-xs performance_profile_hand_book_btn" type="button">download a handbook</button> so you can be prepared for the workshop.
+	</p>
+	<p style="font-size: 12px; color: #8d99a6;">
+		You could write below in brief what the hired person will require to do.
+		<button class="btn btn-default btn-xs performance_profile_star_eg_btn" type="button">Click here to get STAR Examples</button>
+	</p>
+	<p style="font-size: 12px; color: #8d99a6;">
+		You can also help the HR Prepare -By filling the below
+		<ol>
+			<li style="font-size: 12px; color: #8d99a6;">
+				What does the person hire need to accomplish primarily in the first 3 months to be accounted for as an
+				excellent hire.
+			</li>
+			<li style="font-size: 12px; color: #8d99a6;">
+				What is the Value Add This Job will give the Hire? For Eg, New skill learning, relaxed job anything.
+			</li>
+		</ol>
+	</p>
+	</div>`;
+	$wrapper.html(performance_profile_html);
+	$wrapper.on('click', '.performance_profile_hand_book_btn', function() {
+		if(frm.doc.docstatus == 0){
+			frappe.call({
+				method: 'one_fm.hiring.utils.get_performance_profile_resource',
+				callback: function(r) {
+					if(r.message){
+						window.open(r.message, '_blank');
+						// window.open(r.message, '_self');
+					}
+					else{
+						frappe.msgprint(__("There is no Hand book configured in Hiring Settings."));
+					}
+				}
+			});
+		}
+	});
+	$wrapper.on('click', '.performance_profile_guid_btn', function() {
+		if(frm.doc.docstatus == 0){
+			performance_profile_guid_html();
+		}
+	});
+	$wrapper.on('click', '.adlers_btn', function() {
+		if(frm.doc.docstatus == 0){
+			set_adlers_html();
+		}
+	});
+	$wrapper.on('click', '.performance_profile_star_eg_btn', function() {
+		if(frm.doc.docstatus == 0){
+			performance_profile_star_eg_html();
+		}
+	});
+};
+
+var performance_profile_star_eg_html = function() {
+	var dialog = new frappe.ui.Dialog({
+		title: __("STAR Examples"),
+		fields: [
+			{
+				"fieldtype": "HTML",
+				"fieldname": "star_eg_html"
+			}
+		]
+	});
+	let star_eg_html = `
+		<p style="font-size: 12px; color: #8d99a6;">STAR Examples:</p>
+		<ol>
+		<li style="font-size: 12px; color: #8d99a6;">Project Accountant: Upgrade the international consolidations process by Q3 to ensure the preliminary close  figures are within 1-2% variance of the final close</li>
+		<li style="font-size: 12px; color: #8d99a6;">Product Manager: Working with engineering, sales and operations prepare a product launch plan for the (product) within 90 days. Within (days) identify all critical design and test issues needed to ensure an on time product release to manufacturing.</li>
+		<li style="font-size: 12px; color: #8d99a6;">Call Center Rep: with 30 days be in a position to handle 4-5 simoultaneous in-bound calls fully resolving 90% of calls within 4-5 Minutes</li>
+		</ol>
+	`
+	dialog.fields_dict.star_eg_html.$wrapper.html(star_eg_html);
+	dialog.show();
+};
+
+var set_adlers_html = function() {
+	var dialog = new frappe.ui.Dialog({
+		title: __("Adlers"),
+		fields: [
+			{
+				"fieldtype": "HTML",
+				"fieldname": "adlers_html"
+			}
+		]
+	});
+	let adlers_html = `
+		<p style="font-size: 12px; color: #8d99a6;">
+		Lou Adler is the CEO and founder of The Adler Group – a training and search firm helping companies implement
+		Performance-based Hiring℠. Adler is the author of the Amazon top-10 best-seller, Hire With Your Head
+		(John Wiley & Sons, 3rd Edition, 2007). His most recent book has just been published, The Essential Guide for
+		Hiring & Getting Hired (Workbench, 2013). He is also the author of the award-winning Nightingale-Conant audio
+		program, Talent Rules! Using Performance-based Hiring to Build Great. https://louadlergroup.com/
+		</p>
+	`
+	dialog.fields_dict.adlers_html.$wrapper.html(adlers_html);
+	dialog.show();
+};
+
+var performance_profile_guid_html = function() {
+	var dialog = new frappe.ui.Dialog({
+		title: __("Guide"),
+		fields: [
+			{
+				"fieldtype": "HTML",
+				"fieldname": "guid_html"
+			}
+		]
+	});
+	dialog.fields_dict.guid_html.$wrapper.html(frappe.render_template('guid_html'));
+	dialog.show();
+};
+
+var set_open_to_different_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.open_to_different == 'Yes' ? true: false, 'open_to_different_html', 'open_to_different', 'Would you be open to see applicants with a track record of doing these types of work even if the person had a different mix of skills, exp ?');
+};
+
+var set_travel_required_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.travel_required, 'travel_required_html', 'travel_required', 'Is Travel a primary/critial Job Need?');
+};
+
+var set_shift_hours_btn = function(frm) {
+	var $wrapper = frm.fields_dict.shift_hours_html.$wrapper;
+	var selected = 'btn-primary';
+	var val = frm.doc.shift_hours;
+	if(val != 12 && val != 8 && val != 9){
+		val = 'Custom';
+		frm.set_df_property('shift_hours', 'hidden', false);
+	}
+	else{
+		frm.set_df_property('shift_hours', 'hidden', true);
+	}
+	var shift_hours_html = `<div><label class="control-label" style="padding-right: 0px;">Shift Hours</label></div><div>
+		<button class="btn btn-default btn-xs ${val=="12" ? selected: ''} shift_hours_btn_html" type="button" data-shift_hours='12'>12</button>
+		<button class="btn btn-default btn-xs ${val=="9" ? selected: ''} shift_hours_btn_html" type="button" data-shift_hours='9'>9</button>
+		<button class="btn btn-default btn-xs ${val=="8" ? selected: ''} shift_hours_btn_html" type="button" data-shift_hours='8'>8</button>
+		<button class="btn btn-default btn-xs ${val=="Custom" ? selected: ''} shift_hours_btn_html" type="button" data-shift_hours='Custom'>Custom</button>
+	</div>`;
+	$wrapper
+		.html(shift_hours_html);
+	$wrapper.on('click', '.shift_hours_btn_html', function() {
+		if(frm.doc.docstatus == 0){
+			var $btn = $(this);
+			$wrapper.find('.shift_hours_btn_html').removeClass('btn-primary');
+			$btn.addClass('btn-primary');
+			if($btn.attr('data-shift_hours') == 'Custom'){
+				frm.set_df_property('shift_hours', 'hidden', false);
+				frm.set_value('shift_hours', '');
+			}
+			else{
+				frm.set_df_property('shift_hours', 'hidden', true);
+				frm.set_value('shift_hours', $btn.attr('data-shift_hours'));
+			}
+		}
+	});
+};
+
+var set_type_of_license_btn = function(frm) {
+	var $wrapper = frm.fields_dict.type_of_license_html.$wrapper;
+	if(frm.doc.driving_license_required){
+		var selected = 'btn-primary';
+		var val = frm.doc.type_of_license;
+		var type_of_license_html = `<div><label class="control-label" style="padding-right: 0px;">Type of License</label></div><div>
+			<button class="btn btn-default btn-xs ${val=="Light" ? selected: ''} type_of_license_btn_html"
+				type="button" data-type_of_license='Light'>Light</button>
+			<button class="btn btn-default btn-xs ${val=="Heavy" ? selected: ''} type_of_license_btn_html"
+				type="button" data-type_of_license='Heavy'>Heavy</button>
+			<button class="btn btn-default btn-xs ${val=="Motor Bike" ? selected: ''} type_of_license_btn_html"
+				type="button" data-type_of_license='Motor Bike'>Motor Bike</button>
+			<button class="btn btn-default btn-xs ${val=="Inshaya" ? selected: ''} type_of_license_btn_html"
+				type="button" data-type_of_license='Inshaya'>Inshaya</button>
+		</div>`;
+		$wrapper
+			.html(type_of_license_html);
+		$wrapper.on('click', '.type_of_license_btn_html', function() {
+			if(frm.doc.docstatus == 0){
+				var $btn = $(this);
+				$wrapper.find('.type_of_license_btn_html').removeClass('btn-primary');
+				$btn.addClass('btn-primary');
+				frm.set_value('type_of_license', $btn.attr('data-type_of_license'));
+			}
+		});
+	}
+	else{
+		$wrapper.html("");
+	}
+};
+
+var set_provide_salary_advance_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.provide_salary_advance, 'provide_salary_advance_html',
+		'provide_salary_advance', 'Provide Salary Advance?');
+};
+
+var set_provide_health_insurance_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.provide_health_insurance, 'provide_health_insurance_html',
+		'provide_health_insurance', 'Provide Health Insurance?');
+};
+
+var set_provide_mobile_with_line_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.provide_mobile_with_line, 'provide_mobile_with_line_html',
+		'provide_mobile_with_line', 'Provide Mobile with Line?');
+};
+
+var set_provide_company_insurance_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.provide_company_insurance, 'provide_company_insurance_html',
+		'provide_company_insurance', 'Provide Company Insurance?');
+};
+
+var set_driving_license_required_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.driving_license_required, 'driving_license_required_html', 'driving_license_required', 'Is Kuwait Driving License a Mandatory Requirement?');
+};
+
+var set_shift_working_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.shift_working, 'shift_working_html', 'shift_working', 'Will The Employee Work In Shifts?');
+};
+
+var set_night_shift_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.night_shift, 'night_shift_html', 'night_shift', 'Will The Employee Work In Night Shifts?');
+};
+
+var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
+	var $wrapper = frm.fields_dict[html_field].$wrapper;
+	var selected = 'btn-primary';
+	var field_btn_html = field_name+'_btn_html';
+	var field_html = `<div><label class="control-label" style="padding-right: 0px;">${label}</label></div><div>
+		<button class="btn btn-default btn-xs ${val ? selected: ''} ${field_btn_html}" type="button" data='Yes'>Yes</button>
+		<button class="btn btn-default btn-xs ${!val ? selected: ''} ${field_btn_html}" type="button" data='No'>No</button>
+	</div>`;
+	$wrapper
+		.html(field_html);
+	$wrapper.on('click', '.'+field_btn_html, function() {
+		if(frm.doc.docstatus == 0){
+			var $btn = $(this);
+			$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
+			$btn.addClass('btn-primary');
+			if(field_name == 'open_to_different'){
+				frm.set_value(field_name, $btn.attr('data'));
+			}
+			else{
+				frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
+			}
+		}
+	});
+};
 
 var set_is_hieght_mandatory_in_table = function(frm) {
 	if(frm.doc.gender_height_requirement){
@@ -130,7 +597,7 @@ frappe.ui.form.on('ERF Gender Height Requirement', {
 		frappe.model.set_value(cdt, cdn, 'is_height_mandatory', frm.doc.is_height_mandatory);
 	},
 	number: function(frm, cdt, cdn){
-    calculate_total_required_candidates(frm, cdt, cdn);
+    validate_total_required_candidates(frm, cdt, cdn);
   },
 	height: function(frm, cdt, cdn) {
 		validate_height_range(frm, cdt, cdn);
@@ -241,35 +708,6 @@ var set_reason_for_decline_reqd = function(frm) {
 	}
 };
 
-var set_erf_request_details = function(frm) {
-	if(frm.doc.erf_request){
-		frappe.call({
-			method: 'frappe.client.get',
-			args: {
-				doctype: 'ERF Request',
-				filters: {name: frm.doc.erf_request}
-			},
-			callback: function(r) {
-				if(r.message){
-					let request = r.message
-					frm.set_value('department', request.department);
-					frm.set_value('designation', request.designation);
-					frm.set_value('no_of_candidates_by_erf_request', request.number_of_candidates_required);
-					frm.set_value('reason_for_request', request.reason_for_request);
-				}
-			}
-		});
-		frm.set_df_property('department', 'read_only', true);
-		frm.set_df_property('designation', 'read_only', true);
-		frm.set_df_property('reason_for_request', 'read_only', true);
-	}
-	else {
-		frm.set_df_property('department', 'read_only', false);
-		frm.set_df_property('designation', 'read_only', false);
-		frm.set_df_property('reason_for_request', 'read_only', false);
-	}
-};
-
 var calculate_benefit_cost_to_company = function(frm) {
 	let total = 0;
 	if(frm.doc.other_benefits){
@@ -343,6 +781,7 @@ var set_salary_structure = function(frm) {
 };
 
 var manage_type_of_license = function(frm) {
+	set_type_of_license_btn(frm);
 	if(frm.doc.driving_license_required){
 		frm.set_df_property('type_of_license', 'reqd', true);
 	}
@@ -350,6 +789,16 @@ var manage_type_of_license = function(frm) {
 		frm.set_df_property('type_of_license', 'reqd', false);
 		frm.set_value('type_of_license', '');
 	}
+};
+
+var manage_provide_salary_advance = function(frm) {
+	// if(frm.doc.provide_salary_advance){
+	// 	frm.set_df_property('amount_in_advance', 'reqd', true);
+	// }
+	// else{
+	// 	frm.set_df_property('amount_in_advance', 'reqd', false);
+	// 	frm.set_value('amount_in_advance', '');
+	// }
 };
 
 var manage_type_of_travel = function(frm) {
@@ -369,15 +818,15 @@ var set_off_days = function(frm) {
 };
 
 var set_required_quantity_grd = function(frm) {
-  if(frm.doc.total_no_of_candidates_required){
-    frm.set_value('required_quantity', frm.doc.total_no_of_candidates_required);
+  if(frm.doc.number_of_candidates_required){
+    frm.set_value('required_quantity', frm.doc.number_of_candidates_required);
   }
   else{
     frm.set_value('required_quantity', 0);
   }
 }
 
-var calculate_total_required_candidates = function (frm, cdt, cdn) {
+var validate_total_required_candidates = function (frm, cdt, cdn) {
   let total = 0;
 	var child = locals[cdt][cdn];
   if(frm.doc.gender_height_requirement){
@@ -385,12 +834,9 @@ var calculate_total_required_candidates = function (frm, cdt, cdn) {
       total += required_candidate.number;
     });
   }
-	if(total > frm.doc.no_of_candidates_by_erf_request){
-		frappe.model.set_value(child.doctype, child.name, 'number', '');
-		frm.refresh_field('gender_height_requirement');
-		frappe.throw(__('Total Number Candidates Required Should not exceed ERF Request.'))
+	if(total != frm.doc.number_of_candidates_required){
+		frappe.show_alert(__('Total Number Candidates Required Should be {0}.', [frm.doc.number_of_candidates_required]));
 	}
-  frm.set_value('total_no_of_candidates_required', total);
 };
 
 var calculate_salary_per_person = function (frm) {
@@ -404,8 +850,8 @@ var calculate_salary_per_person = function (frm) {
 };
 
 var calculate_total_cost_in_salary = function (frm) {
-  if(frm.doc.total_no_of_candidates_required > 0 && frm.doc.salary_per_person > 0){
-    frm.set_value('total_cost_in_salary', frm.doc.total_no_of_candidates_required * frm.doc.salary_per_person);
+  if(frm.doc.number_of_candidates_required > 0 && frm.doc.salary_per_person > 0){
+    frm.set_value('total_cost_in_salary', frm.doc.number_of_candidates_required * frm.doc.salary_per_person);
   }
   else{
     frm.set_value('total_cost_in_salary', 0);
@@ -419,8 +865,10 @@ var calculate_total_cost_to_company = function(frm) {
 	}
 };
 
-var set_basic_skill_from_designation = function(frm) {
-  frm.clear_table("designation_skill");
+var set_default_details_form_designation = function(frm) {
+	frm.clear_table("designation_skill");
+	frm.clear_table("languages");
+	frm.clear_table("tool_request_item");
   if(frm.doc.designation){
 		frappe.call({
 			method: 'frappe.client.get',
@@ -429,17 +877,44 @@ var set_basic_skill_from_designation = function(frm) {
 				filters: {"name":frm.doc.designation}
 			},
 			callback: function(r) {
-				if(r.message && r.message.skills){
-					let skills = r.message.skills;
-					skills.forEach(function(designation_skill) {
-						let skill = frappe.model.add_child(frm.doc, 'Designation Skill', 'designation_skill');
-						frappe.model.set_value(skill.doctype, skill.name, 'skill', designation_skill.skill);
-						frappe.model.set_value(skill.doctype, skill.name, 'one_fm_proficiency', designation_skill.one_fm_proficiency);
-					});
+				if(r.message){
+					var desgn = r.message;
+					if(desgn.skills){
+						let skill_fields = ['skill', 'one_fm_proficiency'];
+						set_designation_childs_in_erf(frm, desgn.skills, 'Designation Skill', 'designation_skill', skill_fields);
+					}
+					if(desgn.one_fm_tools_required){
+						let tool_fields = ['item', 'quantity'];
+						set_designation_childs_in_erf(frm, desgn.one_fm_tools_required, 'ERF Tool Request Item', 'tool_request_item', tool_fields);
+					}
+					if(desgn.one_fm_languages){
+						let lang_fields = ['language', 'language_name', 'read', 'write', 'speak'];
+						set_designation_childs_in_erf(frm, desgn.one_fm_languages, 'Employee Language Requirement', 'languages', lang_fields);
+					}
+					set_designation_other_details(frm, r.message);
 				}
-				frm.refresh_field('designation_skill');
-			}
+			},
+			freeze: true,
+			freeze_message: __('Fetching Data from Designation to Set Default Data')
 		});
   }
-  frm.refresh_field('designation_skill');
+	frm.refresh_fields();
+};
+
+var set_designation_other_details = function(frm, designation) {
+	let fields = ['is_height_mandatory', 'shift_working', 'night_shift', 'travel_required', 'type_of_travel',
+		'education_qualification', 'driving_license_required', 'type_of_license', 'is_uniform_needed_for_this_job']
+	fields.forEach((field) => {
+		frm.set_value(field, designation['one_fm_'+field]);
+	});
+};
+
+var set_designation_childs_in_erf = function(frm, data, child_doc, child_field, child_doc_fields) {
+	data.forEach((item) => {
+		let child_item = frappe.model.add_child(frm.doc, child_doc, child_field);
+		child_doc_fields.forEach((field) => {
+			frappe.model.set_value(child_item.doctype, child_item.name, field, item[field]);
+		});
+	});
+	frm.refresh_field(child_field);
 };

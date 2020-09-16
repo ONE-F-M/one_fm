@@ -7,70 +7,94 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
-  "erf_request",
-  "erf_code",
+  "reason_for_request",
+  "number_of_candidates_required",
+  "project",
+  "department",
+  "designation",
+  "expected_date_of_deployment",
   "status",
   "reason_for_decline",
   "column_break_3",
   "erf_requested_by",
+  "erf_requested_by_name",
+  "erf_code",
   "erf_initiation",
   "erf_finalized",
-  "section_break_2",
-  "designation",
-  "department",
-  "project",
-  "column_break_8",
-  "reason_for_request",
-  "expected_date_of_deployment",
-  "hiring_method",
   "work_section",
   "working_days",
   "off_days",
   "vacation_days",
+  "governorate",
+  "location_of_work",
+  "save_me",
+  "column_break_14",
+  "travel_required_html",
   "travel_required",
   "type_of_travel",
-  "column_break_14",
-  "location_of_work",
-  "place_of_work",
+  "shift_working_html",
   "shift_working",
+  "night_shift_html",
   "night_shift",
+  "shift_hours_html",
   "shift_hours",
   "candidates_required_section",
   "is_height_mandatory",
   "gender_height_requirement",
-  "total_no_of_candidates_required",
-  "no_of_candidates_by_erf_request",
+  "save_me1",
   "education_and_other_requirements_section",
   "education_qualification",
   "specialization",
   "certification",
   "minimum_experience_required",
-  "maximum_experience_required",
+  "save_me2",
   "column_break_30",
+  "driving_license_required_html",
   "driving_license_required",
+  "type_of_license_html",
   "type_of_license",
-  "language_section",
+  "language_and_basic_skill_section",
   "languages",
-  "basic_skill_section",
   "designation_skill",
-  "performance_profile",
-  "objective_description",
-  "objectives",
-  "key_results",
-  "open_to_different_skilled_and_experienced_candidates",
+  "open_to_different_html",
+  "open_to_different",
+  "save_me3",
   "tools_section",
   "tool_request_item",
   "is_uniform_needed_for_this_job",
-  "salary_compensation_budget_section",
+  "save_me4",
+  "performance_profile_section",
+  "performance_profile_html",
+  "help_hr_to_create_okr",
+  "schedule_for_okr_workshop_with_recruiter",
+  "okr_workshop_with",
+  "okr_workshop_submit_to_hr",
+  "event_for_okr_workshop",
+  "hr_section",
+  "performance_profile",
   "grade",
+  "hiring_method",
+  "column_break_56",
+  "recruiter_assigned",
+  "need_to_assign_more_recruiter",
+  "secondary_recruiter_assigned",
+  "create_project_for_recruiter",
+  "project_for_recruiter",
+  "salary_compensation_budget_section",
   "salary_structure",
   "salary_details",
   "salary_per_person",
   "total_cost_in_salary",
   "column_break_44",
-  "recruiter_assigned",
-  "need_to_assign_more_recruiter",
-  "secondary_recruiter_assigned",
+  "provide_health_insurance_html",
+  "provide_health_insurance",
+  "provide_mobile_with_line_html",
+  "provide_mobile_with_line",
+  "provide_company_insurance_html",
+  "provide_company_insurance",
+  "provide_salary_advance_html",
+  "provide_salary_advance",
+  "amount_in_advance",
   "other_benefits",
   "benefit_cost_to_company",
   "total_cost_to_company",
@@ -81,8 +105,7 @@
   "column_break_54",
   "required_quantity",
   "final_quantity",
-  "amended_from",
-  "data_71"
+  "amended_from"
  ],
  "fields": [
   {
@@ -93,30 +116,23 @@
    "options": "ERF-.YYYY.-"
   },
   {
-   "fieldname": "erf_code",
-   "fieldtype": "Data",
-   "label": "ERF Code",
-   "read_only": 1
+   "fieldname": "reason_for_request",
+   "fieldtype": "Select",
+   "label": "Reason for Request",
+   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nUnPlanned",
+   "reqd": 1
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "ERF",
-   "print_hide": 1,
-   "read_only": 1
+   "fieldname": "number_of_candidates_required",
+   "fieldtype": "Int",
+   "label": "Number of Candidates Required"
   },
   {
-   "fieldname": "section_break_2",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "designation",
+   "fieldname": "project",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Designation",
-   "options": "Designation",
+   "label": "Project",
+   "options": "Project",
    "reqd": 1
   },
   {
@@ -128,30 +144,58 @@
    "reqd": 1
   },
   {
-   "fieldname": "project",
+   "fieldname": "designation",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Project",
-   "options": "Project",
+   "label": "Designation",
+   "options": "Designation",
    "reqd": 1
   },
   {
-   "fieldname": "grade",
+   "fieldname": "erf_requested_by",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Employee Grade",
-   "options": "Employee Grade"
+   "label": "ERF Requested By",
+   "options": "User",
+   "read_only": 1
   },
   {
-   "fieldname": "reason_for_request",
+   "default": "Draft",
+   "fieldname": "status",
    "fieldtype": "Select",
-   "label": "Reason for Request",
-   "options": "\nStaffing Plan\nEmployee Exit\nNew Project\nUnPlanned",
-   "reqd": 1
+   "hidden": 1,
+   "label": "Status",
+   "options": "\nDraft\nAccepted\nDeclined\nClosed",
+   "permlevel": 1
   },
   {
-   "fieldname": "column_break_8",
+   "depends_on": "eval:doc.status == 'Declined'",
+   "fieldname": "reason_for_decline",
+   "fieldtype": "Small Text",
+   "label": "Reason for Decline",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "column_break_3",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "erf_code",
+   "fieldtype": "Data",
+   "label": "ERF Code",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "erf_initiation",
+   "fieldtype": "Date",
+   "label": "ERF Initiation Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "erf_finalized",
+   "fieldtype": "Date",
+   "label": "ERF Finalized",
+   "read_only": 1
   },
   {
    "fieldname": "expected_date_of_deployment",
@@ -160,25 +204,10 @@
    "reqd": 1
   },
   {
-   "default": "0",
-   "fieldname": "shift_working",
-   "fieldtype": "Check",
-   "label": "Shift Working"
-  },
-  {
-   "default": "0",
-   "fieldname": "night_shift",
-   "fieldtype": "Check",
-   "label": "Night Shift"
-  },
-  {
-   "fieldname": "column_break_14",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "shift_hours",
-   "fieldtype": "Float",
-   "label": "Shift Hours"
+   "collapsible": 1,
+   "fieldname": "work_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Work Details"
   },
   {
    "description": "30 Days Month",
@@ -188,6 +217,26 @@
    "reqd": 1
   },
   {
+   "description": "30 Days Month",
+   "fieldname": "off_days",
+   "fieldtype": "Int",
+   "label": "Off Days In a Month",
+   "read_only": 1
+  },
+  {
+   "default": "30",
+   "fieldname": "vacation_days",
+   "fieldtype": "Int",
+   "label": "Vacation Days In an Year"
+  },
+  {
+   "default": "0",
+   "fieldname": "travel_required",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Travel Required"
+  },
+  {
    "depends_on": "travel_required",
    "fieldname": "type_of_travel",
    "fieldtype": "Select",
@@ -195,93 +244,221 @@
    "options": "\nLocal\nOverseas\nLocal and Overseas"
   },
   {
-   "fieldname": "place_of_work",
-   "fieldtype": "Data",
-   "label": "Place of Work",
-   "reqd": 1
-  },
-  {
-   "fieldname": "vacation_days",
-   "fieldtype": "Int",
-   "label": "Vacation Days In an Year",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_3",
+   "fieldname": "column_break_14",
    "fieldtype": "Column Break"
   },
   {
    "default": "0",
-   "fieldname": "travel_required",
+   "fieldname": "shift_working",
    "fieldtype": "Check",
-   "label": "Travel Required"
+   "hidden": 1,
+   "label": "Shift Working"
+  },
+  {
+   "default": "0",
+   "fieldname": "night_shift",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Night Shift"
+  },
+  {
+   "default": "12",
+   "fieldname": "shift_hours",
+   "fieldtype": "Int",
+   "label": "Shift Hours"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "candidates_required_section",
+   "fieldtype": "Section Break",
+   "label": "Candidates Required"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_height_mandatory",
+   "fieldtype": "Check",
+   "label": "Is Height Mandatory"
+  },
+  {
+   "fieldname": "gender_height_requirement",
+   "fieldtype": "Table",
+   "options": "ERF Gender Height Requirement"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "education_and_other_requirements_section",
+   "fieldtype": "Section Break",
+   "label": "Education and Other Requirements"
   },
   {
    "fieldname": "education_qualification",
    "fieldtype": "Select",
    "label": "Minimum Educational Qualification",
-   "options": "\nGraduate\nPost Graduate\nUnder Graduate",
-   "reqd": 1
+   "options": "\nGraduate\nPost Graduate\nUnder Graduate\nHigh School"
   },
   {
-   "depends_on": "driving_license_required",
-   "fieldname": "type_of_license",
-   "fieldtype": "Select",
-   "label": "Type of License",
-   "options": "\nLight\nHeavy\nMotor Bike\nInshaya"
+   "fieldname": "specialization",
+   "fieldtype": "Data",
+   "label": "Specialization"
+  },
+  {
+   "fieldname": "certification",
+   "fieldtype": "Link",
+   "label": "Certification",
+   "options": "Candidate Certification"
+  },
+  {
+   "fieldname": "minimum_experience_required",
+   "fieldtype": "Int",
+   "label": "Minimum Relevant Experience Required (In Years)"
   },
   {
    "fieldname": "column_break_30",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "minimum_experience_required",
-   "fieldtype": "Int",
-   "label": "Minimum Relevant Experience Required (In Years)",
-   "reqd": 1
+   "default": "0",
+   "fieldname": "driving_license_required",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Kuwait Driving License a Mandatory Requirement"
   },
   {
-   "fieldname": "maximum_experience_required",
-   "fieldtype": "Int",
-   "label": "Maximum Experience Required (In Years)"
+   "depends_on": "driving_license_required",
+   "fieldname": "type_of_license",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Type of License",
+   "options": "\nLight\nHeavy\nMotor Bike\nInshaya"
   },
   {
-   "collapsible": 1,
-   "fieldname": "basic_skill_section",
-   "fieldtype": "Section Break",
-   "label": "Basic Skills and Performance Profile"
+   "fieldname": "languages",
+   "fieldtype": "Table",
+   "label": "Languages",
+   "options": "Employee Language Requirement"
+  },
+  {
+   "fieldname": "designation_skill",
+   "fieldtype": "Table",
+   "label": "Skills",
+   "options": "Designation Skill"
   },
   {
    "fieldname": "performance_profile",
    "fieldtype": "Link",
    "label": "Performance Profile",
    "options": "OKR Performance Profile",
-   "reqd": 1
-  },
-  {
-   "fieldname": "salary_details",
-   "fieldtype": "Table",
-   "label": "Salary Details",
-   "options": "ERF Salary Detail",
-   "permlevel": 1,
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_44",
-   "fieldtype": "Column Break"
+   "permlevel": 1
   },
   {
    "fieldname": "hiring_method",
    "fieldtype": "Select",
    "label": "Hiring Method",
    "options": "\nBulk Recruitment\nA la carte Recruitment",
-   "reqd": 1
+   "permlevel": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "tools_section",
+   "fieldtype": "Section Break",
+   "label": "Tools Required for Employee to Work"
+  },
+  {
+   "fieldname": "tool_request_item",
+   "fieldtype": "Table",
+   "options": "ERF Tool Request Item"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_uniform_needed_for_this_job",
+   "fieldtype": "Check",
+   "label": "Is Uniform Needed for This Job"
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee Grade",
+   "options": "Employee Grade"
+  },
+  {
+   "fieldname": "salary_structure",
+   "fieldtype": "Link",
+   "label": "Salary Structure",
+   "options": "Salary Structure",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "salary_details",
+   "fieldtype": "Table",
+   "label": "Salary Details",
+   "options": "ERF Salary Detail",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "salary_per_person",
+   "fieldtype": "Currency",
+   "label": "Salary Per Person",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_cost_in_salary",
+   "fieldtype": "Currency",
+   "label": "Total Cost in Salary",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_44",
+   "fieldtype": "Column Break",
+   "label": "Other Benefits"
   },
   {
    "fieldname": "recruiter_assigned",
    "fieldtype": "Link",
    "label": "Recruiter Assigned",
    "options": "User"
+  },
+  {
+   "default": "0",
+   "fieldname": "need_to_assign_more_recruiter",
+   "fieldtype": "Check",
+   "label": "Need to Assign More Recruiter",
+   "permlevel": 1
+  },
+  {
+   "depends_on": "need_to_assign_more_recruiter",
+   "fieldname": "secondary_recruiter_assigned",
+   "fieldtype": "Link",
+   "label": "Secondary Recruiter Assigned",
+   "options": "User",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "other_benefits",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Other Benefits",
+   "options": "ERF Employee Benefit",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "benefit_cost_to_company",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Benefit Cost to Company",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_cost_to_company",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Total Cost to Company",
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "collapsible": 1,
@@ -306,6 +483,13 @@
    "read_only": 1
   },
   {
+   "fieldname": "pam_available_quantity",
+   "fieldtype": "Int",
+   "label": "Available Quantity",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_54",
    "fieldtype": "Column Break"
   },
@@ -324,266 +508,237 @@
    "read_only": 1
   },
   {
-   "fieldname": "erf_finalized",
-   "fieldtype": "Date",
-   "label": "ERF Finalized",
-   "read_only": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "work_section",
-   "fieldtype": "Section Break",
-   "label": "Basic Work Details"
-  },
-  {
-   "fieldname": "gender_height_requirement",
-   "fieldtype": "Table",
-   "options": "ERF Gender Height Requirement",
-   "reqd": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "education_and_other_requirements_section",
-   "fieldtype": "Section Break",
-   "label": "Education and Other Requirements"
-  },
-  {
-   "fieldname": "designation_skill",
-   "fieldtype": "Table",
-   "label": "Designation Skill",
-   "options": "Designation Skill",
-   "reqd": 1
-  },
-  {
-   "fieldname": "tool_request_item",
-   "fieldtype": "Table",
-   "options": "ERF Tool Request Item",
-   "reqd": 1
-  },
-  {
-   "fieldname": "total_no_of_candidates_required",
-   "fieldtype": "Int",
-   "label": "Total No of Candidates Required",
-   "read_only": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "language_section",
-   "fieldtype": "Section Break",
-   "label": "Language"
-  },
-  {
-   "fieldname": "languages",
-   "fieldtype": "Table",
-   "options": "Employee Language Requirement",
-   "reqd": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "candidates_required_section",
-   "fieldtype": "Section Break",
-   "label": "Candidates Required"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "tools_section",
-   "fieldtype": "Section Break",
-   "label": "Tools Required for Employee to Work"
-  },
-  {
-   "description": "30 Days Month",
-   "fieldname": "off_days",
-   "fieldtype": "Int",
-   "label": "Off Days In a Month",
-   "reqd": 1
-  },
-  {
-   "fieldname": "salary_per_person",
-   "fieldtype": "Currency",
-   "label": "Salary Per Person",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_cost_in_salary",
-   "fieldtype": "Currency",
-   "label": "Total Cost in Salary",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "pam_available_quantity",
-   "fieldtype": "Int",
-   "label": "Available Quantity",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "driving_license_required",
-   "fieldtype": "Check",
-   "label": "Is Kuwait Driving License a Mandatory Requirement"
-  },
-  {
-   "fieldname": "salary_structure",
+   "fieldname": "amended_from",
    "fieldtype": "Link",
-   "label": "Salary Structure",
-   "options": "Salary Structure",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "ERF",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "shift_hours_html",
+   "fieldtype": "HTML",
+   "label": "Shift Hours HTML"
+  },
+  {
+   "fieldname": "travel_required_html",
+   "fieldtype": "HTML",
+   "label": "Travel Required Html"
+  },
+  {
+   "fieldname": "shift_working_html",
+   "fieldtype": "HTML",
+   "label": "Shift Working Html"
+  },
+  {
+   "description": "Will The Employee Work In Night Shifts?",
+   "fieldname": "night_shift_html",
+   "fieldtype": "HTML",
+   "label": "Night Shift HTML"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "hr_section",
+   "fieldtype": "Section Break",
+   "label": "HR",
    "permlevel": 1
-  },
-  {
-   "default": "Today",
-   "fieldname": "erf_initiation",
-   "fieldtype": "Date",
-   "label": "ERF Initiation Date",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_cost_to_company",
-   "fieldtype": "Currency",
-   "label": "Total Cost to Company",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "other_benefits",
-   "fieldtype": "Table",
-   "label": "Other Benefits",
-   "options": "ERF Employee Benefit",
-   "permlevel": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "benefit_cost_to_company",
-   "fieldtype": "Currency",
-   "label": "Benefit Cost to Company",
-   "permlevel": 1,
-   "read_only": 1
   },
   {
    "collapsible": 1,
    "fieldname": "salary_compensation_budget_section",
    "fieldtype": "Section Break",
-   "label": "HR and Salary Compensation Budget",
+   "label": "Salary Compensation Budget",
    "permlevel": 1
   },
   {
-   "fieldname": "erf_request",
-   "fieldtype": "Link",
-   "label": "ERF Request",
-   "options": "ERF Request",
-   "reqd": 1
+   "fieldname": "column_break_56",
+   "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "no_of_candidates_by_erf_request",
-   "fieldtype": "Int",
-   "label": "Number of Candidates by ERF Request",
-   "read_only": 1
+   "collapsible": 1,
+   "fieldname": "language_and_basic_skill_section",
+   "fieldtype": "Section Break",
+   "label": "Language and Basic Skill"
   },
   {
-   "default": "Draft",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "\nDraft\nAccepted\nDeclined\nClosed",
-   "permlevel": 1
+   "depends_on": "eval:doc.docstatus==0",
+   "fieldname": "performance_profile_section",
+   "fieldtype": "Section Break",
+   "label": "Performance Profile"
   },
   {
-   "depends_on": "eval:doc.status == 'Declined'",
-   "fieldname": "reason_for_decline",
-   "fieldtype": "Small Text",
-   "label": "Reason for Decline",
-   "permlevel": 1
-  },
-  {
-   "fieldname": "objectives",
-   "fieldtype": "Table",
-   "label": "Your Primary Objective is are as below",
-   "options": "OKR Performance Profile Objective",
-   "reqd": 1
-  },
-  {
-   "fieldname": "key_results",
-   "fieldtype": "Table",
-   "label": "Below are the Key results you would need to achieve to reach the primary objectives in the given time frame",
-   "options": "OKR Performance Profile Key Result",
-   "reqd": 1
-  },
-  {
-   "fieldname": "objective_description",
+   "fieldname": "performance_profile_html",
    "fieldtype": "HTML",
+   "label": "Performance Profile HTML"
+  },
+  {
+   "fieldname": "schedule_for_okr_workshop_with_recruiter",
+   "fieldtype": "Datetime",
+   "label": "Set a Date With Our Recruiter For a Quick Workshop"
+  },
+  {
+   "fieldname": "okr_workshop_with",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Select HR For a Quick Workshop",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval: !doc.project_for_recruiter && doc.recruiter_assigned",
+   "fieldname": "create_project_for_recruiter",
+   "fieldtype": "Button",
+   "label": "Create Project for Recruiter"
+  },
+  {
+   "depends_on": "eval: !doc.event_for_okr_workshop",
+   "fieldname": "okr_workshop_submit_to_hr",
+   "fieldtype": "Button",
+   "label": "Submit to HR"
+  },
+  {
+   "fieldname": "project_for_recruiter",
+   "fieldtype": "Link",
+   "label": "Project for Recruiter",
+   "options": "Project",
    "read_only": 1
   },
   {
-   "fieldname": "data_71",
-   "fieldtype": "Data"
+   "fieldname": "governorate",
+   "fieldtype": "Select",
+   "label": "Governorate",
+   "options": "\nHawalli\nFarwaniya\nMubarak Al-Kabeer\nAhmadi\nJahra"
+  },
+  {
+   "fieldname": "location_of_work",
+   "fieldtype": "Link",
+   "label": "Location of Work",
+   "options": "Location"
+  },
+  {
+   "fieldname": "event_for_okr_workshop",
+   "fieldtype": "Link",
+   "label": "Meeting",
+   "options": "Event",
+   "read_only": 1
+  },
+  {
+   "fieldname": "open_to_different_html",
+   "fieldtype": "HTML",
+   "label": "Open to Different Skilled and Experienced Candidates"
   },
   {
    "default": "Yes",
-   "fieldname": "open_to_different_skilled_and_experienced_candidates",
+   "fieldname": "open_to_different",
    "fieldtype": "Select",
-   "label": "would you be open to see applicants with a track record of doing these types of work even if the person had a different mix of skills, exp ?",
+   "hidden": 1,
+   "label": "Would you be open to see applicants with a track record of doing these types of work even if the person had a different mix of skills, exp ?",
    "options": "Yes\nNo"
   },
   {
-   "fieldname": "specialization",
+   "fieldname": "save_me",
+   "fieldtype": "Button",
+   "label": "Save"
+  },
+  {
+   "fieldname": "save_me1",
+   "fieldtype": "Button",
+   "label": "Save"
+  },
+  {
+   "fieldname": "save_me2",
+   "fieldtype": "Button",
+   "label": "Save"
+  },
+  {
+   "fieldname": "save_me3",
+   "fieldtype": "Button",
+   "label": "Save"
+  },
+  {
+   "fieldname": "save_me4",
+   "fieldtype": "Button",
+   "label": "Save"
+  },
+  {
+   "fieldname": "erf_requested_by_name",
    "fieldtype": "Data",
-   "label": "Specialization"
-  },
-  {
-   "fieldname": "certification",
-   "fieldtype": "Link",
-   "label": "Certification",
-   "options": "Candidate Certification"
-  },
-  {
-   "fetch_from": "erf_request.department_manager",
-   "fieldname": "erf_requested_by",
-   "fieldtype": "Link",
-   "label": "ERF Requested By",
-   "options": "User",
+   "label": "Full Name",
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "need_to_assign_more_recruiter",
-   "fieldtype": "Check",
-   "label": "Need to Assign More Recruiter",
-   "permlevel": 1
+   "fieldname": "help_hr_to_create_okr",
+   "fieldtype": "Small Text"
   },
   {
-   "depends_on": "need_to_assign_more_recruiter",
-   "fieldname": "secondary_recruiter_assigned",
-   "fieldtype": "Link",
-   "label": "Secondary Recruiter Assigned",
-   "options": "User",
-   "permlevel": 1
+   "fieldname": "driving_license_required_html",
+   "fieldtype": "HTML",
+   "label": "Is Kuwait Driving License a Mandatory Requirement"
   },
   {
-   "description": "Governorate",
-   "fieldname": "location_of_work",
-   "fieldtype": "Select",
-   "label": "Location of Work",
-   "options": "\nHawalli, Kuwait\nFarwaniya, Kuwait\nMubarak Al-Kabeer, Kuwait\nAhmadi, Kuwait\nJahra, Kuwait",
-   "reqd": 1
+   "fieldname": "type_of_license_html",
+   "fieldtype": "HTML",
+   "label": "Type of License"
   },
   {
    "default": "0",
-   "fieldname": "is_height_mandatory",
+   "fieldname": "provide_company_insurance",
    "fieldtype": "Check",
-   "label": "Is Height Mandatory"
+   "hidden": 1,
+   "label": "Provide Company Insurance"
+  },
+  {
+   "fieldname": "provide_company_insurance_html",
+   "fieldtype": "HTML",
+   "label": "Provide Company Insurance HTML"
+  },
+  {
+   "fieldname": "provide_health_insurance_html",
+   "fieldtype": "HTML",
+   "label": "Provide Health Insurance HTML"
   },
   {
    "default": "0",
-   "fieldname": "is_uniform_needed_for_this_job",
+   "fieldname": "provide_health_insurance",
    "fieldtype": "Check",
-   "label": "Is Uniform Needed for This Job"
+   "hidden": 1,
+   "label": "Provide Health Insurance"
+  },
+  {
+   "fieldname": "provide_mobile_with_line_html",
+   "fieldtype": "HTML",
+   "label": "Provide Mobile with Line HTML"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_mobile_with_line",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Provide Mobile with Line"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_salary_advance",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Provide Salary Advance"
+  },
+  {
+   "depends_on": "provide_salary_advance",
+   "fieldname": "amount_in_advance",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Amount in Advance"
+  },
+  {
+   "fieldname": "provide_salary_advance_html",
+   "fieldtype": "HTML",
+   "label": "Provide Salary Advance HTML"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-05-20 23:44:50.638409",
+ "modified": "2020-09-15 23:15:09.620485",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
