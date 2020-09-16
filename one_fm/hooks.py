@@ -50,7 +50,8 @@ doctype_js = {
 	"Notification Log": "public/js/doctype_js/notification_log.js",
 	"Sales Invoice": "public/js/doctype_js/sales_invoice.js",
 	"Delivery Note": "public/js/doctype_js/delivery_note.js",
-	"Job Applicant": "public/js/doctype_js/job_applicant.js"
+	"Job Applicant": "public/js/doctype_js/job_applicant.js",
+	"Job Offer": "public/js/doctype_js/job_offer.js"
 }
 doctype_list_js = {"Job Applicant" : "public/js/doctype_js/job_applicant_list.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -181,7 +182,8 @@ scheduler_events = {
 		'one_fm.utils.check_grp_operator_submission_daily',
 		'one_fm.utils.check_grp_supervisor_submission_daily',
 		'one_fm.utils.check_pam_visa_approval_submission_daily',
-		'one_fm.utils.check_upload_original_visa_submission_daily'
+		'one_fm.utils.check_upload_original_visa_submission_daily',
+		'one_fm.hiring.utils.notify_finance_job_offer_salary_advance'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -291,7 +293,7 @@ fixtures = [
 	},
 	{
 		"dt": "Custom Script",
-		'filters': [['dt', 'in', ['Job Opening', 'Job Offer', 'Item', 'Stock Entry', 'Warehouse', 'Supplier',
+		'filters': [['dt', 'in', ['Job Opening', 'Item', 'Stock Entry', 'Warehouse', 'Supplier',
 		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
 	},
 	{

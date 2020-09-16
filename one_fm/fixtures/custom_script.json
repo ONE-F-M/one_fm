@@ -90,17 +90,6 @@
  {
   "docstatus": 0,
   "doctype": "Custom Script",
-  "dt": "Job Offer",
-  "modified": "2020-05-14 13:33:03.323303",
-  "name": "Job Offer-Client",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "script": "frappe.ui.form.on('Job Offer', {\n  refresh(frm) {\n    if(frm.is_new()){\n      frm.set_value('offer_date', frappe.datetime.now_date());\n    }\n  },\n  job_applicant: function(frm) {\n    set_job_applicant_details(frm);\n  }\n});\n\nvar set_job_applicant_details = function(frm) {\n  if(frm.doc.job_applicant){\n    frappe.db.get_value('Job Applicant', frm.doc.job_applicant, 'one_fm_erf', function(r) {\n      if(r && r.one_fm_erf){\n        frappe.call({\n          method: 'frappe.client.get',\n          args: {\n            doctype: 'ERF',\n            filters: {'name': r.one_fm_erf}\n          },\n          callback: function(ret) {\n            if(ret && ret.message){\n              var erf = ret.message;\n              set_erf_details(frm, erf);\n            }\n          }\n        });\n      }\n    });\n  }\n};\n\nvar set_erf_details = function(frm, erf) {\n  frm.set_value('designation', erf.designation);\n  set_salary_details(frm, erf);\n  set_other_benefits_to_terms(frm, erf);\n};\n\nvar set_salary_details = function(frm, erf) {\n  frm.clear_table('one_fm_salary_details');\n  let total_amount = 0;\n  if(erf.salary_details){\n    erf.salary_details.forEach((item, i) => {\n      total_amount += item.amount;\n      let salary = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'one_fm_salary_details');\n      frappe.model.set_value(salary.doctype, salary.name, 'salary_component', item.salary_component);\n      frappe.model.set_value(salary.doctype, salary.name, 'amount', item.amount);\n    });\n  }\n  frm.set_value('one_fm_job_offer_total_salary', total_amount);\n  frm.refresh_field('one_fm_salary_details');\n};\n\nvar set_other_benefits_to_terms = function(frm, erf) {\n  var terms_list = [];\n  if(erf.other_benefits){\n    erf.other_benefits.forEach((item) => {\n      terms_list.push({'offer_term': item.benefit, 'value': 'Company Provided'});\n    });\n  }\n  var terms = ['Kuwait Visa processing Fees', 'Kuwait Residency Fees', 'Kuwait insurance Fees']\n  terms.forEach((item) => {\n    terms_list.push({'offer_term': item, 'value': 'Borne By The Company'});\n  });\n  var hours = erf.shift_hours?erf.shift_hours:9;\n  let vacation_days = erf.vacation_days?erf.vacation_days:30;\n  terms_list.push({'offer_term': 'Working Hours', 'value': hours+' hours a day, (Subject to Operational Requirements) from Sunday to Thursday'});\n  terms_list.push({'offer_term': 'Annual Leave', 'value': '('+vacation_days+') days paid leave, as per Kuwait Labor Law (Private Sector)'});\n  terms_list.push({'offer_term': 'Probation Period', 'value': '(100) working days'});\n  set_offer_terms(frm, terms_list);\n};\n\nvar set_offer_terms = function(frm, terms_list) {\n  frm.clear_table('offer_terms');\n  terms_list.forEach((item) => {\n    let offer_term = frappe.model.add_child(frm.doc, 'Job Offer Term', 'offer_terms');\n    frappe.model.set_value(offer_term.doctype, offer_term.name, 'offer_term', item['offer_term']);\n    frappe.model.set_value(offer_term.doctype, offer_term.name, 'value', item['value']);\n  });\n  frm.refresh_field('offer_terms');\n}\n"
- },
- {
-  "docstatus": 0,
-  "doctype": "Custom Script",
   "dt": "Warehouse",
   "modified": "2020-08-04 21:27:29.909023",
   "name": "Warehouse-Client",

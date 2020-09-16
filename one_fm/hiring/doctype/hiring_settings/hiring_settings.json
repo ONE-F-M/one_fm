@@ -12,7 +12,9 @@
   "notify_gsd_on_erf_approval",
   "column_break_5",
   "performance_profile_resource",
-  "performance_profile_guid"
+  "performance_profile_guid",
+  "job_offer_section",
+  "notify_finance_department_for_job_offer_salary_advance"
  ],
  "fields": [
   {
@@ -61,11 +63,22 @@
    "fieldtype": "Data",
    "label": "Notify GSD on ERF Approval",
    "options": "Email"
+  },
+  {
+   "fieldname": "job_offer_section",
+   "fieldtype": "Section Break",
+   "label": "Job Offer"
+  },
+  {
+   "fieldname": "notify_finance_department_for_job_offer_salary_advance",
+   "fieldtype": "Link",
+   "label": "Notify Finance Department for Job Offer Salary Advance",
+   "options": "User"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2020-09-15 21:43:55.297861",
+ "modified": "2020-09-16 06:41:51.988450",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",
