@@ -53,7 +53,10 @@ doctype_js = {
 	"Job Applicant": "public/js/doctype_js/job_applicant.js",
 	"Job Offer": "public/js/doctype_js/job_offer.js"
 }
-doctype_list_js = {"Job Applicant" : "public/js/doctype_js/job_applicant_list.js"}
+doctype_list_js = {
+	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
+	"Job Offer": "public/js/doctype_js/job_offer_list.js"
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
