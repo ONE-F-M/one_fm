@@ -1,4 +1,5 @@
 {
+ "autoname": "SR-.######",
  "creation": "2020-09-07 22:32:41.625676",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -101,7 +102,7 @@
    "fieldtype": "Section Break"
   }
  ],
- "modified": "2020-09-07 22:38:44.024523",
+ "modified": "2020-09-17 17:18:00.521557",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Report",
