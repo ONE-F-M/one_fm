@@ -8,7 +8,7 @@ from frappe.core.doctype.version.version import get_diff
 from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 import datetime
-
+from frappe.permissions import remove_user_permission
 
 #Shift Type
 @frappe.whitelist()
@@ -295,9 +295,9 @@ def get_closest_location(time, location):
 
 def haversine(ofc_lat, ofc_lng, emp_lat, emp_lng):
 	"""
-Calculate the great circle distance between two points
-on the earth (specified in decimal degrees)
-"""
+	Calculate the great circle distance between two points
+	on the earth (specified in decimal degrees)
+	"""
 	from math import radians, cos, sin, asin, sqrt
 	# convert decimal degrees to radians
 	try:
@@ -313,3 +313,31 @@ on the earth (specified in decimal degrees)
 	except Exception as e:
 		print(frappe.get_traceback())
 
+
+def employee_before_validate(doc, method):
+	from erpnext.hr.doctype.employee.employee import Employee
+	Employee.validate = employee_validate
+
+
+
+def employee_validate(self):
+	from erpnext.controllers.status_updater import validate_status
+	validate_status(self.status, ["Active", "Court Case", "Absconding", "Left"])
+
+	self.employee = self.name
+	self.set_employee_name()
+	self.validate_date()
+	self.validate_email()
+	self.validate_status()
+	self.validate_reports_to()
+	self.validate_preferred_email()
+	if self.job_applicant:
+		self.validate_onboarding_process()
+
+	if self.user_id:
+		self.validate_user_details()
+	else:
+		existing_user_id = frappe.db.get_value("Employee", self.name, "user_id")
+		if existing_user_id:
+			remove_user_permission(
+				"Employee", self.name, existing_user_id)

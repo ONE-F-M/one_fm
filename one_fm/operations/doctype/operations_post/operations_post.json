@@ -27,7 +27,6 @@
   {
    "fieldname": "post_name",
    "fieldtype": "Data",
-   "hidden": 1,
    "label": "Post Name"
   },
   {
@@ -124,7 +123,7 @@
    "read_only": 1
   }
  ],
- "modified": "2020-09-05 22:11:28.590528",
+ "modified": "2020-09-16 18:00:54.836912",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",
