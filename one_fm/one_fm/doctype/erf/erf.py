@@ -17,6 +17,12 @@ class ERF(Document):
 		if self.okr_workshop_with:
 			self.set_onload('okr_workshop_with_full_name', get_user_fullname(self.okr_workshop_with))
 
+		erf_approver = frappe.db.get_value('Hiring Settings', None, 'erf_approver')
+		if self.reason_for_request == 'UnPlanned':
+			unplanned_erf_approver = frappe.db.get_value('Hiring Settings', None, 'unplanned_erf_approver')
+			erf_approver = unplanned_erf_approver if unplanned_erf_approver else erf_approver
+		self.set_onload('erf_approver', erf_approver)
+
 	def validate(self):
 		if not self.erf_requested_by:
 			self.erf_requested_by = frappe.session.user
@@ -37,6 +43,7 @@ class ERF(Document):
 
 	def after_insert(self):
 		frappe.db.set_value(self.doctype, self.name, 'erf_code', self.name)
+		self.reload()
 
 	def validate_type_of_travel(self):
 		if self.travel_required and not self.type_of_travel:
@@ -200,6 +207,12 @@ class ERF(Document):
 	def create_event_for_okr_workshop(self):
 		return set_event_for_okr_workshop(self)
 
+	def accept_or_decline(self, status, reason_for_decline=None):
+		self.status = status
+		self.reason_for_decline = reason_for_decline
+		self.save()
+		self.reload()
+
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
 	job_opening.job_title = erf.erf_code+'-'+erf.designation+'-'+erf.department
@@ -208,10 +221,9 @@ def create_job_opening_from_erf(erf):
 	job_opening.one_fm_erf = erf.name
 	employee = frappe.db.exists("Employee", {"user_id": erf.owner})
 	job_opening.one_fm_hiring_manager = employee if employee else ''
-	job_opening.one_fm_no_of_positions_by_erf = erf.total_no_of_candidates_required
+	job_opening.one_fm_no_of_positions_by_erf = erf.number_of_candidates_required
 	job_opening.one_fm_job_opening_created = today()
 	job_opening.one_fm_minimum_experience_required = erf.minimum_experience_required
-	job_opening.one_fm_maximum_experience_required = erf.maximum_experience_required
 	job_opening.one_fm_performance_profile = erf.performance_profile
 	description = set_description_by_performance_profile(job_opening, erf)
 	if description:
@@ -241,10 +253,11 @@ def set_erf_skills_in_job_opening(job_opening, erf):
 def set_description_by_performance_profile(job_opening, erf):
 	if erf.performance_profile:
 		template = get_job_openig_description_template()
+		okr = frappe.get_doc('OKR Performance Profile', erf.performance_profile)
 		return frappe.render_template(
 			template, dict(
-				objective_description=frappe.db.get_value('OKR Performance Profile', erf.performance_profile, 'description'),
-				objectives=frappe.db.get_value('OKR Performance Profile', erf.performance_profile, 'objectives')
+				objective_description=okr.description,
+				objectives=okr.objectives
 			)
 		)
 

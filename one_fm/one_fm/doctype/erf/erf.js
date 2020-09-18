@@ -37,6 +37,54 @@ frappe.ui.form.on('ERF', {
 			frm.set_df_property('schedule_for_okr_workshop_with_recruiter', 'label',
 				__('Set a Date With {0} For a Quick Workshop',[frm.doc.__onload.okr_workshop_with_full_name]))
 		}
+		if (frm.doc.docstatus == 1 && frm.doc.__onload && 'erf_approver' in frm.doc.__onload){
+			if(frappe.session.user==frm.doc.__onload.erf_approver && frm.doc.status == "Draft"){
+				frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_decline_erf(frm, 'Accepted', false)).addClass('btn-primary');
+				frm.add_custom_button(__('Decline'), () => frm.events.decline_erf(frm, 'Declined')).addClass('btn-danger');
+			}
+		}
+	},
+	decline_erf: function(frm, status) {
+		var d = new frappe.ui.Dialog({
+			title : __("Decline ERF"),
+			fields : [{
+				fieldtype: "Small Text",
+				label: "Reason for Decline",
+				fieldname: "reason_for_decline",
+				reqd : 1
+			}],
+			primary_action_label: __("Decline"),
+			primary_action: function(){
+				frm.events.confirm_accept_decline_erf(frm, status, d.get_value('reason_for_decline'));
+				d.hide();
+			},
+		});
+		d.show();
+	},
+	confirm_accept_decline_erf: function(frm, status, reason_for_decline) {
+		let msg_status = 'Approve';
+		if(status != 'Approved'){
+			msg_status = (status == 'Accepted' ? 'Accept': 'Decline')
+		}
+		frappe.confirm(
+			__('Do You Want to {0} this ERF', [msg_status]),
+			function(){
+				// Yes
+				frappe.call({
+					doc: frm.doc,
+					method: 'accept_or_decline',
+					args: {status: status, reason_for_decline: reason_for_decline},
+					callback(r) {
+						if (!r.exc) {
+							frm.reload_doc();
+						}
+					},
+					freeze: true,
+					freeze_message: __('Processing ..')
+				});
+			},
+			function(){} // No
+		);
 	},
 	erf_requested_by: function(frm) {
 		frm.set_value('erf_requested_by_name', '');
