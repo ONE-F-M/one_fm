@@ -7,6 +7,12 @@ import frappe
 from frappe.model.document import Document
 
 class AccommodationCheckin(Document):
+	def before_insert(self):
+		if self.type == "IN":
+			self.naming_series = "CHECKIN-.YYYY.-"
+		elif self.type == "OUT":
+			self.naming_series = "CHECKOUT-.YYYY.-"
+
 	def get_checkin_details_from_booking(self):
 		if self.employee and not self.booking_reference:
 			employee = frappe.get_doc('Employee', self.employee)
@@ -30,3 +36,16 @@ class AccommodationCheckin(Document):
 				filters['one_fm_civil_id'] = self.civil_id
 			if filters and len(filters)>0:
 				self.employee = frappe.db.exists('Employee', filters)
+		if self.checkin_reference:
+			checkin = frappe.get_doc('Accommodation Checkin', self.checkin_reference)
+			self.bed = checkin.bed
+			self.employee = checkin.employee
+			self.accommodation = checkin.accommodation
+			self.accommodation_unit = checkin.accommodation_unit
+			self.floor = checkin.floor
+			self.full_name = checkin.full_name
+			self.passport_number = checkin.passport_number
+			self.civil_id = checkin.civil_id
+			self.new_or_current_resident = checkin.new_or_current_resident
+			self.attach_print_accommodation_policy = checkin.attach_print_accommodation_policy
+			self.attach_asset_receiving_declaration = checkin.attach_asset_receiving_declaration

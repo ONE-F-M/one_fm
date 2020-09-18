@@ -14,8 +14,29 @@ frappe.ui.form.on('Accommodation Checkin', {
 	print_asset_receiving_declaration: function(frm) {
 		frm.meta.default_print_format = "Asset Receiving Declaration";
 		frm.print_doc();
+	},
+	print_accommodation_policy: function(frm) {
+		frm.meta.default_print_format = "Accommodation Policy";
+		frm.print_doc();
+	},
+	checkin_reference: function(frm) {
+		set_checkin_details(frm);
+	},
+	type: function(frm) {
+		set_required(frm);
 	}
 });
+
+var set_required = function(frm) {
+	if(frm.doc.type == 'OUT'){
+		frm.set_df_property('checkin_reference', 'reqd', true);
+		frm.set_df_property('reason_for_checkout', 'reqd', true);
+	}
+	else{
+		frm.set_df_property('checkin_reference', 'reqd', false);
+		frm.set_df_property('reason_for_checkout', 'reqd', false);
+	}
+};
 
 var set_checkin_details = function(frm) {
 	frappe.call({
@@ -33,6 +54,17 @@ var set_filters = function(frm) {
 			filters: {
 				'booking_status': ['in', ['Permanent Booking']]
 			}
+		};
+	});
+
+	frm.set_query('checkin_reference', function () {
+		var filters = {};
+		filters['type'] = 'IN'
+		if(frm.doc.employee){
+			filters['employee'] = frm.doc.employee
+		}
+		return {
+			filters: filters
 		};
 	});
 

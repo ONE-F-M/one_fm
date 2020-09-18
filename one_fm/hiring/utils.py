@@ -2,7 +2,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 import frappe
-from frappe.utils import get_url
+from frappe.utils import get_url, fmt_money
 import json
 from frappe import _
 
@@ -116,9 +116,11 @@ def notify_finance_job_offer_salary_advance(job_offer_id=None, job_offer_list=No
     if recipient and job_offer_list and len(job_offer_list)>0:
         message = "<p>Job Offer listed below needs Advance Salary</p><ol>"
         for job_offer in job_offer_list:
+            doc = frappe.get_doc('Job Offer', job_offer.name)
             frappe.db.set_value('Job Offer', job_offer.name, 'one_fm_notified_finance_department', True)
             page_link = get_url("/desk#Form/Job Offer/"+job_offer.name)
-            message += "<li><a href='{0}'>{1}</a>: {2}</li>".format(page_link, job_offer.name, job_offer.one_fm_salary_advance_amount)
+            message += "<li><a href='{0}'>{1}</a>: {2}</li>".format(page_link, job_offer.name,
+                fmt_money(abs(job_offer.one_fm_salary_advance_amount), 3, 'KWD'))
         message += "<ol>"
         frappe.sendmail(
             recipients=[recipient],

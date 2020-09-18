@@ -1,15 +1,18 @@
 {
  "actions": [],
+ "autoname": "naming_series:",
  "creation": "2020-09-14 21:04:36.126422",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "naming_series",
   "type",
   "employee",
   "column_break_2",
   "booking_reference",
   "checkin_reference",
+  "reason_for_checkout",
   "section_break_4",
   "full_name",
   "passport_number",
@@ -28,6 +31,9 @@
   "column_break_21",
   "employee_own_asset_related_to_accommodation",
   "asset_section",
+  "print_accommodation_policy",
+  "attach_print_accommodation_policy",
+  "column_break_26",
   "print_asset_receiving_declaration",
   "attach_asset_receiving_declaration",
   "amended_from"
@@ -37,7 +43,8 @@
    "fieldname": "employee",
    "fieldtype": "Link",
    "label": "Employee",
-   "options": "Employee"
+   "options": "Employee",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_2",
@@ -50,7 +57,8 @@
   {
    "fieldname": "full_name",
    "fieldtype": "Data",
-   "label": "Full Name"
+   "label": "Full Name",
+   "reqd": 1
   },
   {
    "fieldname": "passport_number",
@@ -106,7 +114,8 @@
    "fieldname": "bed",
    "fieldtype": "Link",
    "label": "Bed",
-   "options": "Bed"
+   "options": "Bed",
+   "reqd": 1
   },
   {
    "fieldname": "comments",
@@ -133,15 +142,16 @@
    "fieldname": "new_or_current_resident",
    "fieldtype": "Select",
    "label": "New/Current Resident",
-   "options": "\nNew Resident\nCurrent Resident"
+   "options": "\nNew Resident\nCurrent Resident",
+   "reqd": 1
   },
   {
-   "default": "IN",
    "fieldname": "type",
    "fieldtype": "Select",
-   "hidden": 1,
+   "in_list_view": 1,
    "label": "Type",
-   "options": "\nIN\nOUT"
+   "options": "\nIN\nOUT",
+   "reqd": 1
   },
   {
    "depends_on": "eval:doc.type=='OUT'",
@@ -166,13 +176,12 @@
    "options": "\nYes\nNo"
   },
   {
-   "depends_on": "eval:doc.new_or_current_resident == \"New Resident\" || (doc.new_or_current_resident == 'Current Resident' && doc.employee_own_asset_related_to_accommodation == \"Yes\")",
    "fieldname": "asset_section",
    "fieldtype": "Section Break",
    "label": "Asset Details"
   },
   {
-   "depends_on": "eval:doc.new_or_current_resident == \"New Resident\" || (doc.new_or_current_resident == 'Current Resident' && doc.employee_own_asset_related_to_accommodation == \"Yes\")",
+   "depends_on": "eval:(doc.new_or_current_resident == \"New Resident\" || (doc.new_or_current_resident == 'Current Resident' && doc.employee_own_asset_related_to_accommodation == \"Yes\")) && doc.type==\"IN\" && doc.docstatus == 0",
    "fieldname": "print_asset_receiving_declaration",
    "fieldtype": "Button",
    "label": "Print Asset Receiving Declaration"
@@ -181,12 +190,41 @@
    "depends_on": "eval:doc.new_or_current_resident == \"New Resident\" || (doc.new_or_current_resident == 'Current Resident' && doc.employee_own_asset_related_to_accommodation == \"Yes\")",
    "fieldname": "attach_asset_receiving_declaration",
    "fieldtype": "Attach",
-   "label": "Attach Asset Receiving Declaration"
+   "label": "Signed Copy of Asset Receiving Declaration"
+  },
+  {
+   "depends_on": "eval:doc.type==\"IN\" && doc.docstatus == 0",
+   "fieldname": "print_accommodation_policy",
+   "fieldtype": "Button",
+   "label": "Print Accommodation Policy"
+  },
+  {
+   "fieldname": "attach_print_accommodation_policy",
+   "fieldtype": "Attach",
+   "label": "Signed Copy of Print Accommodation Policy"
+  },
+  {
+   "fieldname": "column_break_26",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.type=='OUT'",
+   "fieldname": "reason_for_checkout",
+   "fieldtype": "Select",
+   "label": "Reason For Checkout",
+   "options": "\nExit the company\nExit the company accommodation\nMoving to a new accommodation\nOther"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "\nCHECKIN-.YYYY.-\nCHECKOUT-.YYYY.-"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-09-15 00:59:18.141666",
+ "modified": "2020-09-18 07:51:07.067057",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin",
@@ -205,6 +243,7 @@
    "write": 1
   }
  ],
+ "search_fields": "employee, full_name, civil_id, passport_number, bed",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1
