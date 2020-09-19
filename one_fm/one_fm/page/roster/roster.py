@@ -16,7 +16,7 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, project=None, si
 	if not cint(assigned):
 		data = frappe.db.sql("""
 			select 
-				distinct emp.name as employee_id, emp.employee_name, emp.image, emp.nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.project
+				distinct emp.name as employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.project
 			from `tabEmployee` as emp, `tabUser` as usr, `tabEmployee Schedule` as sch, `tabOperations Shift` as sh
 			where 
 				sch.date="{date}"
@@ -103,7 +103,7 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 			employee_filters.update({'project': project})
 		if department:
 			employee_filters.update({'department': department})
-		employees = frappe.get_list("Employee", employee_filters, ["employee", "employee_name"])
+		employees = frappe.get_list("Employee", employee_filters, ["employee", "employee_name"], limit_page_length=50)
 		post_types_list = frappe.get_list("Post Type", ["name", "post_abbrv"])
 
 		for key, group in itertools.groupby(post_types_list, key=lambda x: (x['post_abbrv'], x['name'])):
@@ -133,7 +133,7 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 		master_data.update({'employees_data': formatted_employee_data})
 
 	elif scheduled:
-		data = frappe.get_list("Employee Schedule", filters, fields, order_by="date asc, employee_name asc")
+		data = frappe.get_list("Employee Schedule", filters, fields, order_by="date asc, employee_name asc",limit_page_length=50)
 		for key, group in itertools.groupby(data, key=lambda x: (x['post_type'],x['post_abbrv'])):
 			print(key)
 	elif not scheduled:
@@ -142,7 +142,7 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 		pass
 	elif not assigned:
 		pass
-
+	# print(master_data)
 	return master_data
 
 @frappe.whitelist(allow_guest=True)
@@ -247,7 +247,6 @@ def schedule_leave(employees, leave_type, start_date, end_date):
 		print(e)
 		return frappe.utils.response.report_error(e.http_status_code)
 
-
 @frappe.whitelist(allow_guest=True)
 def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 	try:
@@ -267,3 +266,86 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 	except Exception as e:
 		print(e)
 		return frappe.utils.response.report_error(e.http_status_code)
+
+@frappe.whitelist()
+def edit_post(posts, values):
+	args = frappe._dict(json.loads(values))
+
+	if args.post_status == "Cancel Post":
+		cancel_post(posts, args.cancel_from_date)
+	elif args.post_status == "Suspend Post":
+		pass
+	elif args.post_status == "Post Off":
+		pass
+	
+
+def cancel_post(posts, cancel_from_date):
+	print(posts, cancel_from_date)
+	for post in json.loads(posts):
+		project = frappe.get_value("Operations Post", post, "project")
+		end_date = frappe.get_value("Contracts", {"project": project}, "end_date")
+		schedule_list = frappe.get_all("Post Schedule", {"date": (">", cancel_from_date), "post": post})
+		print(schedule_list)
+		for schedule in schedule_list:
+			pass
+
+
+def dayoff(employees, selected_dates=1, repeat_freq="Does not repeat", repeat_till=None, repeat_days=[]):
+	if selected_dates:
+		for employee in json.loads(employees):
+			if frappe.db.exists("Employee Schedule", {"date": employee["date"], "employee": employee["employee"]}):
+				doc = frappe.get_doc("Employee Schedule", {"date": employee["date"], "employee": employee["employee"]})
+				doc.shift = None
+				doc.post_type = None
+				doc.shift_type = None
+				doc.site = None
+				doc.project = None
+				doc.employee_availability = "Day Off"
+				doc.save()
+	else:
+		start_date = cstr(add_to_date(nowdate(), days=1))
+		getdate(start_date).strftime('%A')
+		end_date = repeat_till
+
+		for employee in json.loads(employees):
+			if repeat_freq == "Daily":
+				for date in	pd.date_range(start=start_date, end=end_date):
+					set_dayoff(employee["employee"], cstr(date.date()))
+
+			elif repeat_freq == "Weekly":
+				start_date = cstr(add_to_date(getdate(employee["date"])))
+				for date in	pd.date_range(start=start_date, end=end_date):
+					if getdate(date).strftime('%A') in repeat_days:
+						set_dayoff(employee["employee"], cstr(date.date()))
+
+			elif repeat_freq == "Monthly":
+				start_date = cstr(add_to_date(getdate(employee["date"])))
+				# for date in	pd.Series(pd.date_range(start=start_date, end=end_date, freq='M')):
+				# 	set_dayoff(employee["employee"], cstr(date.date()))
+			elif repeat_freq == "Yearly":
+				start_date = cstr(add_to_date(getdate(employee["date"])))
+				for date in	pd.Series(pd.date_range(start=start_date, end=end_date, freq='Y')):
+					set_dayoff(employee["employee"], cstr(date.date()))
+
+def set_dayoff(employee, date):
+	if frappe.db.exists("Employee Schedule", {"date": date, "employee": employee}):
+		doc = frappe.get_doc("Employee Schedule", {"date": date, "employee": employee})
+		doc.shift = None
+		doc.post_type = None
+		doc.shift_type = None
+		doc.site = None
+		doc.project = None
+		doc.employee_availability = "Day Off"
+		doc.save()
+
+	else:
+		doc = frappe.new_doc("Employee Schedule")
+		doc.employee = employee
+		doc.date = date
+		doc.shift = None
+		doc.post_type = None
+		doc.shift_type = None
+		doc.site = None
+		doc.project = None
+		doc.employee_availability = "Day Off"
+		doc.save()

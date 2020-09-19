@@ -63,7 +63,7 @@ function load_js(page){
 			let element = get_wrapper_element();
 			if(element == '.rosterMonth' || element == '.postMonth'){
 				displayCalendar(calendarSettings1, page);
-				GetHeaders(1);
+				GetHeaders(0);
 				
 				element = element.slice(1);
 				page[element](page);			
@@ -73,7 +73,7 @@ function load_js(page){
 				
 			}else{
 				displayWeekCalendar(weekCalendarSettings, page);
-				GetWeekHeaders(1);
+				GetWeekHeaders(0);
 				
 				element = element.slice(1);
 				page[element](page);			
@@ -180,8 +180,16 @@ function load_js(page){
 		//tab click for week view data function call
 
 		$(".editpostclassclick").click(function () {
-			$(".postmodaltitlechange").html("Edit Post");
+			// $(".postmodaltitlechange").html("Edit Post");
 			let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
+			let posts =  [];
+			let selected = [... new Set(classgrt)];
+			selected.forEach(function(i){
+				let [post, date] = i.split("_");
+				posts.push(post) 
+			})
+			posts = [... new Set(posts)];
+			console.log(posts);
 			let d = new frappe.ui.Dialog({
 				title: 'Edit Post',
 				fields: [
@@ -284,7 +292,7 @@ function load_js(page){
 					},	
 					{
 						label: 'Never End',
-						fieldname: 'never',
+						fieldname: 'suspend_never_end',
 						fieldtype: 'Check',
 					},			
 					{
@@ -319,7 +327,15 @@ function load_js(page){
 				primary_action_label: 'Submit',
 				primary_action(values) {
 					console.log(values);
-					d.hide();
+					frappe.call({
+						method: 'one_fm.one_fm.page.roster.roster.edit_post',
+						args: {posts, values},
+						callback: function(r) {
+							// d.hide();
+						},
+						freeze: true,
+						freeze_message: __('Editing Post....')
+					});
 				}
 			});
 			
@@ -358,61 +374,44 @@ function load_js(page){
 
 		
 		displayCalendar(calendarSettings1, page);
-		//display title of calender ex: Month of Jul 1 - 31, 2020
-		//add array on each of data select from calender
-		$(".posthoverselectclass").on("click", function () {
-			$(this).toggleClass('selectclass');
-			// If the id is not already in the array, add it. If it is, remove it
-
-			classgrt.indexOf(this.getAttribute('data-selectid')) === -1 ? classgrt.push(this.getAttribute('data-selectid')) : classgrt.splice(classgrt.indexOf(this.getAttribute('data-selectid')), 1);
-			
-			if (classgrt.join(",") === '') {
-				$('.Postfilterhideshow').addClass('d-none');
-			}
-			else { 
-				$('.Postfilterhideshow').removeClass('d-none');
-			}
-			// populate the input with the array items separated with a comma
-		});
-		//add array on each of data select from calender    
+		 
 		page.rosterMonth = get_roster_data;
 		page.rosterWeek = get_roster_week_data;
 		page.postWeek = get_post_week_data;
 		page.postMonth = get_post_data;
-		//function call
 		GetTodaySelectedDate();
 
 	}	
 
-    $(".modal").on("hidden.bs.modal", function () {
-        $("#dayoffmodal").trigger("reset");
-        $("#dayoffmodal").validate().resetForm();
-        $("#leaveabsentmodal").trigger("reset");
-        $("#leaveabsentmodal").validate().resetForm();
-        $("#assignchangemodal").trigger("reset");
-        $("#assignchangemodal").validate().resetForm();
-        $("#unassignchangemodal").trigger("reset");
-        $("#unassignchangemodal").validate().resetForm();
-        $("#addpostformmodal").trigger("reset");
-        $("#addpostformmodal").validate().resetForm();
-        $(".select2plg").val(null).trigger("change");
-        $("#addemployeeselect").val(null).trigger("change");
-        $(".postoffdiv").addClass("d-none");
-        $(".suspendpostdiv").addClass("d-none");
-        $(".cancelpostcalenderdiv").addClass("d-none");
-    });
-    $("#sidebarToggle").on("click", function (e) {
-        e.preventDefault();
-        $("body").toggleClass("sb-sidenav-toggled");
-    });
+    // $(".modal").on("hidden.bs.modal", function () {
+    //     $("#dayoffmodal").trigger("reset");
+    //     $("#dayoffmodal").validate().resetForm();
+    //     $("#leaveabsentmodal").trigger("reset");
+    //     $("#leaveabsentmodal").validate().resetForm();
+    //     $("#assignchangemodal").trigger("reset");
+    //     $("#assignchangemodal").validate().resetForm();
+    //     $("#unassignchangemodal").trigger("reset");
+    //     $("#unassignchangemodal").validate().resetForm();
+    //     $("#addpostformmodal").trigger("reset");
+    //     $("#addpostformmodal").validate().resetForm();
+    //     $(".select2plg").val(null).trigger("change");
+    //     $("#addemployeeselect").val(null).trigger("change");
+    //     $(".postoffdiv").addClass("d-none");
+    //     $(".suspendpostdiv").addClass("d-none");
+    //     $(".cancelpostcalenderdiv").addClass("d-none");
+    // });
+    // $("#sidebarToggle").on("click", function (e) {
+    //     e.preventDefault();
+    //     $("body").toggleClass("sb-sidenav-toggled");
+    // });
 
 
 
 
 
-    $("#dayoffformmodal").on("hidden.bs.modal", function () {
-        $("#chkDayOnly").show();
-    });
+    // $("#dayoffformmodal").on("hidden.bs.modal", function () {
+    //     $("#chkDayOnly").show();
+    // });
     //let classgrt = [];
 
     $(`input[name="neverselectallcheckbox"]`).on("change", function () {
@@ -655,6 +654,34 @@ function setup_topbar_events(page){
 }
 
 function bind_events(page){
+	$('.postMonth').find(".hoverselectclass").on("click", function () {
+		$(this).toggleClass("selectclass");
+		// If the id is not already in the array, add it. If it is, remove it  
+		classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+
+		if (classgrt.join(",") === "") {
+			$(".Postfilterhideshow").addClass("d-none");
+		}
+		else {
+			$(".Postfilterhideshow").removeClass("d-none");
+		}
+		// populate the input with the array items separated with a comma
+	});
+
+	$('.postWeek').find(".hoverselectclass").on("click", function () {
+		$(this).toggleClass("selectclass");
+		// If the id is not already in the array, add it. If it is, remove it  
+		classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+
+		if (classgrt.join(",") === "") {
+			$(".Postfilterhideshow").addClass("d-none");
+		}
+		else {
+			$(".Postfilterhideshow").removeClass("d-none");
+		}
+		// populate the input with the array items separated with a comma
+	});
+
 	//add array on each of data select from calender
 	$('.rosterMonth').find(".hoverselectclass").on("click", function () {
 		$(this).toggleClass("selectclass");
@@ -874,14 +901,14 @@ function bind_events(page){
 		
 		if ($(this).is(":checked")) {
 			
-			$(this).parent().parent().parent().children('td').children().not('label').removeClass("posthoverselectclass");
+			$(this).parent().parent().parent().children('td').children().not('label').removeClass("hoverselectclass");
 			$(this).parent().parent().parent().children('td').children().not('label').addClass("selectclass");
 			$(this).parent().parent().parent().children('td').children().not('label').addClass("disableselectclass");
 			$('.Postfilterhideshow').removeClass('d-none');
 			
 		}
 		else {
-			$(this).parent().parent().parent().children('td').children().not('label').addClass("posthoverselectclass");
+			$(this).parent().parent().parent().children('td').children().not('label').addClass("hoverselectclass");
 			$(this).parent().parent().parent().children('td').children().not('label').removeClass("selectclass");
 			$(this).parent().parent().parent().children('td').children().not('label').removeClass("disableselectclass");
 			$('.Postfilterhideshow').addClass('d-none');
@@ -1233,7 +1260,7 @@ function get_post_data(page){
 					schedule = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
-							data-selectid="${post+'|'+date}"
+							data-selectid="${post+'_'+date}"
 							data-date="${date}"
 							data-project="${project}"
 							data-site="${site}"
@@ -1249,7 +1276,7 @@ function get_post_data(page){
 					schedule = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center so"
-							data-selectid="${post_name+'|'+start_date.format('YYYY-MM-DD')}"	
+							data-selectid="${post_name+'_'+start_date.format('YYYY-MM-DD')}"	
 							data-date="${start_date.format('YYYY-MM-DD')}"
 							data-post="${post_name}"
 						</div>
@@ -1307,7 +1334,7 @@ function get_post_week_data(page){
 					schedule = `
 					<td>
 						<div class="hoverselectclass tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
-							data-selectid="${post+'|'+date}"
+							data-selectid="${post+'_'+date}"
 							data-date="${date}"
 							data-project="${project}"
 							data-site="${site}"
@@ -1323,7 +1350,7 @@ function get_post_week_data(page){
 					schedule = `
 					<td>
 						<div class="hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
-							data-selectid="${post_name+'|'+start_date.format('YYYY-MM-DD')}"	
+							data-selectid="${post_name+'_'+start_date.format('YYYY-MM-DD')}"	
 							data-date="${start_date.format('YYYY-MM-DD')}"
 							data-post="${post_name}"
 						</div>
@@ -2052,14 +2079,14 @@ function ShowProperPost() {
 
 	let element = get_wrapper_element();
 	if(element == '.rosterMonth' || element == '.postMonth'){
-		GetHeaders(1);
+		GetHeaders(0);
 		displayCalendar(calendarSettings1);
 		
 		element = element.slice(1);
 		page[element](page);			
 		
 	}else{
-		GetWeekHeaders(1);
+		GetWeekHeaders(0);
 		displayWeekCalendar(calendarSettings1);
 		
 		element = element.slice(1);
@@ -2076,12 +2103,12 @@ function decrementMonth(page) {
 	calendarSettings1.date.subtract(1, "Months");
 	let element = get_wrapper_element();
 	if(element == '.rosterMonth' || element == '.postMonth'){
-		GetHeaders(1);
+		GetHeaders(0);
 		displayCalendar(calendarSettings1);
 		element = element.slice(1);
 		page[element](page);	
 	}else{
-		GetWeekHeaders(1);
+		GetWeekHeaders(0);
 		displayWeekCalendar(calendarSettings1);
 		element = element.slice(1);
 		page[element](page);	
@@ -2253,7 +2280,7 @@ function GetHeaders(IsMonthSet, element) {
 
 // 	calendarSettings1.date.add(1, 'Weeks').subtract(6,'days');     
 	
-// 	GetHeaders(1);
+// 	GetHeaders(0);
 // 	displayCalendar(calendarSettings1);
 // }
 // 	//on next month title display on arrow click
@@ -2261,7 +2288,7 @@ function GetHeaders(IsMonthSet, element) {
 // 	//on previous month title display on arrow click
 // function rosterweekdecrement() {       
 // 	calendarSettings1.date.subtract(1, 'Weeks').subtract(7, 'days');        
-// 	GetHeaders(1);
+// 	GetHeaders(0);
 // 	displayCalendar(calendarSettings1);
 // }
 	//on previous month title display on arrow click
@@ -2864,7 +2891,7 @@ function GetTodaySelectedDate() {
 function rosterweekincrement() {
 	weekCalendarSettings.date.add(1, "Weeks"); //.subtract(6, "days");
 	console.log(weekCalendarSettings.date);
-	GetWeekHeaders(1);
+	GetWeekHeaders(0);
 	displayWeekCalendar(weekCalendarSettings);
 	let element = get_wrapper_element().slice(1);
 	if(element == "rosterWeek"){
@@ -2879,7 +2906,7 @@ function rosterweekincrement() {
 function rosterweekdecrement() {
 	weekCalendarSettings.date.subtract(1, "Weeks"); //.subtract(7, "days");
 	console.log(weekCalendarSettings.date);
-	GetWeekHeaders(1);
+	GetWeekHeaders(0);
 	displayWeekCalendar(weekCalendarSettings);	
 	let element = get_wrapper_element().slice(1);
 	if(element == "rosterWeek"){
@@ -3075,27 +3102,6 @@ function schedule_change_post(page){
 					filters: {"shift": d.get_value('shift')}
 				};
 			}},
-			// {'label': 'Start Date','fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1, 'default': date, 
-			// 	onchange:function(){
-			// 		let start_date = moment(d.get_value('start_date'));
-			// 		console.log(start_date, frappe.datetime.nowdate());
-			// 		if(start_date && start_date.isSameOrBefore(moment(frappe.datetime.nowdate()))){
-			// 			frappe.throw(__("Start Date cannot be before today."));
-			// 		}
-			// 	}
-			// },
-			// {'label': 'End Date','fieldname': 'end_date', 'fieldtype': 'Date', 'reqd': 1, 'default': date,  
-			// 	onchange:function(){
-			// 		let start_date = d.get_value('start_date');
-			// 		let end_date = d.get_value('end_date');
-			// 		if(end_date && moment(end_date).isBefore(moment(frappe.datetime.nowdate()))){
-			// 			frappe.throw(__("End Date cannot be before today."));
-			// 		}
-			// 		if(start_date && end_date && moment(end_date).isBefore(start_date)){
-			// 			frappe.throw(__("End Date cannot be before Start date."));
-			// 		}
-			// 	}
-			// }	
 		],
 		primary_action: function(){
 			let {shift, site, post_type, project} = d.get_values();
@@ -3110,4 +3116,40 @@ function schedule_change_post(page){
 		}
 	});
 	d.show();
+}
+
+function dayoff(page){
+	let employees =  [];
+	let selected = [... new Set(classgrt)];
+	selected.forEach(function(i){
+		let [employee, date] = i.split("|");
+		employees.push({employee, date}) 
+	})
+	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
+	let d = new frappe.ui.Dialog({
+		'title': 'Day Off',
+		'fields': [
+			{'label': 'Selected days only', 'fieldname': 'selected_days', 'fieldtype': 'Check', 'default': 1},
+			{'label': 'Repeat', 'fieldname': 'repeat', 'fieldtype': 'Select', 'depends_on': 'eval:this.get_value("selected_days")==0', 'options': 'Does not repeat\nDaily\nWeekly\nMonthly\nYearly'},
+			{'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("repeat")=="Weekly"'},
+			{'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check'},
+			{'label': 'Wednesday', 'fieldname': 'wednesday', 'fieldtype': 'Check'},
+			{'label': 'Saturday', 'fieldname': 'saturday', 'fieldtype': 'Check'},
+			{'fieldtype': 'Column Break', 'fieldname': 'cb1'},
+			{'label': 'Monday', 'fieldname': 'monday', 'fieldtype': 'Check'},
+			{'label': 'Thursday', 'fieldname': 'thursday', 'fieldtype': 'Check'},
+			{'fieldtype': 'Column Break', 'fieldname': 'cb2'},
+			{'label': 'Tuesday', 'fieldname': 'tuesday', 'fieldtype': 'Check'},
+			{'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check'},
+			{'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:this.get_value("selected_days")==0'},
+			{'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'default': date}
+		],
+		primary_action: function(){
+			d.hide();			
+			let element = get_wrapper_element().slice(1);
+			page[element](page);
+
+		}
+	});
+	d.show();	
 }
