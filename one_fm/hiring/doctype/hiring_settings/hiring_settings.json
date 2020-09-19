@@ -9,8 +9,9 @@
   "erf_approver",
   "unplanned_erf_approver",
   "hr_for_a_quick_workshop",
-  "notify_gsd_on_erf_approval",
+  "hrm_to_fill_hr_and_salary_compensation",
   "column_break_5",
+  "notify_gsd_on_erf_approval",
   "performance_profile_resource",
   "performance_profile_guid",
   "job_offer_section",
@@ -55,7 +56,7 @@
   {
    "fieldname": "hr_for_a_quick_workshop",
    "fieldtype": "Link",
-   "label": "HR For a Quick Workshop to Create Performance Profile",
+   "label": "HRM For a Quick Workshop to Create Performance Profile",
    "options": "User"
   },
   {
@@ -74,11 +75,17 @@
    "fieldtype": "Link",
    "label": "Notify Finance Department for Job Offer Salary Advance",
    "options": "User"
+  },
+  {
+   "fieldname": "hrm_to_fill_hr_and_salary_compensation",
+   "fieldtype": "Link",
+   "label": "HRM to Fill HR and Salary Compensation",
+   "options": "User"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2020-09-16 06:41:51.988450",
+ "modified": "2020-09-19 11:46:47.554983",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",
