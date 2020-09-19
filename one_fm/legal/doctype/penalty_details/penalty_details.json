@@ -10,15 +10,23 @@
   "column_break_4",
   "penalty_description_arabic",
   "section_break_6",
-  "first_occurence",
+  "occurence_type1",
+  "occurence1",
   "column_break_8",
-  "second_occurence",
+  "occurence_type2",
+  "occurence2",
   "column_break_10",
-  "third_occurence",
+  "occurence_type3",
+  "occurence3",
   "column_break_12",
-  "fourth_occurence",
+  "occurence_type4",
+  "occurence4",
   "column_break_14",
-  "fifth_occurence"
+  "occurence_type5",
+  "occurence5",
+  "column_break_21",
+  "occurence_type6",
+  "occurence6"
  ],
  "fields": [
   {
@@ -57,54 +65,106 @@
    "fieldtype": "Section Break"
   },
   {
-   "description": "In days",
-   "fieldname": "first_occurence",
-   "fieldtype": "Float",
-   "label": "First Occurence"
-  },
-  {
    "fieldname": "column_break_8",
    "fieldtype": "Column Break"
-  },
-  {
-   "description": "In days",
-   "fieldname": "second_occurence",
-   "fieldtype": "Float",
-   "label": "Second Occurence"
   },
   {
    "fieldname": "column_break_10",
    "fieldtype": "Column Break"
   },
   {
-   "description": "In days",
-   "fieldname": "third_occurence",
-   "fieldtype": "Float",
-   "label": "Third Occurence"
-  },
-  {
    "fieldname": "column_break_12",
    "fieldtype": "Column Break"
-  },
-  {
-   "description": "In days",
-   "fieldname": "fourth_occurence",
-   "fieldtype": "Float",
-   "label": "Fourth Occurence"
   },
   {
    "fieldname": "column_break_14",
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "occurence_type1",
+   "fieldtype": "Select",
+   "label": "First Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "occurence_type2",
+   "fieldtype": "Select",
+   "label": "Second Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "occurence_type3",
+   "fieldtype": "Select",
+   "label": "Third Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "occurence_type4",
+   "fieldtype": "Select",
+   "label": "Fourth Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "occurence_type5",
+   "fieldtype": "Select",
+   "label": "Fifth Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "occurence_type6",
+   "fieldtype": "Select",
+   "label": "Sixth Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type1==\"Deduction\"",
    "description": "In days",
-   "fieldname": "fifth_occurence",
+   "fieldname": "occurence1",
+   "fieldtype": "Float",
+   "label": "First Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type2==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence2",
+   "fieldtype": "Float",
+   "label": "Second Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type3==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence3",
+   "fieldtype": "Float",
+   "label": "Third Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type4==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence4",
+   "fieldtype": "Float",
+   "label": "Fourth Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type5==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence5",
    "fieldtype": "Float",
    "label": "Fifth Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type6==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence6",
+   "fieldtype": "Float",
+   "label": "Sixth Occurence"
   }
  ],
  "istable": 1,
- "modified": "2020-07-22 16:54:16.688662",
+ "modified": "2020-09-18 14:21:28.176109",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty Details",

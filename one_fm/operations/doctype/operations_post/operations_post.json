@@ -5,10 +5,11 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "handover",
   "post_name",
   "post_template",
-  "site_shift",
   "column_break_4",
+  "site_shift",
   "site",
   "project",
   "section_break_6",
@@ -121,9 +122,15 @@
    "label": "Project",
    "options": "Project",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "handover",
+   "fieldtype": "Check",
+   "label": "Post Handover Required"
   }
  ],
- "modified": "2020-09-16 18:00:54.836912",
+ "modified": "2020-09-19 05:22:19.142127",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",

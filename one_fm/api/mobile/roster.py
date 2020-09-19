@@ -1,9 +1,10 @@
 import frappe
 from frappe import _
-from frappe.utils import getdate, cint, cstr
+from frappe.utils import getdate, cint, cstr, random_string
 from frappe.client import get_list
-import json
 import pandas as pd
+import json, base64, ast
+from frappe.client import attach_file
 from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view, get_roster_view as _get_roster_view
 
 @frappe.whitelist(allow_guest=True)
@@ -12,32 +13,6 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 		return _get_roster_view(start_date, end_date, all, assigned, scheduled, project, site, shift, department, post_type)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-
-
-# def get_shift_supervisor_data(start_date, user_employee, shift=None, post_type=None):
-# 	try:
-# 		#Post Type > Employees
-# 		filters = {"supervisor": user_employee}
-# 		if shift:
-# 			filters.update({"shift": shift})
-# 		shifts_list = frappe.get_list("Operations Shift", filters)
-# 		for shift in shifts_list:
-# 			return frappe.get_list("Roster", {"date": start_date, "shift": shift}, ["employee_name", "availability", "post_type", "shift", "date"])
-# 	except Exception as e:
-# 		return frappe.utils.response.report_error(e.http_status_code)
-
-# def get_site_supervisor_data(start_date, user_employee, site=None, department=None, shift=None, post_type=None):
-# 	filters = {"account_supervisor": user_employee}
-# 	if site:
-# 		filters.update({"name": site})
-# 	sites_list = frappe.get_list("Operations Site", filters)
-	
-
-# def get_project_manager_data(start_date, user_employee, project=None, site=None, department=None, shift=None, post_type=None):
-# 	pass
-
-# def get_operations_manager_data(start_date, user_employee, project=None, site=None, department=None, shift=None, post_type=None):
-# 	pass
 
 
 @frappe.whitelist(allow_guest=True)
@@ -57,6 +32,7 @@ def get_weekly_staff_roster(start_date, end_date):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
+
 @frappe.whitelist()
 def get_current_user_details():
 	user = frappe.session.user
@@ -64,12 +40,14 @@ def get_current_user_details():
 	user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_name", "image", "enrolled"], as_dict=1)
 	return user, user_roles, user_employee
 
+
 @frappe.whitelist(allow_guest=True)
 def get_post_view(start_date, end_date,  project=None, site=None, shift=None, post_type=None, active_posts=1):
 	try:
 		return _get_post_view(start_date, end_date, project, site, shift, post_type, active_posts)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
+
 
 @frappe.whitelist(allow_guest=True)
 def edit_post(post_type, shift, post_status, date_list, paid=0, repeat=None):
@@ -105,6 +83,7 @@ def edit_post(post_type, shift, post_status, date_list, paid=0, repeat=None):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
+
 @frappe.whitelist()
 def get_unassigned_project_employees(project, date, limit_start=None, limit_page_length=20):
 	try:
@@ -113,6 +92,7 @@ def get_unassigned_project_employees(project, date, limit_start=None, limit_page
 			limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)	
+
 
 @frappe.whitelist()
 def get_assigned_employees(shift, date, limit_start=None, limit_page_length=20):
@@ -123,35 +103,6 @@ def get_assigned_employees(shift, date, limit_start=None, limit_page_length=20):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
-# @frappe.whitelist(allow_guest=True)
-# def unschedule_staff(employee, date_list):
-# 	try:
-# 		date_list = json.loads(date_list)
-# 		for date in date_list:
-# 			if frappe.db.exists("Roster", {"employee": employee, "date": date}):
-# 				roster = frappe.get_doc("Roster", {"employee": employee, "date": date})
-# 				frappe.delete_doc("Roster", roster.name, ignore_permissions=True)
-
-# 	except Exception as e:
-# 		print(e)
-# 		return frappe.utils.response.report_error(e.http_status_code)
-
-# @frappe.whitelist(allow_guest=True)
-# def schedule_staff(employee, shift, post_type, date_list, day_off=None):
-# 	try:
-# 		date_list = json.loads(date_list)
-# 		for date in date_list:
-# 			if frappe.db.exists("Roster", {"employee": employee, "date": date}):
-# 				roster = frappe.get_doc("Roster", {"employee": employee, "date": date})
-# 			else:
-# 				roster = frappe.new_doc("Roster")
-# 				roster.employee = employee
-# 				roster.date = date
-# 			roster.shift = shift
-# 			roster.post_type = post_type
-# 			roster.save(ignore_permissions=True)
-# 	except Exception as e:
-# 		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def get_assigned_projects(employee_id):
@@ -166,6 +117,7 @@ def get_assigned_projects(employee_id):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 	
+
 @frappe.whitelist()
 def get_assigned_sites(employee_id, project=None):
 	try:
@@ -185,6 +137,7 @@ def get_assigned_sites(employee_id, project=None):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 	
+
 @frappe.whitelist()
 def get_assigned_shifts(employee_id, site=None):
 	try:
@@ -204,6 +157,7 @@ def get_assigned_shifts(employee_id, site=None):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
+
 @frappe.whitelist()
 def get_departments():
 	try:
@@ -212,6 +166,7 @@ def get_departments():
 	
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
+
 
 @frappe.whitelist()
 def get_post_types(shift=None):
@@ -229,6 +184,7 @@ def get_post_types(shift=None):
 
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
+
 
 @frappe.whitelist()
 def get_post_details(post_name):
@@ -325,4 +281,48 @@ def schedule_leave(employee, leave_type, start_date, end_date):
 		return True
 	except Exception as e:
 		print(e)
+		return frappe.utils.response.report_error(e.http_status_code)
+
+
+@frappe.whitelist()
+def post_handover(post, date, initiated_by, handover_to, docs_check, equipment_check, items_check, docs_comment=None, equipment_comment=None, items_comment=None, attachments=[]):
+	try:
+		handover = frappe.new_doc("Post Handover")
+		handover.post = post
+		handover.date = date
+		handover.initiated_by = initiated_by
+		handover.handover_to = handover_to
+		handover.docs_check = docs_check
+		handover.equipment_check = equipment_check
+		handover.items_check = items_check
+		handover.docs_comment = docs_comment
+		handover.equipment_comment = equipment_comment
+		handover.items_comment = items_comment
+		handover.save()
+
+		for attachment in ast.literal_eval(attachments):
+			attach_file(filename=random_string(6)+".jpg", filedata=base64.b64decode(attachment), doctype=handover.doctype, docname=handover.name)
+
+		return True
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
+
+
+@frappe.whitelist()
+def get_handover_posts(shift=None):
+	try:
+		filters = {"handover": 1}
+		if shift:
+			filters.update({"site_shift": shift})
+		return frappe.get_list("Operations Post", filters)
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
+
+
+@frappe.whitelist()
+def get_report_comments(report_name):
+	try:
+		comments = frappe.get_list("Comment", {"reference_doctype": "Shift Report", "reference_name": report_name, "comment_type": "Comment"}, "*")
+		return comments
+	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)

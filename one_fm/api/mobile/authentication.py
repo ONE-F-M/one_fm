@@ -29,14 +29,14 @@ def login(client_id, grant_type, employee_id, password):
 
 		# Login
 		response = session.post(
-			"http://192.168.0.152/api/method/frappe.integrations.oauth2.get_token",
+			"https://dev.one-fm.com/api/method/frappe.integrations.oauth2.get_token",
 			data=args
 		)
 		print(response.status_code)# response.text)
 		if response.status_code == 200:
 			print(response.text)
 			print(frappe.session.user)
-			conn = FrappeClient("http://192.168.0.152",username=username, password=password)
+			conn = FrappeClient("https://dev.one-fm.com",username=username, password=password)
 			# conn.login(username, password)
 			user, user_roles, user_employee =  conn.get_api("one_fm.api.mobile.roster.get_current_user_details")
 			print(user, user_roles, user_employee)
@@ -47,9 +47,6 @@ def login(client_id, grant_type, employee_id, password):
 			else:
 				res.update({"supervisor": 0})
 
-
-			# res.update()
-			# response = session.post("http://192.168.0.152/api/method/frappe.integrations.oauth2.get_token",data=args)
 			return res
 		else:
 			return {'error': response.status_code}
