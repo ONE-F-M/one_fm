@@ -43,6 +43,9 @@ frappe.ui.form.on('ERF', {
 				frm.add_custom_button(__('Decline'), () => frm.events.decline_erf(frm, 'Declined')).addClass('btn-danger');
 			}
 		}
+		if (!frm.is_new() && frm.doc.docstatus == 0 && !frm.doc.draft_erf_to_hrm){
+			frm.add_custom_button(__('Draft ERF to HR Manager'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
+		}
 	},
 	decline_erf: function(frm, status) {
 		var d = new frappe.ui.Dialog({
@@ -81,6 +84,26 @@ frappe.ui.form.on('ERF', {
 					},
 					freeze: true,
 					freeze_message: __('Processing ..')
+				});
+			},
+			function(){} // No
+		);
+	},
+	draft_erf_to_hrm: function(frm) {
+		frappe.confirm(
+			__('Do You Want to Draft ERF to HR Manager for Submit'),
+			function(){
+				// Yes
+				frappe.call({
+					doc: frm.doc,
+					method: 'draft_erf_to_hrm_for_submit',
+					callback(r) {
+						if (!r.exc) {
+							frm.reload_doc();
+						}
+					},
+					freeze: true,
+					freeze_message: __('Draft ERF to HR Manager..')
 				});
 			},
 			function(){} // No
@@ -138,9 +161,6 @@ frappe.ui.form.on('ERF', {
 	},
 	status: function(frm) {
 		set_reason_for_decline_reqd(frm);
-	},
-	performance_profile: function(frm) {
-		set_objectives_and_krs(frm);
 	},
 	expected_date_of_deployment: function(frm) {
 		validate_date(frm);
@@ -706,46 +726,6 @@ frappe.ui.form.on('ERF Employee Benefit', {
     calculate_benefit_cost_to_company(frm);
   }
 });
-
-var set_objectives_and_krs = function(frm) {
-	frm.clear_table('objectives');
-	frm.clear_table('key_results');
-	if(frm.doc.performance_profile){
-		frappe.call({
-			method: 'frappe.client.get',
-			args: {
-				doctype: 'OKR Performance Profile',
-				filters: {name: frm.doc.performance_profile}
-			},
-			callback: function(r) {
-				if(r && r.message){
-					frm.fields_dict.objective_description.html(r.message.description);
-					let objectives = r.message.objectives;
-					objectives.forEach((item, i) => {
-						let objective = frappe.model.add_child(frm.doc, 'OKR Performance Profile Objective', 'objectives');
-						frappe.model.set_value(objective.doctype, objective.name, 'objective', item.objective);
-						frappe.model.set_value(objective.doctype, objective.name, 'type', item.type);
-						frappe.model.set_value(objective.doctype, objective.name, 'objective_linking_with', item.objective_linking_with);
-						frappe.model.set_value(objective.doctype, objective.name, 'time_frame', item.time_frame);
-					});
-					let key_results = r.message.key_results;
-					key_results.forEach((item, i) => {
-						let kr = frappe.model.add_child(frm.doc, 'OKR Performance Profile Key Result', 'key_results');
-						frappe.model.set_value(kr.doctype, kr.name, 'key_result', item.key_result);
-						frappe.model.set_value(kr.doctype, kr.name, 'objective', item.objective);
-						frappe.model.set_value(kr.doctype, kr.name, 'target_to_be_achieved_by', item.target_to_be_achieved_by);
-					});
-				}
-				frm.refresh_field('objectives');
-				frm.refresh_field('key_results');
-			}
-		});
-	}
-	else{
-		frm.refresh_field('objectives');
-		frm.refresh_field('key_results');
-	}
-};
 
 var set_reason_for_decline_reqd = function(frm) {
 	if(frm.doc.status == 'Declined'){

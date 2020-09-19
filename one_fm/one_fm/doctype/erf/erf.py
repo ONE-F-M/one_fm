@@ -41,6 +41,18 @@ class ERF(Document):
 		self.calculate_total_cost_to_company()
 		self.validate_type_of_travel()
 
+	def draft_erf_to_hrm_for_submit(self):
+		self.draft_erf_to_hrm = True
+		self.status = 'Draft'
+		self.save()
+		self.notify_hrm_to_submit()
+
+	def notify_hrm_to_submit(self):
+		hrm_to_submit = frappe.db.get_value('Hiring Settings', None, 'hrm_to_fill_hr_and_salary_compensation')
+		if hrm_to_submit:
+			send_email(self, [hrm_to_submit])
+			frappe.msgprint(_('{0}, Will Notified By Email.').format(frappe.db.get_value('User', hrm_to_submit, 'full_name')))
+
 	def after_insert(self):
 		frappe.db.set_value(self.doctype, self.name, 'erf_code', self.name)
 		self.reload()

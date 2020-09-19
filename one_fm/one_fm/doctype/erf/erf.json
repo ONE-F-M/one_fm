@@ -15,6 +15,7 @@
   "expected_date_of_deployment",
   "status",
   "reason_for_decline",
+  "draft_erf_to_hrm",
   "column_break_3",
   "erf_requested_by",
   "erf_requested_by_name",
@@ -160,12 +161,10 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
    "options": "\nDraft\nAccepted\nDeclined\nClosed",
-   "permlevel": 1,
    "read_only": 1
   },
   {
@@ -382,7 +381,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Employee Grade",
-   "options": "Employee Grade"
+   "options": "Employee Grade",
+   "permlevel": 1
   },
   {
    "fieldname": "salary_structure",
@@ -421,7 +421,8 @@
    "fieldname": "recruiter_assigned",
    "fieldtype": "Link",
    "label": "Recruiter Assigned",
-   "options": "User"
+   "options": "User",
+   "permlevel": 1
   },
   {
    "default": "0",
@@ -465,6 +466,7 @@
   },
   {
    "collapsible": 1,
+   "depends_on": "draft_erf_to_hrm",
    "fieldname": "grd_section",
    "fieldtype": "Section Break",
    "label": "GRD",
@@ -542,6 +544,8 @@
   },
   {
    "collapsible": 1,
+   "collapsible_depends_on": "eval: doc.draft_erf_to_hrm && doc.docstatus == 0",
+   "depends_on": "draft_erf_to_hrm",
    "fieldname": "hr_section",
    "fieldtype": "Section Break",
    "label": "HR",
@@ -549,6 +553,8 @@
   },
   {
    "collapsible": 1,
+   "collapsible_depends_on": "eval: doc.draft_erf_to_hrm && doc.docstatus == 0",
+   "depends_on": "draft_erf_to_hrm",
    "fieldname": "salary_compensation_budget_section",
    "fieldtype": "Section Break",
    "label": "Salary Compensation Budget",
@@ -565,6 +571,8 @@
    "label": "Language and Basic Skill"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:!doc.draft_erf_to_hrm && doc.docstatus == 0",
    "depends_on": "eval:doc.docstatus==0",
    "fieldname": "performance_profile_section",
    "fieldtype": "Section Break",
@@ -693,7 +701,8 @@
   {
    "fieldname": "provide_company_insurance_html",
    "fieldtype": "HTML",
-   "label": "Provide Company Insurance HTML"
+   "label": "Provide Company Insurance HTML",
+   "permlevel": 1
   },
   {
    "fieldname": "provide_health_insurance_html",
@@ -737,11 +746,18 @@
    "fieldname": "provide_salary_advance_html",
    "fieldtype": "HTML",
    "label": "Provide Salary Advance HTML"
+  },
+  {
+   "default": "0",
+   "fieldname": "draft_erf_to_hrm",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Draft ERF to HRM"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-09-16 14:45:58.267103",
+ "modified": "2020-09-19 22:06:37.190331",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
@@ -762,7 +778,6 @@
    "write": 1
   },
   {
-   "delete": 1,
    "email": 1,
    "export": 1,
    "permlevel": 1,
@@ -770,8 +785,7 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
-   "share": 1,
-   "write": 1
+   "share": 1
   },
   {
    "amend": 1,
