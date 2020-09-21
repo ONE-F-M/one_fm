@@ -36,7 +36,8 @@
   "column_break_26",
   "print_asset_receiving_declaration",
   "attach_asset_receiving_declaration",
-  "amended_from"
+  "asset_return_details_section",
+  "asset_return_details"
  ],
  "fields": [
   {
@@ -123,15 +124,6 @@
    "label": "Comments"
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Accommodation Checkin",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
    "depends_on": "eval:doc.type=='IN'",
    "fieldname": "booking_reference",
    "fieldtype": "Link",
@@ -142,8 +134,7 @@
    "fieldname": "new_or_current_resident",
    "fieldtype": "Select",
    "label": "New/Current Resident",
-   "options": "\nNew Resident\nCurrent Resident",
-   "reqd": 1
+   "options": "\nNew Resident\nCurrent Resident"
   },
   {
    "fieldname": "type",
@@ -158,9 +149,10 @@
    "fieldname": "checkin_reference",
    "fieldtype": "Link",
    "label": "Checkin Reference",
-   "options": "Accommodation Checkin"
+   "options": "Accommodation Checkin Checkout"
   },
   {
+   "depends_on": "eval:doc.type=='IN'",
    "fieldname": "section_break_19",
    "fieldtype": "Section Break"
   },
@@ -176,6 +168,7 @@
    "options": "\nYes\nNo"
   },
   {
+   "depends_on": "eval:doc.type==\"IN\"",
    "fieldname": "asset_section",
    "fieldtype": "Section Break",
    "label": "Asset Details"
@@ -220,14 +213,25 @@
    "hidden": 1,
    "label": "Series",
    "options": "\nCHECKIN-.YYYY.-\nCHECKOUT-.YYYY.-"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.type=='OUT'",
+   "fieldname": "asset_return_details_section",
+   "fieldtype": "Section Break",
+   "label": "Asset Return Details"
+  },
+  {
+   "fieldname": "asset_return_details",
+   "fieldtype": "Small Text",
+   "label": "Asset Return Details"
   }
  ],
- "is_submittable": 1,
  "links": [],
- "modified": "2020-09-18 07:51:07.067057",
+ "modified": "2020-09-21 07:40:15.330807",
  "modified_by": "Administrator",
  "module": "Accommodation",
- "name": "Accommodation Checkin",
+ "name": "Accommodation Checkin Checkout",
  "owner": "Administrator",
  "permissions": [
   {

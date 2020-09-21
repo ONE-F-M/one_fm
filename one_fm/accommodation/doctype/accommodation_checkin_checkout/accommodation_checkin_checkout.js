@@ -1,7 +1,7 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Accommodation Checkin', {
+frappe.ui.form.on('Accommodation Checkin Checkout', {
 	refresh: function(frm) {
 		set_filters(frm);
 	},
@@ -31,10 +31,12 @@ var set_required = function(frm) {
 	if(frm.doc.type == 'OUT'){
 		frm.set_df_property('checkin_reference', 'reqd', true);
 		frm.set_df_property('reason_for_checkout', 'reqd', true);
+		frm.set_df_property('new_or_current_resident', 'reqd', false);
 	}
-	else{
+	else if(frm.doc.type == 'IN'){
 		frm.set_df_property('checkin_reference', 'reqd', false);
 		frm.set_df_property('reason_for_checkout', 'reqd', false);
+		frm.set_df_property('new_or_current_resident', 'reqd', true);
 	}
 };
 
