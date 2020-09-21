@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 
-class AccommodationCheckin(Document):
+class AccommodationCheckinCheckout(Document):
 	def before_insert(self):
 		if self.type == "IN":
 			self.naming_series = "CHECKIN-.YYYY.-"
@@ -37,7 +37,7 @@ class AccommodationCheckin(Document):
 			if filters and len(filters)>0:
 				self.employee = frappe.db.exists('Employee', filters)
 		if self.checkin_reference:
-			checkin = frappe.get_doc('Accommodation Checkin', self.checkin_reference)
+			checkin = frappe.get_doc('Accommodation Checkin Checkout', self.checkin_reference)
 			self.bed = checkin.bed
 			self.employee = checkin.employee
 			self.accommodation = checkin.accommodation

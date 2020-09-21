@@ -227,7 +227,7 @@
  "modified": "2020-09-18 07:51:07.067057",
  "modified_by": "Administrator",
  "module": "Accommodation",
- "name": "Accommodation Checkin",
+ "name": "Accommodation Checkin Checkout",
  "owner": "Administrator",
  "permissions": [
   {
