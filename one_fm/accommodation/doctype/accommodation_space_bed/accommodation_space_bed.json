@@ -8,7 +8,9 @@
   "bed",
   "bed_type",
   "gender",
-  "disabled"
+  "column_break_4",
+  "disabled",
+  "status"
  ],
  "fields": [
   {
@@ -41,11 +43,23 @@
    "in_list_view": 1,
    "label": "Gender",
    "options": "Gender"
+  },
+  {
+   "fetch_from": "bed.status",
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-09-09 07:12:54.520705",
+ "modified": "2020-09-21 13:23:54.557651",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space Bed",

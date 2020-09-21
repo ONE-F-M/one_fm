@@ -32,7 +32,6 @@
   "objects_section",
   "accommodation_objects",
   "occupancy_details_section",
-  "is_occupied",
   "employee",
   "local_or_overseas",
   "passport_number",
@@ -88,7 +87,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "\nBooked\nTemporarily Booked\nOccupied\nUnder Maintenance\nBlocked\nVacant"
+   "options": "\nBooked\nTemporarily Booked\nOccupied\nUnder Maintenance\nBlocked\nVacant",
+   "read_only": 1
   },
   {
    "fetch_from": "accommodation_space.accommodation_space_type",
@@ -157,13 +157,6 @@
    "label": "Occupancy Details"
   },
   {
-   "default": "0",
-   "fieldname": "is_occupied",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Is Occupied"
-  },
-  {
    "fieldname": "employee",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -175,53 +168,70 @@
    "fieldname": "local_or_overseas",
    "fieldtype": "Select",
    "label": "Local or Overseas",
-   "options": "\nLocal\nOverseas"
+   "options": "\nLocal\nOverseas",
+   "read_only": 1
   },
   {
+   "fetch_from": "employee.passport_number",
    "fieldname": "passport_number",
    "fieldtype": "Data",
-   "label": "Passport Number"
+   "label": "Passport Number",
+   "read_only": 1
   },
   {
+   "fetch_from": "employee.employee_name",
    "fieldname": "full_name",
    "fieldtype": "Data",
-   "label": "Full Name"
+   "label": "Full Name",
+   "read_only": 1
   },
   {
+   "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
-   "label": "CIVIL ID"
+   "label": "CIVIL ID",
+   "read_only": 1
   },
   {
+   "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Link",
    "label": "Nationality",
-   "options": "Nationality"
+   "options": "Nationality",
+   "read_only": 1
   },
   {
+   "fetch_from": "employee.one_fm_religion",
    "fieldname": "religion",
    "fieldtype": "Data",
-   "label": "Religion"
+   "label": "Religion",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_24",
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "employee.cell_number",
    "fieldname": "contact_number",
    "fieldtype": "Data",
-   "label": "Contact Number"
+   "label": "Contact Number",
+   "read_only": 1
   },
   {
+   "fetch_from": "employee.prefered_email",
    "fieldname": "email",
    "fieldtype": "Data",
    "label": "Email",
-   "options": "Email"
+   "options": "Email",
+   "read_only": 1
   },
   {
+   "fetch_from": "employee.one_fm_visa_reference_number",
    "fieldname": "visa_number",
    "fieldtype": "Data",
-   "label": "Visa Number"
+   "label": "Visa Number",
+   "read_only": 1
   },
   {
    "fieldname": "comments",
@@ -311,7 +321,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-14 23:37:41.114564",
+ "modified": "2020-09-21 21:57:52.071498",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",

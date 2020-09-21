@@ -11,6 +11,23 @@ class Bed(Document):
 	def validate(self):
 		# self.set_title()
 		self.update_bed_in_space()
+		self.update_occupancy_details()
+
+	def update_occupancy_details(self):
+		if self.status == 'Occupied' and self.nationality:
+			if self.nationality == 'Kuwaiti':
+				self.local_or_overseas = 'Local'
+			else:
+				self.local_or_overseas = 'Overseas'
+		if self.status == 'Vacant':
+			self.employee = ''
+			self.local_or_overseas = ''
+			self.passport_number =  ''
+			self.full_name = ''
+			self.one_fm_nationality = ''
+			self.one_fm_religion = ''
+			self.contact_number = ''
+			self.visa_number = ''
 
 	def update_bed_in_space(self):
 		bed_in_space = frappe.db.exists('Accommodation Space Bed', {'bed': self.name})

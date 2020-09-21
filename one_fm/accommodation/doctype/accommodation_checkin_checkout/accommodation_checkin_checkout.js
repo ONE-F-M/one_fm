@@ -60,8 +60,7 @@ var set_filters = function(frm) {
 	});
 
 	frm.set_query('checkin_reference', function () {
-		var filters = {};
-		filters['type'] = 'IN'
+		var filters = {'type': 'IN', 'checked_out': false};
 		if(frm.doc.employee){
 			filters['employee'] = frm.doc.employee
 		}

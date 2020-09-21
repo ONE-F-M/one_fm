@@ -8,7 +8,9 @@
  "field_order": [
   "naming_series",
   "type",
+  "checked_out",
   "employee",
+  "checkin_checkout_date_time",
   "column_break_2",
   "booking_reference",
   "checkin_reference",
@@ -225,10 +227,23 @@
    "fieldname": "asset_return_details",
    "fieldtype": "Small Text",
    "label": "Asset Return Details"
+  },
+  {
+   "default": "0",
+   "fieldname": "checked_out",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Checked Out"
+  },
+  {
+   "fieldname": "checkin_checkout_date_time",
+   "fieldtype": "Datetime",
+   "label": "Date and Time",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2020-09-21 07:40:15.330807",
+ "modified": "2020-09-21 23:45:20.412208",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",

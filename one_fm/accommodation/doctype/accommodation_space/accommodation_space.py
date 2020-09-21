@@ -10,7 +10,35 @@ from frappe import _
 class AccommodationSpace(Document):
 	def validate(self):
 		self.set_title()
+		self.validate_space_type()
 		self.update_bed_status()
+
+	def validate_space_type(self):
+		bed_space_type = frappe.db.get_value('Accommodation Space', self.name, 'bed_space_type')
+		if bed_space_type != self.bed_space_type:
+			if frappe.db.count('Bed', {'status': 'Occupied', 'disabled': False, 'accommodation_space': self.name}) > 0:
+				frappe.throw(_("There are Occupied Bed in this Space. To change Bed Space Type, Please make all Bed Vacant"))
+			elif frappe.db.count('Bed', {'status': 'Booked', 'disabled': False, 'accommodation_space': self.name}) > 0:
+				frappe.throw(_("There are Booked Bed in this Space. To change Bed Space Type, Please make all Bed Vacant"))
+			elif frappe.db.count('Bed', {'status': 'Temporarily Booked', 'disabled': False, 'accommodation_space': self.name}) > 0:
+				frappe.throw(_("There are Temporarily Booked Bed in this Space. To change Bed Space Type, Please make all Bed Vacant"))
+			else:
+				self.disable_rest_of_beds()
+
+	def disable_rest_of_beds(self):
+		bed_space_capacity = frappe.db.get_value('Accommodation Space', self.name, 'single_bed_capacity')
+		if self.single_bed_capacity < bed_space_capacity:
+			no_beds_to_disable = bed_space_capacity - self.single_bed_capacity
+			disabled_beds = frappe.db.count('Bed', {'disabled': True, 'accommodation_space': self.name})
+			fraction = no_beds_to_disable - disabled_beds
+			if fraction > 0:
+				beds_to_disable = sorted(self.beds,
+					key=lambda k: k.disabled == 1)
+				for i, bed in enumerate(beds_to_disable):
+					if i < fraction:
+						bed.disabled = True
+					else:
+						break
 
 	def update_bed_status(self):
 		if self.bed_space_available:
