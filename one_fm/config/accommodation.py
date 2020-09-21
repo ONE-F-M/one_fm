@@ -38,8 +38,8 @@ def get_data():
 				},
 				{
 					"type": "doctype",
-					"name": "Accommodation Checkin",
-					"label": _("Accommodation Checkin")
+					"name": "Accommodation Checkin Checkout",
+					"label": _("Checkin/Checkout")
 				}
 			]
 		},
