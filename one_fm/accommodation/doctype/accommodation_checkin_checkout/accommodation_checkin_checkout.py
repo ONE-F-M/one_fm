@@ -13,6 +13,18 @@ class AccommodationCheckinCheckout(Document):
 		elif self.type == "OUT":
 			self.naming_series = "CHECKOUT-.YYYY.-"
 
+	def after_insert(self):
+		self.set_bed_status()
+
+	def on_trash(self):
+		self.set_bed_status()
+
+	def set_bed_status(self):
+		if self.type == 'IN':
+			frappe.db.set_value('Bed', self.bed, 'status', 'Occupied')
+		if self.type == 'OUT':
+			frappe.db.set_value('Bed', self.bed, 'status', 'Vacant')
+
 	def get_checkin_details_from_booking(self):
 		if self.employee and not self.booking_reference:
 			employee = frappe.get_doc('Employee', self.employee)
