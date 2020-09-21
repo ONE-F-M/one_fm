@@ -43,7 +43,7 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, project=None, si
 
 	data = frappe.db.sql("""
 		select 
-			distinct emp.name as employee_id, emp.employee_name, emp.nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, sch.shift, sh.site, sh.project
+			distinct emp.name as employee_id, emp.employee_name, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, sch.shift, sh.site, sh.project
 		from `tabEmployee` as emp, `tabUser` as usr, `tabEmployee Schedule` as sch, `tabOperations Shift` as sh
 		where 
 			sch.date="{date}"
