@@ -5,25 +5,57 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
+from frappe import _
 
 class AccommodationCheckinCheckout(Document):
+	def validate(self):
+		if self.is_new():
+			self.validate_checkin_checkout()
+
+	def validate_checkin_checkout(self):
+		if self.type == 'IN':
+			exists_checkin = frappe.db.exists('Accommodation Checkin Checkout', {
+				'employee': self.employee,
+				'type': 'IN',
+				'checked_out': False
+			})
+			if exists_checkin:
+				frappe.throw(_("{0} not checked out from bed <b><a href='#Form/Bed/{1}'>{1}</a></b>".format(
+					self.full_name, frappe.db.get_value('Accommodation Checkin Checkout', exists_checkin, 'bed'))))
+
 	def before_insert(self):
 		if self.type == "IN":
 			self.naming_series = "CHECKIN-.YYYY.-"
 		elif self.type == "OUT":
 			self.naming_series = "CHECKOUT-.YYYY.-"
 
-	def after_insert(self):
-		self.set_bed_status()
-
 	def on_trash(self):
-		self.set_bed_status()
+		exists_employee_checkin_checkout = frappe.db.exists('Accommodation Checkin Checkout', {
+			'employee': self.employee,
+			'type': 'IN',
+			'checkin_checkout_date_time': ['>', self.checkin_checkout_date_time]
+		})
+		if not exists_employee_checkin_checkout:
+			occupy = True if self.type == 'OUT' else False
+			self.update_bed_details(occupy, True)
 
-	def set_bed_status(self):
-		if self.type == 'IN':
-			frappe.db.set_value('Bed', self.bed, 'status', 'Occupied')
-		if self.type == 'OUT':
-			frappe.db.set_value('Bed', self.bed, 'status', 'Vacant')
+	def after_insert(self):
+		occupy = True if self.type == 'IN' else False
+		self.update_bed_details(occupy)
+		self.update_checkin_reference()
+
+	def update_checkin_reference(self):
+		if self.type == 'OUT' and self.checkin_reference:
+			frappe.db.set_value('Accommodation Checkin Checkout', self.checkin_reference, 'checked_out', True)
+
+	def update_bed_details(self, occupy, on_trash=False):
+		bed = frappe.get_doc('Bed', self.bed)
+		if (not occupy and bed.status == 'Occupied' and bed.employee == self.employee) or (occupy and not bed.employee):
+			bed.status = 'Occupied' if occupy else 'Vacant'
+			bed.employee = self.employee if occupy else ''
+			bed.save(ignore_permissions=True)
+			if on_trash:
+				self.update_checkin_reference()
 
 	def get_checkin_details_from_booking(self):
 		if self.employee and not self.booking_reference:
