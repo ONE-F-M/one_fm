@@ -21,6 +21,8 @@ frappe.ui.form.on('ERF', {
 		});
 		set_shift_working_btn(frm);
 		set_driving_license_required_btn(frm);
+		set_is_uniform_needed_for_this_job_btn(frm);
+		set_is_id_card_needed_for_employee_btn(frm);
 		set_provide_health_insurance_btn(frm);
 		set_provide_mobile_with_line_btn(frm);
 		set_provide_company_insurance_btn(frm);
@@ -44,7 +46,7 @@ frappe.ui.form.on('ERF', {
 			}
 		}
 		if (!frm.is_new() && frm.doc.docstatus == 0 && !frm.doc.draft_erf_to_hrm){
-			frm.add_custom_button(__('Draft ERF to HR Manager'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
+			frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
 		}
 	},
 	decline_erf: function(frm, status) {
@@ -277,23 +279,21 @@ var set_filter_for_location = function(frm, location_list) {
 };
 
 var create_event_for_okr_workshop = function(frm) {
-	if(frm.doc.schedule_for_okr_workshop_with_recruiter && frm.doc.okr_workshop_with){
-		frappe.call({
-			doc: frm.doc,
-			method: 'create_event_for_okr_workshop',
-			callback: function(r) {
-				if(r.message){
-					frm.set_value('event_for_okr_workshop', r.message.name);
-					frm.save();
-				}
-				else{
-					frm.set_value('event_for_okr_workshop', '');
-				}
-			},
-			freeze: true,
-			freeze_message: __('Submit to HR, Creating event...')
-		});
-	}
+	frappe.call({
+		doc: frm.doc,
+		method: 'create_event_for_okr_workshop',
+		callback: function(r) {
+			if(r.message){
+				frm.set_value('event_for_okr_workshop', r.message.name);
+				frm.save();
+			}
+			else{
+				frm.set_value('event_for_okr_workshop', '');
+			}
+		},
+		freeze: true,
+		freeze_message: __('Submit to HR, Creating event...')
+	});
 };
 
 var create_project = function(frm) {
@@ -574,6 +574,14 @@ var set_provide_company_insurance_btn = function(frm) {
 
 var set_driving_license_required_btn = function(frm) {
 	yes_no_html_buttons(frm, frm.doc.driving_license_required, 'driving_license_required_html', 'driving_license_required', 'Is Kuwait Driving License a Mandatory Requirement?');
+};
+
+var set_is_id_card_needed_for_employee_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.is_id_card_needed_for_employee, 'is_id_card_needed_for_employee_html', 'is_id_card_needed_for_employee', 'Is ID Card Needed For Employee?');
+};
+
+var set_is_uniform_needed_for_this_job_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.is_uniform_needed_for_this_job, 'is_uniform_needed_for_this_job_html', 'is_uniform_needed_for_this_job', 'Is Uniform Needed for this Job?');
 };
 
 var set_shift_working_btn = function(frm) {

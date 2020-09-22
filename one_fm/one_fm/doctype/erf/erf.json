@@ -62,6 +62,9 @@
   "save_me3",
   "tools_section",
   "tool_request_item",
+  "is_id_card_needed_for_employee_html",
+  "is_id_card_needed_for_employee",
+  "is_uniform_needed_for_this_job_html",
   "is_uniform_needed_for_this_job",
   "save_me4",
   "performance_profile_section",
@@ -374,6 +377,7 @@
    "default": "0",
    "fieldname": "is_uniform_needed_for_this_job",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Is Uniform Needed for This Job"
   },
   {
@@ -602,7 +606,7 @@
    "label": "Create Project for Recruiter"
   },
   {
-   "depends_on": "eval: !doc.event_for_okr_workshop",
+   "depends_on": "eval: !doc.event_for_okr_workshop && !doc.__islocal",
    "fieldname": "okr_workshop_submit_to_hr",
    "fieldtype": "Button",
    "label": "Submit to HR"
@@ -753,11 +757,28 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Draft ERF to HRM"
+  },
+  {
+   "fieldname": "is_uniform_needed_for_this_job_html",
+   "fieldtype": "HTML",
+   "label": "Is Uniform Needed for this Job HTML"
+  },
+  {
+   "fieldname": "is_id_card_needed_for_employee_html",
+   "fieldtype": "HTML",
+   "label": "Is ID Card Needed For Employee HTML"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_id_card_needed_for_employee",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is ID Card Needed For Employee"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-09-19 22:06:37.190331",
+ "modified": "2020-09-22 09:42:01.451666",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

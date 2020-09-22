@@ -156,7 +156,28 @@ class ERF(Document):
 		self.notify_recruiter_and_requester()
 		if self.status == 'Accepted':
 			self.notify_gsd_department()
+			if self.provide_salary_advance:
+				self.notify_finance_department()
 			create_job_opening_from_erf(self)
+
+	def notify_finance_department(self):
+		fin_department = frappe.db.get_value('Hiring Settings', None, 'notify_finance_department_for_job_offer_salary_advance')
+		if fin_department:
+			message = """
+				<p>
+					A new ERF for the {0} position has been raised, employees selected will be receiving salary advance.
+					Subsequently during the hiring process you will be notified the amount for each employee when the
+					applicant is selected and offered.
+				</p>
+			""".format(self.designation)
+			frappe.sendmail(
+				recipients= [fin_department],
+				subject='{0} ERF for {1}'.format(self.status, self.designation),
+				message=message,
+				reference_doctype=self.doctype,
+				reference_name=self.name
+			)
+			frappe.msgprint(_('Finance Department Will be Notified By Email.'))
 
 	def notify_recruiter_and_requester(self):
 		if self.status in ['Accepted', 'Declined']:
@@ -182,10 +203,10 @@ class ERF(Document):
 						<li>Grade: {2}</li>
 						<li>Number of Employees: {3}</li>
 						<li>Position: {0}</li>
-					</ol>
-				</p>
 			""".format(self.designation, self.project, self.grade, self.number_of_candidates_required)
-			message += """
+			if self.is_uniform_needed_for_this_job:
+				message += """<li>Uniform required for the employees</li>"""
+			message += """</ol></p>
 			<p>
 				<table class="table table-bordered table-hover">
 					<thead>
@@ -217,7 +238,9 @@ class ERF(Document):
 			frappe.throw(_('If You Need Assign One More Recruiter, Please fill the Secondary Recruiter Assigned.!'))
 
 	def create_event_for_okr_workshop(self):
-		return set_event_for_okr_workshop(self)
+		self.draft_erf_to_hrm_for_submit()
+		if self.schedule_for_okr_workshop_with_recruiter and self.okr_workshop_with:
+			return set_event_for_okr_workshop(self)
 
 	def accept_or_decline(self, status, reason_for_decline=None):
 		self.status = status

@@ -72,9 +72,9 @@
   },
   {
    "fieldname": "notify_finance_department_for_job_offer_salary_advance",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Notify Finance Department for Job Offer Salary Advance",
-   "options": "User"
+   "options": "Email"
   },
   {
    "fieldname": "hrm_to_fill_hr_and_salary_compensation",
@@ -85,7 +85,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2020-09-19 11:46:47.554983",
+ "modified": "2020-09-22 09:02:55.083958",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",
