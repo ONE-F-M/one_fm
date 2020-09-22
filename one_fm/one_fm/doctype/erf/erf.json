@@ -606,7 +606,7 @@
    "label": "Create Project for Recruiter"
   },
   {
-   "depends_on": "eval: !doc.event_for_okr_workshop",
+   "depends_on": "eval: !doc.event_for_okr_workshop && !doc.__islocal",
    "fieldname": "okr_workshop_submit_to_hr",
    "fieldtype": "Button",
    "label": "Submit to HR"
@@ -778,7 +778,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-09-22 09:34:01.026795",
+ "modified": "2020-09-22 09:42:01.451666",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

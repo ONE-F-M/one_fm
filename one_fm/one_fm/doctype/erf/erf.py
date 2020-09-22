@@ -238,7 +238,9 @@ class ERF(Document):
 			frappe.throw(_('If You Need Assign One More Recruiter, Please fill the Secondary Recruiter Assigned.!'))
 
 	def create_event_for_okr_workshop(self):
-		return set_event_for_okr_workshop(self)
+		self.draft_erf_to_hrm_for_submit()
+		if self.schedule_for_okr_workshop_with_recruiter and self.okr_workshop_with:
+			return set_event_for_okr_workshop(self)
 
 	def accept_or_decline(self, status, reason_for_decline=None):
 		self.status = status
