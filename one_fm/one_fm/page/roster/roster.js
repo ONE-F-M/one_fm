@@ -1,5 +1,5 @@
 frappe.pages['roster'].on_page_load = function(wrapper) {
-	// console.log("[WRAPPER]", wrapper);
+	// ////console.log("[WRAPPER]", wrapper);
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
 		title: 'Roster',
@@ -8,9 +8,9 @@ frappe.pages['roster'].on_page_load = function(wrapper) {
 	
 	$('.content.page-container').empty().append(frappe.render_template('roster'));
 
-	console.log(page, cur_page);
+	////console.log(page, cur_page);
 	$('.content.page-container').find('.redirect_route').on('click', function(e){
-		// console.log(e, this);
+		// //console.log(e, this);
 		let template = $(this).attr('data-route');
 		$('.content.page-container').empty().append(frappe.render_template(template));
 		load_js(page);
@@ -33,7 +33,7 @@ function load_js(page){
     $(this).scrollTop(0);
 
 	$(`a[href="#"]`).click(function (e) {
-		console.log(!$(this).hasClass('navbar-brand'), this);
+		//console.log(!$(this).hasClass('navbar-brand'), this);
 		if(!$(this).hasClass('navbar-brand')){
 			e.preventDefault();
 		}
@@ -50,7 +50,7 @@ function load_js(page){
 		page.datepicker.config.onChange.push(function (selectedDates, dateStr, instance) {
 			$("#calenderviewtable th").removeClass("hightlightedtable");
 			let evt = new Date(dateStr);
-			console.log(evt);
+			//console.log(evt);
 			window.calendarSettings1 = {
 				date: moment(new Date(evt.getFullYear(), evt.getMonth(), evt.getDate())),//.set("date", 4),
 				today: moment()
@@ -92,7 +92,7 @@ function load_js(page){
 		})
 		// partialviewgetMonthviewdata();
 		$(".rosterviewclick").click(function () {
-			// console.log(this);
+			// //console.log(this);
 			$('.rosterMonth').removeClass("d-none");
 			$('.postMonth').addClass("d-none");		
 			$('.rosterWeek').addClass("d-none");
@@ -110,7 +110,7 @@ function load_js(page){
 	
 		});
 		$(".postviewclick").click(function () {
-			// console.log(this);
+			// //console.log(this);
 			$('.rosterMonth').addClass("d-none");
 			$('.postMonth').removeClass("d-none");
 			$('.rosterWeek').addClass("d-none");
@@ -131,7 +131,7 @@ function load_js(page){
 		
 		//week view click jquery
 		$('.postweekviewclick').click(function () {
-			console.log("SSSSSSSSSSSSs");            
+			//console.log("SSSSSSSSSSSSs");            
 			$('.rosterMonth').addClass("d-none");
 			$('.postMonth').addClass("d-none");
 			$('.rosterWeek').addClass("d-none");
@@ -143,7 +143,7 @@ function load_js(page){
 		});
 		//week view click jquery
 		$('.postmonthviewclick').click(function () {
-			console.log("SSSSSSSSSSSSs");            
+			//console.log("SSSSSSSSSSSSs");            
 			$('.rosterMonth').addClass("d-none");
 			$('.postMonth').removeClass("d-none");
 			$('.rosterWeek').addClass("d-none");
@@ -154,7 +154,7 @@ function load_js(page){
 			get_post_data(page);
 		});
 		$('.monthviewclick').click(function () {
-			console.log("SSSSSSSSSSSSs");            
+			//console.log("SSSSSSSSSSSSs");            
 			$('.rosterMonth').removeClass("d-none");
 			$('.postMonth').addClass("d-none");
 			$('.rosterWeek').addClass("d-none");
@@ -189,7 +189,7 @@ function load_js(page){
 				posts.push(post) 
 			})
 			posts = [... new Set(posts)];
-			console.log(posts);
+			//console.log(posts);
 			let d = new frappe.ui.Dialog({
 				title: 'Edit Post',
 				fields: [
@@ -331,7 +331,9 @@ function load_js(page){
 						method: 'one_fm.one_fm.page.roster.roster.edit_post',
 						args: {posts, values},
 						callback: function(r) {
-							// d.hide();
+							d.hide();
+							let element = get_wrapper_element().slice(1);
+							page[element](page);
 						},
 						freeze: true,
 						freeze_message: __('Editing Post....')
@@ -348,7 +350,7 @@ function load_js(page){
 
 
 		$(".select2plg").select2({});
-		// console.log(page);
+		// //console.log(page);
 		// get_roster_data(page);
 		// Add employee modal
 		$("#addemployeeselect").select2({
@@ -421,15 +423,15 @@ function load_js(page){
             //add values to [] list 
 
             $(".selectclass").map(function () {
-                //console.log($(this).attr("data-selectid"));
+                ////console.log($(this).attr("data-selectid"));
                 if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
                     if (isMonth == 1) {
                         classgrt.push($(this).attr("data-selectid"));
-                        // console.log(classgrt);
+                        // //console.log(classgrt);
                     }
                     else {
                         classgrtw.push($(this).attr("data-selectid"));
-                        // console.log(classgrtw);
+                        // //console.log(classgrtw);
                     }
                 }
             });
@@ -755,7 +757,7 @@ function bind_events(page){
 	$('.postWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
 		if ($(this).is(":checked")) {
 			$(this).parent().parent().parent().children("td").children().not("label").each(function(i,v){
-				console.log(v);
+				//console.log(v);
 				let date = $(v).attr('data-date');
 				if(moment(date).isAfter(moment())){
 					$(v).addClass("selectclass");
@@ -812,7 +814,7 @@ function bind_events(page){
 			$(".Postfilterhideshow").addClass("d-none");
 		}
 		$(".selectclass").map(function () {
-			console.log(($(this).attr("data-selectid")));
+			//console.log(($(this).attr("data-selectid")));
 			if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
 				if (isMonth == 1) {
 					// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
@@ -829,7 +831,7 @@ function bind_events(page){
 	/*on checkbox select change*/
 	//on checkbox select change
 	$('.rosterWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
-		console.log($(this));
+		//console.log($(this));
 		if ($(this).is(":checked")) {
 
 			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
@@ -880,9 +882,9 @@ function bind_events(page){
 			$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
 			$(".filterhideshow").addClass("d-none");
 		}
-		console.log($(".selectclass"));
+		//console.log($(".selectclass"));
 		$(".selectclass").map(function () {
-			console.log($(this).attr("data-selectid"));
+			//console.log($(this).attr("data-selectid"));
 			if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
 				if (isMonth == 1) {
 					classgrt.push($(this).attr("data-selectid"));
@@ -914,7 +916,7 @@ function bind_events(page){
 			$('.Postfilterhideshow').addClass('d-none');
 		}          
 		$('.selectclass').map(function () {
-			console.log(classgrt.indexOf($(this).attr('data-selectid')));
+			//console.log(classgrt.indexOf($(this).attr('data-selectid')));
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 			// if (($(this).attr('data-selectid') != undefined) && ($(this).attr('data-selectid') != null) && ($(this).attr('data-selectid') != '')) {
@@ -963,10 +965,10 @@ function get_roster_data(page){
 	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, department, post_type} = page.filters;
-	console.log(start_date, end_date, project, site, shift, department, post_type);
+	//console.log(start_date, end_date, project, site, shift, department, post_type);
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type})
 	.then(res => {
-		// console.log(res);
+		// //console.log(res);
 		let {post_types_data, employees_data}= res;
 		$('.rosterMonth').find('#calenderviewtable tbody').empty();
 		for(post_type_name in post_types_data){
@@ -1045,7 +1047,7 @@ function get_roster_data(page){
 					'Emergency Leave': 'EL'
 				}
 				let {employee, employee_name, date, post_type, post_abbrv, employee_availability, shift} = employees_data[employee_key][i];
-				// console.log(employee, employee_name, date, post_type, post_abbrv, employee_availability, shift);
+				// //console.log(employee, employee_name, date, post_type, post_abbrv, employee_availability, shift);
 				
 				if(post_abbrv){
 					j++;
@@ -1070,7 +1072,7 @@ function get_roster_data(page){
 				i++;
 				$('.rosterMonth').find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
 			}
-			console.log(j, employees_data[employee_key], i);
+			// //console.log(j, employees_data[employee_key], i);
 			$('.rosterMonth').find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i-1]['employee_name']}"]`).append(`<td>${j}</td>`);
 			// $('.rosterMonth').find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(`<td></td>`);
 			// let employee_modal = `
@@ -1093,10 +1095,10 @@ function get_roster_week_data(page){
 	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, department, post_type} = page.filters;
-	console.log(start_date, end_date, project, site, shift, department, post_type);
+	//console.log(start_date, end_date, project, site, shift, department, post_type);
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type})
 	.then(res => {
-		// console.log(res);
+		// //console.log(res);
 		let {post_types_data, employees_data}= res;
 		$('.rosterWeek').find('#calenderweekviewtable tbody').empty();
 		for(post_type_name in post_types_data){
@@ -1175,7 +1177,7 @@ function get_roster_week_data(page){
 					'Emergency Leave': 'EL'
 				}
 				let {employee, employee_name, date, post_type, post_abbrv, employee_availability, shift} = employees_data[employee_key][i];
-				console.log(date, moment().isBefore(moment(date)));
+				// //console.log(date, moment().isBefore(moment(date)));
 				
 				if(employee_availability && post_abbrv){
 					j++;
@@ -1366,7 +1368,7 @@ function get_post_week_data(page){
 }
 
 function setup_filters(page){
-	frappe.db.get_value("Employee", {"user_id": "k.sharma@armor-services.com"}, ["name"])
+	frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
 	.then(res => {
 		let {name} = res.message;
 		page.employee_id = name;
@@ -1385,11 +1387,12 @@ function get_projects(page){
 	let {employee_id} = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_projects',{employee_id})
 	.then(res => {
-		// console.log(res);
+		//console.log(res);
 		let parent = $('#rosteringprojectselect');
 		res.forEach(element => {
 			let {name} = element;
 			parent.append(new Option(name, name));
+			//console.log(parent);
 		});
 		$(parent).on('select2:select', function (e) {
 			page.filters.project = $(this).val();
@@ -1403,7 +1406,7 @@ function get_sites(page){
 	let {employee_id, project} = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_sites',{employee_id, project})
 	.then(res => {
-		// console.log(res);
+		//console.log(res);
 		let parent = $('#rosteringsiteselect');
 		res.forEach(element => {
 			let {name} = element;
@@ -1421,7 +1424,7 @@ function get_shifts(page){
 	let {employee_id, site} = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts',{employee_id, site})
 	.then(res => {
-		// console.log(res);
+		//console.log(res);
 		let parent = $('#rosteringshiftselect');
 		res.forEach(element => {
 			let {name} = element;
@@ -1439,7 +1442,7 @@ function get_post_types(page){
 	let {employee_id, shift} = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_post_types', {employee_id, shift})
 	.then(res => {
-		// console.log(res);
+		//console.log(res);
 		let parent = $('#rosteringpostselect');
 		res.forEach(element => {
 			let {name} = element;
@@ -1457,7 +1460,7 @@ function get_post_types(page){
 function get_departments(page){
 	frappe.xcall('one_fm.api.mobile.roster.get_departments')
 	.then(res => {
-		// console.log(res);
+		//console.log(res);
 		let parent = $('#rosteringdepartmentselect');
 		res.forEach(element => {
 			let {name} = element;
@@ -1658,7 +1661,7 @@ function assignchangemodalclick() {
 
 						var hasGreyClass = $(this).hasClass("greybox");
 						var hasBlueClass = $(this).hasClass("bluebox");
-						// console.log(hasGreyClass + " " + hasBlueClass);
+						// //console.log(hasGreyClass + " " + hasBlueClass);
 						if (postType != 0 && hasBlueClass == false) {
 							$(this).addClass("bluebox");
 							$(this).addClass("align-items-center SG");
@@ -2123,11 +2126,11 @@ function displayCalendar(calendarSettings1, page) {
 	}
 	let element = get_wrapper_element();
 	const calendar = $(element).find('.calendertitlechange')[0];
-	console.log(element, calendar);
+	//console.log(element, calendar);
 	const calendarTitle = calendarSettings1.date.format("MMM");
 	const calendaryear = calendarSettings1.date.format("YYYY");
 	const daysInMonth = calendarSettings1.date.endOf("Month").date();
-	console.log(calendarSettings1.date, calendarSettings1.date.endOf("Month").date());
+	//console.log(calendarSettings1.date, calendarSettings1.date.endOf("Month").date());
 	page.start_date = calendarSettings1.date.startOf("Month").format('YYYY-MM-DD');
 	page.end_date = calendarSettings1.date.endOf("Month").format('YYYY-MM-DD');
 
@@ -2143,12 +2146,12 @@ function displayCalendar(calendarSettings1, page) {
 
 //function for changing roster date
 function ChangeRosteringDate(seldate, this1) {
-	console.log(seldate, this1);
+	//console.log(seldate, this1);
 	var date = calendarSettings1.today.format("DD");
 	var month = calendarSettings1.date.format("MM") - 1;
 	var year = calendarSettings1.date.format("YYYY");
 	var d1 = new Date(year, month, date);
-	console.log(d1);
+	//console.log(d1);
 	$(this1).parent().children().removeClass("hightlightedtable")
 	$(this1).addClass("hightlightedtable");
 	// $("#datepicker").datepicker("update", new Date(year, month, seldate));
@@ -2164,24 +2167,24 @@ function get_wrapper_element(element){
 	let post_element = $(".postMonth").attr("class").split(/\s+/).includes("d-none");
 	let post_week_element = $(".postWeek").attr("class").split(/\s+/).includes("d-none");
 	// let roster_week_element = $(".rosterWeek").attr("class").split(/\s+/);
-	console.log(element, post_week_element);
+	//console.log(element, post_week_element);
 
 
 	if(roster_element && roster_week_element && !post_element && post_week_element){
 		element = '.postMonth';
-		console.log(element);
+		//console.log(element);
 		return element;
 	}else if(!roster_element && roster_week_element && post_element && post_week_element){
 		element = '.rosterMonth';
-		console.log(element);
+		//console.log(element);
 		return element;
 	}else if(roster_element && roster_week_element && post_element && !post_week_element){
 		element = '.postWeek';
-		console.log(element);
+		//console.log(element);
 		return element;
 	}else if(roster_element && !roster_week_element && post_element && post_week_element){
 		element = '.rosterWeek';
-		console.log(element);
+		//console.log(element);
 		return element;
 	}
 }
@@ -2194,7 +2197,7 @@ function GetHeaders(IsMonthSet, element) {
 	var thStartHTML = `<th class="">Post Type / Days</th>`;
 	var thEndHTML = "<th>Total</th>";
 	element = get_wrapper_element(element);
-	console.log(element);
+	//console.log(element);
 	var selectedMonth;
 	if (IsMonthSet == 0) {
 		var today = new Date();
@@ -2211,7 +2214,7 @@ function GetHeaders(IsMonthSet, element) {
 			var todayDay = calDate.format("ddd");
 			var todayDaydate = calDate.format("DD");
 			var th = "";// "<th id="data-day_" + i + "" onclick="ChangeRosteringDate(" + i + ",this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";
-			console.log(todayDaydate === getdateres);
+			//console.log(todayDaydate === getdateres);
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
 				th = '<th id="data-day_' + i + '" class="greytablebg"  onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}else if (todayDaydate === getdateres){
@@ -2224,7 +2227,7 @@ function GetHeaders(IsMonthSet, element) {
 		thHTML = thStartHTML + dataHTML + thEndHTML;
 
 		selectedMonth = today.getMonth();
-		console.log(element, lastDate.format("DD"), $(element).find('.rosterViewTH'));
+		//console.log(element, lastDate.format("DD"), $(element).find('.rosterViewTH'));
 		$(element).find('.rosterViewTH').html("");
 		$(element).find('.rosterViewTH').html(thHTML);
 	}
@@ -2252,7 +2255,7 @@ function GetHeaders(IsMonthSet, element) {
 		thHTML = thStartHTML + dataHTML + thEndHTML;
 		//GetTodaySelectedDate()
 		selectedMonth = today.getMonth();
-		console.log(element, lastDate.format("DD"), $(element).find('.rosterViewTH'));
+		//console.log(element, lastDate.format("DD"), $(element).find('.rosterViewTH'));
 		$(element).find('.rosterViewTH').html("");
 		$(element).find('.rosterViewTH').html(thHTML);
 
@@ -2456,10 +2459,10 @@ function notificationmsg(title, message) {
 	
 function render_staff(view){
 	let filters = cur_page.page.page.filters;
-	console.log(filters);
+	//console.log(filters);
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_staff', filters)
 	.then(res => {
-		console.log(res, view);
+		//console.log(res, view);
 		if(res){
 			let data = res;
 			if(view == "list"){
@@ -2479,21 +2482,21 @@ function render_staff_list_view(data){
 		table.destroy();
 		// table.rows().invalidate().draw();
 	} 
-	console.log("Called");
+	//console.log("Called");
 	data.forEach(function(employee){
-		let {employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department} = employee;
+		let {name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department} = employee;
 		let row = `
 		<tr>
 			<td>
 				<label class="checkboxcontainer">
 					<span class="text-white"></span>
-					<input type="checkbox" name="datatableckeckbox" class="datatablecjeckbox" data-employee-id="${employee_id}">
+					<input type="checkbox" name="datatableckeckbox" class="datatablecjeckbox" data-employee-id="${name}">
 					<span class="checkmark"></span>
 				</label>
 			</td>
 			<td>
-				<a href="#"
-					class="themecolor text-decorationunderline customgetposition d-none d-md-block">${employee_id}</a>
+				<div href="#"
+					class="themecolor customgetposition d-none d-md-block">${employee_id}</div>
 				<!--for mobile modal id strat-->
 				<a href="#" data-target="#staffcardmodal" data-toggle="modal"
 					class="themecolor text-decorationunderline d-block d-md-none">${employee_id}</a>
@@ -2528,6 +2531,18 @@ function render_staff_list_view(data){
 			</td>
 		</tr>`;
 		$('#staffdatatable tbody').append(row);	
+		$(".datatablecjeckbox").change(function () {
+			let getdatatableval = this.checked;
+			if (getdatatableval === true) {
+				$(this).parent().parent().parent().css("background", "#E7EDFB");
+				assignedfilter(0);
+			}
+			else {
+				$(this).parent().parent().parent().css("background", "#ffffff");
+			}
+			let checked = $(".datatablecjeckbox:checked");
+			if(checked.length == 0) assignedfilter(1);
+		});
 	
 	});
 	staffmanagement();
@@ -2535,7 +2550,7 @@ function render_staff_list_view(data){
 
 function render_staff_card_view(data){
 	$('.staff-card-wrapper').empty();
-	console.log("Called");
+	//console.log("Called");
 	data.forEach(function(employee, i){
 		let {employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department, image} = employee;
 		let row = `
@@ -2677,7 +2692,7 @@ function setup_staff_filters_data(){
 		$(".customredropdown .customdropdownheight .dropdown-item").click(function () {
 			let text = $(this).html();
 			let filter_type = $(this).parent().attr('data-filter-type');
-			console.log($(this), text, filter_type);
+			//console.log($(this), text, filter_type);
 			/*$(this).parent().parent().parent().find(".dropdown-toggle .dropdowncustomres").html(text);*/
 			$(this).closest(".btn-group").find(".dropdown-toggle .dropdowncustomres").html(text);
 			if(filter_type == "assigned"){
@@ -2705,7 +2720,7 @@ function setup_staff_filters_data(){
 }
 
 function ClearServiceBoard(e){
-	console.log($(e).attr('data-filter-type'));
+	//console.log($(e).attr('data-filter-type'));
 	let filter_type = $(e).attr('data-filter-type');
 	let filter_text = filter_type.charAt(0).toUpperCase() + filter_type.slice(1)
 	$(e).closest(".btn-group").find(".dropdown-toggle .dropdowncustomres").html(filter_text);
@@ -2717,7 +2732,7 @@ function staff_edit_dialog(){
 	let employees = $(".datatablecjeckbox:checked").map(function () {
 		return $(this).attr("data-employee-id");
 	}).get();
-	console.log(employees);
+	//console.log(employees);
 
 	let d = new frappe.ui.Dialog({
 		'title': 'Edit',
@@ -2732,7 +2747,7 @@ function staff_edit_dialog(){
 				}
 			},
 			{'label': 'Site', 'fieldname': 'site', 'fieldtype': 'Link', 'options': 'Operations Site', get_query: function(){
-				console.log(d, this);
+				//console.log(d, this);
 				let project = d.get_value('project')
 				if(project){
 					return {
@@ -2741,34 +2756,62 @@ function staff_edit_dialog(){
 					};
 				}
 			}},
-			{'label': 'Shift', 'fieldname': 'shift', 'fieldtype': 'Link', 'options': 'Operations Shift',  get_query: function(){
-				console.log(d, this);
+			{'label': 'Shift', 'fieldname': 'shift', 'fieldtype': 'Link', 'options': 'Operations Shift', 'reqd':1,  get_query: function(){
+				//console.log(d, this);
 				let site = d.get_value('site')
 				if(site){
 					return {
 						"filters": { site },
 						"page_len": 9999
 					};
+				}},
+				onchange:function(){
+					let name = d.get_value('shift');
+					if(name){
+						frappe.db.get_value("Operations Shift",name,["site", "project"])
+						.then(res => {
+							//console.log(res);
+							let {site, project} = res.message;
+							d.set_value('site', site);
+							d.set_value('project', project);
+						})
+					}
+				}
+			},
+			{'label': 'Post Type', 'fieldname': 'post_type', 'reqd': 1, 'fieldtype': 'Link', 'options': 'Post Type', get_query: function(){
+				let shift = d.get_value('shift');
+				if(shift){
+					return {
+						query: "one_fm.one_fm.page.roster.roster.get_filtered_post_types",
+						filters: {shift}
+					};
 				}
 			}},
 			{'fieldtype': 'Section Break'},
-			{'label': 'Assign from','fieldname': 'assign_from', 'fieldtype': 'Select', 'options': '\nDate\nImmediately'},
+			{'label': 'Assign from','fieldname': 'assign_from', 'fieldtype': 'Select', 'reqd':1,'options': '\nDate\nImmediately'},
 			{'fieldtype': 'Column Break'},
-			{'fieldname': 'assign_date', 'fieldtype': 'Date', 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'), 'depends_on': "eval:this.get_value('assign_from') == 'Date'"}
+			{'label': 'Assign from date','fieldname': 'assign_date', 'fieldtype': 'Date', 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'), 'depends_on': "eval:this.get_value('assign_from') == 'Date'", 
+				onchange:function(){
+				let assign_date = d.get_value('assign_date');
+				if(assign_date && moment(assign_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
+					frappe.throw(__("Assign from Date cannot be same or before as today."));
+				}
+			}}
 		],
 		primary_action: function(){
-			d.hide();
-			show_alert(d.get_values());
+			let {shift, post_type, assign_from, assign_date} = d.get_values();
+			frappe.xcall('one_fm.one_fm.page.roster.roster.assign_staff',
+			{employees, shift, post_type, assign_from, assign_date})
+			.then(res => {
+				d.hide();
+				frappe.msgprint(__("Successful!"));
+				render_staff($(".layoutSidenav_content").attr("data-view"));
+			});
 		}
 	});
 	d.show();
 }
 
-//
-//
-//
-//
-// Week View Post
 
 //function for dynamic set calender header data on right calender
 function GetWeekHeaders(IsMonthSet, element) {
@@ -2777,18 +2820,18 @@ function GetWeekHeaders(IsMonthSet, element) {
 	var thEndHTML = "<th>Total</th>";
 	var selectedMonth;
 	element = get_wrapper_element(element);
-	console.log(element);
+	(element);
 	if (IsMonthSet == 0) {
 		var today = new Date();
 		// var firstDay = weekCalendarSettings.date.startOf("week").date();
 		// var endofday = weekCalendarSettings.date.endOf("week").date();
-		// console.log(firstDay, endofday);
+		// (firstDay, endofday);
 		var firstDay = new Date(startOfWeek(today));
 		var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate() + 6);
 		var lastDate = moment(lastDay);
 		var getdateres = moment(new Date()).format("DD");
 
-		//console.log(lastDate.format("DD"));
+		////console.log(lastDate.format("DD"));
 		var dataHTML = "";
 		var calDate = moment(new Date(firstDay));//moment(new Date(firstDay.getFullYear(), firstDay.getMonth(), i));
 		for (var i = 1; i <= 7; i++) {
@@ -2845,7 +2888,7 @@ function GetWeekHeaders(IsMonthSet, element) {
 		}
 		thHTML = thStartHTML + dataHTML + thEndHTML;
 		selectedMonth = today.getMonth();
-		// console.log(dataHTML);
+		// ////console.log(dataHTML);
 		$(element).find('.rosterViewTH').html("");
 		$(element).find('.rosterViewTH').html(thHTML);
 
@@ -2890,7 +2933,7 @@ function GetTodaySelectedDate() {
 //on next month title display on arrow click
 function rosterweekincrement() {
 	weekCalendarSettings.date.add(1, "Weeks"); //.subtract(6, "days");
-	console.log(weekCalendarSettings.date);
+	////console.log(weekCalendarSettings.date);
 	GetWeekHeaders(0);
 	displayWeekCalendar(weekCalendarSettings);
 	let element = get_wrapper_element().slice(1);
@@ -2905,7 +2948,7 @@ function rosterweekincrement() {
 //on previous month title display on arrow click
 function rosterweekdecrement() {
 	weekCalendarSettings.date.subtract(1, "Weeks"); //.subtract(7, "days");
-	console.log(weekCalendarSettings.date);
+	////console.log(weekCalendarSettings.date);
 	GetWeekHeaders(0);
 	displayWeekCalendar(weekCalendarSettings);	
 	let element = get_wrapper_element().slice(1);
@@ -2989,7 +3032,7 @@ function unschedule_staff(page){
 			frappe.xcall('one_fm.one_fm.page.roster.roster.unschedule_staff',
 			{employees, start_date, end_date, never_end})
 			.then(res => {
-				console.log(res)
+				////console.log(res)
 				d.hide();
 				let element = get_wrapper_element().slice(1);
 				page[element](page);
@@ -3036,7 +3079,7 @@ function schedule_leave(page){
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_leave',
 			{employees, leave_type, start_date, end_date})
 			.then(res => {
-				console.log(res)
+				////console.log(res)
 				d.hide();
 				let element = get_wrapper_element().slice(1);
 				page[element](page);
@@ -3087,7 +3130,7 @@ function schedule_change_post(page){
 				if(name){
 					frappe.db.get_value("Operations Shift",name,["site", "project"])
 					.then(res => {
-						console.log(res);
+						////console.log(res);
 						let {site, project} = res.message;
 						d.set_value('site', site);
 						d.set_value('project', project);
@@ -3108,7 +3151,7 @@ function schedule_change_post(page){
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
 			{employees, shift, post_type})
 			.then(res => {
-				console.log(res)
+				////console.log(res)
 				d.hide();
 				let element = get_wrapper_element().slice(1);
 				page[element](page);
