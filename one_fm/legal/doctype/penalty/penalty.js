@@ -4,6 +4,15 @@
 frappe.ui.form.on('Penalty', {
 	refresh: function(frm){
 		$('.actions-btn-group').hide();
+		
+		frm.fields_dict["penalty_details"].grid.set_column_disp(["period_start_date"], 0);
+		frm.fields_dict["penalty_details"].grid.set_column_disp(["period_lapse_date"], 0);
+
+        frm.fields_dict["penalty_details"].grid.toggle_enable(["penalty_levied"], 0);
+        frm.fields_dict["penalty_details"].grid.toggle_enable(["penalty_type"], 0);
+        frm.fields_dict["penalty_details"].grid.toggle_enable(["exact_notes"], 0);
+        frm.fields_dict["penalty_details"].grid.toggle_enable(["attachments"], 0);
+		
 		if(frm.doc.workflow_state == "Penalty Accepted" && frm.doc.verified == 0){
 			frm.add_custom_button(
 				'Create Legal Investigation',
@@ -14,7 +23,7 @@ frappe.ui.form.on('Penalty', {
 				}
 			).addClass('btn-info');
 		}
-		// if(frm.doc.workflow_state == "Penalty Issued" && frm.doc.recipient_user == frappe.session.user){
+		if(frm.doc.workflow_state == "Penalty Issued" && frm.doc.recipient_user == frappe.session.user){
 			frm.add_custom_button(
 				'Accept Penalty',
 				() => {
@@ -86,7 +95,7 @@ frappe.ui.form.on('Penalty', {
 					rejection_dialog.show();
 				}
 			).addClass('btn-danger');;
-		// }
+		}
 	}
 });
 

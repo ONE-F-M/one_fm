@@ -20,7 +20,7 @@ class Penalty(Document):
 		subject = _("Penalty Issued by {issuer_name}.".format(issuer_name=self.issuer_name))
 		message = _("""
 			You have been issued a penalty.<br>
-			Please take necessary action with 48 hours.<br>
+			Please take necessary action within 48 hours.<br>
 			<b>Note: Penalty will be automatically accepted after 48 hours.</b><br>
 			Link: {link}""".format(link=link))
 		frappe.sendmail([self.recipient_user], subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)

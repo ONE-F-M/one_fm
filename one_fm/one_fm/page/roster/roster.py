@@ -8,15 +8,23 @@ from frappe import _
 import json
 
 @frappe.whitelist(allow_guest=True)
-def get_staff(assigned=1, employee_id=None, employee_name=None, project=None, site=None, shift=None, department=None, designation=None):
+def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
 	date = cstr(add_to_date(nowdate(), days=1))
-	# date = "2020-07-05"
 	conds = ""
-	print(assigned, employee_id, employee_name, project, site, shift, department, designation)
+
+	if employee_name:
+		conds += 'and emp.employee_name="{name}" '.format(name=employee_name)
+	if department:
+		conds += 'and emp.department="{department}" '.format(department=department)	
+	if designation:
+		conds += 'and emp.designation="{designation}" '.format(designation=designation)
+	if company:
+		conds += 'and emp.company="{company}" '.format(company=company)
 	if not cint(assigned):
+		# print(conds)
 		data = frappe.db.sql("""
 			select 
-				distinct emp.name as employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.project
+				distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.project
 			from `tabEmployee` as emp, `tabUser` as usr, `tabEmployee Schedule` as sch, `tabOperations Shift` as sh
 			where 
 				sch.date="{date}"
@@ -24,29 +32,23 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, project=None, si
 			and emp.user_id=usr.name
 			and sch.shift=sh.name
 			and emp.project is NULL
+			{conds}
 		""".format(date=date, conds=conds), as_dict=1)
 		return data
-
-	if employee_name:
-		conds += 'and emp.employee_name="{name}" '.format(name=employee_name)
+		
 	if project:
 		conds += 'and sh.project="{project}" '.format(project=project)
 	if site:
 		conds += 'and sh.site="{site}" '.format(site=site)
 	if shift:
 		conds += 'and sh.name="{shift}" '.format(shift=shift)
-	if department:
-		conds += 'and emp.department="{department}" '.format(department=department)	
-	if designation:
-		conds += 'and emp.designation="{designation}" '.format(designation=designation)
-	# print(conds)
-
 	data = frappe.db.sql("""
 		select 
-			distinct emp.name as employee_id, emp.employee_name, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, sch.shift, sh.site, sh.project
+			distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, sch.shift, sh.site, sh.project
 		from `tabEmployee` as emp, `tabUser` as usr, `tabEmployee Schedule` as sch, `tabOperations Shift` as sh
 		where 
 			sch.date="{date}"
+		and emp.project is not NULL
 		and sch.employee=emp.employee
 		and emp.user_id=usr.name
 		and sch.shift=sh.name
@@ -196,6 +198,7 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 @frappe.whitelist()
 def get_filtered_post_types(doctype, txt, searchfield, start, page_len, filters):
 	shift = filters.get('shift')
+	print(shift)
 	return frappe.db.sql("""
 		select distinct post_template
 		from `tabOperations Post` 
@@ -270,24 +273,55 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 @frappe.whitelist()
 def edit_post(posts, values):
 	args = frappe._dict(json.loads(values))
-
+	print(args, posts)
 	if args.post_status == "Cancel Post":
-		cancel_post(posts, args.cancel_from_date)
+		# cancel_post(posts, args)
+		frappe.enqueue(cancel_post, posts=posts, args=args, queue='short')
 	elif args.post_status == "Suspend Post":
-		pass
+		# suspend_post(posts, args)
+		frappe.enqueue(suspend_post, posts=posts, args=args, queue='short')
 	elif args.post_status == "Post Off":
 		pass
 	
 
-def cancel_post(posts, cancel_from_date):
-	print(posts, cancel_from_date)
+def cancel_post(posts, args):
+	print(posts, args)
 	for post in json.loads(posts):
 		project = frappe.get_value("Operations Post", post, "project")
 		end_date = frappe.get_value("Contracts", {"project": project}, "end_date")
-		schedule_list = frappe.get_all("Post Schedule", {"date": (">", cancel_from_date), "post": post})
-		print(schedule_list)
-		for schedule in schedule_list:
-			pass
+
+		for date in	pd.date_range(start=args.cancel_from_date, end=end_date):
+			print(date.date())
+			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post}):
+				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post})
+			else: 
+				doc = frappe.new_doc("Post Schedule")
+				doc.post = post
+				doc.date = cstr(date.date())	
+			doc.paid = args.suspend_paid
+			doc.unpaid = args.suspend_unpaid
+			doc.post_status = "Cancelled"
+			doc.save()
+	frappe.db.commit()
+
+def suspend_post(posts, args):
+	for post in json.loads(posts):
+		for date in	pd.date_range(start=args.suspend_from_date, end=args.suspend_to_date):
+			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post}):
+				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post})
+			else: 
+				doc = frappe.new_doc("Post Schedule")
+				doc.post = post
+				doc.date = cstr(date.date())
+			doc.paid = args.suspend_paid
+			doc.unpaid = args.suspend_unpaid
+			doc.post_status = "Suspended"
+			doc.save()
+	frappe.db.commit()
+
+def post_off(posts, args):
+	pass
+
 
 
 def dayoff(employees, selected_dates=1, repeat_freq="Does not repeat", repeat_till=None, repeat_days=[]):
@@ -330,22 +364,44 @@ def dayoff(employees, selected_dates=1, repeat_freq="Does not repeat", repeat_ti
 def set_dayoff(employee, date):
 	if frappe.db.exists("Employee Schedule", {"date": date, "employee": employee}):
 		doc = frappe.get_doc("Employee Schedule", {"date": date, "employee": employee})
-		doc.shift = None
-		doc.post_type = None
-		doc.shift_type = None
-		doc.site = None
-		doc.project = None
-		doc.employee_availability = "Day Off"
-		doc.save()
 
 	else:
 		doc = frappe.new_doc("Employee Schedule")
-		doc.employee = employee
-		doc.date = date
-		doc.shift = None
-		doc.post_type = None
-		doc.shift_type = None
-		doc.site = None
-		doc.project = None
-		doc.employee_availability = "Day Off"
-		doc.save()
+
+	doc.employee = employee
+	doc.date = date
+	doc.shift = None
+	doc.post_type = None
+	doc.shift_type = None
+	doc.site = None
+	doc.project = None
+	doc.employee_availability = "Day Off"
+	doc.save()
+
+
+@frappe.whitelist()
+def assign_staff(employees, shift, post_type, assign_from, assign_date):
+	try:
+		project = frappe.get_value("Operations Shift", shift, ["project"])
+		if assign_from == 'Immediately':
+			assign_date = cstr(add_to_date(nowdate(), days=1))
+		end_date = frappe.get_value("Contracts", {"project": project}, "end_date")
+		frappe.enqueue(assign_job, employees=employees, start_date=assign_date, end_date=end_date, shift=shift, post_type=post_type, queue='short')
+		return True
+	except Exception as e:
+		frappe.log_error(e)
+		frappe.throw(_(e))
+
+def assign_job(employees, start_date, end_date, shift, post_type):
+	for date in	pd.date_range(start=start_date, end=end_date):
+		for employee in json.loads(employees):
+			if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
+				roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date": cstr(date.date())})
+			else:
+				roster = frappe.new_doc("Employee Schedule")
+				roster.employee = employee
+				roster.date = cstr(date.date())
+			roster.shift = shift
+			roster.employee_availability = "Working"
+			roster.post_type = post_type
+			roster.save(ignore_permissions=True)
