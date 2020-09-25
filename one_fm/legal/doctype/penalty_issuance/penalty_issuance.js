@@ -9,6 +9,8 @@ frappe.ui.form.on('Penalty Issuance', {
             set_issuing_employee(frm);
         }	
         set_employee_filters(frm);
+        frm.fields_dict["penalty_issuance_details"].grid.set_column_disp(["penalty_levied"], 0);
+        frm.fields_dict["penalty_issuance_details"].grid.set_column_disp(["occurence_number"], 0);
     },
     pull_as_current: function(frm){
         if(frm.doc.docstatus < 1){

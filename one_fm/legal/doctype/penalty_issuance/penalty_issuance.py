@@ -53,17 +53,55 @@ class PenaltyIssuance(Document):
 			penalty.project = self.project
 
 			for penalty_detail in self.penalty_issuance_details:
-				occurence, occurence_count = self.get_occurence(employee.employee_id, penalty_detail.penalty_type)
-				deduction = self.get_penalty_levied(occurence, penalty_detail.penalty_type)
-								
-				penalty.append("penalty_details", {
+				penalty_details = {
 					"penalty_type": penalty_detail.penalty_type,
 					"penalty_type_arabic": penalty_detail.penalty_type_arabic,
-					"occurence": occurence_count,
-					"deduction": deduction,
 					"exact_notes": penalty_detail.exact_notes,
 					"attachments": penalty_detail.attachments
-				})	
+				}
+				occurences = self.get_occurences(employee.employee_id, penalty_detail.penalty_type)
+				occurence = 0
+				if len(occurences) > 0:
+					#Check if penalty in between start and lapse period, increase the occurence count by 1 and get penalty for that occurence. Set start, lapse date and occurence count
+
+					#If penalty occurence date is between start and lapse date, it means it occured in existing period. Otherwise reset the occurence counter
+					if cstr(occurences[0].period_start_date) <= cstr(getdate(self.penalty_occurence_time)) <= cstr(occurences[0].period_lapse_date):
+						existing_occurences = self.get_existing_occurences(employee.employee_id, penalty_detail.penalty_type, occurences[0].period_start_date, occurences[0].period_lapse_date, )
+						if len(existing_occurences) < 7:
+							occurence = len(existing_occurences) + 1
+							penalty_details.update({
+								'period_start_date': cstr(occurences[0].period_start_date),
+								'period_lapse_date': cstr(occurences[0].period_lapse_date),
+								'occurence_number': occurence
+							})
+						else:
+							#What to do incase existing occurences are more than 6
+							frappe.throw(_("Occurences more than 6"))
+					else:
+						occurence = 1
+						penalty_details.update({
+							'period_start_date': cstr(getdate(self.penalty_occurence_time)),
+							'period_lapse_date': cstr(add_to_date(getdate(self.penalty_occurence_time), years=1)),
+							'occurence_number': occurence
+						})
+					
+				elif len(occurences) == 0:
+					#Get penalty for first occurence and set start,lapse date and occurence count
+					occurence = 1
+					penalty_details.update({
+						'period_start_date': cstr(getdate(self.penalty_occurence_time)),
+						'period_lapse_date': cstr(add_to_date(getdate(self.penalty_occurence_time), years=1)),
+						'occurence_number': occurence
+					})
+				
+				penalty_levied, deduction = self.get_penalty_levied(occurence, penalty_detail.penalty_type)
+				penalty_details.update({
+					'penalty_levied': penalty_levied,
+					'deduction': deduction
+				})
+				print(penalty_details)
+				penalty.append("penalty_details", penalty_details)
+
 			penalty.save()
 			assign_to({
 				"assign_to": user_id,
@@ -73,75 +111,108 @@ class PenaltyIssuance(Document):
 			})
 		frappe.db.commit()
 
-	def get_occurence(self, employee_id, penalty_type):
-		print(employee_id, penalty_type)
+	def get_occurences(self, employee_id, penalty_type):
 		penalties = frappe.db.sql("""
-			SELECT PID.parent, DATE(P.penalty_occurence_time) as penalty_date
+			SELECT PID.parent, PID.period_start_date, PID.period_lapse_date, PID.occurence_number, DATE(P.penalty_occurence_time) as penalty_date
 			FROM `tabPenalty Issuance Details` PID, `tabPenalty` P 
 			WHERE
 				PID.penalty_type="{penalty_type}"
 			AND P.recipient_employee="{emp}"
+			AND P.workflow_state="Penalty Accepted"
 			AND PID.parent=P.name
 			AND PID.parenttype="Penalty"
-			ORDER BY P.penalty_occurence_time ASC
+			ORDER BY P.penalty_occurence_time DESC
 		""".format(penalty_type=penalty_type, emp=employee_id), as_dict=1)
-		#AND P.workflow_state="Penalty Accepted"
-		#Start and end penalty duration date
-		year, month, date = cstr(getdate(self.penalty_occurence_time)).split("-")
-		if len(penalties) > 0:
-			start_year, start_month, start_date = cstr(penalties[0].penalty_date).split("-")
-		else:
-			start_year, start_month, start_date = cstr(getdate(self.penalty_occurence_time)).split("-")
+		return [penalties[0]]
 
-		penalty_duration_start = year+"-"+start_month+"-"+start_date
-		penalty_duration_end = cstr(add_to_date(year+"-"+start_month+"-"+start_date, years=1))
-		print(penalty_duration_start, penalty_duration_end)
-
+	def get_existing_occurences(self, employee_id, penalty_type, start_date, lapse_date):
 		penalties = frappe.db.sql("""
-			SELECT PID.parent, DATE(P.penalty_occurence_time) as penalty_date
-			FROM `tabPenalty Issuance Details` PID, `tabPenalty` P 
+			SELECT tpd.parent
+			FROM `tabPenalty` tp, `tabPenalty Issuance Details` tpd
 			WHERE
-				PID.penalty_type="{penalty_type}"
-			AND P.recipient_employee="{emp}"
-			AND PID.parent=P.name
-			AND PID.parenttype="Penalty"
-			AND DATE(P.penalty_occurence_time) BETWEEN DATE("{penalty_duration_start}") AND DATE("{penalty_duration_end}")
-			ORDER BY P.penalty_occurence_time ASC
-		""".format(
-			penalty_type=penalty_type, 
-			emp=employee_id, 
-			penalty_duration_start=penalty_duration_start, 
-			penalty_duration_end=penalty_duration_end
-		), as_dict=1)
+				tpd.penalty_type="{penalty_type}"
+			AND tp.recipient_employee="{emp}"
+			AND tp.workflow_state="Penalty Accepted"
+			AND tpd.parent=tp.name
+			AND tpd.parenttype="Penalty"
+			AND DATE(tp.penalty_occurence_time) BETWEEN DATE("{start_date}") AND DATE("{lapse_date}")
+		""".format(penalty_type=penalty_type, emp=employee_id, start_date=cstr(start_date), lapse_date=cstr(lapse_date)), as_dict=1)
+		print(penalties)
+		return penalties
 
 
-		occurences = len(penalties) + 1
-		penalty_list_field_map = {
-			"1": "first_occurence",
-			"2": "second_occurence",
-			"3": "third_occurence",
-			"4": "fourth_occurence",
-			"5": "fifth_occurence"
-		}
+	# def get_occurence(self, employee_id, penalty_type):
+	# 	print(employee_id, penalty_type)
+	# 	penalties = frappe.db.sql("""
+	# 		SELECT PID.parent, DATE(P.penalty_occurence_time) as penalty_date
+	# 		FROM `tabPenalty Issuance Details` PID, `tabPenalty` P 
+	# 		WHERE
+	# 			PID.penalty_type="{penalty_type}"
+	# 		AND P.recipient_employee="{emp}"
+	# 		AND PID.parent=P.name
+	# 		AND PID.parenttype="Penalty"
+	# 		ORDER BY P.penalty_occurence_time ASC
+	# 	""".format(penalty_type=penalty_type, emp=employee_id), as_dict=1)
+	# 	#AND P.workflow_state="Penalty Accepted"
+	# 	#Start and end penalty duration date
+	# 	year, month, date = cstr(getdate(self.penalty_occurence_time)).split("-")
+	# 	if len(penalties) > 0:
+	# 		start_year, start_month, start_date = cstr(penalties[0].penalty_date).split("-")
+	# 	else:
+	# 		start_year, start_month, start_date = cstr(getdate(self.penalty_occurence_time)).split("-")
 
-		occurence_count = "1"
-		if 0 < occurences <= 5:
-			occurence_count = cstr(occurences)
-		elif occurences > 5:
-			occurence_count = "5" 
+	# 	penalty_duration_start = year+"-"+start_month+"-"+start_date
+	# 	penalty_duration_end = cstr(add_to_date(year+"-"+start_month+"-"+start_date, years=1))
+	# 	print(penalty_duration_start, penalty_duration_end)
 
-		return penalty_list_field_map[occurence_count], occurence_count
+	# 	penalties = frappe.db.sql("""
+	# 		SELECT PID.parent, DATE(P.penalty_occurence_time) as penalty_date
+	# 		FROM `tabPenalty Issuance Details` PID, `tabPenalty` P 
+	# 		WHERE
+	# 			PID.penalty_type="{penalty_type}"
+	# 		AND P.recipient_employee="{emp}"
+	# 		AND PID.parent=P.name
+	# 		AND PID.parenttype="Penalty"
+	# 		AND DATE(P.penalty_occurence_time) BETWEEN DATE("{penalty_duration_start}") AND DATE("{penalty_duration_end}")
+	# 		ORDER BY P.penalty_occurence_time ASC
+	# 	""".format(
+	# 		penalty_type=penalty_type, 
+	# 		emp=employee_id, 
+	# 		penalty_duration_start=penalty_duration_start, 
+	# 		penalty_duration_end=penalty_duration_end
+	# 	), as_dict=1)
 
-	def get_penalty_levied(self, fieldname, penalty_type):
+
+	# 	occurences = len(penalties) + 1
+	# 	penalty_list_field_map = {
+	# 		"1": "first_occurence",
+	# 		"2": "second_occurence",
+	# 		"3": "third_occurence",
+	# 		"4": "fourth_occurence",
+	# 		"5": "fifth_occurence"
+	# 	}
+
+	# 	occurence_count = "1"
+	# 	if 0 < occurences <= 5:
+	# 		occurence_count = cstr(occurences)
+	# 	elif occurences > 5:
+	# 		occurence_count = "5" 
+
+	# 	return penalty_list_field_map[occurence_count], occurence_count
+
+	def get_penalty_levied(self, occurence, penalty_type):
+		field1 = "occurence_type"+cstr(occurence)
+		field2 = "occurence"+cstr(occurence)
+		
 		penalty_levied = frappe.db.sql("""
-			SELECT pd.{fieldname}
+			SELECT pd.{field1}, pd.{field2}
 			FROM `tabPenalty Details` pd, `tabPenalty List` pl
 			WHERE
 				pd.parent=pl.name
 			AND pl.active=1
 			AND pd.penalty_description_english="{penalty_type}"
-		""".format(fieldname=fieldname, penalty_type=penalty_type), as_dict=1)
-		return penalty_levied[0][fieldname]
+		""".format(field1=field1, field2=field2, penalty_type=penalty_type))
+		return penalty_levied[0]
 
 @frappe.whitelist()
 def get_current_penalty_location(location, penalty_occurence_time):
