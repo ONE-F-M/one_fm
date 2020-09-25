@@ -48,4 +48,12 @@ def get_data():
 			"icon": "octicon octicon-organization",
 			"type": "module"
 		},
+		{
+			"module_name": "Uniform Management",
+			"category": "Modules",
+			"label": _("Uniform Management"),
+			"color": "#2ecc71",
+			"icon": "octicon octicon-organization",
+			"type": "module"
+		},
 	]
