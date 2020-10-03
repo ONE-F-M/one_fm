@@ -2,7 +2,7 @@ import frappe
 
 
 def on_project_save(doc, handler=""):
-    if doc.project_type == 'External':
+    if doc.project_type == 'External' and doc.customer:
         price_list = frappe.db.get_value('Price List', {'project': doc.name}, ['name'])
         if price_list:
             return
