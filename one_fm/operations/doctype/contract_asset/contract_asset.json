@@ -6,8 +6,10 @@
  "field_order": [
   "item_code",
   "count",
-  "uom",
-  "unit_rate"
+  "unit_rate",
+  "column_break_4",
+  "item_name",
+  "uom"
  ],
  "fields": [
   {
@@ -37,10 +39,20 @@
    "in_list_view": 1,
    "label": "Unit Rate",
    "options": "currency"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
- "modified": "2020-08-20 21:15:23.036294",
+ "modified": "2020-10-02 12:08:16.905505",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Asset",

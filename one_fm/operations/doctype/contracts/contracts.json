@@ -57,7 +57,9 @@
   "section_break_4",
   "addendums",
   "section_break_55",
-  "password_management"
+  "password_management",
+  "column_break_54",
+  "price_list"
  ],
  "fields": [
   {
@@ -351,10 +353,21 @@
    "fieldname": "frequency",
    "fieldtype": "Select",
    "label": "Frequency",
-   "options": "\nPO based\nMonthly"
+   "options": "\nDelivery Note Based\nMonthly"
+  },
+  {
+   "fieldname": "column_break_54",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "price_list",
+   "fieldtype": "Link",
+   "label": "Price List",
+   "options": "Price List",
+   "read_only": 1
   }
  ],
- "modified": "2020-09-09 22:36:12.943142",
+ "modified": "2020-09-25 09:21:48.592206",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
