@@ -15,6 +15,23 @@ frappe.ui.form.on('Project', {
             create_dashboard_section("Timesheet", data_onefm);
             dashboard_link_doctype(frm, "Contracts", data_onefm);
         }
+        frm.set_query("income_account", function() {
+            return {
+                filters:{
+                    root_type:'Income',
+                    is_group: 0
+                }
+            };
+        });
+        frm.set_query("cost_center", function() {
+            return {
+                filters:{
+                    is_group: 0
+                }
+            };
+        });
+        frm.refresh_field("income_account");
+        frm.refresh_field("cost_center");
     }
 });
 

@@ -51,7 +51,8 @@ doctype_js = {
 	"Sales Invoice": "public/js/doctype_js/sales_invoice.js",
 	"Delivery Note": "public/js/doctype_js/delivery_note.js",
 	"Job Applicant": "public/js/doctype_js/job_applicant.js",
-	"Job Offer": "public/js/doctype_js/job_offer.js"
+	"Job Offer": "public/js/doctype_js/job_offer.js",
+	"Price List": "public/js/doctype_js/price_list.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -153,9 +154,10 @@ doc_events = {
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
-	# "Project": {
+	"Project": {
+		"on_update": "one_fm.one_fm.project_custom.on_project_save"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
-	# }
+	}
 }
 
 standard_portal_menu_items = [

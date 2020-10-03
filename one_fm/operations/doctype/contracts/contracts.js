@@ -3,7 +3,28 @@
 
 var values = '';
 
+function open_form(frm, doctype, child_doctype, parentfield) {
+	frappe.model.with_doctype(doctype, () => {
+        let new_doc = frappe.model.get_new_doc(doctype);
+        new_doc.type  = 'Contracts';
+		new_doc.customer = frm.doc.client;
+		new_doc.project = frm.doc.project;
+
+		frappe.ui.form.make_quick_entry(doctype, null, null, new_doc);
+	});
+
+}
 frappe.ui.form.on('Contracts', {
+	setup(frm) {
+		frm.make_methods = {
+			'Sales Invoice': () => {
+				open_form(frm, "Sales Invoice", null, null);
+			},
+			'Delivery Note': () => {
+				open_form(frm, "Delivery Note", null, null);
+			},
+		};
+	},
 	use_portal_for_invoice:function(frm){
 		if(frm.doc.use_portal_for_invoice){
 			if(!frm.doc.password_management){
@@ -46,64 +67,84 @@ frappe.ui.form.on('Contracts', {
 		}
 	},
 	validate: function(frm){
-		
-	},
-	client: function(frm) {
-		let client = frm.doc.client;
-		if(client != undefined){
-			frm.set_query("project", function() {
-				return {
-					"filters": {
-						"customer": client,
-						"project_type": 'External'
-					}
-				};
+		if(!frm.doc.client || !frm.doc.project || !frm.doc.start_date){
+			frappe.msgprint({
+				title: __('Value Missing Error'),
+				indicator: 'red',
+				message: __('You have to fill Client, Project and Contract Start Date Before Saving a Contract.')
 			});
-			frm.set_query("customer_address", function() {
-				return {
-					"filters": {
-						"link_doctype": 'Customer',
-						"link_name": client
-					}
-				};
-			});
-			frm.refresh_field("customer_address");
-			frm.set_query("bank_account", function() {
-				return {
-					"filters": {
-						"party_type": 'Customer',
-						"party": client
-					}
-				};
-			});
-			frm.refresh_field("bank_account");
+			validated = false;
 		}
-		else{
-			frm.set_query("project", function() {
-				return {
-					"filters": {
-						"project_type": 'External'
-					}
-				};
-			});
+		if(frm.doc.end_date){
+			if(frm.doc.end_date < frm.doc.start_date){
+				frappe.msgprint({
+					title: __('Validation Error'),
+					indicator: 'red',
+					message: __('Contract End Date Cannot be before Contracts Start Date.')
+				});
+				validated = false;
+			}
 		}
-		frm.refresh_field("project");
 	},
 	refresh:function(frm){
-		if(!frm.doc.client){
-			frm.set_query("project", function() {
-				return {
-					filters:{
-						project_type: 'External'					
-					}
-				};
-			});
-			frm.refresh_field("project");
-		}
+		frm.set_query("bank_account", function() {
+			return {
+				"filters": {
+					"party_type": 'Customer',
+					"party": frm.doc.client
+				}
+			};
+		});
+		frm.refresh_field("bank_account");			
+		frm.set_query("project", function() {
+			return {
+				filters:{
+					project_type: 'External',
+					customer: frm.doc.client
+										
+				}
+			};
+		});
+		frm.refresh_field("project");
+		frm.set_query("customer_address", function() {
+			return {
+				"filters": {
+					"link_doctype": 'Customer',
+					"link_name": frm.doc.client
+				}
+			};
+		});
+		frm.refresh_field("customer_address");
 	},
 	customer_address:function(frm){
 		if(frm.doc.customer_address){
 			erpnext.utils.get_address_display(frm, 'customer_address', 'address_display')
+		}
+	},
+	project: function(frm){
+		if(frm.doc.project){
+			frappe.call({
+				method: 'frappe.client.get_value',
+				args:{
+					'doctype':'Price List',
+					'filters':{
+						'project': frm.doc.project,
+						'enabled': 1,
+						'selling': 1
+					},
+					'fieldname':[
+						'name'
+					]
+				},
+				callback:function(s){
+					if (!s.exc) {
+						if(s.message){
+							frm.set_value("price_list",s.message.name);
+							frm.refresh_field("price_list");
+						}
+					}
+				}
+			});
 		}
 	},
 	bank_account:function(frm){
@@ -178,6 +219,65 @@ function set_contact(doc){
 	console.log(contact_details);
 	$('div[data-fieldname="contact_html"]').empty().append(`<div class="address-box">${contact_details}</div>`);
 }
+
+frappe.ui.form.on('Contract Item', {
+	item_code: function(frm, cdt, cdn) {
+		var d = locals[cdt][cdn];
+		if(d.item_code){
+			frappe.call({
+				method: 'frappe.client.get_value',
+				args:{
+					'doctype':'Item',
+					'filters':{
+						'item_code': d.item_code,
+						'disabled': 0,
+					},
+					'fieldname':[
+						'item_name'
+					]
+				},
+				callback:function(s){
+					if (!s.exc) {
+						if(s.message){
+							frappe.model.set_value(d.doctype, d.name, "item_name", s.message.item_name);
+							frm.refresh_field("items");
+						}
+					}
+				}
+			});
+		}
+
+	}
+})
+frappe.ui.form.on('Contract Asset', {
+	item_code: function(frm, cdt, cdn) {
+		var d = locals[cdt][cdn];
+		if(d.item_code){
+			frappe.call({
+				method: 'frappe.client.get_value',
+				args:{
+					'doctype':'Item',
+					'filters':{
+						'item_code': d.item_code,
+						'disabled': 0,
+					},
+					'fieldname':[
+						'item_name'
+					]
+				},
+				callback:function(s){
+					if (!s.exc) {
+						if(s.message){
+							frappe.model.set_value(d.doctype, d.name, "item_name", s.message.item_name);
+							frm.refresh_field("assets");
+						}
+					}
+				}
+			});
+		}
+
+	}
+})
 
 frappe.ui.form.on('Contract Addendum', {
 	end_date: function(frm, cdt, cdn) {
