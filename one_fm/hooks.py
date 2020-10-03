@@ -153,9 +153,10 @@ doc_events = {
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
-	# "Project": {
+	"Project": {
+		"on_update": "one_fm.one_fm.project_custom.on_project_save"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
-	# }
+	}
 }
 
 standard_portal_menu_items = [
