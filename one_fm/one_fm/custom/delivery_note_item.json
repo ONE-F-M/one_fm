@@ -1,0 +1,31 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Delivery Note Item",
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2020-09-25 13:25:45.276156",
+   "default_value": null,
+   "doc_type": "Delivery Note Item",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "barcode",
+   "idx": 0,
+   "modified": "2020-05-06 10:57:12.264990",
+   "modified_by": "Administrator",
+   "name": "Delivery Note Item-barcode-hidden",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "hidden",
+   "property_type": "Check",
+   "value": "1"
+  }
+ ],
+ "sync_on_migrate": 1
+}
