@@ -13,5 +13,16 @@ def get_data():
 					"onboard": 1
 				}
 			]
+		},
+		{
+			"label": _("Master"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Designation Uniform Profile",
+					"label": _("Designation Uniform Profile"),
+					"onboard": 1
+				}
+			]
 		}
 	]
