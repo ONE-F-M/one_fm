@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "creation": "2020-10-04 18:01:00.342442",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "civil_id",
+  "moi_number",
+  "column_break_3",
+  "insurance_type",
+  "insurance_status",
+  "details_section",
+  "employee_name",
+  "gender",
+  "nationality",
+  "passport_expiry_date",
+  "column_break_11",
+  "no_of_years",
+  "start_date",
+  "end_date",
+  "amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "CIVIL ID"
+  },
+  {
+   "fieldname": "moi_number",
+   "fieldtype": "Data",
+   "label": "MOI Number"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "insurance_type",
+   "fieldtype": "Data",
+   "label": "Insurance Type"
+  },
+  {
+   "fieldname": "insurance_status",
+   "fieldtype": "Data",
+   "label": "Insurance Status"
+  },
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
+  },
+  {
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Date",
+   "label": "Passport Expiry Date"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "no_of_years",
+   "fieldtype": "Int",
+   "label": "No of Years"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "End Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-10-04 18:01:00.342442",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Medical Insurance Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

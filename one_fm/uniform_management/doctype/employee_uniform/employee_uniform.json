@@ -81,6 +81,7 @@
    "read_only": 1
   },
   {
+   "default": "Today",
    "depends_on": "eval:doc.type=='Issue'",
    "fieldname": "issued_on",
    "fieldtype": "Date",
@@ -132,7 +133,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-09-25 06:23:49.226292",
+ "modified": "2020-09-28 07:39:21.437828",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",

@@ -1,0 +1,209 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-10-04 17:18:51.846231",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "category",
+  "civil_id",
+  "moi_number",
+  "column_break_3",
+  "insurance_type",
+  "insurance_status",
+  "details_section",
+  "employee_name",
+  "gender",
+  "nationality",
+  "passport_expiry_date",
+  "column_break_11",
+  "no_of_years",
+  "start_date",
+  "end_date",
+  "amount",
+  "amended_from",
+  "items_section",
+  "items",
+  "grd_section",
+  "grd_operator",
+  "completed",
+  "column_break_23",
+  "grd_supervisor",
+  "payment_done"
+ ],
+ "fields": [
+  {
+   "depends_on": "eval:doc.category == 'Individual'",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "depends_on": "eval:doc.category == 'Individual'",
+   "fieldname": "moi_number",
+   "fieldtype": "Data",
+   "label": "MOI Number"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.category == 'Individual'",
+   "fieldname": "insurance_type",
+   "fieldtype": "Data",
+   "label": "Insurance Type"
+  },
+  {
+   "depends_on": "eval:doc.category == 'Individual'",
+   "fieldname": "insurance_status",
+   "fieldtype": "Data",
+   "label": "Insurance Status"
+  },
+  {
+   "depends_on": "eval:doc.category == 'Individual'",
+   "fieldname": "details_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
+  },
+  {
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Date",
+   "label": "Passport Expiry Date"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "no_of_years",
+   "fieldtype": "Int",
+   "label": "No of Years"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Medical Insurance",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "MI-.YYYY.-"
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name"
+  },
+  {
+   "depends_on": "eval:doc.category == 'Group'",
+   "fieldname": "items_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "Medical Insurance Item"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Category",
+   "options": "\nIndividual\nGroup",
+   "reqd": 1
+  },
+  {
+   "fieldname": "grd_section",
+   "fieldtype": "Section Break",
+   "label": "GRD"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "label": "GRD Operator",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "label": "GRD Supervisor",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "completed",
+   "fieldtype": "Select",
+   "label": "Completed",
+   "options": "\nYes\nNo"
+  },
+  {
+   "default": "0",
+   "fieldname": "payment_done",
+   "fieldtype": "Check",
+   "label": "Payment Done"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-10-04 18:54:28.826191",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Medical Insurance",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
