@@ -67,5 +67,18 @@ def get_data():
 					"name": "Governorate Area"
 				}
 			]
-		}
+		},
+		{
+			"label": _("Data"),
+			"icon": "fa fa-th",
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Data Export",
+					"label": _("Export Data"),
+					"icon": "octicon octicon-cloud-upload",
+					"description": _("Export Data in CSV / Excel format.")
+				}
+			]
+		},
 	]
