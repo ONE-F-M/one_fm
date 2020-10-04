@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One FM</title>
+    <link href="assets/one_fm/assets/css/applicant_login.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css"
+        integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog=="
+        crossorigin="anonymous" />
+</head>
+
+<body>
+    <main>
+        <article class="main-container">
+            <div class="row login-wrapper">
+
+                <!-- Contenido del lado izquierdo -->
+                <section class="col form-wrapper">
+
+                    <!-- Header con links y botón de back -->
+
+                    <!-- Contenedor del formulario y sus mensajes -->
+                    <div class="form-container">
+
+                        <!-- Mensaje de login -->
+                        <div class="form-messages">
+                            <h2>Upload Civil ID</h2>
+                            <p>Upload Your Civil ID, We'll Exctract Data from your docs and make applying easy! </p>
+                        </div>
+
+                        <!-- Formulario -->
+                        <div id="loader" style="display: none;">
+                            <div class="wrapper">
+                                <div class="l"></div>
+                                <div class="l"></div>
+                            </div>
+                            <p>Extracting Text from your civil id, We'll Redirect You as soon as it is done</p>
+                        </div>
+                        <div class="file-upload">
+                            <button class="file-upload-btn" type="button"
+                                onclick="$('.file-upload-input').trigger( 'click' )">Add Image</button>
+
+                            <div class="image-upload-wrap">
+                                <input class="file-upload-input" type='file' onchange="readURL(this);"
+                                    accept="image/*" />
+                                <div class="drag-text">
+                                    <h3>Drag and drop your Civil ID</h3>
+                                </div>
+                            </div>
+                            <div class="file-upload-content">
+                                <img class="file-upload-image" src="#" alt="your image" />
+                                <div class="image-title-wrap">
+                                    <button type="button" onclick="removeUpload()" class="remove-image">Remove <span
+                                            class="image-title">Uploaded Image</span></button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- <a onclick="loader()">
+                            <button class="btn">Extract Text</button>
+                        </a> -->
+                        <!-- <a>
+                            <button class="btn">Add Other Image</button>
+                        </a> -->
+                        <!-- Separador entre botón y opciones -->
+                        <hr class="separator">
+
+                        <!-- Otras opciones de inicio login -->
+                        <a href="./index.html" class="skip">Skip, I'll Fill Manually</a>
+                    </div>
+
+                </section>
+
+                <!-- Contenido del lado derecho -->
+                <section class="col image-wrapper">
+
+                    <div class="image-message">
+
+                        <div class="image-hr-container">
+                            <hr class="image-hr">
+                        </div>
+
+                        <div class="image-text">
+                            <h2>Start your journey now</h2>
+                            <p>Start your amazing JOB with us! Login into your account now and huwala.</p>
+                        </div>
+
+                    </div>
+
+                </section>
+            </div>
+        </article>
+    </main>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script>
+    <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
+</body>
+
+</html>

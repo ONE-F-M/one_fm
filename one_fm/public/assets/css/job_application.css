@@ -1,0 +1,225 @@
+html {
+	scroll-behavior: smooth;
+	scroll-snap-type: y proximity;
+}
+
+body {
+	position: relative;
+}
+
+label {
+	font-size: 0.785em;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: #bebfca;
+}
+
+.main {
+	display: flex;
+	position: relative;
+}
+
+.questions-block-list {
+	width: 100%;
+	position: relative;
+}
+.questions-block-list .submit-btn {
+	position: absolute;
+	bottom: 30px;
+}
+
+.error {
+	border: 1px solid #dc3545;
+}
+
+.questions-block {
+	min-height: 100vh;
+	display: flex;
+	justify-content: center;
+	flex-direction: column;
+	scroll-snap-align: start;
+	padding: 3rem 0;
+}
+
+.questions-block .question-block-form {
+	width: 100%;
+	background: #f7f8fd;
+	padding: 2rem;
+	border-radius: 5px;
+	border: 1px solid #e8e8e8;
+}
+
+.question-block-head {
+	margin-bottom: 2em;
+	display: flex;
+	align-items: center;
+}
+
+.question-block-info {
+	font-size: 1.8rem;
+	font-weight: 700;
+	/* color: #5e64ff; */
+}
+.question-block-info span {
+	font-size: 0.875rem;
+	font-weight: 400;
+	display: block;
+	color: #bebfca;
+}
+
+.question-block-icon {
+	width: 50px;
+	min-width: 50px;
+	height: 50px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #5e64ff12;
+	border-radius: 50%;
+	margin-right: 0.5em;
+	color: #fff;
+	font-size: 1.5em;
+	color: #5e64ff;
+	border: 1px solid #5e64ff1c;
+}
+
+.sidebar-wrap {
+	position: sticky;
+	top: 0;
+	height: 100vh;
+	display: flex;
+	align-items: center;
+	width: 320px;
+	max-width: 320px;
+	min-width: 320px;
+	padding-right: 4rem;
+	font-size: 0.875em;
+	overflow: auto;
+}
+
+.sidebar {
+	counter-reset: sidebar-item;
+	width: 100%;
+	max-height: 100%;
+}
+
+.sidebar-item {
+	display: flex;
+	align-items: center;
+	counter-increment: sidebar-item;
+	width: 100%;
+	margin: 0.5em 0 !important;
+	position: relative;
+	padding: 1em 1em;
+	border-radius: 5px;
+	text-decoration: none;
+	background-color: transparent;
+	border: none !important;
+}
+.sidebar-item:before {
+	content: counter(sidebar-item);
+	width: 25px;
+	margin-right: 1em;
+	font-size: 0.785em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #f7f8fd;
+	height: 25px;
+	border-radius: 50%;
+	border: 1px solid #e8e8e8;
+}
+.sidebar-item:after {
+	content: "";
+	position: absolute;
+	top: -2.5em;
+	bottom: 100%;
+	margin-bottom: -1em;
+	width: 1px;
+	background: rgba(0, 0, 0, 0.07);
+	left: 27px;
+}
+.sidebar-item:first-child:after {
+	display: none;
+}
+.sidebar-item.active {
+	background: #5e64ff;
+	color: #fff;
+	font-weight: 600;
+}
+.sidebar-item.active:before {
+	font-size: 1em;
+	background: #ffffff;
+	color: #5e64ff;
+}
+.sidebar-item.success {
+	background: rgba(69, 198, 16, 0.05);
+	color: #45c610;
+	border: 1px solid rgba(69, 198, 16, 0.3) !important;
+}
+.sidebar-item.success:before {
+	content: "";
+	background: #45c610;
+	color: #fff;
+	border: none;
+	font-family: unicons-line;
+	line-height: 25px;
+	font-size: 1rem;
+	margin-right: 0.785em;
+	padding-top: 3px;
+}
+.sidebar-item.error {
+	background: rgba(233, 22, 61, 0.05);
+	color: #e9163d;
+	border: 1px solid rgba(233, 22, 61, 0.3) !important;
+}
+.sidebar-item.error:before {
+	content: "";
+	background: #e9163d;
+	color: #fff;
+	border: none;
+	font-family: unicons-line;
+	line-height: 25px;
+	font-size: 1rem;
+	margin-right: 0.785em;
+	padding-top: 3px;
+}
+.rating {
+	unicode-bidi: bidi-override;
+	direction: rtl;
+  }
+  .rating > span {
+	display: inline-block;
+	position: relative;
+	width: 1.1em;
+  }
+  .rating > span:hover:before,
+  .rating > span:hover ~ span:before {
+	 content: "\2605";
+	 position: absolute;
+  }
+  .rating-active {
+	content: "\2605" !important;
+	position: absolute !important;
+  }
+  .checked {
+	color: orange;
+  }
+.iti__flag {background-image: url("path/to/flags.png");}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .iti__flag {background-image: url("path/to/flags@2x.png");}
+}
+@media (max-width: 992px) {
+	html {
+		scroll-snap-type: none;
+	}
+
+	.questions-block {
+		min-height: 1px;
+	}
+
+	.sidebar-wrap {
+		display: none;
+	}
+}
