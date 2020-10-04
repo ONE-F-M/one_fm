@@ -45,4 +45,23 @@ $(".image-upload-wrap").bind("dragleave", function () {
     $(".image-upload-wrap").removeClass("image-dropping");
 });
 
+const getLinkedInData = async () => {
+    window.localStorage.setItem("linkedIn", false);
+    const code = window.location.search.slice(6);
+    console.log("code", code);
+    axios
+        .post("https://linked-be.vercel.app/api/accessCode", { code })
+        .then((result) => {
+            console.log(result);
+            localStorage.setItem("linkedInData", JSON.stringify(result));
+        })
+        .catch((err) => {
+            console.log(err);
+            // Do somthing
+        });
+};
+
+if (window.localStorage.getItem("linkedIn")) {
+    getLinkedInData();
+}
 

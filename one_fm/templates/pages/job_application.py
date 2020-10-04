@@ -8,13 +8,13 @@ def get_context(context):
     context.show_search = True
 
 
-@frappe.whitelist(allow_guest=True)
-def get_dummy():
-    doc = frappe.get_doc('ERF')
+# @frappe.whitelist(allow_guest=True)
+# def get_dummy():
+#     doc = frappe.get_doc('ERF')
 
-    doc.title = 'Test'
-    doc.save()
-    return doc
+#     doc.title = 'Test'
+#     doc.save()
+#     return doc
 # @frappe.whitelist(allow_guest=True)
 # def get_jobs_info():
 #     job_name = []
