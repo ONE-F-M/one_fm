@@ -1,13 +1,10 @@
 {
  "actions": [],
- "autoname": "naming_series:",
- "creation": "2020-10-04 17:18:51.846231",
+ "creation": "2020-10-04 18:01:00.342442",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "naming_series",
-  "category",
   "civil_id",
   "moi_number",
   "column_break_3",
@@ -22,20 +19,16 @@
   "no_of_years",
   "start_date",
   "end_date",
-  "amount",
-  "amended_from",
-  "items_section",
-  "items"
+  "amount"
  ],
  "fields": [
   {
-   "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "civil_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "CIVIL ID"
   },
   {
-   "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "moi_number",
    "fieldtype": "Data",
    "label": "MOI Number"
@@ -45,21 +38,24 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "insurance_type",
    "fieldtype": "Data",
    "label": "Insurance Type"
   },
   {
-   "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "insurance_status",
    "fieldtype": "Data",
    "label": "Insurance Status"
   },
   {
-   "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "details_section",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name"
   },
   {
    "fieldname": "gender",
@@ -89,11 +85,13 @@
   {
    "fieldname": "start_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Start Date"
   },
   {
    "fieldname": "end_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "End Date",
    "read_only": 1
   },
@@ -101,68 +99,16 @@
    "fieldname": "amount",
    "fieldtype": "Currency",
    "label": "Amount"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Medical Insurance",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Series",
-   "options": "MI-.YYYY.-"
-  },
-  {
-   "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "label": "Employee Name"
-  },
-  {
-   "depends_on": "eval:doc.category == 'Group'",
-   "fieldname": "items_section",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "items",
-   "fieldtype": "Table",
-   "options": "Medical Insurance Item"
-  },
-  {
-   "fieldname": "category",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Category",
-   "options": "\nIndividual\nGroup",
-   "reqd": 1
   }
  ],
- "is_submittable": 1,
+ "istable": 1,
  "links": [],
- "modified": "2020-10-04 18:07:09.056822",
+ "modified": "2020-10-04 18:01:00.342442",
  "modified_by": "Administrator",
  "module": "GRD",
- "name": "Medical Insurance",
+ "name": "Medical Insurance Item",
  "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
+ "permissions": [],
  "sort_field": "modified",
  "sort_order": "DESC"
 }
