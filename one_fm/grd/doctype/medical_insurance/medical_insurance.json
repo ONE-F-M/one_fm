@@ -25,7 +25,13 @@
   "amount",
   "amended_from",
   "items_section",
-  "items"
+  "items",
+  "grd_section",
+  "grd_operator",
+  "completed",
+  "column_break_23",
+  "grd_supervisor",
+  "payment_done"
  ],
  "fields": [
   {
@@ -140,11 +146,46 @@
    "label": "Category",
    "options": "\nIndividual\nGroup",
    "reqd": 1
+  },
+  {
+   "fieldname": "grd_section",
+   "fieldtype": "Section Break",
+   "label": "GRD"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "label": "GRD Operator",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "label": "GRD Supervisor",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "completed",
+   "fieldtype": "Select",
+   "label": "Completed",
+   "options": "\nYes\nNo"
+  },
+  {
+   "default": "0",
+   "fieldname": "payment_done",
+   "fieldtype": "Check",
+   "label": "Payment Done"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-10-04 18:07:09.056822",
+ "modified": "2020-10-04 18:54:28.826191",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
