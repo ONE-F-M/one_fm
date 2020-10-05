@@ -197,6 +197,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "erf_finalized",
    "fieldtype": "Date",
    "label": "ERF Finalized",
@@ -778,7 +779,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-09-22 09:42:01.451666",
+ "modified": "2020-10-05 08:48:13.189972",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

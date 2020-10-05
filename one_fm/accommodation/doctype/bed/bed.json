@@ -21,6 +21,7 @@
   "accommodation_space_type",
   "type",
   "accommodation_unit",
+  "unit_owner_reference_number",
   "disabled",
   "qr_code_section",
   "bed_qr",
@@ -318,10 +319,17 @@
    "label": "Floor",
    "options": "Floor",
    "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation_unit.owner_reference_number",
+   "fieldname": "unit_owner_reference_number",
+   "fieldtype": "Data",
+   "label": "Unit Owner Reference Number",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-09-21 21:57:52.071498",
+ "modified": "2020-10-05 08:49:37.007187",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",

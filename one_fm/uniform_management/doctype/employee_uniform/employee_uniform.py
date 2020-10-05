@@ -64,6 +64,8 @@ class EmployeeUniform(Document):
 				unifrom_issue.item_name = uniform.item_name
 				unifrom_issue.quantity = uniform.quantity
 				unifrom_issue.qty_uom = uniform.uom
+				if self.type == "Issue" and self.issued_on:
+					unifrom_issue.expire_on = frappe.utils.add_months(self.issued_on, 12)
 
 def get_project_uniform_details(designation_id, project_id=''):
 	if frappe.db.get_value('Designation', designation_id, 'one_fm_is_uniform_needed_for_this_job'):
