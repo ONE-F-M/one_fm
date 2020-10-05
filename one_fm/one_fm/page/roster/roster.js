@@ -997,10 +997,10 @@ function get_roster_data(page){
 				<td>
 					<div class="text-center" data-selectid="${post_type+"|"+date}">${count}</div>
 				</td>`;
-				$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name="${post_type}"]`).append(pt_count);
+				$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name='${post_type}']`).append(pt_count);
 				i++;
 			}
-			$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name="${post_types_data[post_type_name][i-1]['post_type']}"]`).append(`<td></td>`);
+			$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name='${post_types_data[post_type_name][i-1]["post_type"]}']`).append(`<td></td>`);
 		}
 		let emp_row_wrapper = `
 		<tr class="collapse tableshowclass show">
@@ -1285,9 +1285,9 @@ function get_post_data(page){
 					</td>`;
 				}
 				i++;
-				$('.postMonth').find(`#calenderviewtable tbody tr[data-name="${post_name}"]`).append(schedule);
+				$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${post_name}']`).append(schedule);
 			}		
-			$('.postMonth').find(`#calenderviewtable tbody tr[data-name="${post_name}"]`).append(`<td></td>`);
+			$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${post_name}']`).append(`<td></td>`);
 		}			
 		bind_events(page);
 	});
@@ -1368,7 +1368,7 @@ function get_post_week_data(page){
 }
 
 function setup_filters(page){
-	frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
+	frappe.db.get_value("Employee", {"user_id": "k.sharma@armor-services.com"}, ["name"])
 	.then(res => {
 		let {name} = res.message;
 		page.employee_id = name;
