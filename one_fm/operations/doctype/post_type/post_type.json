@@ -5,8 +5,12 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "post_name",
   "post_abbrv",
+  "column_break_2",
+  "sale_item",
+  "column_break_4",
+  "post_name",
+  "section_break_6",
   "skills",
   "designations"
  ],
@@ -33,9 +37,27 @@
    "fieldname": "post_abbrv",
    "fieldtype": "Data",
    "label": "Post Abbreviation"
+  },
+  {
+   "fieldname": "sale_item",
+   "fieldtype": "Link",
+   "label": "Sale Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
   }
  ],
- "modified": "2020-09-01 23:06:49.582513",
+ "modified": "2020-10-01 01:35:27.183960",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Type",

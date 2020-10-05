@@ -16,8 +16,6 @@
   "post_location",
   "column_break_8",
   "gender",
-  "column_break_10",
-  "sale_item",
   "section_break_12",
   "post_description",
   "section_break_14",
@@ -87,16 +85,6 @@
    "options": "Both\nMale\nFemale"
   },
   {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "sale_item",
-   "fieldtype": "Link",
-   "label": "Sale Item",
-   "options": "Item"
-  },
-  {
    "fieldname": "section_break_12",
    "fieldtype": "Section Break"
   },
@@ -130,7 +118,7 @@
    "label": "Post Handover Required"
   }
  ],
- "modified": "2020-09-19 05:22:19.142127",
+ "modified": "2020-10-01 01:22:03.444409",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",
