@@ -37,8 +37,8 @@ class ERF(Document):
 		self.set_salary_details()
 		self.calculate_salary_per_person()
 		self.calculate_total_cost_in_salary()
-		self.calculate_benefit_cost_to_company()
-		self.calculate_total_cost_to_company()
+		# self.calculate_benefit_cost_to_company()
+		# self.calculate_total_cost_to_company()
 		self.validate_type_of_travel()
 
 	def draft_erf_to_hrm_for_submit(self):
