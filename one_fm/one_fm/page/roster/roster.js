@@ -1,5 +1,4 @@
 frappe.pages['roster'].on_page_load = function(wrapper) {
-	// ////console.log("[WRAPPER]", wrapper);
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
 		title: 'Roster',
@@ -8,9 +7,7 @@ frappe.pages['roster'].on_page_load = function(wrapper) {
 	
 	$('.content.page-container').empty().append(frappe.render_template('roster'));
 
-	////console.log(page, cur_page);
 	$('.content.page-container').find('.redirect_route').on('click', function(e){
-		// //console.log(e, this);
 		let template = $(this).attr('data-route');
 		$('.content.page-container').empty().append(frappe.render_template(template));
 		load_js(page);
@@ -20,17 +17,15 @@ frappe.pages['roster'].on_page_load = function(wrapper) {
 }
 
 function load_js(page){
+    $(this).scrollTop(0);
 	
     window.isMonth = 1;
     window.classgrtw = [];
     window.classgrt = [];
 
-	setup_filters(page);
 	setup_staff_filters(page);
 	setup_topbar_events(page);
-    //postcalendertype
-    $("#selRetrive").hide();
-    $(this).scrollTop(0);
+    // $("#selRetrive").hide();
 
 	$(`a[href="#"]`).click(function (e) {
 		//console.log(!$(this).hasClass('navbar-brand'), this);
@@ -46,11 +41,11 @@ function load_js(page){
 	window.today = new Date();
     today.setHours(0, 0, 0, 0);
 	if($('.layoutSidenav_content').attr('data-view') == 'roster'){ 
+		setup_filters(page);
 		page.datepicker = $("#datepicker").flatpickr({inline: true});
 		page.datepicker.config.onChange.push(function (selectedDates, dateStr, instance) {
 			$("#calenderviewtable th").removeClass("hightlightedtable");
 			let evt = new Date(dateStr);
-			//console.log(evt);
 			window.calendarSettings1 = {
 				date: moment(new Date(evt.getFullYear(), evt.getMonth(), evt.getDate())),//.set("date", 4),
 				today: moment()
@@ -59,7 +54,6 @@ function load_js(page){
 				date: moment(new Date(evt.getFullYear(), evt.getMonth(), evt.getDate())).startOf("isoweek"),
 				today: moment()
 			}
-			// displayCalendar(calendarSettingsmain, page);
 			let element = get_wrapper_element();
 			if(element == '.rosterMonth' || element == '.postMonth'){
 				displayCalendar(calendarSettings1, page);
@@ -80,9 +74,6 @@ function load_js(page){
 				$(element).find('.rosterViewTH').children().removeClass("hightlightedtable")
 				$(element).find('.rosterViewTH').find("#data-day_" + evt.getDate()).addClass("hightlightedtable");
 			}
-			// $(this1).parent().children().removeClass("hightlightedtable")
-			// $(this1).addClass("hightlightedtable");
-
 		})
 		$('.flatpickr-next-month').on('click', function(){
 			incrementMonth(page);
@@ -90,7 +81,6 @@ function load_js(page){
 		$('.flatpickr-prev-month').on('click', function(){
 			decrementMonth(page);
 		})
-		// partialviewgetMonthviewdata();
 		$(".rosterviewclick").click(function () {
 			// //console.log(this);
 			$('.rosterMonth').removeClass("d-none");
@@ -254,12 +244,19 @@ function load_js(page){
 						fieldtype: 'Section Break',
 						depends_on: "eval:this.get_value('post_status') == 'Post Off'",
 					},
-					{
-						label: 'Repeat',
-						fieldname: 'repeat',
-						fieldtype: 'Select',
-						options: '\nDoes not repeat\nDaily\nWeekly\nCustom recurrence',
-					},
+					{ label: 'Repeat',fieldname: 'repeat', fieldtype: 'Select', options: '\nDoes not repeat\nDaily\nWeekly\nMonthly\nYearly'},
+					{'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("repeat")=="Weekly"'},
+					{'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check'},
+					{'label': 'Wednesday', 'fieldname': 'wednesday', 'fieldtype': 'Check'},
+					{'label': 'Saturday', 'fieldname': 'saturday', 'fieldtype': 'Check'},
+					{'fieldtype': 'Column Break', 'fieldname': 'cb1'},
+					{'label': 'Monday', 'fieldname': 'monday', 'fieldtype': 'Check'},
+					{'label': 'Thursday', 'fieldname': 'thursday', 'fieldtype': 'Check'},
+					{'fieldtype': 'Column Break', 'fieldname': 'cb2'},
+					{'label': 'Tuesday', 'fieldname': 'tuesday', 'fieldtype': 'Check'},
+					{'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check'},
+					{'fieldtype': 'Section Break', 'fieldname': 'sb2'},
+					{'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'default': date, 'depends_on': 'eval:this.get_value("repeat")!= "Does not repeat"'},
 					{
 						fieldname: 'sb2',
 						fieldtype: 'Section Break',
@@ -343,15 +340,13 @@ function load_js(page){
 			
 			d.show();
 		});
+		
+		
 		//check schedule staff on load
 		$("#chkassgined").prop("checked", true);
 		$("#chkassgined").trigger("change");
 
-
-
-		$(".select2plg").select2({});
-		// //console.log(page);
-		// get_roster_data(page);
+		//Not being used right now
 		// Add employee modal
 		$("#addemployeeselect").select2({
 			placeholder: "Search Employee",
@@ -369,12 +364,8 @@ function load_js(page){
 			today: moment()
 		}
 		
-
 		//display title of calender ex: Month of Jul 1 - 31, 2020
 		GetHeaders(0);
-
-
-		
 		displayCalendar(calendarSettings1, page);
 		 
 		page.rosterMonth = get_roster_data;
@@ -385,36 +376,6 @@ function load_js(page){
 
 	}	
 
-    // $(".modal").on("hidden.bs.modal", function () {
-    //     $("#dayoffmodal").trigger("reset");
-    //     $("#dayoffmodal").validate().resetForm();
-    //     $("#leaveabsentmodal").trigger("reset");
-    //     $("#leaveabsentmodal").validate().resetForm();
-    //     $("#assignchangemodal").trigger("reset");
-    //     $("#assignchangemodal").validate().resetForm();
-    //     $("#unassignchangemodal").trigger("reset");
-    //     $("#unassignchangemodal").validate().resetForm();
-    //     $("#addpostformmodal").trigger("reset");
-    //     $("#addpostformmodal").validate().resetForm();
-    //     $(".select2plg").val(null).trigger("change");
-    //     $("#addemployeeselect").val(null).trigger("change");
-    //     $(".postoffdiv").addClass("d-none");
-    //     $(".suspendpostdiv").addClass("d-none");
-    //     $(".cancelpostcalenderdiv").addClass("d-none");
-    // });
-    // $("#sidebarToggle").on("click", function (e) {
-    //     e.preventDefault();
-    //     $("body").toggleClass("sb-sidenav-toggled");
-    // });
-
-
-
-
-
-    // $("#dayoffformmodal").on("hidden.bs.modal", function () {
-    //     $("#chkDayOnly").show();
-    // });
-    //let classgrt = [];
 
     $(`input[name="neverselectallcheckbox"]`).on("change", function () {
 
@@ -647,11 +608,14 @@ function setup_topbar_events(page){
 
 	$('.changepost').on('click', function(){
 		schedule_change_post(page);		
-		change_post(page);		
+		// change_post(page);		
 	});
 
 	$('.assignchangemodal').on('click', function(){
 		unschedule_staff(page);
+	});
+	$('.dayoff').on('click', function(){
+		dayoff(page);
 	});
 }
 
@@ -916,19 +880,7 @@ function bind_events(page){
 			$('.Postfilterhideshow').addClass('d-none');
 		}          
 		$('.selectclass').map(function () {
-			//console.log(classgrt.indexOf($(this).attr('data-selectid')));
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-
-			// if (($(this).attr('data-selectid') != undefined) && ($(this).attr('data-selectid') != null) && ($(this).attr('data-selectid') != '')) {
-			// 	if (isMonth == 1) {
-			// 		// classgrt.push($(this).attr('data-selectid'));
-			// 		classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-			// 	}
-			// 	else {
-			// 		// classgrtw.push($(this).attr('data-selectid'));
-			// 		classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrtw.push(this.getAttribute("data-selectid")) : classgrtw.splice(classgrtw.indexOf(this.getAttribute("data-selectid")), 1);
-			// 	}                
-			// }
 		});            
 		if ($(this).parent().parent().parent().children('td').children().hasClass('redboxcolor')) {
 			$('#selRetrive').show();
@@ -968,10 +920,10 @@ function get_roster_data(page){
 	//console.log(start_date, end_date, project, site, shift, department, post_type);
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type})
 	.then(res => {
-		// //console.log(res);
 		let {post_types_data, employees_data}= res;
 		$('.rosterMonth').find('#calenderviewtable tbody').empty();
 		for(post_type_name in post_types_data){
+			console.log(post_type_name, post_types_data);
 			let pt_row = `
 			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
 				<td class="clickablerow">
@@ -992,6 +944,7 @@ function get_roster_data(page){
 			end_date = moment(end_date);	
 			let i =0;
 			for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+				console.log(post_types_data[post_type_name][i]);
 				let {date, post_type, count} = post_types_data[post_type_name][i];	
 				let pt_count = `
 				<td>
@@ -1042,6 +995,7 @@ function get_roster_data(page){
 					'Annual Leave': 'purplebox'
 				}
 				let leavemap = {
+					'Day Off': 'DO',
 					'Sick Leave': 'SL',
 					'Annual Leave': 'AL',
 					'Emergency Leave': 'EL'
@@ -1172,12 +1126,13 @@ function get_roster_week_data(page){
 					'Annual Leave': 'purplebox'
 				}
 				let leavemap = {
+					'Day Off': 'DO',
 					'Sick Leave': 'SL',
 					'Annual Leave': 'AL',
 					'Emergency Leave': 'EL'
 				}
 				let {employee, employee_name, date, post_type, post_abbrv, employee_availability, shift} = employees_data[employee_key][i];
-				// //console.log(date, moment().isBefore(moment(date)));
+				console.log(employee, employee_name, date, post_type, post_abbrv, employee_availability, shift);
 				
 				if(employee_availability && post_abbrv){
 					j++;
@@ -1187,6 +1142,7 @@ function get_roster_week_data(page){
 							data-selectid="${employee+"|"+date+"|"+post_type+"|"+shift+"|"+employee_availability}">${post_abbrv}</div>
 					</td>`;	
 				}else if(employee_availability && !post_abbrv){
+					console.log(leavemap[employee_availability]);
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
@@ -1368,7 +1324,7 @@ function get_post_week_data(page){
 }
 
 function setup_filters(page){
-	frappe.db.get_value("Employee", {"user_id": "k.sharma@armor-services.com"}, ["name"])
+	frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
 	.then(res => {
 		let {name} = res.message;
 		page.employee_id = name;
@@ -1387,13 +1343,14 @@ function get_projects(page){
 	let {employee_id} = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_projects',{employee_id})
 	.then(res => {
-		//console.log(res);
 		let parent = $('#rosteringprojectselect');
+		let project_data = [];
 		res.forEach(element => {
 			let {name} = element;
-			parent.append(new Option(name, name));
-			//console.log(parent);
+			project_data.push({'id': name, 'text': name});
 		});
+		parent.select2({data: project_data});
+
 		$(parent).on('select2:select', function (e) {
 			page.filters.project = $(this).val();
 			let element = get_wrapper_element().slice(1);
@@ -1406,12 +1363,13 @@ function get_sites(page){
 	let {employee_id, project} = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_sites',{employee_id, project})
 	.then(res => {
-		//console.log(res);
 		let parent = $('#rosteringsiteselect');
+		let site_data = [];
 		res.forEach(element => {
 			let {name} = element;
-			parent.append(new Option(name, name));
+			site_data.push({'id': name, 'text': name});
 		});
+		parent.select2({data: site_data});
 		$(parent).on('select2:select', function (e) {
 			page.filters.site = $(this).val();
 			let element = get_wrapper_element().slice(1);
@@ -1424,12 +1382,13 @@ function get_shifts(page){
 	let {employee_id, site} = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts',{employee_id, site})
 	.then(res => {
-		//console.log(res);
 		let parent = $('#rosteringshiftselect');
+		let shift_data = [];
 		res.forEach(element => {
 			let {name} = element;
-			parent.append(new Option(name, name));
+			shift_data.push({'id': name, 'text': name});
 		});
+		parent.select2({data: shift_data});
 		$(parent).on('select2:select', function (e) {
 			page.filters.shift = $(this).val();
 			let element = get_wrapper_element().slice(1);
@@ -1442,12 +1401,13 @@ function get_post_types(page){
 	let {employee_id, shift} = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_post_types', {employee_id, shift})
 	.then(res => {
-		//console.log(res);
 		let parent = $('#rosteringpostselect');
+		let post_type_data = [];
 		res.forEach(element => {
 			let {name} = element;
-			parent.append(new Option(name, name));
+			post_type_data.push({'id': name, 'text': name});
 		});
+		parent.select2({data: post_type_data});
 		$(parent).on('select2:select', function (e) {
 			page.filters.post_type = $(this).val();
 			let element = get_wrapper_element().slice(1);
@@ -1460,12 +1420,13 @@ function get_post_types(page){
 function get_departments(page){
 	frappe.xcall('one_fm.api.mobile.roster.get_departments')
 	.then(res => {
-		//console.log(res);
 		let parent = $('#rosteringdepartmentselect');
+		let department_data = [];
 		res.forEach(element => {
 			let {name} = element;
-			parent.append(new Option(name, name));
+			department_data.push({'id': name, 'text': name});
 		});
+		parent.select2({data: department_data});
 		$(parent).on('select2:select', function (e) {
 			page.filters.department = $(this).val();
 			let element = get_wrapper_element().slice(1);
@@ -1504,565 +1465,50 @@ function highlightDays(date) {
 	}
 	return [true, ""];
 }
-function dayoffmodalclick() {
-	//  if ($("#dayoffformmodal").valid()) {
 
-	if (isMonth == 1) {
 
-		if (classgrt.length > 0) {
-			$.each(classgrt, function (index, value) {
-				$(".selectclass").each(function () {
-					// Test if the div element is empty
+// function addpostdeletemodalclick() {
+// 	notificationmsg("Success!!", "Delete successfully.");
+// 	$(".modal").modal("hide");
 
-					if ($(this).attr("data-selectid") == classgrt[index]) {
-						$(this).removeClass("selectclass");
-						//tablebox greybox d-flex justify-content-center align-items-center SG
-						$(this).addClass("tablebox");
-
-						$(this).addClass("d-flex");
-						$(this).addClass("justify-content-center");
-
-						$(this).addClass("greybox");
-
-						//remove other classes
-						$(this).removeClass("borderbox");
-						$(this).removeClass("bluebox");
-						$(this).removeClass("purplebox");
-
-						$(this).html("DO");
-
-					}
-				});
-			});
-			classgrt = [];
-		}
-	}
-	else {
-		if (classgrtw.length > 0) {
-			$.each(classgrtw, function (index, value) {
-				$(".selectclass").each(function () {
-					// Test if the div element is empty
-
-					if ($(this).attr("data-selectid") == classgrtw[index]) {
-						$(this).removeClass("selectclass");
-						//tablebox greybox d-flex justify-content-center align-items-center SG
-						$(this).addClass("tablebox");
-
-						$(this).addClass("d-flex");
-						$(this).addClass("justify-content-center");
-
-						$(this).addClass("greybox");
-
-						//remove other classes
-						$(this).removeClass("borderbox");
-						$(this).removeClass("bluebox");
-						$(this).removeClass("purplebox");
-
-						$(this).html("DO");
-
-					}
-				});
-			});
-			classgrtw = [];
-		}
-	}
-	$("#dayoffmodal").modal("toggle");
-	$(`input[name="selectallcheckbox"]`).each(function () {
-		$(this).prop("checked", false);
-	});
-
-	$(".filterhideshow").addClass("d-none");
-	notificationmsg("Success!!", "");
-
-	// }
-}
-function leaveabsentmodalclick() {
-	if ($("#leaveabsentformmodal").valid()) {
-		notificationmsg("Success!!", "");
-		var leaveType = $("#txtleaveinput option:selected").text();
-		if (isMonth == 1) {
-			$.each(classgrt, function (index, value) {
-				$(".selectclass").each(function () {
-					// Test if the div element is empty
-
-					if ($(this).attr("data-selectid") == classgrt[index]) {
-						$(this).removeClass("selectclass");
-						//tablebox greybox d-flex justify-content-center align-items-center SG
-						$(this).addClass("tablebox");
-
-						$(this).addClass("d-flex");
-						$(this).addClass("justify-content-center");
-
-						$(this).addClass("purplebox");
-
-						//remove other classes
-						$(this).removeClass("borderbox");
-						$(this).removeClass("bluebox");
-						$(this).removeClass("greybox");
-
-						$(this).html(leaveType);
-
-					}
-				});
-			});
-			classgrt = [];
-		}
-		else {
-			$.each(classgrtw, function (index, value) {
-				$(".selectclass").each(function () {
-					// Test if the div element is empty
-
-					if ($(this).attr("data-selectid") == classgrt[index]) {
-						$(this).removeClass("selectclass");
-						//tablebox greybox d-flex justify-content-center align-items-center SG
-						$(this).addClass("tablebox");
-
-						$(this).addClass("d-flex");
-						$(this).addClass("justify-content-center");
-
-						$(this).addClass("purplebox");
-
-						//remove other classes
-						$(this).removeClass("borderbox");
-						$(this).removeClass("bluebox");
-						$(this).removeClass("greybox");
-
-						$(this).html(leaveType);
-
-					}
-				});
-			});
-			classgrtw = [];
-		}
-		$("#leaveabsentmodal").modal("hide");
-
-
-	}
-}
-function assignchangemodalclick() {
-	if ($("#assignformmodal").valid()) {
-
-		//child ni table valus update    
-
-		if (isMonth == 1) {
-			$.each(classgrt, function (index, value) {
-
-				$(".selectclass").each(function () {
-					// Test if the div element is empty
-
-					if ($(this).attr("data-selectid") == classgrt[index]) {
-						$(this).removeClass("selectclass");
-						//tablebox greybox d-flex justify-content-center align-items-center SG
-						$(this).addClass("tablebox");
-
-						$(this).addClass("d-flex");
-						$(this).addClass("justify-content-center");
-						var postType = $("#txtposttype").val();
-
-						var hasGreyClass = $(this).hasClass("greybox");
-						var hasBlueClass = $(this).hasClass("bluebox");
-						// //console.log(hasGreyClass + " " + hasBlueClass);
-						if (postType != 0 && hasBlueClass == false) {
-							$(this).addClass("bluebox");
-							$(this).addClass("align-items-center SG");
-							$(this).html("SG");
-							//remove other classes
-							$(this).removeClass("borderbox");
-							$(this).removeClass("greybox");
-							$(this).removeClass("purplebox");
-						}
-						else if (postType == 0 && hasGreyClass == false) {
-							$(this).addClass("bluebox");
-							$(this).addClass("align-items-center so");
-							$(this).html("SO");
-
-							//remove other classes
-							$(this).removeClass("greybox");
-							$(this).removeClass("borderbox");
-							$(this).removeClass("purplebox");
-						}
-					}
-				});
-			});
-			classgrt = [];
-		}
-		else {
-			$.each(classgrtw, function (index, value) {
-				$(".selectclass").each(function () {
-					// Test if the div element is empty
-
-					if ($(this).attr("data-selectid") == classgrtw[index]) {
-						$(this).removeClass("selectclass");
-						//tablebox greybox d-flex justify-content-center align-items-center SG
-						$(this).addClass("tablebox");
-
-						$(this).addClass("d-flex");
-						$(this).addClass("justify-content-center");
-						var postType = $("#txtposttype").val();
-
-						var hasGreyClass = $(this).hasClass("greybox");
-						var hasBlueClass = $(this).hasClass("bluebox");
-
-						if (postType != 0 && hasBlueClass == false) {
-							$(this).addClass("bluebox");
-							$(this).addClass("align-items-center SG");
-							$(this).html("SG");
-							//remove other classes
-							$(this).removeClass("borderbox");
-							$(this).removeClass("greybox");
-							$(this).removeClass("purplebox");
-						}
-						else if (postType == 0 && hasGreyClass == false) {
-							$(this).addClass("bluebox");
-							$(this).addClass("align-items-center so");
-							$(this).html("SO");
-
-							//remove other classes
-							$(this).removeClass("greybox");
-							$(this).removeClass("borderbox");
-							$(this).removeClass("purplebox");
-						}
-					}
-				});
-			});
-			classgrtw = [];
-		}
-		$(`input[name="selectallcheckbox"]`).each(function () {
-			$(this).prop("checked", false);
-		});
-
-		$(`input[name="neverselectallcheckbox"]`).prop("checked", false);
-		$(".filterhideshow").addClass("d-none");
-		notificationmsg("Success!!", "");
-		$(".modal").modal("hide");
-	}
-}
-function unassignchangemodalclick() {
-	if ($("#unassignformmodal").valid()) {
-
-		if (isMonth == 1) {
-			$.each(classgrt, function (index, value) {
-				$(".selectclass").each(function () {
-					// Test if the div element is empty
-
-					if ($(this).attr("data-selectid") == classgrt[index]) {
-						$(this).removeClass("selectclass");
-						//tablebox greybox d-flex justify-content-center align-items-center SG
-						$(this).addClass("tablebox");
-
-						$(this).addClass("d-flex");
-						$(this).addClass("justify-content-center");
-
-						$(this).addClass("borderbox");
-
-						//remove other classes
-						$(this).removeClass("greybox");
-						$(this).removeClass("bluebox");
-						$(this).removeClass("purplebox");
-
-						$(this).html("");
-
-					}
-				});
-			});
-			classgrt = [];
-		}
-		else {
-			$.each(classgrtw, function (index, value) {
-				$(".selectclass").each(function () {
-					// Test if the div element is empty
-
-					if ($(this).attr("data-selectid") == classgrtw[index]) {
-						$(this).removeClass("selectclass");
-						//tablebox greybox d-flex justify-content-center align-items-center SG
-						$(this).addClass("tablebox");
-
-						$(this).addClass("d-flex");
-						$(this).addClass("justify-content-center");
-
-						$(this).addClass("borderbox");
-
-						//remove other classes
-						$(this).removeClass("greybox");
-						$(this).removeClass("bluebox");
-						$(this).removeClass("purplebox");
-
-						$(this).html("");
-
-					}
-				});
-			});
-			classgrtw = [];
-		}
-		$("#unassignchangemodal").modal("hide");
-		notificationmsg("Success!!", "");
-
-	}
-}
-// function addpostmodalclick() {
-// 	if ($("#addpostformmodal").valid()) {
-// 		notificationmsg("Success!!", "");
-// 		var postType = $("#postcalendertype option:selected").val();
-
-// 		if (isMonth == 1) {
-
-// 			if (classgrt.length > 0) {
-// 				$.each(classgrt, function (index, value) {
-// 					$(".selectclass").each(function () {
-// 						// Test if the div element is empty
-
-// 						if ($(this).attr("data-selectid") == classgrt[index]) {
-// 							$(this).removeClass("selectclass");
-// 							//tablebox greybox d-flex justify-content-center align-items-center SG
-// 							$(this).addClass("tablebox");
-
-// 							$(this).addClass("d-flex");
-// 							$(this).addClass("justify-content-center");
-// 							//this code is shifted to indvidual postype as there is date selection, 
-// 							//so dates lying in them can only apply the class and remove other class maining 
-// 							//remove other classes
-// 							//$(this).removeClass("greybox");
-// 							//$(this).removeClass("bluebox");
-// 							//$(this).removeClass("yellowboxcolor");
-// 							//$(this).removeClass("redboxcolor");
-// 							if (postType == "0") {
-// 								$(this).removeClass("greybox");
-// 								$(this).removeClass("bluebox");
-// 								$(this).removeClass("yellowboxcolor");
-// 								$(this).removeClass("redboxcolor");
-// 								$(this).addClass("greybox");
-
-// 							}
-// 							else if (postType == "1") {
-// 								$(this).removeClass("greybox");
-// 								$(this).removeClass("bluebox");
-// 								$(this).removeClass("yellowboxcolor");
-// 								$(this).removeClass("redboxcolor");
-// 								$(this).addClass("yellowboxcolor");
-// 							}
-// 							else if (postType == "2") {
-
-
-// 								var frmcancelDate = $("#txtpostfromcanceldate").val();
-
-// 								var datepart = frmcancelDate.split("/");
-// 								var startdate = datepart[0];
-// 								var date = new Date();
-// 								var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-// 								var lastdate = lastDay.getDate();
-// 								var dataselectid = $(this).attr("data-selectid")
-// 								var dateselected = data-selectid.match(/\d+/);
-
-// 								if ((parseInt(dateselected[0]) >= parseInt(startdate)) && (dateselected <= lastdate)) {
-// 									$(this).removeClass("greybox");
-// 									$(this).removeClass("bluebox");
-// 									$(this).removeClass("yellowboxcolor");
-// 									$(this).removeClass("redboxcolor");
-// 									$(this).addClass("redboxcolor");
-// 								}
-// 							}
-// 							else if (postType == "3") {
-// 								var frmretriveDate = $("#txtpostfromcanceldate").val();
-
-// 								var datepart = frmretriveDate.split("/");
-// 								var startdate = datepart[0];
-// 								var date = new Date();
-// 								var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-// 								var lastdate = lastDay.getDate();
-// 								var dataselectid = $(this).attr("data-selectid")
-// 								var dateselected = dataselectid.match(/\d+/);
-
-// 								if ((parseInt(dateselected[0]) >= parseInt(startdate)) && (dateselected <= lastdate)) {
-// 									$(this).removeClass("greybox");
-// 									$(this).removeClass("bluebox");
-// 									$(this).removeClass("yellowboxcolor");
-// 									$(this).removeClass("redboxcolor");
-// 									$(this).addClass("bluebox");
-// 								}
-
-// 							}
-
-// 							//  $(this).html("DO");
-
-// 						}
-// 					});
-// 				});
-// 				classgrt = [];
-// 			}
-// 		}
-// 		else {
-// 			if (classgrtw.length > 0) {
-// 				$.each(classgrtw, function (index, value) {
-// 					$(".selectclass").each(function () {
-// 						// Test if the div element is empty
-
-// 						if ($(this).attr("data-selectid") == classgrtw[index]) {
-// 							$(this).removeClass("selectclass");
-// 							//tablebox greybox d-flex justify-content-center align-items-center SG
-// 							$(this).addClass("tablebox");
-
-// 							$(this).addClass("d-flex");
-// 							$(this).addClass("justify-content-center");
-// 							//remove other classes
-// 							//$(this).removeClass("greybox");
-// 							//$(this).removeClass("bluebox");
-// 							//$(this).removeClass("yellowboxcolor");
-// 							//$(this).removeClass("redboxcolor");
-// 							if (postType == "0") {
-// 								$(this).removeClass("greybox");
-// 								$(this).removeClass("bluebox");
-// 								$(this).removeClass("yellowboxcolor");
-// 								$(this).removeClass("redboxcolor");
-// 								$(this).addClass("greybox");
-
-// 							}
-// 							else if (postType == "1") {
-
-// 								$(this).removeClass("greybox");
-// 								$(this).removeClass("bluebox");
-// 								$(this).removeClass("yellowboxcolor");
-// 								$(this).removeClass("redboxcolor");
-// 								$(this).addClass("yellowboxcolor");
-// 							}
-// 							else if (postType == "2") {
-// 								//var frmcancelDate = $("#txtpostfromcanceldate").val();
-
-// 								//var datepart = frmcancelDate.split("/");
-// 								//var startdate = datepart[0];
-// 								//var date = new Date();
-// 								//var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-// 								//var lastdate = lastDay.getDate();
-// 								//var data-selectid = $(this).attr("data-selectid")
-// 								//var dateselected = data-selectid.match(/\d+/);
-
-// 								//if ((parseInt(dateselected[0]) >= parseInt(startdate)) && (dateselected <= lastdate)) {
-// 								$(this).removeClass("greybox");
-// 								$(this).removeClass("bluebox");
-// 								$(this).removeClass("yellowboxcolor");
-// 								$(this).removeClass("redboxcolor");
-// 								$(this).addClass("redboxcolor");
-// 								// } 
-// 							}
-// 							else if (postType == "3") {
-
-// 								//var frmretriveDate = $("#txtpostfromcanceldate").val();
-
-// 								//var datepart = frmretriveDate.split("/");
-// 								//var startdate = datepart[0];
-// 								//var date = new Date();
-// 								//var lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-// 								//var lastdate = lastDay.getDate();
-// 								//var data-selectid = $(this).attr("data-selectid")
-// 								//var dateselected = data-selectid.match(/\d+/);
-
-// 								//if ((parseInt(dateselected[0]) >= parseInt(startdate)) && (dateselected <= lastdate)) {
-// 								$(this).removeClass("greybox");
-// 								$(this).removeClass("bluebox");
-// 								$(this).removeClass("yellowboxcolor");
-// 								$(this).removeClass("redboxcolor");
-// 								$(this).addClass("bluebox");
-// 								// }
-// 							}
-
-// 							//remove other classes
-// 							//$(this).removeClass("borderbox");
-// 							//$(this).removeClass("bluebox");
-// 							//$(this).removeClass("purplebox");
-
-// 							// $(this).html("DO");
-
-// 						}
-// 					});
-// 				});
-// 				classgrtw = [];
-// 			}
-// 		}
-// 		$(`input[name="selectallcheckbox"]`).each(function () {
-// 			//debugger;
-// 			//if (postType == "2") { $(this).addClass("InActivePost"); }
-// 			$(this).prop("checked", false);
-// 		});
-// 		ShowProperPost();
-// 		$(".Postfilterhideshow").addClass("d-none");
-// 		$(".modal").modal("hide");
-// 	}
 // }
-function addpostdeletemodalclick() {
-	notificationmsg("Success!!", "Delete successfully.");
-	$(".modal").modal("hide");
 
-}
-function notificationmsg(title, message) {
-
-	var titletxt = title;
-	var messagetxt = message;
-	$.notify({
-		// options
-		title: "<strong>" + titletxt + "</strong>",
-		message: messagetxt,
-		icon: "far fa-check-circle notifycolor",
-		target: "_blank"
-	},
-		{
-			element: "body",
-			type: "success",
-			showProgressbar: false,
-			placement: {
-				from: "top",
-				align: "right"
-			},
-			offset: 20,
-			spacing: 10,
-			z_index: 1080,
-			delay: 3300,
-			timer: 500,
-			url_target: "_blank",
-			mouse_over: null,
-			animate: {
-				enter: "animated fadeInDown",
-				exit: "animated fadeOutRight"
-			},
-			onShow: null,
-			onShown: null,
-			onClose: null,
-			onClosed: null,
-			icon_type: "class",
-		});
-}
-
-function ShowProperPost() {
-
-	if ($("#chkpostActivePost").is(":checked")) {
-		$("#calenderviewtable tbody tr td").not(".redboxcolor").parent().removeClass("d-none");
-
-		//$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().addClass("InActivePost");
-		//$("#calenderviewtable tbody tr td").not(".redboxcolor").parent().addClass("ActivePost");
-
-	}
-	else {
-		//$("#calenderviewtable tbody tr td").not(".redboxcolor").parent().removeClass("InActivePost");
-		//$("#calenderviewtable tbody tr td").not(".redboxcolor").parent().addClass("ActivePost");
-		//$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().removeClass("InActivePost");
-
-		$("#calenderviewtable tbody tr td").not(".redboxcolor").parent().addClass("d-none");
-	}
-
-
-
-	if ($("#chkpostCancelPost").is(":checked")) {
-		//   $("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().removeClass("InActivePost");
-		$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().removeClass("d-none");
-
-
-	}
-	else if ($("#chkpostCancelPost").is(":checked") == false) {
-		//$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().addClass("InActivePost");
-		$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().addClass("d-none");
-
-	}
-	//chkpostCancelPost
-
-}	
+// function notificationmsg(title, message) {
+// 	var titletxt = title;
+// 	var messagetxt = message;
+// 	$.notify({
+// 		// options
+// 		title: "<strong>" + titletxt + "</strong>",
+// 		message: messagetxt,
+// 		icon: "far fa-check-circle notifycolor",
+// 		target: "_blank"
+// 	},
+// 		{
+// 			element: "body",
+// 			type: "success",
+// 			showProgressbar: false,
+// 			placement: {
+// 				from: "top",
+// 				align: "right"
+// 			},
+// 			offset: 20,
+// 			spacing: 10,
+// 			z_index: 1080,
+// 			delay: 3300,
+// 			timer: 500,
+// 			url_target: "_blank",
+// 			mouse_over: null,
+// 			animate: {
+// 				enter: "animated fadeInDown",
+// 				exit: "animated fadeOutRight"
+// 			},
+// 			onShow: null,
+// 			onShown: null,
+// 			onClose: null,
+// 			onClosed: null,
+// 			icon_type: "class",
+// 		});
+// }
 
 //==========================================================================
 //==========================================================================
@@ -2082,18 +1528,15 @@ function ShowProperPost() {
 
 	let element = get_wrapper_element();
 	if(element == '.rosterMonth' || element == '.postMonth'){
-		GetHeaders(0);
+		GetHeaders(1);
 		displayCalendar(calendarSettings1);
-		
 		element = element.slice(1);
-		page[element](page);			
-		
+		page[element](page)	
 	}else{
-		GetWeekHeaders(0);
+		GetWeekHeaders(1);
 		displayWeekCalendar(calendarSettings1);
-		
 		element = element.slice(1);
-		page[element](page);			
+		page[element](page)
 	}
 }
 //on next month title display on arrow click
@@ -2106,15 +1549,15 @@ function decrementMonth(page) {
 	calendarSettings1.date.subtract(1, "Months");
 	let element = get_wrapper_element();
 	if(element == '.rosterMonth' || element == '.postMonth'){
-		GetHeaders(0);
+		GetHeaders(1);
 		displayCalendar(calendarSettings1);
 		element = element.slice(1);
-		page[element](page);	
+		page[element](page);
 	}else{
-		GetWeekHeaders(0);
+		GetWeekHeaders(1);
 		displayWeekCalendar(calendarSettings1);
 		element = element.slice(1);
-		page[element](page);	
+		page[element](page);
 	}
 }
 //on previous month title display on arrow click
@@ -2126,18 +1569,12 @@ function displayCalendar(calendarSettings1, page) {
 	}
 	let element = get_wrapper_element();
 	const calendar = $(element).find('.calendertitlechange')[0];
-	//console.log(element, calendar);
 	const calendarTitle = calendarSettings1.date.format("MMM");
 	const calendaryear = calendarSettings1.date.format("YYYY");
 	const daysInMonth = calendarSettings1.date.endOf("Month").date();
-	//console.log(calendarSettings1.date, calendarSettings1.date.endOf("Month").date());
 	page.start_date = calendarSettings1.date.startOf("Month").format('YYYY-MM-DD');
 	page.end_date = calendarSettings1.date.endOf("Month").format('YYYY-MM-DD');
 
-	// let start_date = moment()
-	// page.start_date = '';
-	// page.end_date = 
-	// end_date = '';
 	calendar.innerHTML = "";
 	calendar.innerHTML = "Month of <span> " + calendarTitle + " </span> 1 - <span>" + daysInMonth + "</span>, " + calendaryear + "";
 
@@ -2146,15 +1583,12 @@ function displayCalendar(calendarSettings1, page) {
 
 //function for changing roster date
 function ChangeRosteringDate(seldate, this1) {
-	//console.log(seldate, this1);
 	var date = calendarSettings1.today.format("DD");
 	var month = calendarSettings1.date.format("MM") - 1;
 	var year = calendarSettings1.date.format("YYYY");
 	var d1 = new Date(year, month, date);
-	//console.log(d1);
 	$(this1).parent().children().removeClass("hightlightedtable")
 	$(this1).addClass("hightlightedtable");
-	// $("#datepicker").datepicker("update", new Date(year, month, seldate));
 	cur_page.page.page.datepicker.set('defaultDate', d1);
 }
 //function for changing roster date
@@ -2166,29 +1600,42 @@ function get_wrapper_element(element){
 	let roster_week_element = $(".rosterWeek").attr("class").split(/\s+/).includes("d-none");
 	let post_element = $(".postMonth").attr("class").split(/\s+/).includes("d-none");
 	let post_week_element = $(".postWeek").attr("class").split(/\s+/).includes("d-none");
-	// let roster_week_element = $(".rosterWeek").attr("class").split(/\s+/);
-	//console.log(element, post_week_element);
-
 
 	if(roster_element && roster_week_element && !post_element && post_week_element){
 		element = '.postMonth';
-		//console.log(element);
 		return element;
 	}else if(!roster_element && roster_week_element && post_element && post_week_element){
 		element = '.rosterMonth';
-		//console.log(element);
 		return element;
 	}else if(roster_element && roster_week_element && post_element && !post_week_element){
 		element = '.postWeek';
-		//console.log(element);
 		return element;
 	}else if(roster_element && !roster_week_element && post_element && post_week_element){
 		element = '.rosterWeek';
-		//console.log(element);
 		return element;
 	}
 }
+function debounce(func, wait, immediate) {
+	let timeout;
+  
+	return function executedFunction() {
+		let context = this;
+		let args = arguments;
+			
+		let later = function() {
+		timeout = null;
+		if (!immediate) func.apply(context, args);
+		};
 
+		let callNow = immediate && !timeout;
+		
+		clearTimeout(timeout);
+
+		timeout = setTimeout(later, wait);
+		
+		if (callNow) func.apply(context, args);
+	};
+};
 
 //function for dynamic set calender header data on right calender
 function GetHeaders(IsMonthSet, element) {
@@ -2197,7 +1644,6 @@ function GetHeaders(IsMonthSet, element) {
 	var thStartHTML = `<th class="">Post Type / Days</th>`;
 	var thEndHTML = "<th>Total</th>";
 	element = get_wrapper_element(element);
-	//console.log(element);
 	var selectedMonth;
 	if (IsMonthSet == 0) {
 		var today = new Date();
@@ -2270,46 +1716,11 @@ function GetHeaders(IsMonthSet, element) {
 //function for dynamic set calender header data on right calender
 
 
-//function for highlight today calender date in header
-// function GetTodaySelectedDate() {
-// 	var tdate = calendarSettings1.today.format("DD");
-// 	$("#data-day_" + tdate).addClass("hightlightedtable");
-// }
- //function for highlight today calender date in header
-
-
-//on next month title display on arrow click
-// function rosterweekincrement() {
-
-// 	calendarSettings1.date.add(1, 'Weeks').subtract(6,'days');     
-	
-// 	GetHeaders(0);
-// 	displayCalendar(calendarSettings1);
-// }
-// 	//on next month title display on arrow click
-
-// 	//on previous month title display on arrow click
-// function rosterweekdecrement() {       
-// 	calendarSettings1.date.subtract(1, 'Weeks').subtract(7, 'days');        
-// 	GetHeaders(0);
-// 	displayCalendar(calendarSettings1);
-// }
-	//on previous month title display on arrow click
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-
-// edit project notification
-function editproject() {
-	if ($("#editformmodal").valid()) {
-		$(".modal").modal("hide");
-		notificationmsg("Success!!", "");
-	}
-}
-// edit project notification
 
 //datatable function call for staff
 function staffmanagement() {
@@ -2416,7 +1827,6 @@ function notificationmsg(title, message) {
 	var titletxt = title;
 	var messagetxt = message;
 	$.notify({
-		// options
 		title: "<strong>" + titletxt + "</strong>",
 		message: messagetxt,
 		icon: "far fa-check-circle notifycolor",
@@ -2459,10 +1869,8 @@ function notificationmsg(title, message) {
 	
 function render_staff(view){
 	let filters = cur_page.page.page.filters;
-	//console.log(filters);
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_staff', filters)
 	.then(res => {
-		//console.log(res, view);
 		if(res){
 			let data = res;
 			if(view == "list"){
@@ -2475,14 +1883,11 @@ function render_staff(view){
 }
 
 function render_staff_list_view(data){
-	// $('#staffdatatable tbody').empty();
 	if($.fn.dataTable.isDataTable('#staffdatatable')){
 		table = $('#staffdatatable').DataTable();
 		table.clear();
 		table.destroy();
-		// table.rows().invalidate().draw();
 	} 
-	//console.log("Called");
 	data.forEach(function(employee){
 		let {name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department} = employee;
 		let row = `
@@ -2550,7 +1955,6 @@ function render_staff_list_view(data){
 
 function render_staff_card_view(data){
 	$('.staff-card-wrapper').empty();
-	//console.log("Called");
 	data.forEach(function(employee, i){
 		let {employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department, image} = employee;
 		let row = `
@@ -2692,11 +2096,8 @@ function setup_staff_filters_data(){
 		$(".customredropdown .customdropdownheight .dropdown-item").click(function () {
 			let text = $(this).html();
 			let filter_type = $(this).parent().attr('data-filter-type');
-			//console.log($(this), text, filter_type);
-			/*$(this).parent().parent().parent().find(".dropdown-toggle .dropdowncustomres").html(text);*/
 			$(this).closest(".btn-group").find(".dropdown-toggle .dropdowncustomres").html(text);
 			if(filter_type == "assigned"){
-				// text == "Assigned" ? 1 : 0
 				cur_page.page.page.filters[filter_type] = text == "Assigned" ? 1 : 0 ;
 			}else{
 				cur_page.page.page.filters[filter_type] = text;
@@ -2720,7 +2121,6 @@ function setup_staff_filters_data(){
 }
 
 function ClearServiceBoard(e){
-	//console.log($(e).attr('data-filter-type'));
 	let filter_type = $(e).attr('data-filter-type');
 	let filter_text = filter_type.charAt(0).toUpperCase() + filter_type.slice(1)
 	$(e).closest(".btn-group").find(".dropdown-toggle .dropdowncustomres").html(filter_text);
@@ -2732,7 +2132,6 @@ function staff_edit_dialog(){
 	let employees = $(".datatablecjeckbox:checked").map(function () {
 		return $(this).attr("data-employee-id");
 	}).get();
-	//console.log(employees);
 
 	let d = new frappe.ui.Dialog({
 		'title': 'Edit',
@@ -2789,19 +2188,26 @@ function staff_edit_dialog(){
 			}},
 			{'fieldtype': 'Section Break'},
 			{'label': 'Assign from','fieldname': 'assign_from', 'fieldtype': 'Select', 'reqd':1,'options': '\nDate\nImmediately'},
-			{'fieldtype': 'Column Break'},
 			{'label': 'Assign from date','fieldname': 'assign_date', 'fieldtype': 'Date', 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'), 'depends_on': "eval:this.get_value('assign_from') == 'Date'", 
 				onchange:function(){
 				let assign_date = d.get_value('assign_date');
 				if(assign_date && moment(assign_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
 					frappe.throw(__("Assign from Date cannot be same or before as today."));
 				}
-			}}
+			}},
+			{'fieldtype': 'Column Break'},
+			{'label': 'Assign till date','fieldname': 'assign_till_date', 'fieldtype': 'Date', 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'), 
+				onchange:function(){
+				let assign_date = d.get_value('assign_till_date');
+				if(assign_date && moment(assign_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
+					frappe.throw(__("Assign from Date cannot be same or before as today."));
+				}
+			}},
 		],
 		primary_action: function(){
-			let {shift, post_type, assign_from, assign_date} = d.get_values();
+			let {shift, post_type, assign_from, assign_date, assign_till_date} = d.get_values();
 			frappe.xcall('one_fm.one_fm.page.roster.roster.assign_staff',
-			{employees, shift, post_type, assign_from, assign_date})
+			{employees, shift, post_type, assign_from, assign_date, assign_till_date})
 			.then(res => {
 				d.hide();
 				frappe.msgprint(__("Successful!"));
@@ -2831,7 +2237,6 @@ function GetWeekHeaders(IsMonthSet, element) {
 		var lastDate = moment(lastDay);
 		var getdateres = moment(new Date()).format("DD");
 
-		////console.log(lastDate.format("DD"));
 		var dataHTML = "";
 		var calDate = moment(new Date(firstDay));//moment(new Date(firstDay.getFullYear(), firstDay.getMonth(), i));
 		for (var i = 1; i <= 7; i++) {
@@ -2933,8 +2338,7 @@ function GetTodaySelectedDate() {
 //on next month title display on arrow click
 function rosterweekincrement() {
 	weekCalendarSettings.date.add(1, "Weeks"); //.subtract(6, "days");
-	////console.log(weekCalendarSettings.date);
-	GetWeekHeaders(0);
+	GetWeekHeaders(1);
 	displayWeekCalendar(weekCalendarSettings);
 	let element = get_wrapper_element().slice(1);
 	if(element == "rosterWeek"){
@@ -2948,8 +2352,7 @@ function rosterweekincrement() {
 //on previous month title display on arrow click
 function rosterweekdecrement() {
 	weekCalendarSettings.date.subtract(1, "Weeks"); //.subtract(7, "days");
-	////console.log(weekCalendarSettings.date);
-	GetWeekHeaders(0);
+	GetWeekHeaders(1);
 	displayWeekCalendar(weekCalendarSettings);	
 	let element = get_wrapper_element().slice(1);
 	if(element == "rosterWeek"){
@@ -2995,7 +2398,6 @@ function unschedule_staff(page){
 			{'label': 'Start Date','fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1,'default': date, onchange:function(){
 				let start_date = d.get_value('start_date');
 				if(start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
-					// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
 					frappe.throw(__("Start Date cannot be before today."));
 				}
 			}},
@@ -3115,7 +2517,6 @@ function change_post(page){
 
 function schedule_change_post(page){
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
-	// let employee = "HR-EMP-00002";	
 	let employees =  [];
 	let selected = [... new Set(classgrt)];
 	selected.forEach(function(i){
@@ -3130,7 +2531,6 @@ function schedule_change_post(page){
 				if(name){
 					frappe.db.get_value("Operations Shift",name,["site", "project"])
 					.then(res => {
-						////console.log(res);
 						let {site, project} = res.message;
 						d.set_value('site', site);
 						d.set_value('project', project);
@@ -3151,7 +2551,6 @@ function schedule_change_post(page){
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
 			{employees, shift, post_type})
 			.then(res => {
-				////console.log(res)
 				d.hide();
 				let element = get_wrapper_element().slice(1);
 				page[element](page);
@@ -3174,7 +2573,7 @@ function dayoff(page){
 		'fields': [
 			{'label': 'Selected days only', 'fieldname': 'selected_days', 'fieldtype': 'Check', 'default': 1},
 			{'label': 'Repeat', 'fieldname': 'repeat', 'fieldtype': 'Select', 'depends_on': 'eval:this.get_value("selected_days")==0', 'options': 'Does not repeat\nDaily\nWeekly\nMonthly\nYearly'},
-			{'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("repeat")=="Weekly"'},
+			{'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("repeat")=="Weekly" && this.get_value("selected_days")==0'},
 			{'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check'},
 			{'label': 'Wednesday', 'fieldname': 'wednesday', 'fieldtype': 'Check'},
 			{'label': 'Saturday', 'fieldname': 'saturday', 'fieldtype': 'Check'},
@@ -3185,13 +2584,57 @@ function dayoff(page){
 			{'label': 'Tuesday', 'fieldname': 'tuesday', 'fieldtype': 'Check'},
 			{'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check'},
 			{'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:this.get_value("selected_days")==0'},
-			{'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'default': date}
+			{'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'default': date, 'depends_on': 'eval:this.get_value("repeat")!= "Does not repeat"'}
 		],
 		primary_action: function(){
-			d.hide();			
-			let element = get_wrapper_element().slice(1);
-			page[element](page);
+			let week_days = []; 
+			let args = {};
+			let repeat_freq = '';
+			let {selected_days, repeat, sunday, monday, tuesday, wednesday, thursday, friday, saturday, repeat_till} = d.get_values();
+			args["selected_days"] = selected_days;		
+			args["employees"] = employees;	
 
+			if(selected_days == 1){
+				args["repeat"] = 0;
+			}
+
+			if(!selected_days && repeat!== "Does not repeat"){
+				args["repeat"] = 1;
+				args["repeat_till"] = repeat_till;
+
+				if(repeat == "Weekly"){
+					repeat_freq = "Weekly";
+					sunday ? week_days.push("Sunday") : '';
+					monday ? week_days.push("Monday"): '';
+					tuesday ? week_days.push("Tuesday"): '';
+					wednesday ? week_days.push("Wednesday"): '';
+					thursday ? week_days.push("Thursday"): '';
+					friday ? week_days.push("Friday"): '';
+					saturday ? week_days.push("Saturday"): '';		
+					args["week_days"] = week_days;
+					args["repeat_freq"] = repeat_freq;			
+				}
+				else if(repeat == "Daily"){
+					repeat_freq = "Daily";
+					args["repeat_freq"] = repeat_freq;			
+				}
+				else if(repeat == "Monthly"){
+					repeat_freq = "Monthly";
+					args["repeat_freq"] = repeat_freq;			
+				}
+				else if(repeat == "Yearly"){
+					repeat_freq = "Yearly";
+					args["repeat_freq"] = repeat_freq;			
+				}
+			}
+			console.log(args);
+			
+			frappe.xcall('one_fm.one_fm.page.roster.roster.dayoff', args)
+			.then(res => {
+				d.hide();
+				let element = get_wrapper_element().slice(1);
+				page[element](page);
+			});
 		}
 	});
 	d.show();	
