@@ -1,7 +1,7 @@
 from datetime import timedelta
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, cstr, getdate, get_datetime, nowdate, cint
+from frappe.utils import now_datetime, cstr, getdate, get_datetime, nowdate, cint, add_to_date
 import schedule, time
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 from datetime import timedelta, datetime
@@ -296,3 +296,54 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.flags.ignore_permissions = True
 	penalty_issuance.insert()
 	penalty_issuance.submit()
+
+
+def automatic_shift_assignment():
+	date = cstr(getdate())
+	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working"}, ["*"])
+	for schedule in roster:
+		create_shift_assignment(schedule, date)
+
+def create_shift_assignment(schedule, date):
+	shift_assignment = frappe.new_doc("Shift Assignment")
+	shift_assignment.date = date
+	shift_assignment.employee = schedule.employee
+	shift_assignment.employee_name = schedule.employee_name
+	shift_assignment.department = schedule.department
+	shift_assignment.post_type = schedule.post_type
+	shift_assignment.shift = schedule.shift
+	shift_assignment.site = schedule.site
+	shift_assignment.project = schedule.project
+	shift_assignment.shift_type = schedule.shift_type
+	shift_assignment.post_type = schedule.post_type
+	shift_assignment.post_abbrv = schedule.post_abbrv
+	shift_assignment.submit()
+
+
+
+def update_shift_type():
+	today_datetime = now_datetime()	
+	now_time = today_datetime.strftime("%H:%M")
+	shift_types = frappe.get_all("Shift Type", {"end_time": now_time},["name", "allow_check_out_after_shift_end_time"])
+	for shift_type in shift_types:
+		last_sync_of_checkin = add_to_date(today_datetime, minutes=cint(shift_type.allow_check_out_after_shift_end_time)+15, as_datetime=True)
+		frappe.set_value("Shift Type", shift_type.name, "last_sync_of_checkin", last_sync_of_checkin)
+
+
+def process_attendance():
+	now_time = now_datetime().strftime("%H:%M")
+	shift_types = frappe.get_all("Shift Type", {"last_sync_of_checkin": now_time})
+	for shift_type in shift_types:
+		frappe.enqueue(mark_auto_attendance, shift_type, worker='long')
+
+def mark_auto_attendance(shift_type):
+	doc = frappe.get_doc("Shift Type", shift_type.name)
+	doc.process_auto_attendance()	
+
+
+def update_shift_details_in_attendance(doc, method):
+	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "date": doc.attendance_date}):
+		site, project, shift, post_type, post_abbrv = frappe.get_value("Shift Assignment", {"employee": doc.employee, "date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv"])
+		frappe.db.sql("""update `tabAttendance`
+			set project = %s, site = %s, shift = %s, post_type = %s, post_abbrv = %s 
+			where name = %s """, (site, project, shift, post_type, post_abbrv, doc.name))

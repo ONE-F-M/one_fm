@@ -157,6 +157,9 @@ doc_events = {
 	"Project": {
 		"on_update": "one_fm.one_fm.project_custom.on_project_save"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
+	},
+	"Attendance": {
+		"on_submit": "one_fm.api.tasks.update_shift_details_in_attendance"
 	}
 }
 
@@ -189,16 +192,18 @@ scheduler_events = {
 		'one_fm.utils.check_grp_supervisor_submission_daily',
 		'one_fm.utils.check_pam_visa_approval_submission_daily',
 		'one_fm.utils.check_upload_original_visa_submission_daily',
-		'one_fm.hiring.utils.notify_finance_job_offer_salary_advance'
+		'one_fm.hiring.utils.notify_finance_job_offer_salary_advance',
+		'one_fm.api.tasks.automatic_shift_assignment'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
-		'one_fm.utils.send_gp_letter_reminder'
+		'one_fm.utils.send_gp_letter_reminder',
 	],
 	"cron": {
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_accept",
+			"one_fm.api.tasks.update_shift_type"
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.supervisor_reminder",

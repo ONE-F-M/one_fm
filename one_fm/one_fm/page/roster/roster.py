@@ -20,41 +20,39 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
 		conds += 'and emp.designation="{designation}" '.format(designation=designation)
 	if company:
 		conds += 'and emp.company="{company}" '.format(company=company)
+		
+	if project:
+		conds += 'and emp.project="{project}" '.format(project=project)
+	if site:
+		conds += 'and emp.site="{site}" '.format(site=site)
+	if shift:
+		conds += 'and emp.name="{shift}" '.format(shift=shift)
+
 	if not cint(assigned):
-		# print(conds)
 		data = frappe.db.sql("""
 			select 
 				distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.project
-			from `tabEmployee` as emp, `tabUser` as usr, `tabEmployee Schedule` as sch, `tabOperations Shift` as sh
+			from `tabEmployee` as emp, `tabUser` as usr
 			where 
-				sch.date="{date}"
-			and sch.employee<>emp.employee
+			emp.project is NULL
+			and emp.site is NULL
+			and emp.shift is NULL
 			and emp.user_id=usr.name
-			and sch.shift=sh.name
-			and emp.project is NULL
 			{conds}
 		""".format(date=date, conds=conds), as_dict=1)
 		return data
-		
-	if project:
-		conds += 'and sh.project="{project}" '.format(project=project)
-	if site:
-		conds += 'and sh.site="{site}" '.format(site=site)
-	if shift:
-		conds += 'and sh.name="{shift}" '.format(shift=shift)
+
 	data = frappe.db.sql("""
 		select 
-			distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, sch.shift, sh.site, sh.project
-		from `tabEmployee` as emp, `tabUser` as usr, `tabEmployee Schedule` as sch, `tabOperations Shift` as sh
+			distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site, emp.project
+		from `tabEmployee` as emp, `tabUser` as usr
 		where 
-			sch.date="{date}"
-		and emp.project is not NULL
-		and sch.employee=emp.employee
+		emp.project is not NULL
+		and emp.site is not NULL
+		and emp.shift is not NULL
 		and emp.user_id=usr.name
-		and sch.shift=sh.name
 		{conds}
 	""".format(date=date, conds=conds), as_dict=1)
-	print(data)
 	return data
 
 @frappe.whitelist(allow_guest=True)
@@ -198,7 +196,6 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 @frappe.whitelist()
 def get_filtered_post_types(doctype, txt, searchfield, start, page_len, filters):
 	shift = filters.get('shift')
-	print(shift)
 	return frappe.db.sql("""
 		select distinct post_template
 		from `tabOperations Post` 
@@ -323,45 +320,39 @@ def post_off(posts, args):
 	pass
 
 
-
-def dayoff(employees, selected_dates=1, repeat_freq="Does not repeat", repeat_till=None, repeat_days=[]):
+@frappe.whitelist()
+def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[], repeat_till=None):
+	from one_fm.api.mobile.roster import month_range
+	print(employees, selected_dates, repeat, repeat_freq, week_days, type(week_days), repeat_till)
 	if selected_dates:
 		for employee in json.loads(employees):
-			if frappe.db.exists("Employee Schedule", {"date": employee["date"], "employee": employee["employee"]}):
-				doc = frappe.get_doc("Employee Schedule", {"date": employee["date"], "employee": employee["employee"]})
-				doc.shift = None
-				doc.post_type = None
-				doc.shift_type = None
-				doc.site = None
-				doc.project = None
-				doc.employee_availability = "Day Off"
-				doc.save()
+			set_dayoff(employee["employee"], employee["date"])
 	else:
-		start_date = cstr(add_to_date(nowdate(), days=1))
-		getdate(start_date).strftime('%A')
-		end_date = repeat_till
+		if repeat and repeat_freq in ["Daily", "Weekly", "Monthly", "Yearly"]:
+			end_date = repeat_till
 
-		for employee in json.loads(employees):
 			if repeat_freq == "Daily":
-				for date in	pd.date_range(start=start_date, end=end_date):
-					set_dayoff(employee["employee"], cstr(date.date()))
+				for employee in json.loads(employees):
+					for date in	pd.date_range(start=employee["date"], end=end_date):
+						frappe.enqueue(set_dayoff, employee["employee"], cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Weekly":
-				start_date = cstr(add_to_date(getdate(employee["date"])))
-				for date in	pd.date_range(start=start_date, end=end_date):
-					if getdate(date).strftime('%A') in repeat_days:
-						set_dayoff(employee["employee"], cstr(date.date()))
+				for employee in json.loads(employees):
+					for date in	pd.date_range(start=employee["date"], end=end_date):
+						if getdate(date).strftime('%A') in week_days:
+							frappe.enqueue(set_dayoff, employee["employee"], cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Monthly":
-				start_date = cstr(add_to_date(getdate(employee["date"])))
-				# for date in	pd.Series(pd.date_range(start=start_date, end=end_date, freq='M')):
-				# 	set_dayoff(employee["employee"], cstr(date.date()))
+				for employee in json.loads(employees):
+					for date in	month_range(employee["date"], repeat_till):
+						frappe.enqueue(set_dayoff, employee["employee"], cstr(date.date()), queue='short')
+
 			elif repeat_freq == "Yearly":
-				start_date = cstr(add_to_date(getdate(employee["date"])))
-				for date in	pd.Series(pd.date_range(start=start_date, end=end_date, freq='Y')):
-					set_dayoff(employee["employee"], cstr(date.date()))
+				for date in	pd.date_range(start=employee["date"], end=repeat_till, freq=pd.DateOffset(years=1)):
+					frappe.enqueue(set_dayoff, employee["employee"], cstr(date.date()), queue='short')
 
 def set_dayoff(employee, date):
+	print((employee, date))
 	if frappe.db.exists("Employee Schedule", {"date": date, "employee": employee}):
 		doc = frappe.get_doc("Employee Schedule", {"date": date, "employee": employee})
 
@@ -380,13 +371,11 @@ def set_dayoff(employee, date):
 
 
 @frappe.whitelist()
-def assign_staff(employees, shift, post_type, assign_from, assign_date):
+def assign_staff(employees, shift, post_type, assign_from, assign_date, assign_till_date):
 	try:
-		project = frappe.get_value("Operations Shift", shift, ["project"])
 		if assign_from == 'Immediately':
 			assign_date = cstr(add_to_date(nowdate(), days=1))
-		end_date = frappe.get_value("Contracts", {"project": project}, "end_date")
-		frappe.enqueue(assign_job, employees=employees, start_date=assign_date, end_date=end_date, shift=shift, post_type=post_type, queue='short')
+		frappe.enqueue(assign_job, employees=employees, start_date=assign_date, end_date=assign_till_date, shift=shift, post_type=post_type, queue='short')
 		return True
 	except Exception as e:
 		frappe.log_error(e)
@@ -395,6 +384,11 @@ def assign_staff(employees, shift, post_type, assign_from, assign_date):
 def assign_job(employees, start_date, end_date, shift, post_type):
 	for date in	pd.date_range(start=start_date, end=end_date):
 		for employee in json.loads(employees):
+			site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
+			frappe.set_value("Employee", employee, "shift", shift)
+			frappe.set_value("Employee", employee, "site", site)
+			frappe.set_value("Employee", employee, "project", project)
+
 			if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
 				roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date": cstr(date.date())})
 			else:

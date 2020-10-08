@@ -280,6 +280,7 @@ def day_off(employee, date, repeat=0, repeat_freq=None, repeat_till=None):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)	
 
+
 def month_range(start, end):
     rng = pd.date_range(start=pd.Timestamp(start)-pd.offsets.MonthBegin(),
                         end=end,
