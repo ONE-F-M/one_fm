@@ -625,186 +625,55 @@
             </div>
         </div>
     </div>
-    <!-- ============================================================== -->
-    <!-- Main srction end -->
-    <!-- ============================================================== -->
-    <!-- ============================================================== -->
-    <!-- modal section start -->
-    <!-- ============================================================== -->
+</div>
+<!-- ============================================================== -->
+<!-- Main srction end -->
+<!-- ============================================================== -->
+<!-- ============================================================== -->
+<!-- modal section start -->
+<!-- ============================================================== -->
+<!-- ============================================================== -->
+<!--modal section start -->
+<!-- ============================================================== -->
+<div id="sidenav-backdrop"></div>
+<div class="drawer-backdrop" id="drawershow"></div>
+<script>
+    $("#page-roster").find(".redirect_route").on("click", function (e) {
+        let template = $(this).attr("data-route");
+        $("#page-roster").empty().append(frappe.render_template(template));
+        load_js(cur_page.page.page);
+    });
+    setup_staff_filters();
+    setup_staff_filters_data();
+    /*select2 plugin initialization*/
+    $(".select2plg").select2();
+    /*select2 plugin initialization*/
 
-    <div class="modal custommobmodal" id="userunassigned" tabindex="-1" role="dialog" aria-labelledby="userunassigned"
-        aria-modal="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header pt10 pb-0 pl10 pr10 modalheader d-flex align-items-center border-bottom-0">
+    /*slide toggle and side drawer for mobile device*/
+    $("#sidebarToggle").on("click", function (e) {
+        e.preventDefault();
+        $("body").toggleClass("sb-sidenav-toggled");
+    });
 
-                    <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
-                    </button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="img-block custommobrescard text-center" style="">
-                        <span class="">
-                            <img src="images/Warning.svg" class="img_responsive">
-                        </span>
-
-                    </div>
-                    <div class="lightmodalbg mt20 mb26">
-                        <div class="modaltextcolor font30 text-center fontw600 py-1">Are you sure you want to
-                            Unassigned?
-                        </div>
-                    </div>
-
-                </div>
-                <div class="modal-footer modalfooterborder pt10 pb10">
-                    <div class="row text-center w-100">
-                        <div class="col-12 text-center">
-                            <a onclick="" data-dismiss="modal"
-                                class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn continuebtn">Continue</a>
-                            <a href="" data-dismiss="modal"
-                                class="text-center d-inline-block modalbtn greythemebg font16 ml18">Cancel</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal custommobmodal" id="cardeditusermodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-        aria-modal="true">
-        <div class="modal-dialog modal-sm" role="document">
-            <div class="modal-content">
-                <div class="modal-header pt10 pb10 pl20 pr20 modalheader d-flex align-items-center">
-                    <div class="font16 fontw500">Edit</div>
-                    <button type="button" class="modalclose close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true" class=""><i class="fas fa-times"></i></span>
-                    </button>
-                </div>
-
-                <div class="modal-body pl20 pt20 pr20 pb20">
-                    <form id="editformmodal" name="editformmodal">
-                        <div class="row">
-                            <div class="col-sm-12 col-xs-12">
-                                <label for="" class="font16 mb8">Project Name</label>
-                            </div>
-                        </div>
-                        <div class="row mb30">
-                            <div class="col-sm-12 col-md-12 custompageselecttype">
-                                <select class="form-control select2plg" id="txtproject" name="txtproject">
-                                    <option value="">Please Select</option>
-                                    <option value="0">Project 1</option>
-                                    <option value="1">Project 2</option>
-                                    <option value="2">Project 3</option>
-                                </select>
-
-                            </div>
-                        </div>
-                        <div class="row mb30">
-                            <div class="col-sm-12 col-md-12 custompageselecttype">
-                                <select class="form-control select2plg" id="txtsite" name="txtsite">
-                                    <option value="">Please Select</option>
-                                    <option value="0">site 1</option>
-                                    <option value="1">site 2</option>
-                                    <option value="2">site 3</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row mb30">
-                            <div class="col-sm-12 col-md-12 custompageselecttype">
-                                <select class="form-control select2plg" id="txtshift" name="txtshift">
-                                    <option value="">Please Select</option>
-                                    <option value="0">shift 1</option>
-                                    <option value="1">shift 2</option>
-                                    <option value="2">shift 3</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row mb20 pt-3 pt-md-0">
-                            <div class="col-sm-12 col-md-12">
-                                <div class="d-flex">
-                                    <div class="">
-                                        <div class="form-group mb-0">
-                                            <div class="custom-control custom-radio shadow-none">
-                                                <input type="radio" class="custom-control-input" id="modaldateid"
-                                                    name="editstaffradio" value="1">
-                                                <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
-                                                    for="modaldateid">Date</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="pl20">
-                                        <div class="form-group mb-0">
-                                            <div class="custom-control custom-radio shadow-none">
-                                                <input type="radio" class="custom-control-input" id="txtimmediately"
-                                                    name="editstaffradio" value="1">
-                                                <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
-                                                    for="txtimmediately">Immediately</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <div class="row">
-                            <div class="col-sm-12 col-xs-12">
-                                <label for="" class="font16 mb8">Date</label>
-                            </div>
-                            <div class="col-sm-12 col-md-12">
-                                <div id="datepicker" class="input-group date" data-date-format="mm-dd-yyyy">
-                                    <input class="form-control" type="text" id="txtinputdate" name="txtinputdate"
-                                        readonly />
-                                    <span class="input-group-addon inputgroupcalendar"><i
-                                            class="far fa-calendar-alt"></i></span>
-                                </div>
-
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top-0">
-                    <div class="row text-center w-100">
-                        <div class="col-12 text-center text-md-right">
-                            <a onclick="editproject()" id="savemodalid" href="#"
-                                class="text-center d-inline-block modalbtn darkthemebg  font16 closebtn">Save</a>
-                            <a href="#" data-dismiss="modal"
-                                class="text-center d-inline-block modalbtn greythemebg font16 ml18">Close</a>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-    <!-- ============================================================== -->
-    <!--modal section start -->
-    <!-- ============================================================== -->
-    <div id="sidenav-backdrop"></div>
-    <div class="drawer-backdrop" id="drawershow"></div>
-    <script>
-        $(".content.page-container").find(".redirect_route").on("click", function (e) {
-            console.log(e, this);
-            let template = $(this).attr("data-route");
-            $(".content.page-container").empty().append(frappe.render_template(template));
-            load_js(cur_page.page.page);
+    if (screen.availWidth <= 767) {
+        $(".desktopviewpatientconnect").remove();
+        $(".mobileviewpatientconnect").css("overflow-y", "hidden");
+        $(".filtercloseclick").click(function () {
+            $(".sidedrawer").animate({ right: -201, opacity: 1 }, 130);
+            $(".sidedrawer").css("z-index", "2");
+            $("#drawershow").removeClass("show");
+            $("#menu").show();
+            $("body").css("overflow-y", "auto");
+            $("#menuclose").hide();
         });
-        setup_staff_filters();
-        setup_staff_filters_data();
-        /*select2 plugin initialization*/
-        $(".select2plg").select2();
-        /*select2 plugin initialization*/
-
-        /*slide toggle and side drawer for mobile device*/
-        $("#sidebarToggle").on("click", function (e) {
-            e.preventDefault();
-            $("body").toggleClass("sb-sidenav-toggled");
-        });
-
-        if (screen.availWidth <= 767) {
-            $(".desktopviewpatientconnect").remove();
-            $(".mobileviewpatientconnect").css("overflow-y", "hidden");
-            $(".filtercloseclick").click(function () {
+        $("#menu").click(function () {
+            $(".sidedrawer").animate({ right: 0, opacity: 1 }, 130);
+            $("#drawershow").addClass("show");
+            $(".sidedrawer").css("z-index", "999");
+            $("#menuclose").show();
+            $("body").css("overflow-y", "hidden");
+            $(this).hide();
+            $("#drawershow").click(function () {
                 $(".sidedrawer").animate({ right: -201, opacity: 1 }, 130);
                 $(".sidedrawer").css("z-index", "2");
                 $("#drawershow").removeClass("show");
@@ -812,277 +681,228 @@
                 $("body").css("overflow-y", "auto");
                 $("#menuclose").hide();
             });
-            $("#menu").click(function () {
-                $(".sidedrawer").animate({ right: 0, opacity: 1 }, 130);
-                $("#drawershow").addClass("show");
-                $(".sidedrawer").css("z-index", "999");
-                $("#menuclose").show();
-                $("body").css("overflow-y", "hidden");
-                $(this).hide();
-                $("#drawershow").click(function () {
-                    $(".sidedrawer").animate({ right: -201, opacity: 1 }, 130);
-                    $(".sidedrawer").css("z-index", "2");
-                    $("#drawershow").removeClass("show");
-                    $("#menu").show();
-                    $("body").css("overflow-y", "auto");
-                    $("#menuclose").hide();
-                });
-            });
-            $("#menuclose").click(function () {
-                $(".sidedrawer").animate({ right: -200, opacity: 1 }, 130);
-                $(".sidedrawer").css("z-index", "2");
-                $("#drawershow").removeClass("show");
-                $("#menu").show();
-                $("body").css("overflow-y", "auto");
-                $(this).hide();
-            });
+        });
+        $("#menuclose").click(function () {
+            $(".sidedrawer").animate({ right: -200, opacity: 1 }, 130);
+            $(".sidedrawer").css("z-index", "2");
+            $("#drawershow").removeClass("show");
+            $("#menu").show();
+            $("body").css("overflow-y", "auto");
+            $(this).hide();
+        });
+    }
+    else {
+
+    }
+    /*slide toggle and side drawer for mobile device*/
+
+    /*jquery for the svg img change on hover, active , this jquery not working simple .html page it required http, https*/
+    jQuery("img.svg").each(function () {
+        var $img = jQuery(this);
+        var imgID = $img.attr("id");
+        var imgClass = $img.attr("class");
+        var imgURL = $img.attr("src");
+        jQuery.get(imgURL, function (data) {
+            /* Get the SVG tag, ignore the rest*/
+            var $svg = jQuery(data).find("svg");
+            /* Add replaced image"s ID to the new SVG*/
+            if (typeof imgID !== "undefined") {
+                $svg = $svg.attr("id", imgID);
+            }
+            /* Add replaced image"s classes to the new SVG*/
+            if (typeof imgClass !== "undefined") {
+                $svg = $svg.attr("class", imgClass + " replaced-svg");
+            }
+            /* Remove any invalid XML tags as per http://validator.w3.org*/
+            $svg = $svg.removeAttr("xmlns:a");
+            /* Check if the viewport is set, if the viewport is not set the SVG wont"t scale.*/
+            if (!$svg.attr("viewBox") && $svg.attr("height") && $svg.attr("width")) {
+                $svg.attr("viewBox", "0 0 " + $svg.attr("height") + " " + $svg.attr("width"))
+            }
+            /* Replace image with new SVG*/
+            $img.replaceWith($svg);
+        }, "xml");
+    });
+    /*jquery for the svg img change, this jquery not working simple .html page it required http, https*/
+
+    /* jquery for filer start */
+
+
+    /*on select all checkbox on checkbox this click*/
+    $(".staffselectallcheckbox").change(function () {
+        var valuegetchk = $(this).is(":checked");
+        if (valuegetchk === true) {
+            $(`input[type="checkbox"]`).prop("checked", true);
+            assignedfilter(0);
+        }
+        else {
+            $(`input[type="checkbox"]`).prop("checked", false);
+            assignedfilter(1);
+        }
+    });
+    /*on select all checkbox on checkbox this click*/
+
+    /*indivisual card checkbox select*/
+    $(".cardviewcheckbox").change(function () {
+        var getdatatableval = $(this).is(":checked");
+        if (getdatatableval === true) {
+            assignedfilter(0);
         }
         else {
 
+            assignedfilter(1);
         }
-        /*slide toggle and side drawer for mobile device*/
+    });
 
-        /*jquery for the svg img change on hover, active , this jquery not working simple .html page it required http, https*/
-        jQuery("img.svg").each(function () {
-            var $img = jQuery(this);
-            var imgID = $img.attr("id");
-            var imgClass = $img.attr("class");
-            var imgURL = $img.attr("src");
-            jQuery.get(imgURL, function (data) {
-                /* Get the SVG tag, ignore the rest*/
-                var $svg = jQuery(data).find("svg");
-                /* Add replaced image"s ID to the new SVG*/
-                if (typeof imgID !== "undefined") {
-                    $svg = $svg.attr("id", imgID);
-                }
-                /* Add replaced image"s classes to the new SVG*/
-                if (typeof imgClass !== "undefined") {
-                    $svg = $svg.attr("class", imgClass + " replaced-svg");
-                }
-                /* Remove any invalid XML tags as per http://validator.w3.org*/
-                $svg = $svg.removeAttr("xmlns:a");
-                /* Check if the viewport is set, if the viewport is not set the SVG wont"t scale.*/
-                if (!$svg.attr("viewBox") && $svg.attr("height") && $svg.attr("width")) {
-                    $svg.attr("viewBox", "0 0 " + $svg.attr("height") + " " + $svg.attr("width"))
-                }
-                /* Replace image with new SVG*/
-                $img.replaceWith($svg);
-            }, "xml");
+    /*indivisual card checkbox select*/
+    /* jquery for filer end */
+
+
+    /*notification display on button*/
+    $(".continuebtn").click(function () {
+        notificationmsg("Success!!", "Unssigned successfully.");
+    });
+
+
+    $(".assignedbtn").on("click", function () {
+        notificationmsg("Success!!", "Assigned successfully.");
+
+    });
+    /*notification display on button*/
+
+    /*datepicker initialization*/
+    $(function () {
+        var datePicker = $("#datepicker").datepicker({
+            autoclose: true,
+            todayHighlight: true,
+            format: "dd/mm/yyyy",
+            orientation: "auto top",
+        }).on("show", function () {
+            var getwidth = $("#datepicker").width();
+            $(".datepicker-dropdown").css("width", getwidth);
         });
-        /*jquery for the svg img change, this jquery not working simple .html page it required http, https*/
-
-        /* jquery for filer start */
-
-
-        /*on select all checkbox on checkbox this click*/
-        $(".staffselectallcheckbox").change(function () {
-            var valuegetchk = $(this).is(":checked");
-            if (valuegetchk === true) {
-                $(`input[type="checkbox"]`).prop("checked", true);
-                assignedfilter(0);
+        var t;
+        $("#cardeditusermodal").on(
+            "DOMMouseScroll mousewheel scroll",
+            function () {
+                window.clearTimeout(t);
+                t = window.setTimeout(function () {
+                    $("#datepicker").datepicker("place");
+                }, 0);
             }
-            else {
-                $(`input[type="checkbox"]`).prop("checked", false);
-                assignedfilter(1);
-            }
-        });
-        /*on select all checkbox on checkbox this click*/
+        );
 
-        /*indivisual card checkbox select*/
-        $(".cardviewcheckbox").change(function () {
-            var getdatatableval = $(this).is(":checked");
-            if (getdatatableval === true) {
-                assignedfilter(0);
-            }
-            else {
+    });
+    /*datepicker initialization  */
 
-                assignedfilter(1);
-            }
-        });
+    /*dropdown for assign set text on hide show clear filter text
+    $(".customredropdown .customdropdownheight .dropdown-item").click(function () {
+        var text = $(this).html();
+        console.log($(this));
+        $(this).closest(".btn-group").find(".dropdown-toggle .dropdowncustomres").html(text);
+        if (text === "Assigned") {
 
-        /*indivisual card checkbox select*/
-        /* jquery for filer end */
+            $(".hideshowprjname").addClass("d-none");
+            $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
+            $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
+        }
+        else {
+
+            $(".hideshowprjname").removeClass("d-none");
+            $(".btnunassignonclick").removeClass("d-none").addClass("d-block");
+            $(".rostercustomstafftab").addClass("d-none").removeClass("d-flex");
+        }
+    });
+    dropdown for assign set text on hide show clear filter text*/
+
+    /*clear fill form value on modal close */
+    $(".modal").on("hidden.bs.modal", function () {
+        $("form").validate().resetForm();
+        $("form").trigger("reset");
+        $(".select2plg").val(null).trigger("change");
+    });
 
 
-        /*notification display on button*/
-        $(".continuebtn").click(function () {
-            notificationmsg("Success!!", "Unssigned successfully.");
-        });
 
 
-        $(".assignedbtn").on("click", function () {
-            notificationmsg("Success!!", "Assigned successfully.");
+    /* edit project notification*/
+    function editproject() {
+        if ($("#editformmodal").valid()) {
+            $(".modal").modal("hide");
+            notificationmsg("Success!!", "");
+        }
+    }
+    /* edit project notification*/
 
-        });
-        /*notification display on button*/
+    /*function for assign dropdown clear button filter */
+    function clearassignfilter() {
+        $(".assigneddrpval").html("");
+        $(".assigneddrpval").html("Assigned");
+        $(".hideshowprjname").addClass("d-none");
+        $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
+        $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
+    }
+    /*function for assign dropdown clear button filter */
 
-        /*datepicker initialization*/
-        $(function () {
-            var datePicker = $("#datepicker").datepicker({
-                autoclose: true,
-                todayHighlight: true,
-                format: "dd/mm/yyyy",
-                orientation: "auto top",
-            }).on("show", function () {
-                var getwidth = $("#datepicker").width();
-                $(".datepicker-dropdown").css("width", getwidth);
+    /*show (Assign to all) button on unassign option click on assign dropdown*/
+    function filteassignget() {
+        $(".allfilters").removeClass("d-none");
+    }
+    /*show (Assign to all) button on unassign option click on assign dropdown*/
+
+
+    /*clear dropdown value */
+    function clearallfilter() {
+        $(".allfilters").removeClass("d-none");
+        $(".allfilters").addClass("d-none");
+        $(".assigneddrpval").html("");
+        $(".assigneddrpval").html("Assigned");
+        $(".hideshowprjname").addClass("d-none");
+        $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
+        $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
+    }
+    /*clear dropdown value */
+
+    /*function for notification call and pass parameter*/
+    function notificationmsg(title, message) {
+
+        var titletxt = title;
+        var messagetxt = message;
+        $.notify({
+            /* options*/
+            title: "<strong>" + titletxt + "</strong>",
+            message: messagetxt,
+            icon: "far fa-check-circle notifycolor",
+            target: "_blank"
+        },
+            {
+                element: "body",
+                type: "success",
+                showProgressbar: false,
+                placement: {
+                    from: "top",
+                    align: "right"
+                },
+                offset: 20,
+                spacing: 10,
+                z_index: 1080,
+                delay: 3300,
+                timer: 500,
+                url_target: "_blank",
+                mouse_over: null,
+                animate: {
+                    enter: "animated fadeInDown",
+                    exit: "animated fadeOutRight"
+                },
+                onShow: null,
+                onShown: null,
+                onClose: null,
+                onClosed: null,
+                icon_type: "class",
             });
-            var t;
-            $("#cardeditusermodal").on(
-                "DOMMouseScroll mousewheel scroll",
-                function () {
-                    window.clearTimeout(t);
-                    t = window.setTimeout(function () {
-                        $("#datepicker").datepicker("place");
-                    }, 0);
-                }
-            );
-
-        });
-        /*datepicker initialization  */
-
-        /*dropdown for assign set text on hide show clear filter text
-        $(".customredropdown .customdropdownheight .dropdown-item").click(function () {
-            var text = $(this).html();
-            console.log($(this));
-            $(this).closest(".btn-group").find(".dropdown-toggle .dropdowncustomres").html(text);
-            if (text === "Assigned") {
-
-                $(".hideshowprjname").addClass("d-none");
-                $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
-                $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
-            }
-            else {
-
-                $(".hideshowprjname").removeClass("d-none");
-                $(".btnunassignonclick").removeClass("d-none").addClass("d-block");
-                $(".rostercustomstafftab").addClass("d-none").removeClass("d-flex");
-            }
-        });
-        dropdown for assign set text on hide show clear filter text*/
-
-        /*clear fill form value on modal close */
-        $(".modal").on("hidden.bs.modal", function () {
-            $("form").validate().resetForm();
-            $("form").trigger("reset");
-            $(".select2plg").val(null).trigger("change");
-        });
-
-
-
-
-        /* edit project notification*/
-        function editproject() {
-            if ($("#editformmodal").valid()) {
-                $(".modal").modal("hide");
-                notificationmsg("Success!!", "");
-            }
-        }
-        /* edit project notification*/
-
-
-        /*function for assign dropdown filter */
-        /*function assignedfilter(value1) {
-            var filtervale = $("#desktopview.filtertextget").text();
-            var functionmainvalue = value1;
-
-            if (filtervale === "Assigned" && functionmainvalue === 0) {
-                $(".unassignedbtn").removeClass("d-none");
-                $(".assignedbtn").addClass("d-none");
-                $(".editbtn").removeClass("d-none");
-                $(".mainclassfilter").removeClass("d-none");
-                $(".allfilters").addClass("d-none");
-
-
-
-            }
-            else if (filtervale === "Unassigned" && functionmainvalue === 0) {
-                $(".unassignedbtn").addClass("d-none");
-                $(".assignedbtn").removeClass("d-none");
-                $(".editbtn").removeClass("d-none");
-                $(".mainclassfilter").removeClass("d-none");
-                $(".allfilters").addClass("d-none");
-
-
-            }
-
-            else {
-                $(".unassignedbtn").addClass("d-none");
-                $(".assignedbtn").addClass("d-none");
-                $(".editbtn").addClass("d-none");
-            }
-        }*/
-        /*function for assign dropdown filter */
-
-        /*function for assign dropdown clear button filter */
-        function clearassignfilter() {
-            $(".assigneddrpval").html("");
-            $(".assigneddrpval").html("Assigned");
-            $(".hideshowprjname").addClass("d-none");
-            $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
-            $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
-        }
-        /*function for assign dropdown clear button filter */
-
-        /*show (Assign to all) button on unassign option click on assign dropdown*/
-        function filteassignget() {
-            $(".allfilters").removeClass("d-none");
-        }
-        /*show (Assign to all) button on unassign option click on assign dropdown*/
-
-
-        /*clear dropdown value */
-        function clearallfilter() {
-            $(".allfilters").removeClass("d-none");
-            $(".allfilters").addClass("d-none");
-            $(".assigneddrpval").html("");
-            $(".assigneddrpval").html("Assigned");
-            $(".hideshowprjname").addClass("d-none");
-            $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
-            $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
-        }
-        /*clear dropdown value */
-
-        /*function for notification call and pass parameter*/
-        function notificationmsg(title, message) {
-
-            var titletxt = title;
-            var messagetxt = message;
-            $.notify({
-                /* options*/
-                title: "<strong>" + titletxt + "</strong>",
-                message: messagetxt,
-                icon: "far fa-check-circle notifycolor",
-                target: "_blank"
-            },
-                {
-                    element: "body",
-                    type: "success",
-                    showProgressbar: false,
-                    placement: {
-                        from: "top",
-                        align: "right"
-                    },
-                    offset: 20,
-                    spacing: 10,
-                    z_index: 1080,
-                    delay: 3300,
-                    timer: 500,
-                    url_target: "_blank",
-                    mouse_over: null,
-                    animate: {
-                        enter: "animated fadeInDown",
-                        exit: "animated fadeOutRight"
-                    },
-                    onShow: null,
-                    onShown: null,
-                    onClose: null,
-                    onClosed: null,
-                    icon_type: "class",
-                });
-        }
-        render_staff("card");
-        $(".editbtn").on("click", function () {
-            staff_edit_dialog();
-        })
-    </script>
+    }
+    render_staff("card");
+    $(".editbtn").on("click", function () {
+        staff_edit_dialog();
+    })
+</script>

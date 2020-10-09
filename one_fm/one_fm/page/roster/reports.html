@@ -983,10 +983,10 @@
 <div class="drawer-backdrop" id="drawershow"></div>
 <script>
 
-    $(".content.page-container").find(".redirect_route").on("click", function (e) {
+    $("#page-roster").find(".redirect_route").on("click", function (e) {
         console.log(e, this);
         let template = $(this).attr("data-route");
-        $(".content.page-container").empty().append(frappe.render_template(template));
+        $("#page-roster").empty().append(frappe.render_template(template));
     });
 
 </script>
