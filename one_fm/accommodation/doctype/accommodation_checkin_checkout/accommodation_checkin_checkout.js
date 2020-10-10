@@ -4,6 +4,7 @@
 frappe.ui.form.on('Accommodation Checkin Checkout', {
 	refresh: function(frm) {
 		set_filters(frm);
+		set_date(frm);
 	},
 	booking_reference: function(frm) {
 		set_checkin_details(frm);
@@ -26,6 +27,12 @@ frappe.ui.form.on('Accommodation Checkin Checkout', {
 		set_required(frm);
 	}
 });
+
+var set_date = function(frm) {
+	if(frm.is_new()){
+		frm.set_value('checkin_checkout_date_time', frappe.datetime.now_datetime());
+	}
+};
 
 var set_required = function(frm) {
 	if(frm.doc.type == 'OUT'){

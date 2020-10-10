@@ -39,9 +39,11 @@ class AccommodationCheckinCheckout(Document):
 			occupy = True if self.type == 'OUT' else False
 			self.update_bed_details(occupy, True)
 
-	def after_insert(self):
+	def on_update(self):
 		occupy = True if self.type == 'IN' else False
 		self.update_bed_details(occupy)
+
+	def after_insert(self):
 		self.update_checkin_reference()
 
 	def update_checkin_reference(self):
@@ -50,8 +52,10 @@ class AccommodationCheckinCheckout(Document):
 
 	def update_bed_details(self, occupy, on_trash=False):
 		bed = frappe.get_doc('Bed', self.bed)
-		if (not occupy and bed.status == 'Occupied' and bed.employee == self.employee) or (occupy and not bed.employee):
+		if ("Occupied" in bed.status and bed.employee == self.employee) or (occupy and not bed.employee):
 			bed.status = 'Occupied' if occupy else 'Vacant'
+			if occupy and not self.attach_print_accommodation_policy:
+				bed.status = 'Occupied Temporarily'
 			bed.employee = self.employee if occupy else ''
 			bed.save(ignore_permissions=True)
 			if on_trash:

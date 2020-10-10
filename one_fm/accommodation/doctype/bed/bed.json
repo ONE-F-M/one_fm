@@ -88,7 +88,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "\nBooked\nTemporarily Booked\nOccupied\nUnder Maintenance\nBlocked\nVacant",
+   "options": "\nBooked\nTemporarily Booked\nOccupied\nOccupied Temporarily\nUnder Maintenance\nBlocked\nVacant",
    "read_only": 1
   },
   {
@@ -329,7 +329,7 @@
   }
  ],
  "links": [],
- "modified": "2020-10-05 08:49:37.007187",
+ "modified": "2020-10-10 11:35:37.921586",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
