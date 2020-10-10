@@ -92,6 +92,14 @@ var set_filters = function(frm) {
 		};
 	});
 
+	frm.set_query('employee', function () {
+		return {
+			filters: {
+				'one_fm_provide_accommodation_by_company': true
+			}
+		};
+	});
+
 	frm.set_query('bed', function () {
 		return {
 			filters: {
