@@ -20,6 +20,14 @@ def get_data():
 			"type": "module"
 		},
 		{
+			"module_name": "GSD",
+			"category": "Modules",
+			"label": _("GSD"),
+			"color": "#2ecc71",
+			"icon": "octicon octicon-organization",
+			"type": "module"
+		},
+		{
 			"module_name": "Operations",
 			"label": _("Operations"),
 			"color": "grey",
