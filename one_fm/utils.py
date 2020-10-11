@@ -1301,6 +1301,7 @@ def create_job_offer_from_job_applicant(job_applicant):
 def set_erf_details(job_offer, erf):
     job_offer.erf = erf.name
     job_offer.designation = erf.designation
+    job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
     set_salary_details(job_offer, erf)
     set_other_benefits_to_terms(job_offer, erf)
 

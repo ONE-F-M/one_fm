@@ -81,4 +81,22 @@ def get_data():
 				}
 			]
 		},
+		{
+			"label": _("Accommodation Reports"),
+			"icon": "fa fa-th",
+			"items": [
+				{
+					"type": "report",
+					"name": "Unit Bed Space Report",
+					"is_query_report": True,
+					"label": _("Unit Bed Space Report"),
+				},
+				{
+					"type": "report",
+					"name": "Accommodation Bed Space Report",
+					"is_query_report": True,
+					"label": _("Accommodation Bed Space Report"),
+				}
+			]
+		},
 	]
