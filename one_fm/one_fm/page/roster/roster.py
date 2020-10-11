@@ -74,8 +74,10 @@ def get_staff_filters_data():
 	}
 
 @frappe.whitelist(allow_guest=True)
-def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None):
+def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None, limit_start=0, limit_page_length=25):
 	# Roster filters
+	st = time.time()
+
 	master_data = {}
 	formatted_data = []
 	formatted_employee_data = {}
@@ -84,36 +86,60 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 	filters = {
 		'date': ['between', (start_date, end_date)]
 	}
-	if project:
-		filters.update({'project': project})	
-	if site:
-		filters.update({'site': site})	
-	if shift:
-		filters.update({'shift': shift})	
-	if department:
-		filters.update({'department': department})	
+	# if project:
+	# 	filters.update({'project': project})	
+	# if site:
+	# 	filters.update({'site': site})	
+	# if shift:
+	# 	filters.update({'shift': shift})	
+	# if department:
+	# 	filters.update({'department': department})	
 	if post_type:
 		filters.update({'post_type': post_type})	
-	print(filters)
+	print("97", filters)
 	fields = ["employee", "employee_name", "date", "post_type", "post_abbrv", "employee_availability", "shift"]
 	
 	if all:
 		employee_filters = {}
 		if project:
 			employee_filters.update({'project': project})
+		if site:
+			employee_filters.update({'site': site})	
+		if shift:
+			employee_filters.update({'shift': shift})	
 		if department:
 			employee_filters.update({'department': department})
-		employees = frappe.get_list("Employee", employee_filters, ["employee", "employee_name"], limit_page_length=50)
-		post_types_list = frappe.get_list("Post Type", ["name", "post_abbrv"])
 
-		for key, group in itertools.groupby(post_types_list, key=lambda x: (x['post_abbrv'], x['name'])):
+		employees = frappe.get_list("Employee", employee_filters, ["employee", "employee_name"], limit_start=limit_start, limit_page_length=limit_page_length)
+		print(employees)
+		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
+		if department:
+			employee_filters.pop('department', None)
+		if post_type:
+			employee_filters.update({'post_type': post_type})
+
+		print(employee_filters)
+		post_types_list = frappe.get_list("Post Schedule", employee_filters, ["post_type", "post_abbrv"])
+		if post_type:
+			employee_filters.pop('post_type', None)
+		employee_filters.pop('date')
+		employee_filters.pop('post_status')
+		
+		for key, group in itertools.groupby(post_types_list, key=lambda x: (x['post_abbrv'], x['post_type'])):
 			post_list = []
 			for date in	pd.date_range(start=start_date, end=end_date):
-				post_filters = {'date': cstr(date).split(" ")[0], 'post_type': key[1] }
-				post_schedule_count = frappe.get_list("Post Schedule", post_filters)
+				post_filters = employee_filters
+				post_filters.update({'date': cstr(date).split(" ")[0], 'post_type': key[1]})
+
 				post_filled_count = frappe.get_list("Employee Schedule", post_filters)
+
+				post_filters.update({"post_status": "Planned"})
+				post_schedule_count = frappe.get_list("Post Schedule", post_filters)
+				post_filters.pop("post_status", None)
+
 				count = cstr(len(post_schedule_count))+"/"+cstr(len(post_filled_count))
 				post_list.append({'count': count, 'post_type': key[0], 'date': cstr(date).split(" ")[0] })
+
 			post_count_data.update({key[0]: post_list })
 		master_data.update({'post_types_data': post_count_data})
 
@@ -142,7 +168,10 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 		pass
 	elif not assigned:
 		pass
-	# print(master_data)
+	print(master_data)
+	et = time.time()
+	print("------------------------------------------------------------------------------------------")
+	print("Time", et-st)
 	return master_data
 
 @frappe.whitelist(allow_guest=True)
@@ -158,7 +187,7 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 		filters.update({'post_template': post_type})	
 
 	post_list = frappe.get_list("Operations Post", filters, "name")
-	print(post_list)
+	# print(post_list)
 	fields = ['name', 'post', 'post_type','date', 'post_status', 'site', 'shift', 'project']	
 	
 	master_data = {}
@@ -178,9 +207,9 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 		for date in	pd.date_range(start=start_date, end=end_date):
 			filters.update({'date': cstr(date).split(" ")[0], 'post': key})
 			schedule = frappe.get_value("Post Schedule", filters, fields, order_by="post asc, date asc", as_dict=1)
-			print(filters, schedule)
-			print("----------------------------------------------------------------------------------------")
-			print("----------------------------------------------------------------------------------------")
+			# print(filters, schedule)
+			# print("----------------------------------------------------------------------------------------")
+			# print("----------------------------------------------------------------------------------------")
 			if not schedule:
 				schedule = {
 					'post': key,
@@ -189,8 +218,7 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 			schedule_list.append(schedule)
 		master_data.update({key: schedule_list})
 	
-	print(master_data)
-
+	# print(master_data)
 	return master_data
 
 @frappe.whitelist()
@@ -272,13 +300,11 @@ def edit_post(posts, values):
 	args = frappe._dict(json.loads(values))
 	print(args, posts)
 	if args.post_status == "Cancel Post":
-		# cancel_post(posts, args)
 		frappe.enqueue(cancel_post, posts=posts, args=args, queue='short')
 	elif args.post_status == "Suspend Post":
-		# suspend_post(posts, args)
 		frappe.enqueue(suspend_post, posts=posts, args=args, queue='short')
 	elif args.post_status == "Post Off":
-		pass
+		frappe.enqueue(post_off, posts=posts, args=args, queue='short')
 	
 
 def cancel_post(posts, args):
@@ -317,7 +343,58 @@ def suspend_post(posts, args):
 	frappe.db.commit()
 
 def post_off(posts, args):
-	pass
+	from one_fm.api.mobile.roster import month_range
+	post_off_paid = args.post_off_paid
+	post_off_unpaid = args.post_off_unpaid
+	
+	if args.repeat == "Does not repeat":
+		for post in json.loads(posts):
+			set_post_off(post["post"], post["date"], post_off_paid, post_off_unpaid)
+	else:
+		if args.repeat and args.repeat in ["Daily", "Weekly", "Monthly", "Yearly"]:
+			end_date = args.repeat_till
+
+			if args.repeat == "Daily":
+				for post in json.loads(posts):
+					for date in	pd.date_range(start=post["date"], end=end_date):
+						set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
+
+			elif args.repeat == "Weekly":
+				week_days = []
+				if args.sunday: week_days.append("Sunday")
+				if args.monday: week_days.append("Monday")
+				if args.tuesday: week_days.append("Tuesday")
+				if args.wednesday: week_days.append("Wednesday")
+				if args.thursday: week_days.append("Thursday")
+				if args.friday: week_days.append("Friday")
+				if args.saturday: week_days.append("Saturday")
+				for post in json.loads(posts):
+					for date in	pd.date_range(start=post["date"], end=end_date):
+						if getdate(date).strftime('%A') in week_days:
+							set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
+
+			elif args.repeat == "Monthly":
+				for post in json.loads(posts):
+					for date in	month_range(post["date"], args.repeat_till):
+						set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
+
+			elif args.repeat == "Yearly":
+				for date in	pd.date_range(start=post["date"], end=args.repeat_till, freq=pd.DateOffset(years=1)):
+					set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
+	frappe.db.commit()
+
+def set_post_off(post, date, post_off_paid, post_off_unpaid):
+	if frappe.db.exists("Post Schedule", {"date": date, "post": post}):
+		doc = frappe.get_doc("Post Schedule", {"date": date, "post": post})
+	else: 
+		doc = frappe.new_doc("Post Schedule")
+		doc.post = post
+		doc.date = date
+	doc.paid = post_off_paid
+	doc.unpaid = post_off_unpaid
+	doc.post_status = "Post Off"
+	doc.save()
+	
 
 
 @frappe.whitelist()

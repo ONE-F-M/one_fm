@@ -4,7 +4,6 @@ frappe.pages['roster'].on_page_load = function(wrapper) {
 		title: 'Roster',
 		single_column: true
 	});
-	
 	$('#page-roster').empty().append(frappe.render_template('roster'));
 
 	load_js(page);
@@ -151,6 +150,7 @@ function load_js(page){
 			let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
 			let posts =  [];
 			let selected = [... new Set(classgrt)];
+			
 			selected.forEach(function(i){
 				let [post, date] = i.split("_");
 				posts.push({post, date}); 
@@ -219,7 +219,7 @@ function load_js(page){
 						fieldtype: 'Section Break',
 						depends_on: "eval:this.get_value('post_status') == 'Post Off'",
 					},
-					{ label: 'Repeat',fieldname: 'repeat', fieldtype: 'Select', options: '\nDoes not repeat\nDaily\nWeekly\nMonthly\nYearly'},
+					{label: 'Repeat',fieldname: 'repeat', fieldtype: 'Select', options: 'Does not repeat\nDaily\nWeekly\nMonthly\nYearly'},
 					{'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("post_status")=="Post Off" && this.get_value("repeat")=="Weekly"'},
 					{'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check'},
 					{'label': 'Wednesday', 'fieldname': 'wednesday', 'fieldtype': 'Check'},
@@ -296,17 +296,18 @@ function load_js(page){
 				primary_action_label: 'Submit',
 				primary_action(values) {
 					console.log(values, posts);
-					// frappe.call({
-					// 	method: 'one_fm.one_fm.page.roster.roster.edit_post',
-					// 	args: {posts, values},
-					// 	callback: function(r) {
-					// 		d.hide();
-					// 		let element = get_wrapper_element().slice(1);
-					// 		page[element](page);
-					// 	},
-					// 	freeze: true,
-					// 	freeze_message: __('Editing Post....')
-					// });
+
+					frappe.call({
+						method: 'one_fm.one_fm.page.roster.roster.edit_post',
+						args: {posts, values},
+						callback: function(r) {
+							d.hide();
+							let element = get_wrapper_element().slice(1);
+							page[element](page);
+						},
+						freeze: true,
+						freeze_message: __('Editing Post....')
+					});
 				}
 			});
 			

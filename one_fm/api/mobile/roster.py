@@ -349,7 +349,7 @@ def get_assigned_projects(employee_id):
 			return frappe.get_list("Project", {"project_type": "External"}, limit_page_length=9999)
 
 		if "Projects Manager" in user_roles:
-			return frappe.get_list("Project", {"account_manager": employee_id}, limit_page_length=9999)
+			return frappe.get_list("Project", {"account_manager": employee_id, "project_type": "External"}, limit_page_length=9999)
 		return []
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)

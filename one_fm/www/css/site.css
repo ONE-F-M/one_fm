@@ -1091,8 +1091,8 @@ span[data-notify="title"] {
   color: #ffffff;
   text-align: center;
   min-height: 50px !important;
-  max-width: 50px !important;
-  min-width: 50px !important;
+  max-width: 65px !important;
+  min-width: 65px !important;
   border-bottom: 0 !important;
   background: #f56767 !important;
   padding: 25px 8px;
