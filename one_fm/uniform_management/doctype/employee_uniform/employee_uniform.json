@@ -18,9 +18,11 @@
   "status",
   "issued_on",
   "returned_on",
+  "company",
   "amended_from",
   "uniform_details_section",
-  "uniforms"
+  "uniforms",
+  "pay_back_to_company"
  ],
  "fields": [
   {
@@ -110,6 +112,7 @@
    "reqd": 1
   },
   {
+   "default": "Today",
    "depends_on": "eval:doc.type=='Return'",
    "fieldname": "returned_on",
    "fieldtype": "Date",
@@ -129,11 +132,25 @@
    "hidden": 1,
    "label": "Series",
    "options": "\nEUI-.YYYY.-\nEUR-.YYYY.-"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "depends_on": "eval: doc.type == \"Return\"",
+   "fieldname": "pay_back_to_company",
+   "fieldtype": "Currency",
+   "label": "Pay Back to Company",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-09-28 07:39:21.437828",
+ "modified": "2020-10-11 21:33:36.458589",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",

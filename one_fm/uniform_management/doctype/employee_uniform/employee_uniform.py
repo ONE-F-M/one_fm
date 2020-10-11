@@ -5,8 +5,9 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today
+from frappe.utils import today, month_diff
 from frappe import _
+from erpnext.stock.get_item_details import get_item_details
 
 class EmployeeUniform(Document):
 	def before_insert(self):
@@ -22,6 +23,10 @@ class EmployeeUniform(Document):
 		elif self.type == "Return":
 			self.status = 'Returned'
 			self.returned_on = today()
+			for item in self.uniforms:
+				if item.issued_item_link:
+					returned = frappe.db.get_value('Employee Uniform Item', item.issued_item_link, 'returned')
+					frappe.db.set_value('Employee Uniform Item', item.issued_item_link, 'returned', returned+item.quantity)
 
 	def validate(self):
 		if not self.uniforms:
@@ -36,13 +41,24 @@ class EmployeeUniform(Document):
 		pass
 
 	def validate_return(self):
-		if self.type == 'Return' and not self.reason_for_return:
-			frappe.throw(_("Reason for Return required in Employee Uniform"))
-		self.validate_item_return_before_expiry()
+		if self.type == 'Return':
+			if not self.reason_for_return:
+				frappe.throw(_("Reason for Return required in Employee Uniform"))
+			self.validate_item_return_before_expiry()
+			if self.reason_for_return in ['Item Damage', 'Employee Exit']:
+				self.calculate_amount_pay_back()
 
 	def validate_item_return_before_expiry(self):
-		if self.type == 'Return' and self.reason_for_return in ['Item Damage', 'Item Expired']:
+		if self.reason_for_return in ['Item Damage', 'Item Expired']:
 			pass
+
+	def calculate_amount_pay_back(self):
+		pay_back = 0
+		for item in self.uniforms:
+			if item.expire_on > self.returned_on:
+				per_month_rate = (item.quantity * item.rate) / month_diff(item.expire_on, item.issued_on)
+				pay_back += per_month_rate * month_diff(item.expire_on, self.returned_on)
+		self.pay_back_to_company = pay_back
 
 	def set_uniform_details(self):
 		uniforms = False
@@ -59,13 +75,31 @@ class EmployeeUniform(Document):
 
 		if uniforms:
 			for uniform in uniforms:
-				unifrom_issue = self.append('uniforms')
-				unifrom_issue.item = uniform.item
-				unifrom_issue.item_name = uniform.item_name
-				unifrom_issue.quantity = uniform.quantity
-				unifrom_issue.qty_uom = uniform.uom
-				if self.type == "Issue" and self.issued_on:
-					unifrom_issue.expire_on = frappe.utils.add_months(self.issued_on, 12)
+				unifrom_issue_ret = self.append('uniforms')
+				unifrom_issue_ret.item = uniform.item
+				unifrom_issue_ret.item_name = uniform.item_name
+				unifrom_issue_ret.quantity = uniform.quantity
+				unifrom_issue_ret.uom = uniform.uom
+				if self.type == "Issue":
+					args = {
+						'item_code': uniform.item,
+						'doctype': self.doctype,
+						'buying_price_list': frappe.defaults.get_defaults().buying_price_list,
+						'currency': frappe.defaults.get_defaults().currency,
+						'name': self.name,
+						'qty': uniform.quantity,
+						'company': self.company,
+						'conversion_rate': 1,
+						'plc_conversion_rate': 1
+					}
+					unifrom_issue_ret.rate = get_item_details(args).price_list_rate
+					if self.issued_on:
+						unifrom_issue_ret.expire_on = frappe.utils.add_months(self.issued_on, 12)
+				elif self.type == "Return":
+					unifrom_issue_ret.expire_on = uniform.expire_on
+					unifrom_issue_ret.rate = uniform.rate
+					unifrom_issue_ret.issued_item_link = uniform.issued_item_link
+					unifrom_issue_ret.issued_on = uniform.issued_on
 
 def get_project_uniform_details(designation_id, project_id=''):
 	if frappe.db.get_value('Designation', designation_id, 'one_fm_is_uniform_needed_for_this_job'):
@@ -93,7 +127,36 @@ def get_project_uniform_details(designation_id, project_id=''):
 	return False
 
 def get_items_to_return(employee_id):
-	return get_issued_items(employee_id)
+	return get_issued_items_not_returned(employee_id)
 
-def get_issued_items(employee_id):
-	return False
+def get_issued_items_not_returned(employee_id):
+	query = """
+		select
+			i.item, i.item_name, (i.quantity - i.returned) as quantity, i.uom, i.expire_on, i.rate,
+			i.name as issued_item_link, u.issued_on
+		from
+			`tabEmployee Uniform Item` i, `tabEmployee Uniform` u
+		where
+			i.parent=u.name and u.employee = %(employee)s and i.returned < i.quantity and u.type = 'Issue'
+			and u.docstatus = 1
+	"""
+	return frappe.db.sql(query,{'employee': employee_id}, as_dict=True)
+
+def issued_items_not_returned(doctype, txt, searchfield, start, page_len, filters):
+	query = """
+		select
+			i.item, i.item_name
+		from
+			`tabEmployee Uniform Item` i, `tabEmployee Uniform` u
+		where
+			i.parent=u.name and u.employee = %(employee)s and i.returned < i.quantity and u.type = 'Issue'
+			and u.docstatus = 1 and (i.item like %(txt)s or i.item_name like %(txt)s)
+			limit %(start)s, %(page_len)s"""
+	return frappe.db.sql(query,
+		{
+			'employee': filters.get("employee"),
+			'start': start,
+			'page_len': page_len,
+			'txt': "%%%s%%" % txt
+		}
+	)
