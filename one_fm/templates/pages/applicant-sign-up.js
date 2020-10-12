@@ -7,11 +7,13 @@ function onSignIn(googleUser) {
     localStorage.setItem("job-application-auth", `one-fm-authenticated-${profile.getId()}`);
     localStorage.setItem("gName", profile.getName());
     localStorage.setItem("gEmail", profile.getEmail());
+    window.location = "./applicant-docs"
 }
 // Linked in Redirect Link
 
 
 function linkedInSigin() {
     window.localStorage.setItem("linkedIn", true);
+    localStorage.setItem("job-application-auth", `one-fm-authenticated-${Math.floor(Math.random() * 100) + 1}`);
     window.location = "https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=77qh8odc5i852h&redirect_uri=https%3A%2F%2Fdev.one-fm.com%2Fapplicant-docs&scope=r_liteprofile%20r_emailaddress";
 }

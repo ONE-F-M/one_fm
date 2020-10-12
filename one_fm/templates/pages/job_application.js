@@ -1,17 +1,18 @@
+if(window.localStorage.getItem("job-application-auth")){
 console.log("ready0");
 // frappe.ready(function () {
 //     // get_dummy();
 //     console.log("ready");
 // });
-function get_dummy() {
+// function get_dummy() {
 
-    frappe.call({
-        method: 'one_fm.templates.pages.job_application.get_dummy',
-        callback: function (r) {
-            console.log("rr2222", r);
-        }
-    });
-}
+//     frappe.call({
+//         method: 'one_fm.templates.pages.job_application.get_dummy',
+//         callback: function (r) {
+//             console.log("rr2222", r);
+//         }
+//     });
+// }
 // frappe.call('one_fm.templates.pages.job_application.get_dummy', {
 //     role_profile: 'Test'
 // }).then(r => {
@@ -105,9 +106,11 @@ function get_dummy() {
         }
         if (localStorage.getItem("linkedInData")) {
             let data = JSON.parse(localStorage.getItem("linkedInData"));
-            console.log(data);
+            console.log("linkedin data",data);
+        if(!data.data.error){
             firstName.value = data.data.firstName?.localized.en_US;
             thirdName.value = data.data.lastName?.localized.en_US;
+        }
         }
     };
     const star = document.getElementsByClassName("star");
@@ -173,3 +176,8 @@ const addNewSkill = () => {
     skillsList.innerHTML += ` <p>${skillInput.value}</p>`;
     skillInput.value = "";
 };
+}
+else {
+    alert("Please Signup or Login!");
+    window.location = "applicant-sign-up";
+}
