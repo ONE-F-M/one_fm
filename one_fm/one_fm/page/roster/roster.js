@@ -852,10 +852,10 @@ function get_roster_data(page){
 				<td>
 					<div class="text-center" data-selectid="${post_type+"|"+date}">${count}</div>
 				</td>`;
-				$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name='${post_type}']`).append(pt_count);
+				$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_type)}']`).append(pt_count);
 				i++;
 			}
-			$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name='${post_types_data[post_type_name][i-1]["post_type"]}']`).append(`<td></td>`);
+			$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_types_data[post_type_name][i-1]["post_type"])}']`).append(`<td></td>`);
 		}
 		let emp_row_wrapper = `
 		<tr class="collapse tableshowclass show">
@@ -981,10 +981,10 @@ function get_roster_week_data(page){
 				<td>
 					<div class="text-center" data-selectid="${post_type+"|"+date}">${count}</div>
 				</td>`;
-				$('.rosterWeek').find(`#calenderweekviewtable tbody tr[data-name="${post_type}"]`).append(pt_count);
+				$('.rosterWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_type)}"]`).append(pt_count);
 				i++;
 			}
-			$('.rosterWeek').find(`#calenderweekviewtable tbody tr[data-name="${post_types_data[post_type_name][i-1]['post_type']}"]`).append(`<td></td>`);
+			$('.rosterWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_types_data[post_type_name][i-1]['post_type'])}"]`).append(`<td></td>`);
 		}
 		let emp_row_wrapper = `
 		<tr class="collapse tableshowclass show">
@@ -1140,9 +1140,9 @@ function get_post_data(page){
 					</td>`;
 				}
 				i++;
-				$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${post_name}']`).append(schedule);
+				$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(schedule);
 			}		
-			$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${post_name}']`).append(`<td></td>`);
+			$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
 		}			
 		bind_events(page);
 	});
@@ -1215,15 +1215,23 @@ function get_post_week_data(page){
 					</td>`;
 				}
 				i++;
-				$('.postWeek').find(`#calenderweekviewtable tbody tr[data-name="${post_name}"]`).append(schedule);
+				$('.postWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(schedule);
 			}
-			$('.postWeek').find(`#calenderweekviewtable tbody tr[data-name="${post_name}"]`).append(`<td></td>`);		
+			$('.postWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(`<td></td>`);		
 		}
 		bind_events(page);
 	});
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
+function escape_values(string){
+	if(string.includes("'")){
+		string.replace(/'/g, "\'");
+	}
+	if(string.includes('"')){
+		string.replace(/"/g, "\"");
+	}
+	return string;
+}
 
 // Setup filters data on left sidebar
 function setup_filters(page){
@@ -1439,27 +1447,38 @@ function get_wrapper_element(element){
 		return element;
 	}
 }
-function debounce(func, wait, immediate) {
-	let timeout;
+
+const search_staff = () => {
+	let key = $('input[name="searchbyradiobtn"]:checked').val();
+	let search_term = $('#inputtextsearch').val();
+	let view = $(".layoutSidenav_content").attr("data-view");
+	
+	frappe.xcall('one_fm.one_fm.page.roster.roster.search_staff', {key, search_term})
+	.then(res => {
+		if(res){
+			let data = res;
+			if(view == "list"){
+				render_staff_list_view(data);
+			}else if(view == "card"){
+				render_staff_card_view(data);
+			}
+		}
+	})
+
+}
+
+// const debounce = function (fn, d) {
+// 	let timer;
+// 	return function () {
+// 	  let context = this,
+// 		args = arguments;
+// 	  clearTimeout(timer);
+// 	  timer = setTimeout(() => {
+// 		fn.apply(context, arguments);
+// 	  }, d);
+// 	}
+// }
   
-	return function executedFunction() {
-		let context = this;
-		let args = arguments;
-			
-		let later = function() {
-		timeout = null;
-		if (!immediate) func.apply(context, args);
-		};
-
-		let callNow = immediate && !timeout;
-		
-		clearTimeout(timeout);
-
-		timeout = setTimeout(later, wait);
-		
-		if (callNow) func.apply(context, args);
-	};
-};
 
 //function for dynamic set calender header data on right calender
 function GetHeaders(IsMonthSet, element) {
@@ -1630,8 +1649,8 @@ function clearallfilter() {
 	$(".assigneddrpval").html("");
 	$(".assigneddrpval").html("Assigned");
 	$(".hideshowprjname").addClass("d-none");
-	$(".btnunassignonclick").removeClass("d-block").addClass("d-none");
-	$(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
+	// $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
+	// $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
 	render_staff($(".layoutSidenav_content").attr("data-view"));
 }
 //clear dropdown value
@@ -1920,14 +1939,14 @@ function setup_staff_filters_data(){
 			if (text === "Assigned") {
 
 				$(".hideshowprjname").addClass("d-none");
-				$(".btnunassignonclick").removeClass("d-block").addClass("d-none");
-				$(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
+				// $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
+				// $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");
 			}
 			else {
 
 				$(".hideshowprjname").removeClass("d-none");
-				$(".btnunassignonclick").removeClass("d-none").addClass("d-block");
-				$(".rostercustomstafftab").addClass("d-none").removeClass("d-flex");
+				// $(".btnunassignonclick").removeClass("d-none").addClass("d-block");
+				// $(".rostercustomstafftab").addClass("d-none").removeClass("d-flex");
 			}
 			render_staff($(".layoutSidenav_content").attr("data-view"));
 		});

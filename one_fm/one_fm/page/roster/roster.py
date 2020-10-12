@@ -476,3 +476,28 @@ def assign_job(employees, start_date, end_date, shift, post_type):
 			roster.employee_availability = "Working"
 			roster.post_type = post_type
 			roster.save(ignore_permissions=True)
+
+
+@frappe.whitelist(allow_guest=True)
+def search_staff(key, search_term):
+	conds = ""
+	if key == "customer" and search_term:
+		conds += 'and prj.customer like "%{customer}%" and emp.project=prj.name'.format(customer=search_term)
+	elif key == "employee_id" and search_term:
+		conds += 'and emp.employee_id like "%{employee_id}%" '.format(employee_id=search_term)
+	elif key == "project" and search_term:
+		conds += 'and emp.project like "%{project}%" '.format(project=search_term)
+	elif key == "site" and search_term:
+		conds += 'and emp.site like "%{site}%" '.format(site=search_term)
+	elif key == "employee_name" and search_term:
+		conds += 'and emp.employee_name like "%{name}%" '.format(name=search_term)
+
+	data = frappe.db.sql("""
+		select 
+			distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site, emp.project
+		from `tabEmployee` as emp, `tabUser` as usr, `tabProject` as prj
+		where 
+		emp.user_id=usr.name
+		{conds}
+	""".format(conds=conds), as_dict=1)
+	return data

@@ -35,8 +35,7 @@
         <div class="row">
             <div class="col-xs-12 pl20 pt20 pb20 pr20 col-sm-12 col-md-12 col-lg-12">
                 <div class="input-group">
-                    <input type="search" class="serach-textbox form-control" placeholder="Search"
-                        id="inputtextsearch" />
+                    <input type="search" class="serach-textbox form-control" placeholder="Search" />
                     <div class="input-group-append">
                         <button class="btn customtoggledrp dropdown-toggle" type="button" data-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
@@ -372,14 +371,15 @@
                 <div class="col-xs-12 col-sm-12 col-md-9 col-lg-9 mt-0 mt-md-3 mt-lg-0">
                     <div class="d-md-flex justify-content-md-between justify-content-lg-end">
                         <div class="searchbox">
-                            <input type="search" class="serach-textbox form-control" placeholder="Search" />
+                            <input type="search" class="serach-textbox form-control" placeholder="Search"
+                                id="inputtextsearch" />
                             <div class="radiobutton d-md-flex pt10">
                                 <div class=""><span class="font16 cardtitlecolor">Search By:</span></div>
                                 <div class="pl10">
                                     <div class="form-group mb-0">
                                         <div class="custom-control custom-radio shadow-none">
                                             <input type="radio" class="custom-control-input" id="txtsearchbyclient"
-                                                name="searchbyradiobtn" value="1">
+                                                name="searchbyradiobtn" value="customer" checked="checked">
                                             <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
                                                 for="txtsearchbyclient">Client</label>
                                         </div>
@@ -389,7 +389,7 @@
                                     <div class="form-group mb-0">
                                         <div class="custom-control custom-radio shadow-none">
                                             <input type="radio" class="custom-control-input" id="txtsearchbycompany"
-                                                name="searchbyradiobtn" value="1">
+                                                name="searchbyradiobtn" value="employee_id">
                                             <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
                                                 for="txtsearchbycompany">Company Id</label>
                                         </div>
@@ -399,7 +399,7 @@
                                     <div class="form-group mb-0">
                                         <div class="custom-control custom-radio shadow-none">
                                             <input type="radio" class="custom-control-input" id="txtsearchbyproject"
-                                                name="searchbyradiobtn" value="1">
+                                                name="searchbyradiobtn" value="project">
                                             <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
                                                 for="txtsearchbyproject">Project</label>
                                         </div>
@@ -409,7 +409,7 @@
                                     <div class="form-group mb-0">
                                         <div class="custom-control custom-radio shadow-none">
                                             <input type="radio" class="custom-control-input" id="txtsearchbysite"
-                                                name="searchbyradiobtn" value="1">
+                                                name="searchbyradiobtn" value="site">
                                             <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
                                                 for="txtsearchbysite">Site</label>
                                         </div>
@@ -419,7 +419,7 @@
                                     <div class="form-group mb-0">
                                         <div class="custom-control custom-radio shadow-none">
                                             <input type="radio" class="custom-control-input" id="txtsearchbyname"
-                                                name="searchbyradiobtn" value="1">
+                                                name="searchbyradiobtn" value="employee_name">
                                             <label class="custom-control-label font16 cardtitlecolor pl10 fontw500"
                                                 for="txtsearchbyname">Name</label>
                                         </div>
@@ -904,5 +904,12 @@
     render_staff("card");
     $(".editbtn").on("click", function () {
         staff_edit_dialog();
-    })
+    });
+    $("#inputtextsearch").keyup(function () {
+        const search = frappe.utils.debounce(search_staff, 1000);
+        search();
+    });
+    $(`input[name="searchbyradiobtn"]`).change(function () {
+        search_staff();
+    });
 </script>
