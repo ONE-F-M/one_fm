@@ -141,7 +141,7 @@
    "options": "Company"
   },
   {
-   "depends_on": "eval: doc.type == \"Return\"",
+   "depends_on": "eval: doc.type == \"Return\" && (doc.reason_for_return == \"Item Damage\" || doc.reason_for_return == \"Employee Exit\")",
    "fieldname": "pay_back_to_company",
    "fieldtype": "Currency",
    "label": "Pay Back to Company",
@@ -150,7 +150,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-10-11 21:33:36.458589",
+ "modified": "2020-10-13 13:09:46.436226",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",
