@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today, month_diff
+from frappe.utils import today, month_diff, add_days, getdate
 from frappe import _
 from erpnext.stock.get_item_details import get_item_details
 
@@ -160,3 +160,63 @@ def issued_items_not_returned(doctype, txt, searchfield, start, page_len, filter
 			'txt': "%%%s%%" % txt
 		}
 	)
+
+def notify_gsd_and_employee_before_uniform_expiry():
+	query = """
+		select
+			i.item, i.item_name, (i.quantity - i.returned) as quantity, i.uom, i.expire_on, i.rate,
+			i.name as issued_item_link, u.issued_on, u.employee
+		from
+			`tabEmployee Uniform Item` i, `tabEmployee Uniform` u
+		where
+			i.parent=u.name and i.returned < i.quantity and u.type = 'Issue'
+			and u.docstatus = 1 and i.expire_on = %(expire_on)s
+	"""
+	expire_on = getdate(add_days(today(), 7))
+	item_list = frappe.db.sql(query,{'expire_on': expire_on}, as_dict=True)
+	recipients = {}
+	uniforms = {}
+	for item in item_list:
+		if item.employee:
+			employee_user = frappe.get_value('Employee', item.employee, 'user_id')
+			if employee_user in recipients:
+				recipients[employee_user].append(item)
+			else:
+				recipients[employee_user]=[item]
+
+	if recipients:
+		message_to_gsd = ""
+		for recipient in recipients:
+			message = "<p>Expiring Uniforms in seven days of employee {0}</p>".format(recipients[recipient][0].employee)
+			message += """
+			<p>
+				<table class="table table-bordered table-hover">
+					<thead>
+						<tr>
+							<td><b>Item</b></td>
+							<td><b>Item Name</b></td>
+							<td><b>Quantity</b></td>
+							<td><b>Expires On</b></td>
+						</tr>
+					</thead>
+					<tbody>
+			"""
+			for uniform in recipients[recipient]:
+				message += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>".format(uniform.item, uniform.item_name,
+					uniform.quantity, uniform.expire_on)
+
+			message += "</tbody></table></p><br/>"
+			message_to_gsd += message
+			frappe.sendmail(
+				recipients=[recipient],
+				subject=_('Expiring Uniforms in seven days'),
+				message=message,
+				header=['Expiring Uniforms in seven days', 'yellow'],
+			)
+		if message_to_gsd:
+			frappe.sendmail(
+				recipients=['georges@armor-services.com'],
+				subject=_('Expiring Uniforms in seven days'),
+				message=message_to_gsd,
+				header=['Expiring Uniforms in seven days', 'yellow'],
+			)
