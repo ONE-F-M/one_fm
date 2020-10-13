@@ -1,3 +1,4 @@
+if(window.localStorage.getItem("job-application-auth")){
 // File Upload
 function readURL(input) {
     const loaderElement = document.getElementById("loader");
@@ -65,3 +66,8 @@ if (window.localStorage.getItem("linkedIn")) {
     getLinkedInData();
 }
 
+}
+else {
+    alert("Please Signup or Login!");
+    window.location = "applicant-sign-up";
+}
