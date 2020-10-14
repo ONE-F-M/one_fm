@@ -221,6 +221,11 @@ def get_data():
 					"name": "Purchase Receipt",
 					"onboard": 1,
 					"dependencies": ["Item", "Supplier"],
+				},
+				{
+					"type": "doctype",
+					"name": "Warehouse",
+					"onboard": 1,
 				}
 			]
 		},
