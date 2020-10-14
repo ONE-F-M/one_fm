@@ -744,12 +744,11 @@
 
     /*indivisual card checkbox select*/
     $(".cardviewcheckbox").change(function () {
-        var getdatatableval = $(this).is(":checked");
+        var getdatatableval = this.checked;
         if (getdatatableval === true) {
             assignedfilter(0);
         }
         else {
-
             assignedfilter(1);
         }
     });
@@ -760,7 +759,7 @@
 
     /*notification display on button*/
     $(".continuebtn").click(function () {
-        notificationmsg("Success!!", "Unssigned successfully.");
+        notificationmsg("Success!!", "Unassigned successfully.");
     });
 
 
