@@ -1,6 +1,7 @@
 <!-- Main section start -->
 <!-- ============================================================== -->
 <div class="layoutSidenav_content" data-view="list">
+    <div id="cover-spin"></div>
     <div class="bg-white d-none d-md-block">
         <ul class="nav nav-tabs nav-justified rostercustomtab">
             <li class="cursorpointer"><a class="redirect_route" data-route="roster"><span><i
@@ -681,7 +682,6 @@
 <div id="sidenav-backdrop"></div>
 <div class="drawer-backdrop" id="drawershow"></div>
 <script>
-    console.log(frappe);
     $("#page-roster").find(".redirect_route").on("click", function (e) {
         let template = $(this).attr("data-route");
         $("#page-roster").empty().append(frappe.render_template(template));
@@ -891,7 +891,6 @@
     /*clear fill form value on modal close*/
     render_staff("list");
     /*staffmanagement();*/
-    console.log(staffmanagement);
     $(".editbtn").on("click", function () {
         staff_edit_dialog();
     });

@@ -110,7 +110,7 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 		if department:
 			employee_filters.update({'department': department})
 
-		employees = frappe.get_list("Employee", employee_filters, ["employee", "employee_name"], limit_start=limit_start, limit_page_length=limit_page_length)
+		employees = frappe.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
 		print(employees)
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 		if department:
@@ -175,7 +175,7 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 	return master_data
 
 @frappe.whitelist(allow_guest=True)
-def get_post_view(start_date, end_date,  project=None, site=None, shift=None, post_type=None, active_posts=1):
+def get_post_view(start_date, end_date,  project=None, site=None, shift=None, post_type=None, active_posts=1, limit_start=0, limit_page_length=25):
 	filters = {}
 	if project:
 		filters.update({'project': project})	
@@ -186,7 +186,7 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 	if post_type:
 		filters.update({'post_template': post_type})	
 
-	post_list = frappe.get_list("Operations Post", filters, "name")
+	post_list = frappe.get_list("Operations Post", filters, "name", order_by="name asc", limit_start=limit_start, limit_page_length=limit_page_length)
 	# print(post_list)
 	fields = ['name', 'post', 'post_type','date', 'post_status', 'site', 'shift', 'project']	
 	
@@ -452,19 +452,19 @@ def assign_staff(employees, shift, post_type, assign_from, assign_date, assign_t
 	try:
 		if assign_from == 'Immediately':
 			assign_date = cstr(add_to_date(nowdate(), days=1))
-		frappe.enqueue(assign_job, employees=employees, start_date=assign_date, end_date=assign_till_date, shift=shift, post_type=post_type, queue='short')
+		frappe.enqueue(assign_job, employees=employees, start_date=assign_date, end_date=assign_till_date, shift=shift, post_type=post_type, is_async=False, queue='long')
 		return True
 	except Exception as e:
 		frappe.log_error(e)
 		frappe.throw(_(e))
 
 def assign_job(employees, start_date, end_date, shift, post_type):
-	for date in	pd.date_range(start=start_date, end=end_date):
-		for employee in json.loads(employees):
-			site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
-			frappe.set_value("Employee", employee, "shift", shift)
-			frappe.set_value("Employee", employee, "site", site)
-			frappe.set_value("Employee", employee, "project", project)
+	for employee in json.loads(employees):
+		site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
+		frappe.set_value("Employee", employee, "shift", shift)
+		frappe.set_value("Employee", employee, "site", site)
+		frappe.set_value("Employee", employee, "project", project)
+		for date in	pd.date_range(start=start_date, end=end_date):
 
 			if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
 				roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date": cstr(date.date())})
@@ -476,7 +476,6 @@ def assign_job(employees, start_date, end_date, shift, post_type):
 			roster.employee_availability = "Working"
 			roster.post_type = post_type
 			roster.save(ignore_permissions=True)
-
 
 @frappe.whitelist(allow_guest=True)
 def search_staff(key, search_term):

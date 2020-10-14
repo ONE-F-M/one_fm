@@ -1604,22 +1604,22 @@ function assignedfilter(value1) {
 	var functionmainvalue = value1;
 
 	if (filtervale == "Assigned" && functionmainvalue == 0) {
-		$(".unassignedbtn").removeClass("d-none");
-		$(".assignedbtn").addClass("d-none");
+		// $(".unassignedbtn").removeClass("d-none");
+		// $(".assignedbtn").addClass("d-none");
 		$(".editbtn").removeClass("d-none");
 		$(".mainclassfilter").removeClass("d-none");
 		$(".allfilters").addClass("d-none");
 	}
 	else if (filtervale == "Unassigned" && functionmainvalue == 0) {
-		$(".unassignedbtn").addClass("d-none");
-		$(".assignedbtn").removeClass("d-none");
+		// $(".unassignedbtn").addClass("d-none");
+		// $(".assignedbtn").removeClass("d-none");
 		$(".editbtn").removeClass("d-none");
 		$(".mainclassfilter").removeClass("d-none");
 		$(".allfilters").addClass("d-none");
 	}
 	else {
-		$(".unassignedbtn").addClass("d-none");
-		$(".assignedbtn").addClass("d-none");
+		// $(".unassignedbtn").addClass("d-none");
+		// $(".assignedbtn").addClass("d-none");
 		$(".editbtn").addClass("d-none");
 	}
 }
@@ -1782,7 +1782,6 @@ function render_staff_list_view(data){
 			let checked = $(".datatablecjeckbox:checked");
 			if(checked.length == 0) assignedfilter(1);
 		});
-	
 	});
 	staffmanagement();
 }
@@ -1875,7 +1874,17 @@ function render_staff_card_view(data){
 			</div>
 		</div>`;
 		$('.staff-card-wrapper').append(row);
+		$(".cardviewcheckbox").change(function () {
+			var getdatatableval = this.checked;
+			if (getdatatableval === true) {
+				assignedfilter(0);
+			}
+			else {
+				assignedfilter(1);
+			}
+		});
 	});
+	staffmanagement();
 }
 
 function setup_staff_filters(page){
@@ -2037,12 +2046,19 @@ function staff_edit_dialog(){
 		],
 		primary_action: function(){
 			let {shift, post_type, assign_from, assign_date, assign_till_date} = d.get_values();
-			frappe.xcall('one_fm.one_fm.page.roster.roster.assign_staff',
-			{employees, shift, post_type, assign_from, assign_date, assign_till_date})
-			.then(res => {
-				d.hide();
-				frappe.msgprint(__("Successful!"));
-				render_staff($(".layoutSidenav_content").attr("data-view"));
+
+			$('#cover-spin').show(0);
+			frappe.call({
+				method: 'one_fm.one_fm.page.roster.roster.assign_staff',
+				args: {employees, shift, post_type, assign_from, assign_date, assign_till_date},
+				callback: function(r) {
+					d.hide();
+					$('#cover-spin').hide();
+					frappe.msgprint(__("Successful!"));
+					render_staff($(".layoutSidenav_content").attr("data-view"));
+				},
+				freeze: true,
+				freeze_message: __('Editing Post....')
 			});
 		}
 	});
