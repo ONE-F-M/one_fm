@@ -28,6 +28,10 @@ class AccommodationCheckinCheckout(Document):
 			self.naming_series = "CHECKIN-.YYYY.-"
 		elif self.type == "OUT":
 			self.naming_series = "CHECKOUT-.YYYY.-"
+		if self.employee_id and not self.employee:
+			employee = frappe.db.exists('Employee', {'employee_id': self.employee_id})
+			if employee:
+				self.employee = employee
 
 	def on_trash(self):
 		exists_employee_checkin_checkout = frappe.db.exists('Accommodation Checkin Checkout', {

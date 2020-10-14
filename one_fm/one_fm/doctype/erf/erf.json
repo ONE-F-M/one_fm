@@ -131,7 +131,8 @@
   {
    "fieldname": "number_of_candidates_required",
    "fieldtype": "Int",
-   "label": "Number of Candidates Required"
+   "label": "Number of Candidates Required",
+   "reqd": 1
   },
   {
    "fieldname": "project",
@@ -793,7 +794,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-10-10 12:06:55.201542",
+ "modified": "2020-10-13 13:23:11.828552",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
