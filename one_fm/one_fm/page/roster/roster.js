@@ -1085,7 +1085,7 @@ function get_post_data(page){
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view',{start_date, end_date, project, site, shift, post_type})
 	.then(res =>{ 
 		$('.postMonth').find('#calenderviewtable tbody').empty();
-		for(post_name in res){
+		for(post_name in res.post_data){
 			let row = `
 			<tr class="colorclass" data-name="${post_name}">
 				<td>
@@ -1115,7 +1115,7 @@ function get_post_data(page){
 					'Cancelled': 'redboxcolor'
 				}
 				
-				let {project, site, shift, date, post_status, post_type, post, name} = res[post_name][i];
+				let {project, site, shift, date, post_status, post_type, post, name} = res["post_data"][post_name][i];
 				if(name){
 					schedule = `
 					<td>
@@ -1161,7 +1161,7 @@ function get_post_week_data(page){
 	.then(res =>{ 
 		$('.postWeek').find('#calenderweekviewtable tbody').empty();
 
-		for(post_name in res){
+		for(post_name in res.post_data){
 			let row = `
 			<tr class="colorclass" data-name="${post_name}">
 				<td>
@@ -1190,7 +1190,7 @@ function get_post_week_data(page){
 					'Cancelled': 'redboxcolor'
 				}
 				
-				let {project, site, shift, date, post_status, post_type, post, name} = res[post_name][i];
+				let {project, site, shift, date, post_status, post_type, post, name} = res["post_data"][post_name][i];
 				if(name){
 					schedule = `
 					<td>
@@ -1238,7 +1238,7 @@ function escape_values(string){
 
 // Setup filters data on left sidebar
 function setup_filters(page){
-	frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
+	frappe.db.get_value("Employee", {"user_id": "k.sharma@armor-services.com"}, ["name"])
 	.then(res => {
 		let {name} = res.message;
 		page.employee_id = name;

@@ -165,6 +165,7 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 	fields = ['name', 'post', 'post_type','date', 'post_status', 'site', 'shift', 'project']	
 	
 	master_data = {}
+	post_data = {}
 	filters.pop('post_template', None)
 	filters.pop('site_shift', None)
 	if post_type:
@@ -182,8 +183,9 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 					'date': cstr(date).split(" ")[0]
 				}
 			schedule_list.append(schedule)
-		master_data.update({key: schedule_list})
-	master_data.update({"total": post_total})	
+		post_data.update({key: schedule_list})
+	
+	master_data.update({"post_data": post_data, "total": post_total})	
 	return master_data
 
 @frappe.whitelist()
