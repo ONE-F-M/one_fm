@@ -905,7 +905,7 @@
         staff_edit_dialog();
     });
     $("#inputtextsearch").keyup(function () {
-        const search = frappe.utils.debounce(search_staff, 1000);
+        const search = frappe.utils.debounce(search_staff, 1200);
         search();
     });
     $(`input[name="searchbyradiobtn"]`).change(function () {
