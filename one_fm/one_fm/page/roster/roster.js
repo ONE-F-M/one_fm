@@ -296,12 +296,13 @@ function load_js(page){
 				primary_action_label: 'Submit',
 				primary_action(values) {
 					console.log(values, posts);
-
+					$('#cover-spin').show(0);
 					frappe.call({
 						method: 'one_fm.one_fm.page.roster.roster.edit_post',
 						args: {posts, values},
 						callback: function(r) {
 							d.hide();
+							$('#cover-spin').hide();
 							let element = get_wrapper_element().slice(1);
 							page[element](page);
 						},
@@ -569,6 +570,7 @@ function load_js(page){
 
 // Show popups on clicking edit options in Roster view
 function setup_topbar_events(page){
+	console.log(frappe.session.user);
 	$('.scheduleleave').on('click', function(){
 		schedule_leave(page);		
 	});
@@ -587,233 +589,234 @@ function setup_topbar_events(page){
 
 //Bind events to Edit options in Roster/Post view
 function bind_events(page){
-	$('.postMonth').find(".hoverselectclass").on("click", function () {
-		$(this).toggleClass("selectclass");
-		// If the id is not already in the array, add it. If it is, remove it  
-		classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-
-		if (classgrt.join(",") === "") {
-			$(".Postfilterhideshow").addClass("d-none");
-		}
-		else {
-			$(".Postfilterhideshow").removeClass("d-none");
-		}
-	});
-
-	$('.postWeek').find(".hoverselectclass").on("click", function () {
-		$(this).toggleClass("selectclass");
-		// If the id is not already in the array, add it. If it is, remove it  
-		classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-
-		if (classgrt.join(",") === "") {
-			$(".Postfilterhideshow").addClass("d-none");
-		}
-		else {
-			$(".Postfilterhideshow").removeClass("d-none");
-		}
-	});
-
-	//add array on each of data select from calender
-	$('.rosterMonth').find(".hoverselectclass").on("click", function () {
-		$(this).toggleClass("selectclass");
-		// If the id is not already in the array, add it. If it is, remove it  
-		classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-
-		if (classgrt.join(",") === "") {
-			$(".filterhideshow").addClass("d-none");
-		}
-		else {
-			$(".filterhideshow").removeClass("d-none");
-		}
-	});
-
-	//add array on each of data select from calender
-	$('.rosterWeek').find(".hoverselectclass").on("click", function () {
-		$(this).toggleClass("selectclass");
-		// If the id is not already in the array, add it. If it is, remove it  
-		classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-
-		if (classgrt.join(",") === "") {
-			$(".filterhideshow").addClass("d-none");
-		}
-		else {
-			$(".filterhideshow").removeClass("d-none");
-		}
-	});
-
-	/*on checkbox select change*/
-	$('.postWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
-		if ($(this).is(":checked")) {
-			$(this).parent().parent().parent().children("td").children().not("label").each(function(i,v){
-				let date = $(v).attr('data-date');
-				if(moment(date).isAfter(moment())){
-					$(v).addClass("selectclass");
-				}
-			});
-			$(this).parent().parent().parent().children("td").children().not("label").removeClass("hoverselectclass");
-			$(".Postfilterhideshow").removeClass("d-none");
-
-		}
-		else {
-			$(this).parent().parent().parent().children("td").children().not("label").addClass("hoverselectclass");
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
-			})
-			$(this).parent().parent().parent().children("td").children().not("label").removeClass("selectclass");
-			$(".Postfilterhideshow").addClass("d-none");
-		}
-		$(".selectclass").map(function () {
-			classgrt.push($(this).attr("data-selectid"));
-			classgrt = [... new Set(classgrt)];
-			// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-			// 	console.log(isMonth, classgrt);
-			// 	if (isMonth == 1) {
-			// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-			// 		classgrt.push($(this).attr("data-selectid"));
-			// 	}
-			// 	else {
-			// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-			// 		classgrtw.push($(this).attr("data-selectid"));
-			// 	}
-			// }
-		});
-	});
-	/*on checkbox select change*/
-	$('.postMonth').find(`input[name="selectallcheckbox"]`).on("change", function () {
-		if ($(this).is(":checked")) {
-			$(this).parent().parent().parent().children("td").children().not("label").each(function(i,v){
-				let date = $(v).attr('data-date');
-				if(moment(date).isAfter(moment())){
-					$(v).addClass("selectclass");
-				}
-			});
-			$(this).parent().parent().parent().children("td").children().not("label").removeClass("hoverselectclass");
-			$(".Postfilterhideshow").removeClass("d-none");
-		}
-		else {
-			$(this).parent().parent().parent().children("td").children().not("label").addClass("hoverselectclass");
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
-			})
-			$(this).parent().parent().parent().children("td").children().not("label").removeClass("selectclass");
-			$(".Postfilterhideshow").addClass("d-none");
-		}
-		$(".selectclass").map(function () {
-			classgrt.push($(this).attr("data-selectid"));
-			classgrt = [... new Set(classgrt)];
-			// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-			// 	if (isMonth == 1) {
-			// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-			// 		classgrt.push($(this).attr("data-selectid"));
-			// 	}
-			// 	else {
-			// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrtw.push(this.getAttribute("data-selectid")) : classgrtw.splice(classgrtw.indexOf(this.getAttribute("data-selectid")), 1);
-			// 		classgrtw.push($(this).attr("data-selectid"));
-			// 	}
-			// }
-		});
-
-	});
-	//on checkbox select change
-	$('.rosterWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
-		if ($(this).is(":checked")) {
-
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				let [employee, date] = $(v).attr('data-selectid').split('|');
-				if(moment(date).isAfter(moment())){
-					$(v).addClass("selectclass");
-				}
-			});
-			$(".filterhideshow").removeClass("d-none");
-
-		}
-		else {
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
-			})
-			$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
-			$(".filterhideshow").addClass("d-none");
-		}
-		$(".selectclass").map(function () {
-			classgrt.push($(this).attr("data-selectid"));
-			classgrt = [... new Set(classgrt)];
-			// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-			// 	if (isMonth == 1) {
-			// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-			// 		classgrt.push($(this).attr("data-selectid"));
-			// 	}
-			// 	else {
-			// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-			// 		classgrtw.push($(this).attr("data-selectid"));
-			// 	}
-			// }
-		});
-	});
-	//on checkbox select change
-	$('.rosterMonth').find(`input[name="selectallcheckbox"]`).on("change", function () {
-		if ($(this).is(":checked")) {
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				let [employee, date] = $(v).attr('data-selectid').split('|');
-				if(moment(date).isAfter(moment())){
-					$(v).addClass("selectclass");
-				}
-			})
-			$(".filterhideshow").removeClass("d-none");
-		}
-		else {
-			$(this).closest('tr').children("td").children().not("label").each(function(i,v){
-				classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
-			})
-			$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
-			$(".filterhideshow").addClass("d-none");
-		}
-		$(".selectclass").map(function () {
-			classgrt.push($(this).attr("data-selectid"));
-			classgrt = [... new Set(classgrt)];
-			// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-			// 	if (isMonth == 1) {
-			// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-			// 		classgrt.push($(this).attr("data-selectid"));
-			// 	}
-			// 	else {
-			// 		classgrtw.push($(this).attr("data-selectid"));
-			// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrtw.push(this.getAttribute("data-selectid")) : classgrtw.splice(classgrtw.indexOf(this.getAttribute("data-selectid")), 1);
-			// 	}
-			// }
-		});
-	});
-	//on checkbox select change
-	$("input[name='selectallcheckboxes']").on("change", function () {
-		
-		if ($(this).is(":checked")) {
-			
-			$(this).parent().parent().parent().children('td').children().not('label').removeClass("hoverselectclass");
-			$(this).parent().parent().parent().children('td').children().not('label').addClass("selectclass");
-			$(this).parent().parent().parent().children('td').children().not('label').addClass("disableselectclass");
-			$('.Postfilterhideshow').removeClass('d-none');
-			
-		}
-		else {
-			$(this).parent().parent().parent().children('td').children().not('label').addClass("hoverselectclass");
-			$(this).parent().parent().parent().children('td').children().not('label').removeClass("selectclass");
-			$(this).parent().parent().parent().children('td').children().not('label').removeClass("disableselectclass");
-			$('.Postfilterhideshow').addClass('d-none');
-		}          
-		$('.selectclass').map(function () {
+	if(["Operations Manager", "Site Supervisor", "Shift Manager", "Projects Manager"].some(i => frappe.user_roles.includes(i))){
+		$('.postMonth').find(".hoverselectclass").on("click", function () {
+			$(this).toggleClass("selectclass");
+			// If the id is not already in the array, add it. If it is, remove it  
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-		});            
-		if ($(this).parent().parent().parent().children('td').children().hasClass('redboxcolor')) {
-			$('#selRetrive').show();
-			$('.selPost').hide();
-		}
-		else {
-			$('#selRetrive').hide();
-			$('.selPost').show();
-		}
-			
-	});
-	//on checkbox select change
 
+			if (classgrt.join(",") === "") {
+				$(".Postfilterhideshow").addClass("d-none");
+			}
+			else {
+				$(".Postfilterhideshow").removeClass("d-none");
+			}
+		});
+
+		$('.postWeek').find(".hoverselectclass").on("click", function () {
+			$(this).toggleClass("selectclass");
+			// If the id is not already in the array, add it. If it is, remove it  
+			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+
+			if (classgrt.join(",") === "") {
+				$(".Postfilterhideshow").addClass("d-none");
+			}
+			else {
+				$(".Postfilterhideshow").removeClass("d-none");
+			}
+		});
+
+		//add array on each of data select from calender
+		$('.rosterMonth').find(".hoverselectclass").on("click", function () {
+			$(this).toggleClass("selectclass");
+			// If the id is not already in the array, add it. If it is, remove it  
+			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+
+			if (classgrt.join(",") === "") {
+				$(".filterhideshow").addClass("d-none");
+			}
+			else {
+				$(".filterhideshow").removeClass("d-none");
+			}
+		});
+
+		//add array on each of data select from calender
+		$('.rosterWeek').find(".hoverselectclass").on("click", function () {
+			$(this).toggleClass("selectclass");
+			// If the id is not already in the array, add it. If it is, remove it  
+			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+
+			if (classgrt.join(",") === "") {
+				$(".filterhideshow").addClass("d-none");
+			}
+			else {
+				$(".filterhideshow").removeClass("d-none");
+			}
+		});
+
+		/*on checkbox select change*/
+		$('.postWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
+			if ($(this).is(":checked")) {
+				$(this).parent().parent().parent().children("td").children().not("label").each(function(i,v){
+					let date = $(v).attr('data-date');
+					if(moment(date).isAfter(moment())){
+						$(v).addClass("selectclass");
+					}
+				});
+				$(this).parent().parent().parent().children("td").children().not("label").removeClass("hoverselectclass");
+				$(".Postfilterhideshow").removeClass("d-none");
+
+			}
+			else {
+				$(this).parent().parent().parent().children("td").children().not("label").addClass("hoverselectclass");
+				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
+					classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
+				})
+				$(this).parent().parent().parent().children("td").children().not("label").removeClass("selectclass");
+				$(".Postfilterhideshow").addClass("d-none");
+			}
+			$(".selectclass").map(function () {
+				classgrt.push($(this).attr("data-selectid"));
+				classgrt = [... new Set(classgrt)];
+				// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
+				// 	console.log(isMonth, classgrt);
+				// 	if (isMonth == 1) {
+				// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+				// 		classgrt.push($(this).attr("data-selectid"));
+				// 	}
+				// 	else {
+				// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+				// 		classgrtw.push($(this).attr("data-selectid"));
+				// 	}
+				// }
+			});
+		});
+		/*on checkbox select change*/
+		$('.postMonth').find(`input[name="selectallcheckbox"]`).on("change", function () {
+			if ($(this).is(":checked")) {
+				$(this).parent().parent().parent().children("td").children().not("label").each(function(i,v){
+					let date = $(v).attr('data-date');
+					if(moment(date).isAfter(moment())){
+						$(v).addClass("selectclass");
+					}
+				});
+				$(this).parent().parent().parent().children("td").children().not("label").removeClass("hoverselectclass");
+				$(".Postfilterhideshow").removeClass("d-none");
+			}
+			else {
+				$(this).parent().parent().parent().children("td").children().not("label").addClass("hoverselectclass");
+				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
+					classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
+				})
+				$(this).parent().parent().parent().children("td").children().not("label").removeClass("selectclass");
+				$(".Postfilterhideshow").addClass("d-none");
+			}
+			$(".selectclass").map(function () {
+				classgrt.push($(this).attr("data-selectid"));
+				classgrt = [... new Set(classgrt)];
+				// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
+				// 	if (isMonth == 1) {
+				// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+				// 		classgrt.push($(this).attr("data-selectid"));
+				// 	}
+				// 	else {
+				// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrtw.push(this.getAttribute("data-selectid")) : classgrtw.splice(classgrtw.indexOf(this.getAttribute("data-selectid")), 1);
+				// 		classgrtw.push($(this).attr("data-selectid"));
+				// 	}
+				// }
+			});
+
+		});
+		//on checkbox select change
+		$('.rosterWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
+			if ($(this).is(":checked")) {
+
+				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
+					let [employee, date] = $(v).attr('data-selectid').split('|');
+					if(moment(date).isAfter(moment())){
+						$(v).addClass("selectclass");
+					}
+				});
+				$(".filterhideshow").removeClass("d-none");
+
+			}
+			else {
+				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
+					classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
+				})
+				$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
+				$(".filterhideshow").addClass("d-none");
+			}
+			$(".selectclass").map(function () {
+				classgrt.push($(this).attr("data-selectid"));
+				classgrt = [... new Set(classgrt)];
+				// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
+				// 	if (isMonth == 1) {
+				// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+				// 		classgrt.push($(this).attr("data-selectid"));
+				// 	}
+				// 	else {
+				// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+				// 		classgrtw.push($(this).attr("data-selectid"));
+				// 	}
+				// }
+			});
+		});
+		//on checkbox select change
+		$('.rosterMonth').find(`input[name="selectallcheckbox"]`).on("change", function () {
+			if ($(this).is(":checked")) {
+				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
+					let [employee, date] = $(v).attr('data-selectid').split('|');
+					if(moment(date).isAfter(moment())){
+						$(v).addClass("selectclass");
+					}
+				})
+				$(".filterhideshow").removeClass("d-none");
+			}
+			else {
+				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
+					classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
+				})
+				$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
+				$(".filterhideshow").addClass("d-none");
+			}
+			$(".selectclass").map(function () {
+				classgrt.push($(this).attr("data-selectid"));
+				classgrt = [... new Set(classgrt)];
+				// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
+				// 	if (isMonth == 1) {
+				// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+				// 		classgrt.push($(this).attr("data-selectid"));
+				// 	}
+				// 	else {
+				// 		classgrtw.push($(this).attr("data-selectid"));
+				// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrtw.push(this.getAttribute("data-selectid")) : classgrtw.splice(classgrtw.indexOf(this.getAttribute("data-selectid")), 1);
+				// 	}
+				// }
+			});
+		});
+		//on checkbox select change
+		$("input[name='selectallcheckboxes']").on("change", function () {
+			
+			if ($(this).is(":checked")) {
+				
+				$(this).parent().parent().parent().children('td').children().not('label').removeClass("hoverselectclass");
+				$(this).parent().parent().parent().children('td').children().not('label').addClass("selectclass");
+				$(this).parent().parent().parent().children('td').children().not('label').addClass("disableselectclass");
+				$('.Postfilterhideshow').removeClass('d-none');
+				
+			}
+			else {
+				$(this).parent().parent().parent().children('td').children().not('label').addClass("hoverselectclass");
+				$(this).parent().parent().parent().children('td').children().not('label').removeClass("selectclass");
+				$(this).parent().parent().parent().children('td').children().not('label').removeClass("disableselectclass");
+				$('.Postfilterhideshow').addClass('d-none');
+			}          
+			$('.selectclass').map(function () {
+				classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+			});            
+			if ($(this).parent().parent().parent().children('td').children().hasClass('redboxcolor')) {
+				$('#selRetrive').show();
+				$('.selPost').hide();
+			}
+			else {
+				$('#selRetrive').hide();
+				$('.selPost').show();
+			}
+				
+		});
+		//on checkbox select change
+	}
 }
 
 // Get data for Roster monthly view and render it
@@ -1224,10 +1227,10 @@ function get_post_week_data(page){
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 function escape_values(string){
-	if(string.includes("'")){
+	if(string && string.includes("'")){
 		string.replace(/'/g, "\'");
 	}
-	if(string.includes('"')){
+	if(string && string.includes('"')){
 		string.replace(/"/g, "\"");
 	}
 	return string;
@@ -1235,7 +1238,7 @@ function escape_values(string){
 
 // Setup filters data on left sidebar
 function setup_filters(page){
-	frappe.db.get_value("Employee", {"user_id": "k.sharma@armor-services.com"}, ["name"])
+	frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
 	.then(res => {
 		let {name} = res.message;
 		page.employee_id = name;
@@ -1789,7 +1792,7 @@ function render_staff_list_view(data){
 function render_staff_card_view(data){
 	$('.staff-card-wrapper').empty();
 	data.forEach(function(employee, i){
-		let {employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department, image} = employee;
+		let {name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department, image} = employee;
 		let row = `
 		<div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 mb30">
 			<div class="card h-100">
@@ -1819,7 +1822,7 @@ function render_staff_card_view(data){
 											<div class="show-read-more cardtitlecolor font20 ">${employee_name || 'N/A'}</div>
 											<label class="checkboxcontainer d-none d-md-block"><span
 													class="text-white"></span><input type="checkbox"
-													name="cardviewcheckbox" class="cardviewcheckbox"><span
+													name="cardviewcheckbox" class="cardviewcheckbox" data-employee-id="${name}"><span
 													class="checkmark rightcheckbox"></span></label>
 										</div>
 									</div>
@@ -1972,10 +1975,17 @@ function ClearServiceBoard(e){
 }
 
 function staff_edit_dialog(){
-	let employees = $(".datatablecjeckbox:checked").map(function () {
-		return $(this).attr("data-employee-id");
-	}).get();
-
+	let employees = [];
+	if($(".layoutSidenav_content").attr("data-view") == "list"){
+		employees = $(".datatablecjeckbox:checked").map(function () {
+			return $(this).attr("data-employee-id");
+		}).get();
+	}else if ($(".layoutSidenav_content").attr("data-view") == "card"){
+		employees = $(".cardviewcheckbox:checked").map(function () {
+			return $(this).attr("data-employee-id");
+		}).get();
+	}
+	
 	let d = new frappe.ui.Dialog({
 		'title': 'Edit',
 		'fields': [
@@ -2273,11 +2283,14 @@ function unschedule_staff(page){
 			}}
 		],
 		primary_action: function(){
+			$('#cover-spin').show(0);
 			let {start_date, end_date, never_end} = d.get_values();
+			console.log(employees);
 			frappe.xcall('one_fm.one_fm.page.roster.roster.unschedule_staff',
 			{employees, start_date, end_date, never_end})
 			.then(res => {
 				d.hide();
+				$('#cover-spin').hide();
 				let element = get_wrapper_element().slice(1);
 				page[element](page);
 			});
@@ -2319,11 +2332,13 @@ function schedule_leave(page){
 			}}
 		],
 		primary_action: function(){
+			$('#cover-spin').show(0);
 			let {leave_type, start_date, end_date} = d.get_values();
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_leave',
 			{employees, leave_type, start_date, end_date})
 			.then(res => {
 				d.hide();
+				$('#cover-spin').hide();
 				let element = get_wrapper_element().slice(1);
 				page[element](page);
 			});
@@ -2388,11 +2403,14 @@ function schedule_change_post(page){
 			}},
 		],
 		primary_action: function(){
+			
 			let {shift, site, post_type, project} = d.get_values();
+			$('#cover-spin').show(0);
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
 			{employees, shift, post_type})
 			.then(res => {
 				d.hide();
+				$('#cover-spin').hide();
 				let element = get_wrapper_element().slice(1);
 				page[element](page);
 			});
@@ -2428,6 +2446,7 @@ function dayoff(page){
 			{'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'default': date, 'depends_on': 'eval:this.get_value("repeat")!= "Does not repeat"'}
 		],
 		primary_action: function(){
+			$('#cover-spin').show(0);
 			let week_days = []; 
 			let args = {};
 			let repeat_freq = '';
@@ -2472,6 +2491,7 @@ function dayoff(page){
 			frappe.xcall('one_fm.one_fm.page.roster.roster.dayoff', args)
 			.then(res => {
 				d.hide();
+				$('#cover-spin').hide();
 				let element = get_wrapper_element().slice(1);
 				page[element](page);
 			});

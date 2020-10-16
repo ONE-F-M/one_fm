@@ -71,7 +71,7 @@ body[data-route="roster"] #cover-spin {
   right: 0;
   top: 0;
   bottom: 0;
-  background-color: #ffffff; /*rgba(0, 0, 0, 0.952);*/
+  background-color: rgb(255 255 255 / 0.7);
   z-index: 9999;
   display: none;
 }
@@ -103,7 +103,7 @@ body[data-route="roster"] #cover-spin::after {
   width: 40px;
   height: 40px;
   border-style: solid;
-  border-color: #a4a7aa;
+  border-color: #2c77ff;
   border-top-color: transparent;
   border-width: 4px;
   border-radius: 50%;
