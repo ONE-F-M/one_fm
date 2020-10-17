@@ -1,5 +1,4 @@
 {
- "actions": [],
  "creation": "2020-08-31 19:39:53.406596",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -64,108 +63,108 @@
   {
    "fetch_from": "employee.date_of_birth",
    "fieldname": "birth_date",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Birth Date"
   },
   {
    "fieldname": "centeralized_number",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Centeralized Number"
   },
   {
    "fetch_from": "employee.gender",
    "fieldname": "gender",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Gender"
   },
   {
    "fetch_from": "employee.one_fm_place_of_birth",
    "fieldname": "place_of_birth",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Place of Birth"
   },
   {
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_arabic",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "First Name Arabic"
   },
   {
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_arabic",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Second Name Arabic"
   },
   {
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name_arabic",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Third Name Arabic"
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_arabic",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Last Name Arabic"
   },
   {
    "fetch_from": "employee.first_name",
    "fieldname": "first_name_english",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "First Name English"
   },
   {
    "fetch_from": "employee.middle_name",
    "fieldname": "second_name_english",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Second Name English"
   },
   {
    "fetch_from": "employee.one_fm_third_name",
    "fieldname": "third_name_english",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Third Name English"
   },
   {
    "fetch_from": "employee.last_name",
    "fieldname": "last_name_english",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Last Name English"
   },
   {
    "fetch_from": "employee.passport_number",
    "fieldname": "passport_number",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Passport Number"
   },
   {
    "fetch_from": "employee.one_fm_passport_type",
    "fieldname": "passport_type",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Passport Type"
   },
   {
    "fetch_from": "employee.date_of_issue",
    "fieldname": "passport_issue_date",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Passport Issue Date"
   },
   {
    "fetch_from": "employee.valid_upto",
    "fieldname": "passport_expiry_date",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Passport Expiry Date"
   },
   {
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Nationality"
   },
   {
    "fetch_from": "employee.designation",
    "fieldname": "designation",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Designation"
   },
   {
@@ -263,8 +262,7 @@
   }
  ],
  "is_submittable": 1,
- "links": [],
- "modified": "2020-10-04 20:15:31.298545",
+ "modified": "2020-10-12 21:15:18.891133",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
