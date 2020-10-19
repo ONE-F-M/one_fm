@@ -201,6 +201,9 @@ scheduler_events = {
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
 		'one_fm.utils.send_gp_letter_reminder',
 	],
+	"monthly": [
+		'one_fm.one_fm.sales_invoice_custom.create_sales_invoice'
+	],
 	"cron": {
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_accept",
