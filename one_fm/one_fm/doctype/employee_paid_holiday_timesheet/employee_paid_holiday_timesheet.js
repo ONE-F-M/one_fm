@@ -2,7 +2,9 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Employee Paid Holiday Timesheet', {
-	// refresh: function(frm) {
-
-	// }
+	approver: function(frm) {
+		if(frm.doc.approver){
+			frm.set_value("approver_name", frappe.user.full_name(frm.doc.approver));
+		}
+	}
 });

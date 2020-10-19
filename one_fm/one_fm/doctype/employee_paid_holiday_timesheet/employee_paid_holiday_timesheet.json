@@ -9,9 +9,12 @@
   "naming_series",
   "employee",
   "employee_name",
+  "approver",
+  "approver_name",
+  "hours_per_day",
+  "column_break_6",
   "department",
   "designation",
-  "column_break_6",
   "current_assigned_salary_structure",
   "status",
   "date",
@@ -31,7 +34,8 @@
    "fieldname": "employee",
    "fieldtype": "Link",
    "label": "Employee",
-   "options": "Employee"
+   "options": "Employee",
+   "reqd": 1
   },
   {
    "fetch_from": "employee.employee_name",
@@ -68,13 +72,11 @@
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
    "default": "Open",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Open\nApproved\nPartial Approved\nCancelled\nRejected",
-   "read_only": 1
+   "options": "Open\nApproved\nRejected\nCancelled"
   },
   {
    "default": "Today",
@@ -100,12 +102,32 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Employee Paid Holiday Timesheet",
-   "options": "Employee Paid Holiday Timesheet Item"
+   "options": "Employee Paid Holiday Timesheet Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "approver",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Approver",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "approver_name",
+   "fieldtype": "Data",
+   "label": "Approver Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "hours_per_day",
+   "fieldtype": "Float",
+   "label": "Hours per Day"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-10-07 21:28:38.984886",
+ "modified": "2020-10-18 19:13:48.099039",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Paid Holiday Timesheet",

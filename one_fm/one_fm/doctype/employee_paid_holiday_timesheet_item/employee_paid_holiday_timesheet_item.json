@@ -8,8 +8,10 @@
   "date",
   "notes",
   "status",
+  "reason_for_rejection",
+  "column_break_5",
   "timesheet",
-  "reason_for_rejection"
+  "timesheet_status"
  ],
  "fields": [
   {
@@ -46,11 +48,23 @@
    "fieldtype": "Small Text",
    "label": "Reason for Rejection",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "timesheet.status",
+   "fieldname": "timesheet_status",
+   "fieldtype": "Data",
+   "label": "Timesheet Status",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-10-07 21:27:41.058001",
+ "modified": "2020-10-18 19:16:10.682548",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Paid Holiday Timesheet Item",
