@@ -115,6 +115,24 @@ frappe.ui.form.on('Contracts', {
 			};
 		});
 		frm.refresh_field("customer_address");
+		frm.fields_dict['items'].grid.get_field('item_code').get_query = function() {
+            return {    
+                filters:{
+                    is_stock_item: 0,
+                    disabled: 0
+                }
+            }
+        }
+		frm.refresh_field("items");
+		frm.fields_dict['assets'].grid.get_field('item_code').get_query = function() {
+            return {    
+                filters:{
+                    is_stock_item: 1,
+                    disabled: 0
+                }
+            }
+        }
+        frm.refresh_field("assets");
 	},
 	customer_address:function(frm){
 		if(frm.doc.customer_address){
@@ -262,13 +280,22 @@ frappe.ui.form.on('Contract Asset', {
 						'disabled': 0,
 					},
 					'fieldname':[
-						'item_name'
+						'item_name',
+						'stock_uom',
+						'sales_uom'
 					]
 				},
 				callback:function(s){
 					if (!s.exc) {
 						if(s.message){
+							console.log(s.message);
 							frappe.model.set_value(d.doctype, d.name, "item_name", s.message.item_name);
+							if(s.message.sales_uom != undefined){
+								frappe.model.set_value(d.doctype, d.name, "uom", s.message.sales_uom);
+							}
+							else{
+								frappe.model.set_value(d.doctype, d.name, "uom", s.message.stock_uom);
+							}
 							frm.refresh_field("assets");
 						}
 					}

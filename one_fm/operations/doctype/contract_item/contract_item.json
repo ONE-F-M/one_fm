@@ -8,7 +8,19 @@
   "head_count",
   "unit_rate",
   "column_break_4",
-  "item_name"
+  "item_name",
+  "shift_hours",
+  "section_break_7",
+  "sunday",
+  "thursday",
+  "column_break_9",
+  "monday",
+  "friday",
+  "column_break_11",
+  "tuesday",
+  "saturday",
+  "column_break_13",
+  "wednesday"
  ],
  "fields": [
   {
@@ -40,10 +52,75 @@
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "shift_hours",
+   "fieldtype": "Float",
+   "label": "Shift Hours",
+   "precision": "3"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break",
+   "label": "Day Off Per Week"
+  },
+  {
+   "default": "0",
+   "fieldname": "sunday",
+   "fieldtype": "Check",
+   "label": "Sunday"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "monday",
+   "fieldtype": "Check",
+   "label": "Monday"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "tuesday",
+   "fieldtype": "Check",
+   "label": "Tuesday"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "wednesday",
+   "fieldtype": "Check",
+   "label": "Wednesday"
+  },
+  {
+   "default": "0",
+   "fieldname": "thursday",
+   "fieldtype": "Check",
+   "label": "Thursday"
+  },
+  {
+   "default": "0",
+   "fieldname": "friday",
+   "fieldtype": "Check",
+   "label": "Friday"
+  },
+  {
+   "default": "0",
+   "fieldname": "saturday",
+   "fieldtype": "Check",
+   "label": "Saturday"
   }
  ],
  "istable": 1,
- "modified": "2020-10-02 12:07:42.703365",
+ "modified": "2020-10-16 09:24:13.894377",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",
