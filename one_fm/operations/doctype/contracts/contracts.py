@@ -30,21 +30,6 @@ def get_contracts_items(contracts):
     and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc """,(contracts),as_dict=1)
 	
 	return contracts_item_list
-# @frappe.whitelist()
-# def get_contracts_items(name,contracts):
-# 	contracts_item_list = frappe.db.sql("""select ca.item_code,ca.head_count as qty
-# 	from `tabContract Item` ca , `tabContracts` c
-#     where c.name = ca.parent and ca.parenttype = 'Contracts'
-#     and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc """,(contracts),as_dict=1)
-# 	target_doc = frappe.get_doc("Sales Invoice",name)
-# 	for i in contracts_item_list:
-#             target_doc.append('items', {
-#                 'item_code': i.item_code,
-#                 'qty': i.qty,
-#                 'uom': i.uom
-#             })
-	
-# 	return contracts_item_list
 
 def add_contracts_items_item_price(self):
 	for item in self.items:
@@ -74,7 +59,6 @@ def add_contracts_items_item_price(self):
 					'selling': item_price.selling,
 					'price_list_rate': item_price.price_list_rate,
 					'valid_from': item_price.valid_from,
-					#'valid_upto': item_price.valid_upto,
 					'note': item_price.note,
 					'reference': item_price.reference
 				}).insert()
@@ -97,7 +81,6 @@ def add_contracts_items_item_price(self):
 				'selling': item_price.selling,
 				'price_list_rate': item_price.price_list_rate,
 				'valid_from': item_price.valid_from,
-				#'valid_upto': item_price.valid_upto,
 				'note': item_price.note,
 				'reference': item_price.reference
 			}).insert()
@@ -132,7 +115,6 @@ def add_contracts_assets_item_price(self):
 						'selling': item_price.selling,
 						'price_list_rate': item_price.price_list_rate,
 						'valid_from': item_price.valid_from,
-						#'valid_upto': item_price.valid_upto,
 						'note': item_price.note,
 						'reference': item_price.reference
 					}).insert()
@@ -155,7 +137,6 @@ def add_contracts_assets_item_price(self):
 					'selling': item_price.selling,
 					'price_list_rate': item_price.price_list_rate,
 					'valid_from': item_price.valid_from,
-					#'valid_upto': item_price.valid_upto,
 					'note': item_price.note,
 					'reference': item_price.reference
 				}).insert()
