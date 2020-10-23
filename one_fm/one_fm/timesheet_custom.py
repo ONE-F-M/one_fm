@@ -15,6 +15,14 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
         timesheet.employee = key
         for attendance in attendances:
             date = cstr(attendance.attendance_date)
+            #Select the holiday list for the employee
+            holiday_list = frappe.db.get_value("Employee",key,'holiday_list')
+            days_of_week = ['Sunday', 'Monday', 'Tuesday','Wednesday','Thursday','Friday','Saturday']
+            public_holiday = frappe.db.get_value('Holiday', {'parent':holiday_list,'holiday_date':date,'description':['not in',days_of_week]},['description'])
+            #Select public holiday rate from contracts
+            public_holiday_rate = 0
+            if public_holiday:
+                public_holiday_rate = frappe.db.get_value('Contracts',{'project':attendance.project},'public_holiday_rate')
             #Get start time from first employee checkin of that day of log type IN
             start = frappe.get_list("Employee Checkin", {"employee": key, "time": ['between', (date, date)], "log_type": "IN"}, "time", order_by="time asc")[0].time
             #Get end time from last employee checkin of that day of log type OUT
@@ -32,7 +40,10 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             if contract_item_detail:
                 billable = 1
                 billing_hours = contract_item_detail[0].shift_hours
-                billing_rate = contract_item_detail[0].unit_rate
+                if public_holiday_rate > 0:
+                    billing_rate = public_holiday_rate * contract_item_detail[0].unit_rate
+                else:
+                    billing_rate = contract_item_detail[0].unit_rate
             timesheet.append("time_logs", {
                 "activity_type": attendance.post_type,
                 "from_time": start,
