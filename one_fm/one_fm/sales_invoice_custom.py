@@ -2,7 +2,7 @@ import frappe,calendar
 from dateutil.relativedelta import relativedelta
 from datetime import date,timedelta,datetime
 from calendar import monthrange
-from frappe.utils import nowdate,getdate
+from frappe.utils import nowdate,getdate,cstr
 from one_fm.one_fm.timesheet_custom import timesheet_automation
 
 def create_sales_invoice():
@@ -40,6 +40,7 @@ def create_sales_invoice():
                 for i in contract_item_list:
                     timesheet_details = get_projectwise_timesheet_data(item.project,i.item_code,from_date,to_date)
                     #adding timsheet details
+                    description = frappe.db.get_value("Item",i.item_code,'description')
                     item_amount = 0
                     timesheet_billing_amt = 0
                     if timesheet_details:
@@ -63,11 +64,13 @@ def create_sales_invoice():
                             if is_day_off == 0:
                                 extra_amount += (i.unit_rate * i.shift_hours)
                         item_amount += (i.qty * extra_amount)
-                        #day_string = calendar.day_name[today.weekday()]
-                        #Get shift hour and unit rate for the item code from contracts
+                        #adding description if any extra amount(amount for remaining days of month) for service item
+                        if extra_amount > 0:
+                            description = description+' \nAdded an amount '+cstr(extra_amount)+' for the remainig days of the month'
                     sales_invoice.total_billing_amount = sales_invoice.total_billing_amount + timesheet_billing_amt
                     sales_invoice.append('items',{
                             'item_code': i.item_code,
+                            'description': description,
                             'qty': i.qty,
                             'rate': item_amount/i.qty,
                             'income_account': income_account,
@@ -140,7 +143,7 @@ def create_sales_invoice():
                 project_details = frappe.get_doc('Project',item.project)
                 cost_center = project_details.cost_center
                 income_account = project_details.income_account
-                contract_item_list = frappe.db.sql("""select ci.item_code,ci.head_count as qty
+                contract_item_list = frappe.db.sql("""select ci.item_code,ci.head_count as qty,shift_hours,unit_rate
                         from `tabContract Item` ci, `tabContracts` c
                         where c.name = ci.parent and ci.parenttype = 'Contracts'
                         and ci.parent = %s order by ci.idx asc""",(item.name), as_dict=1)
@@ -150,6 +153,8 @@ def create_sales_invoice():
                         from_date = date(from_date.year,from_date.month,1)
                         to_date = today - timedelta(days = 1)
                         timesheet_details = get_projectwise_timesheet_data(item.project,i.item_code,from_date,to_date)
+                        #adding timsheet details
+                        description = frappe.db.get_value("Item",i.item_code,'description')
                         #adding timsheet details
                         item_amount = 0
                         timesheet_billing_amt = 0
@@ -174,10 +179,13 @@ def create_sales_invoice():
                                 if is_day_off == 0:
                                     extra_amount += (i.unit_rate * i.shift_hours)
                             item_amount += (i.qty * extra_amount)
-                            #Get shift hour and unit rate for the item code from contracts
+                            #adding description if any extra amount(amount for remaining days of month) for service item
+                            if extra_amount > 0:
+                                description = description+' \nAdded an amount '+cstr(extra_amount)+' for the remainig days of the month'
                         sales_invoice.total_billing_amount = sales_invoice.total_billing_amount + timesheet_billing_amt
                         sales_invoice.append('items',{
                                 'item_code': i.item_code,
+                                'description' : description,
                                 'qty': i.qty,
                                 'rate': item_amount/i.qty,
                                 'income_account': income_account,
