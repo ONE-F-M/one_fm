@@ -181,7 +181,6 @@ frappe.ui.form.on('Sales Invoice Item', {
                 if (!s.exc) {
                     if(s.message != undefined){
                         if(s.message.is_stock_item == 0){
-                            // get_timesheet_details(frm);
                             get_timesheet_details(frm,d.item_code);
                         }
                     }
@@ -240,10 +239,15 @@ var calculate_total_billing_amount = function(frm){
     frm.set_value("total_billing_amount",total_billing_amount);
     frm.refresh_field("total_billing_amount");
 };
-//    get_timesheet_details =  function(frm,item_code)
 var get_timesheet_details =  function(frm,item) {
-    console.log(frm.doc.posting_date);
-    //select invoice date and check start to end date of month (or date from previous month to current month)
+    //select invoice date and check start to end(upto posting date)
+    // var post_date =new Date(frm.doc.posting_date);
+    // var month = post_date.getMonth();
+    // var year = post_date.getFullYear();
+    // //start date not getting properly
+    // var start_date = (new Date(year, month, 1)).toJSON().slice(0,10);
+    // var end_date = frappe.datetime.add_days(frm.doc.posting_date,-1)
+    // console.log(start_date,end_date);
     frappe.call({
         method: 'one_fm.one_fm.sales_invoice_custom.get_projectwise_timesheet_data',
         args:{
@@ -253,31 +257,13 @@ var get_timesheet_details =  function(frm,item) {
         },
         callback:function(s){
             if (!s.exc) {
-                if(s.message != undefined){
-                    console.log(s.message);
+                if(s.message != undefined && s.message.length > 0){
                     add_timesheet_data(frm,s.message,item);
-                    //add_timesheet_data(frm,s.message,item);
                 }
             }
         }
     });
 };
-// var get_timesheet_details =  function(frm) {
-//     frappe.call({
-//         method: 'one_fm.one_fm.sales_invoice_custom.get_projectwise_timesheet_data',
-//         args:{
-//             'project': frm.doc.project
-//             //'item_code': item.code
-//         },
-//         callback:function(s){
-//             if (!s.exc) {
-//                 if(s.message != undefined){
-//                     add_timesheet_data(frm,s.message);
-//                 }
-//             }
-//         }
-//     });
-// };
 var add_timesheet_data = function(frm,timesheet_data,item_code){
     for (var i=0; i<timesheet_data.length; i++){
         var d = frm.add_child("timesheets");
