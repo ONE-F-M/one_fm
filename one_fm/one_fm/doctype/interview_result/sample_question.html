@@ -1,0 +1,11 @@
+<div>
+	{% if doc.interview_questions %}
+	<p>
+		<ol>
+			{% for row in doc.interview_questions %}
+			<li>{{row.questions}}</li>
+			{% endfor %}
+		</ol>
+	</p>
+	{% endif %}
+</div>

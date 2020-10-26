@@ -52,7 +52,8 @@ doctype_js = {
 	"Delivery Note": "public/js/doctype_js/delivery_note.js",
 	"Job Applicant": "public/js/doctype_js/job_applicant.js",
 	"Job Offer": "public/js/doctype_js/job_offer.js",
-	"Price List": "public/js/doctype_js/price_list.js"
+	"Price List": "public/js/doctype_js/price_list.js",
+	"Vehicle": "public/js/doctype_js/vehicle.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",

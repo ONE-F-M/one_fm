@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:inspection_template_name",
+ "creation": "2020-10-20 12:46:54.018276",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "inspection_template_name",
+  "inspection_parameter"
+ ],
+ "fields": [
+  {
+   "fieldname": "inspection_template_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Inspection Template Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "inspection_parameter",
+   "fieldtype": "Table",
+   "label": "Accommodation Inspection Parameter",
+   "options": "Accommodation Inspection Parameter",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2020-10-20 12:47:48.606833",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Inspection Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Quality Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

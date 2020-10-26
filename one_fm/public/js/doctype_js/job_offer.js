@@ -3,6 +3,18 @@ frappe.ui.form.on('Job Offer', {
     if(frm.is_new()){
       frm.set_value('offer_date', frappe.datetime.now_date());
     }
+    frm.remove_custom_button("Create Employee");
+    if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')
+			&& (frm.doc.docstatus === 1) && (!frm.doc.__onload || !frm.doc.__onload.employee)) {
+			frm.add_custom_button(__('Create New Employee'),
+				function () {
+          frappe.model.open_mapped_doc({
+            method: "one_fm.hiring.utils.make_employee_from_job_offer",
+            frm: frm
+          });
+				}
+			);
+		}
   },
   job_applicant: function(frm) {
     set_job_applicant_details(frm);
@@ -62,6 +74,23 @@ var set_salary_details = function(frm, erf) {
       let salary = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'one_fm_salary_details');
       frappe.model.set_value(salary.doctype, salary.name, 'salary_component', item.salary_component);
       frappe.model.set_value(salary.doctype, salary.name, 'amount', item.amount);
+    });
+  }
+  frm.set_value('one_fm_job_offer_total_salary', total_amount);
+  frm.refresh_field('one_fm_salary_details');
+};
+
+frappe.ui.form.on('ERF Salary Detail', {
+  amount: function(frm, cdt, cdn) {
+    calculate_total_salary(frm);
+  }
+});
+
+var calculate_total_salary = function(frm) {
+  let total_amount = 0;
+  if(frm.doc.one_fm_salary_details){
+    frm.doc.one_fm_salary_details.forEach((item, i) => {
+      total_amount += item.amount;
     });
   }
   frm.set_value('one_fm_job_offer_total_salary', total_amount);
