@@ -55,6 +55,20 @@ frappe.ui.form.on('Job Applicant', {
 				}).addClass('btn-danger');
 			}
     }
+		if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')) {
+			frappe.db.get_value("Employee", {"job_applicant": frm.doc.name}, "name", function(r) {
+				if(!r || !r.name){
+					frm.add_custom_button(__('Create Employee'),
+						function () {
+							frappe.model.open_mapped_doc({
+								method: "one_fm.hiring.utils.make_employee",
+								frm: frm
+							});
+						}
+					);
+				}
+			})
+		}
 	},
 	one_fm_first_name: function(frm) {
     set_applicant_name(frm);
