@@ -48,39 +48,33 @@
    "reqd": 1
   },
   {
-   "fetch_from": "vehicle_leasing_contract.vehicle_type",
    "fieldname": "vehicle_type",
    "fieldtype": "Link",
    "label": "Vehicle Type",
    "options": "Vehicle Type"
   },
   {
-   "fetch_from": "vehicle_leasing_contract.vehicle_status",
    "fieldname": "vehicle_status",
    "fieldtype": "Select",
    "label": "Vehicle Status",
    "options": "\nBrand New\nUsed"
   },
   {
-   "fetch_from": "vehicle_leasing_contract.quantity",
    "fieldname": "quantity",
    "fieldtype": "Int",
    "label": "Quantity"
   },
   {
-   "fetch_from": "vehicle_leasing_contract.make",
    "fieldname": "make",
    "fieldtype": "Data",
    "label": "Make"
   },
   {
-   "fetch_from": "vehicle_leasing_contract.model",
    "fieldname": "model",
    "fieldtype": "Data",
    "label": "Model"
   },
   {
-   "fetch_from": "vehicle_leasing_contract.year_of_made",
    "fieldname": "year_of_made",
    "fieldtype": "Data",
    "label": "Year of Made"
@@ -103,7 +97,7 @@
   }
  ],
  "links": [],
- "modified": "2020-10-23 01:30:20.446893",
+ "modified": "2020-10-26 06:22:04.945211",
  "modified_by": "Administrator",
  "module": "Fleet Management",
  "name": "Lease Vehicle",

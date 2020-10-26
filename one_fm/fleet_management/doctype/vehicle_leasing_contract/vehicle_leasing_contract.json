@@ -30,13 +30,9 @@
   "lessor_poc_fax",
   "lessor_poc_email",
   "vehicle_details_section",
-  "vehicle_type",
-  "vehicle_status",
-  "quantity",
-  "column_break_27",
-  "make",
-  "model",
-  "year_of_made",
+  "vehicle_leasing_contract_item",
+  "create_vehicle",
+  "vehicles",
   "contract_terms_section",
   "lessor_provide_driver",
   "lessor_provide_vehicle_maintenance",
@@ -173,48 +169,6 @@
    "label": "Vehicle Details"
   },
   {
-   "fieldname": "vehicle_type",
-   "fieldtype": "Link",
-   "label": "Vehicle Type",
-   "options": "Vehicle Type",
-   "reqd": 1
-  },
-  {
-   "fieldname": "vehicle_status",
-   "fieldtype": "Select",
-   "label": "Vehicle Status",
-   "options": "\nBrand New\nUsed",
-   "reqd": 1
-  },
-  {
-   "fieldname": "quantity",
-   "fieldtype": "Int",
-   "label": "Quantity",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_27",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "make",
-   "fieldtype": "Data",
-   "label": "Make",
-   "reqd": 1
-  },
-  {
-   "fieldname": "model",
-   "fieldtype": "Data",
-   "label": "Model",
-   "reqd": 1
-  },
-  {
-   "fieldname": "year_of_made",
-   "fieldtype": "Data",
-   "label": "Year of Made",
-   "reqd": 1
-  },
-  {
    "fieldname": "section_break_13",
    "fieldtype": "Section Break"
   },
@@ -264,10 +218,28 @@
    "fieldname": "contract_document",
    "fieldtype": "Attach",
    "label": "Contract Document"
+  },
+  {
+   "fieldname": "vehicle_leasing_contract_item",
+   "fieldtype": "Table",
+   "options": "Vehicle Leasing Contract Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "create_vehicle",
+   "fieldtype": "Button",
+   "label": "Create Vehicle"
+  },
+  {
+   "fieldname": "vehicles",
+   "fieldtype": "Table",
+   "label": "Vehicles",
+   "options": "Lease Vehicle Item",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-10-22 22:54:55.732243",
+ "modified": "2020-10-26 07:24:17.542863",
  "modified_by": "Administrator",
  "module": "Fleet Management",
  "name": "Vehicle Leasing Contract",

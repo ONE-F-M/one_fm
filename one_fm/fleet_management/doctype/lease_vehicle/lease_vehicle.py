@@ -13,7 +13,6 @@ class LeaseVehicle(Document):
 			vehicle.set(d, args[d])
 		vehicle.one_fm_vehicle_category = 'Leased'
 		vehicle.one_fm_vehicle_leasing_contract = self.vehicle_leasing_contract
-		vehicle.one_fm_lease_vehicle = self.name
 		vehicle.make = self.make
 		vehicle.model = self.model
 		vehicle.one_fm_vehicle_type = self.vehicle_type
