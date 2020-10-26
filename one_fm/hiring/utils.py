@@ -69,33 +69,7 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
 @frappe.whitelist()
 def make_employee(source_name, target_doc=None):
     def set_missing_values(source, target):
-        fields_map = {'personal_email': 'email_id', 'middle_name': 'one_fm_second_name',
-            'one_fm_civil_id': 'one_fm_cid_number', 'cell_number': 'one_fm_contact_number',
-            'date_of_issue': 'one_fm_passport_issued', 'valid_upto': 'one_fm_passport_expire',
-            'place_of_issue': 'one_fm_passport_holder_of',
-            'one_fm__highest_educational_qualification': 'one_fm_educational_qualification'}
-        for field in fields_map:
-            target.set(field, source.get(fields_map[field]))
-
-        one_fm_prefix_fields = ['first_name', 'last_name', 'date_of_birth', 'gender', 'passport_number', 'marital_status']
-        for field in one_fm_prefix_fields:
-            target.set(field, source.get('one_fm_'+field))
-
-        target.department, target.designation, target.grade, target.project = frappe.db.get_value("ERF", \
-			source.one_fm_erf, ["department", "designation", "grade", "project"])
-
-        target.status = 'Active'
-        if target.department:
-            dept_code = frappe.db.get_value('Department', target.department, 'department_code')
-            target.department_code = dept_code if dept_code else ''
-
-        external_work_history = target.append('external_work_history')
-        external_work_history.company_name = source.one_fm_current_employer
-        external_work_history.designation = source.one_fm_current_job_title
-        external_work_history.salary = source.one_fm_current_salary
-        exp_in_month = month_diff(source.one_fm_employment_end_date, source.one_fm_employment_start_date)
-        if exp_in_month:
-            external_work_history.total_experience = exp_in_month / 12
+        set_map_job_applicant_details(target, source.name, source)
 
     doc = get_mapped_doc("Job Applicant", source_name, {
         "Job Applicant": {
@@ -106,6 +80,51 @@ def make_employee(source_name, target_doc=None):
         }
     }, target_doc, set_missing_values)
     return doc
+
+@frappe.whitelist()
+def make_employee_from_job_offer(source_name, target_doc=None):
+    def set_missing_values(source, target):
+        set_map_job_applicant_details(target, source.job_applicant)
+    doc = get_mapped_doc("Job Offer", source_name, {
+        "Job Offer": {
+            "doctype": "Employee",
+            "field_map": {
+                "applicant_name": "employee_name",
+            }
+        }
+    }, target_doc, set_missing_values)
+    return doc
+
+def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False):
+    if not job_applicant:
+        job_applicant = frappe.get_doc('Job Applicant', job_applicant_id)
+    fields_map = {'personal_email': 'email_id', 'middle_name': 'one_fm_second_name',
+        'one_fm_civil_id': 'one_fm_cid_number', 'cell_number': 'one_fm_contact_number',
+        'date_of_issue': 'one_fm_passport_issued', 'valid_upto': 'one_fm_passport_expire',
+        'place_of_issue': 'one_fm_passport_holder_of',
+        'one_fm__highest_educational_qualification': 'one_fm_educational_qualification'}
+    for field in fields_map:
+        target.set(field, job_applicant.get(fields_map[field]))
+
+    one_fm_prefix_fields = ['first_name', 'last_name', 'date_of_birth', 'gender', 'passport_number', 'marital_status']
+    for field in one_fm_prefix_fields:
+        target.set(field, job_applicant.get('one_fm_'+field))
+
+    target.department, target.designation, target.grade, target.project = frappe.db.get_value("ERF", \
+		job_applicant.one_fm_erf, ["department", "designation", "grade", "project"])
+
+    target.status = 'Active'
+    if target.department:
+        dept_code = frappe.db.get_value('Department', target.department, 'department_code')
+        target.department_code = dept_code if dept_code else ''
+
+    external_work_history = target.append('external_work_history')
+    external_work_history.company_name = job_applicant.one_fm_current_employer
+    external_work_history.designation = job_applicant.one_fm_current_job_title
+    external_work_history.salary = job_applicant.one_fm_current_salary
+    exp_in_month = month_diff(job_applicant.one_fm_employment_end_date, job_applicant.one_fm_employment_start_date)
+    if exp_in_month:
+        external_work_history.total_experience = exp_in_month / 12
 
 @frappe.whitelist()
 def update_job_offer_from_applicant(jo, status):
