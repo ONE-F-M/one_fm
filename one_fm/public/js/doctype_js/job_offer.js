@@ -68,6 +68,23 @@ var set_salary_details = function(frm, erf) {
   frm.refresh_field('one_fm_salary_details');
 };
 
+frappe.ui.form.on('ERF Salary Detail', {
+  amount: function(frm, cdt, cdn) {
+    calculate_total_salary(frm);
+  }
+});
+
+var calculate_total_salary = function(frm) {
+  let total_amount = 0;
+  if(frm.doc.one_fm_salary_details){
+    frm.doc.one_fm_salary_details.forEach((item, i) => {
+      total_amount += item.amount;
+    });
+  }
+  frm.set_value('one_fm_job_offer_total_salary', total_amount);
+  frm.refresh_field('one_fm_salary_details');
+};
+
 var set_other_benefits_to_terms = function(frm, erf) {
   var terms_list = [];
   if(erf.other_benefits){
