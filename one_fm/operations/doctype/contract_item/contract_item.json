@@ -7,6 +7,7 @@
   "item_code",
   "head_count",
   "unit_rate",
+  "monthly_rate",
   "column_break_4",
   "item_name",
   "shift_hours",
@@ -117,10 +118,16 @@
    "fieldname": "saturday",
    "fieldtype": "Check",
    "label": "Saturday"
+  },
+  {
+   "fieldname": "monthly_rate",
+   "fieldtype": "Currency",
+   "label": "Monthly Rate",
+   "options": "currency"
   }
  ],
  "istable": 1,
- "modified": "2020-10-16 09:24:13.894377",
+ "modified": "2020-10-25 15:16:45.682092",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",
