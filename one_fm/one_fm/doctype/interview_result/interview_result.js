@@ -42,8 +42,36 @@ frappe.ui.form.on('Interview Result', {
 	},
 	pass_to_next_interview: function(frm) {
 		confirm_score_action(frm);
+	},
+	view_question: function(frm) {
+		view_sample_question(frm);
 	}
 });
+
+var view_sample_question = function(frm) {
+	frappe.call({
+		method: 'frappe.client.get',
+		args: {
+			doctype: 'Interview',
+			filters: {name: frm.doc.interview_template}
+		},
+		callback: function(r) {
+			if(r && r.message){
+				var dialog = new frappe.ui.Dialog({
+					title: __("Question"),
+					fields: [
+						{
+							"fieldtype": "HTML",
+							"fieldname": "sample_question"
+						}
+					]
+				});
+				dialog.fields_dict.sample_question.$wrapper.html(frappe.render_template('sample_question', {doc:r.message}));
+				dialog.show();
+			}
+		}
+	});
+};
 
 var confirm_score_action = function(frm) {
 	if(frm.doc.pass_to_next_interview){
