@@ -29,6 +29,7 @@ def create_sales_invoice():
             sales_invoice.customer = item.client
             sales_invoice.project = item.project
             sales_invoice.selling_price_list = item.price_list
+            sales_invoice.timesheets = ''
             project_details = frappe.get_doc('Project',item.project)
             cost_center = project_details.cost_center
             income_account = project_details.income_account
@@ -144,6 +145,7 @@ def create_sales_invoice():
                 sales_invoice.customer = item.client
                 sales_invoice.project = item.project
                 sales_invoice.selling_price_list = item.price_list
+                sales_invoice.timesheets = ''
                 project_details = frappe.get_doc('Project',item.project)
                 cost_center = project_details.cost_center
                 income_account = project_details.income_account
