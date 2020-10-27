@@ -2,13 +2,14 @@ import frappe,calendar
 from dateutil.relativedelta import relativedelta
 from datetime import date,timedelta,datetime
 from calendar import monthrange
-from frappe.utils import nowdate,getdate
+from frappe.utils import nowdate,getdate,cstr
 from one_fm.one_fm.timesheet_custom import timesheet_automation
 
 def create_sales_invoice():
     today = date.today()
     day = today.day
     d = today
+    month_and_year = today.strftime("%B - %Y")   
     #Get the first day of the month
     first_day = date(today.year,today.month,1)
     #Get the last day of the month
@@ -28,6 +29,7 @@ def create_sales_invoice():
             sales_invoice.customer = item.client
             sales_invoice.project = item.project
             sales_invoice.selling_price_list = item.price_list
+            sales_invoice.timesheets = ''
             project_details = frappe.get_doc('Project',item.project)
             cost_center = project_details.cost_center
             income_account = project_details.income_account
@@ -40,6 +42,7 @@ def create_sales_invoice():
                 for i in contract_item_list:
                     timesheet_details = get_projectwise_timesheet_data(item.project,i.item_code,from_date,to_date)
                     #adding timsheet details
+                    description = frappe.db.get_value("Item",i.item_code,'description')
                     item_amount = 0
                     timesheet_billing_amt = 0
                     if timesheet_details:
@@ -56,18 +59,22 @@ def create_sales_invoice():
                         #Adding rate for service from current date to end date by taking values from contracts and add into amount
                         date_list = get_timesheet_remaining_days(today,last_day)
                         extra_amount = 0
+                        no_of_days_remaining = 0
                         for d in range(len(date_list)):
                             day_of_week = calendar.day_name[date_list[d].weekday()]
                             day_of_week = day_of_week.lower()
                             is_day_off = frappe.db.get_value('Contract Item', {'name':i.name ,'parent':item.name}, day_of_week)
                             if is_day_off == 0:
+                                no_of_days_remaining +=1
                                 extra_amount += (i.unit_rate * i.shift_hours)
                         item_amount += (i.qty * extra_amount)
-                        #day_string = calendar.day_name[today.weekday()]
-                        #Get shift hour and unit rate for the item code from contracts
+                        #adding description if any extra amount(amount for remaining days of month) for service item
+                        if extra_amount > 0:
+                            description = description+" Advance Billing: "+cstr(extra_amount)+" for remaining "+ cstr(no_of_days_remaining)+" days for the month "+month_and_year+"."
                     sales_invoice.total_billing_amount = sales_invoice.total_billing_amount + timesheet_billing_amt
                     sales_invoice.append('items',{
                             'item_code': i.item_code,
+                            'description': description,
                             'qty': i.qty,
                             'rate': item_amount/i.qty,
                             'income_account': income_account,
@@ -104,6 +111,7 @@ def create_sales_invoice():
                             'item_code': asset.item_code,
                             'qty': asset.qty,
                             'uom': asset.uom,
+                            'rate': asset.rate,
                             'sales_order': asset.sales_order,
                             'so_detail': asset.so_detail,
                             'delivery_note': asset.delivery_note,
@@ -137,10 +145,11 @@ def create_sales_invoice():
                 sales_invoice.customer = item.client
                 sales_invoice.project = item.project
                 sales_invoice.selling_price_list = item.price_list
+                sales_invoice.timesheets = ''
                 project_details = frappe.get_doc('Project',item.project)
                 cost_center = project_details.cost_center
                 income_account = project_details.income_account
-                contract_item_list = frappe.db.sql("""select ci.item_code,ci.head_count as qty
+                contract_item_list = frappe.db.sql("""select ci.item_code,ci.head_count as qty,shift_hours,unit_rate
                         from `tabContract Item` ci, `tabContracts` c
                         where c.name = ci.parent and ci.parenttype = 'Contracts'
                         and ci.parent = %s order by ci.idx asc""",(item.name), as_dict=1)
@@ -150,6 +159,8 @@ def create_sales_invoice():
                         from_date = date(from_date.year,from_date.month,1)
                         to_date = today - timedelta(days = 1)
                         timesheet_details = get_projectwise_timesheet_data(item.project,i.item_code,from_date,to_date)
+                        #adding timsheet details
+                        description = frappe.db.get_value("Item",i.item_code,'description')
                         #adding timsheet details
                         item_amount = 0
                         timesheet_billing_amt = 0
@@ -167,17 +178,22 @@ def create_sales_invoice():
                             #Adding rate for service from current date to end date by taking values from contracts and add into amount
                             date_list = get_timesheet_remaining_days(today,last_day)
                             extra_amount = 0
+                            no_of_days_remaining = 0
                             for d in range(len(date_list)):
                                 day_of_week = calendar.day_name[date_list[d].weekday()]
                                 day_of_week = day_of_week.lower()
                                 is_day_off = frappe.db.get_value('Contract Item', {'name':i.name ,'parent':item.name}, day_of_week)
                                 if is_day_off == 0:
+                                    no_of_days_remaining +=1
                                     extra_amount += (i.unit_rate * i.shift_hours)
                             item_amount += (i.qty * extra_amount)
-                            #Get shift hour and unit rate for the item code from contracts
+                            #adding description if any extra amount(amount for remaining days of month) for service item
+                            if extra_amount > 0:
+                                description = description+" Advance Billing: "+cstr(extra_amount)+" for remaining "+ cstr(no_of_days_remaining)+" days for the month "+month_and_year+"."
                         sales_invoice.total_billing_amount = sales_invoice.total_billing_amount + timesheet_billing_amt
                         sales_invoice.append('items',{
                                 'item_code': i.item_code,
+                                'description' : description,
                                 'qty': i.qty,
                                 'rate': item_amount/i.qty,
                                 'income_account': income_account,
@@ -214,6 +230,7 @@ def create_sales_invoice():
                                 'item_code': asset.item_code,
                                 'qty': asset.qty,
                                 'uom': asset.uom,
+                                'rate': asset.rate,
                                 'sales_order': asset.sales_order,
                                 'so_detail': asset.so_detail,
                                 'delivery_note': asset.delivery_note,
@@ -242,11 +259,16 @@ def create_sales_invoice():
     return
 
 @frappe.whitelist()
-def get_projectwise_timesheet_data(project,item_code,start_date,end_date):
+def get_projectwise_timesheet_data(project,item_code,start_date = None,end_date = None,posting_date = None):
+    if posting_date != None:
+        posting_date = datetime.strptime(posting_date,'%Y-%m-%d')
+        start_date = date(posting_date.year,posting_date.month,1)
+        end_date = posting_date - timedelta(days = 1)
+
     return frappe.db.sql("""select t.name, t.parent, t.billing_hours, t.billing_amount as billing_amt
 	 		from `tabTimesheet Detail` t where t.parenttype = 'Timesheet' and t.docstatus=1 and t.project = %s and t.billable = 1
 	 		and t.sales_invoice is null and t.from_time >= %s and t.to_time <= %s and t.Activity_type in (select post_name from `tabPost Type` where sale_item
-              = %s ) order by t.idx asc""",(project,start_date,end_date,item_code), as_dict=1)
+              = %s ) order by t.parent asc""",(project,start_date,end_date,item_code), as_dict=1)
 
 #Get remaining amounts of services from contracts for remaining dates
 def get_timesheet_remaining_days(start_date,end_date):

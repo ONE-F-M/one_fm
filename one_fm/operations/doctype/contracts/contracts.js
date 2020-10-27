@@ -118,7 +118,8 @@ frappe.ui.form.on('Contracts', {
 		frm.fields_dict['items'].grid.get_field('item_code').get_query = function() {
             return {    
                 filters:{
-                    is_stock_item: 0,
+					is_stock_item: 0,
+					is_sales_item: 1,
                     disabled: 0
                 }
             }
@@ -127,7 +128,8 @@ frappe.ui.form.on('Contracts', {
 		frm.fields_dict['assets'].grid.get_field('item_code').get_query = function() {
             return {    
                 filters:{
-                    is_stock_item: 1,
+					is_stock_item: 1,
+					is_sales_item: 1,
                     disabled: 0
                 }
             }
