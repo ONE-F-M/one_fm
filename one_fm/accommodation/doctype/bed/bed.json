@@ -152,7 +152,7 @@
    "options": "Accommodation Space Object"
   },
   {
-   "depends_on": "eval:doc.status=='Occupied' || doc.status=='Booked' || doc.status=='Booked Temporary'",
+   "depends_on": "eval:doc.status=='Occupied' || doc.status=='Booked' || doc.status=='Booked Temporary' || doc.status=='Occupied Temporarily'",
    "fieldname": "occupancy_details_section",
    "fieldtype": "Section Break",
    "label": "Occupancy Details"
@@ -329,7 +329,7 @@
   }
  ],
  "links": [],
- "modified": "2020-10-10 11:35:37.921586",
+ "modified": "2020-10-28 19:28:25.363427",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",

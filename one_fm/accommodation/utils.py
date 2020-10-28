@@ -3,7 +3,7 @@ import frappe
 from frappe.utils.print_format import download_pdf
 
 @frappe.whitelist()
-def accommodation_qr_code_live_details(docname, format=None):
+def accommodation_qr_code_live_details(docname):
     doctype = False
     if frappe.db.exists('Bed', {'name': docname}):
         doctype = 'Bed'
@@ -14,4 +14,7 @@ def accommodation_qr_code_live_details(docname, format=None):
     elif frappe.db.exists('Accommodation', {'name': docname}):
         doctype = 'Accommodation'
     if doctype:
+        format = doctype+' QR Details'
+        if not frappe.db.exists('Print Format', {'name': doctype+' QR Details'}):
+            format = None
         return download_pdf(doctype, docname, format=format, doc=None, no_letterhead=0)
