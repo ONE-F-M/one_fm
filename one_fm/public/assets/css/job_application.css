@@ -205,6 +205,34 @@ label {
   .checked {
 	color: orange;
   }
+  .rating-stars ul {
+	list-style-type:none;
+	padding:0;
+	
+	-moz-user-select:none;
+	-webkit-user-select:none;
+  }
+  .rating-stars ul > li.star {
+	display:inline-block;
+	
+  }
+  /* New */
+  /* Idle State of the stars */
+  .rating-stars ul > li.star > i.fa {
+	font-size:1.5em; /* Change the size of the stars */
+	color:#ccc; /* Color on idle state */
+  }
+  
+  /* Hover state of the stars */
+  .rating-stars ul > li.star.hover > i.fa {
+	color:#FFCC36;
+  }
+  
+  /* Selected state of the stars */
+  .rating-stars ul > li.star.selected > i.fa {
+	color:#FF912C;
+  }
+  
 .iti__flag {background-image: url("path/to/flags.png");}
 
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
