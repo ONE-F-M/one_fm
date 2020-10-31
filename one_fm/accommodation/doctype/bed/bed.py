@@ -57,7 +57,22 @@ class Bed(Document):
 		self.update_no_of_bed_in_accommodation()
 
 	def on_trash(self):
+		self.validate_bed_used()
+		self.delete_bed_reference_from_space()
 		self.update_no_of_bed_in_accommodation()
+
+	def delete_bed_reference_from_space(self):
+		query = """
+			delete from
+				`tabAccommodation Space Bed`
+			where
+				bed = {0}
+		"""
+		frappe.db.sql(query.format(self.name))
+
+	def validate_bed_used(self):
+		if frappe.db.exists('Accommodation Checkin Checkout', {'bed': self.name}):
+			frappe.throw(_("Bed can not be Deleted, you can disable the Bed"))
 
 	def update_no_of_bed_in_accommodation(self):
 		frappe.db.set_value('Accommodation', self.accommodation,
