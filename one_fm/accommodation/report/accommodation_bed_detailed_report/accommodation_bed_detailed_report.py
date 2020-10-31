@@ -35,11 +35,11 @@ def get_data(filters):
 			total_no_of_bed_space = frappe.db.count('Bed', filters)
 			totall_no_of_rooms = frappe.db.count('Accommodation Space',
 				{'accommodation': acc.name, 'bed_space_available': 1})
-			type_a = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'Room Type A'})
-			type_b = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'Room Type B'})
-			type_c = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'Room Type C'})
-			type_d = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'Room Type D'})
-			type_e = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'Room Type E'})
+			type_a = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'A'})
+			type_b = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'B'})
+			type_c = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'C'})
+			type_d = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'D'})
+			type_e = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'E'})
 			filters['status'] = 'Occupied'
 			occupied_bed = frappe.db.count('Bed', filters)
 			filters['status'] = 'Vaccant'
