@@ -1,12 +1,4 @@
 frappe.ui.form.on('Sales Invoice', {
-    // 'onload_post_render': function(frm,cdt,cdn) {
-    //     frm.fields_dict.items.grid.wrapper.on('change', 'input[data-fieldname="item_code"][data-doctype="Sales Invoice Item"]', function(e) {
-    //         console.log(e.type);
-    //         var d = locals[cdt][cdn];
-    //         console.log(d.item_code);
-    //         //frappe.model.set_value(v.doctype, v.name,"income_account",s.message.income_account)
-    //     });
-    // },
     validate: function(frm){
         if(frm.doc.project){
             set_income_account_and_cost_center(frm);
@@ -240,14 +232,6 @@ var calculate_total_billing_amount = function(frm){
     frm.refresh_field("total_billing_amount");
 };
 var get_timesheet_details =  function(frm,item) {
-    //select invoice date and check start to end(upto posting date)
-    // var post_date =new Date(frm.doc.posting_date);
-    // var month = post_date.getMonth();
-    // var year = post_date.getFullYear();
-    // //start date not getting properly
-    // var start_date = (new Date(year, month, 1)).toJSON().slice(0,10);
-    // var end_date = frappe.datetime.add_days(frm.doc.posting_date,-1)
-    // console.log(start_date,end_date);
     frappe.call({
         method: 'one_fm.one_fm.sales_invoice_custom.get_projectwise_timesheet_data',
         args:{
@@ -257,6 +241,7 @@ var get_timesheet_details =  function(frm,item) {
         },
         callback:function(s){
             if (!s.exc) {
+                console.log(s.message);
                 if(s.message != undefined && s.message.length > 0){
                     add_timesheet_data(frm,s.message,item);
                 }
