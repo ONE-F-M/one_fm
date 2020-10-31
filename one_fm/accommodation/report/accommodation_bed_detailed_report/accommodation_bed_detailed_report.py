@@ -42,7 +42,7 @@ def get_data(filters):
 			type_e = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'bed_space_type': 'E'})
 			filters['status'] = 'Occupied'
 			occupied_bed = frappe.db.count('Bed', filters)
-			filters['status'] = 'Vaccant'
+			filters['status'] = 'Vacant'
 			vaccant_bed = frappe.db.count('Bed', filters)
 			filters.pop('status')
 			row = [
