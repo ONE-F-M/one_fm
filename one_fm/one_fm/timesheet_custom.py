@@ -1,6 +1,9 @@
-import frappe
+import frappe,calendar
 import itertools
+from datetime import date,timedelta,datetime
 from frappe.utils import cstr
+from calendar import monthrange
+#from one_fm.one_fm.sales_invoice_custom import get_timesheet_remaining_days  
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
     filters = {
@@ -29,8 +32,9 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             end = frappe.get_list("Employee Checkin", {"employee": key, "time": ['between', (date, date)], "log_type": "OUT"}, "time", order_by="time desc")[0].time
             #Get the sale item of post type
             item = frappe.get_value("Post Type", attendance.post_type,'sale_item')
-            #Get billing hours and unit rate from contracts
-            contract_item_detail = frappe.db.sql("""select ci.shift_hours,ci.unit_rate 
+            #Get billing hours and unit rate from contracts and also check(it is monthly_rate or hourly_rate)
+            #Note:- Add select field in contracts items [type-(hourly_rate or monthly_rate)]
+            contract_item_detail = frappe.db.sql("""select ci.shift_hours,ci.type,ci.unit_rate,ci.monthly_rate
             from `tabContract Item` ci,`tabContracts` c 
             where c.name = ci.parent and ci.parenttype = 'Contracts' 
             and c.project = %s and ci.item_code = %s""",(attendance.project,item),as_dict = 1)
@@ -40,10 +44,19 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             if contract_item_detail:
                 billable = 1
                 billing_hours = contract_item_detail[0].shift_hours
-                if public_holiday_rate > 0:
-                    billing_rate = public_holiday_rate * contract_item_detail[0].unit_rate
-                else:
-                    billing_rate = contract_item_detail[0].unit_rate
+                #check contract_item_detail[0].type = 'Monthly Rate'
+                # calculate hourly rate
+                # billing_rate = calculate_hourly_rate_of_monthly_working_days(attendance.project,item,contract_item_detail[0]monthly_rate,contract_item_detail[0].shift_hours,start_date)
+                # if public_holiday_rate > 0:
+                #   billing_rate = public_holiday_rate * contract_item_detail[0].unit_rate
+                if contract_item_detail[0].type == 'Monthly':
+                    billing_rate = calculate_hourly_rate_of_monthly_working_days(attendance.project,item,contract_item_detail[0].monthly_rate,contract_item_detail[0].shift_hours,start_date)
+                #check contract_item_detail[0].type = 'Hourly Rate'..Execute Below code
+                if contract_item_detail[0].type == 'Hourly':
+                    if public_holiday_rate > 0:
+                        billing_rate = public_holiday_rate * contract_item_detail[0].unit_rate
+                    else:
+                        billing_rate = contract_item_detail[0].unit_rate
             timesheet.append("time_logs", {
                 "activity_type": attendance.post_type,
                 "from_time": start,
@@ -59,3 +72,50 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
     frappe.db.commit()	
             
     return
+
+def calculate_hourly_rate_of_monthly_working_days(project = None,item_code = None,monthly_rate = None,shift_hour = None,first_day =None):
+    if first_day != None:
+        last_day = first_day.replace(day = monthrange(first_day.year,first_day.month)[1])
+    days_off_week = frappe.db.sql("""select ci.sunday,ci.monday,ci.tuesday,
+            ci.wednesday,ci.thursday,ci.friday,ci.saturday 
+            from `tabContract Item` ci,`tabContracts` c 
+            where c.name = ci.parent and ci.parenttype = 'Contracts' 
+            and c.project = %s and ci.item_code = %s""",(project,item_code),as_dict = 1)[0]
+    day_off_list = []
+    if days_off_week["sunday"] == 1:
+        day_off_list.append('Sunday')
+    if days_off_week["monday"] == 1:
+        day_off_list.append('Monday')
+    if days_off_week["tuesday"] == 1:
+        day_off_list.append('Tuesday')
+    if days_off_week["wednesday"] == 1:
+        day_off_list.append('Wednesday')
+    if days_off_week["thursday"] == 1:
+        day_off_list.append('Thursday')
+    if days_off_week["friday"] == 1:
+        day_off_list.append('Friday')
+    if days_off_week["saturday"] == 1:
+        day_off_list.append('Saturday')
+
+    #get list of date between one month and remove offdays from list
+    total_days = days_of_month(first_day,last_day)
+    #total_days = get_timesheet_remaining_days(datetime.datetime.strptime(first_day,'%Y-%m-%d'),datetime.datetime.strptime(last_day,'%Y-%m-%d'))
+    working_day_list = []
+    for d in range(len(total_days)):
+        day_of_week = calendar.day_name[total_days[d].weekday()]
+        if day_of_week not in day_off_list:
+            working_day_list.append(total_days[d])       
+    #numbers of items in list = working days of month
+    total_working_day = len(working_day_list)
+    rate_per_day = monthly_rate / float(total_working_day)
+    hourly_rate = float(rate_per_day / shift_hour)
+    
+    return hourly_rate
+
+def days_of_month(start_date, end_date):
+    date_list = []
+    delta = end_date - start_date
+    for i in range(delta.days + 1):
+        day = start_date + timedelta(days=i)
+        date_list.append(day)
+    return date_list
