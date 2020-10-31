@@ -195,8 +195,7 @@ scheduler_events = {
 		'one_fm.utils.check_upload_original_visa_submission_daily',
 		'one_fm.hiring.utils.notify_finance_job_offer_salary_advance',
 		'one_fm.api.tasks.automatic_shift_assignment',
-		'one_fm.uniform_management.doctype.employee_uniform.employee_uniform.notify_gsd_and_employee_before_uniform_expiry',
-		'one_fm.one_fm.sales_invoice_custom.create_sales_invoice'
+		'one_fm.uniform_management.doctype.employee_uniform.employee_uniform.notify_gsd_and_employee_before_uniform_expiry'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -249,6 +248,9 @@ scheduler_events = {
 		],
 		"0 13 * * *": [
 			'one_fm.utils.check_upload_original_visa_submission_reminder2'
+		],
+		"0 6 * * *":[
+			'one_fm.one_fm.sales_invoice_custom.create_sales_invoice'
 		]
 	}
 }
