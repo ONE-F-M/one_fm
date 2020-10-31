@@ -69,7 +69,8 @@ var view_sample_question = function(frm) {
 				dialog.fields_dict.sample_question.$wrapper.html(frappe.render_template('sample_question', {doc:r.message}));
 				dialog.show();
 			}
-		}
+		},
+		freeze: true
 	});
 };
 
