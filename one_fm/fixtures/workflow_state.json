@@ -75,12 +75,12 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2020-05-20 21:14:30.946936",
+  "modified": "2020-10-31 14:01:21.816507",
   "name": "Rejected by Operations Manager",
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "style": "",
+  "style": "Danger",
   "workflow_state_name": "Rejected by Operations Manager"
  },
  {
@@ -207,24 +207,24 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2020-05-04 10:34:01.309632",
+  "modified": "2020-10-31 14:01:04.110608",
   "name": "Approved by Financial",
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "style": "",
+  "style": "Success",
   "workflow_state_name": "Approved by Financial"
  },
  {
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2020-05-04 10:34:10.535705",
+  "modified": "2020-10-31 14:01:34.508652",
   "name": "Rejected by Financial",
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "style": "",
+  "style": "Danger",
   "workflow_state_name": "Rejected by Financial"
  },
  {
@@ -243,12 +243,12 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2020-05-20 21:14:02.633332",
+  "modified": "2020-10-31 14:00:31.540548",
   "name": "Approved by Operations Manager",
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "style": "Success",
+  "style": "Primary",
   "workflow_state_name": "Approved by Operations Manager"
  },
  {
@@ -310,5 +310,29 @@
   "parenttype": null,
   "style": "Success",
   "workflow_state_name": "Investigation Completed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-10-28 21:38:33.140798",
+  "name": "Draft",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Danger",
+  "workflow_state_name": "Draft"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-10-28 21:39:47.280066",
+  "name": "Pending Approval",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Warning",
+  "workflow_state_name": "Pending Approval"
  }
 ]
