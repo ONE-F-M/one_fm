@@ -241,17 +241,6 @@ function set_contact(doc){
 }
 
 frappe.ui.form.on('Contract Item', {
-	//for testing.....
-	// monthly_rate: function(frm, cdt, cdn){
-	// 	var d = locals[cdt][cdn];
-	// 	if(d.monthly_rate){
-	// 		var hour_rate = 0
-	// 		hour_rate = flt(d.monthly_rate)/27;
-	// 		hour_rate = hour_rate/8;
-	// 		console.log(hour_rate);
-	// 		frappe.model.set_value(d.doctype, d.name, "unit_rate", hour_rate);
-	// 	}
-	// },
 	item_code: function(frm, cdt, cdn) {
 		var d = locals[cdt][cdn];
 		if(d.item_code){
