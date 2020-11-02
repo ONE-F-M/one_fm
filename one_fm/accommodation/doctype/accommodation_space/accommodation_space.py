@@ -16,14 +16,15 @@ class AccommodationSpace(Document):
 	def validate_space_type(self):
 		bed_space_type = frappe.db.get_value('Accommodation Space', self.name, 'bed_space_type')
 		if bed_space_type != self.bed_space_type:
-			if frappe.db.count('Bed', {'status': 'Occupied', 'disabled': False, 'accommodation_space': self.name}) > 0:
-				frappe.throw(_("There are Occupied Bed in this Space. To change Bed Space Type, Please make all Bed Vacant"))
-			elif frappe.db.count('Bed', {'status': 'Booked', 'disabled': False, 'accommodation_space': self.name}) > 0:
-				frappe.throw(_("There are Booked Bed in this Space. To change Bed Space Type, Please make all Bed Vacant"))
-			elif frappe.db.count('Bed', {'status': 'Temporarily Booked', 'disabled': False, 'accommodation_space': self.name}) > 0:
-				frappe.throw(_("There are Temporarily Booked Bed in this Space. To change Bed Space Type, Please make all Bed Vacant"))
-			else:
-				self.disable_rest_of_beds()
+			# if frappe.db.count('Bed', {'status': 'Occupied', 'disabled': False, 'accommodation_space': self.name}) > 0:
+			# 	frappe.throw(_("There are Occupied Bed in this Space. To change Bed Space Type, Please make all Bed Vacant"))
+			# elif frappe.db.count('Bed', {'status': 'Booked', 'disabled': False, 'accommodation_space': self.name}) > 0:
+			# 	frappe.throw(_("There are Booked Bed in this Space. To change Bed Space Type, Please make all Bed Vacant"))
+			# elif frappe.db.count('Bed', {'status': 'Temporarily Booked', 'disabled': False, 'accommodation_space': self.name}) > 0:
+			# 	frappe.throw(_("There are Temporarily Booked Bed in this Space. To change Bed Space Type, Please make all Bed Vacant"))
+			# else:
+			# 	self.disable_rest_of_beds()
+			self.disable_rest_of_beds()
 
 	def disable_rest_of_beds(self):
 		bed_space_capacity = frappe.db.get_value('Accommodation Space', self.name, 'single_bed_capacity')
@@ -34,10 +35,12 @@ class AccommodationSpace(Document):
 			if fraction > 0:
 				beds_to_disable = sorted(self.beds,
 					key=lambda k: k.disabled == 1)
-				for i, bed in enumerate(beds_to_disable):
-					if i < fraction:
+				i = 0
+				for bed in beds_to_disable:
+					if i < fraction and bed.status == 'Vacant':
+						i += 1
 						bed.disabled = True
-					else:
+					elif i >= fraction:
 						break
 
 	def update_bed_status(self):
@@ -143,3 +146,69 @@ def filter_floor(doctype, txt, searchfield, start, page_len, filters):
 			'txt': "%%%s%%" % txt
 		}
 	)
+
+def change_room_type():
+	space_details = [
+		{"D":"1010110111"},
+		{"D":"1010110112"},
+		{"D":"1010110113"},
+		{"D":"1010120121"},
+		{"D":"1010120122"},
+		{"D":"1010120123"},
+		{"D":"1020210211"},
+		{"D":"1020210212"},
+		{"D":"1020210213"},
+		{"D":"1020230231"},
+		{"B":"1030310311"},
+		{"D":"1030310313"},
+		{"D":"1030320321"},
+		{"D":"1030320322"},
+		{"D":"1030320323"},
+		{"D":"1030330331"},
+		{"D":"1030330332"},
+		{"D":"1030330333"},
+		{"D":"1040410411"},
+		{"D":"1040410412"},
+		{"C":"1040410413"},
+		{"D":"1040420421"},
+		{"D":"1040420422"},
+		{"D":"1040420423"},
+		{"D":"1040430431"},
+		{"D":"1040430432"},
+		{"D":"1040430433"},
+		{"D":"1050510511"},
+		{"D":"1050510512"},
+		{"D":"1050510513"},
+		{"D":"1050520521"},
+		{"D":"1050520522"},
+		{"D":"1050520523"},
+		{"D":"1050530531"},
+		{"D":"1050530532"},
+		{"D":"1050530533"},
+		{"C":"1060610611"},
+		{"C":"1060610612"},
+		{"C":"1060610613"},
+		{"D":"1060620621"},
+		{"D":"1060620622"},
+		{"D":"1060620623"},
+		{"D":"1060630631"},
+		{"D":"1060630632"},
+		{"D":"1060630633"},
+		{"D":"1070710711"},
+		{"D":"1070710712"},
+		{"D":"1070710716"},
+		{"D":"1070720721"},
+		{"D":"1101021021"},
+		{"D":"1070730731"},
+		{"D":"1070730732"},
+		{"D":"1070730733"},
+		{"D":"1080820821"},
+		{"D":"1080830831"},
+		{"D":"1090930931"},
+		{"D":"1101031031"}
+	]
+	for space in space_details:
+		for key in space:
+			accommodation_space = frappe.get_doc('Accommodation Space', space[key])
+			accommodation_space.bed_space_type = key
+			accommodation_space.save(ignore_permissions=True)
