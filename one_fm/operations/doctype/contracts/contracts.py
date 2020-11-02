@@ -33,15 +33,38 @@ def get_contracts_items(contracts):
 
 def add_contracts_items_item_price(self):
 	for item in self.items:
-		name = frappe.db.get_value('Item Price', {'price_list': self.price_list,'item_code':item.item_code
-				,'uom':'Hours','selling':1}, ['name'])
-		if name:
-			target_doc = frappe.get_doc('Item Price', name)
-			if target_doc.price_list_rate != item.unit_rate and target_doc.valid_from == date.today():
-				target_doc.price_list_rate = item.unit_rate
-				target_doc.save()
-				frappe.db.commit()
-			if target_doc.price_list_rate != item.unit_rate and target_doc.valid_from != date.today():
+		if item.type == 'Hourly' and item.unit_rate > 0:
+			name = frappe.db.get_value('Item Price', {'price_list': self.price_list,'item_code':item.item_code
+					,'uom':'Hours','selling':1}, ['name'])
+			if name:
+				target_doc = frappe.get_doc('Item Price', name)
+				if target_doc.price_list_rate != item.unit_rate and target_doc.valid_from == date.today():
+					target_doc.price_list_rate = item.unit_rate
+					target_doc.save()
+					frappe.db.commit()
+				if target_doc.price_list_rate != item.unit_rate and target_doc.valid_from != date.today():
+					item_price = frappe.new_doc('Item Price')
+					item_price.item_code = item.item_code
+					item_price.uom = 'Hours'
+					item_price.price_list = self.price_list
+					item_price.selling = 1
+					item_price.price_list_rate = item.unit_rate 
+					item_price.valid_from = date.today()
+					item_price.note = "This rate is auto generated from contracts"
+					item_price.reference = self.name
+					item_price.flags.ignore_permissions  = True
+					item_price.update({
+						'item_code': item_price.item_code,
+						'uom': item_price.uom,
+						'price_list': item_price.price_list,
+						'selling': item_price.selling,
+						'price_list_rate': item_price.price_list_rate,
+						'valid_from': item_price.valid_from,
+						'note': item_price.note,
+						'reference': item_price.reference
+					}).insert()
+
+			else:
 				item_price = frappe.new_doc('Item Price')
 				item_price.item_code = item.item_code
 				item_price.uom = 'Hours'
@@ -62,28 +85,6 @@ def add_contracts_items_item_price(self):
 					'note': item_price.note,
 					'reference': item_price.reference
 				}).insert()
-
-		else:
-			item_price = frappe.new_doc('Item Price')
-			item_price.item_code = item.item_code
-			item_price.uom = 'Hours'
-			item_price.price_list = self.price_list
-			item_price.selling = 1
-			item_price.price_list_rate = item.unit_rate 
-			item_price.valid_from = date.today()
-			item_price.note = "This rate is auto generated from contracts"
-			item_price.reference = self.name
-			item_price.flags.ignore_permissions  = True
-			item_price.update({
-				'item_code': item_price.item_code,
-				'uom': item_price.uom,
-				'price_list': item_price.price_list,
-				'selling': item_price.selling,
-				'price_list_rate': item_price.price_list_rate,
-				'valid_from': item_price.valid_from,
-				'note': item_price.note,
-				'reference': item_price.reference
-			}).insert()
 	return
 
 def add_contracts_assets_item_price(self):

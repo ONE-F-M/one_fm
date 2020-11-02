@@ -1016,7 +1016,7 @@
   "doctype": "Workflow",
   "document_type": "Sales Invoice",
   "is_active": 1,
-  "modified": "2020-10-25 15:43:42.277890",
+  "modified": "2020-11-02 10:41:25.535595",
   "name": "Sales Invoice",
   "override_status": 0,
   "parent": null,
@@ -1027,13 +1027,26 @@
    {
     "allow_edit": "Accounts User",
     "doc_status": "0",
+    "is_optional_state": 1,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Sales Invoice",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Draft",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Accounts User",
+    "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
     "parent": "Sales Invoice",
     "parentfield": "states",
     "parenttype": "Workflow",
-    "state": "Pending",
+    "state": "Pending Approval",
     "update_field": null,
     "update_value": null
    },
@@ -1046,7 +1059,46 @@
     "parent": "Sales Invoice",
     "parentfield": "states",
     "parenttype": "Workflow",
-    "state": "Approved",
+    "state": "Approved by Operations Manager",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Accounts User",
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Sales Invoice",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected by Operations Manager",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Accounts Manager",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Sales Invoice",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved by Finance",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Accounts User",
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Sales Invoice",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected by Finance",
     "update_field": null,
     "update_value": null
    }
@@ -1055,24 +1107,57 @@
    {
     "action": "Approve",
     "allow_self_approval": 1,
-    "allowed": "Operations Manager",
+    "allowed": "Accounts User",
     "condition": null,
-    "next_state": "Approved",
+    "next_state": "Pending Approval",
     "parent": "Sales Invoice",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Pending"
+    "state": "Draft"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Operations Manager",
+    "condition": null,
+    "next_state": "Approved by Operations Manager",
+    "parent": "Sales Invoice",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending Approval"
    },
    {
     "action": "Reject",
     "allow_self_approval": 1,
     "allowed": "Operations Manager",
     "condition": null,
-    "next_state": "Pending",
+    "next_state": "Rejected by Operations Manager",
     "parent": "Sales Invoice",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Pending"
+    "state": "Pending Approval"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Accounts Manager",
+    "condition": null,
+    "next_state": "Approved by Finance",
+    "parent": "Sales Invoice",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Approved by Operations Manager"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Accounts Manager",
+    "condition": null,
+    "next_state": "Rejected by Finance",
+    "parent": "Sales Invoice",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Approved by Operations Manager"
    }
   ],
   "workflow_name": "Sales Invoice",

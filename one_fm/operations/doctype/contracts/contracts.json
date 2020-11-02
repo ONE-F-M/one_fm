@@ -35,7 +35,6 @@
   "is_public_holiday_rate",
   "public_holiday_rate",
   "column_break_33",
-  "is_flat_rate",
   "section_break_35",
   "items",
   "section_break_28",
@@ -286,12 +285,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "is_flat_rate",
-   "fieldtype": "Check",
-   "label": "Is Flat Rate"
-  },
-  {
    "collapsible": 1,
    "fieldname": "section_break_35",
    "fieldtype": "Section Break",
@@ -367,7 +360,7 @@
    "read_only": 1
   }
  ],
- "modified": "2020-10-23 13:29:15.842176",
+ "modified": "2020-10-28 21:29:11.674533",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

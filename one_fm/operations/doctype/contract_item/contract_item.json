@@ -6,6 +6,7 @@
  "field_order": [
   "item_code",
   "head_count",
+  "type",
   "unit_rate",
   "monthly_rate",
   "column_break_4",
@@ -38,6 +39,8 @@
    "label": "Head Count"
   },
   {
+   "default": "0",
+   "depends_on": "eval:doc.type == 'Hourly'",
    "fieldname": "unit_rate",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -120,14 +123,22 @@
    "label": "Saturday"
   },
   {
+   "default": "0",
+   "depends_on": "eval:doc.type == 'Monthly'",
    "fieldname": "monthly_rate",
    "fieldtype": "Currency",
    "label": "Monthly Rate",
    "options": "currency"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Hourly\nMonthly"
   }
  ],
  "istable": 1,
- "modified": "2020-10-25 15:16:45.682092",
+ "modified": "2020-10-31 21:23:32.534721",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",
