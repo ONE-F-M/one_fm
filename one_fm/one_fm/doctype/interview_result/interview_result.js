@@ -22,6 +22,7 @@ frappe.ui.form.on('Interview Result', {
 			frm.set_value('interview_date', frappe.datetime.now_datetime());
 		}
 		set_experience_company_options(frm);
+		set_script_html(frm);
 	},
   interview_template: function(frm) {
     set_interview_template(frm);
@@ -42,11 +43,51 @@ frappe.ui.form.on('Interview Result', {
 	},
 	pass_to_next_interview: function(frm) {
 		confirm_score_action(frm);
-	},
-	view_question: function(frm) {
-		view_sample_question(frm);
 	}
 });
+
+var set_script_html = function(frm) {
+	var $wrapper = frm.fields_dict.view_script_button_html.$wrapper;
+	$wrapper.empty();
+	var performance_profile_html = `<div>
+	<p style="font-size: 12px;">
+		<button class="btn btn-default btn-xs view_question_btn" type="button">View Questions</button>
+		<button class="btn btn-default btn-xs msa_script_btn" type="button">MSA-Script</button>
+		<button class="btn btn-default btn-xs exploratory_script_btn" type="button">Exploratory-Script</button>
+	</p>
+	</div>`;
+	$wrapper.html(performance_profile_html);
+	$wrapper.on('click', '.view_question_btn', function() {
+		if(frm.doc.docstatus == 0){
+			view_sample_question(frm);
+		}
+	});
+	$wrapper.on('click', '.msa_script_btn', function() {
+		if(frm.doc.docstatus == 0){
+			view_script(frm, 'msa_script', 'Two-question Performance-based Interview');
+		}
+	});
+	$wrapper.on('click', '.exploratory_script_btn', function() {
+		if(frm.doc.docstatus == 0){
+			view_script(frm, 'exploratory_script', 'Performance-based Exploratory Phone Interview');
+		}
+	});
+};
+
+var view_script = function(frm, script_html, title) {
+	var dialog = new frappe.ui.Dialog({
+		title: __(title),
+		fields: [
+			{
+				"fieldtype": "HTML",
+				"fieldname": "script_html"
+			}
+		]
+	});
+	dialog.fields_dict.script_html.$wrapper.html(frappe.render_template(script_html));
+	dialog.show();
+	dialog.$wrapper.find('.modal-dialog').css("width", "70%");
+}
 
 var view_sample_question = function(frm) {
 	frappe.call({
@@ -188,6 +229,20 @@ frappe.ui.form.on('Interview Question Result', {
 	}
 });
 
+frappe.ui.form.on('Interview Sheet Security Awareness', {
+	score: function(frm, cdt, cdn) {
+		validate_score_with_weight(frm, cdt, cdn);
+    calculate_total_and_avg_score(frm);
+	}
+});
+
+frappe.ui.form.on('Interview Sheet Security Awareness Personal Skill', {
+	score: function(frm, cdt, cdn) {
+		validate_score_with_weight(frm, cdt, cdn);
+    calculate_total_and_avg_score(frm);
+	}
+});
+
 frappe.ui.form.on('Interview Sheet General', {
 	score: function(frm, cdt, cdn) {
 		validate_score_with_weight(frm, cdt, cdn);
@@ -242,6 +297,17 @@ var calculate_total_and_avg_score = function(frm) {
 		});
 		no_of_questions += frm.doc.interview_question_result.length;
 	}
+	if(frm.doc.check_security_awareness){
+		var sections = ['personal_skills', 'security_awareness'];
+	  sections.forEach((item) => {
+			if(frm.doc[item]){
+				frm.doc[item].forEach((item) => {
+					total += item.score;
+				});
+				no_of_questions += frm.doc[item].length;
+			}
+	  });
+	}
   frm.set_value('total_score', total);
   if(total && no_of_questions > 0){
     avg = total/no_of_questions;
@@ -265,7 +331,7 @@ var set_interview_template = function(frm) {
   }
 };
 
-var set_interview_questions = function(frm, is_bulk) {
+var set_interview_questions = function(frm) {
 	frappe.call({
 		method: 'frappe.client.get',
 		args: {
@@ -275,8 +341,10 @@ var set_interview_questions = function(frm, is_bulk) {
 		callback: function(r) {
 			if(r && r.message){
 				var is_bulk = r.message.is_bulk;
+				var check_security_awareness = r.message.check_security_awareness;
 				frm.set_value('is_bulk', is_bulk);
-				if(!is_bulk && r.message.interview_questions){
+				frm.set_value('check_security_awareness', check_security_awareness);
+				if(!is_bulk && !check_security_awareness && r.message.interview_questions){
 					set_interview_sheet_child(frm, 'interview_question_result', 'Interview Question Result', r.message.interview_questions);
 				}
 				else if(is_bulk){
@@ -290,6 +358,30 @@ var set_interview_questions = function(frm, is_bulk) {
 							set_interview_sheet_child(frm, 'interview_sheet_technical', 'Interview Sheet Technical', r.message.technical_questions);
 					}
 				}
+				if(check_security_awareness){
+					if(r.message.personal_skills){
+						frm.clear_table('personal_skills');
+						r.message.personal_skills.forEach((item, i) => {
+							let interview_question = frappe.model.add_child(frm.doc, 'Interview Sheet Security Awareness Personal Skill', 'personal_skills');
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'personal_skill', item.personal_skill);
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'weight', item.weight);
+						});
+					}
+					if(r.message.security_awareness){
+						frm.clear_table('security_awareness');
+						r.message.security_awareness.forEach((item, i) => {
+							let interview_question = frappe.model.add_child(frm.doc, 'Interview Sheet Security Awareness', 'security_awareness');
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'security_awareness', item.security_awareness);
+							frappe.model.set_value(interview_question.doctype, interview_question.name, 'weight', item.weight);
+						});
+					}
+					frm.refresh_field('personal_skills');
+					frm.refresh_field('security_awareness');
+				}
+			}
+			else{
+				frm.set_value('is_bulk', false);
+				frm.set_value('check_security_awareness', false);
 			}
 		}
 	});

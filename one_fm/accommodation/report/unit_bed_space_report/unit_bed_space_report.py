@@ -17,7 +17,7 @@ def get_columns():
 		_("Occupied Bed") + ":Data:120",
 		_("Booked Bed") + ":Data:100",
 		_("Temporary Booked") + ":Data:150",
-		_("Vaccant Bed") + ":Data:100"
+		_("Vacant Bed") + ":Data:100"
     ]
 
 def get_conditions(filters):
@@ -37,7 +37,7 @@ def get_data(filters):
 		occupied_bed = frappe.db.count('Bed', filters)
 		filters['status'] = 'Booked'
 		booked_bed = frappe.db.count('Bed', filters)
-		filters['status'] = 'Vaccant'
+		filters['status'] = 'Vacant'
 		vaccant_bed = frappe.db.count('Bed', filters)
 		filters['status'] = 'Temporary Booked'
 		temporary_booked_bed = frappe.db.count('Bed', filters)

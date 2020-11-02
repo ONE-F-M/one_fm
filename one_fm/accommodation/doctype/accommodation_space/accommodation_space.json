@@ -138,7 +138,6 @@
   {
    "depends_on": "bed_space_available",
    "fetch_from": "bed_space_type.single_bed_capacity",
-   "fetch_if_empty": 1,
    "fieldname": "single_bed_capacity",
    "fieldtype": "Int",
    "label": "Bed Capacity",
@@ -264,7 +263,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-14 20:34:48.938903",
+ "modified": "2020-11-02 08:29:12.797875",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",

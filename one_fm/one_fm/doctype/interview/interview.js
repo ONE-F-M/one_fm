@@ -40,16 +40,13 @@ var set_interview_type_details = function(frm) {
   //   frm.set_value('for_interview_sheet', false);
   // }
   if(frm.doc.interview_type){
-    frappe.db.get_value('Interview Type', frm.doc.interview_type, 'is_bulk', function(r) {
-      if(r && r.is_bulk){
-        frm.set_value('is_bulk', r.is_bulk);
-      }
-      else{
-        frm.set_value('is_bulk', r.is_bulk);
-      }
+    frappe.db.get_value('Interview Type', frm.doc.interview_type, ['is_bulk', 'check_security_awareness'], function(r) {
+			frm.set_value('is_bulk', r.is_bulk);
+			frm.set_value('check_security_awareness', r.check_security_awareness);
     });
   }
   else{
     frm.set_value('is_bulk', false);
+		frm.set_value('check_security_awareness', false);
   }
 };

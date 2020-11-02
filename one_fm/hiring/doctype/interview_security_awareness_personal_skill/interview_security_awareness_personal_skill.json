@@ -1,0 +1,36 @@
+{
+ "actions": [],
+ "creation": "2020-11-02 12:43:39.885910",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "personal_skill",
+  "weight"
+ ],
+ "fields": [
+  {
+   "fieldname": "personal_skill",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Personal Skill",
+   "reqd": 1
+  },
+  {
+   "fieldname": "weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Weight"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-11-02 12:45:08.570436",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Interview Security Awareness Personal Skill",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

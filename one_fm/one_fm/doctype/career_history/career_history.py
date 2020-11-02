@@ -175,7 +175,7 @@ def validate_overlap(doc, child_doc, table):
 
 	if overlap_doc:
 		frappe.throw(_("Row {0}: Start Date and End Date of Career History ({1}) is overlapping with {2}")
-			.format(child_doc.idx, table, overlap_doc[0].name), OverlapError)
+			.format(child_doc.idx, table, overlap_doc[0].company), OverlapError)
 
 def get_doc_condition(table):
 	if table == 'Company':

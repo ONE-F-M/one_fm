@@ -10,6 +10,7 @@
   "interview_type",
   "for_interview_sheet",
   "is_bulk",
+  "check_security_awareness",
   "column_break_3",
   "designation",
   "interview_questions_section",
@@ -24,7 +25,10 @@
   "bulk_interview_sheet_section",
   "general_questions",
   "attitude_questions",
-  "technical_questions"
+  "technical_questions",
+  "check_security_awareness_section",
+  "personal_skills",
+  "security_awareness"
  ],
  "fields": [
   {
@@ -34,7 +38,7 @@
    "options": "Designation"
   },
   {
-   "depends_on": "eval:!doc.is_bulk",
+   "depends_on": "eval:!doc.is_bulk && !doc.check_security_awareness",
    "fieldname": "interview_questions",
    "fieldtype": "Table",
    "label": "Interview Questions",
@@ -68,7 +72,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:!doc.is_bulk",
+   "depends_on": "eval:!doc.is_bulk && !doc.check_security_awareness",
    "fieldname": "interview_questions_section",
    "fieldtype": "Section Break"
   },
@@ -143,10 +147,37 @@
    "fieldtype": "Table",
    "label": "Technical Questions",
    "options": "Interview Technical"
+  },
+  {
+   "default": "0",
+   "fieldname": "check_security_awareness",
+   "fieldtype": "Check",
+   "label": "Check Security Awareness",
+   "read_only": 1
+  },
+  {
+   "depends_on": "check_security_awareness",
+   "fieldname": "check_security_awareness_section",
+   "fieldtype": "Section Break",
+   "label": "Check Security Awareness"
+  },
+  {
+   "depends_on": "check_security_awareness",
+   "fieldname": "personal_skills",
+   "fieldtype": "Table",
+   "label": "Personal Skills",
+   "options": "Interview Security Awareness Personal Skill"
+  },
+  {
+   "depends_on": "check_security_awareness",
+   "fieldname": "security_awareness",
+   "fieldtype": "Table",
+   "label": "Security Awareness",
+   "options": "Interview Security Awareness"
   }
  ],
  "links": [],
- "modified": "2020-07-23 20:19:39.540551",
+ "modified": "2020-11-02 12:49:49.058944",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview",
