@@ -1,3 +1,4 @@
+const baseUrl = "http://dev.one-fm.com"
 if(window.localStorage.getItem("job-application-auth")){
     const ERF = localStorage.getItem("currentJobOpening");
     const basicSkills = "basic-skills";
@@ -7,10 +8,14 @@ if(window.localStorage.getItem("job-application-auth")){
         window.location = "job_opening";
     }
     console.log(ERF)
-    fetch(`http://192.168.0.129/api/resource/ERF/${ERF}`, {
-        headers: {
-            'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
-        }
+    fetch(`${baseUrl}/api/resource/ERF/${ERF}`, {
+        // headers: {
+        //     'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
+        // }
+        body: JSON.stringify({
+            usr: 'h.marzooq@armor-services.com',
+            pwd: 'hassarah420024703307786'
+        })
     })
     .then(r => r.json())
     .then(erf => {
@@ -225,14 +230,18 @@ async function postData(url = '', data = {}) {
   }
 const submitForm = () => {
     console.log("submited");
-    postData('http://192.168.0.129/api/resource/Job Applicant', { "ERF": "ERF-2020-00004", "First Name": "Hassan"})
+    postData(`${baseUrl}/api/resource/Job Applicant`, { "ERF": "ERF-2020-00004", "First Name": "Hassan"})
   .then(data => {
     console.log("post data",data); 
   });
-    fetch(`http://192.168.0.129/api/resource/Job Applicant`, {
-        headers: {
-            'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
-        }
+    fetch(`${baseUrl}/api/resource/Job Applicant`, {
+        // headers: {
+        //     'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
+        // }
+        body: JSON.stringify({
+            usr: 'h.marzooq@armor-services.com',
+            pwd: 'hassarah420024703307786'
+        })
     })
     .then(r => r.json())
     .then(erf => {

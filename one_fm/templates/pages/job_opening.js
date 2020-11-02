@@ -1,3 +1,4 @@
+const baseUrl = "http://dev.one-fm.com";
 const signUp = (erf_code) => {
     localStorage.setItem("currentJobOpening", erf_code.target.id)
     if(window.localStorage.getItem("job-application-auth"))
@@ -61,10 +62,14 @@ Apply
 //         console.log("ada",doc)
 //     })
 // fetch("http://192.168.0.129/api/resource/Gender", {}).then(a=> console.log("hello", a.body.getReader()))
-fetch('http://192.168.0.129/api/resource/ERF?fields=["designation", "erf_code", "creation"]', {
-    headers: {
-        'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
-    }
+fetch(`${baseUrl}/api/resource/ERF?fields=["designation", "erf_code", "creation"]`, {
+    // headers: {
+    //     'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
+    // },
+    body: JSON.stringify({
+        usr: 'h.marzooq@armor-services.com',
+        pwd: 'hassarah420024703307786'
+    })
 })
 .then(r => r.json())
 .then(r => {
