@@ -22,7 +22,7 @@ def get_columns():
 		_("Type E") + ":Data:100",
 		_("Total Bed") + ":Data:100",
 		_("Occupied Bed") + ":Data:120",
-		_("Vaccant Bed") + ":Data:100"
+		_("Vacant Bed") + ":Data:100"
     ]
 
 def get_data(filters):
