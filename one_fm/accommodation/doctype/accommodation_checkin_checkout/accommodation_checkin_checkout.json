@@ -46,6 +46,8 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
@@ -63,6 +65,7 @@
    "fetch_if_empty": 1,
    "fieldname": "full_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Full Name"
   },
   {
@@ -252,12 +255,14 @@
    "fetch_if_empty": 1,
    "fieldname": "employee_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Employee ID",
    "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-10-13 13:43:38.111710",
+ "modified": "2020-11-02 23:47:45.222627",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",
