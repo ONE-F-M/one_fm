@@ -17,6 +17,7 @@
   "interview_type",
   "interview_template",
   "is_bulk",
+  "check_security_awareness",
   "get_best_reference",
   "pass_to_next_interview",
   "section_break_4",
@@ -25,6 +26,8 @@
   "interview_sheet_general",
   "interview_sheet_attitude",
   "interview_sheet_technical",
+  "personal_skills",
+  "security_awareness",
   "work_experience_details",
   "interview_experience_note",
   "work_experience_score",
@@ -62,7 +65,7 @@
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval:!doc.is_bulk",
+   "depends_on": "eval:!doc.is_bulk && !doc.check_security_awareness",
    "fieldname": "interview_question_result",
    "fieldtype": "Table",
    "label": "Interview Question Result",
@@ -227,11 +230,32 @@
    "fieldname": "view_script_button_html",
    "fieldtype": "HTML",
    "label": "View Script Button HTML"
+  },
+  {
+   "depends_on": "check_security_awareness",
+   "fieldname": "security_awareness",
+   "fieldtype": "Table",
+   "label": "Security Awareness",
+   "options": "Interview Sheet Security Awareness"
+  },
+  {
+   "default": "0",
+   "fieldname": "check_security_awareness",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Check Security Awareness"
+  },
+  {
+   "depends_on": "check_security_awareness",
+   "fieldname": "personal_skills",
+   "fieldtype": "Table",
+   "label": "Personal Skills",
+   "options": "Interview Sheet Security Awareness Personal Skill"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-11-02 09:14:04.097028",
+ "modified": "2020-11-02 23:14:15.986306",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview Result",

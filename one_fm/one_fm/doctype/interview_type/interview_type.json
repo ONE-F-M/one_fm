@@ -8,7 +8,8 @@
  "field_order": [
   "interview_type",
   "for_interview_sheet",
-  "is_bulk"
+  "is_bulk",
+  "check_security_awareness"
  ],
  "fields": [
   {
@@ -33,10 +34,17 @@
    "fieldname": "is_bulk",
    "fieldtype": "Check",
    "label": "Is Bulk"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "default": "0",
+   "fieldname": "check_security_awareness",
+   "fieldtype": "Check",
+   "label": "Check Security Awareness"
   }
  ],
  "links": [],
- "modified": "2020-05-19 16:46:01.321362",
+ "modified": "2020-11-02 12:47:33.391756",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview Type",
