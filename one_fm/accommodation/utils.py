@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 import frappe
-from frappe.utils.print_format import download_pdf
+from frappe.utils.print_format import download_pdf, print_by_server
 
 @frappe.whitelist()
 def accommodation_qr_code_live_details(docname):
@@ -18,3 +18,10 @@ def accommodation_qr_code_live_details(docname):
         if not frappe.db.exists('Print Format', {'name': doctype+' QR Details'}):
             format = None
         return download_pdf(doctype, docname, format=format, doc=None, no_letterhead=0)
+
+@frappe.whitelist()
+def print_bulk_accommodation_policy():
+    checkin_list = frappe.db.get_list('Accommodation Checkin Checkout')
+    for checkin in checkin_list:
+        # print_by_server('Accommodation Checkin Checkout', checkin.name, print_format='Accommodation Policy', doc=None, no_letterhead=0)
+        download_pdf('Accommodation Checkin Checkout', checkin.name, format='Accommodation Policy', doc=None, no_letterhead=0)
