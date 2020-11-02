@@ -22,6 +22,7 @@ frappe.ui.form.on('Interview Result', {
 			frm.set_value('interview_date', frappe.datetime.now_datetime());
 		}
 		set_experience_company_options(frm);
+		set_script_html(frm);
 	},
   interview_template: function(frm) {
     set_interview_template(frm);
@@ -42,17 +43,36 @@ frappe.ui.form.on('Interview Result', {
 	},
 	pass_to_next_interview: function(frm) {
 		confirm_score_action(frm);
-	},
-	view_question: function(frm) {
-		view_sample_question(frm);
-	},
-	view_msa_script: function(frm) {
-		view_script(frm, 'msa_script', 'Two-question Performance-based Interview');
-	},
-	view_exploratory_script: function(frm) {
-		view_script(frm, 'exploratory_script', 'Performance-based Exploratory Phone Interview');
 	}
 });
+
+var set_script_html = function(frm) {
+	var $wrapper = frm.fields_dict.view_script_button_html.$wrapper;
+	$wrapper.empty();
+	var performance_profile_html = `<div>
+	<p style="font-size: 12px;">
+		<button class="btn btn-default btn-xs view_question_btn" type="button">View Questions</button>
+		<button class="btn btn-default btn-xs msa_script_btn" type="button">MSA-Script</button>
+		<button class="btn btn-default btn-xs exploratory_script_btn" type="button">Exploratory-Script</button>
+	</p>
+	</div>`;
+	$wrapper.html(performance_profile_html);
+	$wrapper.on('click', '.view_question_btn', function() {
+		if(frm.doc.docstatus == 0){
+			view_sample_question(frm);
+		}
+	});
+	$wrapper.on('click', '.msa_script_btn', function() {
+		if(frm.doc.docstatus == 0){
+			view_script(frm, 'msa_script', 'Two-question Performance-based Interview');
+		}
+	});
+	$wrapper.on('click', '.exploratory_script_btn', function() {
+		if(frm.doc.docstatus == 0){
+			view_script(frm, 'exploratory_script', 'Performance-based Exploratory Phone Interview');
+		}
+	});
+};
 
 var view_script = function(frm, script_html, title) {
 	var dialog = new frappe.ui.Dialog({

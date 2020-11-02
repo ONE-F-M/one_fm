@@ -20,7 +20,7 @@
   "get_best_reference",
   "pass_to_next_interview",
   "section_break_4",
-  "view_question",
+  "view_script_button_html",
   "interview_question_result",
   "interview_sheet_general",
   "interview_sheet_attitude",
@@ -224,15 +224,14 @@
    "options": "\nPass\nReject"
   },
   {
-   "depends_on": "eval: doc.docstatus == 0",
-   "fieldname": "view_question",
-   "fieldtype": "Button",
-   "label": "View Question"
+   "fieldname": "view_script_button_html",
+   "fieldtype": "HTML",
+   "label": "View Script Button HTML"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-10-26 22:52:57.545894",
+ "modified": "2020-11-02 09:14:04.097028",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview Result",
