@@ -34,6 +34,7 @@
   "accommodation_objects",
   "occupancy_details_section",
   "employee",
+  "employee_id",
   "local_or_overseas",
   "passport_number",
   "full_name",
@@ -326,10 +327,17 @@
    "fieldtype": "Data",
    "label": "Unit Owner Reference Number",
    "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2020-10-28 19:28:25.363427",
+ "modified": "2020-11-02 23:41:33.646920",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
