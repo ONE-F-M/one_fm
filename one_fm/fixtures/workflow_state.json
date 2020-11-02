@@ -123,7 +123,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2020-02-01 11:30:53.309998",
+  "modified": "2020-11-02 10:42:13.731357",
   "name": "Cancelled",
   "parent": null,
   "parentfield": null,
@@ -334,5 +334,29 @@
   "parenttype": null,
   "style": "Warning",
   "workflow_state_name": "Pending Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-11-02 09:19:20.144773",
+  "name": "Approved by Finance",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Success",
+  "workflow_state_name": "Approved by Finance"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-11-02 09:20:35.586553",
+  "name": "Rejected by Finance",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Danger",
+  "workflow_state_name": "Rejected by Finance"
  }
 ]
