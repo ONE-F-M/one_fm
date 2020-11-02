@@ -1,9 +1,11 @@
 frappe.ui.form.on('Sales Invoice', {
     validate: function(frm){
-        if(frm.doc.project){
-            set_income_account_and_cost_center(frm);
-        }
-        calculate_total_billing_amount(frm);     
+        if(frm.doc.__islocal || frm.doc.docstatus==0){
+            if(frm.doc.project){
+                set_income_account_and_cost_center(frm);
+            }
+            calculate_total_billing_amount(frm);
+        }     
     },
 	refresh(frm) {
         frm.set_df_property('contracts', 'read_only', 1);
