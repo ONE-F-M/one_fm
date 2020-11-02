@@ -1,25 +1,40 @@
 if(window.localStorage.getItem("job-application-auth")){
-    const ERF = localStorage.getItem("currentJobOpening")
+    const ERF = localStorage.getItem("currentJobOpening");
+    const basicSkills = "basic-skills";
+    const language = "rating";
+    if(!ERF){
+        alert("Please Select a Job Posting before continuing");
+        window.location = "job_opening";
+    }
     console.log(ERF)
     fetch(`http://192.168.0.129/api/resource/ERF/${ERF}`, {
         headers: {
             'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
         }
     })
-.then(r => r.json())
-.then(erf => {
+    .then(r => r.json())
+    .then(erf => {
     console.log("ERF",erf);
     console.log("ERF",erf.data.designation_skill);
     erf.data.designation_skill.map(a=>{
-        placeSkills(a.skill)
+        placeSkills(basicSkills, a.skill)
     })
     starEffects()
-
+    
 })
 // Place Skills
-const placeSkills = (skill="Empty") => {
-    document.getElementById("basic-skills").innerHTML += ` <div class="form-group col-md-6">
-    <p>${skill}</p>
+const placeSkills = (location, skill="none") => {
+    
+    document.getElementById(location).innerHTML += ` <div class="form-group col-md-6">
+    ${skill != "none" ? `<p>${skill}</p>` : `<select class="form-control" name="religion" id="religion">
+    <option value="blank"></option>
+    <option value="Islam">English</option>
+    <option value="Christianity">Arabic</option>
+    <option value="Hinduism">Hindi</option>
+    <option value="Other">Malayalam</option>
+    <option value="Other">Tamil</option>
+    <option value="Other">Other</option>
+</select>`}
 </div>
 <div class="form-group col-md-6">
     <div class='rating-stars'>
@@ -43,6 +58,7 @@ const placeSkills = (skill="Empty") => {
     </div>
 </div>`
 }
+placeSkills(language)
 // Auto complete scripts
     $( function() {
         let availableTags = [
@@ -189,25 +205,42 @@ const starEffects = () =>{
         }
         }
     };
-    const star = document.getElementsByClassName("star");
-    const addStars = (e) => {
-        for (i = 4; i >= 0; i--)
-            star[i].innerHTML = "☆";
-        console.log("e", e.target.dataset.star);
-        console.log("star", star);
-        console.log(star[e.target.id]);
-        for (i = 4; i >= e.target.id; i--)
-            star[i].innerHTML = "★";
-        // console.log(star[i].innerHTML);
+    
 
-    };
-
-    Array.from(star).forEach(function (element) {
-        element.addEventListener('click', addStars);
-    });
-    console.log(star);
     placeText();
 })();
+// Submit
+async function postData(url = '', data = {}) {
+    // Default options are marked with *
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        "Accept": "application/json",
+        'Content-Type': 'application/json',
+        'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'      
+      },     
+      body: JSON.stringify(data) 
+    });
+    return response.json(); // parses JSON response into native JavaScript objects
+  }
+const submitForm = () => {
+    console.log("submited");
+    postData('http://192.168.0.129/api/resource/Job Applicant', { "ERF": "ERF-2020-00004", "First Name": "Hassan"})
+  .then(data => {
+    console.log("post data",data); 
+  });
+    fetch(`http://192.168.0.129/api/resource/Job Applicant`, {
+        headers: {
+            'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
+        }
+    })
+    .then(r => r.json())
+    .then(erf => {
+    console.log("ERFFInel",erf);    
+    
+})
+}
+document.getElementById("submitBtn").addEventListener("click", submitForm);
 
 }
 else {

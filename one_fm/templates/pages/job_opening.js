@@ -1,6 +1,16 @@
 const signUp = (erf_code) => {
     localStorage.setItem("currentJobOpening", erf_code.target.id)
-    location.href = "./applicant-sign-up"
+    if(window.localStorage.getItem("job-application-auth"))
+        location.href = "./job_application"    
+    else
+        location.href = "./applicant-sign-up"
+}
+const easySignUp = (erf_code) => {
+    localStorage.setItem("currentEasyJobOpening", erf_code.target.id)
+    if(window.localStorage.getItem("job-application-auth"))
+        location.href = "./easy_apply"    
+    else
+        location.href = "./applicant-sign-up"
 }
 // proceedToSignUp.addEventListener("click", signUp);
 
@@ -17,7 +27,10 @@ const renderJobs = (designation, erf_code, creation) => {
     </h5>
 </div>
 <a id=${erf_code} class="btn btn-apply float-sm-right float-xs-left proceed-to-signup">
-    Apply
+Apply
+</a>
+<a id=${erf_code} class="btn btn-apply mr-2 float-sm-right float-xs-left proceed-to-easy-signup">
+    Easy Apply
 </a>
 </li>`;
 }
@@ -57,7 +70,6 @@ fetch('http://192.168.0.129/api/resource/ERF?fields=["designation", "erf_code", 
 .then(r => {
     const job_container = document.getElementById("job_listing");
     job_container.innerHTML = "";
-    console.log("parakkum rasaliyay",r);
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     r.data.map(a=> {
         console.log(a)
@@ -70,7 +82,9 @@ fetch('http://192.168.0.129/api/resource/ERF?fields=["designation", "erf_code", 
 })
 .then(r=>{
     const proceedToSignUp = document.getElementsByClassName("proceed-to-signup");
+    const proceedToEasySignUp = document.getElementsByClassName("proceed-to-easy-signup");
 for(let i=0; i<proceedToSignUp.length; i++){
     proceedToSignUp[i].addEventListener("click", signUp);
+    proceedToEasySignUp[i].addEventListener("click", easySignUp);
 }
 })

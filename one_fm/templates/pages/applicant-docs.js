@@ -77,3 +77,10 @@ if(window.localStorage.getItem("job-application-auth")){
         alert("Please Signup or Login!");
         window.location = "applicant-sign-up";
     }
+    const skipSignup = () => {
+        if(localStorage.getItem("currentEasyJobOpening"))
+            window.location = "easy_apply";        
+        else
+            window.location = "job_application";
+
+    }
