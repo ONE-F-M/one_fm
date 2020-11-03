@@ -2401,13 +2401,35 @@ function schedule_change_post(page){
 					filters: {"shift": d.get_value('shift')}
 				};
 			}},
+			{'fieldname': 'cb1', 'fieldtype': 'Section Break'},
+			{'label': 'From Date', 'fieldname': 'start_date', 'fieldtype': 'Date', 'default': date, onchange:function(){
+				let start_date = d.get_value('start_date');
+				console.log( moment(start_date),moment(frappe.datetime.nowdate()));
+				if(start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
+					// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
+					frappe.throw(__("Start Date cannot be before today."));
+				}
+			}},
+			{'fieldname': 'cb1', 'fieldtype': 'Column Break'},
+			{'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'default': date, onchange:function(){
+				let end_date = d.get_value('end_date');
+				let start_date = d.get_value('start_date')
+				if(end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
+					frappe.throw(__("End Date cannot be before today."));
+				}
+				if(start_date && end_date && moment(end_date).isBefore(moment(frappe.datetime.nowdate()))){
+					frappe.throw(__("End Date cannot be before Start Date."));
+				}
+			}},
+			
+
 		],
 		primary_action: function(){
 			
-			let {shift, site, post_type, project} = d.get_values();
+			let {shift, site, post_type, project, start_date, end_date} = d.get_values();
 			$('#cover-spin').show(0);
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-			{employees, shift, post_type})
+			{employees, shift, post_type, start_date, end_date})
 			.then(res => {
 				d.hide();
 				$('#cover-spin').hide();

@@ -1,0 +1,67 @@
+{
+ "creation": "2020-11-02 09:12:01.951789",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "civil_id",
+  "full_name_arabic",
+  "salary",
+  "column_break_4",
+  "social_allowance",
+  "financial_reward",
+  "qualification_bonus"
+ ],
+ "fields": [
+  {
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Civil Id"
+  },
+  {
+   "fieldname": "full_name_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name Arabic"
+  },
+  {
+   "fieldname": "salary",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Salary"
+  },
+  {
+   "fieldname": "social_allowance",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Social Allowance"
+  },
+  {
+   "fieldname": "financial_reward",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Financial Reward"
+  },
+  {
+   "fieldname": "qualification_bonus",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Qualification Bonus"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-11-02 10:08:50.080891",
+ "modified_by": "Administrator",
+ "module": "PIFSS",
+ "name": "Form 55 Employees",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
