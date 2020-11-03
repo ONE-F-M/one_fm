@@ -116,7 +116,6 @@
   },
   {
    "fetch_from": "accommodation_space.bed_space_type",
-   "fetch_if_empty": 1,
    "fieldname": "bed_space_type",
    "fieldtype": "Link",
    "label": "Bed Space Type",
@@ -337,7 +336,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-02 23:41:33.646920",
+ "modified": "2020-11-03 11:52:15.809915",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
