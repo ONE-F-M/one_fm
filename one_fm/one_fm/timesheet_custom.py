@@ -2,8 +2,7 @@ import frappe,calendar
 import itertools
 from datetime import date,timedelta,datetime
 from frappe.utils import cstr
-from calendar import monthrange
-#from one_fm.one_fm.sales_invoice_custom import get_timesheet_remaining_days  
+from calendar import monthrange  
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
     filters = {
@@ -44,14 +43,10 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             if contract_item_detail:
                 billable = 1
                 billing_hours = contract_item_detail[0].shift_hours
-                #check contract_item_detail[0].type = 'Monthly Rate'
-                # calculate hourly rate
-                # billing_rate = calculate_hourly_rate_of_monthly_working_days(attendance.project,item,contract_item_detail[0]monthly_rate,contract_item_detail[0].shift_hours,start_date)
-                # if public_holiday_rate > 0:
-                #   billing_rate = public_holiday_rate * contract_item_detail[0].unit_rate
                 if contract_item_detail[0].type == 'Monthly':
                     billing_rate = calculate_hourly_rate_of_monthly_working_days(attendance.project,item,contract_item_detail[0].monthly_rate,contract_item_detail[0].shift_hours,start_date)
-                #check contract_item_detail[0].type = 'Hourly Rate'..Execute Below code
+                    if public_holiday_rate > 0:
+                        billing_rate = public_holiday_rate * billing_rate
                 if contract_item_detail[0].type == 'Hourly':
                     if public_holiday_rate > 0:
                         billing_rate = public_holiday_rate * contract_item_detail[0].unit_rate
@@ -99,7 +94,6 @@ def calculate_hourly_rate_of_monthly_working_days(project = None,item_code = Non
 
     #get list of date between one month and remove offdays from list
     total_days = days_of_month(first_day,last_day)
-    #total_days = get_timesheet_remaining_days(datetime.datetime.strptime(first_day,'%Y-%m-%d'),datetime.datetime.strptime(last_day,'%Y-%m-%d'))
     working_day_list = []
     for d in range(len(total_days)):
         day_of_week = calendar.day_name[total_days[d].weekday()]
