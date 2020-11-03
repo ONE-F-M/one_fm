@@ -27,6 +27,7 @@ def create_sales_invoice():
             sales_invoice = frappe.new_doc('Sales Invoice')
             sales_invoice.contracts = item.name
             sales_invoice.customer = item.client
+            sales_invoice.set_posting_time = 1
             sales_invoice.project = item.project
             sales_invoice.selling_price_list = item.price_list
             sales_invoice.timesheets = ''
@@ -131,6 +132,7 @@ def create_sales_invoice():
                 sales_invoice.flags.ignore_permissions  = True
                 sales_invoice.update({
                     'customer': sales_invoice.customer,
+                    'set_posting_time': sales_invoice.set_posting_time,
                     'project': sales_invoice.project,
                     'contracts': sales_invoice.contracts,
                     'selling_price_list': sales_invoice.selling_price_list,
@@ -151,6 +153,7 @@ def create_sales_invoice():
                 sales_invoice = frappe.new_doc('Sales Invoice')
                 sales_invoice.contracts = item.name
                 sales_invoice.customer = item.client
+                sales_invoice.set_posting_time = 1
                 sales_invoice.project = item.project
                 sales_invoice.selling_price_list = item.price_list
                 sales_invoice.timesheets = ''
@@ -258,6 +261,7 @@ def create_sales_invoice():
                     sales_invoice.flags.ignore_permissions  = True
                     sales_invoice.update({
                         'customer': sales_invoice.customer,
+                        'set_posting_time': sales_invoice.set_posting_time,
                         'project': sales_invoice.project,
                         'contracts': sales_invoice.contracts,
                         'selling_price_list': sales_invoice.selling_price_list,
