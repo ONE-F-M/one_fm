@@ -9,19 +9,27 @@
   "naming_series",
   "type",
   "checked_out",
-  "employee",
-  "employee_id",
-  "checkin_checkout_date_time",
-  "column_break_2",
   "booking_reference",
   "checkin_reference",
+  "tenant_category",
+  "employee",
+  "column_break_2",
+  "checkin_checkout_date_time",
   "reason_for_checkout",
-  "section_break_4",
+  "contract_details_section",
+  "contract_company_name",
+  "contract_contact_person",
+  "contract_phone",
+  "column_break_15",
+  "contract_email",
+  "contract_start_date",
+  "contract_end_date",
+  "tenant_details_section",
   "full_name",
   "passport_number",
   "column_break_7",
+  "employee_id",
   "civil_id",
-  "one_fm_employee_id",
   "bed_details_section",
   "accommodation",
   "floor",
@@ -49,16 +57,11 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Employee",
-   "options": "Employee",
-   "reqd": 1
+   "options": "Employee"
   },
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_4",
-   "fieldtype": "Section Break"
   },
   {
    "fetch_from": "employee.employee_name",
@@ -66,7 +69,8 @@
    "fieldname": "full_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Full Name"
+   "label": "Full Name",
+   "reqd": 1
   },
   {
    "fetch_from": "employee.passport_number",
@@ -84,13 +88,8 @@
    "fetch_if_empty": 1,
    "fieldname": "civil_id",
    "fieldtype": "Data",
-   "label": "CIVIL ID"
-  },
-  {
-   "fieldname": "one_fm_employee_id",
-   "fieldtype": "Data",
-   "label": "ONE FM Employee ID",
-   "read_only": 1
+   "label": "CIVIL ID",
+   "reqd": 1
   },
   {
    "fieldname": "bed_details_section",
@@ -259,10 +258,69 @@
    "in_standard_filter": 1,
    "label": "Employee ID",
    "read_only": 1
+  },
+  {
+   "fieldname": "tenant_category",
+   "fieldtype": "Select",
+   "label": "Tenant Category",
+   "options": "\nPermanent Employee\nTemporary Employee\nRental Service",
+   "reqd": 1
+  },
+  {
+   "fieldname": "tenant_details_section",
+   "fieldtype": "Section Break",
+   "label": "Tenant Details"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "fieldname": "contract_details_section",
+   "fieldtype": "Section Break",
+   "label": "Contract Details"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "fieldname": "contract_company_name",
+   "fieldtype": "Data",
+   "label": "Company Name"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "fieldname": "contract_contact_person",
+   "fieldtype": "Data",
+   "label": "Contact Person"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "fieldname": "contract_phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "fieldname": "contract_email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "fieldname": "contract_start_date",
+   "fieldtype": "Date",
+   "label": "Contract Start Date"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "fieldname": "contract_end_date",
+   "fieldtype": "Date",
+   "label": "Contract End Date"
   }
  ],
  "links": [],
- "modified": "2020-11-02 23:47:45.222627",
+ "modified": "2020-11-04 09:43:02.403610",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",
@@ -281,7 +339,7 @@
    "write": 1
   }
  ],
- "search_fields": "employee, full_name, civil_id, passport_number, bed",
+ "search_fields": "employee, employee_id, full_name, civil_id, passport_number, bed",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1
