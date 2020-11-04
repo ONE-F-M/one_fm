@@ -473,7 +473,8 @@
    "fieldname": "owner_contact_html",
    "fieldtype": "HTML",
    "hidden": 1,
-   "label": "Owner Contact Html"
+   "label": "Owner Contact Html",
+   "print_hide": 1
   },
   {
    "fieldname": "owner_contact",
@@ -481,6 +482,7 @@
    "hidden": 1,
    "label": "Owner Contact",
    "options": "Contact",
+   "print_hide": 1,
    "read_only": 1
   },
   {
@@ -787,7 +789,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-14 20:54:05.116847",
+ "modified": "2020-11-04 13:09:22.124799",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",

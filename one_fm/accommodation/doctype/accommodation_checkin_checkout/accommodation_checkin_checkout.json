@@ -88,8 +88,7 @@
    "fetch_if_empty": 1,
    "fieldname": "civil_id",
    "fieldtype": "Data",
-   "label": "CIVIL ID",
-   "reqd": 1
+   "label": "CIVIL ID"
   },
   {
    "fieldname": "bed_details_section",
@@ -320,7 +319,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-04 09:43:02.403610",
+ "modified": "2020-11-04 13:13:25.979923",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",
