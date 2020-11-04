@@ -25,6 +25,7 @@ def get_data(filters):
 	acc_list=frappe.db.sql("""select * from `tabAccommodation`""",as_dict=1)
 	for acc in acc_list:
 		filters['accommodation'] = acc.name
+		filters['disabled'] = 0
 		total_no_of_bed_space = frappe.db.count('Bed', filters)
 		filters['status'] = 'Occupied'
 		occupied_bed = frappe.db.count('Bed', filters)

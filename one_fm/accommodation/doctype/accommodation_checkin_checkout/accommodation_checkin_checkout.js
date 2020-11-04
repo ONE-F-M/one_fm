@@ -5,6 +5,7 @@ frappe.ui.form.on('Accommodation Checkin Checkout', {
 	refresh: function(frm) {
 		set_filters(frm);
 		set_date(frm);
+		set_field_properties(frm);
 	},
 	booking_reference: function(frm) {
 		set_checkin_details(frm);
@@ -25,8 +26,30 @@ frappe.ui.form.on('Accommodation Checkin Checkout', {
 	},
 	type: function(frm) {
 		set_required(frm);
+	},
+	tenant_category: function(frm) {
+		set_field_properties(frm);
 	}
 });
+
+var set_field_properties = function(frm) {
+	if(frm.doc.tenant_category == 'Permanent Employee'){
+		frm.set_df_property('employee', 'reqd', true);
+		frm.set_df_property('employee', 'hidden', false);
+	}
+	else if(frm.doc.tenant_category == 'Temporary Employee'){
+		frm.set_df_property('employee', 'reqd', false);
+		frm.set_df_property('employee', 'hidden', true);
+	}
+	else if(frm.doc.tenant_category == 'Rental Service'){
+		frm.set_df_property('employee', 'reqd', false);
+		frm.set_df_property('employee', 'hidden', true);
+	}
+	else{
+		frm.set_df_property('employee', 'reqd', false);
+		frm.set_df_property('employee', 'hidden', true);
+	}
+};
 
 var set_date = function(frm) {
 	if(frm.is_new()){
