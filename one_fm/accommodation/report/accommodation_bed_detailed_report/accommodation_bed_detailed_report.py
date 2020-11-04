@@ -32,9 +32,10 @@ def get_data(filters):
 		for gender in ["Male", "Female"]:
 			filters['accommodation'] = acc.name
 			filters['gender'] = gender
+			filters['disabled'] = 0
 			total_no_of_bed_space = frappe.db.count('Bed', filters)
 			totall_no_of_rooms = frappe.db.count('Accommodation Space',
-				{'accommodation': acc.name, 'bed_space_available': 1})
+				{'accommodation': acc.name, 'bed_space_available': 1, 'gender': gender})
 			type_a = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'disabled': 0, 'bed_space_type': 'A'})
 			type_b = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'disabled': 0, 'bed_space_type': 'B'})
 			type_c = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'disabled': 0, 'bed_space_type': 'C'})
