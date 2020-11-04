@@ -8,6 +8,8 @@
   "site",
   "column_break_2",
   "project",
+  "column_break_4",
+  "date",
   "section_break_3",
   "attendees",
   "section_break_5",
@@ -16,7 +18,18 @@
   "column_break_7",
   "issues",
   "action_taken_section",
-  "action"
+  "action",
+  "last_mom_review_section",
+  "review_last_mom",
+  "last_mom_name",
+  "column_break_16",
+  "last_mom_date",
+  "section_break_18",
+  "last_attendees",
+  "last_action",
+  "pending_actions_section",
+  "review_pending_actions",
+  "pending_actions"
  ],
  "fields": [
   {
@@ -83,9 +96,85 @@
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_mom_review_section",
+   "fieldtype": "Section Break",
+   "label": "Last MOM Review"
+  },
+  {
+   "fieldname": "pending_actions_section",
+   "fieldtype": "Section Break",
+   "label": "Pending Actions"
+  },
+  {
+   "fieldname": "last_attendees",
+   "fieldtype": "Table",
+   "label": "Last Attendees",
+   "options": "MOM POC",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_action",
+   "fieldtype": "Table",
+   "label": "Last Action",
+   "options": "MOM Action"
+  },
+  {
+   "depends_on": "eval:doc.review_pending_actions == '1'",
+   "fieldname": "pending_actions",
+   "fieldtype": "Table",
+   "label": "Pending Actions",
+   "options": "MOM Action"
+  },
+  {
+   "default": "0",
+   "fieldname": "review_last_mom",
+   "fieldtype": "Check",
+   "label": "Review Last MOM"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "review_pending_actions",
+   "fieldtype": "Check",
+   "label": "Review Pending Actions"
+  },
+  {
+   "depends_on": "eval:doc.review_last_mom == '1'",
+   "fieldname": "section_break_18",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "depends_on": "eval:doc.review_last_mom == '1'",
+   "fieldname": "last_mom_name",
+   "fieldtype": "Link",
+   "label": "Last MOM Name",
+   "options": "MOM"
+  },
+  {
+   "depends_on": "eval:doc.review_last_mom == '1'",
+   "fetch_from": "last_mom_name.date",
+   "fieldname": "last_mom_date",
+   "fieldtype": "Date",
+   "label": "Last MOM Date",
+   "read_only": 1
   }
  ],
- "modified": "2020-06-06 15:48:00.646680",
+ "modified": "2020-10-31 19:01:49.631833",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM",

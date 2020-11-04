@@ -28,5 +28,32 @@ class MOM(Document):
 				op_task.subject = issue.subject
 				op_task.description = issue.description
 				op_task.priority = issue.priority
+				op_task.project = self.project 
 				op_task.save()
 			frappe.db.commit()
+
+@frappe.whitelist()
+
+def review_last_mom(mom,site):
+	last_mom = frappe.db.get_list('MOM', filters={ 
+		'name': ['!=', mom ],
+		'site': site
+	
+	},
+	order_by='date desc',
+	page_length=1
+
+	)
+	if len(last_mom)>0:
+		return frappe.get_doc('MOM',last_mom[0].name)
+
+@frappe.whitelist()
+def review_pending_actions(project):
+	filters = {'project': project}
+	data = frappe.db.sql("""
+	SELECT *
+	FROM `tabTask` 
+	WHERE project = %(project)s and (status != 'Completed' or status != 'Cancelled')
+	""", filters, as_dict=1)
+	return data
+
