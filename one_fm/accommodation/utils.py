@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import frappe
+from frappe import _
 from frappe.utils.print_format import download_pdf, print_by_server
 
 @frappe.whitelist()
@@ -21,7 +22,20 @@ def accommodation_qr_code_live_details(docname):
 
 @frappe.whitelist()
 def print_bulk_accommodation_policy():
-    checkin_list = frappe.db.get_list('Accommodation Checkin Checkout')
+    from frappe.utils.background_jobs import enqueue
+    checkin_list = frappe.db.get_list('Accommodation Checkin Checkout', fields['name', 'employee_id'])
+    i = 0
     for checkin in checkin_list:
         # print_by_server('Accommodation Checkin Checkout', checkin.name, print_format='Accommodation Policy', doc=None, no_letterhead=0)
-        download_pdf('Accommodation Checkin Checkout', checkin.name, format='Accommodation Policy', doc=None, no_letterhead=0)
+        email_args = {
+            "recipients": ['j.poil@armor-services.com'],
+            "message": _("Accommodation Policy and Procedure"),
+            "subject": 'Accommodation Ploicy',
+            "attachments": [frappe.attach_print('Accommodation Checkin Checkout', checkin.name, file_name=checkin.employee_id, print_format='Accommodation Policy')],
+            "reference_doctype": 'Accommodation Checkin Checkout',
+            "reference_name": checkin.name
+        }
+        print(i)
+        print(checkin.name)
+        i += 1
+        enqueue(method=frappe.sendmail, queue='short', timeout=300, is_async=True, **email_args)
