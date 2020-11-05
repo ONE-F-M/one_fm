@@ -61,21 +61,24 @@ def easy_apply(applicant_name, applicant_email, applicant_mobile, cover_letter, 
         return 0
 
 @frappe.whitelist(allow_guest=True)
-def create_job_applicant(job_opening, first_name, last_name, email_id, languages=None, skills=None, files=None):
+def create_job_applicant(job_opening, job_applicant_fields, languages=None, skills=None, files=None):
     job_applicant = frappe.db.exists("Job Applicant", {"job_title": job_opening, "email_id": email_id})
     if job_applicant:
         return job_applicant
     else:
         job_applicant = frappe.new_doc('Job Applicant')
         job_applicant.job_title = job_opening
-        job_applicant.one_fm_first_name = first_name
-        job_applicant.one_fm_last_name = last_name
+        set_job_applicant_fields(job_applicant, job_applicant_fields)
         if languages:
             set_languages(job_applicant, languages)
         if skills:
             set_skills(job_applicant, skills)
         job_applicant.insert(ignore_permissions=True)
         return 1, job_applicant.name
+
+def set_job_applicant_fields(doc, job_applicant_fields):
+    for field in job_applicant_fields:
+        doc.set(field, job_applicant_fields.field)
 
 def set_skills(doc, skills):
     for designation_skill in skills:
