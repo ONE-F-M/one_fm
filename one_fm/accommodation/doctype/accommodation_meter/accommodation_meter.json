@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "autoname": "field:meter_reference",
+ "creation": "2020-11-05 07:41:35.520965",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "meter_reference",
+  "meter_type",
+  "default_reading_uom"
+ ],
+ "fields": [
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "meter_reference",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Meter Reference Number",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "meter_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Meter Type",
+   "options": "\nElectrical\nWater",
+   "reqd": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "default_reading_uom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Default Reading UOM",
+   "options": "UOM"
+  }
+ ],
+ "links": [],
+ "modified": "2020-11-05 07:54:00.550991",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Meter",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
