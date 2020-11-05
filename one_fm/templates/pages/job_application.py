@@ -68,17 +68,25 @@ def create_job_applicant(job_opening, job_applicant_fields, languages=None, skil
     else:
         job_applicant = frappe.new_doc('Job Applicant')
         job_applicant.job_title = job_opening
-        set_job_applicant_fields(job_applicant, job_applicant_fields)
+
+        fields_json = json.loads(job_applicant_fields)
+        fields = frappe._dict(fields)
+
+        set_job_applicant_fields(job_applicant, fields)
         if languages:
-            set_languages(job_applicant, languages)
+            languages_json = json.loads(languages)
+            languages_obj = frappe._dict(languages_json)
+            set_languages(job_applicant, languages_obj)
         if skills:
+            skills_json = json.loads(skills)
+            skills_obj = frappe._dict(skills_json)
             set_skills(job_applicant, skills)
         job_applicant.insert(ignore_permissions=True)
-        return 1, job_applicant.name
+        return 1
 
-def set_job_applicant_fields(doc, job_applicant_fields):
-    for field in job_applicant_fields:
-        doc.set(field, job_applicant_fields.field)
+def set_job_applicant_fields(doc, fields):
+    for field in fields:
+        doc.set(field, fields.field)
 
 def set_skills(doc, skills):
     for designation_skill in skills:
