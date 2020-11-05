@@ -266,7 +266,8 @@
    "fieldname": "title",
    "fieldtype": "Data",
    "hidden": 1,
-   "label": "Title"
+   "label": "Title",
+   "print_hide": 1
   },
   {
    "fetch_from": "accommodation.accommodation",
@@ -296,7 +297,8 @@
    "fieldname": "disabled",
    "fieldtype": "Check",
    "in_standard_filter": 1,
-   "label": "Disabled"
+   "label": "Disabled",
+   "print_hide": 1
   },
   {
    "collapsible": 1,
@@ -336,7 +338,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-03 11:52:15.809915",
+ "modified": "2020-11-04 13:10:22.492678",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",

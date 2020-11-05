@@ -150,7 +150,8 @@
    "fieldname": "double_bed_capacity",
    "fieldtype": "Int",
    "hidden": 1,
-   "label": "Double Bed Capacity"
+   "label": "Double Bed Capacity",
+   "print_hide": 1
   },
   {
    "fieldname": "column_break_11",
@@ -162,14 +163,16 @@
    "fieldname": "extra_single_bed_capacity",
    "fieldtype": "Int",
    "hidden": 1,
-   "label": "Extra Single Bed Capacity"
+   "label": "Extra Single Bed Capacity",
+   "print_hide": 1
   },
   {
    "fetch_from": "bed_space_type.extra_double_bed_capacity",
    "fieldname": "extra_double_bed_capacity",
    "fieldtype": "Int",
    "hidden": 1,
-   "label": "Extra Double Bed Capacity"
+   "label": "Extra Double Bed Capacity",
+   "print_hide": 1
   },
   {
    "fieldname": "objects_section",
@@ -201,13 +204,15 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Floor",
+   "print_hide": 1,
    "read_only": 1
   },
   {
    "fieldname": "title",
    "fieldtype": "Data",
    "hidden": 1,
-   "label": "Title"
+   "label": "Title",
+   "print_hide": 1
   },
   {
    "fetch_from": "accommodation.accommodation",
@@ -263,7 +268,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-02 08:29:12.797875",
+ "modified": "2020-11-04 13:12:58.366509",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",

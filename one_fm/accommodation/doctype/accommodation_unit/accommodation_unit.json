@@ -38,7 +38,8 @@
    "fieldname": "floor",
    "fieldtype": "Int",
    "hidden": 1,
-   "label": "Floor"
+   "label": "Floor",
+   "print_hide": 1
   },
   {
    "fieldname": "column_break_3",
@@ -74,7 +75,8 @@
    "fieldname": "title",
    "fieldtype": "Data",
    "hidden": 1,
-   "label": "Title"
+   "label": "Title",
+   "print_hide": 1
   },
   {
    "fetch_from": "accommodation.accommodation",
@@ -135,7 +137,7 @@
   }
  ],
  "links": [],
- "modified": "2020-09-14 20:53:56.157514",
+ "modified": "2020-11-04 13:11:04.137159",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Unit",
