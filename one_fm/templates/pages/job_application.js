@@ -1,34 +1,131 @@
+const baseUrl = "http://dev.one-fm.com"
 if(window.localStorage.getItem("job-application-auth")){
+    const ERF = localStorage.getItem("currentJobOpening");
+    const basicSkills = "basic-skills";
+    const language = "rating";
+    if(!ERF){
+        alert("Please Select a Job Posting before continuing");
+        window.location = "job_opening";
+    }
+    console.log(ERF)
+    fetch(`${baseUrl}/api/resource/ERF/${ERF}`, {
+        // headers: {
+        //     'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
+        // }
+        body: JSON.stringify({
+            usr: 'h.marzooq@armor-services.com',
+            pwd: 'hassarah420024703307786'
+        })
+    })
+    .then(r => r.json())
+    .then(erf => {
+    console.log("ERF",erf);
+    console.log("ERF",erf.data.designation_skill);
+    erf.data.designation_skill.map(a=>{
+        placeSkills(basicSkills, a.skill)
+    })
+    starEffects()
+    
+})
+// Place Skills
+const placeSkills = (location, skill="none") => {
+    
+    document.getElementById(location).innerHTML += ` <div class="form-group col-md-6">
+    ${skill != "none" ? `<p>${skill}</p>` : `<select class="form-control" name="religion" id="religion">
+    <option value="blank"></option>
+    <option value="Islam">English</option>
+    <option value="Christianity">Arabic</option>
+    <option value="Hinduism">Hindi</option>
+    <option value="Other">Malayalam</option>
+    <option value="Other">Tamil</option>
+    <option value="Other">Other</option>
+</select>`}
+</div>
+<div class="form-group col-md-6">
+    <div class='rating-stars'>
+        <ul id='stars'>
+            <li class='star' title='Poor' data-value='1'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' title='Fair' data-value='2'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' title='Good' data-value='3'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' title='Excellent' data-value='4'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' title='WOW!!!' data-value='5'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+        </ul>
+    </div>
+</div>`
+}
+placeSkills(language)
+// Auto complete scripts
+    $( function() {
+        let availableTags = [
+          "Married"
+        ];
+        $( "#tags" ).autocomplete({
+          source: availableTags
+        });
+      } );
 console.log("ready0");
-// frappe.ready(function () {
-//     // get_dummy();
-//     console.log("ready");
-// });
-// function get_dummy() {
 
-//     frappe.call({
-//         method: 'one_fm.templates.pages.job_application.get_dummy',
-//         callback: function (r) {
-//             console.log("rr2222", r);
-//         }
-//     });
-// }
-// frappe.call('one_fm.templates.pages.job_application.get_dummy', {
-//     role_profile: 'Test'
-// }).then(r => {
-//     console.log(r.message);
-// });
-// $('.star').hover(function () {
-//     $(this).prevAll().andSelf().removeClass('fa-star-o').addClass('fa-star');
-// });
+// Star Component
+const starEffects = () =>{
+  
+    /* 1. Visualizing things on Hover - See next part for action on click */
+    $('#stars li').on('mouseover', function(){
+      var onStar = parseInt($(this).data('value'), 10); // The star currently mouse on
+     
+      // Now highlight all the stars that's not after the current hovered star
+      $(this).parent().children('li.star').each(function(e){
+        if (e < onStar) {
+          $(this).addClass('hover');
+        }
+        else {
+          $(this).removeClass('hover');
+        }
+      });
+      
+    }).on('mouseout', function(){
+      $(this).parent().children('li.star').each(function(e){
+        $(this).removeClass('hover');
+      });
+    });
+    
+    
+    /* 2. Action to perform on click */
+    $('#stars li').on('click', function(){
+      var onStar = parseInt($(this).data('value'), 10); // The star currently selected
+      var stars = $(this).parent().children('li.star');
+      
+      for (i = 0; i < stars.length; i++) {
+        $(stars[i]).removeClass('selected');
+      }
+      
+      for (i = 0; i < onStar; i++) {
+        $(stars[i]).addClass('selected');
+      }
+      
+      // JUST RESPONSE (Not needed)
+      var ratingValue = parseInt($('#stars li.selected').last().data('value'), 10);
+      var msg = "";
+      if (ratingValue > 1) {
+          msg = "Thanks! You rated this " + ratingValue + " stars.";
+      }
+      else {
+          msg = "We will improve ourselves. You rated this " + ratingValue + " stars.";
+      }
+      console.log("star", onStar)
+    });
+    
+}
 
-// $('.star').mouseout(function () {
-//     $(this).prevAll().andSelf().removeClass('fa-star').addClass('fa-star-o');
-// });
-
-// $('.star').click(function () {
-//     alert($(this).prevAll().length + 1);
-// });
 // OCR Get Text 
 (function () {
     console.log("before");
@@ -113,69 +210,47 @@ console.log("ready0");
         }
         }
     };
-    const star = document.getElementsByClassName("star");
-    const addStars = (e) => {
-        for (i = 4; i >= 0; i--)
-            star[i].innerHTML = "☆";
-        console.log("e", e.target.dataset.star);
-        console.log("star", star);
-        console.log(star[e.target.id]);
-        for (i = 4; i >= e.target.id; i--)
-            star[i].innerHTML = "★";
-        // console.log(star[i].innerHTML);
+    
 
-    };
-
-    Array.from(star).forEach(function (element) {
-        element.addEventListener('click', addStars);
-    });
-    console.log(star);
     placeText();
 })();
+// Submit
+async function postData(url = '', data = {}) {
+    // Default options are marked with *
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        "Accept": "application/json",
+        'Content-Type': 'application/json',
+        'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'      
+      },     
+      body: JSON.stringify(data) 
+    });
+    return response.json(); // parses JSON response into native JavaScript objects
+  }
+const submitForm = () => {
+    console.log("submited");
+    postData(`${baseUrl}/api/resource/Job Applicant`, { "ERF": "ERF-2020-00004", "First Name": "Hassan"})
+  .then(data => {
+    console.log("post data",data); 
+  });
+    fetch(`${baseUrl}/api/resource/Job Applicant`, {
+        // headers: {
+        //     'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
+        // }
+        body: JSON.stringify({
+            usr: 'h.marzooq@armor-services.com',
+            pwd: 'hassarah420024703307786'
+        })
+    })
+    .then(r => r.json())
+    .then(erf => {
+    console.log("ERFFInel",erf);    
+    
+})
+}
+document.getElementById("submitBtn").addEventListener("click", submitForm);
 
-const addNewLanguage = () => {
-    const languageContainer = document.getElementById("language-input");
-    languageContainer.innerHTML += `<div>
-                                            <div class="col-md-8">
-                                                <select class="form-control" name="religion" id="religion">
-                                                    <option value="blank"></option>
-                                                    <option value="Islam">English</option>
-                                                    <option value="Christianity">Arabic</option>
-                                                    <option value="Hinduism">Hindi</option>
-                                                    <option value="Other">Malayalam</option>
-                                                    <option value="Other">Tamil</option>
-                                                    <option value="Other">Other</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="rating" id="rating">
-                                                    <span id="0" data-star="5" class="star">☆</span><span id="1"
-                                                        data-star="4" class="star">☆</span><span id="2" data-star="3"
-                                                        class="star">☆</span><span id="3" data-star="2"
-                                                        class="star">☆</span><span id="4" data-star="1"
-                                                        class="star">☆</span>
-                                                </div>
-                                            </div>
-                                        </div>`;
-    console.log("language added");
-};
-// console.log("user logged in", frappe.is_user_logged_in());
-// frappe.call({
-//     method: 'one_fm.templates.pages.job_application.get_dummy',
-//     callback: function (r) {
-//         console.log("r", r);
-//         if (r) {
-//             console.log("r", r);
-//         }
-//     }
-// });
-
-const addNewSkill = () => {
-    const skillInput = document.getElementById("skill-input");
-    const skillsList = document.getElementById("skills-list");
-    skillsList.innerHTML += ` <p>${skillInput.value}</p>`;
-    skillInput.value = "";
-};
 }
 else {
     alert("Please Signup or Login!");
