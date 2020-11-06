@@ -22,25 +22,25 @@ def get_website_info_data():
     about_us_info = frappe.get_doc("Website Info")
     data.append(about_us_info.section_title)
     data.append(about_us_info.section_header)
-    
-    about_us_content = frappe.db.sql(""" select font_icon,subject from `tabAbout Us Subject` order by idx """) 
+
+    about_us_content = frappe.db.sql(""" select font_icon,subject from `tabAbout Us Subject` order by idx """)
     data.append(about_us_content)
 
-    our_vision = frappe.db.sql(""" select subject from `tabOur Vision` order by idx """) 
+    our_vision = frappe.db.sql(""" select subject from `tabOur Vision` order by idx """)
     data.append(our_vision)
 
-    our_mission = frappe.db.sql(""" select subject from `tabOur Mission` order by idx """) 
+    our_mission = frappe.db.sql(""" select subject from `tabOur Mission` order by idx """)
     data.append(our_mission)
 
     data.append(about_us_info.services_title)
 
-    services_content = frappe.db.sql(""" select font_icon,title,subject from `tabServices Subject` order by idx """) 
+    services_content = frappe.db.sql(""" select font_icon,title,subject from `tabServices Subject` order by idx """)
     data.append(services_content)
 
     data.append(about_us_info.address)
     data.append(about_us_info.phone)
     data.append(about_us_info.email)
-    
+
     data.append(about_us_info.facebook)
     data.append(about_us_info.youtube)
     data.append(about_us_info.twitter)
@@ -103,7 +103,7 @@ def add_new_job_applicant(job_opening, applicant_name, applicant_email, applican
             "cover_letter": applicant_cover
         })
         doc.insert(ignore_permissions=True)
-        
+
         return 1, doc.name
     else:
         job_applicant_name = frappe.db.get_value("Job Applicant", {"job_title": job_opening, "email_id": applicant_email}, "name")
@@ -121,19 +121,22 @@ def edit_job_applicant(job_applicant, job_opening, applicant_name, applicant_ema
         "doctype":"Job Applicant",
         "job_title": job_opening,
         "applicant_name": applicant_name,
+        "one_fm_first_name": applicant_name,
+        "one_fm_last_name": applicant_name,
         "email_id": applicant_email,
         "cover_letter": applicant_cover
     })
     applicant_doc.insert(ignore_permissions=True)
 
-    # if applicant_files:
-    #     fd_json = json.loads(applicant_files)
-    #     fd_list = list(fd_json["files_data"])
-    #     for fd in fd_list:
-    #         filedoc = save_file(fd["filename"], fd["dataurl"], "Job Applicant", applicant_doc.name, decode=True, is_private=1)
+    if applicant_files:
+        fd_json = json.loads(applicant_files)
+        print(fd_json)
+        fd_list = list(fd_json["files_data"])
+        for fd in fd_list:
+            filedoc = save_file(fd["filename"], fd["dataurl"], "Job Applicant", applicant_doc.name, decode=True, is_private=1)
 
     return 1
- 
+
 
 @frappe.whitelist(allow_guest=True)
 def send_contact_email(contact_name, contact_email, contact_subject, contact_message):
@@ -175,11 +178,11 @@ def attach_file_to_application(filedata, job_applicant_name):
     if filedata:
         fd_json = json.loads(filedata)
 
-    return filedata
-    
-        # fd_list = list(fd_json["files_data"])
-        # for fd in fd_list:
-        #     filedoc = save_file(fd["filename"], fd["dataurl"], "Job Applicant", job_applicant_name, decode=True, is_private=1)
+        # return filedata
+
+        fd_list = list(fd_json["files_data"])
+        for fd in fd_list:
+            filedoc = save_file(fd["filename"], fd["dataurl"], "Job Applicant", job_applicant_name, decode=True, is_private=0)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -198,4 +201,3 @@ def request_new_quote(person_name, organization_name, quote_email, mobile_no, qu
         return 1
     else:
         return 0
-

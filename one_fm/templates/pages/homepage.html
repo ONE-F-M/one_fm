@@ -90,7 +90,7 @@
                         <a href="#" data-toggle="modal" data-target="#request_quote">Request Quote</a>
                     </div>
                 </div>
-                
+
             </div>
         </div>
     </header>
@@ -153,14 +153,14 @@
                         <!-- <h2 class="wow fadeInDown" data-wow-delay="0.5s">WE SUPPLY PROTECTION</h2> -->
 
                         <h2 class="typewrite" data-period="2000" data-type='[ "Hi, We are One FM.",
-                        "We Provide Security Services.", 
-                        "We Provide HVAC services.", 
-                        "We Provide Generator Services.", 
-                        "We Provide Cleaning services.", 
-                        "We Provide Plumbing Services.", 
-                        "We Provide IT services.", 
-                        "We Provide Electrical & AC services.", 
-                        "We Provide Landscaping services.", 
+                        "We Provide Security Services.",
+                        "We Provide HVAC services.",
+                        "We Provide Generator Services.",
+                        "We Provide Cleaning services.",
+                        "We Provide Plumbing Services.",
+                        "We Provide IT services.",
+                        "We Provide Electrical & AC services.",
+                        "We Provide Landscaping services.",
                         "We Provide Facilities Management services." ]'>
                             <span class="wrap"></span>
                         </h2>
@@ -235,7 +235,7 @@
                                     <li>Human; In dealing with our employees, where unique training and development are our aim, surrounded&nbsp;“Our Employee” – “Our Family Member”.</li>
                                     <li>Customer satisfaction before profit; which reflects our care to our employee and our valued customers.</li>
                                 </ul>
-                            
+
                         </div>
                     </div>
 
@@ -413,7 +413,7 @@
                 </div>
             </div>
             <div class="row" id="our_clients_info">
-                
+
                 <div class="col-12 col-md-6 col-lg-2">
                     <div class="single-team-member">
                         <div class="member-image">
@@ -463,7 +463,7 @@
             </div>
 
             <div class="row" id="our-jobs">
-                
+
 
                 <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
                     <div class="hover ehover11">
@@ -495,7 +495,7 @@
                 <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
                 <button type="button" class="btn btn-primary" onclick="document.getElementById('erpnext-developer').classList.toggle('hidden');">Apply</button>
             </div>
-            
+
             <div class="modal-applyed hidden" id="erpnext-developer">
                 <hr>
                     <form id="frmFileUp">
@@ -517,6 +517,69 @@
                       <div class="form-group">
                         <label for="applicant_files">Resume Attachment</label>
                         <input type="file" class="form-control-file" name="applicant_files" id="applicant_files">
+                        ########
+                        <form id="frmFileUp">
+                          <input type="file" id="select_files" multiple>
+                        </form>
+                        <button id="btn_upload">Upload</button>
+
+                        <script type="text/javascript">
+
+                          frappe.ready(function() {
+                            var $form = $("form[id='frmFileUp']");
+
+                            $form.on("change", "[type='file']", function() {
+                              var $input = $(this);
+                              var input = $input.get(0);
+
+                              if(input.files.length) {
+                                input.filedata = { "files_data" : [] }; //Initialize as json array.
+
+                                window.file_reading = true;
+
+                                $.each(input.files, function(key, value) {
+                                  setupReader(value, input);
+                                });
+
+                                window.file_reading = false;
+                              }
+                            });
+
+                            $("#btn_upload").click(function() {
+                              var filedata = $('#select_files').prop('filedata');
+
+                              frappe.call({
+                                method: "one_fm.templates.pages.homepage.attach_file_to_application",
+                                args: {"filedata": filedata, "job_applicant_name": 'abdbbd - kjkjkjkjkjkjkjkjkjkj@kjk.d - erf-2020-00006-software-developer-research-development-onefm' },
+                                freeze: true,
+                                freeze_message: __("Upload files..."),
+                                callback: function(r){
+                                  if(!r.exc) {
+                                    frappe.msgprint(__("Files uploaded"));
+                                  } else {
+                                    frappe.msgprint(__("Files not uploaded. <br /> " + r.exc));
+                                  }
+                                }
+                              });
+                            });
+                          });
+
+                          function setupReader(file, input) {
+                              var name = file.name;
+                              var reader = new FileReader();
+                              reader.onload = function(e) {
+                              input.filedata.files_data.push({
+                                "__file_attachment": 1,
+                                "filename": file.name,
+                                "dataurl": reader.result
+                              })
+                            }
+                            reader.readAsDataURL(file);
+                          }
+                        </script>
+
+
+                        ######
                       </div>
 
                       <button type="button" id="btn_upload" class="btn btn-primary" onclick="add_new_job_applicant('erpnext-developer')">Submit</button>
@@ -534,7 +597,7 @@
 
     <!-- ***** Our Team Area Start ***** -->
     <section class="our-Team-area bg-white  clearfix">
-    
+
                 <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d6956.178638870675!2d48.005844!3d29.338378!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x4fde92abc99ed6ca!2sArmor%20Services!5e0!3m2!1sen!2sus!4v1575285888646!5m2!1sen!2sus" width="100%" height="450" frameborder="0" style="border:0;" allowfullscreen=""></iframe>
 
     </section>
@@ -621,7 +684,7 @@
                                     <div class="col-12">
                                         <div class="form-group control-group">
                                             <div class="controls">
-                                            <textarea name="message" class="form-control" id="message" cols="30" rows="4" placeholder="Your Message *" required data-validation-required-message="Please enter your message" minlength="5" 
+                                            <textarea name="message" class="form-control" id="message" cols="30" rows="4" placeholder="Your Message *" required data-validation-required-message="Please enter your message" minlength="5"
           data-validation-minlength-message="Min 5 characters" maxlength="999"></textarea>
                                             <p class="help-block"></p>
                                         </div>
@@ -766,7 +829,7 @@ var TxtType = function(el, toRotate, period) {
 //  }
 
 // });
-       
+
 
 
 
@@ -790,15 +853,14 @@ var TxtType = function(el, toRotate, period) {
 
 // jQuery( document ).ready( function() {
 //     window.addEventListener('scroll', function(e) {
-//         if( isOnScreen( jQuery('.cool_facts_area') ) ) { 
+//         if( isOnScreen( jQuery('.cool_facts_area') ) ) {
 //             console.log('hiii');
 //             new WOW().init();
-//         }   
+//         }
 //     });
 // });
-       
+
     </script>
 
 
 {% endblock %}
-
