@@ -12,13 +12,13 @@
   "meter_type",
   "meter_reference",
   "frequancy",
-  "last_reading_date",
-  "reading_date",
+  "reading_uom",
   "column_break_6",
+  "last_reading_date",
   "last_reading",
+  "reading_date",
   "current_reading",
   "consumption",
-  "reading_uom",
   "amended_from"
  ],
  "fields": [
@@ -48,7 +48,7 @@
    "fieldname": "meter_type",
    "fieldtype": "Select",
    "label": "Meter Type",
-   "options": "\nElectrical\nWater",
+   "options": "\nElectricity\nWater",
    "reqd": 1
   },
   {
@@ -116,7 +116,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-11-05 08:02:17.898950",
+ "modified": "2020-11-07 02:00:51.414368",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Meter Reading Record",
