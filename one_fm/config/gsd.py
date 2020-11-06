@@ -40,6 +40,11 @@ def get_data():
 					"type": "doctype",
 					"name": "Accommodation Checkin Checkout",
 					"label": _("Checkin/Checkout")
+				},
+				{
+					"type": "doctype",
+					"name": "Accommodation Meter Reading Record",
+					"label": _("Water/Electricity Meter Reading")
 				}
 			]
 		},
