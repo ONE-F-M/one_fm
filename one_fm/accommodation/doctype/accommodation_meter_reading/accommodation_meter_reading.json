@@ -5,27 +5,15 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "meter",
-  "serial_number",
+  "meter_type",
+  "meter_reference",
   "initial_reading",
-  "notes"
+  "notes",
+  "column_break_5",
+  "last_reading_date",
+  "last_reading"
  ],
  "fields": [
-  {
-   "fieldname": "meter",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Meter",
-   "options": "\nElectrical Meter\nWater Meter",
-   "reqd": 1
-  },
-  {
-   "fieldname": "serial_number",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Serial Number",
-   "reqd": 1
-  },
   {
    "fieldname": "notes",
    "fieldtype": "Small Text",
@@ -38,11 +26,43 @@
    "in_list_view": 1,
    "label": "Initial Reading",
    "reqd": 1
+  },
+  {
+   "fieldname": "meter_reference",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Meter Reference",
+   "options": "Accommodation Meter",
+   "reqd": 1
+  },
+  {
+   "fieldname": "meter_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Meter Type",
+   "options": "\nElectricity\nWater",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_reading_date",
+   "fieldtype": "Date",
+   "label": "Last Reading Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_reading",
+   "fieldtype": "Float",
+   "label": "Last Reading",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-09-18 07:56:17.770833",
+ "modified": "2020-11-07 01:47:03.225323",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Meter Reading",

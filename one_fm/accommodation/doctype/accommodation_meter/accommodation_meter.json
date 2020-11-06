@@ -26,7 +26,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Meter Type",
-   "options": "\nElectrical\nWater",
+   "options": "\nElectricity\nWater",
    "reqd": 1
   },
   {
@@ -39,7 +39,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-05 07:54:00.550991",
+ "modified": "2020-11-06 23:41:02.350818",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Meter",

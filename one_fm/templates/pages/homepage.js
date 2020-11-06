@@ -2,7 +2,7 @@ frappe.ready(function () {
   get_website_info_data();
   get_website_info_count();
   get_clients_info();
-  get_jobs_info();
+  // get_jobs_info();
 
 
   var $form_0 = $("form[id='frmFileUp_0']");
