@@ -34,6 +34,7 @@
   "accommodation",
   "floor",
   "accommodation_unit",
+  "accommodation_space",
   "bed",
   "column_break_14",
   "comments",
@@ -316,10 +317,17 @@
    "fieldname": "contract_end_date",
    "fieldtype": "Date",
    "label": "Contract End Date"
+  },
+  {
+   "fetch_from": "bed.accommodation_space",
+   "fieldname": "accommodation_space",
+   "fieldtype": "Link",
+   "label": "Accommodation Space",
+   "options": "Accommodation Space"
   }
  ],
  "links": [],
- "modified": "2020-11-04 13:13:25.979923",
+ "modified": "2020-11-07 02:37:01.375473",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",
