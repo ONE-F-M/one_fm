@@ -39,7 +39,7 @@ var set_field_properties = function(frm) {
 	}
 	else if(frm.doc.tenant_category == 'Temporary Employee'){
 		frm.set_df_property('employee', 'reqd', false);
-		frm.set_df_property('employee', 'hidden', true);
+		frm.set_df_property('employee', 'hidden', false);
 	}
 	else if(frm.doc.tenant_category == 'Rental Service'){
 		frm.set_df_property('employee', 'reqd', false);
