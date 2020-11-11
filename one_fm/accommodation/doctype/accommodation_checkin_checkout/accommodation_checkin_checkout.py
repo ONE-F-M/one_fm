@@ -61,6 +61,11 @@ class AccommodationCheckinCheckout(Document):
 			if occupy and not self.attach_print_accommodation_policy:
 				bed.status = 'Occupied Temporarily'
 			bed.employee = self.employee if occupy else ''
+			if occupy and self.tenant_category:
+				bed.passport_number =  self.passport_number
+				bed.full_name = self.full_name
+				bed.one_fm_nationality = self.nationality
+				bed.civil_id = self.civil_id
 			bed.save(ignore_permissions=True)
 			if on_trash:
 				self.update_checkin_reference()

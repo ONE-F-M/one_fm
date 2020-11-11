@@ -28,6 +28,7 @@ class Bed(Document):
 			self.one_fm_religion = ''
 			self.contact_number = ''
 			self.visa_number = ''
+			self.email = ''
 
 	def update_bed_in_space(self):
 		bed_in_space = frappe.db.exists('Accommodation Space Bed', {'bed': self.name})
