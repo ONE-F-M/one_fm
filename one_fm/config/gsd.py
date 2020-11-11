@@ -92,21 +92,21 @@ def get_data():
 			"items": [
 				{
 					"type": "report",
-					"name": "Unit Bed Space Report",
+					"name": "Units List Report",
 					"is_query_report": True,
-					"label": _("Unit Bed Space Report"),
+					"label": _("Units List Report"),
 				},
 				{
 					"type": "report",
-					"name": "Accommodation Bed Space Report",
+					"name": "Bed Space Summary Report",
 					"is_query_report": True,
-					"label": _("Accommodation Bed Space Report"),
+					"label": _("Bed Space Summary Report"),
 				},
 				{
 					"type": "report",
-					"name": "Accommodation Bed Detailed Report",
+					"name": "Bed Space Detailed Report",
 					"is_query_report": True,
-					"label": _("Accommodation Bed Detailed Report"),
+					"label": _("Bed Space Detailed Report"),
 				},
 				{
 					"type": "report",

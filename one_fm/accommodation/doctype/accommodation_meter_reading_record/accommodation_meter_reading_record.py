@@ -57,3 +57,9 @@ def get_accommodation_meter_details(meter_reference, reference_doctype, referenc
 	reading = frappe.get_doc('Accommodation Meter Reading',
 		{'parenttype': reference_doctype, 'parent': reference_name, 'meter_reference': meter_reference})
 	return {'meter': meter, 'reading': reading}
+
+@frappe.whitelist()
+def get_accommodation_meter(meter_type, reference_doctype, reference_name):
+	filters = {'parenttype': reference_doctype, 'parent': reference_name, 'meter_type': meter_type}
+	if frappe.db.exists('Accommodation Meter Reading', filters):
+		return frappe.get_doc('Accommodation Meter Reading', filters)

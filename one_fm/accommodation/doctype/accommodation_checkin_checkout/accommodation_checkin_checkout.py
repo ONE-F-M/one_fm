@@ -11,6 +11,15 @@ class AccommodationCheckinCheckout(Document):
 	def validate(self):
 		if self.is_new():
 			self.validate_checkin_checkout()
+		self.set_accommodation_policy()
+
+	def set_accommodation_policy(self):
+		if self.employee:
+			policy = frappe.db.get_value('Employee', self.employee, 'one_fm_accommodation_policy')
+			if not self.attach_print_accommodation_policy and policy:
+				self.attach_print_accommodation_policy = policy
+			elif not policy and self.attach_print_accommodation_policy:
+				frappe.db.set_value('Employee', self.employee, 'one_fm_accommodation_policy', self.attach_print_accommodation_policy)
 
 	def validate_checkin_checkout(self):
 		if self.type == 'IN':
@@ -47,6 +56,7 @@ class AccommodationCheckinCheckout(Document):
 		occupy = True if self.type == 'IN' else False
 		self.update_bed_details(occupy)
 
+
 	def after_insert(self):
 		self.update_checkin_reference()
 
@@ -61,6 +71,11 @@ class AccommodationCheckinCheckout(Document):
 			if occupy and not self.attach_print_accommodation_policy:
 				bed.status = 'Occupied Temporarily'
 			bed.employee = self.employee if occupy else ''
+			if occupy and self.tenant_category:
+				bed.passport_number =  self.passport_number
+				bed.full_name = self.full_name
+				bed.one_fm_nationality = self.nationality
+				bed.civil_id = self.civil_id
 			bed.save(ignore_permissions=True)
 			if on_trash:
 				self.update_checkin_reference()
@@ -101,3 +116,5 @@ class AccommodationCheckinCheckout(Document):
 			self.new_or_current_resident = checkin.new_or_current_resident
 			self.attach_print_accommodation_policy = checkin.attach_print_accommodation_policy
 			self.attach_asset_receiving_declaration = checkin.attach_asset_receiving_declaration
+		if self.employee:
+			self.attach_print_accommodation_policy = frappe.db.get_value('Employee', self.employee, 'one_fm_accommodation_policy')

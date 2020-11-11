@@ -7,12 +7,15 @@ frappe.ui.form.on('Accommodation Meter Reading Record', {
 	},
 	reference_doctype: function(frm) {
 		set_filters(frm);
+		frm.set_value('reference_name', '');
 	},
 	reference_name: function(frm) {
 		set_filters(frm);
+		set_meter(frm);
 	},
 	meter_type: function(frm) {
 		set_filters(frm);
+		set_meter(frm);
 	},
 	meter_reference: function(frm) {
 		set_meter_details(frm);
@@ -31,6 +34,30 @@ var calculate_consumption = function(frm) {
 	}
 };
 
+var set_meter = function(frm) {
+	if(frm.doc.meter_type && frm.doc.reference_name){
+		frappe.call({
+			method: 'one_fm.accommodation.doctype.accommodation_meter_reading_record.accommodation_meter_reading_record.get_accommodation_meter',
+			args: {
+				'meter_type': frm.doc.meter_type,
+				'reference_doctype': frm.doc.reference_doctype,
+				'reference_name': frm.doc.reference_name
+			},
+			callback: function(r) {
+				if(r && r.message && r.message.meter_reference){
+					frm.set_value('meter_reference', r.message.meter_reference);
+				}
+				else{
+					frm.set_value('meter_reference', '');
+				}
+			}
+		});
+	}
+	else{
+		frm.set_value('meter_reference', '');
+	}
+};
+
 var set_meter_details = function(frm) {
 	if(frm.doc.meter_reference){
 		frappe.call({
@@ -45,14 +72,31 @@ var set_meter_details = function(frm) {
 					if(r.message.meter){
 						frm.set_value('reading_uom', r.message.meter.default_reading_uom);
 					}
+					else{
+						frm.set_value('reading_uom', '');
+					}
 					if(r.message.reading){
 						var reading = r.message.reading;
 						frm.set_value('last_reading_date', reading.last_reading_date);
 						frm.set_value('last_reading', reading.last_reading);
 					}
+					else{
+						frm.set_value('last_reading_date', '');
+						frm.set_value('last_reading', '');
+					}
+				}
+				else{
+					frm.set_value('reading_uom', '');
+					frm.set_value('last_reading_date', '');
+					frm.set_value('last_reading', '');
 				}
 			}
 		});
+	}
+	else{
+		frm.set_value('reading_uom', '');
+		frm.set_value('last_reading_date', '');
+		frm.set_value('last_reading', '');
 	}
 };
 

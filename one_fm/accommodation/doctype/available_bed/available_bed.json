@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "accommodation_space",
   "bed",
   "bed_type",
   "gender",
@@ -35,7 +36,7 @@
    "fetch_if_empty": 1,
    "fieldname": "area",
    "fieldtype": "Data",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Area",
    "read_only": 1
   },
@@ -44,6 +45,7 @@
    "fetch_if_empty": 1,
    "fieldname": "location",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Location",
    "options": "Location",
    "read_only": 1
@@ -51,7 +53,6 @@
   {
    "fieldname": "bed_type",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Bed Type",
    "options": "\nSingle\nDouble",
    "read_only": 1
@@ -65,7 +66,7 @@
    "fetch_if_empty": 1,
    "fieldname": "governorate",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Governorate",
    "options": "Governorate",
    "read_only": 1
@@ -73,15 +74,22 @@
   {
    "fieldname": "gender",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Gender",
    "options": "Gender",
+   "read_only": 1
+  },
+  {
+   "fieldname": "accommodation_space",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Space",
+   "options": "Accommodation Space",
    "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-09-09 09:55:25.068419",
+ "modified": "2020-11-11 18:20:24.729166",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Available Bed",

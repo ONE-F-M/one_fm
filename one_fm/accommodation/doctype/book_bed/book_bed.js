@@ -207,6 +207,7 @@ var check_bed_availability = function(frm) {
 				let beds = r.message;
 				beds.forEach((bed, i) => {
 					var available_bed = frm.add_child('available_beds');
+					available_bed.accommodation_space = bed.accommodation_space;
 					available_bed.bed = bed.name;
 					available_bed.bed_type = bed.bed_type;
 					available_bed.gender = bed.gender;
