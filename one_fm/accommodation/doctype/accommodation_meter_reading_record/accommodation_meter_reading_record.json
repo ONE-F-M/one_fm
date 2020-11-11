@@ -30,11 +30,12 @@
    "options": "AMRR-.YYYY.-"
   },
   {
+   "default": "Accommodation",
    "fieldname": "reference_doctype",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Reference DocType",
-   "options": "\nAccommodation\nAccommodation Unit",
+   "label": "Accommodation / Unit",
+   "options": "Accommodation\nAccommodation Unit",
    "reqd": 1
   },
   {
@@ -45,16 +46,18 @@
    "reqd": 1
   },
   {
+   "default": "Electricity",
    "fieldname": "meter_type",
    "fieldtype": "Select",
    "label": "Meter Type",
-   "options": "\nElectricity\nWater",
+   "options": "Electricity\nWater",
    "reqd": 1
   },
   {
    "fieldname": "last_reading",
    "fieldtype": "Float",
    "label": "Last Reading",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -66,13 +69,15 @@
   {
    "fieldname": "consumption",
    "fieldtype": "Float",
-   "label": "Consumption"
+   "label": "Consumption",
+   "read_only": 1
   },
   {
    "fieldname": "reading_uom",
    "fieldtype": "Link",
    "label": "Reading UOM",
-   "options": "UOM"
+   "options": "UOM",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -105,7 +110,8 @@
   {
    "fieldname": "last_reading_date",
    "fieldtype": "Date",
-   "label": "Last Reading Date"
+   "label": "Last Reading Date",
+   "read_only": 1
   },
   {
    "fieldname": "reading_date",
@@ -116,7 +122,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-11-07 02:00:51.414368",
+ "modified": "2020-11-11 17:53:10.530390",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Meter Reading Record",
