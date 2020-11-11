@@ -1,5 +1,5 @@
-// const baseUrl = "http://dev.one-fm.com"
-const baseUrl = "http://192.168.0.129"
+const baseUrl = (frappe.base_url || window.location.origin);
+if(baseUrl.substr(baseUrl.length-1, 1)=='/') baseUrl = baseUrl.substr(0, baseUrl.length-1);
 if(window.localStorage.getItem("job-application-auth")){
     const ERF = localStorage.getItem("currentJobOpening");
     const basicSkills = "basic-skills";
@@ -40,11 +40,11 @@ if(window.localStorage.getItem("job-application-auth")){
       placeSkills(language, "none", a.language_name)
     })
     starEffects()
-    
+
 })
 // Place Skills
 const placeSkills = (location, skill="none", language="none") => {
-    document.getElementById(location).innerHTML += 
+    document.getElementById(location).innerHTML +=
     skill != "none" ? `
     <div class="form-group col-md-6">
     <p>${skill}</p>
@@ -75,19 +75,19 @@ const placeSkills = (location, skill="none", language="none") => {
     <p>${language}</p>
 </div>
 <div class="form-group col-md-2">
-<div class=''> 
+<div class=''>
 Speak
 </div>
-<div class='mt-3'> 
+<div class='mt-3'>
 Read
 </div>
-<div class='mt-3'> 
+<div class='mt-3'>
 Write
 </div>
 </div>
 <div class="form-group col-md-6">
-    <div class='rating-stars'> 
-        <ul class='stars'>        
+    <div class='rating-stars'>
+        <ul class='stars'>
             <li class='star' data-language=${language} title='speak' data-value='1'>
                 <i class='fa fa-star fa-fw'></i>
             </li>
@@ -145,7 +145,7 @@ Write
     </div>
 </div>
 `
-  
+
   }
 
 // Auto complete scripts
@@ -161,11 +161,11 @@ console.log("ready0");
 
 // Star Component
 const starEffects = () =>{
-  
+
     /* 1. Visualizing things on Hover - See next part for action on click */
     $('.stars li').on('mouseover', function(){
       var onStar = parseInt($(this).data('value'), 10); // The star currently mouse on
-     
+
       // Now highlight all the stars that's not after the current hovered star
       $(this).parent().children('li.star').each(function(e){
         if (e < onStar) {
@@ -175,27 +175,27 @@ const starEffects = () =>{
           $(this).removeClass('hover');
         }
       });
-      
+
     }).on('mouseout', function(){
       $(this).parent().children('li.star').each(function(e){
         $(this).removeClass('hover');
       });
     });
-    
-    
+
+
     /* 2. Action to perform on click */
     $('.stars li').on('click', function(){
       var onStar = parseInt($(this).data('value'), 10); // The star currently selected
       var stars = $(this).parent().children('li.star');
-      
+
       for (i = 0; i < stars.length; i++) {
         $(stars[i]).removeClass('selected');
       }
-      
+
       for (i = 0; i < onStar; i++) {
         $(stars[i]).addClass('selected');
       }
-      
+
       // RESPONSE
       var ratingValue = parseInt($('.stars li.selected').last().data('value'), 10);
       console.log(this.title);
@@ -225,10 +225,10 @@ const starEffects = () =>{
       }
       console.log("star", msg)
     });
-    
+
 }
 
-// OCR Get Text 
+// OCR Get Text
 (function () {
     console.log("before");
     const firstName = document.getElementById("firstName");
@@ -312,7 +312,7 @@ const starEffects = () =>{
         }
         }
     };
-    
+
 
     placeText();
 })();
@@ -325,6 +325,7 @@ const submitForm = () => {
           method: 'one_fm.templates.pages.job_application.create_job_applicant',
           args: {
             job_opening: localStorage.getItem("currentJobOpening"),
+            email_id: $('#email').val(),
             job_applicant_fields: {
               one_fm_first_name: $('#firstName').val(),
               // one_fm_second_name: $('#secondName').val(),
@@ -337,16 +338,16 @@ const submitForm = () => {
               one_fm_marital_status: $('#MaritalStatus option:selected').text(),
               one_fm_email_id: $('#email').val(),
               one_fm_contact_number: $('#phone').val(),
-              // one_fm_secondary_number: $('#phone1').val(),              
-              one_fm_passport_number: $('#PassportNumber').val(),              
-              one_fm_passport_holder_of: $('#passportHolderOf').val(),              
-              one_fm_passport_issued: $('#passportIssued').val(),              
-              one_fm_passport_expire: $('#passportExpiry').val(),              
-              one_fm_passport_type: $('#PassportType').val(),              
-              one_fm_have_a_valid_visa_in_kuwait: $('#ValidVisa').val(),              
-              one_fm_visa_type: $('#visaType').val(),              
-              // one_fm_visa_issued: $('#visaIssuedOn').val(),              
-              one_fm_cid_number: $('#civilId').val(),              
+              // one_fm_secondary_number: $('#phone1').val(),
+              one_fm_passport_number: $('#PassportNumber').val(),
+              one_fm_passport_holder_of: $('#passportHolderOf').val(),
+              one_fm_passport_issued: $('#passportIssued').val(),
+              one_fm_passport_expire: $('#passportExpiry').val(),
+              one_fm_passport_type: $('#PassportType').val(),
+              one_fm_have_a_valid_visa_in_kuwait: $('#ValidVisa').val(),
+              one_fm_visa_type: $('#visaType').val(),
+              // one_fm_visa_issued: $('#visaIssuedOn').val(),
+              one_fm_cid_number: $('#civilId').val(),
               one_fm_cid_expire: $('#civilValidTill').val(),
               one_fm_educational_qualification: $('#educationalQualification option:selected').text(),
               one_fm_university: $('#University').val(),
@@ -355,22 +356,22 @@ const submitForm = () => {
               one_fm_night_shift: $('#nightShift option:selected').text(),
               one_fm_type_of_travel: $('#typeOfTravel option:selected').text(),
             },
-            languages: listOfLanguages,
-            skills: listOfSkills,
-            files: $('#resume').val(),
+            // languages: listOfLanguages,
+            // skills: listOfSkills,
+            // files: $('#resume').val(),
           },
           callback: function (r) {
             if (r) {
-      
+
               console.log(r);
-      
+
               if (r.message == 1) {
                 Swal.fire(
                   'Successfully Sent!',
                   'Your message has been sent.',
                   'success'
                 );
-      
+
                 $('#fullName').val('');
                 $('#email').val('');
                 $('#phone').val('');
@@ -382,7 +383,7 @@ const submitForm = () => {
                   text: 'Please try again!'
                 });
               }
-      
+
             }
           }
         });
