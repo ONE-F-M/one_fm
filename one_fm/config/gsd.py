@@ -92,9 +92,9 @@ def get_data():
 			"items": [
 				{
 					"type": "report",
-					"name": "Unit Bed Space Report",
+					"name": "Units List Report",
 					"is_query_report": True,
-					"label": _("Unit Bed Space Report"),
+					"label": _("Units List Report"),
 				},
 				{
 					"type": "report",
