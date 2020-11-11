@@ -18,7 +18,9 @@ def get_columns():
 		_("Employee Name") + ":Data:180",
 		_("CIVIL ID") + ":Data:120",
 		_("Checkin") + ":Date:120",
-		_("Checkout") + ":Date:120"
+		_("Checkout") + ":Date:120",
+		_("Checkin Ref") + ":Link/Accommodation Checkin Checkout:120",
+		_("Checkout Ref") + ":Link/Accommodation Checkin Checkout:120"
     ]
 
 def get_conditions(filters):
@@ -35,20 +37,28 @@ def get_data(filters):
 	acc_list=frappe.db.sql("""select * from `tabAccommodation Checkin Checkout` where type='IN' {0}""".format(conditions), as_dict=1)
 	for acc in acc_list:
 		checkout_date = ''
+		checkout = ''
+		accommodation_not_provided_by_company = True
+		accommodation_by_company = False
+		if acc.employee and filters.get('accommodation_not_provided_by_company'):
+			accommodation_by_company = frappe.db.get_value('Employee', acc.employee, 'one_fm_provide_accommodation_by_company')
 		if acc.checked_out:
 			checkout = frappe.db.exists('Accommodation Checkin Checkout', {'checkin_reference': acc.name})
 			if checkout:
 				checkout_date = frappe.db.get_value('Accommodation Checkin Checkout', checkout, 'checkin_checkout_date_time')
-		row = [
-			acc.accommodation,
-			acc.accommodation_unit,
-			acc.bed,
-			acc.employee_id,
-			acc.full_name,
-			acc.civil_id,
-			acc.checkin_checkout_date_time,
-			checkout_date
-		]
-		data.append(row)
+		if accommodation_not_provided_by_company and not accommodation_by_company:
+			row = [
+				acc.accommodation,
+				acc.accommodation_unit,
+				acc.bed,
+				acc.employee_id,
+				acc.full_name,
+				acc.civil_id,
+				acc.checkin_checkout_date_time,
+				checkout_date,
+				acc.name,
+				checkout
+			]
+			data.append(row)
 
 	return data
