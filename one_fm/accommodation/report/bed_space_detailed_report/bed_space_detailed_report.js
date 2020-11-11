@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 /* eslint-disable */
 
-frappe.query_reports["Accommodation Bed Detailed Report"] = {
+frappe.query_reports["Bed Space Detailed Report"] = {
 	"filters": [
 
 	]

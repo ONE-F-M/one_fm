@@ -104,9 +104,9 @@ def get_data():
 				},
 				{
 					"type": "report",
-					"name": "Accommodation Bed Detailed Report",
+					"name": "Bed Space Detailed Report",
 					"is_query_report": True,
-					"label": _("Accommodation Bed Detailed Report"),
+					"label": _("Bed Space Detailed Report"),
 				},
 				{
 					"type": "report",
