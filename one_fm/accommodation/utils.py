@@ -23,23 +23,17 @@ def accommodation_qr_code_live_details(docname):
 @frappe.whitelist()
 def print_bulk_accommodation_policy(accommodation, recipients = ['j.poil@armor-services.com']):
     from frappe.utils.background_jobs import enqueue
-    checkin_list = frappe.db.get_list('Accommodation Checkin Checkout', filters={'accommodation': accommodation}, fields=['name', 'employee_id'])
+    checkin_list = frappe.db.get_list('Accommodation Checkin Checkout', filters={'accommodation': accommodation, 'type'='IN'}, fields=['name', 'employee_id'])
     i = 0
-    attachments = []
     for checkin in checkin_list:
         # print_by_server('Accommodation Checkin Checkout', checkin.name, print_format='Accommodation Policy', doc=None, no_letterhead=0)
-        attachments.append(frappe.attach_print('Accommodation Checkin Checkout', checkin.name, file_name=checkin.employee_id, print_format='Accommodation Policy'))
         print(i)
         print(checkin.name)
-        i += 1
-        if i == 1:
-            break
-    if attachments:
         email_args = {
             "recipients": recipients,
             "message": _("Accommodation Policy and Procedure"),
-            "subject": 'Accommodation Ploicy',
-            "attachments": attachments,
+            "subject": 'Accommodation Ploicy for Accommodation {0}'.format(accommodation),
+            "attachments": [frappe.attach_print('Accommodation Checkin Checkout', checkin.name, file_name=checkin.employee_id, print_format='Accommodation Policy')],
             "reference_doctype": 'Accommodation Checkin Checkout',
             "reference_name": checkin.name
         }
