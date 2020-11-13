@@ -23,7 +23,7 @@ def accommodation_qr_code_live_details(docname):
 @frappe.whitelist()
 def print_bulk_accommodation_policy(accommodation, recipients = ['j.poil@armor-services.com']):
     from frappe.utils.background_jobs import enqueue
-    checkin_list = frappe.db.get_list('Accommodation Checkin Checkout', filters={'accommodation': accommodation, 'type'='IN'}, fields=['name', 'employee_id'])
+    checkin_list = frappe.db.get_list('Accommodation Checkin Checkout', filters={'accommodation': accommodation, 'type':'IN'}, fields=['name', 'employee_id'])
     i = 0
     for checkin in checkin_list:
         # print_by_server('Accommodation Checkin Checkout', checkin.name, print_format='Accommodation Policy', doc=None, no_letterhead=0)
