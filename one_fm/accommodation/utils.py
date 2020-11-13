@@ -21,21 +21,26 @@ def accommodation_qr_code_live_details(docname):
         return download_pdf(doctype, docname, format=format, doc=None, no_letterhead=0)
 
 @frappe.whitelist()
-def print_bulk_accommodation_policy():
+def print_bulk_accommodation_policy(accommodation, recipients = ['j.poil@armor-services.com']):
     from frappe.utils.background_jobs import enqueue
-    checkin_list = frappe.db.get_list('Accommodation Checkin Checkout', fields['name', 'employee_id'])
+    checkin_list = frappe.db.get_list('Accommodation Checkin Checkout', filters={'accommodation': accommodation}, fields=['name', 'employee_id'])
     i = 0
+    attachments = []
     for checkin in checkin_list:
         # print_by_server('Accommodation Checkin Checkout', checkin.name, print_format='Accommodation Policy', doc=None, no_letterhead=0)
-        email_args = {
-            "recipients": ['j.poil@armor-services.com'],
-            "message": _("Accommodation Policy and Procedure"),
-            "subject": 'Accommodation Ploicy',
-            "attachments": [frappe.attach_print('Accommodation Checkin Checkout', checkin.name, file_name=checkin.employee_id, print_format='Accommodation Policy')],
-            "reference_doctype": 'Accommodation Checkin Checkout',
-            "reference_name": checkin.name
-        }
+        attachments.append(frappe.attach_print('Accommodation Checkin Checkout', checkin.name, file_name=checkin.employee_id, print_format='Accommodation Policy'))
         print(i)
         print(checkin.name)
         i += 1
+        if i == 1:
+            break
+    if attachments:
+        email_args = {
+            "recipients": recipients,
+            "message": _("Accommodation Policy and Procedure"),
+            "subject": 'Accommodation Ploicy',
+            "attachments": attachments,
+            "reference_doctype": 'Accommodation Checkin Checkout',
+            "reference_name": checkin.name
+        }
         enqueue(method=frappe.sendmail, queue='short', timeout=300, is_async=True, **email_args)
