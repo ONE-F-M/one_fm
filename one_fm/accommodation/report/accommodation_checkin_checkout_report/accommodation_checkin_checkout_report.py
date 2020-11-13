@@ -11,21 +11,22 @@ def execute(filters=None):
 
 def get_columns():
     return [
-        _("Accommodation") + ":Link/Accommodation:150",
-		_("Unit") + ":Link/Accommodation Unit:100",
+        _("Accommodation") + ":Link/Accommodation:80",
+		_("Unit") + ":Link/Accommodation Unit:80",
 		_("Bed") + ":Link/Bed:120",
-		_("Employee ID") + ":Data:150",
+		_("Employee ID") + ":Data:120",
 		_("Employee Name") + ":Data:180",
-		_("CIVIL ID") + ":Data:120",
-		_("Checkin") + ":Date:120",
-		_("Checkout") + ":Date:120",
+		_("CIVIL ID") + ":Data:100",
+		_("Checkin") + ":Date:100",
 		_("Checkin Ref") + ":Link/Accommodation Checkin Checkout:120",
-		_("Checkout Ref") + ":Link/Accommodation Checkin Checkout:120"
+		_("Checkout") + ":Date:100",
+		_("Checkout Ref") + ":Link/Accommodation Checkin Checkout:120",
+		_("Tenant Category") + ":Data:120"
     ]
 
 def get_conditions(filters):
 	conditions = ""
-	fields = ['accommodation', 'accommodation_unit', 'bed', 'employee', 'employee_id']
+	fields = ['accommodation', 'accommodation_unit', 'bed', 'employee', 'employee_id', 'tenant_category']
 	for field in fields:
 		if filters.get(field):
 			conditions += " and {0}='{1}' ".format(field, filters.get(field))
@@ -55,9 +56,10 @@ def get_data(filters):
 				acc.full_name,
 				acc.civil_id,
 				acc.checkin_checkout_date_time,
-				checkout_date,
 				acc.name,
-				checkout
+				checkout_date,
+				checkout,
+				acc.tenant_category
 			]
 			data.append(row)
 

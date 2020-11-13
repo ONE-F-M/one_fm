@@ -37,6 +37,12 @@ frappe.query_reports["Accommodation Checkin Checkout Report"] = {
 			"fieldname":"accommodation_not_provided_by_company",
 			"label": __("Not Provided by Company"),
 			"fieldtype": "Check"
+		},
+		{
+			"fieldname":"tenant_category",
+			"label": __("Tenant Category"),
+			"fieldtype": "Select",
+			"options": "\nGranted Service\nPaid Service"
 		}
 	]
 };
