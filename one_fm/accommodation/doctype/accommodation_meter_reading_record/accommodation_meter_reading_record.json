@@ -122,13 +122,15 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-11-11 17:53:10.530390",
+ "modified": "2020-11-13 06:45:43.330479",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Meter Reading Record",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -138,6 +140,7 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
