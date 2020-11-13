@@ -60,13 +60,14 @@ var set_meter = function(frm) {
 
 var set_meter_details = function(frm) {
 	if(frm.doc.meter_reference){
+		var filters = {'meter_reference': frm.doc.meter_reference};
+		if(frm.doc.reference_doctype && frm.doc.reference_name){
+			filters['reference_doctype'] = frm.doc.reference_doctype;
+			filters['reference_name'] = frm.doc.reference_name;
+		}
 		frappe.call({
 			method: 'one_fm.accommodation.doctype.accommodation_meter_reading_record.accommodation_meter_reading_record.get_accommodation_meter_details',
-			args: {
-				'meter_reference': frm.doc.meter_reference,
-				'reference_doctype': frm.doc.reference_doctype,
-				'reference_name': frm.doc.reference_name
-			},
+			args: filters,
 			callback: function(r) {
 				if(r && r.message){
 					if(r.message.meter){
@@ -79,6 +80,10 @@ var set_meter_details = function(frm) {
 						var reading = r.message.reading;
 						frm.set_value('last_reading_date', reading.last_reading_date);
 						frm.set_value('last_reading', reading.last_reading);
+						if(!frm.doc.reference_name){
+							frm.set_value('reference_doctype', reading.parenttype);
+							frm.set_value('reference_name', reading.parent);
+						}
 					}
 					else{
 						frm.set_value('last_reading_date', '');
@@ -101,14 +106,24 @@ var set_meter_details = function(frm) {
 };
 
 var set_filters = function(frm) {
-	var reference_doctype = 'Accommodation';
-	if(frm.doc.reference_doctype == 'Accommodation Unit'){
-		reference_doctype = 'Accommodation Unit';
-	}
-	frm.set_query("meter_reference", function() {
-		return {
-			query: "one_fm.accommodation.doctype.accommodation_meter_reading_record.accommodation_meter_reading_record.filter_meter_ref",
-			filters: {'reference_doctype': reference_doctype, 'reference_name': frm.doc.reference_name, 'meter_type': frm.doc.meter_type}
+		var reference_doctype = 'Accommodation';
+		if(frm.doc.reference_doctype == 'Accommodation Unit'){
+			reference_doctype = 'Accommodation Unit';
 		}
-	});
+		var filters = {};
+		if(frm.doc.meter_type){
+			filters['meter_type']=frm.doc.meter_type;
+		}
+		if(frm.doc.reference_name && frm.doc.reference_doctype){
+			filters['reference_doctype'] = frm.doc.reference_doctype;
+			filters['reference_name'] = frm.doc.reference_name;
+		}
+		if(filters){
+			frm.set_query("meter_reference", function() {
+				return {
+					query: "one_fm.accommodation.doctype.accommodation_meter_reading_record.accommodation_meter_reading_record.filter_meter_ref",
+					filters: filters
+				}
+			});
+		}
 };

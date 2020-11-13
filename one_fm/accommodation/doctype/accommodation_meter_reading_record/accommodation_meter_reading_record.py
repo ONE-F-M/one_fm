@@ -37,9 +37,13 @@ def filter_meter_ref(doctype, txt, searchfield, start, page_len, filters):
 		from
 			`tabAccommodation Meter Reading`
 		where
-			parenttype = %(reference_doctype)s and parent = %(reference_name)s
-			and meter_type = %(meter_type)s and meter_reference like %(txt)s
-			limit %(start)s, %(page_len)s"""
+			meter_reference like %(txt)s
+	"""
+	if filters.get('meter_type'):
+		query += " and meter_type = %(meter_type)s"
+	if filters.get('reference_doctype') and filters.get('reference_name'):
+		query += " and parenttype = %(reference_doctype)s and parent = %(reference_name)s"
+	query += " limit %(start)s, %(page_len)s"
 	return frappe.db.sql(query,
 		{
 			'reference_doctype': filters.get("reference_doctype"),
@@ -52,10 +56,14 @@ def filter_meter_ref(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 @frappe.whitelist()
-def get_accommodation_meter_details(meter_reference, reference_doctype, reference_name):
+def get_accommodation_meter_details(meter_reference, reference_doctype = None, reference_name = None):
 	meter = frappe.get_doc('Accommodation Meter', meter_reference)
-	reading = frappe.get_doc('Accommodation Meter Reading',
-		{'parenttype': reference_doctype, 'parent': reference_name, 'meter_reference': meter_reference})
+	filters = {'meter_reference': meter_reference}
+	if reference_doctype:
+		filters ['parenttype'] = reference_doctype
+		if reference_name:
+			filters ['parent'] = reference_name
+	reading = frappe.get_doc('Accommodation Meter Reading', filters)
 	return {'meter': meter, 'reading': reading}
 
 @frappe.whitelist()
