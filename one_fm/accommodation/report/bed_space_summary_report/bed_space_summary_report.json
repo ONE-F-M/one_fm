@@ -8,7 +8,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": "ONE FM",
- "modified": "2020-11-11 17:05:01.570557",
+ "modified": "2020-11-16 08:43:48.361600",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed Space Summary Report",
@@ -20,6 +20,9 @@
  "roles": [
   {
    "role": "System Manager"
+  },
+  {
+   "role": "Accommodation User"
   }
  ]
 }

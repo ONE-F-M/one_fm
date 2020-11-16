@@ -8,7 +8,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": "ONE FM",
- "modified": "2020-11-13 22:12:19.198458",
+ "modified": "2020-11-16 08:43:29.130491",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Meter Reading Report",
@@ -20,6 +20,9 @@
  "roles": [
   {
    "role": "System Manager"
+  },
+  {
+   "role": "Accommodation User"
   }
  ]
 }

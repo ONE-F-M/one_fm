@@ -342,7 +342,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-11 18:45:37.904168",
+ "modified": "2020-11-16 08:47:42.316606",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",
@@ -357,6 +357,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
    "share": 1,
    "write": 1
   }

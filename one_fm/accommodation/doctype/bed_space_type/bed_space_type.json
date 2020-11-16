@@ -60,7 +60,7 @@
   }
  ],
  "links": [],
- "modified": "2020-07-10 09:12:45.628437",
+ "modified": "2020-11-16 08:45:51.745199",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed Space Type",
@@ -75,6 +75,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
    "share": 1,
    "write": 1
   }

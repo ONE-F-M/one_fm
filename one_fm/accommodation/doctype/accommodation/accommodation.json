@@ -789,7 +789,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-04 13:09:22.124799",
+ "modified": "2020-11-16 08:46:44.500883",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",
@@ -804,6 +804,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
    "share": 1,
    "write": 1
   }

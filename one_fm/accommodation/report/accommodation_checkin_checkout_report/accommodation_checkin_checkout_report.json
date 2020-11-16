@@ -8,7 +8,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": "ONE FM",
- "modified": "2020-11-03 21:03:44.940544",
+ "modified": "2020-11-16 08:44:12.565813",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout Report",
@@ -20,6 +20,9 @@
  "roles": [
   {
    "role": "System Manager"
+  },
+  {
+   "role": "Accommodation User"
   }
  ]
 }
