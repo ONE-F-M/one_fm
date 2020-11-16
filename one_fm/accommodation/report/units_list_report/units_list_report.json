@@ -8,7 +8,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": "ONE FM",
- "modified": "2020-11-11 16:52:38.661478",
+ "modified": "2020-11-16 08:44:02.496311",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Units List Report",
@@ -20,6 +20,9 @@
  "roles": [
   {
    "role": "System Manager"
+  },
+  {
+   "role": "Accommodation User"
   }
  ]
 }

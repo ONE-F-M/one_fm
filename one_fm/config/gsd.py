@@ -114,6 +114,12 @@ def get_data():
 					"is_query_report": True,
 					"label": _("Checkin Checkout Report"),
 				},
+				{
+					"type": "report",
+					"name": "Accommodation Meter Reading Report",
+					"is_query_report": True,
+					"label": _("Meter Reading Report"),
+				}
 			]
 		},
 		{
