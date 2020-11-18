@@ -14,10 +14,11 @@ def get_columns():
         _("Code/Rerf") + ":Link/Accommodation:100",
         _("Accommodation Name") + ":Data:180",
 		_("Total Bed") + ":Data:100",
-		_("Occupied Bed") + ":Data:120",
-		_("Booked Bed") + ":Data:100",
+		_("Occupied") + ":Data:120",
+		_("Occupied Temporarily") + ":Data:180",
+		_("Booked") + ":Data:100",
 		_("Temporary Booked") + ":Data:150",
-		_("Vacant Bed") + ":Data:100"
+		_("Vacant") + ":Data:100"
     ]
 
 def get_data(filters):
@@ -29,6 +30,8 @@ def get_data(filters):
 		total_no_of_bed_space = frappe.db.count('Bed', filters)
 		filters['status'] = 'Occupied'
 		occupied_bed = frappe.db.count('Bed', filters)
+		filters['status'] = 'Occupied Temporarily'
+		occupied_temporarily = frappe.db.count('Bed', filters)
 		filters['status'] = 'Booked'
 		booked_bed = frappe.db.count('Bed', filters)
 		filters['status'] = 'Vacant'
@@ -41,6 +44,7 @@ def get_data(filters):
 			acc.accommodation,
 			total_no_of_bed_space,
 			occupied_bed,
+			occupied_temporarily,
 			booked_bed,
 			temporary_booked_bed,
 			vaccant_bed
