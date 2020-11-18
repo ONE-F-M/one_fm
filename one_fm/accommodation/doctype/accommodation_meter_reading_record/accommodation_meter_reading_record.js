@@ -22,6 +22,7 @@ frappe.ui.form.on('Accommodation Meter Reading Record', {
 		}
 		else{
 			frm.set_value('accommodation_unit', '');
+			frm.set_df_property('accommodation_unit', 'reqd', false);
 		}
 		set_meter(frm);
 	},

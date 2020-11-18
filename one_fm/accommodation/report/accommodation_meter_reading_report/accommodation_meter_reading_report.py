@@ -42,11 +42,9 @@ def get_data(filters):
 	conditions = get_conditions(filters)
 	reading_list=frappe.db.sql(query.format(conditions), as_dict=1)
 	for reading in reading_list:
-		accommodation = reading.reference_name if reading.reference_doctype == 'Accommodation' else ''
-		accommodation_unit = reading.reference_name if reading.reference_doctype == 'Accommodation Unit' else ''
 		row = [
-			accommodation,
-			accommodation_unit,
+			reading.accommodation,
+			reading.accommodation_unit,
 			reading.meter_type,
 			reading.reading_date,
 			reading.current_reading,

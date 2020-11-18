@@ -24,8 +24,8 @@ class AccommodationMeterReadingRecord(Document):
 			{
 				'current_reading': self.current_reading,
 				'reading_date': self.reading_date,
-				'reference_doctype': self.reference_doctype,
-				'reference_name': self.reference_name,
+				'reference_doctype': 'Accommodation' if self.reading_type == 'Common' else 'Accommodation Unit',
+				'reference_name': self.accommodation if self.reading_type == 'Common' else self.accommodation_unit,
 				'meter_reference': self.meter_reference
 			}
 		)
