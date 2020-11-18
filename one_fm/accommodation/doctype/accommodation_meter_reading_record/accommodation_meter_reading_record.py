@@ -24,8 +24,8 @@ class AccommodationMeterReadingRecord(Document):
 			{
 				'current_reading': self.current_reading,
 				'reading_date': self.reading_date,
-				'reference_doctype': self.reference_doctype,
-				'reference_name': self.reference_name,
+				'reference_doctype': 'Accommodation' if self.reading_type == 'Common' else 'Accommodation Unit',
+				'reference_name': self.accommodation if self.reading_type == 'Common' else self.accommodation_unit,
 				'meter_reference': self.meter_reference
 			}
 		)
@@ -56,14 +56,9 @@ def filter_meter_ref(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 @frappe.whitelist()
-def get_accommodation_meter_details(meter_reference, reference_doctype = None, reference_name = None):
+def get_accommodation_meter_details(meter_reference):
 	meter = frappe.get_doc('Accommodation Meter', meter_reference)
-	filters = {'meter_reference': meter_reference}
-	if reference_doctype:
-		filters ['parenttype'] = reference_doctype
-		if reference_name:
-			filters ['parent'] = reference_name
-	reading = frappe.get_doc('Accommodation Meter Reading', filters)
+	reading = frappe.get_doc('Accommodation Meter Reading', {'meter_reference': meter_reference})
 	return {'meter': meter, 'reading': reading}
 
 @frappe.whitelist()
