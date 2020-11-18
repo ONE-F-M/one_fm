@@ -119,6 +119,12 @@ def get_data():
 					"name": "Accommodation Meter Reading Report",
 					"is_query_report": True,
 					"label": _("Meter Reading Report"),
+				},
+				{
+					"type": "report",
+					"name": "Monthly Consumption Report",
+					"is_query_report": True,
+					"label": _("Monthly Consumption Report"),
 				}
 			]
 		},
