@@ -72,3 +72,16 @@ def send_policy(recipients, accommodation, attachments):
         "reference_name": checkin.name
     }
     enqueue(method=frappe.sendmail, queue='short', timeout=300, is_async=True, **email_args)
+
+def remind_accommodation_meter_reading():
+    meter_list = frappe.db.get_list('Accommodation Meter Reading', fields=['name', 'meter_type', 'meter_reference', 'parent', 'parenttype'])
+    recipients = ['j.poil@armor-services.com']
+    for meter in meter_list:
+        email_args = {
+            "recipients": recipients,
+            "subject": _("Reminder to Record Accommodation Meter Reading"),
+            "message": _("Please record {0} Meter Reading for {1}".format(meter.meter_type, meter.meter_reference)),
+            "reference_doctype": meter.parenttype,
+            "reference_name": meter.parent
+        }
+        enqueue(method=frappe.sendmail, queue='short', timeout=300, is_async=True, **email_args)
