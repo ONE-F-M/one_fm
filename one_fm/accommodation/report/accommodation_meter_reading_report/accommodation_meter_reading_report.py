@@ -13,7 +13,8 @@ def get_columns():
     return [
         _("Accommodation") + ":Link/Accommodation:120",
 		_("Unit") + ":Link/Accommodation Unit:80",
-		_("Meter Type") + ":Link/Bed:120",
+		_("Meter Type") + ":Data:120",
+		_("Meter Reference") + ":Data:120",
 		_("Reading Date") + ":Date:120",
 		_("Reading") + ":Float:120",
 		_("Consumption") + ":Float:120"
@@ -46,6 +47,7 @@ def get_data(filters):
 			reading.accommodation,
 			reading.accommodation_unit,
 			reading.meter_type,
+			reading.meter_reference,
 			reading.reading_date,
 			reading.current_reading,
 			reading.consumption

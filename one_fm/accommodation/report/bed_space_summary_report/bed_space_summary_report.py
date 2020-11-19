@@ -18,7 +18,9 @@ def get_columns():
 		_("Occupied Temporarily") + ":Data:180",
 		_("Booked") + ":Data:100",
 		_("Temporary Booked") + ":Data:150",
-		_("Vacant") + ":Data:100"
+		_("Vacant") + ":Data:100",
+		_("Occupied %") + ":Data:100",
+		_("Vacant %") + ":Data:100"
     ]
 
 def get_data(filters):
@@ -39,6 +41,12 @@ def get_data(filters):
 		filters['status'] = 'Temporary Booked'
 		temporary_booked_bed = frappe.db.count('Bed', filters)
 		filters.pop('status')
+		occupied_percent = 0
+		if total_no_of_bed_space > 0:
+			occupied_percent = ((occupied_bed+occupied_temporarily)*100)/total_no_of_bed_space
+		vacant_percent = 0
+		if total_no_of_bed_space > 0:
+			vacant_percent = (vaccant_bed*100)/total_no_of_bed_space
 		row = [
 			acc.name,
 			acc.accommodation,
@@ -47,7 +55,9 @@ def get_data(filters):
 			occupied_temporarily,
 			booked_bed,
 			temporary_booked_bed,
-			vaccant_bed
+			vaccant_bed,
+			occupied_percent,
+			vacant_percent
 		]
 		data.append(row)
 
