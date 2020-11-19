@@ -41,7 +41,6 @@ def send_bulk_accommodation_policy_one_by_one(accommodation, recipients = ['j.po
 
 @frappe.whitelist()
 def send_bulk_accommodation_policy(accommodation, recipients = ['j.poil@armor-services.com']):
-    from frappe.utils.background_jobs import enqueue
     checkin_list = frappe.db.get_list('Accommodation Checkin Checkout', filters={'accommodation': accommodation, 'type':'IN'}, fields=['name', 'employee_id'])
     attachments = []
     send = False
@@ -63,6 +62,7 @@ def send_bulk_accommodation_policy(accommodation, recipients = ['j.poil@armor-se
         send_policy(recipients, accommodation, attachments)
 
 def send_policy(recipients, accommodation, attachments):
+    from frappe.utils.background_jobs import enqueue
     email_args = {
         "recipients": recipients,
         "message": _("Accommodation Policy and Procedure"),
