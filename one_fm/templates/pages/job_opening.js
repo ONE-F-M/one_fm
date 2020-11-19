@@ -41,6 +41,9 @@ function get_jobs_info() {
                 Posted On
                     ${finalDate}
                 </h5>
+                <p>
+                    ${job.description}
+                </p>
             </div>
             <a id='${job.name}' class="btn btn-apply mr-2 float-sm-right float-xs-left proceed-to-easy-signup" onclick="easySignUp('${job.name}')">
                 Easy Apply
