@@ -302,7 +302,7 @@ var calculate_total_and_avg_score = function(frm) {
 	  sections.forEach((item) => {
 			if(frm.doc[item]){
 				frm.doc[item].forEach((item) => {
-					total += item.score;
+					total += item.score || 0;
 				});
 				no_of_questions += frm.doc[item].length;
 			}

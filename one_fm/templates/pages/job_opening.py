@@ -20,9 +20,7 @@ def get_job_openings(doctype='Job Opening', txt=None, filters=None, limit_start=
 	fields = ['name', 'status', 'job_title', 'description', 'designation', 'one_fm_job_opening_created']
 
 	filters = filters or {}
-	filters.update({
-		'status': 'Open'
-	})
+	filters.update({'status': 'Open', 'publish': 1})
 
 	if txt:
 		filters.update({

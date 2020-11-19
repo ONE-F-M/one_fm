@@ -92,6 +92,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "default": "0",
    "fieldname": "total_score",
    "fieldtype": "Float",
    "label": "Total Score",
@@ -102,6 +103,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "0",
    "fieldname": "average_score",
    "fieldtype": "Float",
    "label": "Average Score",
@@ -255,7 +257,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-11-02 23:14:15.986306",
+ "modified": "2020-11-19 01:55:24.533594",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview Result",

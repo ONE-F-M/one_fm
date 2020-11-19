@@ -13,7 +13,8 @@ def get_columns(reading_type):
 	columns = [_("Accommodation") + ":Link/Accommodation:120"]
 	if reading_type == "Unit":
 		columns.append(_("Unit") + ":Link/Accommodation Unit:80")
-	columns.append(_("Meter Type") + ":Data:80")
+	columns.append(_("Meter Type") + ":Data:100")
+	columns.append(_("Meter Ref") + ":Data:100")
 	months = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
 	for month in months:
 		columns.append(_(month) + ":Data:80")
@@ -68,6 +69,7 @@ def get_data(filters):
 		for row_data in row_data_list[key]:
 			accommodation = row_data.accommodation
 			meter_type = row_data.meter_type
+			meter_reference = row_data.meter_reference
 			if filters.get('reading_type') == "Unit":
 				accommodation_unit = row_data.accommodation_unit
 			if row_data.month:
@@ -78,6 +80,7 @@ def get_data(filters):
 			row.append(accommodation_unit)
 			row_index = 1
 		row.append(meter_type)
+		row.append(meter_reference)
 		for month in months:
 			row.append('')
 		for month_key in month_consumption:
