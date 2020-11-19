@@ -67,9 +67,7 @@ def send_policy(recipients, accommodation, attachments):
         "recipients": recipients,
         "message": _("Accommodation Policy and Procedure"),
         "subject": 'Accommodation Ploicy for Accommodation {0}'.format(accommodation),
-        "attachments": attachments,
-        "reference_doctype": 'Accommodation Checkin Checkout',
-        "reference_name": checkin.name
+        "attachments": attachments
     }
     enqueue(method=frappe.sendmail, queue='short', timeout=300, is_async=True, **email_args)
 
