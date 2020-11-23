@@ -2,6 +2,19 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Accommodation', {
+	onload_post_render: function(frm){
+			$('[data-fieldname="map_html"]').append(`<div style='width:100%; height:500px' id='map'></div>`);
+			let {latitude, longitude}= frm.doc;
+			window.markers = [];
+			window.circles = [];
+			// JS API is loaded and available
+			console.log("Called")
+			window.map = new google.maps.Map(document.getElementById('map'), {
+					center: {lat: 29.338394, lng: 48.005958},
+					zoom: 17
+			});
+			loadGoogleMap(frm);
+	},
 	refresh: function(frm) {
 		set_qr_code(frm);
 		set_contact_html(frm);
@@ -57,6 +70,49 @@ var set_qr_code = function(frm) {
 	var qr_code = frappe.render_template(qr_code_html,{"doc":doc, "qr_details": qr_details, "url": url});
 	$(frm.fields_dict["accommodation_qr"].wrapper).html(qr_code);
 	refresh_field("accommodation_qr")
+};
+
+function loadGoogleMap(frm){
+    let lat = 29.338394;
+    let lng = 48.005958;
+    if(frm.doc.name == '01'){
+        lat = 29.269929000;
+        lng = 47.966612800;
+    }
+    else if(frm.doc.name == '02'){
+        lat = 29.152381700;
+        lng = 48.121065800;
+    }
+    else if(frm.doc.name == '03'){
+        lat = 29.152044100;
+        lng = 48.121005200;
+    }
+    let radius = frm.doc.geofence_radius;
+    if(lat !== undefined && lng !== undefined){
+        let marker = new google.maps.Marker({
+            position: {lat, lng},
+            map: map,
+            title: frm.doc.location_name
+        });
+        marker.setMap(map);
+        map.setCenter({lat, lng});
+        markers.push(marker);
+
+        if(radius){
+            let geofence_circle = new google.maps.Circle({
+                strokeColor: '#FF0000',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#FF0000',
+                fillOpacity: 0.35,
+                map: map,
+                center: {lat, lng},
+                radius: radius,
+                clickable: false
+            });
+            circles.push(geofence_circle);
+        }
+    }
 };
 
 var set_contact_html = function(frm) {
