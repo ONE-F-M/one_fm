@@ -71,6 +71,9 @@ def send_policy(recipients, accommodation, attachments):
     }
     enqueue(method=frappe.sendmail, queue='short', timeout=300, is_async=True, **email_args)
 
+def execute_monthly():
+    remind_accommodation_meter_reading()
+
 def remind_accommodation_meter_reading():
     meter_list = frappe.db.get_list('Accommodation Meter Reading', fields=['name', 'meter_type', 'meter_reference', 'parent', 'parenttype'])
     recipients = ['j.poil@armor-services.com']

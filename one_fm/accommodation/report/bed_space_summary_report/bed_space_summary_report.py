@@ -19,8 +19,8 @@ def get_columns():
 		_("Booked") + ":Data:100",
 		_("Temporary Booked") + ":Data:150",
 		_("Vacant") + ":Data:100",
-		_("Occupied %") + ":Data:100",
-		_("Vacant %") + ":Data:100"
+		_("Occupied %") + ":Percent:100",
+		_("Vacant %") + ":Percent:100"
     ]
 
 def get_data(filters):
