@@ -37,6 +37,15 @@ class InterviewResult(Document):
 			total += self.work_experience_score if self.work_experience_score else 0
 			no_of_questions += 1
 
+		elif self.check_security_awareness:
+			interview_tables = ['personal_skills', 'security_awareness']
+			for interview_table in interview_tables:
+				interview_questions = self.get(interview_table)
+				if interview_questions:
+					for interview_question in interview_questions:
+						total += interview_question.score
+					no_of_questions += len(interview_questions)
+
 		elif self.interview_question_result:
 			for interview_question in self.interview_question_result:
 				total += interview_question.score

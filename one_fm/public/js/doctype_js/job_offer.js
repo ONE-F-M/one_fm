@@ -81,6 +81,9 @@ var set_salary_details = function(frm, erf) {
 };
 
 frappe.ui.form.on('ERF Salary Detail', {
+  one_fm_salary_details_remove: function(frm, cdt, cdn) {
+    calculate_total_salary(frm);
+  },
   amount: function(frm, cdt, cdn) {
     calculate_total_salary(frm);
   }

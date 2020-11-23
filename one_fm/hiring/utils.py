@@ -18,6 +18,13 @@ def get_performance_profile_guid():
     if file_path:
         return get_url(file_path)
 
+def validate_job_offer(doc, method):
+    if doc.one_fm_salary_details:
+        total_amount = 0
+        for salary in doc.one_fm_salary_details:
+            total_amount += salary.amount if salary.amount else 0
+        doc.one_fm_job_offer_total_salary = total_amount
+
 def after_insert_job_applicant(doc, method):
     website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)
     notify_recruiter_and_requester_from_job_applicant(doc, method)

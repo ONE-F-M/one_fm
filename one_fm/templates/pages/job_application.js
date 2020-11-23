@@ -1,47 +1,56 @@
 const baseUrl = (frappe.base_url || window.location.origin);
 if(baseUrl.substr(baseUrl.length-1, 1)=='/') baseUrl = baseUrl.substr(0, baseUrl.length-1);
-if(window.localStorage.getItem("job-application-auth")){
-    const ERF = localStorage.getItem("currentJobOpening");
-    const basicSkills = "basic-skills";
-    const language = "rating";
-    const listOfLanguages = [];
-    const listOfSkills = [];
-    if(!ERF){
-        alert("Please Select a Job Posting before continuing");
-        window.location = "job_opening";
-    }
-    console.log(ERF)
-    fetch(`${baseUrl}/api/resource/ERF/${ERF}`, {
-        headers: {
-            'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
-        }
-    })
-    .then(r => r.json())
-    .then(erf => {
-    console.log("ERF",erf);
-    console.log("ERF",erf.data.designation_skill);
-    window.localStorage.setItem("erf", erf)
-    erf.data.designation_skill.map(a=>{
-        listOfSkills.push({
-          skill: a.skill,
-          proficiency: ""
-        })
-        placeSkills(basicSkills, a.skill)
-    })
-    erf.data.languages.map(a=>{
-      console.log("lang",a)
-      listOfLanguages.push({
-        language: a.language,
-        language_name: a.language_name,
-        speak: 0,
-        read: 0,
-        write: 0
-      });
-      placeSkills(language, "none", a.language_name)
-    })
-    starEffects()
+const listOfLanguages = [];
+const listOfSkills = [];
+const basicSkills = "basic-skills";
+const language = "rating";
 
-})
+$(document).ready(function () {
+  if(window.localStorage.getItem("job-application-auth")){
+    set_jobs_info_to_application();
+  }
+  else {
+      alert("Please Signup or Login!");
+      window.location = "applicant-sign-up";
+  }
+});
+
+function set_jobs_info_to_application() {
+  const job = localStorage.getItem("currentJobOpening");
+  if(!job){
+      alert("Please Select a Job Posting before continuing");
+      window.location = "job_opening";
+  }
+  frappe.call({
+    method: "one_fm.templates.pages.job_application.get_job_details",
+    args: {'job': job},
+    callback: function (r) {
+      if(r.message){
+        var erf = r.message;
+        window.localStorage.setItem("erf", erf.name);
+        erf.designation_skill.map(a=>{
+            listOfSkills.push({
+              skill: a.skill,
+              proficiency: ""
+            })
+            placeSkills(basicSkills, a.skill)
+        })
+        erf.languages.map(a=>{
+          listOfLanguages.push({
+            language: a.language,
+            language_name: a.language_name,
+            speak: 0,
+            read: 0,
+            write: 0
+          });
+          placeSkills(language, "none", a.language_name)
+        })
+        starEffects();
+      }
+    }
+  });
+};
+
 // Place Skills
 const placeSkills = (location, skill="none", language="none") => {
     document.getElementById(location).innerHTML +=
@@ -145,19 +154,17 @@ Write
     </div>
 </div>
 `
-
-  }
+}
 
 // Auto complete scripts
-    $( function() {
-        let availableTags = [
-          "Married"
-        ];
-        $( "#tags" ).autocomplete({
-          source: availableTags
-        });
-      } );
-console.log("ready0");
+$(function() {
+    let availableTags = [
+      "Married"
+    ];
+    $( "#tags" ).autocomplete({
+      source: availableTags
+    });
+});
 
 // Star Component
 const starEffects = () =>{
@@ -198,13 +205,10 @@ const starEffects = () =>{
 
       // RESPONSE
       var ratingValue = parseInt($('.stars li.selected').last().data('value'), 10);
-      console.log(this.title);
       if(this.title != "skill"){
-        console.log(this.getAttribute('data-language'));
         listOfLanguages.map(a=> {
           if(a.language_name == this.getAttribute('data-language')){
             a[this.title] = ratingValue;
-            console.log(a)
           }
         })
       }
@@ -213,8 +217,6 @@ const starEffects = () =>{
           if(a.skill == this.getAttribute('data-skill'))
             a.proficiency = ratingValue;
         })
-        console.log(this.getAttribute('data-skill'));
-        console.log(listOfSkills);
       }
       var msg = "";
       if (ratingValue > 1) {
@@ -223,9 +225,7 @@ const starEffects = () =>{
       else {
           msg = "We will improve ourselves. You rated this " + ratingValue + " stars.";
       }
-      console.log("star", msg)
     });
-
 }
 
 // OCR Get Text
@@ -316,82 +316,71 @@ const starEffects = () =>{
 
     placeText();
 })();
-console.log("select",$("#religion option:selected").text());
+
 // Submit
 const submitForm = () => {
-    console.log("submit", listOfLanguages);
-    let erf = window.localStorage.getItem("erf")
-        frappe.call({
-          method: 'one_fm.templates.pages.job_application.create_job_applicant',
-          args: {
-            job_opening: localStorage.getItem("currentJobOpening"),
-            email_id: $('#email').val(),
-            job_applicant_fields: {
-              one_fm_first_name: $('#firstName').val(),
-              // one_fm_second_name: $('#secondName').val(),
-              // one_fm_third_name: $('#thirdName').val(),
-              one_fm_last_name: $('#lastName').val(),
-              one_fm_gender: $("#gender option:selected").text(),
-              one_fm_religion: $("#religion option:selected").text(),
-              one_fm_date_of_birth: $('#dob').val(),
-              one_fm_place_of_birth: $('#placeOfBirth').val(),
-              one_fm_marital_status: $('#MaritalStatus option:selected').text(),
-              one_fm_email_id: $('#email').val(),
-              one_fm_contact_number: $('#phone').val(),
-              // one_fm_secondary_number: $('#phone1').val(),
-              one_fm_passport_number: $('#PassportNumber').val(),
-              one_fm_passport_holder_of: $('#passportHolderOf').val(),
-              one_fm_passport_issued: $('#passportIssued').val(),
-              one_fm_passport_expire: $('#passportExpiry').val(),
-              one_fm_passport_type: $('#PassportType').val(),
-              one_fm_have_a_valid_visa_in_kuwait: $('#ValidVisa').val(),
-              one_fm_visa_type: $('#visaType').val(),
-              // one_fm_visa_issued: $('#visaIssuedOn').val(),
-              one_fm_cid_number: $('#civilId').val(),
-              one_fm_cid_expire: $('#civilValidTill').val(),
-              one_fm_educational_qualification: $('#educationalQualification option:selected').text(),
-              one_fm_university: $('#University').val(),
-              // one_fm_specialization: $('#Specialization').val(),
-              one_fm_rotation_shift: $('#rotationalShift option:selected').text(),
-              one_fm_night_shift: $('#nightShift option:selected').text(),
-              one_fm_type_of_travel: $('#typeOfTravel option:selected').text(),
-            },
-            // languages: listOfLanguages,
-            // skills: listOfSkills,
-            // files: $('#resume').val(),
-          },
-          callback: function (r) {
-            if (r) {
+    frappe.call({
+      method: 'one_fm.templates.pages.job_application.create_job_applicant',
+      args: {
+        job_opening: localStorage.getItem("currentJobOpening"),
+        email_id: $('#email').val(),
+        job_applicant_fields: {
+          one_fm_first_name: $('#firstName').val(),
+          one_fm_erf: window.localStorage.getItem("erf"),
+          // one_fm_second_name: $('#secondName').val(),
+          // one_fm_third_name: $('#thirdName').val(),
+          one_fm_last_name: $('#lastName').val(),
+          one_fm_gender: $("#gender option:selected").text(),
+          one_fm_religion: $("#religion option:selected").text(),
+          one_fm_date_of_birth: $('#dob').val(),
+          one_fm_place_of_birth: $('#placeOfBirth').val(),
+          one_fm_marital_status: $('#MaritalStatus option:selected').text(),
+          one_fm_email_id: $('#email').val(),
+          one_fm_contact_number: $('#phone').val(),
+          one_fm_secondary_number: $('#phone1').val(),
+          one_fm_passport_number: $('#PassportNumber').val(),
+          one_fm_passport_holder_of: $('#passportHolderOf').val(),
+          one_fm_passport_issued: $('#passportIssued').val(),
+          one_fm_passport_expire: $('#passportExpiry').val(),
+          one_fm_passport_type: $('#PassportType option:selected').text(),
+          one_fm_have_a_valid_visa_in_kuwait: $('#ValidVisa').val(),
+          one_fm_visa_type: $('#visaType').val(),
+          one_fm_visa_issued: $('#visaIssuedOn').val(),
+          one_fm_cid_number: $('#civilId').val(),
+          one_fm_cid_expire: $('#civilValidTill').val(),
+          one_fm_educational_qualification: $('#educationalQualification option:selected').text(),
+          one_fm_university: $('#University').val(),
+          one_fm_specialization: $('#Specialization').val(),
+          one_fm_rotation_shift: $('#rotationalShift option:selected').text(),
+          one_fm_night_shift: $('#nightShift option:selected').text(),
+          one_fm_type_of_driving_license: $('#typeOfDrivingLicense option:selected').text(),
+        },
+        languages: listOfLanguages,
+        skills: listOfSkills,
+        // files: $('#resume').val(),
+      },
+      callback: function (r) {
+        if (r) {
+          if (r.message == 1) {
+            Swal.fire(
+              'Successfully Sent!',
+              'Your message has been sent.',
+              'success'
+            );
 
-              console.log(r);
-
-              if (r.message == 1) {
-                Swal.fire(
-                  'Successfully Sent!',
-                  'Your message has been sent.',
-                  'success'
-                );
-
-                $('#fullName').val('');
-                $('#email').val('');
-                $('#phone').val('');
-                $('#resume').val('');
-              } else {
-                Swal.fire({
-                  icon: 'error',
-                  title: 'Could not send...',
-                  text: 'Please try again!'
-                });
-              }
-
-            }
+            $('#fullName').val('');
+            $('#email').val('');
+            $('#phone').val('');
+            $('#resume').val('');
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Could not send...',
+              text: 'Please try again!'
+            });
           }
-        });
+        }
+      }
+    });
 }
 document.getElementById("submitBtn").addEventListener("click", submitForm);
-
-}
-else {
-    alert("Please Signup or Login!");
-    window.location = "applicant-sign-up";
-}
