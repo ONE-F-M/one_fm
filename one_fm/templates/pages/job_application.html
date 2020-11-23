@@ -75,11 +75,11 @@
                             Basic skill
                         </div>
                     </a>
-                    <a href="#documents-required" class="sidebar-item list-group-item">
+                    <!-- <a href="#documents-required" class="sidebar-item list-group-item">
                         <div class="sidebar-item-text">
                             Documents required
                         </div>
-                    </a>
+                    </a> -->
                 </div>
             </div>
             <div class="questions-block-list">
@@ -329,8 +329,10 @@
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="PassportType">Passport Type</label>
-                                    <input type="text" class="form-control" id="PassportType" value="Standard"
-                                        placeholder="Passport Type">
+                                    <select class="form-control" name="PassportType" id="PassportType">
+                                        <option>Normal</option>
+                                        <option>Diplomat</option>
+                                    </select>
                                 </div>
                             </div>
                             <a href="#visa-and-residency">
@@ -499,16 +501,16 @@
                                         <label for="rotationalShift">Rotation Shift</label>
                                         <select class="form-control" name="rotationalShift" id="rotationalShift">
                                             <option></option>
-                                            <option>No</option>
-                                            <option>Yes</option>
+                                            <option>Yes, I Will Work in Rotation Shift</option>
+                                            <option>No, I Cant Work in Rotation Shift</option>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label for="nightShift">Night Shift</label>
                                         <select class="form-control" name="nightShift" id="nightShift">
                                             <option></option>
-                                            <option>No</option>
-                                            <option>Yes</option>
+                                            <option>Yes, I Will Work in Night Shift</option>
+                                            <option>No, I Cant Work in Night Shift</option>
                                         </select>
                                     </div>
                                 </div>
@@ -522,8 +524,8 @@
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label for="typeOfTravel">Type of Travel</label>
-                                        <select class="form-control" name="typeOfTravel" id="typeOfTravel">
+                                        <label for="typeOfDrivingLicense">Type of Driving License</label>
+                                        <select class="form-control" name="typeOfDrivingLicense" id="typeOfDrivingLicense">
                                             <option></option>
                                             <option>Light</option>
                                             <option>Heavy</option>
@@ -562,7 +564,7 @@
                                 </a>
                             </div>
                         </div>
-                        <div class="questions-block" id="documents-required">
+                        <!-- <div class="questions-block" id="documents-required">
                             <div class="question-block-head">
                                 <div class="question-block-icon"><i class="uil uil-envelope-alt"></i></div>
                                 <div class="question-block-info">
@@ -612,7 +614,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                 </form>
                 <div id="submitBtn" class="btn btn-primary submit-btn">Submit</div>
             </div>

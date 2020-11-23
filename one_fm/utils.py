@@ -1101,8 +1101,8 @@ def validate_job_applicant(doc, method):
     validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     set_average_score(doc, method)
-    if doc.is_new():
-        set_childs_for_application_web_form(doc, method)
+    # if doc.is_new():
+    #     set_childs_for_application_web_form(doc, method)
     if frappe.session.user != 'Guest':
         validate_mandatory_childs(doc)
     if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
@@ -1239,9 +1239,9 @@ def get_mandatory_fields_work_details(doc):
         return field_list
 
 def get_mandatory_fields_contact_details(doc):
-    if not doc.one_fm_is_agency_applying:
-        return [{'Country Code for Primary Contact Number': 'one_fm_country_code'},
-            {'Primary Contact Number': 'one_fm_contact_number'}]
+    # if not doc.one_fm_is_agency_applying:
+    #     return [{'Country Code for Primary Contact Number': 'one_fm_country_code'},
+    #         {'Primary Contact Number': 'one_fm_contact_number'}]
     return []
 
 def get_mandatory_fields_visa_details(doc):

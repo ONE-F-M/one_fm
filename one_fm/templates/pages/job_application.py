@@ -4,10 +4,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url
 
-
 def get_context(context):
     context.show_search = True
-
 
 @frappe.whitelist(allow_guest=True)
 def get_dummy():
@@ -16,23 +14,6 @@ def get_dummy():
     # doc.title = 'Test'
     # doc.save()
     return doc
-# @frappe.whitelist(allow_guest=True)
-# def get_jobs_info():
-#     job_name = []
-#     job_title = []
-#     job_description = []
-
-#     jobs = frappe.db.sql(
-#         """ select name,job_title,description from `tabJob Opening` where status='Open' """)
-#     if jobs:
-#         for job in jobs:
-#             job_name.append(job[0])
-#             job_title.append(job[1])
-#             job_description.append(job[2])
-#         return job_name, job_title, job_description
-#     else:
-#         return None
-
 
 @frappe.whitelist(allow_guest=True)
 def easy_apply(applicant_name, applicant_email, applicant_mobile, cover_letter, job_opening, resume=None):
@@ -65,7 +46,6 @@ def easy_apply(applicant_name, applicant_email, applicant_mobile, cover_letter, 
     except:
         return 0
 
-
 @frappe.whitelist(allow_guest=True)
 def create_job_applicant(job_opening, email_id, job_applicant_fields, languages=None, skills=None, files=None):
     job_applicant = frappe.db.exists(
@@ -74,25 +54,19 @@ def create_job_applicant(job_opening, email_id, job_applicant_fields, languages=
         return job_applicant
     else:
         job_applicant = frappe.new_doc('Job Applicant')
-        job_applicant.one_fm_erf = job_opening
-        job_applicant.applicant_name = "DDDDD"
-        job_applicant.job_title = frappe.db.get_value('Job Opening', {'one_fm_erf': job_opening})
+        job_applicant.job_title = job_opening
 
         fields_json = json.loads(job_applicant_fields)
         fields = frappe._dict(fields_json)
 
         set_job_applicant_fields(job_applicant, fields)
-        job_applicant.one_fm_passport_type = 'Normal'
-        job_applicant.one_fm_rotation_shift = 'No, I Cant Work in Rotation Shift'
-        job_applicant.one_fm_night_shift = 'No, I Cant Work in Night Shift'
-        # if languages:
-        #     languages_json = json.loads(languages)
-        #     languages_obj = frappe._dict(languages_json)
-        #     set_languages(job_applicant, languages_obj)
-        # if skills:
-        #     skills_json = json.loads(skills)
-        #     skills_obj = frappe._dict(skills_json)
-        #     set_skills(job_applicant, skills)
+
+        if languages:
+            languages_json = json.loads(languages)
+            set_languages(job_applicant, languages_json)
+        if skills:
+            skills_json = json.loads(skills)
+            set_skills(job_applicant, skills_json)
         # if files:
         #     files_json = json.loads(files)
         #     files_obj = frappe._dict(files_json)
@@ -119,19 +93,44 @@ def attach_file_to_application(filedata, job_applicant_id):
 def set_job_applicant_fields(doc, fields):
     for field in fields:
         doc.set(field, fields[field])
+    name_fields = ['one_fm_second_name', 'one_fm_third_name', 'one_fm_last_name']
+    applicant_name = doc.one_fm_first_name if doc.one_fm_first_name else ''
+    for name_field in name_fields:
+        if doc.get(name_field):
+            applicant_name += ' '+doc.get(name_field)
+    doc.applicant_name = applicant_name
 
 def set_skills(doc, skills):
     for designation_skill in skills:
         skill = doc.append('one_fm_designation_skill')
-        skill.skill = designation_skill[skill]
-        skill.proficiency = designation_skill[proficiency]
-
+        skill.skill = designation_skill['skill']
+        skill.proficiency = designation_skill['proficiency']
 
 def set_languages(doc, languages):
     for language in languages:
         lang = doc.append('one_fm_languages')
-        lang.language = language[language]
-        lang.language_name = language[language_name]
-        lang.speak = language[speak]
-        lang.read = language[read]
-        lang.write = language[write]
+        lang.language = language['language']
+        lang.language_name = language['language_name']
+        lang.speak = language['speak']
+        lang.read = language['read']
+        lang.write = language['write']
+
+@frappe.whitelist(allow_guest=True)
+def get_job_details(job):
+    erf = False
+    erf_id = frappe.db.get_value('Job Opening', job, 'one_fm_erf')
+    if erf_id:
+        erf = frappe.get_doc('ERF', erf_id)
+    return erf
+
+@frappe.whitelist(allow_guest=True)
+def get_required_documents(job, visa_type=None):
+    filters = {}
+    source_of_hire = frappe.db.get_value('Job Opening', job, 'one_fm_source_of_hire')
+    if source_of_hire == 'Local and Overseas' and visa_type:
+        source_of_hire = 'Local'
+    filters['visa_type'] = visa_type if visa_type else ''
+    filters['source_of_hire'] = source_of_hire
+
+    from one_fm.one_fm.doctype.recruitment_document_checklist.recruitment_document_checklist import get_recruitment_document_checklist
+    return get_recruitment_document_checklist(filters)
