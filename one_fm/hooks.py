@@ -129,6 +129,9 @@ doc_events = {
 		"validate": "one_fm.utils.validate_job_applicant",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
+	"Job Offer": {
+		"validate": "one_fm.hiring.utils.validate_job_offer"
+	},
 	"Shift Type": {
 		"autoname": "one_fm.api.doc_events.naming_series"
 	},
