@@ -122,8 +122,7 @@ doc_events = {
 		"validate": "one_fm.utils.validate_hajj_leave"
 	},
 	"Employee": {
-		"before_validate": "one_fm.api.doc_events.employee_before_validate",
-		"on_update": "one_fm.one_fm.doctype.erf_request.erf_request.trigger_employee_exit"
+		"before_validate": "one_fm.api.doc_events.employee_before_validate"
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
