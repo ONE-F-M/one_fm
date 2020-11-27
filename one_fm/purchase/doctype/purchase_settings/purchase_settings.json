@@ -7,7 +7,10 @@
  "field_order": [
   "request_for_material_section",
   "request_for_material_accepter",
-  "request_for_material_approver"
+  "request_for_material_approver",
+  "request_for_purchase_section",
+  "request_for_purchase_accepter",
+  "request_for_purchase_approver"
  ],
  "fields": [
   {
@@ -30,11 +33,30 @@
    "label": "Request for Material Accepter",
    "options": "User",
    "reqd": 1
+  },
+  {
+   "fieldname": "request_for_purchase_section",
+   "fieldtype": "Section Break",
+   "label": "Request for Purchase"
+  },
+  {
+   "fieldname": "request_for_purchase_accepter",
+   "fieldtype": "Link",
+   "label": "Request for Purchase Accepter",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "request_for_purchase_approver",
+   "fieldtype": "Link",
+   "label": "Request for Purchase Approver",
+   "options": "User",
+   "reqd": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2020-08-06 20:04:08.375872",
+ "modified": "2020-11-27 22:38:54.822075",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Purchase Settings",

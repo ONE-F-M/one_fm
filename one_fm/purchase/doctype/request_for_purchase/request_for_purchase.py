@@ -6,14 +6,67 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import nowdate, getdate
+from frappe.utils import nowdate, getdate, get_url
 
 class RequestforPurchase(Document):
+	def onload(self):
+		self.set_onload('accepter', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_accepter'))
+		self.set_onload('approver', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver'))
+
 	def make_purchase_order_for_quotation(self):
 		if self.items_to_order:
 			for item in self.items_to_order:
 				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
 					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description)
+
+	def accept_approve_reject_request_for_purchase(self, status, approver, accepter, reason_for_rejection=None):
+		page_link = get_url("/desk#Form/Request for Purchase/" + self.name)
+		# Notify Requester
+		self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
+
+		# Notify Approver
+		if status == 'Accepted' and frappe.session.user == approver:
+			message = "<p>Please Review and Approve or Reject the Request for Purchase <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
+			subject = '{0} Request for Purchase by {1}'.format(status, frappe.session.user)
+			send_email(self, [accepter], message, subject)
+			create_notification_log(subject, message, [accepter], self)
+
+		# Notify Accepter
+		if status in ['Approved', 'Rejected'] and frappe.session.user == approver:
+			self.notify_requester_accepter(page_link, status, [accepter], reason_for_rejection)
+
+		self.status = status
+		self.reason_for_rejection = reason_for_rejection
+		self.save()
+		self.reload()
+
+	def notify_requester_accepter(self, page_link, status, recipients, reason_for_rejection=None):
+		message = "Request for Purchase <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
+		if status == 'Rejected' and reason_for_rejection:
+			message += " due to {0}".format(reason_for_rejection)
+		subject = '{0} Request for Purchase by {1}'.format(status, frappe.session.user)
+		send_email(self, recipients, message, subject)
+		create_notification_log(subject, message, recipients, self)
+
+def send_email(doc, recipients, message, subject):
+	frappe.sendmail(
+		recipients= recipients,
+		subject=subject,
+		message=message,
+		reference_doctype=doc.doctype,
+		reference_name=doc.name
+	)
+
+def create_notification_log(subject, message, for_users, reference_doc):
+	for user in for_users:
+		doc = frappe.new_doc('Notification Log')
+		doc.subject = subject
+		doc.email_content = message
+		doc.for_user = user
+		doc.document_type = reference_doc.doctype
+		doc.document_name = reference_doc.name
+		doc.from_user = reference_doc.modified_by
+		doc.insert(ignore_permissions=True)
 
 @frappe.whitelist()
 def make_request_for_quotation(source_name, target_doc=None):
@@ -116,7 +169,7 @@ def create_purchase_order(**args):
 		"uom": args.uom,
 		"qty": args.qty,
 		"rate": args.rate,
-		"schedule_date": getdate(args.delivery_date) if nowdate() < args.delivery_date else nowdate(),
+		"schedule_date": getdate(args.delivery_date) if (args.delivery_date and nowdate() < args.delivery_date) else nowdate(),
 		"expected_delivery_date": args.delivery_date
 	})
 	if not args.do_not_save:

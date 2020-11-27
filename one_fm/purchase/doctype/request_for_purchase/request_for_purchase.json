@@ -25,6 +25,7 @@
   "warehouse",
   "items_section",
   "items",
+  "get_requested_items_to_order",
   "items_to_order",
   "technical_remarks",
   "notes_section",
@@ -89,7 +90,7 @@
    "no_copy": 1,
    "oldfieldname": "status",
    "oldfieldtype": "Select",
-   "options": "\nDraft\nApproved\nRejected\nSubmitted\nCancelled",
+   "options": "\nDraft\nAccepted\nApproved\nRejected\nSubmitted\nCancelled",
    "print_hide": 1,
    "read_only": 1,
    "reqd": 1,
@@ -212,12 +213,17 @@
    "fieldtype": "Table",
    "label": "Items to Order",
    "options": "Request for Purchase Quotation Item"
+  },
+  {
+   "fieldname": "get_requested_items_to_order",
+   "fieldtype": "Button",
+   "label": "Get Requested Items to Order"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-07-23 18:01:13.238944",
+ "modified": "2020-11-27 23:36:15.614693",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",
