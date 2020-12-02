@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 from . import __version__ as app_version
 import frappe
+from frappe import _
 from erpnext.hr.doctype.shift_request.shift_request import ShiftRequest
 from one_fm.api.doc_methods.shift_request import shift_request_submit
 
@@ -168,12 +169,23 @@ doc_events = {
 }
 
 standard_portal_menu_items = [
-	{"title": "Job Applications", "route": "/job-applications", "reference_doctype": "Job Applicant", "role": "Job Applicant"}
+	{"title": "Job Applications", "route": "/job-applications", "reference_doctype": "Job Applicant", "role": "Job Applicant"},
+	{"title": _("Request for Supplier Quotations"), "route": "/rfq1", "reference_doctype": "Request for Supplier Quotation", "role": "Supplier"},
 ]
 
 has_website_permission = {
 	"Job Applicant": "one_fm.utils.applicant_has_website_permission"
 }
+
+website_route_rules = [
+	{"from_route": "/rfq1", "to_route": "Request for Supplier Quotation"},
+	{"from_route": "/rfq1/<path:name>", "to_route": "rfq1",
+		"defaults": {
+			"doctype": "Request for Supplier Quotation",
+			"parents": [{"label": _("Request for Supplier Quotation"), "route": "rfq1"}]
+		}
+	}
+]
 
 # doc_events = {
 # 	"*": {
