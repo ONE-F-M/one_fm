@@ -5,13 +5,12 @@ frappe.ui.form.on('Request for Purchase', {
 	refresh: function(frm) {
 		frm.events.make_custom_buttons(frm);
 		if(frm.doc.docstatus == 1){
-			frm.set_df_property('status', 'read_only', false);
-		}
-		if(frm.is_new() || frm.doc.docstatus != 1){
-			frm.set_df_property('items_to_order', 'hidden', true);
+			frm.set_df_property('items_to_order', 'hidden', false);
+			frm.set_df_property('get_requested_items_to_order', 'hidden', false);
 		}
 		else{
-			frm.set_df_property('items_to_order', 'hidden', false);
+			frm.set_df_property('items_to_order', 'hidden', true);
+			frm.set_df_property('get_requested_items_to_order', 'hidden', true);
 		}
 	},
 	status: function(frm) {
@@ -36,6 +35,64 @@ frappe.ui.form.on('Request for Purchase', {
 					() => frm.events.make_purchase_order(frm), __('Create'));
 			}
 		}
+		if (frm.doc.docstatus == 1){
+			if("accepter" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.accepter && frm.doc.status == "Draft"){
+				frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_approve_request_for_purchase(frm, 'Accepted')).addClass('btn-primary');
+				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_purchase(frm, 'Rejected')).addClass('btn-danger');
+			}
+			if("approver" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.approver && frm.doc.status == "Accepted"){
+				frm.add_custom_button(__('Approve'), () => frm.events.confirm_accept_approve_request_for_purchase(frm, 'Approved')).addClass('btn-primary');
+				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_purchase(frm, 'Rejected')).addClass('btn-danger');
+			}
+		}
+	},
+	reject_request_for_purchase: function(frm, status) {
+		var d = new frappe.ui.Dialog({
+			title : __("Reject Request for Purchase"),
+			fields : [{
+				fieldtype: "Small Text",
+				label: "Reason for Rejection",
+				fieldname: "reason_for_rejection",
+				reqd : 1
+			}],
+			primary_action_label: __("Reject"),
+			primary_action: function(){
+				frm.events.accept_approve_reject_request_for_purchase(frm, status, d.get_value('reason_for_rejection'));
+				d.hide();
+			},
+		});
+		d.show();
+	},
+	confirm_accept_approve_request_for_purchase: function(frm, status) {
+		let msg_status = 'Approve';
+		if(status != 'Approved'){
+			msg_status = status == 'Accepted' ? 'Accept': 'Reject'
+		}
+		frappe.confirm(
+			__('Do You Want to {0} this Request for Purchase', [msg_status]),
+			function(){
+				// Yes
+				frm.events.accept_approve_reject_request_for_purchase(frm, status, false);
+			},
+			function(){} // No
+		);
+	},
+	accept_approve_reject_request_for_purchase: function(frm, status, reason_for_rejection) {
+		frappe.call({
+			doc: frm.doc,
+			method: 'accept_approve_reject_request_for_purchase',
+			args: {
+				status: status,
+				accepter: frm.doc.__onload.accepter,
+				approver: frm.doc.__onload.approver,
+				reason_for_rejection: reason_for_rejection
+			},
+			callback(r) {
+				if (!r.exc) {
+					frm.reload_doc();
+				}
+			}
+		});
 	},
 	make_request_for_quotation: function(frm) {
 		frappe.model.open_mapped_doc({
@@ -67,5 +124,17 @@ frappe.ui.form.on('Request for Purchase', {
 			freeze: true,
 			freeze_message: "Creating Purchase Order"
 		})
+	},
+	get_requested_items_to_order: function(frm) {
+		frm.clear_table('items_to_order');
+		frm.doc.items.forEach((item, i) => {
+			var items_to_order = frm.add_child('items_to_order');
+			items_to_order.item_code = item.item_code
+			items_to_order.item_name = item.item_name
+			items_to_order.description = item.description
+			items_to_order.uom = item.uom
+			items_to_order.qty = item.qty
+		});
+		frm.refresh_fields();
 	}
 });

@@ -36,14 +36,18 @@ frappe.ui.form.on('Request for Material', {
 	},
 	refresh: function(frm) {
 		frm.events.make_custom_buttons(frm);
-		if(frm.doc.docstatus == 1){
-			if(frappe.session.user == frm.doc.request_for_material_accepter){
-				frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
-			}
-		}
+		set_item_field_property(frm);
 		let status = ['Draft', 'Accepted', 'Approved', 'Rejected'];
 		if(status.includes(frm.doc.status) && frm.doc.docstatus == 1){
 			frm.set_df_property('status', 'options', status);
+		}
+		if(frm.doc.docstatus == 0){
+			if (frappe.user.has_role("Stock User")){
+				frm.set_df_property('type', 'options', "\nIndividual\nProject\nStock\nSafety Stock");
+			}
+			else{
+				frm.set_df_property('type', 'options', "\nIndividual\nProject");
+			}
 		}
 		frm.set_query('warehouse', function () {
 			if(frm.doc.type == 'Project'){
@@ -227,8 +231,28 @@ frappe.ui.form.on('Request for Material', {
 	},
 	type: function(frm) {
 		set_employee_or_project(frm);
+		set_item_field_property(frm)
 	}
 });
+
+var set_item_field_property = function(frm) {
+	if((frm.doc.docstatus == 1 && frappe.session.user == frm.doc.request_for_material_accepter)
+		|| (frm.doc.type == 'Stock' || frm.doc.type == 'Safety Stock')){
+		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
+	}
+	if(frm.doc.type == 'Stock' || frm.doc.type == 'Safety Stock'){
+		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).read_only = true;
+		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = false;
+		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).read_only = true;
+		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = false;
+	}
+	else{
+		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).read_only = false;
+		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = true;
+		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).read_only = false;
+		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = true;
+	}
+};
 
 var set_employee_or_project = function(frm) {
 	if(frm.doc.type){

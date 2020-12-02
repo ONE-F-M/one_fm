@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "creation": "2020-12-02 06:25:07.091917",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "description_attribute",
+  "value"
+ ],
+ "fields": [
+  {
+   "fieldname": "description_attribute",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Description",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "value",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Value",
+   "options": "description_attribute",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-12-02 06:25:07.091917",
+ "modified_by": "Administrator",
+ "module": "Purchase",
+ "name": "Item Description",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 from . import __version__ as app_version
 import frappe
+from frappe import _
 from erpnext.hr.doctype.shift_request.shift_request import ShiftRequest
 from one_fm.api.doc_methods.shift_request import shift_request_submit
 
@@ -54,7 +55,9 @@ doctype_js = {
 	"Job Offer": "public/js/doctype_js/job_offer.js",
 	"Price List": "public/js/doctype_js/price_list.js",
 	"Vehicle": "public/js/doctype_js/vehicle.js",
-	"Asset": "public/js/doctype_js/asset.js"
+	"Asset": "public/js/doctype_js/asset.js",
+	"Item": "public/js/doctype_js/item.js",
+	"Item Group": "public/js/doctype_js/item_group.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -122,8 +125,7 @@ doc_events = {
 		"validate": "one_fm.utils.validate_hajj_leave"
 	},
 	"Employee": {
-		"before_validate": "one_fm.api.doc_events.employee_before_validate",
-		"on_update": "one_fm.one_fm.doctype.erf_request.erf_request.trigger_employee_exit"
+		"before_validate": "one_fm.api.doc_events.employee_before_validate"
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
@@ -141,7 +143,8 @@ doc_events = {
 	},
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",
-		"before_insert": "one_fm.utils.validate_get_item_group_parent"
+		"before_insert": "one_fm.utils.validate_get_item_group_parent",
+		"validate": "one_fm.utils.validate_item_group"
 	},
 	"Item": {
 		"autoname": "one_fm.utils.item_naming_series"
@@ -169,12 +172,23 @@ doc_events = {
 }
 
 standard_portal_menu_items = [
-	{"title": "Job Applications", "route": "/job-applications", "reference_doctype": "Job Applicant", "role": "Job Applicant"}
+	{"title": "Job Applications", "route": "/job-applications", "reference_doctype": "Job Applicant", "role": "Job Applicant"},
+	{"title": _("Request for Supplier Quotations"), "route": "/rfq1", "reference_doctype": "Request for Supplier Quotation", "role": "Supplier"},
 ]
 
 has_website_permission = {
 	"Job Applicant": "one_fm.utils.applicant_has_website_permission"
 }
+
+website_route_rules = [
+	{"from_route": "/rfq1", "to_route": "Request for Supplier Quotation"},
+	{"from_route": "/rfq1/<path:name>", "to_route": "rfq1",
+		"defaults": {
+			"doctype": "Request for Supplier Quotation",
+			"parents": [{"label": _("Request for Supplier Quotation"), "route": "rfq1"}]
+		}
+	}
+]
 
 # doc_events = {
 # 	"*": {
@@ -316,7 +330,7 @@ fixtures = [
 	},
 	{
 		"dt": "Custom Script",
-		'filters': [['dt', 'in', ['Job Opening', 'Item', 'Stock Entry', 'Warehouse', 'Supplier',
+		'filters': [['dt', 'in', ['Job Opening', 'Stock Entry', 'Warehouse', 'Supplier',
 		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
 	},
 	{
