@@ -979,19 +979,22 @@ def get_approved_leaves_for_period(employee, leave_type, from_date, to_date):
 def get_item_code(parent_item_group = None ,subitem_group = None ,item_group = None ,cur_item_id = None):
     item_code = None
     if parent_item_group:
-        parent_item_group_code = frappe.db.get_value('Item Group', parent_item_group, 'item_group_code')
+        # parent_item_group_code = frappe.db.get_value('Item Group', parent_item_group, 'item_group_code')
+        parent_item_group_code = ""
         item_code = parent_item_group_code
 
         if subitem_group:
-            subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'item_group_code')
-            item_code = parent_item_group_code+subitem_group_code
+            # subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'item_group_code')
+            subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'one_fm_item_group_abbr')
+            item_code = subitem_group_code
 
             if item_group:
-                item_group_code = frappe.db.get_value('Item Group', item_group, 'item_group_code')
-                item_code = parent_item_group_code+subitem_group_code+item_group_code
+                # item_group_code = frappe.db.get_value('Item Group', item_group, 'item_group_code')
+                item_group_code = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
+                item_code = subitem_group_code+"-"+item_group_code
 
                 if cur_item_id:
-                    item_code = parent_item_group_code+subitem_group_code+item_group_code+cur_item_id
+                    item_code = subitem_group_code+"-"+item_group_code+"-"+cur_item_id
 
     return item_code
 
@@ -1050,13 +1053,13 @@ def warehouse_naming_series(doc, method):
 
 @frappe.whitelist(allow_guest=True)
 def item_group_naming_series(doc, method):
-    doc.name = doc.item_group_code+'-'+doc.item_group_name
+    # doc.name = doc.item_group_code+'-'+doc.item_group_name
+    pass
 
 @frappe.whitelist(allow_guest=True)
 def item_naming_series(doc, method):
     doc.name = doc.item_code
-
-
+    doc.item_name = doc.item_code
 
 @frappe.whitelist(allow_guest=True)
 def validate_get_warehouse_parent(doc, method):
@@ -1068,15 +1071,26 @@ def validate_get_warehouse_parent(doc, method):
 
     doc.warehouse_code = str(int(new_warehouse_code_final)).zfill(3)
 
+@frappe.whitelist()
+def validate_item_group(doc, method):
+    if doc.parent_item_group and doc.parent_item_group != 'All Item Group' and not doc.one_fm_item_group_descriptions:
+        set_item_group_description_form_parent(doc)
 
+def set_item_group_description_form_parent(doc):
+    parent = frappe.get_doc('Item Group', doc.parent_item_group)
+    if parent.one_fm_item_group_descriptions:
+        for desc in parent.one_fm_item_group_descriptions:
+            item_group_description = doc.append('one_fm_item_group_descriptions')
+            item_group_description.description_attribute = desc.description_attribute
+            item_group_description.from_parent = True
 
 @frappe.whitelist(allow_guest=True)
 def validate_get_item_group_parent(doc, method):
-    first_parent = doc.parent_item_group
-    second_parent = frappe.db.get_value('Item Group', {"name": first_parent}, 'parent_item_group')
-
-    if first_parent == 'All Item Groups' or second_parent == 'All Item Groups':
-        doc.is_group = 1
+    # first_parent = doc.parent_item_group
+    # second_parent = frappe.db.get_value('Item Group', {"name": first_parent}, 'parent_item_group')
+    #
+    # if first_parent == 'All Item Groups' or second_parent == 'All Item Groups':
+    #     doc.is_group = 1
 
     new_item_group_code = frappe.db.sql("select item_group_code+1 from `tabItem Group` where parent_item_group ='{0}' order by item_group_code desc limit 1".format(doc.parent_item_group))
     if new_item_group_code:

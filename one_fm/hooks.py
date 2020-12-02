@@ -55,7 +55,9 @@ doctype_js = {
 	"Job Offer": "public/js/doctype_js/job_offer.js",
 	"Price List": "public/js/doctype_js/price_list.js",
 	"Vehicle": "public/js/doctype_js/vehicle.js",
-	"Asset": "public/js/doctype_js/asset.js"
+	"Asset": "public/js/doctype_js/asset.js",
+	"Item": "public/js/doctype_js/item.js",
+	"Item Group": "public/js/doctype_js/item_group.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -141,7 +143,8 @@ doc_events = {
 	},
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",
-		"before_insert": "one_fm.utils.validate_get_item_group_parent"
+		"before_insert": "one_fm.utils.validate_get_item_group_parent",
+		"validate": "one_fm.utils.validate_item_group"
 	},
 	"Item": {
 		"autoname": "one_fm.utils.item_naming_series"
@@ -327,7 +330,7 @@ fixtures = [
 	},
 	{
 		"dt": "Custom Script",
-		'filters': [['dt', 'in', ['Job Opening', 'Item', 'Stock Entry', 'Warehouse', 'Supplier',
+		'filters': [['dt', 'in', ['Job Opening', 'Stock Entry', 'Warehouse', 'Supplier',
 		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
 	},
 	{

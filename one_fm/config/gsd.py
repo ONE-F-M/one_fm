@@ -210,6 +210,41 @@ def get_data():
 			]
 		},
 		{
+			"label": _("Item Description Masters"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Uniform Type",
+					"onboard": 1,
+					"description": _("Uniform Type"),
+				},
+				{
+					"type": "doctype",
+					"name": "Uniform Type Description",
+					"onboard": 1,
+					"description": _("Uniform Type Description"),
+				},
+				{
+					"type": "doctype",
+					"name": "Size",
+					"onboard": 1,
+					"description": _("Size"),
+				},
+				{
+					"type": "doctype",
+					"name": "Color",
+					"onboard": 1,
+					"description": _("Color"),
+				},
+				{
+					"type": "doctype",
+					"name": "Material",
+					"onboard": 1,
+					"description": _("Material"),
+				}
+			]
+		},
+		{
 			"label": _("Supplier"),
 			"items": [
 				{
