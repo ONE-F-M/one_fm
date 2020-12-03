@@ -1076,6 +1076,65 @@ def validate_item_group(doc, method):
     if doc.parent_item_group and doc.parent_item_group != 'All Item Group' and not doc.one_fm_item_group_descriptions:
         set_item_group_description_form_parent(doc)
 
+@frappe.whitelist()
+def before_insert_item(doc, method):
+    if not doc.item_id:
+        set_item_id(doc)
+    if not doc.item_code:
+        set_item_code(doc)
+    set_item_description(doc)
+
+def set_item_id(doc):
+    next_item_id = "0000"
+    item_id = get_item_id_series("All Item Groups", doc.subitem_group, doc.item_group)
+    if item_id:
+        next_item_id = str(int(item_id)+1)
+        for i in range(0, 4-len(next_item_id)):
+            next_item_id = '0'+next_item_id
+    doc.item_id = next_item_id
+
+def set_item_code(doc):
+    if doc.item_id:
+        doc.item_code = get_item_code("All Item Groups", doc.subitem_group, doc.item_group, doc.item_id)
+
+def set_item_description(doc):
+    final_description = ""
+    if doc.description1:
+        child_description = doc.append('item_descriptions')
+        child_description.description_attribute = "Uniform Type"
+        child_description.value = doc.description1
+    if doc.description2:
+        child_description = doc.append('item_descriptions')
+        child_description.description_attribute = "Uniform Type Description"
+        child_description.value = doc.description2
+    if doc.description3:
+        child_description = doc.append('item_descriptions')
+        child_description.description_attribute = "Size"
+        child_description.value = doc.description3
+    if doc.description4:
+        child_description = doc.append('item_descriptions')
+        child_description.description_attribute = "Color"
+        child_description.value = doc.description4
+    if doc.description5:
+        child_description = doc.append('item_descriptions')
+        child_description.description_attribute = "Material"
+        child_description.value = doc.description5
+    if doc.final_description:
+        child_description = doc.append('item_descriptions')
+        child_description.description_attribute = "Gender"
+        child_description.value = doc.final_description
+
+
+    if doc.one_fm_project:
+        final_description+=doc.one_fm_project
+    if doc.one_fm_designation:
+        final_description+=(' - ' if final_description else '')+doc.one_fm_designation
+    for item in doc.item_descriptions:
+        final_description+=(' - ' if final_description else '')+item.value
+    if doc.other_description:
+        final_description+=(' - ' if final_description else '')+doc.other_description
+    doc.description = final_description
+
 def set_item_group_description_form_parent(doc):
     parent = frappe.get_doc('Item Group', doc.parent_item_group)
     if parent.one_fm_item_group_descriptions:
