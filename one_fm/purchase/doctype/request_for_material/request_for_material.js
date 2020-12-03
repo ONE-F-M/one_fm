@@ -49,16 +49,16 @@ frappe.ui.form.on('Request for Material', {
 				frm.set_df_property('type', 'options', "\nIndividual\nProject");
 			}
 		}
-		frm.set_query('warehouse', function () {
-			if(frm.doc.type == 'Project'){
-				return {
-					filters: {
-						'one_fm_project': frm.doc.project,
-						'is_group': 0
-					}
-				};
-			}
-		});
+		// frm.set_query('warehouse', function () {
+		// 	if(frm.doc.type == 'Project'){
+		// 		return {
+		// 			filters: {
+		// 				'one_fm_project': frm.doc.project,
+		// 				'is_group': 0
+		// 			}
+		// 		};
+		// 	}
+		// });
 	},
 	make_custom_buttons: function(frm) {
 		if (frm.doc.docstatus == 1 && frm.doc.status == 'Approved') {
