@@ -147,7 +147,8 @@ doc_events = {
 		"validate": "one_fm.utils.validate_item_group"
 	},
 	"Item": {
-		"autoname": "one_fm.utils.item_naming_series"
+		"autoname": "one_fm.utils.item_naming_series",
+		"before_insert": "one_fm.utils.before_insert_item"
 	},
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
