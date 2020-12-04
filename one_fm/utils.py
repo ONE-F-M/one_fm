@@ -1082,6 +1082,13 @@ def before_insert_item(doc, method):
         set_item_id(doc)
     if not doc.item_code:
         set_item_code(doc)
+
+@frappe.whitelist()
+def validate_item(doc, method):
+    if not doc.item_barcode:
+        doc.item_barcode = doc.item_code
+    if not doc.parent_item_group:
+        doc.parent_item_group = "All Item Groups"
     set_item_description(doc)
 
 def set_item_id(doc):
@@ -1099,6 +1106,7 @@ def set_item_code(doc):
 
 def set_item_description(doc):
     final_description = ""
+    # For Uniform Import
     if doc.description1:
         child_description = doc.append('item_descriptions')
         child_description.description_attribute = "Uniform Type"
