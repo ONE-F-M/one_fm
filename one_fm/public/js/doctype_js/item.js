@@ -15,6 +15,12 @@ frappe.ui.form.on('Item', {
 				]
 			};
 		});
+		frm.set_query("uniform_type_description", function() {
+			return {
+				query: "one_fm.utils.filter_uniform_type_description",
+				filters: {'uniform_type': frm.doc.uniform_type}
+			}
+		});
 	},
 	validate: function(frm){
 		frm.set_value("item_barcode", cur_frm.doc.item_code)
@@ -24,6 +30,12 @@ frappe.ui.form.on('Item', {
 		}
 		if(frm.doc.one_fm_designation){
 			final_description+=(final_description?' - ':'')+frm.doc.one_fm_designation
+		}
+		if(frm.doc.uniform_type){
+			final_description+=(final_description?' - ':'')+frm.doc.uniform_type
+		}
+		if(frm.doc.uniform_type_description){
+			final_description+=(final_description?' - ':'')+frm.doc.uniform_type_description
 		}
 		frm.doc.item_descriptions.forEach((item, i) => {
 			final_description+=(final_description?' - ':'')+item.value
@@ -60,11 +72,8 @@ frappe.ui.form.on('Item', {
 				},
 				callback: function(r) {
 					if(r.message){
-						console.log(r.message)
 						var new_item_id = String(parseInt(r.message)+1)
-						console.log(new_item_id)
 						var final_item_id = new_item_id.padStart(4, '0')
-						console.log(final_item_id)
 						frm.set_value("item_id", final_item_id)
 					}
 				}
@@ -78,18 +87,29 @@ frappe.ui.form.on('Item', {
 					filters: {'name': frm.doc.item_group}
 				},
 				callback: function(ret) {
+					frm.set_value('have_uniform_type_and_description', false);
+					frm.clear_table('item_descriptions');
 					if(ret && ret.message){
-						frm.clear_table('item_descriptions');
 					  if(ret.message.one_fm_item_group_descriptions){
 					    ret.message.one_fm_item_group_descriptions.forEach((item, i) => {
-					      let desc = frappe.model.add_child(frm.doc, 'Item Description', 'item_descriptions');
-					      frappe.model.set_value(desc.doctype, desc.name, 'description_attribute', item.description_attribute);
+								if(item.description_attribute == "Uniform Type" || item.description_attribute == "Uniform Type Description"){
+									frm.set_value('have_uniform_type_and_description', true);
+								}
+								else{
+									let desc = frappe.model.add_child(frm.doc, 'Item Description', 'item_descriptions');
+						      frappe.model.set_value(desc.doctype, desc.name, 'description_attribute', item.description_attribute);
+								}
 					    });
 					  }
-					  frm.refresh_field('item_descriptions');
 					}
+					frm.refresh_field('item_descriptions');
 				}
 			});
+		}
+		else{
+			frm.set_value('have_uniform_type_and_description', false);
+			frm.clear_table('item_descriptions');
+			frm.refresh_field('item_descriptions');
 		}
 	},
 	item_id: function(frm) {
