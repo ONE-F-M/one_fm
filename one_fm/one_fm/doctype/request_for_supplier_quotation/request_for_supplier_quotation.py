@@ -8,6 +8,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url, cint
 from frappe.core.doctype.communication.email import make
+from erpnext.accounts.party import get_party_account_currency, get_party_details
+from six import string_types
 
 
 class RequestforSupplierQuotation(Document):
@@ -87,3 +89,50 @@ def get_list_context(context=None):
 		'title': _('Request for Supplier Quotation'),
 	})
 	return list_context
+
+# This method is used to make supplier quotation from supplier's portal.
+@frappe.whitelist()
+def create_supplier_quotation(doc):
+    if isinstance(doc, string_types):
+        doc = json.loads(doc)
+
+    # try:
+    sq_doc = frappe.get_doc({
+    "doctype": "Quotation From Supplier",
+    "supplier": doc.get('supplier'),
+    "terms": doc.get("terms"),
+    "company": doc.get("company"),
+    "currency": doc.get('currency') or get_party_account_currency('Supplier', doc.get('supplier'), doc.get('company')),
+    "buying_price_list": doc.get('buying_price_list') or frappe.db.get_value('Buying Settings', None, 'buying_price_list')
+    })
+    add_items(sq_doc, doc.get('supplier'), doc.get('items'))
+    sq_doc.flags.ignore_permissions = True
+    sq_doc.run_method("set_missing_values")
+    sq_doc.save()
+    frappe.msgprint(_("Quotation From Supplier {0} created").format(sq_doc.name))
+    return sq_doc.name
+    # except Exception:
+    # return None
+
+def add_items(sq_doc, supplier, items):
+	for data in items:
+		if data.get("qty") > 0:
+			if isinstance(data, dict):
+				data = frappe._dict(data)
+
+			create_rfq_items(sq_doc, supplier, data)
+
+def create_rfq_items(sq_doc, supplier, data):
+	sq_doc.append('items', {
+		"item_code": data.item_code,
+		"item_name": data.item_name,
+		"description": data.description,
+		"qty": data.qty,
+        "uom": "Nos",
+		"rate": data.rate,
+        "amount": data.amount,
+		"supplier_part_no": frappe.db.get_value("Item Supplier", {'parent': data.item_code, 'supplier': supplier}, "supplier_part_no"),
+		"warehouse": data.warehouse or '',
+		"request_for_quotation_item": data.name,
+		"request_for_quotation": data.parent
+	})

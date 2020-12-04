@@ -818,6 +818,7 @@
    "options": "Request for Supplier Quotation"
   },
   {
+   "default": "Today",
    "fieldname": "estimated_delivery_date",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -837,7 +838,7 @@
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-07-23 18:21:54.042532",
+ "modified": "2020-12-05 02:05:52.757065",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Quotation From Supplier",
