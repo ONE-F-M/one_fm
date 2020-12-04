@@ -6,7 +6,8 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "uniform_type_description"
+  "uniform_type_description",
+  "uniform_types"
  ],
  "fields": [
   {
@@ -16,10 +17,18 @@
    "label": "Uniform Type Description",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "uniform_types",
+   "fieldtype": "Table",
+   "label": "Uniform Types",
+   "options": "Uniform Description Type",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2020-12-02 06:34:51.447466",
+ "modified": "2020-12-04 08:07:57.254772",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Uniform Type Description",

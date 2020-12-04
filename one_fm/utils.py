@@ -1107,36 +1107,35 @@ def set_item_code(doc):
 def set_item_description(doc):
     final_description = ""
     # For Uniform Import
-    if doc.description1:
-        child_description = doc.append('item_descriptions')
-        child_description.description_attribute = "Uniform Type"
-        child_description.value = doc.description1
-    if doc.description2:
-        child_description = doc.append('item_descriptions')
-        child_description.description_attribute = "Uniform Type Description"
-        child_description.value = doc.description2
-    if doc.description3:
-        child_description = doc.append('item_descriptions')
-        child_description.description_attribute = "Size"
-        child_description.value = doc.description3
-    if doc.description4:
-        child_description = doc.append('item_descriptions')
-        child_description.description_attribute = "Color"
-        child_description.value = doc.description4
-    if doc.description5:
-        child_description = doc.append('item_descriptions')
-        child_description.description_attribute = "Material"
-        child_description.value = doc.description5
-    if doc.final_description:
-        child_description = doc.append('item_descriptions')
-        child_description.description_attribute = "Gender"
-        child_description.value = doc.final_description
+    if doc.uniform_type or doc.uniform_type_description:
+        doc.have_uniform_type_and_description = True
+    if not doc.item_descriptions:
+        if doc.description3:
+            child_description = doc.append('item_descriptions')
+            child_description.description_attribute = "Size"
+            child_description.value = doc.description3
+        if doc.description4:
+            child_description = doc.append('item_descriptions')
+            child_description.description_attribute = "Color"
+            child_description.value = doc.description4
+        if doc.description5:
+            child_description = doc.append('item_descriptions')
+            child_description.description_attribute = "Material"
+            child_description.value = doc.description5
+        if doc.final_description:
+            child_description = doc.append('item_descriptions')
+            child_description.description_attribute = "Gender"
+            child_description.value = doc.final_description
 
 
     if doc.one_fm_project:
         final_description+=doc.one_fm_project
     if doc.one_fm_designation:
         final_description+=(' - ' if final_description else '')+doc.one_fm_designation
+    if doc.uniform_type:
+        final_description+=(' - ' if final_description else '')+doc.uniform_type
+    if doc.uniform_type_description:
+        final_description+=(' - ' if final_description else '')+doc.uniform_type_description
     for item in doc.item_descriptions:
         final_description+=(' - ' if final_description else '')+item.value
     if doc.other_description:
@@ -1175,6 +1174,24 @@ def get_item_id_series(parent_item_group, subitem_group, item_group):
         return previous_item_id[0][0]
     else:
         return '0000'
+
+def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, filters):
+	query = """
+		select
+			parent
+		from
+			`tabUniform Description Type`
+		where
+			uniform_type = %(uniform_type)s and uniform_type like %(txt)s
+			limit %(start)s, %(page_len)s"""
+	return frappe.db.sql(query,
+		{
+			'uniform_type': filters.get("uniform_type"),
+			'start': start,
+			'page_len': page_len,
+			'txt': "%%%s%%" % txt
+		}
+	)
 
 def validate_job_applicant(doc, method):
     validate_transferable_field(doc)
