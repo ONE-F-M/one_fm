@@ -12,6 +12,12 @@ frappe.ui.form.on('Request for Purchase', {
 			frm.set_df_property('items_to_order', 'hidden', true);
 			frm.set_df_property('get_requested_items_to_order', 'hidden', true);
 		}
+		if(!frm.doc.approver || (frm.doc.approver != frm.doc.__onload.approver)){
+			frm.set_value('approver', frm.doc.__onload.approver);
+		}
+		if(!frm.doc.accepter || (frm.doc.accepter != frm.doc.__onload.accepter)){
+			frm.set_value('accepter', frm.doc.__onload.accepter);
+		}
 	},
 	status: function(frm) {
 		if(frm.doc.status && frm.doc.status == 'Rejected'){

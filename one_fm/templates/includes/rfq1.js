@@ -76,7 +76,7 @@ rfq1 = Class.extend({
 			frappe.freeze();
 			frappe.call({
 				type: "POST",
-				method: "erpnext.buying.doctype.request_for_quotation.request_for_quotation.create_supplier_quotation",
+				method: "one_fm.one_fm.doctype.request_for_supplier_quotation.request_for_supplier_quotation.create_supplier_quotation",
 				args: {
 					doc: doc
 				},
@@ -85,7 +85,8 @@ rfq1 = Class.extend({
 					frappe.unfreeze();
 					if(r.message){
 						$('.btn-sm').hide()
-						window.location.href = "/supplier-quotations/" + encodeURIComponent(r.message);
+						// window.location.href = "/supplier-quotations/" + encodeURIComponent(r.message);
+						window.location.href = "/rfq1";
 					}
 				}
 			})
