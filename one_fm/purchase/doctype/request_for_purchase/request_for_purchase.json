@@ -14,6 +14,8 @@
   "column_break1",
   "transaction_date",
   "request_for_material",
+  "accepter",
+  "approver",
   "section_break_5",
   "requested_by",
   "employee",
@@ -218,12 +220,28 @@
    "fieldname": "get_requested_items_to_order",
    "fieldtype": "Button",
    "label": "Get Requested Items to Order"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "accepter",
+   "fieldtype": "Link",
+   "label": "Accepter",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "approver",
+   "fieldtype": "Link",
+   "label": "Approver",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-11-27 23:36:15.614693",
+ "modified": "2020-12-05 00:38:04.331739",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",
