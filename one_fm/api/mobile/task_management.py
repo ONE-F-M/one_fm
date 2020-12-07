@@ -12,7 +12,7 @@ def get_tasks():
 		print(user, user_employee)
 		tasks = frappe.db.sql("""
 			SELECT
-				name, subject, project, description, status
+				name, subject, project, site, description, status
 			FROM `tabTask`
 			WHERE
 				name IN

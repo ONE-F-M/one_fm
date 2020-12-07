@@ -1235,7 +1235,7 @@ function escape_values(string){
 
 // Setup filters data on left sidebar
 function setup_filters(page){
-	frappe.db.get_value("Employee", {"user_id": "k.sharma@armor-services.com"}, ["name"])
+	frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
 	.then(res => {
 		let {name} = res.message;
 		page.employee_id = name;

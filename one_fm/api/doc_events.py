@@ -32,6 +32,7 @@ def employee_checkin_validate(doc, method):
 			"IN" : "Arrive Late",
 			"OUT": "Leave Early"
 		}
+		existing_perm = None
 		checkin_time = get_datetime(doc.time)
 		shift_actual_timings = get_actual_start_end_datetime_of_shift(doc.employee, get_datetime(doc.time), True)
 		prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))

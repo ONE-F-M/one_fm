@@ -85,7 +85,7 @@ def get_weekly_staff_roster(start_date, end_date):
 	
 		roster = frappe.db.sql("""
 			SELECT shift, employee, date, employee_availability, post_type
-			FROM `tabRoster`
+			FROM `tabEmployee Schedule`
 			WHERE employee="{emp}"
 			AND date BETWEEN date("{start_date}") AND date("{end_date}")
 		""".format(emp=user_employee, start_date=start_date, end_date=end_date), as_dict=1)
