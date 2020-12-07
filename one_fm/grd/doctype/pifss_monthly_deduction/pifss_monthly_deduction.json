@@ -1,0 +1,62 @@
+{
+ "creation": "2020-11-05 21:36:26.021218",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "attach_report",
+  "data_2",
+  "deduction_month",
+  "section_break_4",
+  "deductions"
+ ],
+ "fields": [
+  {
+   "description": "Data will be imported from attached report",
+   "fieldname": "attach_report",
+   "fieldtype": "Attach",
+   "label": "Attach Monthly Deduction Report"
+  },
+  {
+   "fieldname": "data_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "deduction_month",
+   "fieldtype": "Date",
+   "label": "Due Date"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "deductions",
+   "fieldtype": "Table",
+   "label": "Deductions",
+   "options": "PIFSS Monthly Deduction Employees"
+  }
+ ],
+ "modified": "2020-11-12 19:53:11.158764",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PIFSS Monthly Deduction",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
