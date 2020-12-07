@@ -248,18 +248,20 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 				rosters = frappe.get_list("Employee Schedule", {"employee": employee["employee"],"date": ('>=', start_date)})
 				rosters = [roster.name for roster in rosters]
 				rosters = ', '.join(['"{}"'.format(value) for value in rosters])
-				frappe.db.sql("""
-					delete from `tabEmployee Schedule`
-					where name in ({ids})
-				""".format(ids=rosters))
+				if rosters:
+					frappe.db.sql("""
+						delete from `tabEmployee Schedule`
+						where name in ({ids})
+					""".format(ids=rosters))
 			if end_date and cint(never_end) != 1:
 				rosters = frappe.get_list("Employee Schedule", {"employee": employee["employee"], "date": ['between', (start_date, end_date)]})
 				rosters = [roster.name for roster in rosters]
 				rosters = ', '.join(['"{}"'.format(value) for value in rosters])
-				frappe.db.sql("""
-					delete from `tabEmployee Schedule`
-					where name in ({ids})
-				""".format(ids=rosters))
+				if rosters:
+					frappe.db.sql("""
+						delete from `tabEmployee Schedule`
+						where name in ({ids})
+					""".format(ids=rosters))
 		frappe.db.commit()
 		return True
 	except Exception as e:
@@ -411,6 +413,7 @@ def set_dayoff(employee, date):
 	doc.site = None
 	doc.project = None
 	doc.employee_availability = "Day Off"
+	doc.post_abbrv = None
 	doc.save()
 
 

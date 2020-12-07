@@ -36,6 +36,7 @@
   {
    "fieldname": "post_abbrv",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Post Abbreviation"
   },
   {
@@ -57,7 +58,7 @@
    "fieldtype": "Section Break"
   }
  ],
- "modified": "2020-10-01 01:35:27.183960",
+ "modified": "2020-12-07 11:46:59.196144",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Type",
