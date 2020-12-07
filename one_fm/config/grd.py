@@ -17,7 +17,7 @@ def get_data():
 				},
 			]
 		},
-        {
+		{
 			"label": _("Public Authority for Manpower"),
 			"items": [
 				{
@@ -35,7 +35,7 @@ def get_data():
 				},
 			]
 		},
-         {
+		 {
 			"label": _("Public Institution for Social Security"),
 			"items": [
 				{
@@ -45,7 +45,7 @@ def get_data():
 				},
 			]
 		},
-         {
+		 {
 			"label": _("Ministry of Commerce and Industry"),
 			"items": [
 				{
@@ -55,7 +55,7 @@ def get_data():
 				},
 			]
 		},
-        {
+		{
 			"label": _("Public Authority for Civil Information"),
 			"items": [
 				{
@@ -65,7 +65,7 @@ def get_data():
 				},
 			]
 		},
-        {
+		{
 			"label": _("GRD Settings"),
 			"items": [
 				{
@@ -84,6 +84,25 @@ def get_data():
 					"onboard": 1,
 				},
 			]
+		},
+		{
+			"label": _("PIFSS"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "PIFSS Form 103",
+					"onboard": 1,
+				},
+				{
+					"type": "doctype",
+					"name": "PIFSS Form 55",
+					"onboard": 1,
+				},
+				{
+					"type": "doctype",
+					"name": "PIFSS Monthly Deduction",
+					"onboard": 1,
+				},
+			]
 		}
-        
 	]

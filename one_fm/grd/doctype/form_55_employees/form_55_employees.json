@@ -32,6 +32,10 @@
    "label": "Salary"
   },
   {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "social_allowance",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -48,16 +52,12 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Qualification Bonus"
-  },
-  {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
- "modified": "2020-11-02 10:08:50.080891",
+ "modified": "2020-11-12 19:16:58.059214",
  "modified_by": "Administrator",
- "module": "PIFSS",
+ "module": "GRD",
  "name": "Form 55 Employees",
  "owner": "Administrator",
  "permissions": [],

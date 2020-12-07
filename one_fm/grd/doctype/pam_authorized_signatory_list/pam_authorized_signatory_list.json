@@ -1,15 +1,17 @@
 {
- "actions": [],
  "autoname": "PAS-.YYYY.-.MM.-.######",
  "creation": "2019-12-15 22:16:03.398590",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "company_name_arabic",
+  "company_location",
+  "company_paci_number",
+  "column_break_3",
   "pam_file_name",
   "pam_file_number",
-  "column_break_3",
-  "issuer_number",
+  "pam_issuer_number",
   "section_break_5",
   "authorized_signatory",
   "section_break_7",
@@ -54,11 +56,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "issuer_number",
-   "fieldtype": "Data",
-   "label": "Issuer Number"
-  },
-  {
    "fieldname": "section_break_5",
    "fieldtype": "Section Break"
   },
@@ -69,10 +66,29 @@
   {
    "fieldname": "column_break_9",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company_name_arabic",
+   "fieldtype": "Data",
+   "label": "Company Name Arabic"
+  },
+  {
+   "fieldname": "company_location",
+   "fieldtype": "Data",
+   "label": "Company Location"
+  },
+  {
+   "fieldname": "company_paci_number",
+   "fieldtype": "Data",
+   "label": "Company PACI Number"
+  },
+  {
+   "fieldname": "pam_issuer_number",
+   "fieldtype": "Data",
+   "label": "PAM Issuer Number"
   }
  ],
- "links": [],
- "modified": "2020-09-01 09:04:50.977677",
+ "modified": "2020-11-10 10:00:58.454723",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Authorized Signatory List",

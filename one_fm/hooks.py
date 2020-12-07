@@ -274,6 +274,9 @@ scheduler_events = {
 		],
 		"0 6 * * *":[
 			'one_fm.one_fm.sales_invoice_custom.create_sales_invoice'
+		],
+		"0 */48 * * *": [
+			'one_fm.one_fm.pifss.doctype.pifss_form_103.pifss_form_103.notify_open_pifss'
 		]
 	}
 }

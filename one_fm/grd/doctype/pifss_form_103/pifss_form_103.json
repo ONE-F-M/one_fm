@@ -65,7 +65,7 @@
    "options": "Registration\nEnd of Service"
   },
   {
-   "fieldname": "column_break_2",
+   "fieldname": "column_break_4",
    "fieldtype": "Column Break"
   },
   {
@@ -75,15 +75,56 @@
    "options": "Submitted\nUnder Process\nAccepted\nRejected"
   },
   {
-   "fieldname": "employee_details_section",
-   "fieldtype": "Section Break",
-   "label": "Employee Details"
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "bold": 1,
+   "default": "REG-.{employee}.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "no_copy": 1,
+   "options": "REG-.{employee}.-\nEND-.{employee}.-",
+   "print_hide": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "company_name_arabic",
+   "fieldtype": "Data",
+   "label": "Company name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company_pifss_registration_no",
+   "fieldtype": "Data",
+   "label": "Company PIFSS Registration no",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "authorized_signatory",
    "fieldtype": "Link",
    "label": "Authorized Signatory",
-   "options": "Authorized Signatory"
+   "options": "PAM Authorized Signatory List"
+  },
+  {
+   "fieldname": "employee_details_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
   },
   {
    "fieldname": "employee",
@@ -118,13 +159,13 @@
    "label": "Third Name"
   },
   {
-   "fieldname": "column_break_13",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "fourth_name",
    "fieldtype": "Data",
    "label": "Fourth name"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "employee.one_fm_civil_id",
@@ -156,8 +197,13 @@
   },
   {
    "fieldname": "nationality_subject",
-   "fieldtype": "Data",
-   "label": "Nationality Subject"
+   "fieldtype": "Select",
+   "label": "Nationality Subject",
+   "options": "\n\u0627\u0644\u0623\u0648\u0644\u064a\n\u0627\u0644\u062b\u0627\u0646\u064a\u0629\n\u0627\u0644\u062b\u0627\u0644\u062b\u0629\n\u0627\u0644\u0631\u0627\u0628\u0639\u0629\n\u0627\u0644\u062e\u0627\u0645\u0633\u0629\n\u0627\u0644\u0633\u0627\u0628\u0639\u0629\n\u0627\u0644\u062b\u0627\u0645\u0646\u0629"
+  },
+  {
+   "fieldname": "data_20",
+   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "employee.date_of_birth",
@@ -171,18 +217,6 @@
    "label": "Date of naturalization"
   },
   {
-   "fieldname": "company_name_arabic",
-   "fieldtype": "Data",
-   "label": "Company name in Arabic",
-   "read_only": 1
-  },
-  {
-   "fieldname": "company_pifss_registration_no",
-   "fieldtype": "Data",
-   "label": "Company PIFSS Registration no",
-   "read_only": 1
-  },
-  {
    "fieldname": "registration_details_section",
    "fieldtype": "Section Break",
    "label": "Registration Details"
@@ -194,15 +228,27 @@
    "label": "Date of Joining"
   },
   {
+   "fieldname": "column_break_29",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "subscription_start_date",
    "fieldtype": "Date",
    "label": "Subscription Start Date"
+  },
+  {
+   "fieldname": "column_break_31",
+   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "position",
    "fieldtype": "Data",
    "label": "Position"
+  },
+  {
+   "fieldname": "column_break_33",
+   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "employee.one_fm_basic_salary",
@@ -217,19 +263,23 @@
    "label": "End of Service"
   },
   {
+   "fieldname": "attach_resignationtermination",
+   "fieldtype": "Attach",
+   "label": "Attach Resignation/Termination"
+  },
+  {
    "fieldname": "end_date",
    "fieldtype": "Date",
    "label": "End Date"
   },
   {
+   "fieldname": "column_break_37",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "reason_for_resignationtermination",
    "fieldtype": "Small Text",
    "label": "Reason for Resignation/Termination"
-  },
-  {
-   "fieldname": "attach_resignationtermination",
-   "fieldtype": "Attach",
-   "label": "Attach Resignation/Termination"
   },
   {
    "depends_on": "eval:doc.request_type==\"Registration\"",
@@ -243,6 +293,10 @@
    "label": "Registration Application Number"
   },
   {
+   "fieldname": "column_break_41",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "attach_signed_form",
    "fieldtype": "Attach",
    "label": "Attach Signed Form"
@@ -253,66 +307,13 @@
    "label": "Civil ID Copy"
   },
   {
-   "fieldname": "date_of_birth_certificate",
-   "fieldtype": "Attach",
-   "label": "Date of Birth Certificate"
-  },
-  {
-   "fieldname": "section_break_4",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "data_20",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_29",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_31",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_33",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_41",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "column_break_44",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_37",
-   "fieldtype": "Column Break"
-  },
-  {
-   "bold": 1,
-   "default": "REG-.{employee}.-",
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Series",
-   "no_copy": 1,
-   "options": "REG-.{employee}.-\nEND-.{employee}.-",
-   "print_hide": 1,
-   "reqd": 1,
-   "set_only_once": 1
-  },
-  {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_8",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
+   "fieldname": "date_of_birth_certificate",
+   "fieldtype": "Attach",
+   "label": "Date of Birth Certificate"
   },
   {
    "fieldname": "nationality_proof",
@@ -320,9 +321,9 @@
    "label": "Nationality Proof"
   }
  ],
- "modified": "2020-11-02 08:56:00.267850",
+ "modified": "2020-11-18 21:43:02.102173",
  "modified_by": "Administrator",
- "module": "PIFSS",
+ "module": "GRD",
  "name": "PIFSS Form 103",
  "owner": "Administrator",
  "permissions": [
