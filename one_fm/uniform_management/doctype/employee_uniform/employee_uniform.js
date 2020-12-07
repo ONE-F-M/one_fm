@@ -13,6 +13,7 @@ frappe.ui.form.on('Employee Uniform', {
 	},
 	type: function(frm) {
 		set_uniform_details(frm);
+		set_warehouse_lable(frm);
 	},
 	get_item_data: function(frm, item) {
 		if (!item.item || frm.doc.type=='Return') return;
@@ -42,6 +43,16 @@ frappe.ui.form.on('Employee Uniform', {
 		});
 	},
 });
+
+var set_warehouse_lable = function(frm) {
+	frm.set_df_property('warehouse', 'label', "Warehouse");
+	if(frm.doc.type == "Issue"){
+		frm.set_df_property('warehouse', 'label', "Issue From");
+	}
+	else if(frm.doc.type == "Return"){
+		frm.set_df_property('warehouse', 'label', "Return To");
+	}
+};
 
 frappe.ui.form.on('Employee Uniform Item', {
 	uniforms_add: function(frm, cdt, cdn) {
