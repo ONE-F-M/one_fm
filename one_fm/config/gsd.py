@@ -146,6 +146,17 @@ def get_data():
 			]
 		},
 		{
+			"label": _("Uniform Management Reports"),
+			"items": [
+				{
+					"type": "report",
+					"name": "Uniform Details",
+					"is_query_report": True,
+					"label": _("Uniform Details")
+				}
+			]
+		},
+		{
 			"label": _("Purchasing"),
 			"icon": "fa fa-star",
 			"items": [
