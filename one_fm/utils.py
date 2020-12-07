@@ -1049,7 +1049,8 @@ def pam_authorized_signatory():
 
 @frappe.whitelist(allow_guest=True)
 def warehouse_naming_series(doc, method):
-    doc.name = doc.warehouse_code+' - '+doc.warehouse_name
+    # doc.name = doc.warehouse_code+' - '+doc.warehouse_name
+    pass
 
 @frappe.whitelist(allow_guest=True)
 def item_group_naming_series(doc, method):
