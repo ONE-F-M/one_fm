@@ -9,6 +9,7 @@
   "naming_series",
   "type",
   "reason_for_return",
+  "warehouse",
   "employee",
   "employee_name",
   "civil_id",
@@ -124,7 +125,7 @@
    "fieldname": "reason_for_return",
    "fieldtype": "Select",
    "label": "Reason for Return",
-   "options": "\nEmployee Exit\nEmployee Transfer\nItem Damage\nItem Expired"
+   "options": "\nEmployee Exit\nEmployee Transfer\nItem Damage\nItem Expired\nItem Exchange"
   },
   {
    "fieldname": "naming_series",
@@ -146,11 +147,18 @@
    "fieldtype": "Currency",
    "label": "Pay Back to Company",
    "read_only": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-10-13 13:09:46.436226",
+ "modified": "2020-12-07 11:37:00.193400",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",
