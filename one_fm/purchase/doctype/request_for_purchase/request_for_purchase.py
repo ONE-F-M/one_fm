@@ -31,7 +31,8 @@ class RequestforPurchase(Document):
 		if self.items_to_order:
 			for item in self.items_to_order:
 				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
-					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description)
+					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description,
+					warehouse=self.warehouse)
 
 	def accept_approve_reject_request_for_purchase(self, status, approver, accepter, reason_for_rejection=None):
 		page_link = get_url("/desk#Form/Request for Purchase/" + self.name)
@@ -167,6 +168,7 @@ def create_purchase_order(**args):
 	else:
 		po = frappe.new_doc("Purchase Order")
 		po.transaction_date = nowdate()
+		po.set_warehouse = args.warehouse
 		# po.schedule_date = add_days(nowdate(), 1)
 		# po.company = args.company
 		po.supplier = args.supplier
