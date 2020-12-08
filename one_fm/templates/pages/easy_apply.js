@@ -1,8 +1,37 @@
+$(document).ready(function () {
+  get_nationality();
+});
+
+function get_nationality() {
+  $("#nationality").empty();
+  const job_container = document.getElementById("nationality");
+  job_container.innerHTML +=  `<option></option>`;
+  frappe.call({
+    method: "one_fm.templates.pages.easy_apply.get_nationality_list",
+    callback: function (r) {
+      if (r.message) {
+        var jobs = r.message;
+        jobs.forEach((job, i) => {
+          job_container.innerHTML +=  `
+            <option>${job.name}</option>
+          `;
+        });
+      }
+    }
+  });
+
+};
+
 function easy_apply() {
   frappe.call({
     method: 'one_fm.templates.pages.job_application.easy_apply',
     args: {
-      applicant_name: $('#fullName').val(),
+      first_name: $('#firstName').val(),
+      second_name: $('#secondName').val() || '',
+      third_name: $('#thirdName').val() || '',
+      last_name: $('#lastName').val(),
+      nationality: $('#nationality').val(),
+      civil_id: $('#civilID').val() || '',
       applicant_email: $('#email').val(),
       applicant_mobile: $('#phone').val(),
       cover_letter: $('#coverLetter').val(),
@@ -16,7 +45,11 @@ function easy_apply() {
         'Your message has been sent.',
         'success'
         );
-        $('#fullName').val('');
+        $('#firstName').val('');
+        $('#secondName').val('');
+        $('#thirdName').val('');
+        $('#lastName').val('');
+        $('#nationality').val('');
         $('#email').val('');
         $('#phone').val('');
         // $('#resume').val('');

@@ -16,9 +16,13 @@ def get_dummy():
     return doc
 
 @frappe.whitelist(allow_guest=True)
-def easy_apply(applicant_name, applicant_email, applicant_mobile, cover_letter, job_opening, resume=None):
+def easy_apply(first_name, second_name, third_name, last_name, nationality, civil_id, applicant_email, applicant_mobile,
+    cover_letter, job_opening, resume=None):
     sender = frappe.get_value("Email Account", filters={"default_outgoing": 1}, fieldname="email_id") or None
-
+    applicant_name = first_name
+    applicant_name += (" "+second_name) if second_name else ""
+    applicant_name += (" "+third_name) if third_name else ""
+    applicant_name += " "+last_name
     job = frappe.get_doc('Job Opening', job_opening)
     erf_link = get_url("/desk#Form/ERF/" + job.one_fm_erf)
     job_link = get_url("/desk#Form/Job Opening/" + job.name)
@@ -32,7 +36,8 @@ def easy_apply(applicant_name, applicant_email, applicant_mobile, cover_letter, 
         {3}
         <br><br><br><b>Reference:</b> ERF <a href='{4}'>{5}</a> and Job Opening <a href='{6}'>{7}</a>
     """.format(applicant_name, applicant_email, applicant_mobile, cover_letter, erf_link, job.one_fm_erf, job_link, job.name)
-
+    create_job_applicant_for_easy_apply(applicant_name, first_name, second_name, third_name, last_name, nationality,
+        civil_id, applicant_email, applicant_mobile, cover_letter, job_opening)
     try:
         # Notify the HR User
         hr_user_to_get_notified = frappe.db.get_single_value('Hiring Settings', 'easy_apply_to') or 'hr@one-fm.com'
@@ -45,6 +50,28 @@ def easy_apply(applicant_name, applicant_email, applicant_mobile, cover_letter, 
         return 1
     except:
         return 0
+
+def create_job_applicant_for_easy_apply(applicant_name, first_name, second_name, third_name, last_name, nationality,
+        civil_id, applicant_email, applicant_mobile, cover_letter, job_opening, files=None):
+    job_applicant = frappe.db.exists(
+        "Job Applicant", {"job_title": job_opening, "email_id": applicant_email})
+    if job_applicant:
+        return job_applicant
+    else:
+        job_applicant = frappe.new_doc('Job Applicant')
+        job_applicant.job_title = job_opening
+        job_applicant.one_fm_erf = frappe.db.get_value('Job Opening', job_opening, "one_fm_erf")
+        job_applicant.applicant_name = applicant_name
+        job_applicant.one_fm_email_id = applicant_email
+        job_applicant.one_fm_first_name = first_name
+        job_applicant.one_fm_second_name = second_name
+        job_applicant.one_fm_third_name = third_name
+        job_applicant.one_fm_last_name = last_name
+        job_applicant.one_fm_nationality = nationality
+        job_applicant.one_fm_cid_number = civil_id
+        job_applicant.one_fm_contact_number = applicant_mobile
+        job_applicant.one_fm_is_easy_apply = True
+        job_applicant.insert(ignore_permissions=True)
 
 @frappe.whitelist(allow_guest=True)
 def create_job_applicant(job_opening, email_id, job_applicant_fields, languages=None, skills=None, files=None):
