@@ -183,7 +183,7 @@ def create_purchase_order(**args):
 		"uom": args.uom,
 		"qty": args.qty,
 		"rate": args.rate,
-		"schedule_date": getdate(args.delivery_date) if (args.delivery_date and nowdate() < args.delivery_date) else nowdate(),
+		"schedule_date": getdate(args.delivery_date) if (args.delivery_date and getdate(nowdate()) < getdate(args.delivery_date)) else getdate(nowdate()),
 		"expected_delivery_date": args.delivery_date
 	})
 	if not args.do_not_save:
