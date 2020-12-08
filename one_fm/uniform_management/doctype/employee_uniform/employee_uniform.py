@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe.utils import today, month_diff, add_days, getdate
 from frappe import _
 from erpnext.stock.get_item_details import get_item_details
+from frappe.model.mapper import get_mapped_doc
 
 class EmployeeUniform(Document):
 	def before_insert(self):
@@ -27,6 +28,7 @@ class EmployeeUniform(Document):
 				if item.issued_item_link:
 					returned = frappe.db.get_value('Employee Uniform Item', item.issued_item_link, 'returned')
 					frappe.db.set_value('Employee Uniform Item', item.issued_item_link, 'returned', returned+item.quantity)
+		make_stock_entry(self)
 
 	def validate(self):
 		if not self.uniforms:
@@ -110,6 +112,44 @@ class EmployeeUniform(Document):
 					unifrom_issue_ret.rate = uniform.rate
 					unifrom_issue_ret.issued_item_link = uniform.issued_item_link
 					unifrom_issue_ret.issued_on = uniform.issued_on
+
+def make_stock_entry(employee_uniform):
+	source_name = employee_uniform.name
+	target_doc=None
+	def update_item(obj, target, source_parent):
+		if employee_uniform.type == "Issue":
+			target.s_warehouse = employee_uniform.warehouse
+		else:
+			target.t_warehouse = employee_uniform.warehouse
+
+	def set_missing_values(source, target):
+		target.purpose = 'Material Receipt'
+		if employee_uniform.type == "Issue":
+			target.purpose = 'Material Issue'
+		target.run_method("calculate_rate_and_amount")
+		target.set_stock_entry_type()
+		target.set_job_card_data()
+
+	doclist = get_mapped_doc("Employee Uniform", source_name, {
+		"Employee Uniform": {
+			"doctype": "Stock Entry",
+			"validation": {
+				"docstatus": ["=", 1]
+			}
+		},
+		"Employee Uniform Item": {
+			"doctype": "Stock Entry Detail",
+			"field_map": {
+				"item": "item_code",
+				"quantity": "qty"
+			},
+			"postprocess": update_item,
+			"condition": lambda doc: doc.item
+		}
+	}, target_doc, set_missing_values)
+
+	doclist.save(ignore_permissions=True)
+	doclist.submit()
 
 def get_issued_item_quantity(item, employee):
 	issued_qty = 0
