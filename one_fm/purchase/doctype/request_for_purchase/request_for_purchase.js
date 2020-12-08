@@ -42,7 +42,10 @@ frappe.ui.form.on('Request for Purchase', {
 			}
 		}
 		if (frm.doc.docstatus == 1){
-			if("accepter" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.accepter && frm.doc.status == "Draft"){
+			if(frappe.session.user==frm.doc.owner && frm.doc.status == "Draft" && frm.doc.items_to_order && frm.doc.items_to_order.length > 0){
+				frm.add_custom_button(__('Send Request'), () => frm.events.send_request_for_purchase(frm, 'Draft Request')).addClass('btn-primary');
+			}
+			if("accepter" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.accepter && frm.doc.status == "Draft Request"){
 				frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_approve_request_for_purchase(frm, 'Accepted')).addClass('btn-primary');
 				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_purchase(frm, 'Rejected')).addClass('btn-danger');
 			}
@@ -68,6 +71,24 @@ frappe.ui.form.on('Request for Purchase', {
 			},
 		});
 		d.show();
+	},
+	send_request_for_purchase: function(frm, status) {
+		frappe.confirm(
+			__('Do You Want to Send this Request for Purchase'),
+			function(){
+				// Yes
+				frappe.call({
+					doc: frm.doc,
+					method: 'send_request_for_purchase',
+					callback(r) {
+						if (!r.exc) {
+							frm.reload_doc();
+						}
+					}
+				});
+			},
+			function(){} // No
+		);
 	},
 	confirm_accept_approve_request_for_purchase: function(frm, status) {
 		let msg_status = 'Approve';

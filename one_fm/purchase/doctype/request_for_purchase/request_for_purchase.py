@@ -13,6 +13,20 @@ class RequestforPurchase(Document):
 		self.set_onload('accepter', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_accepter'))
 		self.set_onload('approver', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver'))
 
+	def send_request_for_purchase(self):
+		self.notify_request_for_material_accepter()
+
+	def notify_request_for_material_accepter(self):
+		if self.accepter:
+			page_link = get_url("/desk#Form/Request for Purchase/" + self.name)
+			message = "<p>Please Review and Accept or Reject the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
+			subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
+			send_email(self, [self.accepter], message, subject)
+			create_notification_log(subject, message, [self.accepter], self)
+			self.status = "Draft Request"
+			self.save()
+			self.reload()
+
 	def make_purchase_order_for_quotation(self):
 		if self.items_to_order:
 			for item in self.items_to_order:
