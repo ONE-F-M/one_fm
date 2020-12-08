@@ -13,7 +13,10 @@ frappe.ui.form.on('Employee Uniform', {
 	},
 	type: function(frm) {
 		set_uniform_details(frm);
-		set_warehouse_lable(frm);
+		set_warehouse(frm);
+	},
+	reason_for_return: function(frm) {
+		set_warehouse(frm);
 	},
 	get_item_data: function(frm, item) {
 		if (!item.item || frm.doc.type=='Return') return;
@@ -44,13 +47,32 @@ frappe.ui.form.on('Employee Uniform', {
 	},
 });
 
-var set_warehouse_lable = function(frm) {
+var set_warehouse = function(frm) {
 	frm.set_df_property('warehouse', 'label', "Warehouse");
 	if(frm.doc.type == "Issue"){
 		frm.set_df_property('warehouse', 'label', "Issue From");
+		frappe.db.get_value('Uniform Management Settings', "", 'new_uniform_warehouse', function(r) {
+			if(r && r.new_uniform_warehouse){
+				frm.set_value('warehouse', r.new_uniform_warehouse);
+			}
+		});
 	}
 	else if(frm.doc.type == "Return"){
 		frm.set_df_property('warehouse', 'label', "Return To");
+		if(frm.doc.reason_for_return && frm.doc.reason_for_return == "Item Exchange"){
+			frappe.db.get_value('Uniform Management Settings', "", 'new_uniform_warehouse', function(r) {
+				if(r && r.new_uniform_warehouse){
+					frm.set_value('warehouse', r.new_uniform_warehouse);
+				}
+			});
+		}
+		else{
+			frappe.db.get_value('Uniform Management Settings', "", 'used_uniform_warehouse', function(r) {
+				if(r && r.used_uniform_warehouse){
+					frm.set_value('warehouse', r.used_uniform_warehouse);
+				}
+			});
+		}
 	}
 };
 
