@@ -1197,12 +1197,13 @@ def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, 
 def validate_job_applicant(doc, method):
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
-    validate_mandatory_fields(doc)
+    if not doc.one_fm_is_easy_apply:
+        validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     set_average_score(doc, method)
     # if doc.is_new():
     #     set_childs_for_application_web_form(doc, method)
-    if frappe.session.user != 'Guest':
+    if frappe.session.user != 'Guest' and not doc.one_fm_is_easy_apply:
         validate_mandatory_childs(doc)
     if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
         create_job_offer_from_job_applicant(doc.name)
