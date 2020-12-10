@@ -70,12 +70,13 @@ class EmployeeUniform(Document):
 	def validate_issued_no_of_items(self):
 		if self.designation:
 			uniforms = get_project_uniform_details(self.designation, self.project)
-			for item in self.uniforms:
-				uniform = sorted(uniforms, key=lambda k: k.item == item.item)
-				if uniform and len(uniform) == 1:
-					total_issued = item.quantity + get_issued_item_quantity(item.item, self.employee)
-					if total_issued > uniform[0].quantity:
-						frappe.throw(_("According to Designation Uniform Profile for {3} you can issue only {0} {1} of {2} in total".format(uniform[0].quantity, uniform[0].uom, uniform[0].item_name, self.designation)))
+			if uniforms:
+				for item in self.uniforms:
+					uniform = sorted(uniforms, key=lambda k: k.item == item.item)
+					if uniform and len(uniform) == 1:
+						total_issued = item.quantity + get_issued_item_quantity(item.item, self.employee)
+						if total_issued > uniform[0].quantity:
+							frappe.throw(_("According to Designation Uniform Profile for {3} you can issue only {0} {1} of {2} in total".format(uniform[0].quantity, uniform[0].uom, uniform[0].item_name, self.designation)))
 
 	def validate_return(self):
 		if self.type == 'Return':
