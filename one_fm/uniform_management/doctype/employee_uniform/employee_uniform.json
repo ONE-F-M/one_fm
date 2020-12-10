@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2020-09-24 17:08:53.538042",
  "doctype": "DocType",
@@ -166,13 +167,15 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-12-08 21:07:58.644578",
+ "modified": "2020-12-10 16:04:20.192471",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -182,6 +185,7 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

@@ -16,6 +16,10 @@ class EmployeeUniform(Document):
 			self.naming_series = 'EUR-.YYYY.-'
 		else:
 			self.naming_series = 'EUI-.YYYY.-'
+		if not self.employee and self.employee_id:
+			employee = frappe.db.get_value('Employee', {'employee_id': self.employee_id})
+			if employee:
+				self.employee = employee
 
 	def on_submit(self):
 		if self.type == "Issue":
@@ -35,10 +39,33 @@ class EmployeeUniform(Document):
 			frappe.throw(_("Uniforms required in Employee Uniform"))
 		self.validate_issue()
 		self.validate_return()
+		self.validate_items()
+
+	def validate_items(self):
+		for uniform in self.uniforms:
+			if self.issued_on and not uniform.issued_on:
+				uniform.issued_on = self.issued_on
+			if not uniform.rate:
+				args = {
+					'item_code': uniform.item,
+					'doctype': self.doctype,
+					'buying_price_list': frappe.defaults.get_defaults().buying_price_list,
+					'currency': frappe.defaults.get_defaults().currency,
+					'name': self.name,
+					'qty': uniform.quantity,
+					'company': self.company,
+					'conversion_rate': 1,
+					'plc_conversion_rate': 1
+				}
+				unifrom.rate = get_item_details(args).price_list_rate
+			if self.issued_on and not uniform.expire_on:
+				uniform.expire_on = frappe.utils.add_months(self.issued_on, 12)
 
 	def validate_issue(self):
 		if self.type == "Issue":
 			self.validate_issued_no_of_items()
+			if not self.warehouse:
+				self.warehouse = frappe.db.get_value("Uniform Management Settings", None, 'new_uniform_warehouse')
 
 	def validate_issued_no_of_items(self):
 		if self.designation:
@@ -57,6 +84,10 @@ class EmployeeUniform(Document):
 			self.validate_item_return_before_expiry()
 			if self.reason_for_return in ['Item Damage', 'Employee Exit']:
 				self.calculate_amount_pay_back()
+			if not self.warehouse:
+				self.warehouse = frappe.db.get_value("Uniform Management Settings", None, 'used_uniform_warehouse')
+				if self.reason_for_return == "Item Exchange":
+					self.warehouse = frappe.db.get_value("Uniform Management Settings", None, 'new_uniform_warehouse')
 
 	def validate_item_return_before_expiry(self):
 		if self.reason_for_return in ['Item Expired']:
