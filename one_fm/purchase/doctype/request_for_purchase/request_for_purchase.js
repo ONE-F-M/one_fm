@@ -4,14 +4,6 @@
 frappe.ui.form.on('Request for Purchase', {
 	refresh: function(frm) {
 		frm.events.make_custom_buttons(frm);
-		if(frm.doc.docstatus == 1){
-			frm.set_df_property('items_to_order', 'hidden', false);
-			frm.set_df_property('get_requested_items_to_order', 'hidden', false);
-		}
-		else{
-			frm.set_df_property('items_to_order', 'hidden', true);
-			frm.set_df_property('get_requested_items_to_order', 'hidden', true);
-		}
 		if(!frm.doc.approver || (frm.doc.approver != frm.doc.__onload.approver)){
 			frm.set_value('approver', frm.doc.__onload.approver);
 		}
@@ -163,5 +155,17 @@ frappe.ui.form.on('Request for Purchase', {
 			items_to_order.qty = item.qty
 		});
 		frm.refresh_fields();
+	},
+	supplier: function(frm) {
+		set_supplier_to_items_to_order(frm);
 	}
 });
+
+var set_supplier_to_items_to_order = function(frm){
+	if(frm.doc.items_to_order){
+		frm.doc.items_to_order.forEach((item) => {
+			frappe.model.set_value(item.doctype, item.name, 'supplier', frm.doc.supplier);
+		});
+		frm.refresh_field('items_to_order');
+	}
+}

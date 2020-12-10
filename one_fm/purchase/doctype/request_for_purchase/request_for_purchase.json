@@ -28,6 +28,7 @@
   "items_section",
   "items",
   "get_requested_items_to_order",
+  "supplier",
   "items_to_order",
   "technical_remarks",
   "notes_section",
@@ -211,12 +212,14 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus == 1",
    "fieldname": "items_to_order",
    "fieldtype": "Table",
    "label": "Items to Order",
    "options": "Request for Purchase Quotation Item"
   },
   {
+   "depends_on": "eval:doc.docstatus == 1",
    "fieldname": "get_requested_items_to_order",
    "fieldtype": "Button",
    "label": "Get Requested Items to Order"
@@ -236,12 +239,20 @@
    "label": "Approver",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus == 1",
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "options": "Supplier"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-12-08 04:19:36.956914",
+ "modified": "2020-12-10 14:18:24.084650",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",
