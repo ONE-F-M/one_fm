@@ -9,6 +9,7 @@ from erpnext.stock.utils import update_included_uom_in_report
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
+	filters['warehouse'] = frappe.db.get_value('Uniform Management Settings', None, "new_uniform_warehouse")
 	include_uom = filters.get("include_uom")
 	columns = get_columns()
 	bin_list = get_bin_list(filters)
@@ -48,8 +49,8 @@ def execute(filters=None):
 		if (re_order_level or re_order_qty) and re_order_level > bin.projected_qty:
 			shortage_qty = re_order_level - flt(bin.projected_qty)
 
-		data.append([item.name, item.item_name, item.description, item.item_group, bin.warehouse,
-			item.stock_uom, bin.actual_qty, bin.planned_qty, re_order_level, re_order_qty, shortage_qty])
+		data.append([item.name, item.item_name, item.description, item.item_group,
+			item.stock_uom, bin.actual_qty, bin.used_warehouse_qty])
 
 		if include_uom:
 			conversion_factors.append(item.conversion_factor)
@@ -60,10 +61,9 @@ def execute(filters=None):
 def get_columns():
 	return [
 		{"label": _("Item Code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 140},
-		{"label": _("Item Name"), "fieldname": "item_name", "width": 100},
-		{"label": _("Description"), "fieldname": "description", "width": 300},
+		{"label": _("Item Name"), "fieldname": "item_name", "width": 150},
+		{"label": _("Description"), "fieldname": "description", "width": 370},
 		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
-		{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 120},
 		{"label": _("UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 100},
 		{"label": _("New Uniform"), "fieldname": "actual_qty", "fieldtype": "Float", "width": 120, "convertible": "qty"},
 		{"label": _("Used Uniform"), "fieldname": "planned_qty", "fieldtype": "Float", "width": 120, "convertible": "qty"}
@@ -87,8 +87,30 @@ def get_bin_list(filters):
 		ordered_qty, reserved_qty, reserved_qty_for_production, reserved_qty_for_sub_contract, projected_qty
 		from tabBin bin {conditions} order by item_code, warehouse
 		""".format(conditions=" where " + " and ".join(conditions) if conditions else ""), as_dict=1)
-
+	used_warehouse_bin_list = get_used_uniform_qty()
+	for bin in bin_list:
+		if used_warehouse_bin_list:
+			for used_bin in used_warehouse_bin_list:
+				if used_bin.item_code == bin.item_code:
+					bin['used_warehouse_qty'] = used_bin.actual_qty
 	return bin_list
+
+def get_used_uniform_qty(item_code=None):
+	warehouse = frappe.db.get_value('Uniform Management Settings', None, "used_uniform_warehouse")
+	if warehouse:
+		conditions = []
+		warehouse_details = frappe.db.get_value("Warehouse", warehouse, ["lft", "rgt"], as_dict=1)
+		if warehouse_details:
+			conditions.append(" exists (select name from `tabWarehouse` wh \
+				where wh.lft >= %s and wh.rgt <= %s and bin.warehouse = wh.name)"%(warehouse_details.lft,
+				warehouse_details.rgt))
+
+		bin_list = frappe.db.sql("""select item_code, warehouse, actual_qty
+			from tabBin bin {conditions} order by item_code, warehouse
+			""".format(conditions=" where " + " and ".join(conditions) if conditions else ""), as_dict=1)
+		return bin_list
+	else:
+		return False
 
 def get_item_map(item_code, include_uom):
 	"""Optimization: get only the item doc and re_order_levels table"""

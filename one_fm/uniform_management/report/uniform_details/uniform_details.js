@@ -11,12 +11,6 @@ frappe.query_reports["Uniform Details"] = {
 			"default": frappe.defaults.get_user_default("Company")
 		},
 		{
-			"fieldname":"warehouse",
-			"label": __("Warehouse"),
-			"fieldtype": "Link",
-			"options": "Warehouse"
-		},
-		{
 			"fieldname":"item_code",
 			"label": __("Item"),
 			"fieldtype": "Link",
