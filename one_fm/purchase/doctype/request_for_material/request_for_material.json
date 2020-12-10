@@ -422,7 +422,7 @@
  "icon": "fa fa-ticket",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-11-27 20:34:07.721531",
+ "modified": "2020-12-10 06:45:51.086342",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
@@ -504,6 +504,5 @@
  "search_fields": "status,transaction_date",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
- "sort_order": "DESC",
- "title_field": "title"
+ "sort_order": "DESC"
 }
