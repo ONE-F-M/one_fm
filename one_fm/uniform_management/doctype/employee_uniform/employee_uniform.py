@@ -57,7 +57,7 @@ class EmployeeUniform(Document):
 					'conversion_rate': 1,
 					'plc_conversion_rate': 1
 				}
-				unifrom.rate = get_item_details(args).price_list_rate
+				uniform.rate = get_item_details(args).price_list_rate
 			if self.issued_on and not uniform.expire_on:
 				uniform.expire_on = frappe.utils.add_months(self.issued_on, 12)
 
@@ -119,11 +119,11 @@ class EmployeeUniform(Document):
 
 		if uniforms:
 			for uniform in uniforms:
-				unifrom_issue_ret = self.append('uniforms')
-				unifrom_issue_ret.item = uniform.item
-				unifrom_issue_ret.item_name = uniform.item_name
-				unifrom_issue_ret.quantity = uniform.quantity
-				unifrom_issue_ret.uom = uniform.uom
+				uniform_issue_ret = self.append('uniforms')
+				uniform_issue_ret.item = uniform.item
+				uniform_issue_ret.item_name = uniform.item_name
+				uniform_issue_ret.quantity = uniform.quantity
+				uniform_issue_ret.uom = uniform.uom
 				if self.type == "Issue":
 					args = {
 						'item_code': uniform.item,
@@ -136,14 +136,14 @@ class EmployeeUniform(Document):
 						'conversion_rate': 1,
 						'plc_conversion_rate': 1
 					}
-					unifrom_issue_ret.rate = get_item_details(args).price_list_rate
+					uniform_issue_ret.rate = get_item_details(args).price_list_rate
 					if self.issued_on:
-						unifrom_issue_ret.expire_on = frappe.utils.add_months(self.issued_on, 12)
+						uniform_issue_ret.expire_on = frappe.utils.add_months(self.issued_on, 12)
 				elif self.type == "Return":
-					unifrom_issue_ret.expire_on = uniform.expire_on
-					unifrom_issue_ret.rate = uniform.rate
-					unifrom_issue_ret.issued_item_link = uniform.issued_item_link
-					unifrom_issue_ret.issued_on = uniform.issued_on
+					uniform_issue_ret.expire_on = uniform.expire_on
+					uniform_issue_ret.rate = uniform.rate
+					uniform_issue_ret.issued_item_link = uniform.issued_item_link
+					uniform_issue_ret.issued_on = uniform.issued_on
 
 def make_stock_entry(employee_uniform):
 	source_name = employee_uniform.name
