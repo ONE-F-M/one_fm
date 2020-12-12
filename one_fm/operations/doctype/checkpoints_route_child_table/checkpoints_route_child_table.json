@@ -1,0 +1,75 @@
+{
+ "creation": "2020-12-06 13:02:37.628051",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "checkpoint_name",
+  "site",
+  "project",
+  "time__date",
+  "tolerance",
+  "checkpoints_form",
+  "checkpoints_form_template"
+ ],
+ "fields": [
+  {
+   "fieldname": "checkpoint_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Checkpoint Name",
+   "options": "Checkpoints"
+  },
+  {
+   "fetch_from": "checkpoint_name.site_name",
+   "fieldname": "site",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Site"
+  },
+  {
+   "fetch_from": "checkpoint_name.project_name",
+   "fieldname": "project",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Project"
+  },
+  {
+   "fieldname": "time__date",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Time / Date"
+  },
+  {
+   "fieldname": "tolerance",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tolerance (Minutes) "
+  },
+  {
+   "default": "0",
+   "fieldname": "checkpoints_form",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Checkpoints Form"
+  },
+  {
+   "fieldname": "checkpoints_form_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Checkpoints Form Template",
+   "options": "Checkpoints Form Template"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-12-11 17:57:44.434737",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Checkpoints Route Child Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

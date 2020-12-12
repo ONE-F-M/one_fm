@@ -94,13 +94,15 @@ class PenaltyIssuance(Document):
 						'occurence_number': occurence
 					})
 				
-				penalty_levied, deduction = self.get_penalty_levied(occurence, penalty_detail.penalty_type)
-				penalty_details.update({
-					'penalty_levied': penalty_levied,
-					'deduction': deduction
-				})
-				print(penalty_details)
-				penalty.append("penalty_details", penalty_details)
+				penalty_levied_details = self.get_penalty_levied(occurence, penalty_detail.penalty_type)
+				if penalty_levied_details:
+					penalty_levied, deduction = penalty_levied_details
+					penalty_details.update({
+						'penalty_levied': penalty_levied,
+						'deduction': deduction
+					})
+					print(penalty_details)
+					penalty.append("penalty_details", penalty_details)
 
 			penalty.save()
 			assign_to({
@@ -123,7 +125,7 @@ class PenaltyIssuance(Document):
 			AND PID.parenttype="Penalty"
 			ORDER BY P.penalty_occurence_time DESC
 		""".format(penalty_type=penalty_type, emp=employee_id), as_dict=1)
-		return [penalties[0]]
+		return [penalties[0]] if penalties else []
 
 	def get_existing_occurences(self, employee_id, penalty_type, start_date, lapse_date):
 		penalties = frappe.db.sql("""
@@ -212,7 +214,7 @@ class PenaltyIssuance(Document):
 			AND pl.active=1
 			AND pd.penalty_description_english="{penalty_type}"
 		""".format(field1=field1, field2=field2, penalty_type=penalty_type))
-		return penalty_levied[0]
+		return penalty_levied[0] if penalty_levied else False
 
 @frappe.whitelist()
 def get_current_penalty_location(location, penalty_occurence_time):
