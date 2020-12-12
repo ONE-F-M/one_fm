@@ -13,7 +13,9 @@ class MOM(Document):
 		for attendee in self.attendees:
 			if attendee.attended_meeting:
 				attendees_count = attendees_count + 1
-				break
+			else:
+				self.remove(attendee)
+
 		if(attendees_count < 1):
 			frappe.throw(_("Please check the attendees present."))
 
@@ -53,7 +55,7 @@ def review_pending_actions(project):
 	data = frappe.db.sql("""
 	SELECT *
 	FROM `tabTask` 
-	WHERE project = %(project)s and (status != 'Completed' or status != 'Cancelled')
+	WHERE (project = %(project)s) AND (status != 'Completed' AND status != 'Cancelled')
 	""", filters, as_dict=1)
 	return data
 

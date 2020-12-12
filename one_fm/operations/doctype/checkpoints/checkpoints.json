@@ -19,7 +19,9 @@
   {
    "fieldname": "checkpoint_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Checkpoint Name",
+   "reqd": 1,
    "unique": 1
   },
   {
@@ -45,10 +47,11 @@
    "options": "Operations Site"
   },
   {
+   "fetch_from": "site_name.site_location",
    "fieldname": "location_name",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Checkpoint Location",
-   "options": "Location"
+   "read_only": 1
   },
   {
    "fieldname": "checkpoint_notes",
@@ -60,7 +63,7 @@
    "fieldtype": "Column Break"
   }
  ],
- "modified": "2020-07-07 19:34:30.962286",
+ "modified": "2020-12-11 17:41:50.908782",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Checkpoints",

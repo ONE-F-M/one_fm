@@ -1,0 +1,150 @@
+{
+ "allow_rename": 1,
+ "autoname": "format: Missed Site MOM - {site} - {YYYY}/{MM}/{DD}",
+ "creation": "2020-11-13 08:32:48.873113",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "poc",
+  "section_break_2",
+  "project",
+  "project_manager",
+  "project_manager_name",
+  "column_break_5",
+  "site",
+  "site_supervisor",
+  "site_supervisor_name",
+  "section_break_9",
+  "reason_for_missed_mom",
+  "amended_from",
+  "penalty_note",
+  "penalty_type",
+  "penalty_code"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fieldname": "poc",
+   "fieldtype": "Table",
+   "label": "POC",
+   "options": "POC",
+   "read_only": 1
+  },
+  {
+   "fieldname": "site_supervisor",
+   "fieldtype": "Link",
+   "label": "Site Supervisor",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "site_supervisor.employee_name",
+   "fieldname": "site_supervisor_name",
+   "fieldtype": "Data",
+   "label": "Site Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project.account_manager",
+   "fieldname": "project_manager",
+   "fieldtype": "Data",
+   "label": "Project Manager",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project.manager_name",
+   "fieldname": "project_manager_name",
+   "fieldtype": "Data",
+   "label": "Project Manager Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "MOM Followup",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason_for_missed_mom",
+   "fieldtype": "Long Text",
+   "label": "Reason for Missed MOM"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "penalty_note",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Penalty Note"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "penalty_type",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Penalty Type",
+   "options": "Penalty Type"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "penalty_type.penalty_code",
+   "fieldname": "penalty_code",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Penalty Code",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2020-12-11 17:25:06.683680",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "MOM Followup",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
