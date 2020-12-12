@@ -153,6 +153,12 @@ def get_data():
 					"name": "Uniform Details",
 					"is_query_report": True,
 					"label": _("Uniform Details")
+				},
+				{
+					"type": "report",
+					"name": "Uniform Issued Report",
+					"is_query_report": True,
+					"label": _("Uniform Issued Report")
 				}
 			]
 		},
