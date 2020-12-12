@@ -8,7 +8,11 @@
   "authorized_signatory_name_arabic",
   "civil_id_number",
   "nationality_english",
-  "nationality_arabic"
+  "nationality_arabic",
+  "section_break_6",
+  "civil_id_copy",
+  "column_break_8",
+  "signature"
  ],
  "fields": [
   {
@@ -46,10 +50,28 @@
    "label": "Nationality (ENGLISH)",
    "options": "Nationality",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "civil_id_copy",
+   "fieldtype": "Attach",
+   "label": "Civil Id Copy"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Attach",
+   "label": "Signature"
   }
  ],
  "istable": 1,
- "modified": "2019-12-19 13:28:12.518108",
+ "modified": "2020-11-10 09:53:32.423135",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Authorized Signatory Table",

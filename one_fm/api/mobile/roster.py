@@ -85,7 +85,7 @@ def get_weekly_staff_roster(start_date, end_date):
 	
 		roster = frappe.db.sql("""
 			SELECT shift, employee, date, employee_availability, post_type
-			FROM `tabRoster`
+			FROM `tabEmployee Schedule`
 			WHERE employee="{emp}"
 			AND date BETWEEN date("{start_date}") AND date("{end_date}")
 		""".format(emp=user_employee, start_date=start_date, end_date=end_date), as_dict=1)
@@ -366,7 +366,7 @@ def get_assigned_sites(employee_id, project=None):
 			return frappe.get_list("Operations Site", limit_page_length=9999)
 
 		elif "Operations Manager" in user_roles or "Projects Manager" in user_roles:
-			return frappe.get_list("Operations Site", {"project": project}, limit_page_length=9999)
+			return frappe.get_list("Operations Site", filters, limit_page_length=9999)
 
 		elif "Site Supervisor" in user_roles:
 			filters.update({"account_supervisor": employee_id})
@@ -378,10 +378,12 @@ def get_assigned_sites(employee_id, project=None):
 	
 
 @frappe.whitelist()
-def get_assigned_shifts(employee_id, site=None):
+def get_assigned_shifts(employee_id, project=None, site=None):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
 		filters = {}
+		if project:
+			filters.update({"project": project})
 		if site:
 			filters.update({"site": site})
 
@@ -419,7 +421,7 @@ def get_post_types(shift=None):
 			return frappe.get_list("Post Type", limit_page_length=9999)
 
 		if "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles or "Shift Supervisor" in user_roles:
-			return frappe.get_list("Operations Post",{"site_shift": shift}, "post_template",limit_page_length=9999)
+			return frappe.get_list("Operations Post",{"site_shift": shift}, "post_template", limit_page_length=9999)
 
 		return []
 	except Exception as e:

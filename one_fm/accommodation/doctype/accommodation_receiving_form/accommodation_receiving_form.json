@@ -225,7 +225,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-07-08 22:29:38.685200",
+ "modified": "2020-11-16 08:45:42.616923",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Receiving Form",
@@ -240,6 +240,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
    "share": 1,
    "write": 1
   }

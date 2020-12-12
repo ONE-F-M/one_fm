@@ -7,18 +7,20 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
-  "reference_doctype",
-  "reference_name",
+  "accommodation",
+  "reading_type",
+  "accommodation_unit",
+  "owner_reference_number",
   "meter_type",
   "meter_reference",
-  "frequancy",
-  "last_reading_date",
-  "reading_date",
+  "reading_uom",
   "column_break_6",
+  "last_reading_date",
   "last_reading",
+  "reading_date",
+  "month",
   "current_reading",
   "consumption",
-  "reading_uom",
   "amended_from"
  ],
  "fields": [
@@ -30,31 +32,18 @@
    "options": "AMRR-.YYYY.-"
   },
   {
-   "fieldname": "reference_doctype",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Reference DocType",
-   "options": "\nAccommodation\nAccommodation Unit",
-   "reqd": 1
-  },
-  {
-   "fieldname": "reference_name",
-   "fieldtype": "Dynamic Link",
-   "label": "Reference Name",
-   "options": "reference_doctype",
-   "reqd": 1
-  },
-  {
+   "default": "Electricity",
    "fieldname": "meter_type",
    "fieldtype": "Select",
    "label": "Meter Type",
-   "options": "\nElectrical\nWater",
+   "options": "Electricity\nWater",
    "reqd": 1
   },
   {
    "fieldname": "last_reading",
    "fieldtype": "Float",
    "label": "Last Reading",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -66,13 +55,15 @@
   {
    "fieldname": "consumption",
    "fieldtype": "Float",
-   "label": "Consumption"
+   "label": "Consumption",
+   "read_only": 1
   },
   {
    "fieldname": "reading_uom",
    "fieldtype": "Link",
    "label": "Reading UOM",
-   "options": "UOM"
+   "options": "UOM",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -95,34 +86,68 @@
    "reqd": 1
   },
   {
-   "default": "Monthly",
-   "fieldname": "frequancy",
-   "fieldtype": "Select",
-   "label": "Frequancy",
-   "options": "\nWeakly\nMonthly\nYearly",
-   "reqd": 1
-  },
-  {
    "fieldname": "last_reading_date",
    "fieldtype": "Date",
-   "label": "Last Reading Date"
+   "label": "Last Reading Date",
+   "read_only": 1
   },
   {
+   "default": "Today",
    "fieldname": "reading_date",
    "fieldtype": "Date",
    "label": "Reading Date",
+   "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Accommodation",
+   "options": "Accommodation",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.reading_type == 'Unit'",
+   "fieldname": "accommodation_unit",
+   "fieldtype": "Link",
+   "label": "Accommodation Unit",
+   "options": "Accommodation Unit"
+  },
+  {
+   "fieldname": "reading_type",
+   "fieldtype": "Select",
+   "label": "Reading Type",
+   "options": "\nCommon\nUnit",
+   "reqd": 1
+  },
+  {
+   "fieldname": "month",
+   "fieldtype": "Select",
+   "label": "Month",
+   "options": "\nJanuary\nFebruary\nMarch\nApril\nMay\nJune\nJuly\nAugust\nSeptember\nOctober\nNovember\nDecember",
+   "read_only": 1
+  },
+  {
+   "depends_on": "accommodation_unit",
+   "fetch_from": "accommodation_unit.owner_reference_number",
+   "fieldname": "owner_reference_number",
+   "fieldtype": "Data",
+   "label": "Owner Reference Number",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-11-05 08:02:17.898950",
+ "modified": "2020-11-19 23:43:28.425260",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Meter Reading Record",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -132,6 +157,22 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

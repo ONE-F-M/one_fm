@@ -40,6 +40,11 @@ def get_data():
 					"type": "doctype",
 					"name": "Accommodation Checkin Checkout",
 					"label": _("Checkin/Checkout")
+				},
+				{
+					"type": "doctype",
+					"name": "Accommodation Meter Reading Record",
+					"label": _("Water/Electricity Meter Reading")
 				}
 			]
 		},
@@ -87,21 +92,21 @@ def get_data():
 			"items": [
 				{
 					"type": "report",
-					"name": "Unit Bed Space Report",
+					"name": "Units List Report",
 					"is_query_report": True,
-					"label": _("Unit Bed Space Report"),
+					"label": _("Units List Report"),
 				},
 				{
 					"type": "report",
-					"name": "Accommodation Bed Space Report",
+					"name": "Bed Space Summary Report",
 					"is_query_report": True,
-					"label": _("Accommodation Bed Space Report"),
+					"label": _("Bed Space Summary Report"),
 				},
 				{
 					"type": "report",
-					"name": "Accommodation Bed Detailed Report",
+					"name": "Bed Space Detailed Report",
 					"is_query_report": True,
-					"label": _("Accommodation Bed Detailed Report"),
+					"label": _("Bed Space Detailed Report"),
 				},
 				{
 					"type": "report",
@@ -109,6 +114,18 @@ def get_data():
 					"is_query_report": True,
 					"label": _("Checkin Checkout Report"),
 				},
+				{
+					"type": "report",
+					"name": "Accommodation Meter Reading Report",
+					"is_query_report": True,
+					"label": _("Meter Reading Report"),
+				},
+				{
+					"type": "report",
+					"name": "Monthly Consumption Report",
+					"is_query_report": True,
+					"label": _("Monthly Consumption Report"),
+				}
 			]
 		},
 		{
@@ -125,6 +142,23 @@ def get_data():
 					"name": "Designation Uniform Profile",
 					"label": _("Designation Uniform Profile"),
 					"onboard": 1
+				}
+			]
+		},
+		{
+			"label": _("Uniform Management Reports"),
+			"items": [
+				{
+					"type": "report",
+					"name": "Uniform Details",
+					"is_query_report": True,
+					"label": _("Uniform Details")
+				},
+				{
+					"type": "report",
+					"name": "Uniform Issued Report",
+					"is_query_report": True,
+					"label": _("Uniform Issued Report")
 				}
 			]
 		},
@@ -189,6 +223,41 @@ def get_data():
 					"label": _("Item Group"),
 					"link": "Tree/Item Group",
 					"description": _("Tree of Item Groups."),
+				}
+			]
+		},
+		{
+			"label": _("Item Description Masters"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Uniform Type",
+					"onboard": 1,
+					"description": _("Uniform Type"),
+				},
+				{
+					"type": "doctype",
+					"name": "Uniform Type Description",
+					"onboard": 1,
+					"description": _("Uniform Type Description"),
+				},
+				{
+					"type": "doctype",
+					"name": "Size",
+					"onboard": 1,
+					"description": _("Size"),
+				},
+				{
+					"type": "doctype",
+					"name": "Color",
+					"onboard": 1,
+					"description": _("Color"),
+				},
+				{
+					"type": "doctype",
+					"name": "Material",
+					"onboard": 1,
+					"description": _("Material"),
 				}
 			]
 		},

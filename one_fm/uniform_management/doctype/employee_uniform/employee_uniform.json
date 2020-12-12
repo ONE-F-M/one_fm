@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2020-09-24 17:08:53.538042",
  "doctype": "DocType",
@@ -9,10 +10,12 @@
   "naming_series",
   "type",
   "reason_for_return",
+  "warehouse",
   "employee",
+  "employee_id",
   "employee_name",
-  "civil_id",
   "column_break_4",
+  "civil_id",
   "designation",
   "project",
   "status",
@@ -124,7 +127,7 @@
    "fieldname": "reason_for_return",
    "fieldtype": "Select",
    "label": "Reason for Return",
-   "options": "\nEmployee Exit\nEmployee Transfer\nItem Damage\nItem Expired"
+   "options": "\nEmployee Exit\nEmployee Transfer\nItem Damage\nItem Expired\nItem Exchange"
   },
   {
    "fieldname": "naming_series",
@@ -146,17 +149,33 @@
    "fieldtype": "Currency",
    "label": "Pay Back to Company",
    "read_only": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-10-13 13:09:46.436226",
+ "modified": "2020-12-10 16:04:20.192471",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -166,6 +185,7 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

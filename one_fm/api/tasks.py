@@ -300,7 +300,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 
 def automatic_shift_assignment():
 	date = cstr(getdate())
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working"}, ["*"])
+	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working", "project": "Mighty Zinger"}, ["*"])
 	for schedule in roster:
 		create_shift_assignment(schedule, date)
 
@@ -345,5 +345,64 @@ def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "date": doc.attendance_date}):
 		site, project, shift, post_type, post_abbrv = frappe.get_value("Shift Assignment", {"employee": doc.employee, "date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv"])
 		frappe.db.sql("""update `tabAttendance`
-			set project = %s, site = %s, shift = %s, post_type = %s, post_abbrv = %s 
-			where name = %s """, (site, project, shift, post_type, post_abbrv, doc.name))
+			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s 
+			where name = %s """, (project, site, shift, post_type, post_abbrv, doc.name))
+
+
+def create_attendance():
+	emps = ["HR-EMP-00030", "HR-EMP-00035"]
+	x = range(1, 30)
+	for emp in emps:
+		for n in x:
+			if n not in [4,11,18,25]:
+				date = getdate("2020-09-"+cstr(n))
+				doc = frappe.new_doc("Attendance")
+				doc.employee= emp
+				doc.attendance_date = cstr(date)
+				doc.working_hours = 11.2
+				doc.status = "Post Off"
+				doc.status = "Present"
+				doc.post_abbrv = "GSG"
+				doc.post_type = "Gate Security Guard"
+				doc.site = "Cpven Ahmadi"
+				doc.operations_shift = "Cpven Ahmadi-Day|6:00:00-18:00:00|12.0 hours"
+				doc.project = "CPVEN"
+				doc.insert()
+				doc.submit()
+	frappe.db.commit()
+
+def timesheet_automation():
+	start_date = '2020-09-01' # Replace date with dynamic date value
+	end_date = '2020-09-30'  # Replace date with dynamic date value
+	filters = {
+		'attendance_date': ['between', (start_date, end_date)],
+		'project': 'CPVEN', # Replace hardcoded value with project name
+		'status': 'Present'
+	}
+
+	logs = frappe.db.get_list('Attendance', fields="employee,working_hours,attendance_date,operations_shift,project,post_type", filters=filters, order_by="employee,attendance_date")
+	for key, group in itertools.groupby(logs, key=lambda x: (x['employee'])):
+		attendances = list(group)
+		timesheet = frappe.new_doc("Timesheet")
+		timesheet.employee = key
+			
+		for attendance in attendances:
+			date = cstr(attendance.attendance_date)
+			#Get start time from first employee checkin of that day of log type IN
+			start = frappe.get_list("Employee Checkin", {"employee": key, "time": ['between', (date, date)], "log_type": "IN"}, "time", order_by="time asc")[0].time
+			#Get end time from last employee checkin of that day of log type OUT
+			end = frappe.get_list("Employee Checkin", {"employee": key, "time": ['between', (date, date)], "log_type": "OUT"}, "time", order_by="time desc")[0].time
+
+			# Added hardcoded for testing
+			#start = date + ' 08:00:00'
+			#end = date + ' 17:00:00'
+
+			timesheet.append("time_logs", {
+				"activity_type": attendance.post_type,
+				"from_time": start,
+				"to_time": end,
+				"project": attendance.project,
+				"hours": attendance.working_hours
+			})
+		timesheet.save()
+	frappe.db.commit()	

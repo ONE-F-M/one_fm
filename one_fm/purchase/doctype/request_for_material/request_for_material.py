@@ -52,9 +52,16 @@ class RequestforMaterial(Document):
 		create_notification_log(subject, message, recipients, self)
 
 	def validate(self):
-		self.set_title()
 		self.validate_details_against_type()
 		self.set_request_for_material_accepter_and_approver()
+		self.set_item_fields()
+		self.set_title()
+
+	def set_item_fields(self):
+		if self.items and self.type in ['Stock', 'Safety Stock']:
+			for item in self.items:
+				item.requested_item_name = item.item_name
+				item.requested_description = item.description
 
 	def set_request_for_material_accepter_and_approver(self):
 		if not self.request_for_material_accepter:

@@ -27,13 +27,16 @@
   "tenant_details_section",
   "full_name",
   "passport_number",
+  "nationality",
   "column_break_7",
   "employee_id",
   "civil_id",
+  "employment_type",
   "bed_details_section",
   "accommodation",
   "floor",
   "accommodation_unit",
+  "accommodation_space",
   "bed",
   "column_break_14",
   "comments",
@@ -255,14 +258,13 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Employee ID",
-   "read_only": 1
+   "label": "Employee ID"
   },
   {
    "fieldname": "tenant_category",
    "fieldtype": "Select",
    "label": "Tenant Category",
-   "options": "\nPermanent Employee\nTemporary Employee\nRental Service",
+   "options": "\nGranted Service\nPaid Service",
    "reqd": 1
   },
   {
@@ -271,25 +273,25 @@
    "label": "Tenant Details"
   },
   {
-   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
    "fieldname": "contract_details_section",
    "fieldtype": "Section Break",
    "label": "Contract Details"
   },
   {
-   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
    "fieldname": "contract_company_name",
    "fieldtype": "Data",
    "label": "Company Name"
   },
   {
-   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
    "fieldname": "contract_contact_person",
    "fieldtype": "Data",
    "label": "Contact Person"
   },
   {
-   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
    "fieldname": "contract_phone",
    "fieldtype": "Data",
    "label": "Phone"
@@ -299,27 +301,48 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
    "fieldname": "contract_email",
    "fieldtype": "Data",
    "label": "Email",
    "options": "Email"
   },
   {
-   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
    "fieldname": "contract_start_date",
    "fieldtype": "Date",
    "label": "Contract Start Date"
   },
   {
-   "depends_on": "eval:doc.tenant_category == 'Rental Service'",
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
    "fieldname": "contract_end_date",
    "fieldtype": "Date",
    "label": "Contract End Date"
+  },
+  {
+   "fetch_from": "bed.accommodation_space",
+   "fieldname": "accommodation_space",
+   "fieldtype": "Link",
+   "label": "Accommodation Space",
+   "options": "Accommodation Space"
+  },
+  {
+   "fetch_from": "employee.employment_type",
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type"
+  },
+  {
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality"
   }
  ],
  "links": [],
- "modified": "2020-11-04 13:13:25.979923",
+ "modified": "2020-11-16 08:47:42.316606",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",
@@ -334,6 +357,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
    "share": 1,
    "write": 1
   }

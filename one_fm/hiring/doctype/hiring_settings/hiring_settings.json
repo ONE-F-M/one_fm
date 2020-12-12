@@ -15,7 +15,9 @@
   "performance_profile_resource",
   "performance_profile_guid",
   "job_offer_section",
-  "notify_finance_department_for_job_offer_salary_advance"
+  "notify_finance_department_for_job_offer_salary_advance",
+  "job_applicaion_section",
+  "easy_apply_to"
  ],
  "fields": [
   {
@@ -81,11 +83,22 @@
    "fieldtype": "Link",
    "label": "HRM to Fill HR and Salary Compensation",
    "options": "User"
+  },
+  {
+   "fieldname": "job_applicaion_section",
+   "fieldtype": "Section Break",
+   "label": "Job Applicaion"
+  },
+  {
+   "fieldname": "easy_apply_to",
+   "fieldtype": "Data",
+   "label": "Easy Apply to",
+   "options": "Email"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2020-09-22 09:02:55.083958",
+ "modified": "2020-11-11 11:43:40.140554",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

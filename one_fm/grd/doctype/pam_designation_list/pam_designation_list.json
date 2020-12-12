@@ -14,7 +14,10 @@
   {
    "fieldname": "designation_name_english",
    "fieldtype": "Data",
+   "in_filter": 1,
+   "in_global_search": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Designation Name (English)",
    "reqd": 1
   },
@@ -29,7 +32,10 @@
   {
    "fieldname": "designation_code",
    "fieldtype": "Data",
+   "in_filter": 1,
+   "in_global_search": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Designation Code",
    "reqd": 1
   },
@@ -42,7 +48,7 @@
    "reqd": 1
   }
  ],
- "modified": "2019-12-15 21:58:31.364493",
+ "modified": "2020-10-26 21:36:41.977915",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Designation List",
@@ -62,6 +68,7 @@
   }
  ],
  "quick_entry": 1,
+ "search_fields": "designation_name_english,designation_code",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

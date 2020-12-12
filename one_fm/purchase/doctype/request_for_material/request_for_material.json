@@ -296,7 +296,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "\nIndividual\nProject",
+   "options": "\nIndividual\nProject\nStock\nSafety Stock",
    "print_hide": 1,
    "reqd": 1
   },
@@ -340,7 +340,7 @@
    "options": "Project"
   },
   {
-   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project'",
+   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project' || doc.type == 'Stock' || doc.type == 'Safety Stock'",
    "fieldname": "type_details_section",
    "fieldtype": "Section Break"
   },
@@ -407,22 +407,22 @@
   {
    "fieldname": "request_for_material_accepter",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Request for Material Accepter",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "request_for_material_approver",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Request for Material Approver",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-ticket",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-08-24 09:07:30.663644",
+ "modified": "2020-12-10 06:45:51.086342",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
@@ -504,6 +504,5 @@
  "search_fields": "status,transaction_date",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
- "sort_order": "DESC",
- "title_field": "title"
+ "sort_order": "DESC"
 }

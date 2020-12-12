@@ -979,19 +979,22 @@ def get_approved_leaves_for_period(employee, leave_type, from_date, to_date):
 def get_item_code(parent_item_group = None ,subitem_group = None ,item_group = None ,cur_item_id = None):
     item_code = None
     if parent_item_group:
-        parent_item_group_code = frappe.db.get_value('Item Group', parent_item_group, 'item_group_code')
+        # parent_item_group_code = frappe.db.get_value('Item Group', parent_item_group, 'item_group_code')
+        parent_item_group_code = ""
         item_code = parent_item_group_code
 
         if subitem_group:
-            subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'item_group_code')
-            item_code = parent_item_group_code+subitem_group_code
+            # subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'item_group_code')
+            subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'one_fm_item_group_abbr')
+            item_code = subitem_group_code
 
             if item_group:
-                item_group_code = frappe.db.get_value('Item Group', item_group, 'item_group_code')
-                item_code = parent_item_group_code+subitem_group_code+item_group_code
+                # item_group_code = frappe.db.get_value('Item Group', item_group, 'item_group_code')
+                item_group_code = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
+                item_code = subitem_group_code+"-"+item_group_code
 
                 if cur_item_id:
-                    item_code = parent_item_group_code+subitem_group_code+item_group_code+cur_item_id
+                    item_code = subitem_group_code+"-"+item_group_code+"-"+cur_item_id
 
     return item_code
 
@@ -1046,17 +1049,18 @@ def pam_authorized_signatory():
 
 @frappe.whitelist(allow_guest=True)
 def warehouse_naming_series(doc, method):
-    doc.name = doc.warehouse_code+' - '+doc.warehouse_name
+    # doc.name = doc.warehouse_code+' - '+doc.warehouse_name
+    pass
 
 @frappe.whitelist(allow_guest=True)
 def item_group_naming_series(doc, method):
-    doc.name = doc.item_group_code+'-'+doc.item_group_name
+    # doc.name = doc.item_group_code+'-'+doc.item_group_name
+    pass
 
 @frappe.whitelist(allow_guest=True)
 def item_naming_series(doc, method):
     doc.name = doc.item_code
-
-
+    doc.item_name = doc.item_code
 
 @frappe.whitelist(allow_guest=True)
 def validate_get_warehouse_parent(doc, method):
@@ -1068,15 +1072,92 @@ def validate_get_warehouse_parent(doc, method):
 
     doc.warehouse_code = str(int(new_warehouse_code_final)).zfill(3)
 
+@frappe.whitelist()
+def validate_item_group(doc, method):
+    if doc.parent_item_group and doc.parent_item_group != 'All Item Group' and not doc.one_fm_item_group_descriptions:
+        set_item_group_description_form_parent(doc)
 
+@frappe.whitelist()
+def before_insert_item(doc, method):
+    if not doc.item_id:
+        set_item_id(doc)
+    if not doc.item_code:
+        set_item_code(doc)
+
+@frappe.whitelist()
+def validate_item(doc, method):
+    if not doc.item_barcode:
+        doc.item_barcode = doc.item_code
+    if not doc.parent_item_group:
+        doc.parent_item_group = "All Item Groups"
+    set_item_description(doc)
+
+def set_item_id(doc):
+    next_item_id = "0000"
+    item_id = get_item_id_series("All Item Groups", doc.subitem_group, doc.item_group)
+    if item_id:
+        next_item_id = str(int(item_id)+1)
+        for i in range(0, 4-len(next_item_id)):
+            next_item_id = '0'+next_item_id
+    doc.item_id = next_item_id
+
+def set_item_code(doc):
+    if doc.item_id:
+        doc.item_code = get_item_code("All Item Groups", doc.subitem_group, doc.item_group, doc.item_id)
+
+def set_item_description(doc):
+    final_description = ""
+    # For Uniform Import
+    if doc.uniform_type or doc.uniform_type_description:
+        doc.have_uniform_type_and_description = True
+    if not doc.item_descriptions:
+        if doc.description3:
+            child_description = doc.append('item_descriptions')
+            child_description.description_attribute = "Size"
+            child_description.value = doc.description3
+        if doc.description4:
+            child_description = doc.append('item_descriptions')
+            child_description.description_attribute = "Color"
+            child_description.value = doc.description4
+        if doc.description5:
+            child_description = doc.append('item_descriptions')
+            child_description.description_attribute = "Material"
+            child_description.value = doc.description5
+        if doc.final_description:
+            child_description = doc.append('item_descriptions')
+            child_description.description_attribute = "Gender"
+            child_description.value = doc.final_description
+
+
+    if doc.one_fm_project:
+        final_description+=doc.one_fm_project
+    if doc.one_fm_designation:
+        final_description+=(' - ' if final_description else '')+doc.one_fm_designation
+    if doc.uniform_type:
+        final_description+=(' - ' if final_description else '')+doc.uniform_type
+    if doc.uniform_type_description:
+        final_description+=(' - ' if final_description else '')+doc.uniform_type_description
+    for item in doc.item_descriptions:
+        final_description+=(' - ' if final_description else '')+item.value
+    if doc.other_description:
+        final_description+=(' - ' if final_description else '')+doc.other_description
+    doc.description = final_description
+
+def set_item_group_description_form_parent(doc):
+    parent = frappe.get_doc('Item Group', doc.parent_item_group)
+    if parent.one_fm_item_group_descriptions:
+        for desc in parent.one_fm_item_group_descriptions:
+            item_group_description = doc.append('one_fm_item_group_descriptions')
+            item_group_description.description_attribute = desc.description_attribute
+            item_group_description.from_parent = True
 
 @frappe.whitelist(allow_guest=True)
 def validate_get_item_group_parent(doc, method):
-    first_parent = doc.parent_item_group
-    second_parent = frappe.db.get_value('Item Group', {"name": first_parent}, 'parent_item_group')
-
-    if first_parent == 'All Item Groups' or second_parent == 'All Item Groups':
-        doc.is_group = 1
+    # first_parent = doc.parent_item_group
+    # second_parent = frappe.db.get_value('Item Group', {"name": first_parent}, 'parent_item_group')
+    #
+    # if first_parent == 'All Item Groups' or second_parent == 'All Item Groups':
+    #     doc.is_group = 1
 
     new_item_group_code = frappe.db.sql("select item_group_code+1 from `tabItem Group` where parent_item_group ='{0}' order by item_group_code desc limit 1".format(doc.parent_item_group))
     if new_item_group_code:
@@ -1095,15 +1176,34 @@ def get_item_id_series(parent_item_group, subitem_group, item_group):
     else:
         return '0000'
 
+def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, filters):
+	query = """
+		select
+			parent
+		from
+			`tabUniform Description Type`
+		where
+			uniform_type = %(uniform_type)s and uniform_type like %(txt)s
+			limit %(start)s, %(page_len)s"""
+	return frappe.db.sql(query,
+		{
+			'uniform_type': filters.get("uniform_type"),
+			'start': start,
+			'page_len': page_len,
+			'txt': "%%%s%%" % txt
+		}
+	)
+
 def validate_job_applicant(doc, method):
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
-    validate_mandatory_fields(doc)
+    if not doc.one_fm_is_easy_apply:
+        validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     set_average_score(doc, method)
-    if doc.is_new():
-        set_childs_for_application_web_form(doc, method)
-    if frappe.session.user != 'Guest':
+    # if doc.is_new():
+    #     set_childs_for_application_web_form(doc, method)
+    if frappe.session.user != 'Guest' and not doc.one_fm_is_easy_apply:
         validate_mandatory_childs(doc)
     if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
         create_job_offer_from_job_applicant(doc.name)
@@ -1239,9 +1339,9 @@ def get_mandatory_fields_work_details(doc):
         return field_list
 
 def get_mandatory_fields_contact_details(doc):
-    if not doc.one_fm_is_agency_applying:
-        return [{'Country Code for Primary Contact Number': 'one_fm_country_code'},
-            {'Primary Contact Number': 'one_fm_contact_number'}]
+    # if not doc.one_fm_is_agency_applying:
+    #     return [{'Country Code for Primary Contact Number': 'one_fm_country_code'},
+    #         {'Primary Contact Number': 'one_fm_contact_number'}]
     return []
 
 def get_mandatory_fields_visa_details(doc):

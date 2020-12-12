@@ -75,11 +75,11 @@
                             Basic skill
                         </div>
                     </a>
-                    <a href="#documents-required" class="sidebar-item list-group-item">
+                    <!-- <a href="#documents-required" class="sidebar-item list-group-item">
                         <div class="sidebar-item-text">
                             Documents required
                         </div>
-                    </a>
+                    </a> -->
                 </div>
             </div>
             <div class="questions-block-list">
@@ -101,6 +101,7 @@
                                 <div class="form-group col-md-6">
                                     <label for="gender">Gender</label>
                                     <select class="form-control" name="gender" id="gender">
+                                        <option></option>
                                         <option>Male</option>
                                         <option>Female</option>
                                     </select>
@@ -111,9 +112,13 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="form-group col-md-6">
+                                <!-- <div class="form-group col-md-6">
                                     <label for="secondName">Second Name</label>
                                     <input type="text" class="form-control" id="secondName" placeholder="Second Name">
+                                </div> -->
+                                <div class="form-group col-md-6">
+                                    <label for="lastName">Last Name</label>
+                                    <input type="text" class="form-control" id="lastName" placeholder="Last Name">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="religion">Religion</label>
@@ -126,20 +131,20 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="form-group col-md-6">
+                            <!-- <div class="row"> -->
+                            <!-- <div class="form-group col-md-6">
                                     <label for="thirdName">Third Name</label>
                                     <input type="text" class="form-control" id="thirdName" placeholder="Third Name">
-                                </div>
+                                </div> -->
+                            <!-- <div class="form-group col-md-6">
+                                    <label for="dob">Date of Birth</label>
+                                    <input type="date" class="form-control" id="dob" placeholder="Date of Birth">
+                                </div> -->
+                            <!-- </div> -->
+                            <div class="row">
                                 <div class="form-group col-md-6">
                                     <label for="dob">Date of Birth</label>
                                     <input type="date" class="form-control" id="dob" placeholder="Date of Birth">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="form-group col-md-6">
-                                    <label for="lastName">Last Name</label>
-                                    <input type="text" class="form-control" id="lastName" placeholder="Last Name">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="placeOfBirth">Place of Birth</label>
@@ -194,11 +199,6 @@
                                 <input type="email" class="form-control" id="email" placeholder="Email ID">
                             </div>
                             <div class="row">
-                                <!-- <div class="form-group col-md-12">
-                                    <label for="countryCodePrimary">Country Code for Primary Contact Number</label>
-                                    <input type="text" class="form-control" id="countryCodePrimary"
-                                        placeholder="Country Code">
-                                </div> -->
                                 <div class="form-group col-md-6">
                                     <label for="primaryContactNumber">Primary Contact Number</label> <br />
                                     <!-- <input type="text" class="form-control" id="primaryContactNumber"
@@ -311,26 +311,28 @@
                             </div>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label for="countryCodePrimary">Passport Holder of</label>
-                                    <input type="text" class="form-control" id="countryCodePrimary"
+                                    <label for="passportHolderOf">Passport Holder of</label>
+                                    <input type="text" class="form-control" id="passportHolderOf"
                                         placeholder="Passport Holder of">
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="primaryContactNumber">Passport Issued on</label>
-                                    <input type="date" class="form-control" id="primaryContactNumber"
+                                    <label for="passportIssued">Passport Issued on</label>
+                                    <input type="date" class="form-control" id="passportIssued"
                                         placeholder="Passport Issued on">
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label for="countryCodeSecondary">Passport Expire on</label>
-                                    <input type="date" class="form-control" id="countryCodeSecondary"
+                                    <label for="passportExpiry">Passport Expire on</label>
+                                    <input type="date" class="form-control" id="passportExpiry"
                                         placeholder="Passport Expire on">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="PassportType">Passport Type</label>
-                                    <input type="text" class="form-control" id="PassportType" value="Standard"
-                                        placeholder="Passport Type">
+                                    <select class="form-control" name="PassportType" id="PassportType">
+                                        <option>Normal</option>
+                                        <option>Diplomat</option>
+                                    </select>
                                 </div>
                             </div>
                             <a href="#visa-and-residency">
@@ -351,18 +353,19 @@
                                 <div class="form-group col-md-6">
                                     <input required type="checkbox" id="ValidVisa" class="floatLabel" name="ValidVisa">
                                     <label for="firstName2">I Have a Valid Visa in Kuwait</label> <br />
-                                    <input required type="checkbox" id="ValidVisa" class="floatLabel" name="ValidVisa">
+                                    <input required type="checkbox" id="presentInKuwait" class="floatLabel"
+                                        name="ValidVisa">
                                     <label for="dob">Are You in Kuwait at Present:</label>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="gender">Visa Type</label>
-                                    <input type="text" class="form-control" id="gender2" placeholder="Visa Type">
+                                    <input type="text" class="form-control" id="visaType" placeholder="Visa Type">
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label for="secondName">Visa Issued on</label>
-                                    <input type="date" class="form-control" id="secondName"
+                                    <label for="visaIssuedOn">Visa Issued on</label>
+                                    <input type="date" class="form-control" id="visaIssuedOn"
                                         placeholder="Visa Issued on">
                                 </div>
                                 <div class="form-group col-md-6">
@@ -456,8 +459,10 @@
                         <div class="question-block-form">
                             <div class="row">
                                 <div class="form-group col-md-12">
-                                    <label for="religion">What is Your Highest Educational Qualification:</label>
-                                    <select class="form-control" name="religion" id="religion">
+                                    <label for="educationalQualification">What is Your Highest Educational
+                                        Qualification:</label>
+                                    <select class="form-control" name="educationalQualification"
+                                        id="educationalQualification">
                                         <option></option>
                                         <option>Post Graduate</option>
                                         <option>Master</option>
@@ -470,7 +475,7 @@
                             <div class="row">
                                 <div class="form-group col-md-6">
                                     <label for="University">University</label>
-                                    <input type="text" class="form-control" id="University2" placeholder="University">
+                                    <input type="text" class="form-control" id="University" placeholder="University">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="Specialization">Specialization</label>
@@ -494,33 +499,33 @@
                                 <div class="row">
                                     <div class="form-group col-md-6">
                                         <label for="rotationalShift">Rotation Shift</label>
-                                        <select class="form-control" name="religion" id="rotationalShift">
+                                        <select class="form-control" name="rotationalShift" id="rotationalShift">
                                             <option></option>
-                                            <option>No</option>
-                                            <option>Yes</option>
+                                            <option>Yes, I Will Work in Rotation Shift</option>
+                                            <option>No, I Cant Work in Rotation Shift</option>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label for="rotationalShift">Night Shift</label>
-                                        <select class="form-control" name="religion" id="nightShift">
+                                        <label for="nightShift">Night Shift</label>
+                                        <select class="form-control" name="nightShift" id="nightShift">
                                             <option></option>
-                                            <option>No</option>
-                                            <option>Yes</option>
+                                            <option>Yes, I Will Work in Night Shift</option>
+                                            <option>No, I Cant Work in Night Shift</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label for="rotationalShift">Type of Travel</label>
-                                        <select class="form-control" name="religion" id="typeOfTravel">
+                                        <label for="canYouTravel">Can you Travel?</label>
+                                        <select class="form-control" name="canYouTravel" id="canYouTravel">
                                             <option></option>
                                             <option>No I Cant Travel</option>
                                             <option>Yes I will Travel</option>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label for="rotationalShift">Type of Travel</label>
-                                        <select class="form-control" name="religion" id="typeOfTravel">
+                                        <label for="typeOfDrivingLicense">Type of Driving License</label>
+                                        <select class="form-control" name="typeOfDrivingLicense" id="typeOfDrivingLicense">
                                             <option></option>
                                             <option>Light</option>
                                             <option>Heavy</option>
@@ -550,30 +555,7 @@
                                     <div class="col-md-6"><label for="Proficiency">Proficiency</label></div>
                                 </div>
                                 <div class="row" id="basic-skills">
-                                    <!-- <div class="form-group col-md-6">
-                                        <p>Js</p>
-                                    </div>
-                                    <div class="form-group col-md-6">
-                                        <div class='rating-stars'>
-                                            <ul id='stars'>
-                                                <li class='star' title='Poor' data-value='1'>
-                                                    <i class='fa fa-star fa-fw'></i>
-                                                </li>
-                                                <li class='star' title='Fair' data-value='2'>
-                                                    <i class='fa fa-star fa-fw'></i>
-                                                </li>
-                                                <li class='star' title='Good' data-value='3'>
-                                                    <i class='fa fa-star fa-fw'></i>
-                                                </li>
-                                                <li class='star' title='Excellent' data-value='4'>
-                                                    <i class='fa fa-star fa-fw'></i>
-                                                </li>
-                                                <li class='star' title='WOW!!!' data-value='5'>
-                                                    <i class='fa fa-star fa-fw'></i>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div> -->
+                                    <!-- Skills will be here -->
                                 </div>
 
                                 <!-- <div type="submit" class="btn btn-primary">Sign in</div> -->
@@ -582,7 +564,7 @@
                                 </a>
                             </div>
                         </div>
-                        <div class="questions-block" id="documents-required">
+                        <!-- <div class="questions-block" id="documents-required">
                             <div class="question-block-head">
                                 <div class="question-block-icon"><i class="uil uil-envelope-alt"></i></div>
                                 <div class="question-block-info">
@@ -632,7 +614,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                 </form>
                 <div id="submitBtn" class="btn btn-primary submit-btn">Submit</div>
             </div>
@@ -643,6 +625,7 @@
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"
         integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"

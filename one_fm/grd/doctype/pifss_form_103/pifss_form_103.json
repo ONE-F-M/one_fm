@@ -1,0 +1,345 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2020-10-21 20:18:25.036895",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "request_type",
+  "column_break_4",
+  "status",
+  "column_break_2",
+  "naming_series",
+  "section_break_4",
+  "company_name_arabic",
+  "column_break_8",
+  "company_pifss_registration_no",
+  "column_break_10",
+  "authorized_signatory",
+  "employee_details_section",
+  "employee",
+  "employee_name",
+  "first_name",
+  "second_name",
+  "third_name",
+  "fourth_name",
+  "column_break_13",
+  "civil_id",
+  "mobile",
+  "address",
+  "nationality_details_section",
+  "nationality_no",
+  "nationality_subject",
+  "data_20",
+  "date_of_birth",
+  "date_of_naturalization",
+  "registration_details_section",
+  "date_of_joining",
+  "column_break_29",
+  "subscription_start_date",
+  "column_break_31",
+  "position",
+  "column_break_33",
+  "salary",
+  "end_of_service_section",
+  "attach_resignationtermination",
+  "end_date",
+  "column_break_37",
+  "reason_for_resignationtermination",
+  "registration_section",
+  "registration_application_number",
+  "column_break_41",
+  "attach_signed_form",
+  "civil_id_copy",
+  "column_break_44",
+  "date_of_birth_certificate",
+  "nationality_proof"
+ ],
+ "fields": [
+  {
+   "fieldname": "request_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Request Type",
+   "options": "Registration\nEnd of Service"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Submitted\nUnder Process\nAccepted\nRejected"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "bold": 1,
+   "default": "REG-.{employee}.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "no_copy": 1,
+   "options": "REG-.{employee}.-\nEND-.{employee}.-",
+   "print_hide": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "company_name_arabic",
+   "fieldtype": "Data",
+   "label": "Company name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company_pifss_registration_no",
+   "fieldtype": "Data",
+   "label": "Company PIFSS Registration no",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "authorized_signatory",
+   "fieldtype": "Link",
+   "label": "Authorized Signatory",
+   "options": "PAM Authorized Signatory List"
+  },
+  {
+   "fieldname": "employee_details_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_first_name_in_arabic",
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First name"
+  },
+  {
+   "fetch_from": "employee.one_fm_last_name_in_arabic",
+   "fieldname": "second_name",
+   "fieldtype": "Data",
+   "label": "Second name"
+  },
+  {
+   "fieldname": "third_name",
+   "fieldtype": "Data",
+   "label": "Third Name"
+  },
+  {
+   "fieldname": "fourth_name",
+   "fieldtype": "Data",
+   "label": "Fourth name"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "Civil ID"
+  },
+  {
+   "fetch_from": "employee.cell_number",
+   "fieldname": "mobile",
+   "fieldtype": "Data",
+   "label": "Mobile "
+  },
+  {
+   "fetch_from": "employee.permanent_address",
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "fieldname": "nationality_details_section",
+   "fieldtype": "Section Break",
+   "label": "Nationality Details"
+  },
+  {
+   "fieldname": "nationality_no",
+   "fieldtype": "Data",
+   "label": "Nationality No"
+  },
+  {
+   "fieldname": "nationality_subject",
+   "fieldtype": "Select",
+   "label": "Nationality Subject",
+   "options": "\n\u0627\u0644\u0623\u0648\u0644\u064a\n\u0627\u0644\u062b\u0627\u0646\u064a\u0629\n\u0627\u0644\u062b\u0627\u0644\u062b\u0629\n\u0627\u0644\u0631\u0627\u0628\u0639\u0629\n\u0627\u0644\u062e\u0627\u0645\u0633\u0629\n\u0627\u0644\u0633\u0627\u0628\u0639\u0629\n\u0627\u0644\u062b\u0627\u0645\u0646\u0629"
+  },
+  {
+   "fieldname": "data_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.date_of_birth",
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "date_of_naturalization",
+   "fieldtype": "Date",
+   "label": "Date of naturalization"
+  },
+  {
+   "fieldname": "registration_details_section",
+   "fieldtype": "Section Break",
+   "label": "Registration Details"
+  },
+  {
+   "fetch_from": "employee.date_of_joining",
+   "fieldname": "date_of_joining",
+   "fieldtype": "Date",
+   "label": "Date of Joining"
+  },
+  {
+   "fieldname": "column_break_29",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "subscription_start_date",
+   "fieldtype": "Date",
+   "label": "Subscription Start Date"
+  },
+  {
+   "fieldname": "column_break_31",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.one_fm_pam_designation",
+   "fieldname": "position",
+   "fieldtype": "Data",
+   "label": "Position"
+  },
+  {
+   "fieldname": "column_break_33",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.one_fm_basic_salary",
+   "fieldname": "salary",
+   "fieldtype": "Data",
+   "label": "Salary"
+  },
+  {
+   "depends_on": "eval:doc.request_type==\"End of Service\"",
+   "fieldname": "end_of_service_section",
+   "fieldtype": "Section Break",
+   "label": "End of Service"
+  },
+  {
+   "fieldname": "attach_resignationtermination",
+   "fieldtype": "Attach",
+   "label": "Attach Resignation/Termination"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "column_break_37",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason_for_resignationtermination",
+   "fieldtype": "Small Text",
+   "label": "Reason for Resignation/Termination"
+  },
+  {
+   "depends_on": "eval:doc.request_type==\"Registration\"",
+   "fieldname": "registration_section",
+   "fieldtype": "Section Break",
+   "label": "Registration"
+  },
+  {
+   "fieldname": "registration_application_number",
+   "fieldtype": "Data",
+   "label": "Registration Application Number"
+  },
+  {
+   "fieldname": "column_break_41",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attach_signed_form",
+   "fieldtype": "Attach",
+   "label": "Attach Signed Form"
+  },
+  {
+   "fieldname": "civil_id_copy",
+   "fieldtype": "Attach",
+   "label": "Civil ID Copy"
+  },
+  {
+   "fieldname": "column_break_44",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "date_of_birth_certificate",
+   "fieldtype": "Attach",
+   "label": "Date of Birth Certificate"
+  },
+  {
+   "fieldname": "nationality_proof",
+   "fieldtype": "Attach",
+   "label": "Nationality Proof"
+  }
+ ],
+ "modified": "2020-11-18 21:43:02.102173",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PIFSS Form 103",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

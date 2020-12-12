@@ -1,0 +1,60 @@
+<div>
+	{% if doc.interview_questions %}
+	<p>
+		<ol>
+			{% for row in doc.interview_questions %}
+			<li>{{row.questions}}</li>
+			{% endfor %}
+		</ol>
+	</p>
+	{% endif %}
+	{% if doc.general_questions %}
+	<p>
+		<ol>
+			{% for row in doc.general_questions %}
+			<li>{{row.questions}}</li>
+			{% endfor %}
+		</ol>
+	</p>
+	{% endif %}
+	{% if doc.attitude_questions %}
+	<p>
+		<ol>
+			{% for row in doc.attitude_questions %}
+			<li>{{row.questions}}</li>
+			{% endfor %}
+		</ol>
+	</p>
+	{% endif %}
+	{% if doc.technical_questions %}
+	<p>
+		<ol>
+			{% for row in doc.technical_questions %}
+			<li>{{row.questions}}</li>
+			{% endfor %}
+		</ol>
+	</p>
+	{% endif %}
+	{% if doc.check_security_awareness %}
+		{% if doc.personal_skills %}
+		<p>
+			<b><u>Personal Skills</u></b>
+			<ol>
+				{% for row in doc.personal_skills %}
+				<li>{{row.personal_skill}}</li>
+				{% endfor %}
+			</ol>
+		</p>
+		{% endif %}
+		{% if doc.security_awareness %}
+		<p>
+			<b><u>Security Awareness</u></b>
+			<ol>
+				{% for row in doc.security_awareness %}
+				<li>{{row.security_awareness}}</li>
+				{% endfor %}
+			</ol>
+		</p>
+		{% endif %}
+	{% endif %}
+</div>

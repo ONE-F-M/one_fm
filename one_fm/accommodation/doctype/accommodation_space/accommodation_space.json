@@ -268,7 +268,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-04 13:12:58.366509",
+ "modified": "2020-11-16 08:47:12.986963",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Space",
@@ -283,6 +283,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
    "share": 1,
    "write": 1
   }

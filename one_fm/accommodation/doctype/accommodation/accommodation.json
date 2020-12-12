@@ -100,6 +100,7 @@
   "accommodation_paci_number",
   "column_break_76",
   "accommodation_location",
+  "map_html",
   "accommodation_geolocation",
   "accommodation_meter_reading_section",
   "water_and_electricity_consumption_billed_by",
@@ -538,6 +539,7 @@
   {
    "fieldname": "accommodation_geolocation",
    "fieldtype": "Geolocation",
+   "hidden": 1,
    "label": "Geolocation"
   },
   {
@@ -786,10 +788,15 @@
    "fieldtype": "Select",
    "label": "Water and Electricity Consumption Billed By",
    "options": "\nThe Company\nThe Owner"
+  },
+  {
+   "fieldname": "map_html",
+   "fieldtype": "HTML",
+   "label": "Map HTML"
   }
  ],
  "links": [],
- "modified": "2020-11-04 13:09:22.124799",
+ "modified": "2020-11-24 02:15:19.031485",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation",
@@ -804,6 +811,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
    "share": 1,
    "write": 1
   }

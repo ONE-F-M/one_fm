@@ -1,87 +1,178 @@
-const baseUrl = "http://dev.one-fm.com"
-if(window.localStorage.getItem("job-application-auth")){
-    const ERF = localStorage.getItem("currentJobOpening");
-    const basicSkills = "basic-skills";
-    const language = "rating";
-    if(!ERF){
-        alert("Please Select a Job Posting before continuing");
-        window.location = "job_opening";
-    }
-    console.log(ERF)
-    fetch(`${baseUrl}/api/resource/ERF/${ERF}`, {
-        // headers: {
-        //     'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
-        // }
-        body: JSON.stringify({
-            usr: 'h.marzooq@armor-services.com',
-            pwd: 'hassarah420024703307786'
+const baseUrl = (frappe.base_url || window.location.origin);
+if(baseUrl.substr(baseUrl.length-1, 1)=='/') baseUrl = baseUrl.substr(0, baseUrl.length-1);
+const listOfLanguages = [];
+const listOfSkills = [];
+const basicSkills = "basic-skills";
+const language = "rating";
+
+$(document).ready(function () {
+  if(window.localStorage.getItem("job-application-auth")){
+    set_jobs_info_to_application();
+  }
+  else {
+      alert("Please Signup or Login!");
+      window.location = "applicant-sign-up";
+  }
+});
+
+function set_jobs_info_to_application() {
+  const job = localStorage.getItem("currentJobOpening");
+  if(!job){
+      alert("Please Select a Job Posting before continuing");
+      window.location = "job_opening";
+  }
+  frappe.call({
+    method: "one_fm.templates.pages.job_application.get_job_details",
+    args: {'job': job},
+    callback: function (r) {
+      if(r.message){
+        var erf = r.message;
+        window.localStorage.setItem("erf", erf.name);
+        erf.designation_skill.map(a=>{
+            listOfSkills.push({
+              skill: a.skill,
+              proficiency: ""
+            })
+            placeSkills(basicSkills, a.skill)
         })
-    })
-    .then(r => r.json())
-    .then(erf => {
-    console.log("ERF",erf);
-    console.log("ERF",erf.data.designation_skill);
-    erf.data.designation_skill.map(a=>{
-        placeSkills(basicSkills, a.skill)
-    })
-    starEffects()
-    
-})
+        erf.languages.map(a=>{
+          listOfLanguages.push({
+            language: a.language,
+            language_name: a.language_name,
+            speak: 0,
+            read: 0,
+            write: 0
+          });
+          placeSkills(language, "none", a.language_name)
+        })
+        starEffects();
+      }
+    }
+  });
+};
+
 // Place Skills
-const placeSkills = (location, skill="none") => {
-    
-    document.getElementById(location).innerHTML += ` <div class="form-group col-md-6">
-    ${skill != "none" ? `<p>${skill}</p>` : `<select class="form-control" name="religion" id="religion">
-    <option value="blank"></option>
-    <option value="Islam">English</option>
-    <option value="Christianity">Arabic</option>
-    <option value="Hinduism">Hindi</option>
-    <option value="Other">Malayalam</option>
-    <option value="Other">Tamil</option>
-    <option value="Other">Other</option>
-</select>`}
-</div>
-<div class="form-group col-md-6">
+const placeSkills = (location, skill="none", language="none") => {
+    document.getElementById(location).innerHTML +=
+    skill != "none" ? `
+    <div class="form-group col-md-6">
+    <p>${skill}</p>
+    </div>
+    <div class="form-group col-md-6">
     <div class='rating-stars'>
-        <ul id='stars'>
-            <li class='star' title='Poor' data-value='1'>
+        <ul class='stars'>
+            <li class='star' data-skill=${skill} title='skill' data-value='1'>
                 <i class='fa fa-star fa-fw'></i>
             </li>
-            <li class='star' title='Fair' data-value='2'>
+            <li class='star' data-skill=${skill} title='skill' data-value='2'>
                 <i class='fa fa-star fa-fw'></i>
             </li>
-            <li class='star' title='Good' data-value='3'>
+            <li class='star' data-skill=${skill} title='skill' data-value='3'>
                 <i class='fa fa-star fa-fw'></i>
             </li>
-            <li class='star' title='Excellent' data-value='4'>
+            <li class='star' data-skill=${skill} title='skill' data-value='4'>
                 <i class='fa fa-star fa-fw'></i>
             </li>
-            <li class='star' title='WOW!!!' data-value='5'>
+            <li class='star' data-skill=${skill} title='skill' data-value='5'>
                 <i class='fa fa-star fa-fw'></i>
             </li>
         </ul>
     </div>
-</div>`
+</div>
+    ` : `
+<div class="form-group col-md-4">
+    <p>${language}</p>
+</div>
+<div class="form-group col-md-2">
+<div class=''>
+Speak
+</div>
+<div class='mt-3'>
+Read
+</div>
+<div class='mt-3'>
+Write
+</div>
+</div>
+<div class="form-group col-md-6">
+    <div class='rating-stars'>
+        <ul class='stars'>
+            <li class='star' data-language=${language} title='speak' data-value='1'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='speak' data-value='2'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='speak' data-value='3'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='speak' data-value='4'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='speak' data-value='5'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+        </ul>
+    </div>
+    <div class='rating-stars'>
+        <ul class='stars'>
+            <li class='star' data-language=${language} title='read' data-value='1'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='read' data-value='2'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='read' data-value='3'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='read' data-value='4'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='read' data-value='5'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+        </ul>
+    </div>
+    <div class='rating-stars'>
+        <ul class='stars'>
+            <li class='star' data-language=${language} title='write' data-value='1'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='write' data-value='2'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='write' data-value='3'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='write' data-value='4'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+            <li class='star' data-language=${language} title='write' data-value='5'>
+                <i class='fa fa-star fa-fw'></i>
+            </li>
+        </ul>
+    </div>
+</div>
+`
 }
-placeSkills(language)
+
 // Auto complete scripts
-    $( function() {
-        let availableTags = [
-          "Married"
-        ];
-        $( "#tags" ).autocomplete({
-          source: availableTags
-        });
-      } );
-console.log("ready0");
+$(function() {
+    let availableTags = [
+      "Married"
+    ];
+    $( "#tags" ).autocomplete({
+      source: availableTags
+    });
+});
 
 // Star Component
 const starEffects = () =>{
-  
+
     /* 1. Visualizing things on Hover - See next part for action on click */
-    $('#stars li').on('mouseover', function(){
+    $('.stars li').on('mouseover', function(){
       var onStar = parseInt($(this).data('value'), 10); // The star currently mouse on
-     
+
       // Now highlight all the stars that's not after the current hovered star
       $(this).parent().children('li.star').each(function(e){
         if (e < onStar) {
@@ -91,29 +182,42 @@ const starEffects = () =>{
           $(this).removeClass('hover');
         }
       });
-      
+
     }).on('mouseout', function(){
       $(this).parent().children('li.star').each(function(e){
         $(this).removeClass('hover');
       });
     });
-    
-    
+
+
     /* 2. Action to perform on click */
-    $('#stars li').on('click', function(){
+    $('.stars li').on('click', function(){
       var onStar = parseInt($(this).data('value'), 10); // The star currently selected
       var stars = $(this).parent().children('li.star');
-      
+
       for (i = 0; i < stars.length; i++) {
         $(stars[i]).removeClass('selected');
       }
-      
+
       for (i = 0; i < onStar; i++) {
         $(stars[i]).addClass('selected');
       }
-      
-      // JUST RESPONSE (Not needed)
-      var ratingValue = parseInt($('#stars li.selected').last().data('value'), 10);
+
+      // RESPONSE
+      var ratingValue = parseInt($('.stars li.selected').last().data('value'), 10);
+      if(this.title != "skill"){
+        listOfLanguages.map(a=> {
+          if(a.language_name == this.getAttribute('data-language')){
+            a[this.title] = ratingValue;
+          }
+        })
+      }
+      else {
+        listOfSkills.map(a=> {
+          if(a.skill == this.getAttribute('data-skill'))
+            a.proficiency = ratingValue;
+        })
+      }
       var msg = "";
       if (ratingValue > 1) {
           msg = "Thanks! You rated this " + ratingValue + " stars.";
@@ -121,12 +225,10 @@ const starEffects = () =>{
       else {
           msg = "We will improve ourselves. You rated this " + ratingValue + " stars.";
       }
-      console.log("star", onStar)
     });
-    
 }
 
-// OCR Get Text 
+// OCR Get Text
 (function () {
     console.log("before");
     const firstName = document.getElementById("firstName");
@@ -210,49 +312,75 @@ const starEffects = () =>{
         }
         }
     };
-    
+
 
     placeText();
 })();
+
 // Submit
-async function postData(url = '', data = {}) {
-    // Default options are marked with *
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        "Accept": "application/json",
-        'Content-Type': 'application/json',
-        'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'      
-      },     
-      body: JSON.stringify(data) 
-    });
-    return response.json(); // parses JSON response into native JavaScript objects
-  }
 const submitForm = () => {
-    console.log("submited");
-    postData(`${baseUrl}/api/resource/Job Applicant`, { "ERF": "ERF-2020-00004", "First Name": "Hassan"})
-  .then(data => {
-    console.log("post data",data); 
-  });
-    fetch(`${baseUrl}/api/resource/Job Applicant`, {
-        // headers: {
-        //     'Authorization': 'token 57f152ebd8b9af5:50fe35e6c122253'
-        // }
-        body: JSON.stringify({
-            usr: 'h.marzooq@armor-services.com',
-            pwd: 'hassarah420024703307786'
-        })
-    })
-    .then(r => r.json())
-    .then(erf => {
-    console.log("ERFFInel",erf);    
-    
-})
+    frappe.call({
+      method: 'one_fm.templates.pages.job_application.create_job_applicant',
+      args: {
+        job_opening: localStorage.getItem("currentJobOpening"),
+        email_id: $('#email').val(),
+        job_applicant_fields: {
+          one_fm_first_name: $('#firstName').val(),
+          one_fm_erf: window.localStorage.getItem("erf"),
+          // one_fm_second_name: $('#secondName').val(),
+          // one_fm_third_name: $('#thirdName').val(),
+          one_fm_last_name: $('#lastName').val(),
+          one_fm_gender: $("#gender option:selected").text(),
+          one_fm_religion: $("#religion option:selected").text(),
+          one_fm_date_of_birth: $('#dob').val(),
+          one_fm_place_of_birth: $('#placeOfBirth').val(),
+          one_fm_marital_status: $('#MaritalStatus option:selected').text(),
+          one_fm_email_id: $('#email').val(),
+          one_fm_contact_number: $('#phone').val(),
+          one_fm_secondary_number: $('#phone1').val(),
+          one_fm_passport_number: $('#PassportNumber').val(),
+          one_fm_passport_holder_of: $('#passportHolderOf').val(),
+          one_fm_passport_issued: $('#passportIssued').val(),
+          one_fm_passport_expire: $('#passportExpiry').val(),
+          one_fm_passport_type: $('#PassportType option:selected').text(),
+          one_fm_have_a_valid_visa_in_kuwait: $('#ValidVisa').val(),
+          one_fm_visa_type: $('#visaType').val(),
+          one_fm_visa_issued: $('#visaIssuedOn').val(),
+          one_fm_cid_number: $('#civilId').val(),
+          one_fm_cid_expire: $('#civilValidTill').val(),
+          one_fm_educational_qualification: $('#educationalQualification option:selected').text(),
+          one_fm_university: $('#University').val(),
+          one_fm_specialization: $('#Specialization').val(),
+          one_fm_rotation_shift: $('#rotationalShift option:selected').text(),
+          one_fm_night_shift: $('#nightShift option:selected').text(),
+          one_fm_type_of_driving_license: $('#typeOfDrivingLicense option:selected').text(),
+        },
+        languages: listOfLanguages,
+        skills: listOfSkills,
+        // files: $('#resume').val(),
+      },
+      callback: function (r) {
+        if (r) {
+          if (r.message == 1) {
+            Swal.fire(
+              'Successfully Sent!',
+              'Your message has been sent.',
+              'success'
+            );
+
+            $('#fullName').val('');
+            $('#email').val('');
+            $('#phone').val('');
+            $('#resume').val('');
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Could not send...',
+              text: 'Please try again!'
+            });
+          }
+        }
+      }
+    });
 }
 document.getElementById("submitBtn").addEventListener("click", submitForm);
-
-}
-else {
-    alert("Please Signup or Login!");
-    window.location = "applicant-sign-up";
-}

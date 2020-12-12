@@ -295,7 +295,6 @@ function load_js(page){
 				],
 				primary_action_label: 'Submit',
 				primary_action(values) {
-					console.log(values, posts);
 					$('#cover-spin').show(0);
 					frappe.call({
 						method: 'one_fm.one_fm.page.roster.roster.edit_post',
@@ -359,8 +358,7 @@ function load_js(page){
 
             $(".selectclass").map(function () {
                 if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-					console.log($(this).attr("data-selectid"));
-                    if (isMonth == 1) {
+                   if (isMonth == 1) {
                         classgrt.push($(this).attr("data-selectid"));
                     }
                     else {
@@ -570,7 +568,6 @@ function load_js(page){
 
 // Show popups on clicking edit options in Roster view
 function setup_topbar_events(page){
-	console.log(frappe.session.user);
 	$('.scheduleleave').on('click', function(){
 		schedule_leave(page);		
 	});
@@ -1238,7 +1235,7 @@ function escape_values(string){
 
 // Setup filters data on left sidebar
 function setup_filters(page){
-	frappe.db.get_value("Employee", {"user_id": "k.sharma@armor-services.com"}, ["name"])
+	frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
 	.then(res => {
 		let {name} = res.message;
 		page.employee_id = name;
@@ -1258,15 +1255,18 @@ function get_projects(page){
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_projects',{employee_id})
 	.then(res => {
 		let parent = $('[data-page-route="roster"] #rosteringprojectselect');
-		let project_data = [];
+		let project_data = [{'id': '', 'text': 'Select Project'}];
 		res.forEach(element => {
 			let {name} = element;
 			project_data.push({'id': name, 'text': name});
 		});
+		parent.empty().trigger("change");
 		parent.select2({data: project_data});
 
 		$(parent).on('select2:select', function (e) {
 			page.filters.project = $(this).val();
+			get_sites(page);
+			get_shifts(page);
 			let element = get_wrapper_element().slice(1);
 			page[element](page);			
 		});
@@ -1274,19 +1274,22 @@ function get_projects(page){
 }
 
 function get_sites(page){
-	let {employee_id, project} = page;
+	let {employee_id} = page;
+	let {project} = page.filters;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_sites',{employee_id, project})
 	.then(res => {
 		let parent = $('[data-page-route="roster"] #rosteringsiteselect');
-		let site_data = [];
+		let site_data = [{'id': '', 'text': 'Select Site'}];
 		res.forEach(element => {
 			let {name} = element;
 			site_data.push({'id': name, 'text': name});
 		});
+		parent.empty().trigger("change");
 		parent.select2({data: site_data});
 		
 		$(parent).on('select2:select', function (e) {
 			page.filters.site = $(this).val();
+			get_shifts(page);
 			let element = get_wrapper_element().slice(1);
 			page[element](page);
 		});
@@ -1294,15 +1297,17 @@ function get_sites(page){
 }
 
 function get_shifts(page){
-	let {employee_id, site} = page;
-	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts',{employee_id, site})
+	let {employee_id} = page;
+	let {project, site} = page.filters;
+	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts',{employee_id, project, site})
 	.then(res => {
 		let parent = $('[data-page-route="roster"] #rosteringshiftselect');
-		let shift_data = [];
+		let shift_data = [{'id': '', 'text': 'Select Shift'}];
 		res.forEach(element => {
 			let {name} = element;
 			shift_data.push({'id': name, 'text': name});
 		});
+		parent.empty().trigger("change");
 		parent.select2({data: shift_data});
 
 		$(parent).on('select2:select', function (e) {
@@ -2285,7 +2290,6 @@ function unschedule_staff(page){
 		primary_action: function(){
 			$('#cover-spin').show(0);
 			let {start_date, end_date, never_end} = d.get_values();
-			console.log(employees);
 			frappe.xcall('one_fm.one_fm.page.roster.roster.unschedule_staff',
 			{employees, start_date, end_date, never_end})
 			.then(res => {
@@ -2404,7 +2408,6 @@ function schedule_change_post(page){
 			{'fieldname': 'cb1', 'fieldtype': 'Section Break'},
 			{'label': 'From Date', 'fieldname': 'start_date', 'fieldtype': 'Date', 'default': date, onchange:function(){
 				let start_date = d.get_value('start_date');
-				console.log( moment(start_date),moment(frappe.datetime.nowdate()));
 				if(start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))){
 					// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
 					frappe.throw(__("Start Date cannot be before today."));

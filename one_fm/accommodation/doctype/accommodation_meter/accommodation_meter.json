@@ -26,7 +26,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Meter Type",
-   "options": "\nElectrical\nWater",
+   "options": "\nElectricity\nWater",
    "reqd": 1
   },
   {
@@ -39,7 +39,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-05 07:54:00.550991",
+ "modified": "2020-11-16 08:47:20.794208",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Meter",
@@ -54,6 +54,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
    "share": 1,
    "write": 1
   }
