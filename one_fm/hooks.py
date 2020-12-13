@@ -160,7 +160,8 @@ doc_events = {
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
 	},
 	"Purchase Receipt": {
-		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt"
+		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
+		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit"
 	},
 	"ToDo": {
 		"after_insert": "one_fm.grd.utils.todo_after_insert"
