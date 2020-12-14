@@ -2,52 +2,22 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
-  "modified": "2020-07-01 01:12:00.411674",
-  "name": "Accept",
+  "modified": "2020-11-23 19:46:19.020045",
+  "name": "Submit for Review",
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "workflow_action_name": "Accept"
+  "workflow_action_name": "Submit for Review"
  },
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
-  "modified": "2020-02-01 11:07:36.096023",
-  "name": "Approval Request",
+  "modified": "2020-12-04 18:19:02.728946",
+  "name": "Reject & Issue Penalty",
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "workflow_action_name": "Approval Request"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
-  "modified": "2020-02-01 11:11:31.802414",
-  "name": "HR Rejected",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "workflow_action_name": "HR Rejected"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
-  "modified": "2020-02-01 11:11:55.261627",
-  "name": "HR Approved",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "workflow_action_name": "HR Approved"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
-  "modified": "2020-02-01 11:30:33.777234",
-  "name": "Cancel",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "workflow_action_name": "Cancel"
+  "workflow_action_name": "Reject & Issue Penalty"
  },
  {
   "docstatus": 0,
@@ -58,45 +28,5 @@
   "parentfield": null,
   "parenttype": null,
   "workflow_action_name": "Approve"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
-  "modified": "2019-11-24 17:45:54.588520",
-  "name": "Reject",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "workflow_action_name": "Reject"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
-  "modified": "2019-11-24 17:45:54.591163",
-  "name": "Review",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "workflow_action_name": "Review"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
-  "modified": "2020-07-27 18:21:12.104104",
-  "name": "Start Investigation",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "workflow_action_name": "Start Investigation"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
-  "modified": "2020-07-27 18:41:41.753166",
-  "name": "Complete Investigation",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "workflow_action_name": "Complete Investigation"
  }
 ]
