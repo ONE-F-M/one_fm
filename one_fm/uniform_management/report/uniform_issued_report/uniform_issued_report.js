@@ -4,6 +4,11 @@
 
 frappe.query_reports["Uniform Issued Report"] = {
 	"filters": [
-
+		{
+			"fieldname":"employee",
+			"label": __("Employee"),
+			"fieldtype": "Link",
+			"options": "Employee"
+		}
 	]
 };
