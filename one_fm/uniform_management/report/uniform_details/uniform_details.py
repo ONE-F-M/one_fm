@@ -49,8 +49,8 @@ def execute(filters=None):
 		if (re_order_level or re_order_qty) and re_order_level > bin.projected_qty:
 			shortage_qty = re_order_level - flt(bin.projected_qty)
 
-		data.append([item.name, item.item_name, item.description, item.item_group,
-			item.stock_uom, bin.actual_qty, bin.used_warehouse_qty])
+		data.append([item.name, item.description, item.item_group,
+			item.stock_uom, bin.projected_qty, 0, bin.actual_qty, bin.used_warehouse_qty])
 
 		if include_uom:
 			conversion_factors.append(item.conversion_factor)
@@ -61,10 +61,11 @@ def execute(filters=None):
 def get_columns():
 	return [
 		{"label": _("Item Code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 140},
-		{"label": _("Item Name"), "fieldname": "item_name", "width": 150},
 		{"label": _("Description"), "fieldname": "description", "width": 370},
 		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
 		{"label": _("UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 100},
+		{"label": _("Received"), "fieldname": "received", "fieldtype": "Float", "width": 120, "convertible": "qty"},
+		{"label": _("Distributed"), "fieldname": "distributed", "fieldtype": "Float", "width": 120, "convertible": "qty"},
 		{"label": _("New Uniform"), "fieldname": "actual_qty", "fieldtype": "Float", "width": 120, "convertible": "qty"},
 		{"label": _("Used Uniform"), "fieldname": "planned_qty", "fieldtype": "Float", "width": 120, "convertible": "qty"}
 	]
