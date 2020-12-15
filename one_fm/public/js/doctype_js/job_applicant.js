@@ -399,7 +399,7 @@ var is_dob_include_in_cid = function(cid, dob) {
 		day = day.toString();
 	}
 	year = year.toString().slice(-2);
-	let date_string = day+month+year;
+	let date_string = year+month+day;
 	return cid.includes(date_string);
 };
 
