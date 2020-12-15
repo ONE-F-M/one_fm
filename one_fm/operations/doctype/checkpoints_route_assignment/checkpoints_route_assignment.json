@@ -25,38 +25,10 @@
   "checkpoints_route_assignment_loose_schedule_table",
   "section_break_18",
   "hourly_repeat",
-  "column_break_38",
-  "daily_repeat",
-  "column_break_32",
-  "weekly_repeat",
-  "column_break_34",
-  "monthly_repeat",
-  "section_break_21",
-  "start_repeat_time",
-  "column_break_23",
-  "end_repeat_time",
-  "column_break_24",
-  "repeat_every_set_duration",
-  "section_break_29",
-  "start_date",
-  "column_break_31",
-  "end_date",
-  "column_break_33",
-  "never_end",
-  "section_break_39",
-  "sunday",
-  "column_break_41",
-  "monday",
-  "column_break_43",
-  "tuesday",
-  "column_break_45",
-  "wednesday",
-  "column_break_47",
-  "thursday",
-  "column_break_49",
-  "friday",
-  "column_break_51",
-  "saturday"
+  "section_break_20",
+  "scheduled_repeat",
+  "column_break_22",
+  "single_schedule"
  ],
  "fields": [
   {
@@ -144,6 +116,26 @@
    "label": "Hourly Repeat"
   },
   {
+   "fieldname": "section_break_20",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "scheduled_repeat",
+   "fieldtype": "Check",
+   "label": "Scheduled Repeat"
+  },
+  {
+   "fieldname": "column_break_22",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "single_schedule",
+   "fieldtype": "Check",
+   "label": "Single Schedule"
+  },
+  {
    "fieldname": "section_break_11",
    "fieldtype": "Section Break"
   },
@@ -158,171 +150,9 @@
    "fieldtype": "Table",
    "label": "Checkpoints Route Assignment Loose Schedule Table",
    "options": "Checkpoints Route Assignment Loose Schedule Child Table"
-  },
-  {
-   "default": "00:00:00",
-   "fieldname": "start_repeat_time",
-   "fieldtype": "Time",
-   "label": "Start Repeat Time"
-  },
-  {
-   "fieldname": "column_break_23",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "00:00:00",
-   "fieldname": "end_repeat_time",
-   "fieldtype": "Time",
-   "label": "End Repeat Time"
-  },
-  {
-   "fieldname": "column_break_24",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "00:00:00",
-   "fieldname": "repeat_every_set_duration",
-   "fieldtype": "Time",
-   "label": "Repeat Every Set Duration"
-  },
-  {
-   "depends_on": "eval:doc.hourly_repeat == '1'",
-   "fieldname": "section_break_21",
-   "fieldtype": "Section Break"
-  },
-  {
-   "depends_on": "eval:doc.daily_repeat == '1' || doc.weekly_repeat == '1' || doc.monthly_repeat == '1'",
-   "fieldname": "section_break_29",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "start_date",
-   "fieldtype": "Date",
-   "label": "Start Date"
-  },
-  {
-   "fieldname": "column_break_31",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "end_date",
-   "fieldtype": "Data",
-   "label": "End Date"
-  },
-  {
-   "fieldname": "column_break_33",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "never_end",
-   "fieldtype": "Check",
-   "label": "Never End"
-  },
-  {
-   "default": "0",
-   "fieldname": "daily_repeat",
-   "fieldtype": "Check",
-   "label": "Daily Repeat"
-  },
-  {
-   "fieldname": "column_break_32",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "weekly_repeat",
-   "fieldtype": "Check",
-   "label": "Weekly Repeat"
-  },
-  {
-   "fieldname": "column_break_34",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "monthly_repeat",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Monthly Repeat"
-  },
-  {
-   "fieldname": "column_break_38",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.weekly_repeat == '1'",
-   "fieldname": "section_break_39",
-   "fieldtype": "Section Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "sunday",
-   "fieldtype": "Check",
-   "label": "Sunday"
-  },
-  {
-   "fieldname": "column_break_41",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "monday",
-   "fieldtype": "Check",
-   "label": "Monday"
-  },
-  {
-   "fieldname": "column_break_43",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "tuesday",
-   "fieldtype": "Check",
-   "label": "Tuesday"
-  },
-  {
-   "fieldname": "column_break_45",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "wednesday",
-   "fieldtype": "Check",
-   "label": "Wednesday"
-  },
-  {
-   "fieldname": "column_break_47",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "thursday",
-   "fieldtype": "Check",
-   "label": "Thursday"
-  },
-  {
-   "fieldname": "column_break_49",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "friday",
-   "fieldtype": "Check",
-   "label": "Friday"
-  },
-  {
-   "fieldname": "column_break_51",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "saturday",
-   "fieldtype": "Check",
-   "label": "Saturday"
   }
  ],
- "modified": "2020-12-13 19:46:45.932398",
+ "modified": "2020-12-12 08:34:14.930046",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Checkpoints Route Assignment",

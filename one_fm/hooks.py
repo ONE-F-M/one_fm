@@ -332,36 +332,13 @@ fixtures = [
 		"dt": "Property Setter"
 	},
 	{
-		"dt": "Workflow State", "filters":[
-        [
-            "name", "in", [
-                "Assign to Site Supervisor",
-				"Review by Projects Manager",
-				"Approved By Projects Manager",
-				"Issue Penalty",
-            ]
-        ]
-    ]
+		"dt": "Workflow State"
 	},
 	{
-		"dt": "Workflow Action Master", "filters":[
-        [
-            "name", "in", [
-                "Submit for Review",
-				"Approve",
-				"Reject & Issue Penalty",
-            ]
-        ]
-    ]
+		"dt": "Workflow Action Master"
 	},
 	{
-		"dt": "Workflow", "filters":[
-        [
-            "name", "in", [
-                "Missed MOM Follow-up Action Workflow",
-            ]
-        ]
-    ]
+		"dt": "Workflow"
 	},
 	{
 		"dt": "Custom Script",
