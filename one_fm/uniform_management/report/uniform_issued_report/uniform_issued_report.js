@@ -9,6 +9,12 @@ frappe.query_reports["Uniform Issued Report"] = {
 			"label": __("Employee"),
 			"fieldtype": "Link",
 			"options": "Employee"
+		},
+		{
+			"fieldname":"returned_on",
+			"label": __("Return Date"),
+			"fieldtype": "Date",
+			"default": frappe.datetime.now_date()
 		}
 	]
 };
