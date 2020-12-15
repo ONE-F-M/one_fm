@@ -55,7 +55,7 @@ def calculate_amount_pay_back(uniform, returned_on=None):
 		returned_on = getdate(today())
 
 	qty_return = uniform.quantity - (uniform.returned or 0)
-	if qty_return > 0 and getdate(uniform.expire_on) > returned_on:
+	if qty_return > 0 and getdate(uniform.expire_on) > getdate(returned_on):
 		per_month_rate = (qty_return * uniform.rate) / month_diff(uniform.expire_on, uniform.issued_on)
 		pay_back += per_month_rate * month_diff(uniform.expire_on, returned_on)
 	return pay_back
