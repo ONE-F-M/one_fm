@@ -13,16 +13,17 @@ def execute(filters=None):
 
 def get_columns():
     return [
-        _("Employee") + ":Link/Employee:150",
-		_("Employee ID") + ":Data:150",
-		_("Employee Name") + ":Data:150",
-        _("Item") + ":Data:150",
-        _("Issued") + ":Date:100",
-        _("Issued Qty") + ":Data:100",
+		_("Employee") + ":Link/Employee:120",
+		_("Employee ID") + ":Data:120",
+		_("Employee Name") + ":Data:180",
+		_("Item") + ":Data:120",
+		_("Issued") + ":Date:90",
+		_("Issued Qty") + ":Data:90",
 		_("Returned Qty") + ":Data:100",
-		_("Expire On") + ":Date:100",
-		_("Pay Back") + ":Currency:100",
-        ]
+		_("Expire On") + ":Date:90",
+		_("Status") + ":Data:80",
+		_("Cost") + ":Currency:70",
+    ]
 
 def get_data(filters):
 	data=[]
@@ -43,8 +44,11 @@ def get_data(filters):
 	uniform_list=frappe.db.sql(query,as_dict=1)
 	for uniform in uniform_list:
 		pay_back = calculate_amount_pay_back(uniform, filters.returned_on)
+		uniform_status = "Valid"
+		if getdate(uniform.expire_on) <= getdate(filters.returned_on):
+			uniform_status = "Expired"
 		row = [uniform.employee, uniform.employee_id, uniform.employee_name, uniform.item, uniform.issued_on,
-			uniform.quantity, uniform.returned, uniform.expire_on, pay_back]
+			uniform.quantity, uniform.returned, uniform.expire_on, uniform_status, pay_back]
 		data.append(row)
 
 	return data
