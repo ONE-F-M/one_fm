@@ -19,7 +19,21 @@ def get_performance_profile_guid():
         return get_url(file_path)
 
 def validate_job_offer(doc, method):
-    if doc.one_fm_salary_details:
+    if doc.one_fm_erf and not doc.one_fm_salary_structure:
+        erf_salary_structure = frappe.db.get_value('ERF', doc.one_fm_erf, 'salary_structure')
+        if erf_salary_structure:
+            doc.one_fm_salary_structure = erf_salary_structure
+    if doc.one_fm_salary_structure:
+        salary_structure = frappe.get_doc('Salary Structure', doc.one_fm_salary_structure)
+        total_amount = 0
+        doc.set('one_fm_salary_details', [])
+        for salary in salary_structure.earnings:
+            total_amount += salary.amount
+            salary_details = doc.append('one_fm_salary_details')
+            salary_details.salary_component = salary.salary_component
+            salary_details.amount = salary.amount
+        doc.one_fm_job_offer_total_salary = total_amount
+    elif doc.one_fm_salary_details:
         total_amount = 0
         for salary in doc.one_fm_salary_details:
             total_amount += salary.amount if salary.amount else 0
@@ -91,12 +105,22 @@ def make_employee(source_name, target_doc=None):
 @frappe.whitelist()
 def make_employee_from_job_offer(source_name, target_doc=None):
     def set_missing_values(source, target):
+        if source.one_fm_salary_structure:
+            target.one_fm_salary_type = frappe.db.get_value('Salary Structure', source.one_fm_salary_structure, 'payroll_frequency')
+            salary_structure = frappe.get_doc('Salary Structure', source.one_fm_salary_structure)
+            if salary_structure.earnings:
+                for earning in salary_structure.earnings:
+                    if earning.salary_component == 'Basic':
+                        target.one_fm_basic_salary = earning.amount
+            target.salary_mode = salary_structure.mode_of_payment
         set_map_job_applicant_details(target, source.job_applicant)
     doc = get_mapped_doc("Job Offer", source_name, {
         "Job Offer": {
             "doctype": "Employee",
             "field_map": {
                 "applicant_name": "employee_name",
+                "name": "job_offer",
+                "one_fm_salary_structure": "job_offer_salary_structure"
             }
         }
     }, target_doc, set_missing_values)
@@ -132,6 +156,16 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
     exp_in_month = month_diff(job_applicant.one_fm_employment_end_date, job_applicant.one_fm_employment_start_date)
     if exp_in_month:
         external_work_history.total_experience = exp_in_month / 12
+
+@frappe.whitelist()
+def create_salary_structure_assignment(doc, method):
+    if doc.job_offer_salary_structure:
+        assignment = frappe.new_doc("Salary Structure Assignment")
+        assignment.employee = doc.name
+        assignment.salary_structure = doc.job_offer_salary_structure
+        assignment.company = doc.company
+        assignment.from_date = doc.date_of_joining
+        assignment.save(ignore_permissions = True)
 
 @frappe.whitelist()
 def update_job_offer_from_applicant(jo, status):

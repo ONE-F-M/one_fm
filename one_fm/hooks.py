@@ -125,7 +125,8 @@ doc_events = {
 		"validate": "one_fm.utils.validate_hajj_leave"
 	},
 	"Employee": {
-		"before_validate": "one_fm.api.doc_events.employee_before_validate"
+		"before_validate": "one_fm.api.doc_events.employee_before_validate",
+		"after_insert": "one_fm.hiring.utils.create_salary_structure_assignment"
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
@@ -231,7 +232,7 @@ scheduler_events = {
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly"
 	],
-  
+
 	"cron": {
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_accept",

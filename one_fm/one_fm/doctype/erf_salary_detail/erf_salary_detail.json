@@ -15,6 +15,7 @@
    "in_list_view": 1,
    "label": "Salary Component",
    "options": "Salary Component",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -22,12 +23,13 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Amount",
+   "read_only": 1,
    "reqd": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-04-27 17:49:51.496047",
+ "modified": "2020-12-16 08:27:47.551800",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF Salary Detail",

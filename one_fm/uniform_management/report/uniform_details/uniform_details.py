@@ -61,7 +61,7 @@ def execute(filters=None):
 		for distribution in distribution_list:
 			distributed += distribution.quantity - distribution.returned
 		data.append([item.name, item.description, item.item_group,
-			item.stock_uom, bin.projected_qty, distributed, bin.actual_qty, bin.used_warehouse_qty])
+			item.stock_uom, bin.actual_qty+distributed, distributed, bin.actual_qty, bin.used_warehouse_qty])
 
 		if include_uom:
 			conversion_factors.append(item.conversion_factor)

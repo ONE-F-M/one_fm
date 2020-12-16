@@ -34,7 +34,10 @@ frappe.ui.form.on('Job Offer', {
 				freeze_message: __("Notifying Finance Department."),
 			});
 		}
-	}
+	},
+  one_fm_salary_structure: function(frm) {
+    set_salary_structure_to_salary_details(frm);
+  }
 });
 
 var set_job_applicant_details = function(frm) {
@@ -66,14 +69,45 @@ var set_erf_details = function(frm, erf) {
 };
 
 var set_salary_details = function(frm, erf) {
-  frm.clear_table('one_fm_salary_details');
-  let total_amount = 0;
-  if(erf.salary_details){
+  frm.set_value('one_fm_salary_structure', erf.salary_structure);
+  if(erf.salary_details && !erf.salary_structure){
+    frm.clear_table('one_fm_salary_details');
+    let total_amount = 0;
     erf.salary_details.forEach((item, i) => {
       total_amount += item.amount;
       let salary = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'one_fm_salary_details');
       frappe.model.set_value(salary.doctype, salary.name, 'salary_component', item.salary_component);
       frappe.model.set_value(salary.doctype, salary.name, 'amount', item.amount);
+    });
+    frm.set_value('one_fm_job_offer_total_salary', total_amount);
+    frm.refresh_field('one_fm_salary_details');
+  }
+};
+
+var set_salary_structure_to_salary_details = function(frm) {
+  frm.clear_table('one_fm_salary_details');
+  let total_amount = 0;
+  if(frm.doc.one_fm_salary_structure){
+    frappe.call({
+      method: 'frappe.client.get',
+      args: {
+        doctype: 'Salary Structure',
+        filters: {'name': frm.doc.one_fm_salary_structure}
+      },
+      callback: function(r) {
+        if(r && r.message){
+          if(r.message.earnings){
+            r.message.earnings.forEach((item, i) => {
+              total_amount += item.amount;
+              let salary = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'one_fm_salary_details');
+              frappe.model.set_value(salary.doctype, salary.name, 'salary_component', item.salary_component);
+              frappe.model.set_value(salary.doctype, salary.name, 'amount', item.amount);
+            });
+          }
+        }
+        frm.set_value('one_fm_job_offer_total_salary', total_amount);
+        frm.refresh_field('one_fm_salary_details');
+      }
     });
   }
   frm.set_value('one_fm_job_offer_total_salary', total_amount);
