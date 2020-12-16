@@ -19,7 +19,21 @@ def get_performance_profile_guid():
         return get_url(file_path)
 
 def validate_job_offer(doc, method):
-    if doc.one_fm_salary_details:
+    if doc.one_fm_erf and not doc.one_fm_salary_structure:
+        erf_salary_structure = frappe.db.get_value('ERF', doc.one_fm_erf, 'salary_structure')
+        if erf_salary_structure:
+            doc.one_fm_salary_structure = erf_salary_structure
+    if doc.one_fm_salary_structure:
+        salary_structure = frappe.get_doc('Salary Structure', doc.one_fm_salary_structure)
+        total_amount = 0
+        doc.set('one_fm_salary_details', [])
+        for salary in salary_structure.earnings:
+            total_amount += salary.amount
+            salary_details = doc.append('one_fm_salary_details')
+            salary_details.salary_component = salary.salary_component
+            salary_details.amount = salary.amount
+        doc.one_fm_job_offer_total_salary = total_amount
+    elif doc.one_fm_salary_details:
         total_amount = 0
         for salary in doc.one_fm_salary_details:
             total_amount += salary.amount if salary.amount else 0
