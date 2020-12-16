@@ -7,6 +7,7 @@
  "field_order": [
   "item",
   "item_name",
+  "actual_quantity",
   "quantity",
   "uom",
   "column_break_4",
@@ -26,6 +27,7 @@
    "reqd": 1
   },
   {
+   "fetch_from": "item.item_name",
    "fieldname": "item_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -49,6 +51,7 @@
    "default": "0",
    "fieldname": "returned",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Returned",
    "read_only": 1
   },
@@ -81,11 +84,17 @@
    "fieldtype": "Date",
    "label": "Issued On",
    "read_only": 1
+  },
+  {
+   "fieldname": "actual_quantity",
+   "fieldtype": "Float",
+   "label": "Actual Quantity",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-10-11 21:27:37.815758",
+ "modified": "2020-12-16 06:58:21.458870",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform Item",

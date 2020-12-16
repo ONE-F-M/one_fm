@@ -122,6 +122,7 @@ class EmployeeUniform(Document):
 				uniform_issue_ret = self.append('uniforms')
 				uniform_issue_ret.item = uniform.item
 				uniform_issue_ret.item_name = uniform.item_name
+				uniform_issue_ret.actual_quantity = uniform.quantity
 				uniform_issue_ret.quantity = uniform.quantity
 				uniform_issue_ret.uom = uniform.uom
 				if self.type == "Issue":
