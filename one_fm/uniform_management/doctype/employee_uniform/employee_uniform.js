@@ -5,6 +5,7 @@ frappe.ui.form.on('Employee Uniform', {
 	refresh: function(frm) {
 		if(frm.doc.type == "Return"){
 			frappe.meta.get_docfield("Employee Uniform Item", 'returned', frm.doc.name).hidden = true;
+			// frappe.meta.get_docfield("Employee Uniform Item", 'quantity', frm.doc.name).label = 'Return Qty';
 		}
 	},
 	employee: function(frm) {
@@ -14,6 +15,10 @@ frappe.ui.form.on('Employee Uniform', {
 	type: function(frm) {
 		set_uniform_details(frm);
 		set_warehouse(frm);
+		if(frm.doc.type == "Return"){
+			frappe.meta.get_docfield("Employee Uniform Item", 'returned', frm.doc.name).hidden = true;
+			// frappe.meta.get_docfield("Employee Uniform Item", 'quantity', frm.doc.name).label = 'Return Qty';
+		}
 	},
 	reason_for_return: function(frm) {
 		set_warehouse(frm);
@@ -88,6 +93,16 @@ frappe.ui.form.on('Employee Uniform Item', {
 		const item = locals[doctype][name];
 		frm.events.get_item_data(frm, item);
 	},
+	quantity: function(frm, doctype, name) {
+		const item = locals[doctype][name];
+		if(frm.doc.type == 'Return'){
+			if(item.actual_quantity && item.quantity && item.quantity > item.actual_quantity){
+				item.quantity = item.actual_quantity
+				refresh_field("quantity", name, "uniforms");
+				frappe.throw(__("Could not exceed the Quantity than {0}",[item.actual_quantity]));
+			}
+		}
+	}
 });
 
 var set_filters = function(frm) {
