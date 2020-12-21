@@ -67,31 +67,18 @@ frappe.pages['stock-balance-1'].on_page_load = function(wrapper) {
 			parent: page.main,
 		})
 
-		// page.item_dashboard.before_refresh = function() {
-		// 	this.item_code = page.item_field.get_value();
-		// 	this.warehouse = page.warehouse_field.get_value();
-		// 	this.item_group = page.item_group_field.get_value();
-		// }
-
 		page.item_dashboard.refresh();
 
-		// item click
-		// var setup_click = function(doctype) {
-		// 	page.main.on('click', 'a[data-type="'+ doctype.toLowerCase() +'"]', function() {
-		// 		var name = $(this).attr('data-name');
-		// 		var field = page[doctype.toLowerCase() + '_field'];
-		// 		if(field.get_value()===name) {
-		// 			frappe.set_route('Form', doctype, name)
-		// 		} else {
-		// 			field.set_input(name);
-		// 			page.item_dashboard.refresh();
-		// 		}
-		// 	});
-		// }
+		var setup_click = function(doctype, doc_abbr) {
+			page.main.on('click', 'a[data-type="'+ doc_abbr +'"]', function() {
+				var name = $(this).attr('data-name');
+				frappe.set_route('Form', doctype, name)
+			});
+		}
 
-		// setup_click('Item');
-		// setup_click('Warehouse');
+		setup_click('Request for Material', 'rfm');
+		setup_click('Request for Purchase', 'rfp');
+		setup_click('Purchase Order', 'po');
+		setup_click('Purchase Receipt', 'pr');
 	});
-
-
 }
