@@ -1,0 +1,23 @@
+{
+ "content": null,
+ "creation": "2020-12-18 21:47:22.168369",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2020-12-18 21:47:22.168369",
+ "modified_by": "Administrator",
+ "module": "Purchase",
+ "name": "stock-balance-1",
+ "owner": "Administrator",
+ "page_name": "stock-balance-1",
+ "roles": [
+  {
+   "role": "Purchase User"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Purchase Flow"
+}

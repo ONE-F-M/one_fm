@@ -167,6 +167,11 @@ def get_data():
 			"icon": "fa fa-star",
 			"items": [
 				{
+					"type": "page",
+					"name": "stock-balance-1",
+					"label": _("Purchase Flow")
+				},
+				{
 					"type": "doctype",
 					"name": "Request for Material",
 					"onboard": 1,

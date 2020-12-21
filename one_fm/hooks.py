@@ -19,7 +19,7 @@ app_license = "MIT"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/one_fm/css/one_fm.css"
+app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
 		"/assets/one_fm/js/maps.js"
 ]
