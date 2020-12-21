@@ -382,5 +382,41 @@
   "parenttype": null,
   "style": "Danger",
   "workflow_state_name": "Rejected by Finance"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-12-16 02:17:48.166511",
+  "name": "Received At Warehouse",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Danger",
+  "workflow_state_name": "Received At Warehouse"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-12-17 14:02:10.250096",
+  "name": "Transferred From Warehouse",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Success",
+  "workflow_state_name": "Transferred From Warehouse"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2020-12-19 22:36:47.463809",
+  "name": "Transferred",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Success",
+  "workflow_state_name": "Transferred"
  }
 ]
