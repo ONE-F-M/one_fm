@@ -11,6 +11,7 @@ from frappe.model.document import Document
 
 class CustomerAsset(Document):
 	def validate(self):
+		self.purchase_receipt_no = self.purchase_receipt
 		self.validate_asset_values()
 		self.validate_item()
 		self.prepare_depreciation_data()
@@ -309,15 +310,12 @@ def on_purchase_receipt_submit(doc, handler=""):
 				customer_asset_doc.asset_name = item.item_name
 				customer_asset_doc.item_code = item.item_code
 				customer_asset_doc.purchase_receipt = doc.name
-				#customer_asset_doc.purchase_invoice = doc.name
-				customer_asset_doc.location = 'Cyber pak'
 				customer_asset_doc.gross_purchase_amount = item.base_net_rate + item.item_tax_amount
 				customer_asset_doc.purchase_date = doc.posting_date
 				customer_asset_doc.update({
 				'asset_name': customer_asset_doc.asset_name,
 				'item_code': customer_asset_doc.item_code,
 				'purchase_receipt': customer_asset_doc.purchase_receipt,
-				'location': customer_asset_doc.location,
 				'gross_purchase_amount': customer_asset_doc.gross_purchase_amount,
 				'purchase_date': customer_asset_doc.purchase_date
 				}).insert()
