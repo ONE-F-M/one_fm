@@ -1,0 +1,31 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Asset Finance Book",
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2020-11-26 10:58:40.954122",
+   "default_value": null,
+   "doc_type": "Asset Finance Book",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "expected_value_after_useful_life",
+   "idx": 0,
+   "modified": "2020-11-26 10:58:40.954122",
+   "modified_by": "Administrator",
+   "name": "Asset Finance Book-expected_value_after_useful_life-depends_on",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "depends_on",
+   "property_type": "Data",
+   "value": "eval:parent.doctype == 'Asset' || parent.doctype == 'Customer Asset'"
+  }
+ ],
+ "sync_on_migrate": 1
+}
