@@ -7,7 +7,7 @@
 				{% else %}
 				<span class="indicator red"></span>
 				{% endif %}
-				<a data-type="warehouse" data-name="{{ d.warehouse }}">{{ d.name }}</a>
+				<a data-type="rfm" data-name="{{ d.name }}">{{ d.name }}</a>
 			</div>
 			<div class="col-sm-2 small" style="margin-top: 8px;">
 				<!-- {% if show_item %} -->
@@ -16,8 +16,8 @@
 				{% else %}
 				<span class="indicator red"></span>
 				{% endif %}
-				<a data-type="item"
-					data-name="{{ d.item_code }}">{{ d.rfp }}
+				<a data-type="rfp"
+					data-name="{{ d.rfp }}">{{ d.rfp }}
 					<!-- {% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %} -->
 				</a>
 				<!-- {% endif %} -->
@@ -29,8 +29,8 @@
 				{% else %}
 				<span class="indicator red"></span>
 				{% endif %}
-				<a data-type="item"
-					data-name="{{ d.item_code }}">{{ d.po }}
+				<a data-type="po"
+					data-name="{{ d.po }}">{{ d.po }}
 					<!-- {% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %} -->
 				</a>
 				<!-- {% endif %} -->
@@ -42,8 +42,8 @@
 				{% else %}
 				<span class="indicator red"></span>
 				{% endif %}
-				<a data-type="item"
-					data-name="{{ d.item_code }}">{{ d.pr }}
+				<a data-type="pr"
+					data-name="{{ d.pr }}">{{ d.pr }}
 					<!-- {% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %} -->
 				</a>
 				<!-- {% endif %} -->
