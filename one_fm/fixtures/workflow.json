@@ -1266,5 +1266,165 @@
   ],
   "workflow_name": "Sales Invoice",
   "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Asset",
+  "is_active": 1,
+  "modified": "2020-12-17 14:13:16.993467",
+  "name": "Asset",
+  "override_status": 1,
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "send_email_alert": 1,
+  "states": [
+   {
+    "allow_edit": "Stock User",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Asset",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Received At Warehouse",
+    "update_field": "",
+    "update_value": null
+   },
+   {
+    "allow_edit": "Stock User",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Asset",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Transferred From Warehouse",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Stock User",
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Asset",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Cancelled",
+    "update_field": null,
+    "update_value": null
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Transfer",
+    "allow_self_approval": 1,
+    "allowed": "Stock User",
+    "condition": null,
+    "next_state": "Transferred From Warehouse",
+    "parent": "Asset",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Received At Warehouse"
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Stock User",
+    "condition": null,
+    "next_state": "Cancelled",
+    "parent": "Asset",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Transferred From Warehouse"
+   }
+  ],
+  "workflow_name": "Asset",
+  "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Asset Movement",
+  "is_active": 1,
+  "modified": "2020-12-19 22:39:45.112963",
+  "name": "Asset Movement",
+  "override_status": 0,
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "send_email_alert": 1,
+  "states": [
+   {
+    "allow_edit": "Stock User",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Asset Movement",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Stock Manager",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Asset Movement",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Transferred",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Stock Manager",
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Asset Movement",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Cancelled",
+    "update_field": null,
+    "update_value": null
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Transfer",
+    "allow_self_approval": 1,
+    "allowed": "Stock Manager",
+    "condition": null,
+    "next_state": "Transferred",
+    "parent": "Asset Movement",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending"
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Stock Manager",
+    "condition": null,
+    "next_state": "Cancelled",
+    "parent": "Asset Movement",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Transferred"
+   }
+  ],
+  "workflow_name": "Asset Movement",
+  "workflow_state_field": "workflow_state"
  }
 ]
