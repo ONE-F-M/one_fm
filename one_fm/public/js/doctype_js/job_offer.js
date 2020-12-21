@@ -15,6 +15,7 @@ frappe.ui.form.on('Job Offer', {
 				}
 			);
 		}
+    set_filters(frm);
   },
   job_applicant: function(frm) {
     set_job_applicant_details(frm);
@@ -37,8 +38,24 @@ frappe.ui.form.on('Job Offer', {
 	},
   one_fm_salary_structure: function(frm) {
     set_salary_structure_to_salary_details(frm);
+  },
+  employee_grade: function(frm) {
+    set_filters(frm);
   }
 });
+
+var set_filters = function(frm) {
+  var filters = {};
+  if(frm.doc.employee_grade){
+    filters['employee_grade'] = frm.doc.employee_grade;
+  }
+	frm.set_query("one_fm_salary_structure", function() {
+		return {
+			query: "one_fm.one_fm.utils.get_salary_structure_list",
+			filters: filters
+		}
+	});
+};
 
 var set_job_applicant_details = function(frm) {
   if(frm.doc.job_applicant){
