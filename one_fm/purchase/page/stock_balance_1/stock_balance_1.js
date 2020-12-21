@@ -1,7 +1,7 @@
 frappe.pages['stock-balance-1'].on_page_load = function(wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: __('Purchase Flow'),
+		title: __('Purchase Dashboard'),
 		single_column: true
 	});
 	page.start = 0;

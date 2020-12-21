@@ -66,10 +66,23 @@ def get_data(item_code=None, warehouse=None, item_group=None,
 				item.update({'progress': 75})
 				item.update({'po': exists_po})
 				item.update({'po_status': frappe.db.get_value('Purchase Order', exists_po, 'docstatus')})
-				exists_pr = frappe.db.exists('Purchase Receipt', {'purchase_order': exists_po})
-				if exists_pr:
+				# exists_pr = frappe.db.exists('Purchase Receipt', {'purchase_order': exists_po})
+				query = """
+					select
+						distinct pr.name, pr.docstatus
+					from
+						`tabPurchase Receipt` pr, `tabPurchase Receipt Item` pri
+					where
+						pri.parent=pr.name and pri.purchase_order=%s
+				"""
+				pr_list = frappe.db.sql(query, (exists_po), as_dict=True)
+				if pr_list:
 					item.update({'progress': 100})
-					item.update({'pr': exists_pr})
-					item.update({'pr_status': frappe.db.get_value('Purchase Receipt', exists_pr, 'docstatus')})
+					i = 1
+					for pr in pr_list:
+						if i == 1:
+							item.update({'pr': pr.name})
+							item.update({'pr_status': pr.docstatus})
+						i += 1
 
 	return items

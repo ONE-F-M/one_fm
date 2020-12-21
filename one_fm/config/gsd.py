@@ -169,7 +169,7 @@ def get_data():
 				{
 					"type": "page",
 					"name": "stock-balance-1",
-					"label": _("Purchase Flow")
+					"label": _("Purchase Dashboard")
 				},
 				{
 					"type": "doctype",
