@@ -3,12 +3,26 @@
 
 frappe.ui.form.on('Designation Profile', {
 	refresh: function(frm) {
-		// frm.set_query("designation", function() {
-		// 	return {
-		// 		filters: {
-		// 			"one_fm_is_uniform_needed_for_this_job": true
-		// 		}
-		// 	}
-		// });
+		frm.set_query("item", "accommodation_assets", function() {
+			return {
+				filters: {
+					"is_fixed_asset": true
+				}
+			}
+		});
+		frm.set_query("item", "accommodation_consumables", function() {
+			return {
+				filters: {
+					"is_stock_item": true
+				}
+			}
+		});
+		frm.set_query("item", "uniforms", function() {
+			return {
+				filters: {
+					"is_stock_item": true
+				}
+			}
+		});
 	}
 });
