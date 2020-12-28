@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 
-class DesignationUniformProfile(Document):
+class DesignationProfile(Document):
 	def autoname(self):
 		name = ""
 		if self.project:
