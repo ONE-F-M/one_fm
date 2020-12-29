@@ -1,0 +1,220 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "naming_series:",
+ "creation": "2020-12-28 11:10:49.975927",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "type",
+  "reason_for_return",
+  "warehouse",
+  "employee",
+  "employee_id",
+  "employee_name",
+  "column_break_4",
+  "civil_id",
+  "designation",
+  "project",
+  "status",
+  "issued_on",
+  "returned_on",
+  "company",
+  "asset_details_section",
+  "assets",
+  "consumables_details_section",
+  "consumables",
+  "section_break_20",
+  "pay_back_to_company",
+  "handover_form",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "\nAACI-.YYYY.-\nAACR-.YYYY.-"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "\nIssue\nReturn",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.type=='Return'",
+   "fieldname": "reason_for_return",
+   "fieldtype": "Select",
+   "label": "Reason for Return",
+   "options": "\nEmployee Exit\nEmployee Transfer\nItem Damage\nItem Expired\nItem Exchange\nAccommodation Change"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nDraft\nSubmitted",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "depends_on": "eval:doc.type=='Issue'",
+   "fieldname": "issued_on",
+   "fieldtype": "Date",
+   "label": "Issued On",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "depends_on": "eval:doc.type=='Return'",
+   "fieldname": "returned_on",
+   "fieldtype": "Date",
+   "label": "Returned On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "asset_details_section",
+   "fieldtype": "Section Break",
+   "label": "Asset Details"
+  },
+  {
+   "fieldname": "assets",
+   "fieldtype": "Table",
+   "label": "Assets",
+   "options": "Accommodation Distribution Asset"
+  },
+  {
+   "depends_on": "eval: doc.type == \"Return\" && (doc.reason_for_return == \"Item Damage\" || doc.reason_for_return == \"Employee Exit\")",
+   "fieldname": "pay_back_to_company",
+   "fieldtype": "Currency",
+   "label": "Pay Back to Company",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: !doc.__islocal",
+   "fieldname": "handover_form",
+   "fieldtype": "Attach",
+   "label": "Signed Copy of Handover Form"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Accommodation Asset and Consumable",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "consumables_details_section",
+   "fieldtype": "Section Break",
+   "label": "Consumables Details "
+  },
+  {
+   "fieldname": "consumables",
+   "fieldtype": "Table",
+   "label": "Consumables",
+   "options": "Accommodation Distribution Consumable"
+  },
+  {
+   "fieldname": "section_break_20",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-12-29 07:37:56.975431",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Asset and Consumable",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
