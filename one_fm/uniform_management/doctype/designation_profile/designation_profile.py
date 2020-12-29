@@ -3,8 +3,12 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-# import frappe
+import frappe
 from frappe.model.document import Document
 
-class DesignationUniform(Document):
-	pass
+class DesignationProfile(Document):
+	def autoname(self):
+		name = ""
+		if self.project:
+			name = self.project+"-"
+		self.name = name+self.designation

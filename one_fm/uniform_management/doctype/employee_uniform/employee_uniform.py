@@ -22,6 +22,7 @@ class EmployeeUniform(Document):
 				self.employee = employee
 
 	def on_submit(self):
+		self.validate_handover_form()
 		if self.type == "Issue":
 			self.status = 'Issued'
 			self.issued_on = today()
@@ -33,6 +34,10 @@ class EmployeeUniform(Document):
 					returned = frappe.db.get_value('Employee Uniform Item', item.issued_item_link, 'returned')
 					frappe.db.set_value('Employee Uniform Item', item.issued_item_link, 'returned', returned+item.quantity)
 		make_stock_entry(self)
+
+	def validate_handover_form(self):
+		if not self.handover_form:
+			frappe.throw(_("Attach Signed copy of Uniform Handover Form to Submit.!"))
 
 	def validate(self):
 		if not self.uniforms:
@@ -76,7 +81,7 @@ class EmployeeUniform(Document):
 					if uniform and len(uniform) == 1:
 						total_issued = item.quantity + get_issued_item_quantity(item.item, self.employee)
 						if total_issued > uniform[0].quantity:
-							frappe.throw(_("According to Designation Uniform Profile for {3} you can issue only {0} {1} of {2} in total".format(uniform[0].quantity, uniform[0].uom, uniform[0].item_name, self.designation)))
+							frappe.throw(_("According to Designation Profile - Uniforms for {3} you can issue only {0} {1} of {2} in total".format(uniform[0].quantity, uniform[0].uom, uniform[0].item_name, self.designation)))
 
 	def validate_return(self):
 		if self.type == 'Return':
@@ -110,7 +115,7 @@ class EmployeeUniform(Document):
 			if self.type == "Issue" and self.designation:
 				uniforms = get_project_uniform_details(self.designation, self.project)
 				if not uniforms:
-					frappe.msgprint(msg = 'No Designation Uniform Profile Found',
+					frappe.msgprint(msg = 'No Designation Profile - Uniforms Found',
 				       title = 'Warning',
 				       indicator = 'red'
 				    )
@@ -198,7 +203,7 @@ def get_project_uniform_details(designation_id, project_id=''):
 			select
 				name
 			from
-				`tabDesignation Uniform Profile`
+				`tabDesignation Profile`
 			where
 				designation=%(designation)s {condition}
 		"""
@@ -212,7 +217,7 @@ def get_project_uniform_details(designation_id, project_id=''):
 			condition = "and project IS NULL"
 			profile_id = frappe.db.sql(query.format(condition=condition), filters, as_dict=1)
 		if profile_id and profile_id[0]['name']:
-			profile = frappe.get_doc('Designation Uniform Profile', profile_id[0]['name'])
+			profile = frappe.get_doc('Designation Profile', profile_id[0]['name'])
 			return profile.uniforms if profile.uniforms else False
 	return False
 

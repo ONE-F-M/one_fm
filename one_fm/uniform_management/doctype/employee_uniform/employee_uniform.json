@@ -25,7 +25,8 @@
   "amended_from",
   "uniform_details_section",
   "uniforms",
-  "pay_back_to_company"
+  "pay_back_to_company",
+  "handover_form"
  ],
  "fields": [
   {
@@ -163,11 +164,17 @@
    "fieldtype": "Data",
    "label": "Employee ID",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval: !doc.__islocal",
+   "fieldname": "handover_form",
+   "fieldtype": "Attach",
+   "label": "Signed Copy of Uniform Handover Form"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-12-10 16:04:20.192471",
+ "modified": "2020-12-28 10:27:20.328215",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",

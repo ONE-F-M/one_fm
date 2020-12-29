@@ -45,6 +45,11 @@ def get_data():
 					"type": "doctype",
 					"name": "Accommodation Meter Reading Record",
 					"label": _("Water/Electricity Meter Reading")
+				},
+				{
+					"type": "doctype",
+					"name": "Accommodation Asset and Consumable",
+					"label": _("Accommodation Asset and Consumable")
 				}
 			]
 		},
@@ -70,6 +75,12 @@ def get_data():
 				{
 					"type": "doctype",
 					"name": "Governorate Area"
+				},
+				{
+					"type": "doctype",
+					"name": "Designation Profile",
+					"label": _("Designation Profile"),
+					"onboard": 1
 				}
 			]
 		},
@@ -139,8 +150,8 @@ def get_data():
 				},
 				{
 					"type": "doctype",
-					"name": "Designation Uniform Profile",
-					"label": _("Designation Uniform Profile"),
+					"name": "Designation Profile",
+					"label": _("Designation Profile"),
 					"onboard": 1
 				}
 			]

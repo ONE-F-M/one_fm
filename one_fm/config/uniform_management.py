@@ -19,8 +19,8 @@ def get_data():
 			"items": [
 				{
 					"type": "doctype",
-					"name": "Designation Uniform Profile",
-					"label": _("Designation Uniform Profile"),
+					"name": "Designation Profile",
+					"label": _("Designation Profile"),
 					"onboard": 1
 				}
 			]
