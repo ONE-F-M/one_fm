@@ -1,6 +1,15 @@
 import frappe
 
 
+def get_depreciation_expense_amount(doc, handler=""):
+    from_asset_depreciation = frappe.db.sql("""select sum(ja.debit) as depreciation_amount 
+            from `tabJournal Entry Account` ja,`tabJournal Entry` j 
+            where j.name = ja.parent and ja.parenttype = 'Journal Entry'
+            and ja.project = %s and ja.reference_type = 'Asset'
+            and j.voucher_type = 'Depreciation Entry' and ja.docstatus = 1 """,(doc.name),as_dict = 1)[0]
+
+    doc.total_depreciation_expense = from_asset_depreciation.depreciation_amount
+
 def on_project_save(doc, handler=""):
     if doc.project_type == 'External' and doc.customer:
         price_list = frappe.db.get_value('Price List', {'project': doc.name}, ['name'])

@@ -118,5 +118,15 @@
   "parentfield": null,
   "parenttype": null,
   "workflow_action_name": "Complete Investigation"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2020-12-16 02:14:32.588453",
+  "name": "Transfer",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Transfer"
  }
 ]

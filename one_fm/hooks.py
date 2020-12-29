@@ -57,7 +57,9 @@ doctype_js = {
 	"Vehicle": "public/js/doctype_js/vehicle.js",
 	"Asset": "public/js/doctype_js/asset.js",
 	"Item": "public/js/doctype_js/item.js",
-	"Item Group": "public/js/doctype_js/item_group.js"
+	"Item Group": "public/js/doctype_js/item_group.js",
+	"Purchase Receipt": "public/js/doctype_js/purchase_receipt.js",
+	"Asset Movement": "public/js/doctype_js/asset_movement.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -160,7 +162,8 @@ doc_events = {
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
 	},
 	"Purchase Receipt": {
-		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt"
+		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
+		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit"
 	},
 	"ToDo": {
 		"after_insert": "one_fm.grd.utils.todo_after_insert"
@@ -169,11 +172,16 @@ doc_events = {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	"Project": {
+		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
 		"on_update": "one_fm.one_fm.project_custom.on_project_save"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
 		"on_submit": "one_fm.api.tasks.update_shift_details_in_attendance"
+	},
+	"Asset":{
+		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
+		"on_submit": "one_fm.one_fm.asset_custom.on_asset_submit"
 	}
 }
 
@@ -220,7 +228,8 @@ scheduler_events = {
 		'one_fm.hiring.utils.notify_finance_job_offer_salary_advance',
 		'one_fm.api.tasks.automatic_shift_assignment',
 		'one_fm.uniform_management.doctype.employee_uniform.employee_uniform.notify_gsd_and_employee_before_uniform_expiry',
-		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder'
+		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
+		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
