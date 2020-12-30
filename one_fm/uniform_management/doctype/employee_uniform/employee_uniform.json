@@ -25,6 +25,7 @@
   "amended_from",
   "uniform_details_section",
   "uniforms",
+  "total_quantity",
   "pay_back_to_company",
   "handover_form"
  ],
@@ -145,10 +146,9 @@
    "options": "Company"
   },
   {
-   "depends_on": "eval: doc.type == \"Return\" && (doc.reason_for_return == \"Item Damage\" || doc.reason_for_return == \"Employee Exit\")",
    "fieldname": "pay_back_to_company",
    "fieldtype": "Currency",
-   "label": "Pay Back to Company",
+   "label": "Total Cost",
    "read_only": 1
   },
   {
@@ -170,11 +170,17 @@
    "fieldname": "handover_form",
    "fieldtype": "Attach",
    "label": "Signed Copy of Uniform Handover Form"
+  },
+  {
+   "fieldname": "total_quantity",
+   "fieldtype": "Int",
+   "label": "Total Quantity",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-12-28 10:27:20.328215",
+ "modified": "2020-12-30 09:32:23.430891",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",
