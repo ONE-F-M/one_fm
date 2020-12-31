@@ -11,6 +11,7 @@
   "hr_for_a_quick_workshop",
   "hrm_to_fill_hr_and_salary_compensation",
   "column_break_5",
+  "do_not_notify_requester",
   "notify_gsd_on_erf_approval",
   "performance_profile_resource",
   "performance_profile_guid",
@@ -94,11 +95,17 @@
    "fieldtype": "Data",
    "label": "Easy Apply to",
    "options": "Email"
+  },
+  {
+   "default": "0",
+   "fieldname": "do_not_notify_requester",
+   "fieldtype": "Check",
+   "label": "Do Not Notify Requester"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2020-11-11 11:43:40.140554",
+ "modified": "2020-12-31 11:04:56.533023",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

@@ -45,8 +45,10 @@ class EmployeeUniform(Document):
 		self.validate_issue()
 		self.validate_return()
 		self.validate_items()
+		self.calculate_amount_pay_back()
 
 	def validate_items(self):
+		total_quantity = 0
 		for uniform in self.uniforms:
 			if self.issued_on and not uniform.issued_on:
 				uniform.issued_on = self.issued_on
@@ -65,6 +67,8 @@ class EmployeeUniform(Document):
 				uniform.rate = get_item_details(args).price_list_rate
 			if self.issued_on and not uniform.expire_on:
 				uniform.expire_on = frappe.utils.add_months(self.issued_on, 12)
+			total_quantity += uniform.quantity
+		self.total_quantity = total_quantity
 
 	def validate_issue(self):
 		if self.type == "Issue":
@@ -88,8 +92,6 @@ class EmployeeUniform(Document):
 			if not self.reason_for_return:
 				frappe.throw(_("Reason for Return required in Employee Uniform"))
 			self.validate_item_return_before_expiry()
-			if self.reason_for_return in ['Item Damage', 'Employee Exit']:
-				self.calculate_amount_pay_back()
 			if not self.warehouse:
 				self.warehouse = frappe.db.get_value("Uniform Management Settings", None, 'used_uniform_warehouse')
 				if self.reason_for_return == "Item Exchange":
@@ -104,9 +106,11 @@ class EmployeeUniform(Document):
 	def calculate_amount_pay_back(self):
 		pay_back = 0
 		for item in self.uniforms:
-			if item.expire_on > self.returned_on:
+			if self.type == 'Return' and self.reason_for_return in ['Item Damage', 'Employee Exit'] and item.expire_on > self.returned_on:
 				per_month_rate = (item.quantity * item.rate) / month_diff(item.expire_on, item.issued_on)
 				pay_back += per_month_rate * month_diff(item.expire_on, self.returned_on)
+			elif self.type == 'Issue':
+				pay_back += item.quantity * item.rate
 		self.pay_back_to_company = pay_back
 
 	def set_uniform_details(self):

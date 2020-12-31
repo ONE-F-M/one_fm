@@ -1,13 +1,14 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "format:RFP-{YYYY}.{#####}",
+ "autoname": "naming_series:",
  "creation": "2020-06-04 09:29:23.914970",
  "doctype": "DocType",
  "document_type": "Document",
  "engine": "InnoDB",
  "field_order": [
   "company",
+  "naming_series",
   "status",
   "reason_for_rejection",
   "priority",
@@ -247,12 +248,20 @@
    "fieldtype": "Link",
    "label": "Supplier",
    "options": "Supplier"
+  },
+  {
+   "default": "RFP-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "RFP-.YYYY.-"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-12-10 14:18:24.084650",
+ "modified": "2020-12-30 11:13:13.064947",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",
