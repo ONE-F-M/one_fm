@@ -182,6 +182,9 @@ class ERF(Document):
 	def notify_recruiter_and_requester(self):
 		if self.status in ['Accepted', 'Declined']:
 			recipients = [self.erf_requested_by, self.recruiter_assigned]
+			do_not_notify_requester = frappe.db.get_value('Hiring Settings', None, 'do_not_notify_requester')
+			if do_not_notify_requester == '1':
+				recipients = [self.recruiter_assigned]
 			if self.erf_requested_by == self.recruiter_assigned:
 				recipients = [self.erf_requested_by]
 			if self.need_to_assign_more_recruiter and self.secondary_recruiter_assigned:
@@ -190,6 +193,8 @@ class ERF(Document):
 			msg = _('{0} and {1} Will be Notified By Email.').format(self.erf_requested_by, self.recruiter_assigned)
 			if self.erf_requested_by == self.recruiter_assigned:
 				msg = _('{0} Will be Notified By Email.').format(self.erf_requested_by)
+			elif do_not_notify_requester == '1':
+				msg = _('{0} Will be Notified By Email.').format(self.recruiter_assigned)
 			frappe.msgprint(msg)
 
 	def notify_gsd_department(self):

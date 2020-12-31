@@ -46,6 +46,11 @@ frappe.ui.form.on('ERF', {
 				frm.add_custom_button(__('Decline'), () => frm.events.decline_erf(frm, 'Declined')).addClass('btn-danger');
 			}
 		}
+		if (frm.doc.docstatus == 1 && frm.doc.status == "Accepted"){
+			if(frappe.session.user==frm.doc.erf_requested_by || frappe.session.user==frm.doc.recruiter_assigned || frappe.session.user==frm.doc.secondary_recruiter_assigned){
+				frm.add_custom_button(__('Close ERF'), () => frm.events.close_erf(frm)).addClass('btn-primary');
+			}
+		}
 		if (!frm.is_new() && frm.doc.docstatus == 0 && !frm.doc.draft_erf_to_hrm){
 			frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
 		}
@@ -66,6 +71,27 @@ frappe.ui.form.on('ERF', {
 			},
 		});
 		d.show();
+	},
+	close_erf: function(frm) {
+		frappe.confirm(
+			__('Do You Want to Close this ERF'),
+			function(){
+				// Yes
+				frappe.call({
+					doc: frm.doc,
+					method: 'accept_or_decline',
+					args: {status: 'Closed'},
+					callback(r) {
+						if (!r.exc) {
+							frm.reload_doc();
+						}
+					},
+					freeze: true,
+					freeze_message: __('Processing ..')
+				});
+			},
+			function(){} // No
+		);
 	},
 	confirm_accept_decline_erf: function(frm, status, reason_for_decline) {
 		let msg_status = 'Approve';

@@ -138,6 +138,7 @@
    "fieldname": "project",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Project",
    "options": "Project",
    "reqd": 1
@@ -146,6 +147,7 @@
    "fieldname": "department",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Department",
    "options": "Department",
    "reqd": 1
@@ -161,6 +163,7 @@
   {
    "fieldname": "erf_requested_by",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "ERF Requested By",
    "options": "User",
    "read_only": 1
@@ -169,6 +172,7 @@
    "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "\nDraft\nAccepted\nDeclined\nClosed",
    "read_only": 1
@@ -794,7 +798,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-10-13 13:23:11.828552",
+ "modified": "2020-12-31 10:23:42.701640",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
