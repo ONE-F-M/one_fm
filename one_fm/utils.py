@@ -1054,7 +1054,7 @@ def warehouse_naming_series(doc, method):
         project_code = frappe.db.get_value('Project', doc.one_fm_project, 'one_fm_project_code')
         if project_code:
             name += '-'+project_code
-    if doc.is_group:
+    if doc.is_group == '1':
         name += '-'+'01'
     else:
         name += '-'+'02'
