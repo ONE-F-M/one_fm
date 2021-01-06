@@ -327,7 +327,7 @@ def get_data():
 			]
 		},
 		{
-			"label": _("Fleat Management"),
+			"label": _("Fleet Management"),
 			"items": [
 				{
 					"type": "doctype",
