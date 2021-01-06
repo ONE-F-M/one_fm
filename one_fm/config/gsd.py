@@ -326,4 +326,17 @@ def get_data():
 				}
 			]
 		},
+		{
+			"label": _("Fleat Management"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Vehicle Leasing Contract"
+				},
+				{
+					"type": "doctype",
+					"name": "Vehicle"
+				}
+			]
+		},
 	]
