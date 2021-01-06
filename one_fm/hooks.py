@@ -65,6 +65,9 @@ doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
 	"Job Offer": "public/js/doctype_js/job_offer_list.js"
 }
+doctype_tree_js = {
+	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -145,7 +148,8 @@ doc_events = {
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
-		"before_insert": "one_fm.utils.validate_get_warehouse_parent"
+		"before_insert": "one_fm.utils.validate_get_warehouse_parent",
+		"on_update": "one_fm.utils.set_warehouse_contact_from_project"
 	},
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",

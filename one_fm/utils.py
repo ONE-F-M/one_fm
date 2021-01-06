@@ -1049,8 +1049,16 @@ def pam_authorized_signatory():
 
 @frappe.whitelist(allow_guest=True)
 def warehouse_naming_series(doc, method):
-    # doc.name = doc.warehouse_code+' - '+doc.warehouse_name
-    pass
+    name = "WRH-"+doc.warehouse_code
+    if doc.one_fm_is_project_warehouse and doc.one_fm_project:
+        project_code = frappe.db.get_value('Project', doc.one_fm_project, 'one_fm_project_code')
+        if project_code:
+            name += '-'+project_code
+    if doc.is_group:
+        name += '-'+'01'
+    else:
+        name += '-'+'02'
+    doc.name = name # +'-'+doc.warehouse_name
 
 @frappe.whitelist(allow_guest=True)
 def item_group_naming_series(doc, method):
@@ -1070,7 +1078,13 @@ def validate_get_warehouse_parent(doc, method):
     else:
         new_warehouse_code_final = '1'
 
-    doc.warehouse_code = str(int(new_warehouse_code_final)).zfill(3)
+    doc.warehouse_code = ""
+    # if doc.parent_warehouse:
+    #     parent_wh_code = frappe.db.get_value('Warehouse', doc.parent_warehouse, 'warehouse_code')
+    #     if parent_wh_code:
+    #         doc.warehouse_code = parent_wh_code + " - "
+
+    doc.warehouse_code += str(int(new_warehouse_code_final)).zfill(4)
 
 @frappe.whitelist()
 def validate_item_group(doc, method):
@@ -1489,3 +1503,22 @@ def validate_applicant_overseas_transferable(applicant):
             frappe.throw(_('Mark the Applicant is Transferable or Not'))
         if transferable_details['transferable'] == "No":
             frappe.throw(_("Applicant is Not Transferable"))
+
+@frappe.whitelist()
+def set_warehouse_contact_from_project(doc, method):
+    if doc.one_fm_project and doc.one_fm_site:
+        site = frappe.get_doc("Operations Site", doc.one_fm_site)
+        # if site.site_poc:
+        #     for poc in site.site_poc:
+        #         if poc.poc:
+        #             contact = frappe.get_doc('Contact', poc.poc)
+        #             links = contact.append('links')
+        #             links.link_doctype = doc.doctype
+        #             links.link_name = doc.name
+        #             contact.save(ignore_permissions=True)
+        if site.address:
+            address = frappe.get_doc('Address', site.address)
+            links = address.append('links')
+            links.link_doctype = doc.doctype
+            links.link_name = doc.name
+            address.save(ignore_permissions=True)
