@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 
 def execute(filters=None):
-	columns, data = get_columns(), get_data()
+	columns, data = get_columns(), get_data(filters)
 	return columns, data
 
 def get_columns():
@@ -27,10 +27,11 @@ def get_columns():
 		_("No Action") + ":Data:80"
         ]
 
-def get_data():
+def get_data(filters):
 	data=[]
-	erf_list = frappe.db.sql("""select * from `tabERF`""",as_dict=1)
-	for erf in erf_list:
+	erf_list = frappe.db.get_list("ERF", filters=filters)
+	for erf_name in erf_list:
+		erf = frappe.get_doc('ERF', erf_name.name)
 		total_no_of_applicants = frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code })
 		total_no_of_joined = frappe.db.count('Employee', {'one_fm_erf': erf.erf_code })
 		total_no_of_rejected = frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code, 'status':'Rejected' })
