@@ -54,6 +54,13 @@ frappe.ui.form.on('Job Applicant', {
 					}
 				}).addClass('btn-danger');
 			}
+			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
+				if (frappe.user.has_role("Hiring Manager")){
+					frm.add_custom_button(__('Change ERF'), function() {
+						change_applicant_erf(frm);
+					});
+				}
+			}
     }
 		if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')) {
 			frappe.db.get_value("Employee", {"job_applicant": frm.doc.name}, "name", function(r) {
@@ -193,6 +200,31 @@ frappe.ui.form.on('Job Applicant', {
 		}
 	}
 });
+
+var change_applicant_erf = function(frm) {
+	var dialog = new frappe.ui.Dialog({
+		title: 'Change ERF',
+		fields: [
+			{fieldtype: "Link", options: 'ERF', label: "New ERF", fieldname: "erf", reqd: true}
+		],
+		primary_action_label: __("Change ERF"),
+		primary_action : function(){
+			frappe.confirm(
+				__('Are you sure to change ERF for the Job Applicant?'),
+				function(){
+					// Yes
+					frm.set_value('one_fm_erf', dialog.get_value('erf'));
+					dialog.hide();
+				},
+				function(){
+					// No
+					dialog.hide();
+				}
+			);
+		}
+	});
+	dialog.show();
+};
 
 var change_applicant_status = function(frm, status_field, status) {
 	let msg = __('Do you really want to make {0} the applicant?', [status])
