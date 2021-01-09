@@ -27,6 +27,12 @@ def get_data():
                 {
 					"type": "doctype",
 					"name": "Best Reference",
+				},
+				{
+					"type": "report",
+					"name": "ERF Report",
+					"is_query_report": True,
+					"label": _("ERF Report"),
 				}
 			]
 		},
