@@ -145,23 +145,23 @@
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name",
    "fieldtype": "Data",
-   "label": "First name"
+   "label": "First Name in Arabic"
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "second_name",
    "fieldtype": "Data",
-   "label": "Second name"
+   "label": "Second Name in Arabic"
   },
   {
    "fieldname": "third_name",
    "fieldtype": "Data",
-   "label": "Third Name"
+   "label": "Third Name in Arabic"
   },
   {
    "fieldname": "fourth_name",
    "fieldtype": "Data",
-   "label": "Fourth name"
+   "label": "Fourth Name in Arabic"
   },
   {
    "fieldname": "column_break_13",
@@ -321,7 +321,7 @@
    "label": "Nationality Proof"
   }
  ],
- "modified": "2020-11-18 21:43:02.102173",
+ "modified": "2021-01-10 09:34:07.424115",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",
