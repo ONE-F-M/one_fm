@@ -4,20 +4,20 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "vehicle_id",
   "license_plate",
   "model",
-  "make",
   "column_break_4",
+  "make",
   "vehicle_type",
   "purpose_of_use"
  ],
  "fields": [
   {
    "fieldname": "license_plate",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "License Plate",
-   "options": "Vehicle"
+   "label": "License Plate"
   },
   {
    "fieldname": "model",
@@ -47,11 +47,18 @@
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vehicle_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Vehicle ID",
+   "options": "Vehicle"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-10-23 01:36:07.584576",
+ "modified": "2021-01-13 18:46:30.657991",
  "modified_by": "Administrator",
  "module": "Fleet Management",
  "name": "Lease Vehicle Item",

@@ -1,8 +1,42 @@
 frappe.ui.form.on('Vehicle', {
-	refresh: function(frm) {
+	refresh(frm) {
 		set_qr_code(frm);
+		frappe.breadcrumbs.add("GSD");
+		frm.set_df_property('license_plate', 'hidden', false);
+	},
+	one_fm_vehicle_category(frm) {
+	    if(frm.doc.one_fm_vehicle_category == 'Leased'){
+	        frm.set_df_property('vehicle_leasing_contract', 'reqd', true);
+	    }
+	    else{
+	        frm.set_df_property('vehicle_leasing_contract', 'reqd', false);
+	    }
+	},
+	vehicle_leasing_contract(frm){
+	  if(!frm.doc.vehicle_leasing_contract){
+	      frm.set_value('vehicle_leasing_details', '');
+	  }
+	},
+	vehicle_leasing_details(frm){
+	    if(frm.doc.vehicle_leasing_details){
+	        frappe.call({
+	           method: "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.get_vehicle_from_leasing_contract",
+				args: {'vehicle_detail': frm.doc.vehicle_leasing_details},
+				callback: function(r) {
+					if(!r.exc){
+					    var data = r.message;
+					    frm.set_value('make', data.make);
+					    frm.set_value('model', data.model);
+					    frm.set_value('one_fm_vehicle_type', data.vehicle_type);
+					    frm.set_value('one_fm_year_of_made', data.year_of_made);
+					}
+				},
+				freeze: true,
+				freeze_message: "Fetching Vehicle Details..."
+	        });
+	    }
 	}
-});
+})
 
 var set_qr_code = function(frm) {
 	let qr_code_html = `{%if doc.name%}

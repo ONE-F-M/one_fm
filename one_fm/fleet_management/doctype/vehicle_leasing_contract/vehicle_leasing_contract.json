@@ -8,6 +8,7 @@
  "field_order": [
   "naming_series",
   "contract_details_section",
+  "type_of_lessor",
   "lessor_name",
   "lessor_area",
   "lessor_block",
@@ -164,6 +165,7 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval: !doc.__islocal",
    "fieldname": "vehicle_details_section",
    "fieldtype": "Section Break",
    "label": "Vehicle Details"
@@ -220,14 +222,15 @@
    "label": "Contract Document"
   },
   {
+   "depends_on": "eval: !doc.__islocal",
    "fieldname": "vehicle_leasing_contract_item",
    "fieldtype": "Table",
-   "options": "Vehicle Leasing Contract Item",
-   "reqd": 1
+   "options": "Vehicle Leasing Contract Item"
   },
   {
    "fieldname": "create_vehicle",
    "fieldtype": "Button",
+   "hidden": 1,
    "label": "Create Vehicle"
   },
   {
@@ -236,10 +239,17 @@
    "label": "Vehicles",
    "options": "Lease Vehicle Item",
    "read_only": 1
+  },
+  {
+   "fieldname": "type_of_lessor",
+   "fieldtype": "Select",
+   "label": "Type of Lessor",
+   "options": "\nCompany\nIndividual",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2020-10-26 07:24:17.542863",
+ "modified": "2021-01-13 19:14:04.078540",
  "modified_by": "Administrator",
  "module": "Fleet Management",
  "name": "Vehicle Leasing Contract",
