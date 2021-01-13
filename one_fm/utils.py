@@ -1049,16 +1049,17 @@ def pam_authorized_signatory():
 
 @frappe.whitelist(allow_guest=True)
 def warehouse_naming_series(doc, method):
-    name = "WRH-"+doc.warehouse_code
+    # name = "WRH-"+doc.warehouse_code
+    name = "WRH"
     if doc.one_fm_is_project_warehouse and doc.one_fm_project:
         project_code = frappe.db.get_value('Project', doc.one_fm_project, 'one_fm_project_code')
         if project_code:
             name += '-'+project_code
-    if doc.is_group == '1':
-        name += '-'+'01'
-    else:
-        name += '-'+'02'
-    doc.name = name # +'-'+doc.warehouse_name
+    # if doc.is_group == '1':
+    #     name += '-'+'01'
+    # else:
+    #     name += '-'+'02'
+    doc.name = name +'-'+doc.warehouse_code # +'-'+doc.warehouse_name
 
 @frappe.whitelist(allow_guest=True)
 def item_group_naming_series(doc, method):
@@ -1072,19 +1073,19 @@ def item_naming_series(doc, method):
 
 @frappe.whitelist(allow_guest=True)
 def validate_get_warehouse_parent(doc, method):
-    new_warehouse_code = frappe.db.sql("select warehouse_code+1 from `tabWarehouse` where parent ='{0}' order by warehouse_code desc limit 1".format(doc.parent_warehouse))
-    if new_warehouse_code:
-        new_warehouse_code_final = new_warehouse_code[0][0]
+    if doc.parent_warehouse:
+        parent_wh_code = frappe.db.get_value('Warehouse', doc.parent_warehouse, 'warehouse_code')
+        # if parent_wh_code:
+        #     doc.warehouse_code = parent_wh_code + " - "
+        doc.warehouse_code = str(int(parent_wh_code)+1).zfill(4)
+
     else:
-        new_warehouse_code_final = '1'
-
-    doc.warehouse_code = ""
-    # if doc.parent_warehouse:
-    #     parent_wh_code = frappe.db.get_value('Warehouse', doc.parent_warehouse, 'warehouse_code')
-    #     if parent_wh_code:
-    #         doc.warehouse_code = parent_wh_code + " - "
-
-    doc.warehouse_code += str(int(new_warehouse_code_final)).zfill(4)
+        new_warehouse_code = frappe.db.sql("select warehouse_code+1 from `tabWarehouse` where parent ='{0}' order by warehouse_code desc limit 1".format(doc.parent_warehouse))
+        if new_warehouse_code:
+            new_warehouse_code_final = new_warehouse_code[0][0]
+        else:
+            new_warehouse_code_final = '1'
+        doc.warehouse_code = str(int(new_warehouse_code_final)).zfill(4)
 
 @frappe.whitelist()
 def validate_item_group(doc, method):
