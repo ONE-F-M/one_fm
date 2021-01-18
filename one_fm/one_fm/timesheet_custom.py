@@ -57,6 +57,8 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
                 "from_time": start,
                 "to_time": end,
                 "project": attendance.project,
+                #add site 
+                "site": attendance.site,
                 "hours": attendance.working_hours,
                 "billable": billable,
 				"billing_hours": billing_hours,
