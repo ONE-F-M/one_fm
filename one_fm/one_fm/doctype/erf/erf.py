@@ -152,13 +152,7 @@ class ERF(Document):
 			frappe.msgprint(_('{0}, Will Notified By Email.').format(frappe.db.get_value('User', erf_approver, 'full_name')))
 
 	def on_update_after_submit(self):
-		assign_recruiter_to_project_task(self)
-		self.notify_recruiter_and_requester()
-		if self.status == 'Accepted':
-			self.notify_gsd_department()
-			if self.provide_salary_advance:
-				self.notify_finance_department()
-			create_job_opening_from_erf(self)
+		pass
 
 	def notify_finance_department(self):
 		fin_department = frappe.db.get_value('Hiring Settings', None, 'notify_finance_department_for_job_offer_salary_advance')
@@ -251,6 +245,13 @@ class ERF(Document):
 		self.status = status
 		self.reason_for_decline = reason_for_decline
 		self.save()
+		assign_recruiter_to_project_task(self)
+		self.notify_recruiter_and_requester()
+		if self.status == 'Accepted':
+			self.notify_gsd_department()
+			if self.provide_salary_advance:
+				self.notify_finance_department()
+			create_job_opening_from_erf(self)
 		self.reload()
 
 def create_job_opening_from_erf(erf):

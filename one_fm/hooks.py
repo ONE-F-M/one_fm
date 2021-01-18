@@ -131,7 +131,7 @@ doc_events = {
 	},
 	"Employee": {
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",
-		"after_insert": "one_fm.hiring.utils.create_salary_structure_assignment"
+		"after_insert": "one_fm.hiring.utils.employee_after_insert"
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
