@@ -186,6 +186,9 @@ doc_events = {
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
 		"on_submit": "one_fm.one_fm.asset_custom.on_asset_submit"
+	}, 
+	"Sales Invoice":{
+		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice"
 	}
 }
 
