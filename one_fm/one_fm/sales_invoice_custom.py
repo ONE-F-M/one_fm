@@ -8,8 +8,7 @@ from one_fm.one_fm.timesheet_custom import timesheet_automation,calculate_hourly
 #from frappe import _
 
 def create_sales_invoice():
-    #today = date.today()
-    today = getdate("2020-10-31")
+    today = date.today()
     day = today.day
     d = today
     month_and_year = today.strftime("%B - %Y")   
@@ -24,7 +23,7 @@ def create_sales_invoice():
             from_date = first_day
             to_date = today - timedelta(days = 1)
             #run timesheet automation for the project
-            #timesheet_automation(from_date,to_date,item.project)
+            timesheet_automation(from_date,to_date,item.project)
             sales_invoice = frappe.new_doc('Sales Invoice')
             sales_invoice.contracts = item.name
             sales_invoice.customer = item.client
