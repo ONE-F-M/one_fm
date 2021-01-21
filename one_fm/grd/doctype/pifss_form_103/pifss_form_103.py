@@ -34,3 +34,9 @@ def notify_open_pifss(doc, method):
 		notification.document_name = notification.name
 		notification.save()
 		frappe.db.commit()
+
+@frappe.whitelist()
+def get_signatory_name(parent):
+	name_list = frappe.db.sql("""select  authorized_signatory_name_arabic from `tabPAM Authorized Signatory Table`
+				where parent = %s  """,(parent),as_list=1)
+	return name_list
