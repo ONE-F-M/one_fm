@@ -157,7 +157,7 @@ def add_into_sales_invoice(sales_invoice):
         create_todo(sales_invoice.name)
     except Exception as e:
         print(e)
-        
+
 #Get contracts list
 def get_contracts_list(due_date,start_date,end_date):
     return frappe.db.sql("""select name,client,project,price_list,invoice_frequency,due_date,frequency,start_date,is_invoice_for_site 
@@ -191,9 +191,8 @@ def get_asset_items_from_delivery_note(project,client,start_date,end_date):
 
 #Add site wise details into invoice
 def add_site_wise_contracts_item_details_into_invoice(sales_invoice,site_group,contract_item,start_date,end_date,key,first_day,income_account,cost_center,month_and_year):
-    timesheet_billing_amt = 0
+    timesheet_billing_amt = site_amount = extra_amount = no_of_days_remaining = hourly_rate= 0
     sitewise_timesheet = list(site_group)
-    site_amount = 0
     description = frappe.db.get_value("Item",contract_item.item_code,'description')
     for st in sitewise_timesheet:
         #add site wise timesheet and item in sales invoice details
@@ -208,9 +207,6 @@ def add_site_wise_contracts_item_details_into_invoice(sales_invoice,site_group,c
     timesheet_billing_amt += site_amount
     #Adding rate for service from current date to end date by taking values from contracts and add into amount
     date_list = get_timesheet_remaining_days(start_date,start_date)
-    extra_amount = 0
-    no_of_days_remaining = 0
-    hourly_rate = 0
     #find qty of item in a site
     item_qty = get_operations_post_in_site(key,sales_invoice.project,contract_item.item_code)
     if contract_item.type == 'Monthly':
@@ -247,8 +243,7 @@ def add_site_wise_contracts_item_details_into_invoice(sales_invoice,site_group,c
 #Add details into invoice
 def add_contracts_item_details_into_invoice(sales_invoice,timesheet_details,contract_item,start_date,end_date,first_day,income_account,cost_center,month_and_year):
     description = frappe.db.get_value("Item",contract_item.item_code,'description')
-    item_amount = 0
-    timesheet_billing_amt = 0
+    item_amount = timesheet_billing_amt = extra_amount = no_of_days_remaining = hourly_rate = 0
     if timesheet_details:
         for t in timesheet_details:
             item_amount += t.billing_amt
@@ -262,9 +257,6 @@ def add_contracts_item_details_into_invoice(sales_invoice,timesheet_details,cont
         timesheet_billing_amt = item_amount
         #Adding rate for service from current date to end date by taking values from contracts and add into amount
         date_list = get_timesheet_remaining_days(start_date,end_date)
-        extra_amount = 0
-        no_of_days_remaining = 0
-        hourly_rate = 0
         if contract_item.type == 'Monthly':
             #calculate hourly rate
             hourly_rate = calculate_hourly_rate_of_monthly_working_days(sales_invoice.project,contract_item.item_code,contract_item.monthly_rate,contract_item.shift_hours,first_day)
