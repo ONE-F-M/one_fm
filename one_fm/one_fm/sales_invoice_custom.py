@@ -17,146 +17,147 @@ def create_sales_invoice():
     #Get the last day of the month
     last_day = first_day.replace(day = monthrange(first_day.year,first_day.month)[1])
     contacts_list = get_contracts_list(day,today,today)
-    for item in contacts_list:
+    for contracts in contacts_list:
         sales_invoice = ''
-        if item.invoice_frequency == 'Monthly':
+        if contracts.invoice_frequency == 'Monthly':
             from_date = first_day
             to_date = today - timedelta(days = 1)
             #run timesheet automation for the project
-            timesheet_automation(from_date,to_date,item.project)
-            sales_invoice = frappe.new_doc('Sales Invoice')
-            sales_invoice.contracts = item.name
-            sales_invoice.customer = item.client
-            sales_invoice.set_posting_time = 1
-            sales_invoice.project = item.project
-            sales_invoice.selling_price_list = item.price_list
-            sales_invoice.timesheets = ''
-            project_details = frappe.get_doc('Project',item.project)
-            cost_center = project_details.cost_center
-            income_account = project_details.income_account
-            #select contracts items and gets details from timesheet and add into the sales invoice item table
-            contract_item_list = get_contract_item_list(item.name)
-            if contract_item_list:
-                if item.is_invoice_for_site:
-                    for i in contract_item_list:
-                        sitewise_timesheet_details = get_sitewise_timesheet_data(item.project,i.item_code,from_date,today)
-                        timesheet_billing_amt = 0
-                        if sitewise_timesheet_details:
-                            for key, group in itertools.groupby(sitewise_timesheet_details, key=lambda x: (x['site'])):
-                                #Add site wise detail
-                                sales_invoice = add_site_wise_contracts_item_details_into_invoice(sales_invoice,group,i,today,last_day,key,first_day,income_account,cost_center,month_and_year)
-                else:
-                    for i in contract_item_list:
-                        #add reference to the attendance
-                        timesheet_details = get_projectwise_timesheet_data(item.project,i.item_code,from_date,today)
-                        sales_invoice = add_contracts_item_details_into_invoice(sales_invoice,timesheet_details,i,today,last_day,first_day,income_account,cost_center,month_and_year)
-            if item.frequency == 'Monthly':
-                contract_asset_list = get_asset_items_from_contracts(item.name)                
-                for asset in contract_asset_list:
-                    sales_invoice.append('items',{
-                            'item_code': asset.item_code,
-                            'qty': asset.qty,
-                            'uom': asset.uom,
-                            'income_account': income_account,
-                            'cost_center': cost_center
-                    })
-                    
-            else:
-                delivery_note_start_date = today - relativedelta(months = 1)
-                delivery_not_end_date = today - timedelta(days = 1)
-                contract_asset_list = get_asset_items_from_delivery_note(item.project,item.client,delivery_note_start_date,delivery_not_end_date)
-                sales_invoice = append_delivery_note_items(sales_invoice,contract_asset_list,income_account,cost_center)
-            try:
-                sales_invoice.flags.ignore_permissions  = True
-                sales_invoice.update({
-                    'customer': sales_invoice.customer,
-                    'set_posting_time': sales_invoice.set_posting_time,
-                    'project': sales_invoice.project,
-                    'contracts': sales_invoice.contracts,
-                    'selling_price_list': sales_invoice.selling_price_list,
-                    'items': sales_invoice.items,
-                    'timesheets': sales_invoice.timesheets,
-                }).insert()
-                create_todo(sales_invoice.name)
-            except Exception as e:
-                print(e)
-        if item.invoice_frequency == 'Quarterly':
-            time_difference = relativedelta(d,item.start_date)
+            timesheet_automation(from_date,to_date,contracts.project)
+            create_monthly_sales_invoice(sales_invoice,contracts,today,first_day,last_day,from_date,month_and_year)
+        if contracts.invoice_frequency == 'Quarterly':
+            time_difference = relativedelta(d,contracts.start_date)
             full_months = time_difference.years * 12 + time_difference.months + 1
             if full_months%3 == 0:
                 from_date = first_day
                 to_date = today - timedelta(days = 1)
                 #run timesheet automation for the project
-                timesheet_automation(from_date,to_date,item.project)
-                sales_invoice = frappe.new_doc('Sales Invoice')
-                sales_invoice.contracts = item.name
-                sales_invoice.customer = item.client
-                sales_invoice.set_posting_time = 1
-                sales_invoice.project = item.project
-                sales_invoice.selling_price_list = item.price_list
-                sales_invoice.timesheets = ''
-                project_details = frappe.get_doc('Project',item.project)
-                cost_center = project_details.cost_center
-                income_account = project_details.income_account
-                contract_item_list = get_contract_item_list(item.name)
-                if contract_item_list:
-                    if item.is_invoice_for_site:
-                        for i in contract_item_list:
-                            from_date = (today - relativedelta(months = 2))
-                            from_date = date(from_date.year,from_date.month,1)
-                            to_date = today - timedelta(days = 1)
-                            sitewise_timesheet_details = get_sitewise_timesheet_data(item.project,i.item_code,from_date,today)
-                            #adding timsheet details
-                            timesheet_billing_amt = 0
-                            if sitewise_timesheet_details:
-                                for key, group in itertools.groupby(sitewise_timesheet_details, key=lambda x: (x['site'])):
-                                    #Add site wise detail
-                                    sales_invoice = add_site_wise_contracts_item_details_into_invoice(sales_invoice,group,i,today,last_day,key,first_day,income_account,cost_center,month_and_year)
-                    else:
-                        for i in contract_item_list:
-                            from_date = (today - relativedelta(months = 2))
-                            from_date = date(from_date.year,from_date.month,1)
-                            to_date = today - timedelta(days = 1)
-                            timesheet_details = get_projectwise_timesheet_data(item.project,i.item_code,from_date,today)
-                            sales_invoice = add_contracts_item_details_into_invoice(sales_invoice,timesheet_details,i,today,last_day,first_day,income_account,cost_center,month_and_year)
-                if item.frequency == 'Monthly':
-                    contract_asset_list = get_asset_items_from_contracts(item.name)
-                    
-                    for asset in contract_asset_list:
-                        sales_invoice.append('items',{
-                                'item_code': asset.item_code,
-                                'qty': asset.qty * 3,
-                                'uom': asset.uom,
-                                'income_account': income_account,
-                                'cost_center': cost_center
-                        })
-                        
-                else:
-                    delivery_note_start_date = (today - relativedelta(months = 3))
-                    delivery_not_end_date = today - timedelta(days = 1)
-                    contract_asset_list = get_asset_items_from_delivery_note(item.project,item.client,delivery_note_start_date,delivery_not_end_date)
-                    sales_invoice = append_delivery_note_items(sales_invoice,contract_asset_list,income_account,cost_center)
-                try:
-                    sales_invoice.flags.ignore_permissions  = True
-                    sales_invoice.update({
-                        'customer': sales_invoice.customer,
-                        'set_posting_time': sales_invoice.set_posting_time,
-                        'project': sales_invoice.project,
-                        'contracts': sales_invoice.contracts,
-                        'selling_price_list': sales_invoice.selling_price_list,
-                        'items': sales_invoice.items,
-                        'timesheets': sales_invoice.timesheets,
-                    }).insert()
-                    create_todo(sales_invoice.name)
-                except Exception as e:
-                    print(e)
+                timesheet_automation(from_date,to_date,contracts.project)
+                create_quarterly_sales_invoice(sales_invoice,item,today,first_day,last_day,from_date,month_and_year)
             else:
                 from_date = today - relativedelta(months = 1)
                 to_date = today - timedelta(days = 1)
                 #run timesheet automation for the project
-                timesheet_automation(from_date,to_date,item.project)
+                timesheet_automation(from_date,to_date,contracts.project)
     return
 
+#Create monthly sales invoice
+def create_monthly_sales_invoice(sales_invoice,contracts,today,first_day,last_day,from_date,month_and_year):
+    sales_invoice = frappe.new_doc('Sales Invoice')
+    sales_invoice.contracts = contracts.name
+    sales_invoice.customer = contracts.client
+    sales_invoice.set_posting_time = 1
+    sales_invoice.project = contracts.project
+    sales_invoice.selling_price_list = contracts.price_list
+    sales_invoice.timesheets = ''
+    project_details = frappe.get_doc('Project',contracts.project)
+    cost_center = project_details.cost_center
+    income_account = project_details.income_account
+    #select contracts items and gets details from timesheet and add into the sales invoice item table
+    contract_item_list = get_contract_item_list(contracts.name)
+    if contract_item_list:
+        if contracts.is_invoice_for_site:
+            for contract_item in contract_item_list:
+                sitewise_timesheet_details = get_sitewise_timesheet_data(contracts.project,contract_item.item_code,from_date,today)
+                timesheet_billing_amt = 0
+                if sitewise_timesheet_details:
+                    for key, group in itertools.groupby(sitewise_timesheet_details, key=lambda x: (x['site'])):
+                        #Add site wise detail
+                        sales_invoice = add_site_wise_contracts_item_details_into_invoice(sales_invoice,group,contract_item,today,last_day,key,first_day,income_account,cost_center,month_and_year)
+        else:
+            for contract_item in contract_item_list:
+                #add reference to the attendance
+                timesheet_details = get_projectwise_timesheet_data(item.project,contract_item.item_code,from_date,today)
+                sales_invoice = add_contracts_item_details_into_invoice(sales_invoice,timesheet_details,contract_item,today,last_day,first_day,income_account,cost_center,month_and_year)
+    if contracts.frequency == 'Monthly':
+        contract_asset_list = get_asset_items_from_contracts(contracts.name)                
+        for asset in contract_asset_list:
+            sales_invoice.append('items',{
+                    'item_code': asset.item_code,
+                    'qty': asset.qty,
+                    'uom': asset.uom,
+                    'income_account': income_account,
+                    'cost_center': cost_center
+            })
+            
+    else:
+        delivery_note_start_date = today - relativedelta(months = 1)
+        delivery_not_end_date = today - timedelta(days = 1)
+        contract_asset_list = get_asset_items_from_delivery_note(contracts.project,contracts.client,delivery_note_start_date,delivery_not_end_date)
+        sales_invoice = append_delivery_note_items(sales_invoice,contract_asset_list,income_account,cost_center)
+    #insert into sales invoice
+    add_into_sales_invoice(sales_invoice)
+
+#Create quarterly sales invoice
+def create_quarterly_sales_invoice(sales_invoice,contracts,today,first_day,last_day,from_date,month_and_year):
+    sales_invoice = frappe.new_doc('Sales Invoice')
+    sales_invoice.contracts = contracts.name
+    sales_invoice.customer = contracts.client
+    sales_invoice.set_posting_time = 1
+    sales_invoice.project = contracts.project
+    sales_invoice.selling_price_list = contracts.price_list
+    sales_invoice.timesheets = ''
+    project_details = frappe.get_doc('Project',contracts.project)
+    cost_center = project_details.cost_center
+    income_account = project_details.income_account
+    contract_item_list = get_contract_item_list(contracts.name)
+    if contract_item_list:
+        if contracts.is_invoice_for_site:
+            for contract_item in contract_item_list:
+                from_date = (today - relativedelta(months = 2))
+                from_date = date(from_date.year,from_date.month,1)
+                to_date = today - timedelta(days = 1)
+                sitewise_timesheet_details = get_sitewise_timesheet_data(contracts.project,contract_item.item_code,from_date,today)
+                #adding timsheet details
+                timesheet_billing_amt = 0
+                if sitewise_timesheet_details:
+                    for key, group in itertools.groupby(sitewise_timesheet_details, key=lambda x: (x['site'])):
+                        #Add site wise detail
+                        sales_invoice = add_site_wise_contracts_item_details_into_invoice(sales_invoice,group,contract_item,today,last_day,key,first_day,income_account,cost_center,month_and_year)
+        else:
+            for contract_item in contract_item_list:
+                from_date = (today - relativedelta(months = 2))
+                from_date = date(from_date.year,from_date.month,1)
+                to_date = today - timedelta(days = 1)
+                timesheet_details = get_projectwise_timesheet_data(contracts.project,contract_item.item_code,from_date,today)
+                sales_invoice = add_contracts_item_details_into_invoice(sales_invoice,timesheet_details,contract_item,today,last_day,first_day,income_account,cost_center,month_and_year)
+    if contracts.frequency == 'Monthly':
+        contract_asset_list = get_asset_items_from_contracts(contracts.name)
+        
+        for asset in contract_asset_list:
+            sales_invoice.append('items',{
+                    'item_code': asset.item_code,
+                    'qty': asset.qty * 3,
+                    'uom': asset.uom,
+                    'income_account': income_account,
+                    'cost_center': cost_center
+            })
+            
+    else:
+        delivery_note_start_date = (today - relativedelta(months = 3))
+        delivery_not_end_date = today - timedelta(days = 1)
+        contract_asset_list = get_asset_items_from_delivery_note(contracts.project,contracts.client,delivery_note_start_date,delivery_not_end_date)
+        sales_invoice = append_delivery_note_items(sales_invoice,contract_asset_list,income_account,cost_center)
+    #insert into sales invoice
+    add_into_sales_invoice(sales_invoice)
+
+#add into sales invoice
+def add_into_sales_invoice(sales_invoice):
+    try:
+        sales_invoice.flags.ignore_permissions  = True
+        sales_invoice.update({
+            'customer': sales_invoice.customer,
+            'set_posting_time': sales_invoice.set_posting_time,
+            'project': sales_invoice.project,
+            'contracts': sales_invoice.contracts,
+            'selling_price_list': sales_invoice.selling_price_list,
+            'items': sales_invoice.items,
+            'timesheets': sales_invoice.timesheets,
+        }).insert()
+        create_todo(sales_invoice.name)
+    except Exception as e:
+        print(e)
+        
 #Get contracts list
 def get_contracts_list(due_date,start_date,end_date):
     return frappe.db.sql("""select name,client,project,price_list,invoice_frequency,due_date,frequency,start_date,is_invoice_for_site 
