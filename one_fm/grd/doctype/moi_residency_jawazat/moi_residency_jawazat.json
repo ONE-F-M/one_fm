@@ -169,52 +169,52 @@
   },
   {
    "fieldname": "company_pam_file_number",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Company PAM File Number"
   },
   {
    "fieldname": "company_centralized_number",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Company Centralized Number"
   },
   {
    "fieldname": "company_trade_name",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Company Trade Name"
   },
   {
    "fieldname": "company_email_id",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Company Email ID"
   },
   {
    "fieldname": "paci_number",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "PACI Number"
   },
   {
    "fieldname": "company_location",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Company Location"
   },
   {
    "fieldname": "company_block_number",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Company Block Number"
   },
   {
    "fieldname": "company_street_name",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Company Street Name"
   },
   {
    "fieldname": "company_building_name",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Company Building Name"
   },
   {
    "fieldname": "company_contact_number",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Company Contact Number"
   },
   {
@@ -236,9 +236,8 @@
   },
   {
    "fieldname": "governorate",
-   "fieldtype": "Link",
-   "label": "Governorate",
-   "options": "Governorate"
+   "fieldtype": "Read Only",
+   "label": "Governorate"
   },
   {
    "fieldname": "section_break_4",
@@ -262,7 +261,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2020-10-12 21:15:18.891133",
+ "modified": "2021-01-21 14:43:22.512035",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",

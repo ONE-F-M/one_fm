@@ -15,7 +15,10 @@
   "column_break_8",
   "company_pifss_registration_no",
   "column_break_10",
+  "signatory_name",
   "authorized_signatory",
+  "column_break_11",
+  "pifss_authorized_signatory",
   "employee_details_section",
   "employee",
   "employee_name",
@@ -96,6 +99,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "fetch_from": "pifss_authorized_signatory.company_name_arabic",
    "fieldname": "company_name_arabic",
    "fieldtype": "Data",
    "label": "Company name in Arabic",
@@ -106,6 +110,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "pifss_authorized_signatory.pifss_registration_no",
    "fieldname": "company_pifss_registration_no",
    "fieldtype": "Data",
    "label": "Company PIFSS Registration no",
@@ -118,6 +123,7 @@
   {
    "fieldname": "authorized_signatory",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Authorized Signatory",
    "options": "PAM Authorized Signatory List"
   },
@@ -144,24 +150,30 @@
   {
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name",
-   "fieldtype": "Data",
-   "label": "First Name in Arabic"
+   "fieldtype": "Read Only",
+   "label": "First Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_second_name_in_arabic",
+   "fieldname": "second_name",
+   "fieldtype": "Read Only",
+   "label": "Second Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_third_name_in_arabic",
+   "fieldname": "third_name",
+   "fieldtype": "Read Only",
+   "label": "Third Name in Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
-   "fieldname": "second_name",
-   "fieldtype": "Data",
-   "label": "Second Name in Arabic"
-  },
-  {
-   "fieldname": "third_name",
-   "fieldtype": "Data",
-   "label": "Third Name in Arabic"
-  },
-  {
    "fieldname": "fourth_name",
-   "fieldtype": "Data",
-   "label": "Fourth Name in Arabic"
+   "fieldtype": "Read Only",
+   "label": "Fourth Name in Arabic",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_13",
@@ -170,20 +182,23 @@
   {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
-   "fieldtype": "Data",
-   "label": "Civil ID"
+   "fieldtype": "Read Only",
+   "label": "Civil ID",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.cell_number",
    "fieldname": "mobile",
-   "fieldtype": "Data",
-   "label": "Mobile "
+   "fieldtype": "Read Only",
+   "label": "Mobile ",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.permanent_address",
    "fieldname": "address",
-   "fieldtype": "Small Text",
-   "label": "Address"
+   "fieldtype": "Read Only",
+   "label": "Address",
+   "read_only": 1
   },
   {
    "fieldname": "nationality_details_section",
@@ -209,7 +224,8 @@
    "fetch_from": "employee.date_of_birth",
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth"
+   "label": "Date of Birth",
+   "read_only": 1
   },
   {
    "fieldname": "date_of_naturalization",
@@ -224,16 +240,18 @@
   {
    "fetch_from": "employee.date_of_joining",
    "fieldname": "date_of_joining",
-   "fieldtype": "Date",
-   "label": "Date of Joining"
+   "fieldtype": "Read Only",
+   "label": "Date of Joining",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_29",
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "employee.date_of_joining",
    "fieldname": "subscription_start_date",
-   "fieldtype": "Date",
+   "fieldtype": "Read Only",
    "label": "Subscription Start Date"
   },
   {
@@ -243,8 +261,9 @@
   {
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "position",
-   "fieldtype": "Data",
-   "label": "Position"
+   "fieldtype": "Read Only",
+   "label": "Position",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_33",
@@ -253,8 +272,9 @@
   {
    "fetch_from": "employee.one_fm_basic_salary",
    "fieldname": "salary",
-   "fieldtype": "Data",
-   "label": "Salary"
+   "fieldtype": "Read Only",
+   "label": "Salary",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.request_type==\"End of Service\"",
@@ -319,9 +339,25 @@
    "fieldname": "nationality_proof",
    "fieldtype": "Attach",
    "label": "Nationality Proof"
+  },
+  {
+   "fieldname": "pifss_authorized_signatory",
+   "fieldtype": "Link",
+   "label": "PIFSS Authorized Signatory",
+   "options": "PIFSS Authorized Signatory"
+  },
+  {
+   "depends_on": "pifss_authorized_signatory",
+   "fieldname": "signatory_name",
+   "fieldtype": "Select",
+   "label": "Signatory Name"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2021-01-10 09:34:07.424115",
+ "modified": "2021-01-21 09:06:01.064393",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",

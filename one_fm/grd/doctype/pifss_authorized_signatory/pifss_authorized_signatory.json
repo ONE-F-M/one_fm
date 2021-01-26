@@ -1,0 +1,81 @@
+{
+ "autoname": "PFAS-.YYYY.-.MM.-.######",
+ "creation": "2021-01-19 15:39:51.227251",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "company_name_arabic",
+  "column_break_3",
+  "is_active",
+  "pifss_registration_no",
+  "section_break_4",
+  "authorized_signatory"
+ ],
+ "fields": [
+  {
+   "fetch_from": "company.company_name_arabic",
+   "fieldname": "company_name_arabic",
+   "fieldtype": "Data",
+   "label": "Company Name Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "company.pifss_registration_no",
+   "fieldname": "pifss_registration_no",
+   "fieldtype": "Data",
+   "label": "PIFSS Registration No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "authorized_signatory",
+   "fieldtype": "Table",
+   "label": "Authorized Signatory",
+   "options": "PAM Authorized Signatory Table"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  }
+ ],
+ "modified": "2021-01-21 07:58:12.764401",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PIFSS Authorized Signatory",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
