@@ -96,7 +96,7 @@ def assign_task(task_name, employee):
 @frappe.whitelist()
 def edit_task(task_name, description):
 	try:
-		if not frappe.has_permission("Task", "edit", task_name):
+		if not frappe.has_permission("Task", "write", task_name):
 			return frappe.utils.response.report_error(417)
 		task = frappe.get_doc("Task", task_name)
 		task.description = description

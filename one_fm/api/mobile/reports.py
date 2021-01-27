@@ -68,9 +68,11 @@ def delete_shift_report(report_name):
 		
 
 @frappe.whitelist()
-def edit_shift_report(report_name, importance=None, report_type=None, comments=None, request_for_action=None, images=[]):
+def edit_shift_report(report_name, importance=None, report_type=None, comments=None, request_for_action=None, images=[], new_images=[]):
 	try:
 		shift_report = frappe.get_doc("Shift Report", report_name)
+		result = True
+		diff = []
 		if importance:
 			shift_report.importance = importance
 		if report_type:
@@ -82,12 +84,22 @@ def edit_shift_report(report_name, importance=None, report_type=None, comments=N
 		if len(images) > 0:
 			attachments = get_attachments(shift_report.doctype, shift_report.name)
 			images = json.loads(images)
-			diff = [i for i in images + attachments if i not in images or i not in attachments]
+			for image in images:
+				if frappe._dict(image) in attachments:
+					diff.append(image)
 			result = len(diff) == 0
+		if len(new_images) > 0:
+			for attachment in ast.literal_eval(new_images):
+				attach_file(filename=random_string(6)+".jpg", filedata=base64.b64decode(attachment), doctype=shift_report.doctype, docname=shift_report.name)
+
 		if not result:
 			for image in diff:
 				frappe.delete_doc("File", image["name"])
 		return True
+
+	except Exception as e:
+		print(e)
+		return frappe.utils.response.report_error(e.http_status_code)
 
 	except Exception as e:
 		print(e)
