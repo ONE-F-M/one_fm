@@ -54,5 +54,18 @@ def get_data():
 					"label": _("Legal Investigation Session")
 				},
 			]
+		},
+				{
+			"label": _("Setup"),
+			"items": [
+				{
+					"color": "grey",
+					"icon": "octicon octicon-key",
+					"type": "doctype",
+					"name": "Legal Settings",
+					"label": _("Legal Settings")
+				},
+			]
 		}        
+        
 	]
