@@ -88,7 +88,7 @@ def get_weekly_staff_roster(start_date, end_date):
 			FROM `tabEmployee Schedule`
 			WHERE employee="{emp}"
 			AND date BETWEEN date("{start_date}") AND date("{end_date}")
-		""".format(emp=user_employee, start_date=start_date, end_date=end_date), as_dict=1)
+		""".format(emp=user_employee.name, start_date=start_date, end_date=end_date), as_dict=1)
 		print(roster)
 		return roster
 	except Exception as e:
@@ -335,7 +335,7 @@ def get_unscheduled_employees(date, shift):
 def get_assigned_employees(shift, date, limit_start=None, limit_page_length=20):
 	try:
 		#Todo add date range
-		return frappe.get_list("Roster", fields=["employee", "employee_name", "post_type"], filters={"shift": shift, "date": date}, order_by="employee_name asc",
+		return frappe.get_list("Employee Schedule", fields=["employee", "employee_name", "post_type"], filters={"shift": shift, "date": date}, order_by="employee_name asc",
 			limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
@@ -577,6 +577,7 @@ def get_current_shift(employee):
 		else:
 			return shifts[0].shift
 	except Exception as e:
+		print(frappe.get_traceback())
 		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()

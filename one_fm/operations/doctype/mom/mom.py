@@ -10,7 +10,7 @@ from frappe import _
 class MOM(Document):
 	def validate(self):
 		attendees_count = 0
-		for attendee in self.attendees:
+		for attendee in self.attendees[:]:
 			if attendee.attended_meeting:
 				attendees_count = attendees_count + 1
 			else:
