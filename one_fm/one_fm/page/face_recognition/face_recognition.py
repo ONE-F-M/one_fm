@@ -81,7 +81,7 @@ def verify():
 		skip_attendance = frappe.local.form_dict['skip_attendance']
 		latitude = frappe.local.form_dict['latitude']
 		longitude = frappe.local.form_dict['longitude']
-		timestamp = frappe.local.form_dict['timestamp']
+		# timestamp = frappe.local.form_dict['timestamp']
 		files = frappe.request.files
 		file = files['file']
 		content = file.stream.read()
@@ -101,7 +101,7 @@ def verify():
 					recog_end = time.time()
 					print("Face Recognition Time = ", recog_end-recog_start)
 					print("Face Recognition Success")
-					return check_in(log_type, skip_attendance, latitude, longitude, timestamp)
+					return check_in(log_type, skip_attendance, latitude, longitude)
 				else:
 					recog_end = time.time()
 					print("Face Recognition Time = ", recog_end-recog_start)
@@ -117,7 +117,7 @@ def verify():
 		raise exc
 
 
-def check_in(log_type, skip_attendance, latitude, longitude, timestamp):
+def check_in(log_type, skip_attendance, latitude, longitude):
 	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
 	checkin = frappe.new_doc("Employee Checkin")
 	checkin.employee = employee

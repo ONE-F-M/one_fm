@@ -362,11 +362,11 @@ function upload_file(file, method, log_type, skip_attendance){
 		let form_data = new FormData();
         form_data.append("file", file, frappe.session.user+".mp4");
         if(method == 'verify'){
-            let {timestamp} = cur_page.page.page.position;
+            // let {timestamp} = cur_page.page.page.position;
             let {latitude, longitude} = cur_page.page.page.position.coords;
             form_data.append("latitude", latitude);
             form_data.append("longitude", longitude);
-            form_data.append("timestamp", timestamp);
+            // form_data.append("timestamp", timestamp);
             form_data.append("log_type", log_type);
             form_data.append("skip_attendance", skip_attendance);
         }
