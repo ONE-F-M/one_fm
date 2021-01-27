@@ -15,7 +15,6 @@ class MOM(Document):
 				attendees_count = attendees_count + 1
 			else:
 				self.remove(attendee)
-				self.reload()
 
 		if(attendees_count < 1):
 			frappe.throw(_("Please check the attendees present."))
