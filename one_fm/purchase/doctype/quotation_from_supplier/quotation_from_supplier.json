@@ -123,7 +123,7 @@
    "no_copy": 1,
    "oldfieldname": "naming_series",
    "oldfieldtype": "Select",
-   "options": "PUR-QTNS-.YYYY.-",
+   "options": "QUO-.YYYY.-.######\nPUR-QTNS-.YYYY.-",
    "print_hide": 1,
    "reqd": 1,
    "set_only_once": 1
@@ -838,7 +838,7 @@
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-12-05 02:05:52.757065",
+ "modified": "2021-01-31 18:41:14.757951",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Quotation From Supplier",
