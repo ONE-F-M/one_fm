@@ -65,7 +65,7 @@
    "no_copy": 1,
    "oldfieldname": "naming_series",
    "oldfieldtype": "Select",
-   "options": "RM-.YYYY.-",
+   "options": "RFM-.YYYY.-.######\nRM-.YYYY.-",
    "print_hide": 1,
    "reqd": 1,
    "set_only_once": 1
@@ -422,7 +422,7 @@
  "icon": "fa fa-ticket",
  "is_submittable": 1,
  "links": [],
- "modified": "2020-12-10 06:45:51.086342",
+ "modified": "2021-01-31 18:39:10.120147",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",

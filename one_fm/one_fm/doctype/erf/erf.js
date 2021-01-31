@@ -73,25 +73,32 @@ frappe.ui.form.on('ERF', {
 		d.show();
 	},
 	close_erf: function(frm) {
-		frappe.confirm(
-			__('Do You Want to Close this ERF'),
-			function(){
-				// Yes
-				frappe.call({
-					doc: frm.doc,
-					method: 'accept_or_decline',
-					args: {status: 'Closed'},
-					callback(r) {
-						if (!r.exc) {
-							frm.reload_doc();
-						}
-					},
-					freeze: true,
-					freeze_message: __('Processing ..')
-				});
-			},
-			function(){} // No
-		);
+		if(frm.doc.erf_employee && frm.doc.erf_employee.length > 0){
+			var msg = __("Do You Want to Close this ERF?<br>Candidates Required: {0}\
+				<br>Employee Selected/Joined: {1}", [frm.doc.number_of_candidates_required, frm.doc.erf_employee.length])
+			frappe.confirm(
+				msg,
+				function(){
+					// Yes
+					frappe.call({
+						doc: frm.doc,
+						method: 'accept_or_decline',
+						args: {status: 'Closed'},
+						callback(r) {
+							if (!r.exc) {
+								frm.reload_doc();
+							}
+						},
+						freeze: true,
+						freeze_message: __('Processing ..')
+					});
+				},
+				function(){} // No
+			);
+		}
+		else{
+			frappe.throw(__("Please update Close With Employee Table to Close the ERF."))
+		}
 	},
 	confirm_accept_decline_erf: function(frm, status, reason_for_decline) {
 		let msg_status = 'Approve';

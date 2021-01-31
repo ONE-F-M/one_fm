@@ -111,7 +111,9 @@
   "column_break_54",
   "required_quantity",
   "final_quantity",
-  "amended_from"
+  "amended_from",
+  "close_with_section",
+  "erf_employee"
  ],
  "fields": [
   {
@@ -794,11 +796,26 @@
    "fieldname": "provide_accommodation_by_company_html",
    "fieldtype": "HTML",
    "label": "Provide Accommodation by Company HTML"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.docstatus==1&&(doc.status==\"Accepted\" || doc.status==\"Closed\")",
+   "fieldname": "close_with_section",
+   "fieldtype": "Section Break",
+   "label": "Close With"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus==1&&(doc.status==\"Accepted\" || doc.status==\"Closed\")",
+   "fieldname": "erf_employee",
+   "fieldtype": "Table",
+   "label": "ERF Employee",
+   "options": "ERF Employee"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-12-31 10:23:42.701640",
+ "modified": "2021-01-11 09:13:47.718714",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

@@ -39,6 +39,11 @@ class RequestforMaterial(Document):
 				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
 
 			self.status = status
+			if status == "Approved":
+				# Notify Stock Manager - Stock Manger Check If Item Available
+				# If Item Available then Create SE Issue and Transfer and update qty issued in the RFMItem
+				# If Qty - qty Issued > 0 then Create RFP button appear
+				pass
 			self.reason_for_rejection = reason_for_rejection
 			self.save()
 			self.reload()

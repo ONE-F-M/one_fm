@@ -131,7 +131,7 @@ doc_events = {
 	},
 	"Employee": {
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",
-		"after_insert": "one_fm.hiring.utils.create_salary_structure_assignment"
+		"after_insert": "one_fm.hiring.utils.employee_after_insert"
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -150,6 +150,10 @@ doc_events = {
 		"autoname": "one_fm.utils.warehouse_naming_series",
 		"before_insert": "one_fm.utils.validate_get_warehouse_parent",
 		"on_update": "one_fm.utils.set_warehouse_contact_from_project"
+	},
+	"Vehicle": {
+		"autoname": "one_fm.fleet_management.utils.vehicle_naming_series",
+		"after_insert": "one_fm.fleet_management.doctype.vehicle_leasing_contract.vehicle_leasing_contract.after_insert_vehicle"
 	},
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",

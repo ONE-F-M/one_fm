@@ -157,6 +157,17 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
     if exp_in_month:
         external_work_history.total_experience = exp_in_month / 12
 
+def employee_after_insert(doc, method):
+    create_salary_structure_assignment(doc, method)
+    update_erf_close_with(doc)
+
+def update_erf_close_with(doc):
+    if doc.one_fm_erf:
+        erf = frappe.get_doc('ERF', doc.one_fm_erf)
+        employees = erf.append('erf_employee')
+        employees.employee = doc.name
+        erf.save(ignore_permissions=True)
+
 @frappe.whitelist()
 def create_salary_structure_assignment(doc, method):
     if doc.job_offer_salary_structure:
