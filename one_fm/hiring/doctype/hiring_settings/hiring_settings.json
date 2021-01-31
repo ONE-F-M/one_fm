@@ -10,6 +10,7 @@
   "unplanned_erf_approver",
   "hr_for_a_quick_workshop",
   "hrm_to_fill_hr_and_salary_compensation",
+  "close_erf_automatically",
   "column_break_5",
   "do_not_notify_requester",
   "notify_gsd_on_erf_approval",
@@ -101,11 +102,18 @@
    "fieldname": "do_not_notify_requester",
    "fieldtype": "Check",
    "label": "Do Not Notify Requester"
+  },
+  {
+   "default": "0",
+   "description": "Close ERF Automatically on Employee Creation with ERF Reference or Number of Employee Selection in ERF.",
+   "fieldname": "close_erf_automatically",
+   "fieldtype": "Check",
+   "label": "Close ERF Automatically"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2020-12-31 11:04:56.533023",
+ "modified": "2021-01-30 11:58:05.802619",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

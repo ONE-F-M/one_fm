@@ -152,7 +152,9 @@ class ERF(Document):
 			frappe.msgprint(_('{0}, Will Notified By Email.').format(frappe.db.get_value('User', erf_approver, 'full_name')))
 
 	def on_update_after_submit(self):
-		pass
+		if frappe.db.get_value('Hiring Settings', None, 'close_erf_automatically'):
+			if self.erf_employee and len(self.erf_employee) == self.number_of_candidates_required:
+				self.db_set('status', 'Closed')
 
 	def notify_finance_department(self):
 		fin_department = frappe.db.get_value('Hiring Settings', None, 'notify_finance_department_for_job_offer_salary_advance')
