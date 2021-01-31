@@ -73,7 +73,7 @@ frappe.ui.form.on('Item', {
 				callback: function(r) {
 					if(r.message){
 						var new_item_id = String(parseInt(r.message)+1)
-						var final_item_id = new_item_id.padStart(4, '0')
+						var final_item_id = new_item_id.padStart(6, '0')
 						frm.set_value("item_id", final_item_id)
 					}
 				}
