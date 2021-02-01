@@ -6,6 +6,21 @@ def execute():
     rename_item_according_to_new_series()
     # PUR-ORD-YYYY-##### to POR-YYYY-######
     rename_po_according_to_new_series()
+    # MAT-PRE-YYYY-##### to PRC-YYYY-######
+    rename_pr_according_to_new_series()
+    # RM-YYYY-##### to RFM-YYYY-######
+    rename_rfm_according_to_new_series()
+
+def rename_rfm_according_to_new_series():
+    frappe.reload_doc('purchase', 'doctype', 'request_for_material')
+    for doc in frappe.get_all('Request for Material'):
+        series = doc.name[8:]
+        year = doc.name[3:7]
+        new_name = "RFM-"+year+"-0"+series
+        frappe.rename_doc('Request for Material', doc.name, new_name, force=True)
+        print(doc.name)
+        print(new_name)
+        print("===========")
 
 def rename_po_according_to_new_series():
     frappe.reload_doc('buying', 'doctype', 'purchase_order')
@@ -14,6 +29,17 @@ def rename_po_according_to_new_series():
         year = doc.name[8:12]
         new_name = "POR-"+year+"-0"+series
         frappe.rename_doc('Purchase Order', doc.name, new_name, force=True)
+        print(doc.name)
+        print(new_name)
+        print("===========")
+
+def rename_pr_according_to_new_series():
+    frappe.reload_doc('stock', 'doctype', 'purchase_receipt')
+    for doc in frappe.get_all('Purchase Receipt'):
+        series = doc.name[13:]
+        year = doc.name[8:12]
+        new_name = "PRC-"+year+"-0"+series
+        frappe.rename_doc('Purchase Receipt', doc.name, new_name, force=True)
         print(doc.name)
         print(new_name)
         print("===========")
