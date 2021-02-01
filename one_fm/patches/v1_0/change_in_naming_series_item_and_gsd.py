@@ -3,7 +3,20 @@ import frappe
 
 def execute():
     # UNF-SHT-#### to UNF-SHT-######
-	rename_item_according_to_new_series()
+    rename_item_according_to_new_series()
+    # PUR-ORD-YYYY-##### to POR-YYYY-######
+    rename_po_according_to_new_series()
+
+def rename_po_according_to_new_series():
+    frappe.reload_doc('buying', 'doctype', 'purchase_order')
+    for doc in frappe.get_all('Purchase Order'):
+        series = doc.name[13:]
+        year = doc.name[8:12]
+        new_name = "POR-"+year+"-0"+series
+        frappe.rename_doc('Purchase Order', doc.name, new_name, force=True)
+        print(doc.name)
+        print(new_name)
+        print("===========")
 
 def rename_item_according_to_new_series():
     frappe.reload_doc('stock', 'doctype', 'item')
