@@ -1108,11 +1108,11 @@ def validate_item(doc, method):
     set_item_description(doc)
 
 def set_item_id(doc):
-    next_item_id = "0000"
+    next_item_id = "000000"
     item_id = get_item_id_series("All Item Groups", doc.subitem_group, doc.item_group)
     if item_id:
         next_item_id = str(int(item_id)+1)
-        for i in range(0, 4-len(next_item_id)):
+        for i in range(0, 6-len(next_item_id)):
             next_item_id = '0'+next_item_id
     doc.item_id = next_item_id
 
