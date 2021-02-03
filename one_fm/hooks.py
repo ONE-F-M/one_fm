@@ -56,6 +56,7 @@ doctype_js = {
 	"Price List": "public/js/doctype_js/price_list.js",
 	"Vehicle": "public/js/doctype_js/vehicle.js",
 	"Asset": "public/js/doctype_js/asset.js",
+	"Supplier": "public/js/doctype_js/supplier.js",
 	"Item": "public/js/doctype_js/item.js",
 	"Item Group": "public/js/doctype_js/item_group.js",
 	"Purchase Receipt": "public/js/doctype_js/purchase_receipt.js",
@@ -165,6 +166,9 @@ doc_events = {
 		"before_insert": "one_fm.utils.before_insert_item",
 		"validate": "one_fm.utils.validate_item"
 	},
+	"Supplier Group": {
+		"on_update": "one_fm.utils.supplier_group_on_update",
+	},
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
@@ -190,7 +194,7 @@ doc_events = {
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
 		"on_submit": "one_fm.one_fm.asset_custom.on_asset_submit"
-	}, 
+	},
 	"Sales Invoice":{
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice"
 	}
