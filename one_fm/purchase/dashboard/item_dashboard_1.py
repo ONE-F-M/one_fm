@@ -51,7 +51,10 @@ def get_data(item_code=None, warehouse=None, item_group=None,
 		exists_rfp = frappe.db.exists('Request for Purchase', {'request_for_material': item.name})
 		item.update({'rfp': ''})
 		item.update({'po': ''})
+		item.update({'po_workflow': ''})
 		item.update({'pr': ''})
+		item.update({'pi': ''})
+		item.update({'pi_status': ''})
 		item.update({'progress': 25})
 		item.update({'rfm_status': frappe.db.get_value('Request for Material', item.name, 'docstatus')})
 		item.update({'rfp_status': ''})
@@ -66,6 +69,7 @@ def get_data(item_code=None, warehouse=None, item_group=None,
 				item.update({'progress': 75})
 				item.update({'po': exists_po})
 				item.update({'po_status': frappe.db.get_value('Purchase Order', exists_po, 'docstatus')})
+				item.update({'po_workflow': frappe.db.get_value('Purchase Order', exists_po, 'workflow_state')})
 				# exists_pr = frappe.db.exists('Purchase Receipt', {'purchase_order': exists_po})
 				query = """
 					select
@@ -83,6 +87,24 @@ def get_data(item_code=None, warehouse=None, item_group=None,
 						if i == 1:
 							item.update({'pr': pr.name})
 							item.update({'pr_status': pr.docstatus})
+							query = """
+								select
+									distinct pi.name, pi.docstatus
+								from
+									`tabPurchase Invoice` pi, `tabPurchase Invoice Item` pii
+								where
+									pii.parent=pi.name and pii.purchase_receipt=%s
+							"""
+							pi_list = frappe.db.sql(query, (pr.name), as_dict=True)
+							if pi_list:
+								j = 1
+								for pi in pi_list:
+									if j == 1:
+										item.update({'pi': pi.name})
+										item.update({'pi_status': pi.docstatus})
+									j += 1
 						i += 1
+
+
 
 	return items
