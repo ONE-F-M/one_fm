@@ -1069,18 +1069,19 @@ def item_group_naming_series(doc, method):
 @frappe.whitelist()
 def supplier_group_on_update(doc, method):
     """update series list"""
-    set_options = frappe.get_meta('Supplier').get_field("naming_series").options+'\n'+'SUP-'+doc.abbr+'-.######'
-    check_duplicate_naming_series(set_options)
-    series_list = set_options.split("\n")
+    if doc.abbr:
+        set_options = frappe.get_meta('Supplier').get_field("naming_series").options+'\n'+'SUP-'+doc.abbr+'-.######'
+        check_duplicate_naming_series(set_options)
+        series_list = set_options.split("\n")
 
-    # set in doctype
-    set_series_for(doc, 'Supplier', series_list)
+        # set in doctype
+        set_series_for(doc, 'Supplier', series_list)
 
-    # create series
-    map(insert_naming_series, [d.split('.')[0] for d in series_list if d.strip()])
-    frappe.db.set_value('Supplier Group', doc.name, 'supplier_naming_series', 'SUP-'+doc.abbr+'-.######')
+        # create series
+        map(insert_naming_series, [d.split('.')[0] for d in series_list if d.strip()])
+        frappe.db.set_value('Supplier Group', doc.name, 'supplier_naming_series', 'SUP-'+doc.abbr+'-.######')
 
-    frappe.msgprint(_("Series Updated"))
+        frappe.msgprint(_("Series Updated"))
 
 def insert_naming_series(series):
     """insert series if missing"""
