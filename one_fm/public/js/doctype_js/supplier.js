@@ -32,12 +32,12 @@ frappe.ui.form.on('Supplier', {
 					frm.set_value('naming_series', r.supplier_naming_series);
 				}
 				else{
-					frm.set_value('naming_series', 'SUP-.#######');
+					frm.set_value('naming_series', 'SUP-.######');
 				}
 			});
 		}
 		else{
-			frm.set_value('naming_series', 'SUP-.#######');
+			frm.set_value('naming_series', 'SUP-.######');
 		}
 	}
 })
