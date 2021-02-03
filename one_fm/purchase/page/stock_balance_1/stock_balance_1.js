@@ -72,7 +72,7 @@ frappe.pages['stock-balance-1'].on_page_load = function(wrapper) {
 		var setup_click = function(doctype, doc_abbr) {
 			page.main.on('click', 'a[data-type="'+ doc_abbr +'"]', function() {
 				var name = $(this).attr('data-name');
-				frappe.set_route('Form', doctype, name)
+				frappe.set_route('Form', doctype, name);
 			});
 		}
 
@@ -80,5 +80,18 @@ frappe.pages['stock-balance-1'].on_page_load = function(wrapper) {
 		setup_click('Request for Purchase', 'rfp');
 		setup_click('Purchase Order', 'po');
 		setup_click('Purchase Receipt', 'pr');
+		setup_click('Purchase Invoice', 'pi');
+
+		page.main.on('click', 'div[data-type=pri]', function() {
+			var name = $(this).attr('data-name');
+			frappe.call({
+				method: "erpnext.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_invoice",
+				args: {source_name: name},
+				callback: function (r) {
+					var doclist = frappe.model.sync(r.message);
+					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				}
+			});
+		});
 	});
 }

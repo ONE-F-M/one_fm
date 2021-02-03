@@ -3,50 +3,105 @@
 		<div class="row">
 			<div class="col-sm-2 small" style="margin-top: 8px;">
 				{% if d.rfm_status == 1 %}
-				<span class="indicator blue"></span>
+					<span class="indicator blue"></span>
 				{% else %}
-				<span class="indicator red"></span>
+					<span class="indicator red"></span>
 				{% endif %}
 				<a data-type="rfm" data-name="{{ d.name }}">{{ d.name }}</a>
 			</div>
 			<div class="col-sm-2 small" style="margin-top: 8px;">
-				<!-- {% if show_item %} -->
-				{% if d.rfp_status == 1 %}
-				<span class="indicator blue"></span>
+				{% if d.rfp %}
+					{% if d.rfp_status == 1 %}
+						<span class="indicator blue"></span>
+					{% else %}
+						<span class="indicator red"></span>
+					{% endif %}
+					<a data-type="rfp"
+						data-name="{{ d.rfp }}">{{ d.rfp }}
+					</a>
 				{% else %}
-				<span class="indicator red"></span>
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
 				{% endif %}
-				<a data-type="rfp"
-					data-name="{{ d.rfp }}">{{ d.rfp }}
-					<!-- {% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %} -->
-				</a>
-				<!-- {% endif %} -->
 			</div>
-			<div class="col-sm-3 small" style="margin-top: 8px;">
-				<!-- {% if show_item %} -->
-				{% if d.po_status == 1 %}
-				<span class="indicator blue"></span>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.po %}
+					{% if d.po_status == 1 %}
+						<span class="indicator blue"></span>
+					{% else %}
+						<span class="indicator red"></span>
+					{% endif %}
+					<a data-type="po"
+						data-name="{{ d.po }}">{{ d.po }}
+					</a>
+					<br/>
+					<!-- <a data-type="po_workflow"
+						data-name="{{ d.po }}">{{ d.po_workflow }}
+					</a> -->
+					<div class="btn-group">
+						<a data-type="po_workflow" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"
+							data-name="{{ d.po }}">{{ d.po_workflow }}
+						</a>
+						<!-- <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+							{{ d.po_workflow }}
+							<span class="caret"></span>
+						</button>
+						<ul role="menu" class="dropdown-menu">
+							<li>
+								<a>Approve</a>
+							</li>
+							<li>
+								<a>Reject</a>
+							</li>
+						</ul> -->
+					</div>
 				{% else %}
-				<span class="indicator red"></span>
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
 				{% endif %}
-				<a data-type="po"
-					data-name="{{ d.po }}">{{ d.po }}
-					<!-- {% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %} -->
-				</a>
-				<!-- {% endif %} -->
 			</div>
-			<div class="col-sm-3 small" style="margin-top: 8px;">
-				<!-- {% if show_item %} -->
-				{% if d.pr_status == 1 %}
-				<span class="indicator blue"></span>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.pr %}
+					{% if d.pr_status == 1 %}
+						<span class="indicator blue"></span>
+					{% else %}
+						<span class="indicator red"></span>
+					{% endif %}
+					<a data-type="pr"
+						data-name="{{ d.pr }}">{{ d.pr }}
+					</a>
 				{% else %}
-				<span class="indicator red"></span>
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
 				{% endif %}
-				<a data-type="pr"
-					data-name="{{ d.pr }}">{{ d.pr }}
-					<!-- {% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %} -->
-				</a>
-				<!-- {% endif %} -->
+			</div>
+			<div class="col-sm-2 small">
+				{% if d.pr && !d.pi %}
+					<div class="btn btn-primary" data-type="pri" data-name="{{ d.pr }}">Invoice
+					</div>
+				{% else %}
+					{% if d.pr && d.pi %}
+						{% if d.pi_status == 1 %}
+							<span class="indicator blue"></span>
+						{% else %}
+							<span class="indicator red"></span>
+						{% endif %}
+						<a data-type="pi"
+							data-name="{{ d.pi }}">{{ d.pi }}
+						</a>
+					{% else %}
+						<span class="indicator darkgrey"></span>
+						<a style="font-size: 12px; color: #8d99a6;">
+							No Record found.
+						</a>
+					{% endif %}
+				{% endif %}
 			</div>
 			<div class="col-sm-2 small">
 				<div class="progress level" style="margin: 0px;">
