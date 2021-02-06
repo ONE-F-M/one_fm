@@ -55,18 +55,19 @@ def get_data(item_code=None, warehouse=None, item_group=None,
 		item.update({'pr': ''})
 		item.update({'pi': ''})
 		item.update({'pi_status': ''})
-		item.update({'progress': 25})
+		item.update({'progress': 20})
+		item.update({'progress_bgc': '00FF00;'})
 		item.update({'rfm_status': frappe.db.get_value('Request for Material', item.name, 'docstatus')})
 		item.update({'rfp_status': ''})
 		item.update({'po_status': ''})
 		item.update({'pr_status': ''})
 		if exists_rfp:
 			item.update({'rfp': exists_rfp})
-			item.update({'progress': 50})
+			item.update({'progress': 40})
 			item.update({'rfp_status': frappe.db.get_value('Request for Purchase', exists_rfp, 'docstatus')})
 			exists_po = frappe.db.exists('Purchase Order', {'one_fm_request_for_purchase': exists_rfp})
 			if exists_po:
-				item.update({'progress': 75})
+				item.update({'progress': 60})
 				item.update({'po': exists_po})
 				item.update({'po_status': frappe.db.get_value('Purchase Order', exists_po, 'docstatus')})
 				item.update({'po_workflow': frappe.db.get_value('Purchase Order', exists_po, 'workflow_state')})
@@ -81,7 +82,7 @@ def get_data(item_code=None, warehouse=None, item_group=None,
 				"""
 				pr_list = frappe.db.sql(query, (exists_po), as_dict=True)
 				if pr_list:
-					item.update({'progress': 100})
+					item.update({'progress': 80})
 					i = 1
 					for pr in pr_list:
 						if i == 1:
@@ -97,6 +98,8 @@ def get_data(item_code=None, warehouse=None, item_group=None,
 							"""
 							pi_list = frappe.db.sql(query, (pr.name), as_dict=True)
 							if pi_list:
+								item.update({'progress': 100})
+								item.update({'progress_bgc': 'blue;'})
 								j = 1
 								for pi in pi_list:
 									if j == 1:
