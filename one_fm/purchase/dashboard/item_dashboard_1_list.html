@@ -29,7 +29,12 @@
 			<div class="col-sm-2 small" style="margin-top: 8px;">
 				{% if d.po %}
 					{% if d.po_status == 1 %}
-						<span class="indicator blue"></span>
+						{% if d.po_workflow == "Approved" %}
+							<span class="indicator blue"></span>
+						{% endif %}
+						{% if d.po_workflow == "Pending Approval" %}
+							<span class="indicator green"></span>
+						{% endif %}
 					{% else %}
 						<span class="indicator red"></span>
 					{% endif %}
@@ -107,7 +112,7 @@
 				<div class="progress level" style="margin: 0px;">
 					<div class="progress-bar progress-bar-success" role="progressbar"
 						aria-valuenow={{d.progress}}
-						aria-valuemin="0" aria-valuemax="100" style="width: {{d.progress}}%;">
+						aria-valuemin="0" aria-valuemax="100" style="width: {{d.progress}}%; background-color: {{d.progress_bgc}};">
 					</div>
 				</div>
 				<!-- <span class="inline-graph">
