@@ -129,6 +129,10 @@ def make_employee_from_job_offer(source_name, target_doc=None):
 def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False):
     if not job_applicant:
         job_applicant = frappe.get_doc('Job Applicant', job_applicant_id)
+        target.nationality_no = job_applicant.nationality_no
+        target.nationality_subject = job_applicant.nationality_subject
+        target.date_of_naturalization = job_applicant.date_of_naturalization
+
     fields_map = {'personal_email': 'email_id', 'middle_name': 'one_fm_second_name',
         'one_fm_civil_id': 'one_fm_cid_number', 'cell_number': 'one_fm_contact_number',
         'date_of_issue': 'one_fm_passport_issued', 'valid_upto': 'one_fm_passport_expire',

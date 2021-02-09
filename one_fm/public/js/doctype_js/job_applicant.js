@@ -198,6 +198,20 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			)
 		}
+	},
+	one_fm_nationality: function(frm) {
+		if(frm.doc.one_fm_nationality && !frm.doc.one_fm_passport_holder_of || !frm.doc.one_fm_country_of_overseas){
+			frappe.db.get_value('Nationality', frm.doc.one_fm_nationality, 'country', function(r) {
+				if(r.country){
+					if(!frm.doc.one_fm_passport_holder_of){
+						frm.set_value('one_fm_passport_holder_of', r.country);
+					}
+					if(!frm.doc.one_fm_country_of_overseas){
+						frm.set_value('one_fm_country_of_overseas', r.country);
+					}
+				}
+			});
+		}
 	}
 });
 
