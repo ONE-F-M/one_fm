@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "field:nationality_english",
  "creation": "2019-12-19 13:27:21.994538",
  "doctype": "DocType",
@@ -6,7 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "nationality_english",
-  "nationality_arabic"
+  "nationality_arabic",
+  "country"
  ],
  "fields": [
   {
@@ -23,9 +25,16 @@
    "in_list_view": 1,
    "label": "Nationality (ARABIC)",
    "reqd": 1
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
   }
  ],
- "modified": "2019-12-19 13:27:36.090990",
+ "links": [],
+ "modified": "2021-02-08 17:27:45.172739",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Nationality",
