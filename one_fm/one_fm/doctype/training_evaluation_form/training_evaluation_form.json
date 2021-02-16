@@ -1,0 +1,122 @@
+{
+ "allow_guest_to_view": 1,
+ "creation": "2021-02-12 08:46:16.867413",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sb6",
+  "title",
+  "route",
+  "column_break_3",
+  "published",
+  "training_details_section",
+  "training_event",
+  "training_form_template",
+  "cb3",
+  "start_time",
+  "end_time",
+  "section_break_6",
+  "questions"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "label": "Route"
+  },
+  {
+   "default": "0",
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "label": "Published"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "questions",
+   "fieldtype": "Table",
+   "label": "Questions",
+   "options": "Training Evaluation Form Questions"
+  },
+  {
+   "fieldname": "training_form_template",
+   "fieldtype": "Link",
+   "label": "Training Form Template",
+   "options": "Training Evaluation Form Template"
+  },
+  {
+   "fieldname": "training_event",
+   "fieldtype": "Link",
+   "label": "Training Event",
+   "options": "Training Event"
+  },
+  {
+   "fieldname": "cb3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "training_event.start_time",
+   "fieldname": "start_time",
+   "fieldtype": "Datetime",
+   "label": "Start Time",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "training_event.end_time",
+   "fieldname": "end_time",
+   "fieldtype": "Datetime",
+   "label": "End Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb6",
+   "fieldtype": "Section Break",
+   "label": "Publishing Details"
+  },
+  {
+   "fieldname": "training_details_section",
+   "fieldtype": "Section Break",
+   "label": "Training Details"
+  }
+ ],
+ "has_web_view": 1,
+ "is_published_field": "published",
+ "modified": "2021-02-12 12:11:00.543182",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Training Evaluation Form",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "search_fields": "title",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}

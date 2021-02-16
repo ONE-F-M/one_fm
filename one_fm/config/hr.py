@@ -87,5 +87,22 @@ def get_data():
 					"name": "Demand Letter",
 				}
 			]
+		},
+		{
+			"label": _("Training"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Training Evaluation Form Template",
+				},
+                {
+					"type": "doctype",
+					"name": "Training Evaluation Form",
+				},
+                {
+					"type": "doctype",
+					"name": "Training Evaluation Form Response",
+				}
+			]
 		}
 	]

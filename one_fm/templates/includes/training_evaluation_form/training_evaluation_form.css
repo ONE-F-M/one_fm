@@ -1,0 +1,28 @@
+@media only screen and (max-width: 600px) {
+  /* For mobile phones: */
+  /* table th,
+  table td {
+    background-color: blueviolet;
+    padding: 0.1rem;
+  } */
+  table {
+    font-size: 80%;
+    font-weight: 400;
+  }
+  .table thead th,
+  .table tbody th,
+  .table tbody td {
+    padding: 0.3rem;
+  }
+  .form-check-inline {
+    vertical-align: middle;
+  }
+}
+.t-center {
+  text-align: center;
+}
+.table thead th,
+.table tbody th,
+.table tbody td {
+  vertical-align: middle;
+}
