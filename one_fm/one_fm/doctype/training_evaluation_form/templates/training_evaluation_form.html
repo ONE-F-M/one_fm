@@ -30,7 +30,7 @@
             </tr>
         </thead>
 
-        <tbody>
+        <tbody name="parent-wrapper">
             {% for question in doc.questions %}
             <tr>
                 <td class="t-center">{{question.idx}}</td>
@@ -56,7 +56,7 @@
                 <td class="t-center" >{{ doc.questions|len + 1 }}</td>
                 <td colspan="2" scope="row">What aspects of the training can be improved?<br>or<br>Do you want to add any comments?</td>
                 <td colspan="5">
-                    <textarea class="form-control" name="{{ doc.questions|len + 1}}"></textarea>
+                    <textarea class="form-control" name="additional_comments"></textarea>
                 </td>
         </tbody>
     </table>

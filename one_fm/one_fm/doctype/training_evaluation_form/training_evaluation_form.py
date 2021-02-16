@@ -23,7 +23,7 @@ def submit_training_feedback(args):
 	response_doc.training_event = frappe.get_value("Training Evaluation Form", args['ref'], "training_event")
 	response_doc.start_date = args['startTime']
 	response_doc.end_date = args['endTime']
-	response_doc.additional_comments = args['10']
+	response_doc.additional_comments = args['additional_comments']
 
 	for question in template_doc.questions:
 		data = { "question": question.question }
@@ -33,3 +33,4 @@ def submit_training_feedback(args):
 
 	response_doc.insert()
 	response_doc.submit()
+	return True
