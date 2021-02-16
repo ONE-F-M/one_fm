@@ -1,4 +1,5 @@
 {
+ "allow_import": 1,
  "autoname": "field:template_name",
  "creation": "2021-02-12 08:23:38.888442",
  "doctype": "DocType",
@@ -27,7 +28,7 @@
    "options": "Training Evaluation Form Questions"
   }
  ],
- "modified": "2021-02-12 08:23:38.888442",
+ "modified": "2021-02-16 07:55:10.257825",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Training Evaluation Form Template",
