@@ -1,0 +1,81 @@
+{
+ "actions": [],
+ "creation": "2021-02-15 00:33:00.715646",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_name",
+  "mobile_no",
+  "gender",
+  "col_break123",
+  "email_id",
+  "nationality",
+  "sugested_position"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant Name",
+   "oldfieldname": "lead_name",
+   "oldfieldtype": "Data",
+   "reqd": 1
+  },
+  {
+   "fieldname": "mobile_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Mobile No.",
+   "oldfieldname": "mobile_no",
+   "oldfieldtype": "Data",
+   "reqd": 1
+  },
+  {
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email Address",
+   "oldfieldname": "email_id",
+   "oldfieldtype": "Data",
+   "options": "Email"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fieldname": "col_break123",
+   "fieldtype": "Column Break",
+   "width": "50%"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality"
+  },
+  {
+   "fieldname": "sugested_position",
+   "fieldtype": "Link",
+   "label": "Sugested Position",
+   "options": "Designation"
+  }
+ ],
+ "icon": "fa fa-user",
+ "istable": 1,
+ "links": [],
+ "modified": "2021-02-17 07:46:15.753287",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Head Hunt Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "show_name_in_global_search": 1,
+ "sort_order": "DESC"
+}

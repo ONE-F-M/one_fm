@@ -60,7 +60,8 @@ doctype_js = {
 	"Item": "public/js/doctype_js/item.js",
 	"Item Group": "public/js/doctype_js/item_group.js",
 	"Purchase Receipt": "public/js/doctype_js/purchase_receipt.js",
-	"Asset Movement": "public/js/doctype_js/asset_movement.js"
+	"Asset Movement": "public/js/doctype_js/asset_movement.js",
+	"Job Opening": "public/js/doctype_js/job_opening.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -370,7 +371,7 @@ fixtures = [
 	},
 	{
 		"dt": "Custom Script",
-		'filters': [['dt', 'in', ['Job Opening', 'Stock Entry', 'Warehouse', 'Supplier',
+		'filters': [['dt', 'in', ['Stock Entry', 'Warehouse',
 		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
 	},
 	{

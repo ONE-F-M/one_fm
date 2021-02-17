@@ -45,6 +45,11 @@
                             Language
                         </div>
                     </a>
+                    <a href="#nationality-details" class="sidebar-item list-group-item">
+                        <div class="sidebar-item-text">
+                            Nationality Details
+                        </div>
+                    </a>
                     <a href="#passport" class="sidebar-item list-group-item">
                         <div class="sidebar-item-text">
                             Passport
@@ -169,13 +174,25 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <div class="row">
+                              <div class="form-group col-md-6">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="gridCheck">
-                                    <label class="form-check-label" for="gridCheck">
-                                        Do You Have Previous Work Experience
-                                    </label>
+                                  <input class="form-check-input" type="checkbox" id="gridCheck">
+                                  <label class="form-check-label" for="gridCheck">
+                                      Do You Have Previous Work Experience
+                                  </label>
                                 </div>
+                              </div>
+                              <div class="form-group col-md-6">
+                                  <label for="Nationality">Nationality</label>
+                                  <select class="form-control" name="Nationality" id="Nationality">
+                                      <option></option>
+                                      <option>Kuwaiti</option>
+                                      <option>Indian</option>
+                                  </select>
+                              </div>
+                            </div>
+                            <div class="form-group">
                                 <a href="#contact-details">
                                     <div class="btn">Next</div>
                                 </a>
@@ -289,6 +306,43 @@
                                             class="star">☆</span>
                                     </div>
                                 </div> -->
+                            </div>
+                            <a href="#nationality-details">
+                                <div class="btn">Next</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="questions-block" id="nationality-details">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-diary-alt"></i></div>
+                            <div class="question-block-info">
+                                Nationality Details
+                                <span>Enter nationality details for Kuwaiti only.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="form-group">
+                                <label for="NationalityNo">Nationality No</label>
+                                <input type="text" class="form-control" id="NationalityNo"
+                                    placeholder="Nationality No">
+                            </div>
+                            <div class="form-group">
+                                <label for="NationalitySubject">Nationality Subject</label>
+                                <select class="form-control" name="NationalitySubject" id="NationalitySubject">
+                                    <option></option>
+                                    <option>الأولي</option>
+                                    <option>الثانية</option>
+                                    <option>الثالثة</option>
+                                    <option>الرابعة</option>
+                                    <option>الخامسة</option>
+                                    <option>السابعة</option>
+                                    <option>الثامنة</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="DateofNaturalization">Date of Naturalization</label>
+                                <input type="date" class="form-control" id="DateofNaturalization"
+                                    placeholder="Date of Naturalization">
                             </div>
                             <a href="#passport">
                                 <div class="btn">Next</div>
