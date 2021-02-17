@@ -1,0 +1,291 @@
+{
+ "actions": [],
+ "allow_events_in_timeline": 1,
+ "allow_import": 1,
+ "autoname": "naming_series:",
+ "creation": "2021-02-10 08:05:23.420155",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "lead_details",
+  "naming_series",
+  "applicant_name",
+  "mobile_no",
+  "email_id",
+  "gender",
+  "nationality",
+  "col_break123",
+  "sugested_position",
+  "lead_owner_type",
+  "lead_owner_dt",
+  "lead_owner",
+  "status",
+  "source",
+  "from_employee",
+  "image",
+  "section_break_12",
+  "contact_by",
+  "contact_date",
+  "column_break_14",
+  "ends_on",
+  "notes_section",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "lead_details",
+   "fieldtype": "Section Break",
+   "options": "fa fa-user"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "no_copy": 1,
+   "oldfieldname": "naming_series",
+   "oldfieldtype": "Select",
+   "options": "HRD-LEAD-.YYYY.-",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "label": "Email Address",
+   "oldfieldname": "email_id",
+   "oldfieldtype": "Data",
+   "options": "Email",
+   "search_index": 1
+  },
+  {
+   "fieldname": "col_break123",
+   "fieldtype": "Column Break",
+   "width": "50%"
+  },
+  {
+   "default": "__user",
+   "fieldname": "lead_owner",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Lead Owner",
+   "oldfieldname": "lead_owner",
+   "oldfieldtype": "Link",
+   "options": "lead_owner_dt",
+   "search_index": 1
+  },
+  {
+   "default": "Lead",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "no_copy": 1,
+   "oldfieldname": "status",
+   "oldfieldtype": "Select",
+   "options": "Lead\nOpen\nReplied\nInterested\nConverted\nDo Not Contact",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Link",
+   "label": "Source",
+   "oldfieldname": "source",
+   "oldfieldtype": "Select",
+   "options": "Lead Source"
+  },
+  {
+   "depends_on": "eval:doc.source == 'Existing Employee'",
+   "fieldname": "from_employee",
+   "fieldtype": "Link",
+   "label": "From Employee",
+   "no_copy": 1,
+   "oldfieldname": "customer",
+   "oldfieldtype": "Link",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image",
+   "print_hide": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break",
+   "label": "Follow Up"
+  },
+  {
+   "fieldname": "contact_by",
+   "fieldtype": "Link",
+   "label": "Next Contact By",
+   "oldfieldname": "contact_by",
+   "oldfieldtype": "Link",
+   "options": "User",
+   "width": "100px"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "contact_date",
+   "fieldtype": "Datetime",
+   "label": "Next Contact Date",
+   "no_copy": 1,
+   "oldfieldname": "contact_date",
+   "oldfieldtype": "Date",
+   "width": "100px"
+  },
+  {
+   "bold": 1,
+   "fieldname": "ends_on",
+   "fieldtype": "Datetime",
+   "label": "Ends On",
+   "no_copy": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "mobile_no",
+   "fieldtype": "Data",
+   "label": "Mobile No.",
+   "oldfieldname": "mobile_no",
+   "oldfieldtype": "Data",
+   "reqd": 1
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality"
+  },
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "Applicant Name",
+   "oldfieldname": "lead_name",
+   "oldfieldtype": "Data",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Internal",
+   "fieldname": "lead_owner_type",
+   "fieldtype": "Select",
+   "label": "Lead Owner Type",
+   "options": "\nInternal\nExternal",
+   "reqd": 1
+  },
+  {
+   "default": "User",
+   "fieldname": "lead_owner_dt",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Lead Owner Dt",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "sugested_position",
+   "fieldtype": "Link",
+   "label": "Sugested Position",
+   "options": "Designation"
+  }
+ ],
+ "icon": "fa fa-user",
+ "image_field": "image",
+ "links": [],
+ "modified": "2021-02-17 07:58:57.662559",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Applicant Lead",
+ "name_case": "Title Case",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "permlevel": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All"
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest",
+   "share": 1
+  }
+ ],
+ "search_fields": "applicant_name,lead_owner,status",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "applicant_name"
+}

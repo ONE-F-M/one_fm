@@ -72,6 +72,23 @@ def get_data():
 			]
 		},
 		{
+			"label": _("GETS"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Job Opening Add",
+				},
+                {
+					"type": "doctype",
+					"name": "Head Hunt"
+				},
+                {
+					"type": "doctype",
+					"name": "Applicant Lead",
+				}
+			]
+		},
+		{
 			"label": _("Agency"),
 			"items": [
 				{

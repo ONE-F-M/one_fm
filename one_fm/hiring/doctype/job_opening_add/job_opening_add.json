@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2021-02-11 08:16:56.045176",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "title",
+  "type",
+  "source",
+  "url_reference",
+  "reference",
+  "column_break_7",
+  "is_active",
+  "is_cost_free",
+  "cost",
+  "start_date",
+  "end_date",
+  "image_reference",
+  "job_openings"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "ADD-.YYYY.-"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Advertisement Type",
+   "options": "\nOnline\nOffline\nBoth",
+   "reqd": 1
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Link",
+   "label": "Advertisement Source",
+   "options": "Lead Source",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reference",
+   "fieldtype": "Small Text",
+   "label": "Advertisement Reference"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Advertisement Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "Advertisement End Date"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_cost_free",
+   "fieldtype": "Check",
+   "label": "Is Cost Free"
+  },
+  {
+   "depends_on": "eval:doc.is_cost_free!=1",
+   "fieldname": "cost",
+   "fieldtype": "Currency",
+   "label": "Advertisement Cost"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "image_reference",
+   "fieldtype": "Attach Image",
+   "label": "Advertisement Image Reference"
+  },
+  {
+   "depends_on": "eval:doc.type == 'Online' || doc.type == 'Both'",
+   "fieldname": "url_reference",
+   "fieldtype": "Data",
+   "label": "Advertisement URL Reference",
+   "options": "URL"
+  },
+  {
+   "fieldname": "job_openings",
+   "fieldtype": "Table",
+   "options": "Job Opening Add Job",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2021-02-17 07:43:32.043290",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Job Opening Add",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

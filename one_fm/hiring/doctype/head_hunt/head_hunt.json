@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "allow_events_in_timeline": 1,
+ "allow_import": 1,
+ "autoname": "naming_series:",
+ "creation": "2021-02-15 00:36:55.021215",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "lead_details",
+  "naming_series",
+  "lead_owner_type",
+  "lead_owner_dt",
+  "column_break_7",
+  "lead_owner",
+  "status",
+  "applicants_details_section",
+  "items",
+  "notes_section",
+  "notes",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "lead_details",
+   "fieldtype": "Section Break",
+   "options": "fa fa-user"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "no_copy": 1,
+   "oldfieldname": "naming_series",
+   "oldfieldtype": "Select",
+   "options": "HRD-HUNT-.YYYY.-",
+   "set_only_once": 1
+  },
+  {
+   "default": "Internal",
+   "fieldname": "lead_owner_type",
+   "fieldtype": "Select",
+   "label": "Head Hunter Type",
+   "options": "\nInternal\nExternal",
+   "reqd": 1
+  },
+  {
+   "default": "User",
+   "fieldname": "lead_owner_dt",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Head Hunter Dt",
+   "options": "DocType"
+  },
+  {
+   "default": "__user",
+   "fieldname": "lead_owner",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Head Hunter",
+   "oldfieldname": "lead_owner",
+   "oldfieldtype": "Link",
+   "options": "lead_owner_dt",
+   "search_index": 1
+  },
+  {
+   "default": "Lead",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Status",
+   "no_copy": 1,
+   "oldfieldname": "status",
+   "oldfieldtype": "Select",
+   "options": "Lead\nOpen\nReplied\nInterested\nConverted\nDo Not Contact"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "applicants_details_section",
+   "fieldtype": "Section Break",
+   "label": "Applicants Details"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "Head Hunt Item"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Head Hunt",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "icon": "fa fa-user",
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-02-17 07:48:57.124878",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Head Hunt",
+ "name_case": "Title Case",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "lead_owner,status",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "lead_owner"
+}
