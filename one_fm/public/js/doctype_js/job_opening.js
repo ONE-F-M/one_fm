@@ -17,6 +17,11 @@ frappe.ui.form.on('Job Opening', {
   },
   one_fm_job_post_valid_till: function(frm) {
     validate_date(frm);
+  },
+  publish: function(frm) {
+    if(!frm.doc.publish && frm.doc.allow_easy_apply){
+      frm.set_value('allow_easy_apply', false);
+    }
   }
 });
 
