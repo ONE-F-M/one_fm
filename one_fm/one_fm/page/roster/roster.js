@@ -2379,10 +2379,17 @@ function schedule_change_post(page){
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
 	let employees =  [];
 	let selected = [... new Set(classgrt)];
-	selected.forEach(function(i){
-		let [employee, date] = i.split("|");
-		employees.push({employee, date}) 
-	})
+	
+	if(selected.length > 1){
+		selected.forEach(function(i){
+			let [employee, date] = i.split("|");
+			employees.push(employee);
+			employees = [... new Set(employees)];
+		})
+	}else{
+		
+	}
+	console.log(employees);
 	let d = new frappe.ui.Dialog({
 		'title': 'Schedule/Change Post',
 		'fields': [
@@ -2437,12 +2444,21 @@ function schedule_change_post(page){
 				d.hide();
 				$('#cover-spin').hide();
 				let element = get_wrapper_element().slice(1);
-				page[element](page);
+				// page[element](page);
+				update(element, page);
 			});
 		}
 	});
 	d.show();
 }
+function update(element, page)	{
+	frappe.realtime.on("roster_view", function(output) {
+		// message = JSON.parse(output);
+		console.log(output)
+		page[element](page);
+	});
+}
+
 
 function dayoff(page){
 	let employees =  [];

@@ -6,6 +6,10 @@ import numpy as np
 import time
 from frappe import _
 import json
+import multiprocessing 
+import os
+from multiprocessing.pool import ThreadPool as Pool
+from itertools import product
 
 @frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
@@ -199,24 +203,41 @@ def get_filtered_post_types(doctype, txt, searchfield, start, page_len, filters)
 	
 @frappe.whitelist()
 def schedule_staff(employees, shift, post_type, start_date, end_date):
+	import time
 	try:
+		start = time.time()
 		for employee in json.loads(employees):
-			for date in	pd.date_range(start=start_date, end=end_date):
-				if frappe.db.exists("Employee Schedule", {"employee": employee["employee"], "date": cstr(date.date())}):
-					roster = frappe.get_doc("Employee Schedule", {"employee": employee["employee"], "date": cstr(date.date())})
-				else:
-					roster = frappe.new_doc("Employee Schedule")
-					roster.employee = employee["employee"]
-					roster.date = cstr(date.date())
-				roster.shift = shift
-				roster.employee_availability = "Working"
-				roster.post_type = post_type
-				print(roster.as_dict())
-				roster.save(ignore_permissions=True)
+			frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, is_async=True, queue='long')
+
+		end = time.time()
+		print("[TOTAL]", end-start)
 		return True
 	except Exception as e:
 		frappe.log_error(e)
 		frappe.throw(_(e))
+
+
+def schedule(employee, shift, post_type, start_date, end_date):
+	start = time.time()
+	for date in	pd.date_range(start=start_date, end=end_date):
+		if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
+			roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date())})
+			frappe.db.set_value("Employee Schedule", roster, "shift", val=shift)
+			frappe.db.set_value("Employee Schedule", roster, "date", val=cstr(date.date()))
+			frappe.db.set_value("Employee Schedule", roster, "employee_availability", val="Working")
+			frappe.db.set_value("Employee Schedule", roster, "post_type", val=post_type)
+		else:
+			roster = frappe.new_doc("Employee Schedule")
+			roster.employee = employee
+			roster.date = cstr(date.date())
+			roster.shift = shift
+			roster.employee_availability = "Working"
+			roster.post_type = post_type
+		# print(roster.as_dict())
+			roster.save(ignore_permissions=True)
+	end = time.time()
+	frappe.publish_realtime("roster_view", "Success")
+	print(employee, end-start)
 
 @frappe.whitelist()
 def schedule_leave(employees, leave_type, start_date, end_date):
@@ -429,6 +450,7 @@ def assign_staff(employees, shift, post_type, assign_from, assign_date, assign_t
 		frappe.throw(_(e))
 
 def assign_job(employees, start_date, end_date, shift, post_type):
+	start = time.time()
 	for employee in json.loads(employees):
 		site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
 		frappe.set_value("Employee", employee, "shift", shift)
@@ -446,6 +468,8 @@ def assign_job(employees, start_date, end_date, shift, post_type):
 			roster.employee_availability = "Working"
 			roster.post_type = post_type
 			roster.save(ignore_permissions=True)
+	end = time.time()
+	print("------------------[TIME TAKEN]===================", end-start)
 
 @frappe.whitelist(allow_guest=True)
 def search_staff(key, search_term):
