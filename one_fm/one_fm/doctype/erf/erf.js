@@ -28,6 +28,7 @@ frappe.ui.form.on('ERF', {
 		set_provide_company_insurance_btn(frm);
 		set_provide_salary_advance_btn(frm);
 		set_provide_accommodation_by_company_btn(frm);
+		set_provide_transportation_by_company_btn(frm);
 		set_type_of_license_btn(frm);
 		set_night_shift_btn(frm);
 		set_shift_hours_btn(frm);
@@ -594,6 +595,11 @@ var set_provide_salary_advance_btn = function(frm) {
 var set_provide_accommodation_by_company_btn = function(frm) {
 	yes_no_html_buttons(frm, frm.doc.provide_accommodation_by_company, 'provide_accommodation_by_company_html',
 		'provide_accommodation_by_company', 'Provide Accommodation by Company?');
+};
+
+var set_provide_transportation_by_company_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.provide_transportation_by_company, 'provide_transportation_by_company_html',
+		'provide_transportation_by_company', 'Provide Transportation by Company?');
 };
 
 var set_provide_health_insurance_btn = function(frm) {
