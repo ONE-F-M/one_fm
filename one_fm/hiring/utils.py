@@ -38,6 +38,8 @@ def validate_job_offer(doc, method):
         for salary in doc.one_fm_salary_details:
             total_amount += salary.amount if salary.amount else 0
         doc.one_fm_job_offer_total_salary = total_amount
+    if frappe.db.exists('Letter Head', 'ONE FM - Job Offer') and not doc.letter_head:
+        doc.letter_head = 'ONE FM - Job Offer'
 
 def after_insert_job_applicant(doc, method):
     website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)

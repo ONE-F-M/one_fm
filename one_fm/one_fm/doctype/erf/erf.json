@@ -101,6 +101,8 @@
   "amount_in_advance",
   "provide_accommodation_by_company_html",
   "provide_accommodation_by_company",
+  "provide_transportation_by_company_html",
+  "provide_transportation_by_company",
   "other_benefits",
   "benefit_cost_to_company",
   "total_cost_to_company",
@@ -811,11 +813,23 @@
    "fieldtype": "Table",
    "label": "ERF Employee",
    "options": "ERF Employee"
+  },
+  {
+   "fieldname": "provide_transportation_by_company_html",
+   "fieldtype": "HTML",
+   "label": "Provide Transportation by Company HTML"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_transportation_by_company",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Provide Transportation by Company"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-01-11 09:13:47.718714",
+ "modified": "2021-02-17 16:23:26.117113",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
@@ -895,6 +909,7 @@
    "share": 1
   }
  ],
+ "search_fields": "designation, project",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

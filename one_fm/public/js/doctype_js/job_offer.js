@@ -3,6 +3,7 @@ frappe.ui.form.on('Job Offer', {
     if(frm.is_new()){
       frm.set_value('offer_date', frappe.datetime.now_date());
     }
+    check_and_info_offer_terms(frm, false);
     frm.remove_custom_button("Create Employee");
     if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')
 			&& (frm.doc.docstatus === 1) && (!frm.doc.__onload || !frm.doc.__onload.employee)) {
@@ -16,6 +17,15 @@ frappe.ui.form.on('Job Offer', {
 			);
 		}
     set_filters(frm);
+  },
+  validate: function(frm) {
+    // check_and_info_offer_terms(frm);
+  },
+  one_fm_provide_accommodation_by_company: function(frm) {
+    // check_and_info_offer_terms(frm, 'one_fm_provide_accommodation_by_company');
+  },
+  one_fm_provide_transportation_by_company: function(frm) {
+    // check_and_info_offer_terms(frm, 'one_fm_provide_transportation_by_company');
   },
   job_applicant: function(frm) {
     set_job_applicant_details(frm);
@@ -56,6 +66,40 @@ var set_filters = function(frm) {
 		}
 	});
 };
+
+var check_and_info_offer_terms = function(frm, field_name) {
+  if(frm.doc.one_fm_provide_accommodation_by_company || frm.doc.one_fm_provide_transportation_by_company){
+    if (frm.doc.one_fm_salary_details){
+      var exists = false;
+      frm.doc.one_fm_salary_details.forEach((item, i) => {
+        if(item.salary_component.includes('Accommodation') || item.salary_component.includes('Transportation')){
+          exists = true;
+        }
+      });
+      if(exists){
+        let msg = __("Accommodation / Transportation is listed in the Salary Structure, Please confirm if it is provide by company.!!");
+        frm.set_intro(msg, 'yellow');
+        if(field_name){
+          confirm_input(frm, msg, field_name)
+        }
+      }
+    }
+  }
+};
+
+var confirm_input = function(frm, msg, field_name) {
+  frappe.confirm(
+    msg+" Would you like to continue ?",
+    function(){
+      validated = true;
+    }, // Yes
+    function(){
+      // No
+      frm.set_value(field_name, '');
+      validated = false;
+    }
+  );
+}
 
 var set_job_applicant_details = function(frm) {
   if(frm.doc.job_applicant){

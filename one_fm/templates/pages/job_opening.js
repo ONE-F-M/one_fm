@@ -26,7 +26,7 @@ function get_jobs_info() {
         var jobs = r.message;
         jobs.forEach((job, i) => {
           const job_container = document.getElementById("job_listing");
-          job_container.innerHTML +=  `<li class="job-preview" id=${job.name}>
+          var job_list_html = `<li class="job-preview" id=${job.name}>
             <div class="content float-left">
                 <h4 class="job-title">
                     ${job.designation}
@@ -34,14 +34,17 @@ function get_jobs_info() {
                 <p>
                     ${job.description}
                 </p>
-            </div>
-            <a id='${job.name}' class="btn btn-apply mr-2 float-sm-right float-xs-left proceed-to-easy-signup" onclick="easySignUp('${job.name}')">
-                Easy Apply
-            </a>
-            <a id=${job.name} class="btn btn-apply float-sm-right float-xs-left proceed-to-signup" onclick="signUp('${job.name}')">
+            </div>`
+            if(job.allow_easy_apply){
+              job_list_html += `<a id='${job.name}' class="btn btn-apply mr-2 float-sm-right float-xs-left proceed-to-easy-signup" onclick="easySignUp('${job.name}')">
+                  Easy Apply
+              </a>`
+            }
+            job_list_html += `<a id=${job.name} class="btn btn-apply float-sm-right float-xs-left proceed-to-signup" onclick="signUp('${job.name}')">
               Apply
             </a>
             </li>`;
+          job_container.innerHTML += job_list_html;
         });
       }
     }

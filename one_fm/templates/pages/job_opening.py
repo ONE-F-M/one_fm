@@ -17,7 +17,7 @@ def get_gender():
 
 @frappe.whitelist(allow_guest=True)
 def get_job_openings(doctype='Job Opening', txt=None, filters=None, limit_start=0, limit_page_length=20, order_by=None):
-	fields = ['name', 'status', 'job_title', 'description', 'designation', 'one_fm_job_opening_created']
+	fields = ['name', 'status', 'job_title', 'description', 'designation', 'one_fm_job_opening_created', 'allow_easy_apply']
 
 	filters = filters or {}
 	filters.update({'status': 'Open', 'publish': 1})
