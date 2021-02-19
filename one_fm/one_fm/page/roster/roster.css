@@ -61,6 +61,11 @@ body[data-route="roster"] .simplecheckbox:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
 }
+body[data-route="roster"] .sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  left: 0;
+}
 
 /*--------------------------------------------------*/
 /*---------------------SPINNER----------------------*/
