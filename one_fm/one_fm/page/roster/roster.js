@@ -867,11 +867,11 @@ function get_roster_data(page){
 			</td>
 		</tr>`;
 		$('.rosterMonth').find('#calenderviewtable tbody').append(emp_row_wrapper);
-		for(employee_key in employees_data){
+		for(employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})){
 			let {employee_name, employee, date} = employees_data[employee_key];
 			let emp_row = `
 			<tr data-name="${employee_key}">
-				<td>
+				<td class="sticky">
 					<label class="checkboxcontainer simplecheckbox">
 						<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
 						<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
@@ -940,7 +940,9 @@ function get_roster_data(page){
 			// </tr>`;
 			// $('.rosterMonth').find(`#rowchildtable tbody"]`).append(employee_modal);
 		}
+		frappe.show_alert({message:__("Roster updated"), indicator:'green'});
 		bind_events(page);
+
 	});
 }
 
@@ -996,11 +998,12 @@ function get_roster_week_data(page){
 			</td>
 		</tr>`;
 		$('.rosterWeek').find('#calenderweekviewtable tbody').append(emp_row_wrapper);
-		for(employee_key in employees_data){
+
+		for(employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})){
 			let {employee_name, employee, date} = employees_data[employee_key];
 			let emp_row = `
 			<tr data-name="${employee_key}">
-				<td>
+				<td class="sticky">
 					<label class="checkboxcontainer simplecheckbox">
 						<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
 						<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
@@ -1069,6 +1072,7 @@ function get_roster_week_data(page){
 			// </tr>`;
 			// $('.rosterMonth').find(`#rowchildtable tbody"]`).append(employee_modal);
 		}
+		frappe.show_alert({message:__("Roster updated"), indicator:'green'});
 		bind_events(page);
 	});	
 }
@@ -1085,7 +1089,7 @@ function get_post_data(page){
 		for(post_name in res.post_data){
 			let row = `
 			<tr class="colorclass" data-name="${post_name}">
-				<td>
+				<td class="sticky">
 					<label class="checkboxcontainer simplecheckbox mx-4">
 						<span
 							class="lightgrey font16 customfontweight fontw400 postname">
@@ -1144,6 +1148,7 @@ function get_post_data(page){
 			}		
 			$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
 		}			
+		frappe.show_alert({message:__("Postview updated"), indicator:'green'});
 		bind_events(page);
 	});
 }
@@ -1161,7 +1166,7 @@ function get_post_week_data(page){
 		for(post_name in res.post_data){
 			let row = `
 			<tr class="colorclass" data-name="${post_name}">
-				<td>
+				<td class="sticky">
 					<label class="checkboxcontainer simplecheckbox mx-4">
 						<span class="lightgrey font16 customfontweight fontw400 postname">
 							${post_name}
@@ -1219,6 +1224,7 @@ function get_post_week_data(page){
 			}
 			$('.postWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(`<td></td>`);		
 		}
+		frappe.show_alert({message:__("Postview updated"), indicator:'green'});
 		bind_events(page);
 	});
 }
@@ -1492,7 +1498,7 @@ const search_staff = () => {
 function GetHeaders(IsMonthSet, element) {
 
 	var thHTML = "";
-	var thStartHTML = `<th class="">Post Type / Days</th>`;
+	var thStartHTML = `<th class="sticky">Post Type / Days</th>`;
 	var thEndHTML = "<th>Total</th>";
 	element = get_wrapper_element(element);
 	var selectedMonth;
@@ -2069,8 +2075,9 @@ function staff_edit_dialog(){
 				callback: function(r) {
 					d.hide();
 					$('#cover-spin').hide();
+					update_staff_view();
 					frappe.msgprint(__("Successful!"));
-					render_staff($(".layoutSidenav_content").attr("data-view"));
+					// render_staff($(".layoutSidenav_content").attr("data-view"));
 				},
 				freeze: true,
 				freeze_message: __('Editing Post....')
@@ -2080,11 +2087,17 @@ function staff_edit_dialog(){
 	d.show();
 }
 
+function update_staff_view(){
+	frappe.realtime.on("staff_view", function(output) {
+		console.log(output, typeof(output));
+		render_staff($(".layoutSidenav_content").attr("data-view"));
+	});
+}
 
 //function for dynamic set calender header data on right calender
 function GetWeekHeaders(IsMonthSet, element) {
 	var thHTML = "";
-	var thStartHTML = `<th class="">Post Type / Days</th>`;
+	var thStartHTML = `<th class="sticky">Post Type / Days</th>`;
 	var thEndHTML = "<th>Total</th>";
 	var selectedMonth;
 	element = get_wrapper_element(element);
@@ -2389,7 +2402,6 @@ function schedule_change_post(page){
 	}else{
 		
 	}
-	console.log(employees);
 	let d = new frappe.ui.Dialog({
 		'title': 'Schedule/Change Post',
 		'fields': [
@@ -2444,14 +2456,14 @@ function schedule_change_post(page){
 				d.hide();
 				$('#cover-spin').hide();
 				let element = get_wrapper_element().slice(1);
-				// page[element](page);
-				update(element, page);
+				update_roster_view(element, page);
 			});
 		}
 	});
 	d.show();
 }
-function update(element, page)	{
+function update_roster_view(element, page)	{
+	page[element](page);
 	frappe.realtime.on("roster_view", function(output) {
 		// message = JSON.parse(output);
 		console.log(output)
