@@ -1049,17 +1049,23 @@ def pam_authorized_signatory():
 
 @frappe.whitelist(allow_guest=True)
 def warehouse_naming_series(doc, method):
-    # name = "WRH-"+doc.warehouse_code
-    name = "WRH"
-    if doc.one_fm_is_project_warehouse and doc.one_fm_project:
+    if doc.one_fm_project:
+        name = "WRH"
         project_code = frappe.db.get_value('Project', doc.one_fm_project, 'one_fm_project_code')
+        if not project_code:
+            project_code = create_new_project_code(doc.one_fm_project)
         if project_code:
             name += '-'+project_code
-    # if doc.is_group == '1':
-    #     name += '-'+'01'
-    # else:
-    #     name += '-'+'02'
-    doc.name = name +'-'+doc.warehouse_code # +'-'+doc.warehouse_name
+        doc.name = name +'-'+doc.warehouse_code # +'-'+doc.warehouse_name
+
+def create_new_project_code(project_id):
+    project_code = frappe.db.sql("select one_fm_project_code+1 from `tabProject` order by one_fm_project_code desc limit 1")
+    if project_code:
+        new_project_code = project_code[0][0]
+    else:
+        new_project_code = '1'
+    frappe.db.set_value('Project', project_id, 'one_fm_project_code', str(int(new_project_code)).zfill(4))
+    return str(int(new_project_code)).zfill(4)
 
 @frappe.whitelist(allow_guest=True)
 def item_group_naming_series(doc, method):
@@ -1146,16 +1152,23 @@ def item_naming_series(doc, method):
     doc.name = doc.item_code
     doc.item_name = doc.item_code
 
-@frappe.whitelist(allow_guest=True)
-def validate_get_warehouse_parent(doc, method):
-    if doc.parent_warehouse:
-        parent_wh_code = frappe.db.get_value('Warehouse', doc.parent_warehouse, 'warehouse_code')
-        # if parent_wh_code:
-        #     doc.warehouse_code = parent_wh_code + " - "
-        doc.warehouse_code = str(int(parent_wh_code)+1).zfill(4)
+@frappe.whitelist()
+def before_insert_warehouse(doc, method):
+    set_warehouse_code(doc)
 
-    else:
-        new_warehouse_code = frappe.db.sql("select warehouse_code+1 from `tabWarehouse` where parent ='{0}' order by warehouse_code desc limit 1".format(doc.parent_warehouse))
+def set_warehouse_code(doc):
+    if doc.one_fm_project:
+        query = """
+            select
+                warehouse_code+1
+            from
+                `tabWarehouse`
+            where one_fm_project = '{0}'
+            order by
+                warehouse_code
+            desc limit 1
+        """
+        new_warehouse_code = frappe.db.sql(query.format(doc.one_fm_project))
         if new_warehouse_code:
             new_warehouse_code_final = new_warehouse_code[0][0]
         else:
