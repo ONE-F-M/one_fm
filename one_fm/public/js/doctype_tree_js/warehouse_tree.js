@@ -13,13 +13,11 @@ frappe.treeview_settings['Warehouse'] = {
 	fields:[
 		{fieldtype:'Check', fieldname:'is_group', label:__('Is Group'),
 			description: __("Child nodes can be only created under 'Group' type nodes")},
-		{fieldtype:'Check', fieldname:'one_fm_is_project_warehouse', label:__('Is Project Warehouse')},
 		{fieldtype:'Link', fieldname:'one_fm_project', label:__('Project'), options: 'Project',
-		depends_on: 'eval:doc.one_fm_is_project_warehouse',
 		onchange: () => {
 			cur_dialog.set_value('warehouse_name', cur_dialog.get_value('one_fm_project'));
 		}
-		},
+		, reqd:true},
 		{fieldtype:'Data', fieldname: 'warehouse_name',
 			label:__('New Warehouse Name'), reqd:true},
 	],

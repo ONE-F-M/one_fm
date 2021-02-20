@@ -61,7 +61,8 @@ doctype_js = {
 	"Item Group": "public/js/doctype_js/item_group.js",
 	"Purchase Receipt": "public/js/doctype_js/purchase_receipt.js",
 	"Asset Movement": "public/js/doctype_js/asset_movement.js",
-	"Job Opening": "public/js/doctype_js/job_opening.js"
+	"Job Opening": "public/js/doctype_js/job_opening.js",
+	"Warehouse": "public/js/doctype_js/warehouse.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -150,7 +151,7 @@ doc_events = {
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
-		"before_insert": "one_fm.utils.validate_get_warehouse_parent",
+		"before_insert": "one_fm.utils.before_insert_warehouse",
 		"on_update": "one_fm.utils.set_warehouse_contact_from_project"
 	},
 	"Vehicle": {
