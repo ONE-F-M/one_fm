@@ -1,59 +1,59 @@
 ﻿/* body {background-color: #F3F5F7 !important;font-family: Roboto,sans-serif;} */
 /* .layoutSidenav_content{overflow:hidden !important} */
-.intro-header {
+body[data-route="roster"] .intro-header {
   background: url("../Content/img/loginbg.jpg") no-repeat center center fixed;
   background-size: cover;
   background-color: #19386f;
 }
-.bg-overlay {
+body[data-route="roster"] .bg-overlay {
   background: rgba(0, 13, 36, 0);
   height: 100vh;
 }
-a {
+body[data-route="roster"] a {
   cursor: pointer;
 }
 /* .form-control {font-size: 16px;color: #596f88;border: 1px solid #DFE3E7;font-size: 16px !important;height: 38px !important;box-shadow: none !important;-moz-box-shadow: none !important;-webkit-box-shadow: none !important;    } */
-label {
+body[data-route="roster"] label {
   font-weight: 500;
 }
-button:focus {
+body[data-route="roster"] button:focus {
   outline: 0 !important;
   box-shadow: none !important;
 }
-.footerdiv {
+body[data-route="roster"] .footerdiv {
   position: absolute;
   width: 100%;
   bottom: 0;
 }
-.form-group > input,
-.form-group > textarea,
-.form-group > select {
+body[data-route="roster"] .form-group > input,
+body[data-route="roster"] .form-group > textarea,
+body[data-route="roster"] .form-group > select {
   padding: 5px 10px;
   height: auto;
   border-radius: 4px !important;
   box-shadow: none !important;
   border: 1px solid #dfe3e7;
 }
-.loginpadding {
+body[data-route="roster"] .loginpadding {
   padding-top: 11%;
 }
-input {
+body[data-route="roster"] input {
   color: #596f88 !important;
 }
-.dropdownfont {
+body[data-route="roster"] .dropdownfont {
   background: #fff !important;
   border-radius: 50%;
   padding: 5.99px 6px;
   font-size: 14px;
 }
-.customizedropdown button {
+body[data-route="roster"] .customizedropdown button {
   color: #fff;
   font-weight: 500;
   height: 38px;
   line-height: 1;
   padding: 5px 28px 5px 0px !important;
 }
-.downarrowicon {
+body[data-route="roster"] .downarrowicon {
   padding: 5px 28px 5px 0px !important;
   font-size: 16px !important;
   background: #19253d url(../../Content/img/downwhite.svg) 99% !important;
@@ -66,59 +66,62 @@ input {
   transition: none !important;
   -webkit-appearance: none !important;
 }
-.customizedropdown .dropdown-toggle::after {
+body[data-route="roster"] .customizedropdown .dropdown-toggle::after {
   display: none !important;
 }
-.useravtar {
+body[data-route="roster"] .useravtar {
   color: #ffffff !important;
   background-color: transparent;
   border-radius: 100%;
   height: 26px;
   width: 26px;
 }
-.customizedropdown .dropdown-menu {
+body[data-route="roster"] .customizedropdown .dropdown-menu {
   min-width: 100% !important;
 }
-.dropdownbtnborder {
+body[data-route="roster"] .dropdownbtnborder {
   border-bottom: 1px solid rgba(0, 0, 0, 0.15);
 }
-.customizedropdown button:hover,
-.customizedropdown button:focus {
+body[data-route="roster"] .customizedropdown button:hover,
+body[data-route="roster"] .customizedropdown button:focus {
   color: #fff !important;
 }
-.dropdown-item.active,
-.dropdown-item:active {
+body[data-route="roster"] .dropdown-item.active,
+body[data-route="roster"] .dropdown-item:active {
   color: #fff;
   text-decoration: none;
   background-color: #007bff;
 }
-.customizedropdown .dropdown-menu .dropdown-item.active,
-.dropdown-item:active {
+body[data-route="roster"]
+  .customizedropdown
+  .dropdown-menu
+  .dropdown-item.active,
+body[data-route="roster"] .dropdown-item:active {
   color: #000 !important;
   text-decoration: none;
   background-color: #eeeeee;
 }
-.adminpadding {
+body[data-route="roster"] .adminpadding {
   padding-top: 84px;
 }
-.cursorpointer {
+body[data-route="roster"] .cursorpointer {
   cursor: pointer;
 }
-.simple-pagination {
+body[data-route="roster"] .simple-pagination {
   padding: 0 5px 0 0 !important;
 }
-.form-control:focus {
+body[data-route="roster"] .form-control:focus {
   color: #495057;
   background-color: #fff;
   border-color: #2c77ff;
   outline: 0;
   box-shadow: none;
 }
-.responiconfa {
+body[data-route="roster"] .responiconfa {
   height: 20px !important;
   width: 19px !important;
 }
-.assendingicon {
+body[data-route="roster"] .assendingicon {
   padding: 12px 30px 12px 12px !important;
   font-size: 16px !important;
   color: #fff !important;
@@ -132,7 +135,7 @@ input {
   transition: none !important;
   -webkit-appearance: none;
 }
-.assendingicon.uparrow {
+body[data-route="roster"] .assendingicon.uparrow {
   padding: 12px 30px 12px 12px !important;
   font-size: 16px !important;
   color: #fff !important;
@@ -146,7 +149,7 @@ input {
   transition: none !important;
   -webkit-appearance: none;
 }
-.btngreen {
+body[data-route="roster"] .btngreen {
   background: #f53c56;
   padding: 4px 0;
   width: 130px;
@@ -156,21 +159,21 @@ input {
   text-align: center;
   border-radius: 4px;
 }
-.useravtar {
+body[data-route="roster"] .useravtar {
   color: #ffffff !important;
   background-color: transparent;
   border-radius: 100%;
   height: 28px;
   width: 28px;
 }
-.useravtardrp {
+body[data-route="roster"] .useravtardrp {
   color: #ffffff !important;
   background-color: transparent;
   border-radius: 100%;
   height: 25px;
   width: 25px;
 }
-.btnpink {
+body[data-route="roster"] .btnpink {
   background: #00a759;
   padding: 4px 0;
   width: 130px !important;
@@ -180,65 +183,65 @@ input {
   text-align: center;
   border-radius: 4px;
 }
-.borderradius4 {
+body[data-route="roster"] .borderradius4 {
   border-radius: 4px;
 }
-.filterbtn {
+body[data-route="roster"] .filterbtn {
   padding: 1px 8px;
   background: #2680eb;
   border-radius: 4px;
   color: #fff !important;
 }
-.modalbtn {
+body[data-route="roster"] .modalbtn {
   padding: 8px 10px !important;
   width: 90px !important;
   border-radius: 4px;
   text-decoration: none !important;
 }
-.darkthemebg {
+body[data-route="roster"] .darkthemebg {
   background: #2c77ff !important;
   color: #fff !important;
 }
-.greythemebg {
+body[data-route="roster"] .greythemebg {
   background: #f8f9fa !important;
   color: #212529 !important;
   border: 1px solid #dee2e6;
 }
-.modalfooterborder {
+body[data-route="roster"] .modalfooterborder {
   border-top: 1px solid #efefef !important;
 }
-.dashboardicon {
+body[data-route="roster"] .dashboardicon {
   height: 18px;
   width: 16px;
 }
-.dashboardspan {
+body[data-route="roster"] .dashboardspan {
   line-height: 1;
   padding-left: 12px;
 }
-a:focus,
-a:hover {
+body[data-route="roster"] a:focus,
+body[data-route="roster"] a:hover {
   color: #2c77ff;
   outline: 0;
 }
-a {
+body[data-route="roster"] a {
   text-decoration: none !important;
 }
-a:hover {
+body[data-route="roster"] a:hover {
   text-decoration: none !important;
 }
-.switch {
+body[data-route="roster"] .switch {
   position: relative;
   display: inline-block;
   width: 36px;
   height: 19px;
   margin-bottom: 0;
 }
-.switch input {
+body[data-route="roster"] .switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
-.slider {
+body[data-route="roster"] .slider {
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -249,45 +252,45 @@ a:hover {
   -webkit-transition: 0.4s;
   transition: 0.4s;
 }
-ul {
+body[data-route="roster"] ul {
   list-style: none;
 }
 /* Rounded sliders */
-.slider.round {
+body[data-route="roster"] .slider.round {
   border-radius: 34px;
 }
-.slider.round:before {
+body[data-route="roster"] .slider.round:before {
   border-radius: 50%;
 }
-.linkcolor {
+body[data-route="roster"] .linkcolor {
   color: #2680eb !important;
 }
-.userprofile {
+body[data-route="roster"] .userprofile {
   color: #ffffff !important;
   background-color: transparent;
   border-radius: 100%;
   height: 33px;
   width: 33px;
 }
-.resdropdown .userfont a {
+body[data-route="roster"] .resdropdown .userfont a {
   font-size: 20px;
 }
-.resdropdown .dropdown-toggle::after {
+body[data-route="roster"] .resdropdown .dropdown-toggle::after {
   font-size: 17px;
   margin-left: 10px !important;
 }
-.readmoreclass {
+body[data-route="roster"] .readmoreclass {
   text-overflow: ellipsis;
   overflow: hidden;
   width: 95%;
   white-space: nowrap;
   display: inline-block;
 }
-.collapsecolor.collapsed {
+body[data-route="roster"] .collapsecolor.collapsed {
   color: #7b8498;
   font-weight: 500;
 }
-.checkboxcontainer {
+body[data-route="roster"] .checkboxcontainer {
   display: block;
   align-items: center;
   position: relative;
@@ -300,14 +303,14 @@ ul {
   -ms-user-select: none;
   user-select: none;
 }
-.checkboxcontainer input {
+body[data-route="roster"] .checkboxcontainer input {
   position: absolute;
   opacity: 0;
   cursor: pointer;
   height: 0;
   width: 0;
 }
-.checkmark {
+body[data-route="roster"] .checkmark {
   position: absolute;
   top: 0;
   left: 0;
@@ -317,23 +320,23 @@ ul {
   border: 1px solid #757575;
   border-radius: 2px;
 }
-.checkboxcontainer:hover input ~ .checkmark {
+body[data-route="roster"] .checkboxcontainer:hover input ~ .checkmark {
   background-color: #fff;
 }
-.checkboxcontainer input:checked ~ .checkmark {
+body[data-route="roster"] .checkboxcontainer input:checked ~ .checkmark {
   background-color: #2c77ff;
   border-radius: 2px;
   border: 1px solid #007bff;
 }
-.checkmark:after {
+body[data-route="roster"] .checkmark:after {
   content: "";
   position: absolute;
   display: none;
 }
-.checkboxcontainer input:checked ~ .checkmark:after {
+body[data-route="roster"] .checkboxcontainer input:checked ~ .checkmark:after {
   display: block;
 }
-.checkboxcontainer .checkmark:after {
+body[data-route="roster"] .checkboxcontainer .checkmark:after {
   left: 3px;
   top: 0px;
   width: 7px;
@@ -345,7 +348,7 @@ ul {
   transform: rotate(45deg);
   border-radius: 2px;
 }
-#userDropdown + .dropdown-menu {
+body[data-route="roster"] #userDropdown + .dropdown-menu {
   margin-top: 0;
   right: -27px !important;
   top: 64px;
@@ -357,7 +360,7 @@ ul {
   box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.1607843137254902);
 }
 /*css for tab start*/
-.rostercustomtab.nav-tabs.nav-justified > li > a {
+body[data-route="roster"] .rostercustomtab.nav-tabs.nav-justified > li > a {
   border-bottom: 0;
   border-left: 5px solid #fff !important;
   padding: 9px 0;
@@ -367,10 +370,10 @@ ul {
   font-size: 16px;
   border-right: 0 !important;
 }
-.font12 {
+body[data-route="roster"] .font12 {
   font-size: 12px;
 }
-.close.modalclose {
+body[data-route="roster"] .close.modalclose {
   float: right;
   font-size: 14px;
   font-weight: 500;
@@ -381,7 +384,7 @@ ul {
   opacity: 0.8;
   vertical-align: middle;
 }
-.checkboxcontainer.simplecheckbox {
+body[data-route="roster"] .checkboxcontainer.simplecheckbox {
   display: flex;
   align-items: center;
   position: relative;
@@ -393,23 +396,32 @@ ul {
   -ms-user-select: none;
   user-select: none;
 }
-.customfontweight {
+body[data-route="roster"] .customfontweight {
   font-weight: 500;
   line-height: 1.1;
 }
-.rostercustomstafftab > li {
+body[data-route="roster"] .rostercustomstafftab > li {
   width: auto !important;
 }
-.lightmodalbg {
+body[data-route="roster"] .lightmodalbg {
   background: #efefef !important;
 }
-.modaltextcolor {
+body[data-route="roster"] .modaltextcolor {
   color: #e46a76;
 }
-.rostercustomtab.nav-tabs.nav-justified > .active > a,
-.rostercustomtab.nav-tabs.nav-justified > li > a:hover,
-.rostercustomtab.nav-tabs.nav-justified > .active > a:focus,
-.rostercustomtab.nav-tabs.nav-justified > .active > a:hover {
+body[data-route="roster"] .rostercustomtab.nav-tabs.nav-justified > .active > a,
+body[data-route="roster"]
+  .rostercustomtab.nav-tabs.nav-justified
+  > li
+  > a:hover,
+body[data-route="roster"]
+  .rostercustomtab.nav-tabs.nav-justified
+  > .active
+  > a:focus,
+body[data-route="roster"]
+  .rostercustomtab.nav-tabs.nav-justified
+  > .active
+  > a:hover {
   border-left: 5px solid #0552de !important;
   border-right: 0;
   border-top: 0;
@@ -418,11 +430,14 @@ ul {
   background: #2c77ff !important;
   border-bottom: none !important;
 }
-.rostercustomstafftab {
+body[data-route="roster"] .rostercustomstafftab {
   border: 1px solid #007bff !important;
   border-radius: 4px !important;
 }
-.rostercustomstafftab.nav-tabs.nav-justified > li > a {
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > li
+  > a {
   border-bottom: 0;
   border-left: none !important;
   padding: 7px 22px;
@@ -432,10 +447,22 @@ ul {
   font-size: 16px;
   border-right: 0 !important;
 }
-.rostercustomstafftab.nav-tabs.nav-justified > .active > a,
-.rostercustomstafftab.nav-tabs.nav-justified > li > a:hover,
-.rostercustomstafftab.nav-tabs.nav-justified > .active > a:focus,
-.rostercustomstafftab.nav-tabs.nav-justified > .active > a:hover {
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > .active
+  > a,
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > li
+  > a:hover,
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > .active
+  > a:focus,
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > .active
+  > a:hover {
   border-left: none !important;
   border-right: 0;
   border-top: 0;
@@ -444,8 +471,8 @@ ul {
   background: #007bff !important;
   border-bottom: none !important;
 }
-.serach-textbox,
-.select2-search__field {
+body[data-route="roster"] .serach-textbox,
+body[data-route="roster"] .select2-search__field {
   padding: 5px 5px 5px 30px !important;
   color: #010101;
   font-size: 16px !important;
@@ -463,8 +490,8 @@ ul {
   outline-offset: 0px !important;
   box-shadow: none; /* margin-top: 9px !important; */
 }
-.serach-textbox:focus,
-select2-search__field:focus {
+body[data-route="roster"] .serach-textbox:focus,
+body[data-route="roster"] select2-search__field:focus {
   padding: 5px 5px 5px 30px !important;
   color: #010101;
   font-size: 16px !important;
@@ -483,49 +510,49 @@ select2-search__field:focus {
   outline-offset: 0px !important;
   box-shadow: none; /* margin-top: 9px !important; */
 }
-.lightbluedtbg {
+body[data-route="roster"] .lightbluedtbg {
   background: #e7edfb;
 }
-.text-decoration-none {
+body[data-route="roster"] .text-decoration-none {
   text-decoration: none !important;
 }
-.customredropdown {
+body[data-route="roster"] .customredropdown {
   padding: 0 !important;
 }
-.customredropdown .dropdown-item {
+body[data-route="roster"] .customredropdown .dropdown-item {
   padding: 5px 10px !important;
   color: #000;
   font-weight: 400;
   font-size: 16px;
   cursor: pointer !important;
 }
-.btncolor {
+body[data-route="roster"] .btncolor {
   background-color: #1e90ff !important;
   color: #fff !important;
 }
-.customredropdown .dropdown-item:hover,
-.customredropdown .dropdown-item:focus {
+body[data-route="roster"] .customredropdown .dropdown-item:hover,
+body[data-route="roster"] .customredropdown .dropdown-item:focus {
   background-color: #1e90ff !important;
   color: #fff !important;
 }
-.font14 {
+body[data-route="roster"] .font14 {
   font-size: 16px;
 }
-.lightbluecolor {
+body[data-route="roster"] .lightbluecolor {
   color: #007bff;
   font-size: 16px;
 }
-.fitertext {
+body[data-route="roster"] .fitertext {
   color: #002171;
 }
-.borderradius4 {
+body[data-route="roster"] .borderradius4 {
   border-radius: 4px;
 }
-.customdrodownicon {
+body[data-route="roster"] .customdrodownicon {
   color: #63799b !important;
   font-size: 16px !important;
 }
-.dropdowncustomres {
+body[data-route="roster"] .dropdowncustomres {
   max-width: 80px;
   padding-right: 0px;
   display: inline-block;
@@ -533,11 +560,11 @@ select2-search__field:focus {
   overflow: hidden;
   vertical-align: middle;
 }
-.customdropdownheight {
+body[data-route="roster"] .customdropdownheight {
   max-height: 200px;
   overflow-y: auto;
 }
-.customdrodownicon::after {
+body[data-route="roster"] .customdrodownicon::after {
   font-family: "Font Awesome 5 Free";
   font-weight: 900;
   content: "\f078" !important;
@@ -552,42 +579,42 @@ select2-search__field:focus {
   border-right: 0 !important;
   border-top: 0 !important;
 }
-.btn-group.open .customdrodownicon.dropdown-toggle {
+body[data-route="roster"] .btn-group.open .customdrodownicon.dropdown-toggle {
   box-shadow: none !important;
   text-decoration: none;
 }
-.card.customcard {
+body[data-route="roster"] .card.customcard {
   position: absolute;
   margin-bottom: 30px;
   width: 500px;
   box-shadow: 0px 2px 2px #00000066;
   border: 1px solid #e6e6e6;
 }
-.card.customstaffcard {
+body[data-route="roster"] .card.customstaffcard {
   margin-bottom: 30px;
   border: 1px solid #e6e6e6;
 }
-.checkmark.rightcheckbox {
+body[data-route="roster"] .checkmark.rightcheckbox {
   right: 0 !important;
   left: auto !important;
 }
-.customwidthcard {
+body[data-route="roster"] .customwidthcard {
   width: 60px !important;
   display: inline-block;
 }
-.bordertopcustom {
+body[data-route="roster"] .bordertopcustom {
   border-top: 1px solid #e6e6e6;
 }
-.bordertopdotted {
+body[data-route="roster"] .bordertopdotted {
   border-top: 1px dashed #e6e6e6;
 }
-.media-body {
+body[data-route="roster"] .media-body {
   width: auto !important;
 }
-.grand-parent {
+body[data-route="roster"] .grand-parent {
   position: relative;
 }
-.img_block_responsive {
+body[data-route="roster"] .img_block_responsive {
   height: 100px;
   width: 100px;
   border-radius: 4px;
@@ -597,17 +624,17 @@ select2-search__field:focus {
   display: inline-block;
   background: #ebf2f9;
 }
-.customiconhover {
+body[data-route="roster"] .customiconhover {
   padding: 4px 6px;
   background: none;
   border-radius: 4px;
 }
-.responiconfawdit {
+body[data-route="roster"] .responiconfawdit {
   height: 16px;
   width: 16px !important;
   vertical-align: text-bottom;
 }
-.iconfont {
+body[data-route="roster"] .iconfont {
   padding: 8px 0 !important;
   border-radius: 50%;
   font-size: 16px;
@@ -619,42 +646,42 @@ select2-search__field:focus {
   border: 1px solid #ebf2f9;
   box-shadow: -1px 0px 4px -1px #00000066;
 }
-.form-control[disabled],
-.form-control[readonly],
-fieldset[disabled] .form-control {
+body[data-route="roster"] .form-control[disabled],
+body[data-route="roster"] .form-control[readonly],
+body[data-route="roster"] fieldset[disabled] .form-control {
   background: #fff !important;
   color: #596f88 !important;
   box-shadow: none;
   border: 1px solid #dfe3e7;
 }
-.inputgroupcalendar {
+body[data-route="roster"] .inputgroupcalendar {
   border: 1px solid #dfe3e7;
   background-color: #f8f9fa !important;
 }
-.inputgroupcalendar {
+body[data-route="roster"] .inputgroupcalendar {
   width: 38px !important;
   padding: 9px 12px !important;
   font-size: 16px;
 }
-.show-read-more {
+body[data-route="roster"] .show-read-more {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
   width: 90%;
 }
-.customiconhover:hover {
+body[data-route="roster"] .customiconhover:hover {
   padding: 4px 6px;
   background: #d2ddf6;
   border-radius: 4px;
 }
-.fa-phone-alt:before {
+body[data-route="roster"] .fa-phone-alt:before {
   content: "\f879";
 }
-.alert.alert-success .notifycolor {
+body[data-route="roster"] .alert.alert-success .notifycolor {
   color: #00d64f !important;
   font-size: 30px;
 }
-.alert.alert-success {
+body[data-route="roster"] .alert.alert-success {
   background: #00af41 !important;
   color: #fff !important;
   width: 150px;
@@ -663,42 +690,47 @@ fieldset[disabled] .form-control {
   border-radius: 10px;
   box-shadow: 0px 0px 6px #00000029;
 }
-.alertmessage {
+body[data-route="roster"] .alertmessage {
   white-space: normal !important;
   font-size: 16px;
   color: #fff !important;
   padding-top: 12px;
 }
-.alert.alert-success button.close {
+body[data-route="roster"] .alert.alert-success button.close {
   box-shadow: 0 !important;
   top: 0px;
   right: 20px !important;
   color: #fff !important;
   opacity: 1 !important;
 }
-span[data-notify="title"] {
+body[data-route="roster"] span[data-notify="title"] {
   display: block !important;
   font-size: 18px;
   padding-top: 20px;
 }
-.select2 {
+body[data-route="roster"] .select2 {
   width: 100% !important;
 }
-.select2-container--default
+body[data-route="roster"]
+  .select2-container--default
   .select2-results__option--highlighted[aria-selected] {
   background-color: #5897fb !important;
   color: white !important;
 }
-.select2-container--default .select2-results__option[aria-selected="true"] {
+body[data-route="roster"]
+  .select2-container--default
+  .select2-results__option[aria-selected="true"] {
   background-color: #5897fb !important;
   color: #fff !important;
 }
-.select2-container--default
+body[data-route="roster"]
+  .select2-container--default
   .select2-selection--single
   .select2-selection__arrow {
   display: none;
 }
-.custompageselecttype
+body[data-route="roster"]
+  .custompageselecttype
   .select2-container--default
   .select2-selection--single
   .select2-selection__rendered {
@@ -719,7 +751,10 @@ span[data-notify="title"] {
   border: 1px solid #dfe3e7 !important;
   box-shadow: none;
 }
-.customselecttype .select2-container .select2-selection--single {
+body[data-route="roster"]
+  .customselecttype
+  .select2-container
+  .select2-selection--single {
   box-sizing: border-box;
   cursor: pointer;
   display: block;
@@ -727,7 +762,8 @@ span[data-notify="title"] {
   user-select: none;
   -webkit-user-select: none;
 }
-.customselecttype
+body[data-route="roster"]
+  .customselecttype
   .select2-container
   .select2-selection--single
   .select2-selection__rendered {
@@ -737,7 +773,8 @@ span[data-notify="title"] {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.custompageselecttype
+body[data-route="roster"]
+  .custompageselecttype
   .select2-container--default
   .select2-selection--single
   .select2-selection__rendered {
@@ -747,7 +784,10 @@ span[data-notify="title"] {
   line-height: 26px;
   border: 1px solid #dfe3e7;
 }
-.custompageselecttype .select2-container .select2-selection--single {
+body[data-route="roster"]
+  .custompageselecttype
+  .select2-container
+  .select2-selection--single {
   box-sizing: border-box;
   cursor: pointer;
   display: block;
@@ -756,7 +796,8 @@ span[data-notify="title"] {
   -webkit-user-select: none;
   border: none !important;
 }
-.custompageselecttype
+body[data-route="roster"]
+  .custompageselecttype
   .select2-container
   .select2-selection--single
   .select2-selection__rendered {
@@ -766,22 +807,22 @@ span[data-notify="title"] {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.form-control {
+body[data-route="roster"] .form-control {
   color: #596f88 !important;
 }
-.media-body,
-.media-left,
-.media-right {
+body[data-route="roster"] .media-body,
+body[data-route="roster"] .media-left,
+body[data-route="roster"] .media-right {
   display: block;
 }
-.serach-textbox::-webkit-input-placeholder {
+body[data-route="roster"] .serach-textbox::-webkit-input-placeholder {
   /* Edge */
   color: #ced4da !important;
 }
-.panel-group .panel + .panel {
+body[data-route="roster"] .panel-group .panel + .panel {
   margin-top: 20px;
 }
-.customheightbtn {
+body[data-route="roster"] .customheightbtn {
   font-size: 16px;
   border: 1px solid #2c77ff !important;
   width: 60px;
@@ -791,7 +832,7 @@ span[data-notify="title"] {
   display: inline-block;
   color: #2680eb !important;
 }
-.primarybtn {
+body[data-route="roster"] .primarybtn {
   font-size: 16px;
   border: 1px solid #2c77ff !important;
   color: #fff !important;
@@ -801,133 +842,141 @@ span[data-notify="title"] {
   padding: 8px 14px;
   display: inline-block;
 }
-.avtarbg {
+body[data-route="roster"] .avtarbg {
   background: #1697c8 !important;
 }
-.serach-textbox:-ms-input-placeholder {
+body[data-route="roster"] .serach-textbox:-ms-input-placeholder {
   /* Internet Explorer 10-11 */
   color: #ced4da !important;
 }
-.custommobheight {
+body[data-route="roster"] .custommobheight {
   height: 50px !important;
 }
-.serach-textbox::placeholder {
+body[data-route="roster"] .serach-textbox::placeholder {
   color: #ced4da !important;
 }
-.dropdown-menu-right.customselect {
+body[data-route="roster"] .dropdown-menu-right.customselect {
   right: -6px !important;
 }
-.navbar-nav .open .dropdown-menu {
+body[data-route="roster"] .navbar-nav .open .dropdown-menu {
   position: absolute !important;
 }
-.btn.customtoggledrp {
+body[data-route="roster"] .btn.customtoggledrp {
   font-size: 20px !important;
   padding: 0 10px;
   outline: 0 !important;
   border: 1px solid #dfe3e7 !important;
 }
-.btn.customtoggledrp:focus {
+body[data-route="roster"] .btn.customtoggledrp:focus {
   font-size: 20px !important;
   padding: 0 10px;
   outline: 0 !important;
   border: 1px solid #dfe3e7 !important;
 }
-.customtoggledrp::after {
+body[data-route="roster"] .customtoggledrp::after {
   display: none !important;
 }
-.dropdown-backdrop {
+body[data-route="roster"] .dropdown-backdrop {
   display: none;
 }
-.customdropdownmob {
+body[data-route="roster"] .customdropdownmob {
   margin: 0 !important;
 }
-.residenavli.active .icon path,
-.residenavli.active .icon rect {
+body[data-route="roster"] .residenavli.active .icon path,
+body[data-route="roster"] .residenavli.active .icon rect {
   fill: #ffffff !important;
 }
-.residenavli:hover .icon path,
-.residenavli:hover .icon rect {
+body[data-route="roster"] .residenavli:hover .icon path,
+body[data-route="roster"] .residenavli:hover .icon rect {
   fill: #ffffff !important;
 }
-.residenavli:focus .icon path,
-.residenavli:focus .icon rect {
+body[data-route="roster"] .residenavli:focus .icon path,
+body[data-route="roster"] .residenavli:focus .icon rect {
   fill: #ffffff !important;
 }
-.customizepanel {
+body[data-route="roster"] .customizepanel {
   border: 1px solid #dfe3e7;
   background: #fff !important;
 }
-.customizepanel.active {
+body[data-route="roster"] .customizepanel.active {
   border: 1px solid #007bff;
   background: #fff !important;
 }
-.lineheight {
+body[data-route="roster"] .lineheight {
   line-height: 1.2;
 }
-.customizepanel > .panel-heading {
+body[data-route="roster"] .customizepanel > .panel-heading {
   padding: 20px 20px 20px 20px !important;
 }
-.font-medium {
+body[data-route="roster"] .font-medium {
   font-weight: 500 !important;
 }
-.tableshowclass.show {
+body[data-route="roster"] .tableshowclass.show {
   display: table-row !important;
 }
-.toggleicon[aria-expanded="true"] i:before {
+body[data-route="roster"] .toggleicon[aria-expanded="true"] i:before {
   content: "\f077";
 }
-.nav.rostercustomtab > li > a:focus {
+body[data-route="roster"] .nav.rostercustomtab > li > a:focus {
   background-color: #fff !important;
 }
-.toggleicon[aria-expanded="false"] i:before {
+body[data-route="roster"] .toggleicon[aria-expanded="false"] i:before {
   content: "\f078";
 }
-.fontawesomeicon {
+body[data-route="roster"] .fontawesomeicon {
   text-align: center;
   border: 1px solid #63799b;
   border-radius: 50%;
   padding: 10px 11px;
   font-size: 16px;
 }
-.togglescreenbtnimg {
+body[data-route="roster"] .togglescreenbtnimg {
   width: 22px;
   height: 19px;
 }
-.modal-header {
+body[data-route="roster"] .modal-header {
   font-weight: 500 !important;
 }
-.responiconfont {
+body[data-route="roster"] .responiconfont {
   height: 16px;
   width: 16px;
 }
-.customappenddiv {
+body[data-route="roster"] .customappenddiv {
   position: relative;
 }
-.datepicker table {
+body[data-route="roster"] .datepicker table {
   width: 100%;
 }
-.datepicker.dropdown-menu {
+body[data-route="roster"] .datepicker.dropdown-menu {
   padding: 10px !important;
 }
-.custommobmodal .modal-dialog {
+body[data-route="roster"] .custommobmodal .modal-dialog {
   min-height: 800px;
   overflow-y: auto;
 }
-.responiconfont {
+body[data-route="roster"] .responiconfont {
   height: 14px;
   width: 14px;
 }
-.rostercustomstafftab.customrosteringtab {
+body[data-route="roster"] .rostercustomstafftab.customrosteringtab {
   overflow: hidden;
   border: 1px solid #63799b !important;
   border-radius: 4px !important;
 }
-.rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified > .active > a,
-.rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified > li > a:hover,
-.rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+  > .active
+  > a,
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+  > li
+  > a:hover,
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
   > .active
   > a:focus,
-.rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
   > .active
   > a:hover {
   border-left: none !important;
@@ -938,7 +987,10 @@ span[data-notify="title"] {
   background: #63799b !important;
   border-bottom: none !important;
 }
-.rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified > li > a {
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+  > li
+  > a {
   border-bottom: 0;
   color: #63799b;
   border-left: none !important;
@@ -949,61 +1001,66 @@ span[data-notify="title"] {
   font-size: 16px !important;
   border-right: 0 !important;
 }
-.dateblock {
+body[data-route="roster"] .dateblock {
   padding-bottom: 30px;
   border-bottom: 2px solid #e9ecef;
 }
-.legendboxview {
+body[data-route="roster"] .legendboxview {
   height: 30px;
   min-width: 30px;
   border-radius: 4px;
 }
-.greenboxcolor {
+body[data-route="roster"] .greenboxcolor {
   background: #6cb233;
 }
-.purplebox {
+body[data-route="roster"] .purplebox {
   background: #7030a0;
 }
-.yellowboxcolor {
+body[data-route="roster"] .yellowboxcolor {
   background: #ffc000;
 }
-.lightgreenboxcolor {
+body[data-route="roster"] .lightgreenboxcolor {
   background: #c1e8a2;
 }
-.redboxcolor {
+body[data-route="roster"] .redboxcolor {
   background: #ff0000;
 }
-.greyboxcolor {
+body[data-route="roster"] .greyboxcolor {
   background: #7f7f7f;
 }
-.lightblueboxcolor {
+body[data-route="roster"] .lightblueboxcolor {
   background: #63a8f8;
 }
-.orangeboxcolor {
+body[data-route="roster"] .orangeboxcolor {
   background: #ff9a36;
 }
-.blueboxcolor {
+body[data-route="roster"] .blueboxcolor {
   background: #0070c0;
 }
-.lightgreenbox {
+body[data-route="roster"] .lightgreenbox {
   background: #70ad47;
 }
-.darkblackox {
+body[data-route="roster"] .darkblackox {
   background: #262626;
 }
-.borderbox {
+body[data-route="roster"] .borderbox {
   background: #ffffff;
   border: 3px solid #787878;
 }
-.darkbluefontcolor {
+body[data-route="roster"] .darkbluefontcolor {
   color: #007bff !important;
 }
-#calenderviewtable > thead > tr > th.hightlightedtable {
+body[data-route="roster"]
+  #calenderviewtable
+  > thead
+  > tr
+  > th.hightlightedtable {
   background: #2c77ff !important;
   color: #fff !important;
 }
 
-#calenderviewtable > thead > tr > th:first-child {
+body[data-route="roster"] #calenderviewtable > thead > tr > th:first-child {
+  z-index: 1;
   font-weight: 600;
   white-space: nowrap !important;
   text-align: center;
@@ -1013,7 +1070,7 @@ span[data-notify="title"] {
   max-width: 238px !important;
   min-width: 238px !important;
 }
-#calenderviewtable > thead > tr > th {
+body[data-route="roster"] #calenderviewtable > thead > tr > th {
   font-weight: 400;
   white-space: normal !important;
   text-align: center;
@@ -1024,7 +1081,7 @@ span[data-notify="title"] {
   background: #f5f5f5 !important;
   padding: 25px 9px;
 }
-#calenderviewtable > tbody > tr > td:first-child {
+body[data-route="roster"] #calenderviewtable > tbody > tr > td:first-child {
   height: 50px;
   font-size: 16px;
   white-space: normal !important;
@@ -1033,9 +1090,10 @@ span[data-notify="title"] {
   min-width: 238px !important;
   border-bottom: 0 !important;
   text-align: left !important;
+  background: #f5f5f5 !important;
   padding: 0 !important;
 }
-#calenderviewtable > tbody > tr > td {
+body[data-route="roster"] #calenderviewtable > tbody > tr > td {
   font-size: 14px;
   vertical-align: middle;
   padding: 5px 5px;
@@ -1046,7 +1104,7 @@ span[data-notify="title"] {
   border-bottom: 0 !important;
   border-left: 0 !important;
 }
-#calenderviewtable > tbody > tr > td:last-child {
+body[data-route="roster"] #calenderviewtable > tbody > tr > td:last-child {
   padding: 8px 10px;
   white-space: normal !important;
   text-align: center;
@@ -1055,7 +1113,7 @@ span[data-notify="title"] {
   border-bottom: 0 !important;
   border-left: 0 !important;
 }
-.subtable > tbody > tr > td:first-child {
+body[data-route="roster"] .subtable > tbody > tr > td:first-child {
   font-weight: 500;
   font-size: 16px;
   height: 50px;
@@ -1067,7 +1125,7 @@ span[data-notify="title"] {
   text-align: left !important;
   background: #f5f5f5 !important;
 }
-.subtable > tbody > tr > td {
+body[data-route="roster"] .subtable > tbody > tr > td {
   font-size: 14px;
   padding: 5px 5px;
   height: 50px;
@@ -1075,7 +1133,7 @@ span[data-notify="title"] {
   min-width: 50px !important;
   border-top: 0 !important;
 }
-.subtable > tbody > tr > td:last-child {
+body[data-route="roster"] .subtable > tbody > tr > td:last-child {
   padding: 10px 10px;
   vertical-align: middle;
   height: 50px;
@@ -1085,7 +1143,7 @@ span[data-notify="title"] {
   text-align: center !important;
   color: #ff0000 !important;
 }
-#calenderviewtable > thead > tr > th:last-child {
+body[data-route="roster"] #calenderviewtable > thead > tr > th:last-child {
   vertical-align: middle;
   white-space: normal !important;
   color: #ffffff;
@@ -1097,23 +1155,23 @@ span[data-notify="title"] {
   background: #f56767 !important;
   padding: 25px 8px;
 }
-.tablebox {
+body[data-route="roster"] .tablebox {
   height: 40px;
   border-radius: 4px;
 }
-.pt15 {
+body[data-route="roster"] .pt15 {
   padding-top: 15px;
 }
-.pb15 {
+body[data-route="roster"] .pb15 {
   padding-bottom: 15px;
 }
-.pl15 {
+body[data-route="roster"] .pl15 {
   padding-left: 15px;
 }
-.pr15 {
+body[data-route="roster"] .pr15 {
   padding-right: 15px;
 }
-.responsivebluebtn {
+body[data-route="roster"] .responsivebluebtn {
   background: #2c77ff !important;
   border-radius: 4px;
   color: #fff !important;
@@ -1123,33 +1181,38 @@ span[data-notify="title"] {
   margin: 5px 10px;
   line-height: 1.3;
 }
-.bluebox {
+body[data-route="roster"] .bluebox {
   background: #63a8f8;
   color: #fff;
 }
-.orangebox {
+body[data-route="roster"] .orangebox {
   background: #ff9a36;
   color: #010101;
 }
-.greybox {
+body[data-route="roster"] .greybox {
   background: #bebebe;
   color: #010101;
 }
-.yellowbox {
+body[data-route="roster"] .yellowbox {
   background: #fecd49;
   color: #010101;
 }
-.paddingdiv {
+body[data-route="roster"] .paddingdiv {
   padding: 15px 10px;
 }
-.borderleft {
+body[data-route="roster"] .borderleft {
   border-left: 1px solid #ddd;
 }
-#calenderweekviewtable > thead > tr > th.hightlightedtable {
+body[data-route="roster"]
+  #calenderweekviewtable
+  > thead
+  > tr
+  > th.hightlightedtable {
   background: #2c77ff !important;
   color: #fff !important;
 }
-#calenderweekviewtable > thead > tr > th:first-child {
+body[data-route="roster"] #calenderweekviewtable > thead > tr > th:first-child {
+  z-index: 1;
   font-weight: 600;
   white-space: nowrap !important;
   text-align: center;
@@ -1159,7 +1222,7 @@ span[data-notify="title"] {
   max-width: 238px !important;
   min-width: 238px !important;
 }
-#calenderweekviewtable > thead > tr > th {
+body[data-route="roster"] #calenderweekviewtable > thead > tr > th {
   font-weight: 400;
   white-space: nowrap !important;
   text-align: center;
@@ -1168,7 +1231,7 @@ span[data-notify="title"] {
   background: #f5f5f5 !important;
   padding: 25px 9px;
 }
-#calenderweekviewtable > tbody > tr > td:first-child {
+body[data-route="roster"] #calenderweekviewtable > tbody > tr > td:first-child {
   font-size: 16px !important;
   height: 50px;
   white-space: normal !important;
@@ -1179,7 +1242,7 @@ span[data-notify="title"] {
   text-align: left !important;
   padding: 0 !important;
 }
-#calenderweekviewtable > tbody > tr > td {
+body[data-route="roster"] #calenderweekviewtable > tbody > tr > td {
   font-size: 14px;
   vertical-align: middle;
   padding: 5px 5px;
@@ -1190,7 +1253,7 @@ span[data-notify="title"] {
   border-bottom: 0 !important;
   border-left: 0 !important;
 }
-#calenderweekviewtable > tbody > tr > td:last-child {
+body[data-route="roster"] #calenderweekviewtable > tbody > tr > td:last-child {
   padding: 8px 10px;
   white-space: normal !important;
   text-align: center;
@@ -1199,7 +1262,7 @@ span[data-notify="title"] {
   border-bottom: 0 !important;
   border-left: 0 !important;
 }
-.subcalenderweektable > tbody > tr > td:first-child {
+body[data-route="roster"] .subcalenderweektable > tbody > tr > td:first-child {
   font-weight: 500;
   font-size: 16px;
   height: 50px;
@@ -1211,7 +1274,7 @@ span[data-notify="title"] {
   text-align: left !important;
   background: #f5f5f5 !important;
 }
-.subcalenderweektable > tbody > tr > td {
+body[data-route="roster"] .subcalenderweektable > tbody > tr > td {
   font-size: 14px;
   padding: 5px 5px;
   height: 50px;
@@ -1219,7 +1282,7 @@ span[data-notify="title"] {
   min-width: 130px !important;
   border-top: 0 !important;
 }
-.subcalenderweektable > tbody > tr > td:last-child {
+body[data-route="roster"] .subcalenderweektable > tbody > tr > td:last-child {
   padding: 10px 10px;
   vertical-align: middle;
   height: 50px;
@@ -1227,7 +1290,7 @@ span[data-notify="title"] {
   text-align: center !important;
   color: #ff0000 !important;
 }
-#calenderweekviewtable > thead > tr > th:last-child {
+body[data-route="roster"] #calenderweekviewtable > thead > tr > th:last-child {
   vertical-align: middle;
   white-space: normal !important;
   color: #ffffff;
@@ -1239,11 +1302,11 @@ span[data-notify="title"] {
   background: #f56767 !important;
   padding: 25px 8px;
 }
-.tablebox {
+body[data-route="roster"] .tablebox {
   height: 40px;
   border-radius: 4px;
 }
-.responsivebluebtnright {
+body[data-route="roster"] .responsivebluebtnright {
   background: #2c77ff !important;
   border-radius: 4px;
   color: #fff !important;
@@ -1255,11 +1318,11 @@ span[data-notify="title"] {
   height: 38px;
   width: 38px;
 }
-.customarrowtab {
+body[data-route="roster"] .customarrowtab {
   color: #63799b !important;
   width: 56px !important;
 }
-.hoverselectclass {
+body[data-route="roster"] .hoverselectclass {
   cursor: pointer !important;
   vertical-align: middle;
   border-radius: 4px;
@@ -1268,48 +1331,90 @@ span[data-notify="title"] {
   height: 40px !important;
   padding: 10px 5px !important;
 }
-.selectclass {
+body[data-route="roster"] .selectclass {
   background: #e7edfb;
   color: #010101 !important;
 }
-.customarrowtab:hover {
+body[data-route="roster"] .customarrowtab:hover {
   color: #63799b !important;
   width: 56px !important;
 }
-.bordertableft {
+body[data-route="roster"] .bordertableft {
   border-left: 1px solid #63799b;
 }
-.datepicker-inline {
+body[data-route="roster"] .datepicker-inline {
   width: 100% !important;
 }
-.datepicker.datepicker-inline table tr td.today,
-.datepicker.datepicker-inline table tr td.active:active,
-.datepicker.datepicker-inline table tr td.active:hover:active,
-.datepicker.datepicker-inline table tr td.active.disabled:active,
-.datepicker.datepicker-inline table tr td.active.disabled:hover:active,
-.datepicker.datepicker-inline table tr td.active.active,
-.datepicker.datepicker-inline table tr td.active:hover.active,
-.datepicker.datepicker-inline table tr td.active.disabled.active,
-.datepicker.datepicker-inline table tr td.active.disabled:hover.active {
+body[data-route="roster"] .datepicker.datepicker-inline table tr td.today,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active:active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active:hover:active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.disabled:active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.disabled:hover:active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active:hover.active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.disabled.active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.disabled:hover.active {
   background-color: #2c77ff !important;
   background: #2c77ff !important;
   color: #fff !important;
 }
 
-#calenderweekviewtable > thead > tr > th.hightlightedtable {
+body[data-route="roster"]
+  #calenderweekviewtable
+  > thead
+  > tr
+  > th.hightlightedtable {
   background: #2c77ff !important;
   color: #fff !important;
 }
-.rostercustomstafftab.customrosteringtab.rosteringheadingtab.nav-tabs.nav-justified
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.rosteringheadingtab.nav-tabs.nav-justified
   > li
   > a {
   width: 100px !important;
 }
-.responsivebluebtn.customizebluebtnres .customdrodownicon {
+body[data-route="roster"]
+  .responsivebluebtn.customizebluebtnres
+  .customdrodownicon {
   color: #fff !important;
   line-height: 1;
 }
-.responsivebluebtn.customizebluebtnres .customdrodownicon .dropdowncustomres {
+body[data-route="roster"]
+  .responsivebluebtn.customizebluebtnres
+  .customdrodownicon
+  .dropdowncustomres {
   white-space: nowrap;
   padding-right: 0px;
   display: inline-block;
@@ -1317,16 +1422,20 @@ span[data-notify="title"] {
   overflow: hidden;
   vertical-align: middle;
 }
-.responsivebluebtn.customizebluebtnres .customdrodownicon::after {
+body[data-route="roster"]
+  .responsivebluebtn.customizebluebtnres
+  .customdrodownicon::after {
   line-height: 1 !important;
   color: #fff !important;
 }
-.responsivebluebtn.customizebluebtnres .dropdown-menu-right.customselect {
+body[data-route="roster"]
+  .responsivebluebtn.customizebluebtnres
+  .dropdown-menu-right.customselect {
   width: 100%;
   right: 0 !important;
 }
-.multiselectselect .serach-textbox,
-.select2-search__field {
+body[data-route="roster"] .multiselectselect .serach-textbox,
+body[data-route="roster"] .select2-search__field {
   padding: 5px !important;
   color: #010101;
   font-size: 16px !important;
@@ -1339,7 +1448,8 @@ span[data-notify="title"] {
   outline-offset: 0px !important;
   box-shadow: none; /* margin-top: 9px !important; */
 }
-.select2-container--default
+body[data-route="roster"]
+  .select2-container--default
   .select2-selection--multiple
   .select2-selection__choice {
   background-color: #5897fb;
@@ -1352,7 +1462,8 @@ span[data-notify="title"] {
   margin-top: 5px;
   padding: 0 5px;
 }
-.select2-container--default
+body[data-route="roster"]
+  .select2-container--default
   .select2-selection--multiple
   .select2-selection__choice__remove {
   color: #fff !important;
@@ -1362,7 +1473,8 @@ span[data-notify="title"] {
   margin-right: 2px;
   font-size: 14px !important;
 }
-.select2-container--default
+body[data-route="roster"]
+  .select2-container--default
   .select2-selection--multiple
   .select2-selection__choice__remove {
   color: #fff !important;
@@ -1372,40 +1484,42 @@ span[data-notify="title"] {
   margin-right: 2px;
   font-size: 14px !important;
 }
-#calenderviewtable > thead > tr > th.greytablebg {
+body[data-route="roster"] #calenderviewtable > thead > tr > th.greytablebg {
   background: #c7c7c7 !important;
 }
-#calenderweekviewtable > thead > tr > th.greytablebg {
+body[data-route="roster"] #calenderweekviewtable > thead > tr > th.greytablebg {
   background: #c7c7c7 !important;
 }
-.lightgreycolorbox {
+body[data-route="roster"] .lightgreycolorbox {
   background: #f2f4f8 !important;
 }
-.customprogressbar.ui-widget.ui-widget-content {
+body[data-route="roster"] .customprogressbar.ui-widget.ui-widget-content {
   border: 1px solid #2c77ff;
   border-radius: 50px;
 }
-.customprogressbar.ui-progressbar .ui-progressbar-value {
+body[data-route="roster"]
+  .customprogressbar.ui-progressbar
+  .ui-progressbar-value {
   margin: 0;
   height: 100%;
   background: #2c77ff;
   border: 1px solid #2c77ff;
 }
-.minheight120 {
+body[data-route="roster"] .minheight120 {
   min-height: 120px;
 }
-.customiconbghover {
+body[data-route="roster"] .customiconbghover {
   background: #d2ddf6 !important;
   padding: 4px 6px;
   background: none;
   border-radius: 4px;
 }
-.pdfimg {
+body[data-route="roster"] .pdfimg {
   height: 30px;
   width: 30px;
 }
-.datetimepicker td,
-.datetimepicker th {
+body[data-route="roster"] .datetimepicker td,
+body[data-route="roster"] .datetimepicker th {
   text-align: center;
   width: 20px;
   font-size: 14px;
@@ -1415,7 +1529,7 @@ span[data-notify="title"] {
   border-radius: 4px;
   border: 0;
 }
-.datetimepicker table tr td span {
+body[data-route="roster"] .datetimepicker table tr td span {
   display: block;
   width: 23%; /* height: 54px; */
   font-size: 14px;
@@ -1428,17 +1542,17 @@ span[data-notify="title"] {
   -moz-border-radius: 4px;
   border-radius: 4px;
 }
-.datetimepicker table {
+body[data-route="roster"] .datetimepicker table {
   margin: 0;
   width: 100%;
 }
-.datetimepicker thead tr:first-child th:hover,
-.datetimepicker tfoot th:hover {
+body[data-route="roster"] .datetimepicker thead tr:first-child th:hover,
+body[data-route="roster"] .datetimepicker tfoot th:hover {
   background: #fff !important;
 }
 /*css for tab end*/
 @media (min-width: 1920px) {
-  .img_block_responsive {
+  body[data-route="roster"] .img_block_responsive {
     height: 100px;
     width: 100px;
     border-radius: 4px;
@@ -1448,7 +1562,7 @@ span[data-notify="title"] {
     display: inline-block;
     background: #ececec;
   }
-  .dropdowncustomres {
+  body[data-route="roster"] .dropdowncustomres {
     max-width: 150px;
     padding-right: 0px;
     display: inline-block;
@@ -1456,7 +1570,7 @@ span[data-notify="title"] {
     overflow: hidden;
     vertical-align: middle;
   }
-  .hoverselectclass:hover {
+  body[data-route="roster"] .hoverselectclass:hover {
     background: #e7edfb;
     color: #010101 !important;
     cursor: pointer !important;
@@ -1468,27 +1582,27 @@ span[data-notify="title"] {
   }
 }
 @media (min-width: 1700px) {
-  .footerfont {
+  body[data-route="roster"] .footerfont {
     font-size: 16px;
   }
-  .minsectionheight {
+  body[data-route="roster"] .minsectionheight {
     height: 100vh;
   }
-  .textchangeadd {
+  body[data-route="roster"] .textchangeadd {
     width: 134px;
   }
 }
 @media only screen and (min-width: 1280px) and (max-width: 1919px) {
-  .footerfont {
+  body[data-route="roster"] .footerfont {
     font-size: 13px;
   }
-  .minsectionheight {
+  body[data-route="roster"] .minsectionheight {
     height: 100vh;
   }
-  .textchangeadd {
+  body[data-route="roster"] .textchangeadd {
     width: 134px;
   }
-  .hoverselectclass:hover {
+  body[data-route="roster"] .hoverselectclass:hover {
     background: #e7edfb;
     color: #010101 !important;
     cursor: pointer !important;
@@ -1500,27 +1614,27 @@ span[data-notify="title"] {
   }
 }
 @media screen and (min-width: 1200px) and (max-width: 1440px) {
-  .footerfont {
+  body[data-route="roster"] .footerfont {
     font-size: 13px;
   }
-  .minsectionheight {
+  body[data-route="roster"] .minsectionheight {
     height: 100vh;
   }
-  .card.customcard {
+  body[data-route="roster"] .card.customcard {
     position: absolute;
     margin-bottom: 30px;
     width: 400px;
     box-shadow: 0px 2px 2px #00000066;
     border: 1px solid #e6e6e6;
   }
-  .fontawesomeicon {
+  body[data-route="roster"] .fontawesomeicon {
     text-align: center;
     border: 1px solid #63799b;
     border-radius: 50%;
     padding: 7px 8px;
     font-size: 16px;
   }
-  .customheightbtn {
+  body[data-route="roster"] .customheightbtn {
     font-size: 16px;
     border: 1px solid #2c77ff !important;
     width: 60px;
@@ -1530,7 +1644,7 @@ span[data-notify="title"] {
     display: inline-block;
     color: #2680eb !important;
   }
-  .iconfont {
+  body[data-route="roster"] .iconfont {
     padding: 5px 0 !important;
     border-radius: 50%;
     font-size: 16px;
@@ -1542,37 +1656,37 @@ span[data-notify="title"] {
     border: 1px solid #ebf2f9;
     box-shadow: -1px 0px 4px -1px #00000066;
   }
-  .responiconfawdit {
+  body[data-route="roster"] .responiconfawdit {
     height: 15px;
     width: 15px !important;
     vertical-align: text-bottom;
   }
 }
 @media (device-width: 1280px) {
-  .footerfont {
+  body[data-route="roster"] .footerfont {
     font-size: 13px;
   }
-  .minsectionheight {
+  body[data-route="roster"] .minsectionheight {
     height: 100vh;
   }
-  .adminpadding {
+  body[data-route="roster"] .adminpadding {
     padding-top: 80px;
   }
-  .card.customcard {
+  body[data-route="roster"] .card.customcard {
     position: absolute;
     margin-bottom: 30px;
     width: 400px;
     box-shadow: 0px 2px 2px #00000066;
     border: 1px solid #e6e6e6;
   }
-  .fontawesomeicon {
+  body[data-route="roster"] .fontawesomeicon {
     text-align: center;
     border: 1px solid #63799b;
     border-radius: 50%;
     padding: 7px 8px;
     font-size: 16px;
   }
-  .customheightbtn {
+  body[data-route="roster"] .customheightbtn {
     font-size: 16px;
     border: 1px solid #2c77ff !important;
     width: 60px;
@@ -1582,7 +1696,7 @@ span[data-notify="title"] {
     display: inline-block;
     color: #2680eb !important;
   }
-  .iconfont {
+  body[data-route="roster"] .iconfont {
     padding: 5px 0 !important;
     border-radius: 50%;
     font-size: 16px;
@@ -1594,7 +1708,7 @@ span[data-notify="title"] {
     border: 1px solid #ebf2f9;
     box-shadow: -1px 0px 4px -1px #00000066;
   }
-  .responiconfawdit {
+  body[data-route="roster"] .responiconfawdit {
     height: 15px;
     width: 15px !important;
     vertical-align: text-bottom;
@@ -1604,33 +1718,33 @@ span[data-notify="title"] {
   .footerfont {
     font-size: 13px;
   }
-  .minsectionheight {
+  body[data-route="roster"] .minsectionheight {
     height: 100vh;
   }
-  .customipaspad {
+  body[data-route="roster"] .customipaspad {
     padding: 0 6px !important;
   }
-  .customiconhover {
+  body[data-route="roster"] .customiconhover {
     background: #d2ddf6 !important;
     padding: 6px 15px;
   }
-  .customiconhover:hover {
+  body[data-route="roster"] .customiconhover:hover {
     padding: 6px 15px;
   }
-  .ipadpadd {
+  body[data-route="roster"] .ipadpadd {
     padding-top: 15px;
   }
-  .dropdown-menu-right.customselect {
+  body[data-route="roster"] .dropdown-menu-right.customselect {
     right: -15px !important;
   }
-  .card.customcard {
+  body[data-route="roster"] .card.customcard {
     position: absolute;
     margin-bottom: 30px;
     width: 400px;
     box-shadow: 0px 2px 2px #00000066;
     border: 1px solid #e6e6e6;
   }
-  .dropdowncustomres {
+  body[data-route="roster"] .dropdowncustomres {
     max-width: 50px;
     padding-right: 0px;
     display: inline-block;
@@ -1638,17 +1752,17 @@ span[data-notify="title"] {
     overflow: hidden;
     vertical-align: middle;
   }
-  .heightipad {
+  body[data-route="roster"] .heightipad {
     height: 28px;
   }
-  .fontawesomeicon {
+  body[data-route="roster"] .fontawesomeicon {
     text-align: center;
     border: 1px solid #63799b;
     border-radius: 50%;
     padding: 7px 8px;
     font-size: 16px;
   }
-  .customheightbtn {
+  body[data-route="roster"] .customheightbtn {
     font-size: 16px;
     border: 1px solid #2c77ff !important;
     width: 60px;
@@ -1658,7 +1772,7 @@ span[data-notify="title"] {
     display: inline-block;
     color: #2680eb !important;
   }
-  .iconfont {
+  body[data-route="roster"] .iconfont {
     padding: 5px 0 !important;
     border-radius: 50%;
     font-size: 16px;
@@ -1670,15 +1784,15 @@ span[data-notify="title"] {
     border: 1px solid #ebf2f9;
     box-shadow: -1px 0px 4px -1px #00000066;
   }
-  .responiconfawdit {
+  body[data-route="roster"] .responiconfawdit {
     height: 15px;
     width: 15px !important;
     vertical-align: text-bottom;
   }
-  .textchangeadd {
+  body[data-route="roster"] .textchangeadd {
     width: 134px;
   }
-  .responsivebluebtn {
+  body[data-route="roster"] .responsivebluebtn {
     background: #2c77ff !important;
     border-radius: 4px;
     color: #fff !important;
@@ -1689,7 +1803,10 @@ span[data-notify="title"] {
     margin: 10px 20px 10px 0;
     line-height: 1.3;
   }
-  .responsivebluebtn.customizebluebtnres .customdrodownicon .dropdowncustomres {
+  body[data-route="roster"]
+    .responsivebluebtn.customizebluebtnres
+    .customdrodownicon
+    .dropdowncustomres {
     max-width: 90%;
     min-width: 90%;
     white-space: nowrap;
@@ -1701,19 +1818,19 @@ span[data-notify="title"] {
   }
 }
 @media (device-width: 768px) {
-  .footerfont {
+  body[data-route="roster"] .footerfont {
     font-size: 13px;
   }
-  .minsectionheight {
+  body[data-route="roster"] .minsectionheight {
     height: 100vh;
   }
-  .customiconhover {
+  body[data-route="roster"] .customiconhover {
     background: #d2ddf6 !important;
   }
-  .ipadpadd {
+  body[data-route="roster"] .ipadpadd {
     padding-top: 15px;
   }
-  .dropdowncustomres {
+  body[data-route="roster"] .dropdowncustomres {
     max-width: 60px;
     padding-right: 0px;
     display: inline-block;
@@ -1721,14 +1838,14 @@ span[data-notify="title"] {
     overflow: hidden;
     vertical-align: middle;
   }
-  .card.customcard {
+  body[data-route="roster"] .card.customcard {
     position: absolute;
     margin-bottom: 30px;
     width: 400px;
     box-shadow: 0px 2px 2px #00000066;
     border: 1px solid #e6e6e6;
   }
-  .dropdowncustomres {
+  body[data-route="roster"] .dropdowncustomres {
     max-width: 50px;
     padding-right: 0px;
     display: inline-block;
@@ -1736,17 +1853,17 @@ span[data-notify="title"] {
     overflow: hidden;
     vertical-align: middle;
   }
-  .heightipad {
+  body[data-route="roster"] .heightipad {
     height: 28px;
   }
-  .fontawesomeicon {
+  body[data-route="roster"] .fontawesomeicon {
     text-align: center;
     border: 1px solid #63799b;
     border-radius: 50%;
     padding: 7px 8px;
     font-size: 16px;
   }
-  .customheightbtn {
+  body[data-route="roster"] .customheightbtn {
     font-size: 16px;
     border: 1px solid #2c77ff !important;
     width: 60px;
@@ -1756,7 +1873,7 @@ span[data-notify="title"] {
     display: inline-block;
     color: #2680eb !important;
   }
-  .iconfont {
+  body[data-route="roster"] .iconfont {
     padding: 5px 0 !important;
     border-radius: 50%;
     font-size: 16px;
@@ -1768,12 +1885,12 @@ span[data-notify="title"] {
     border: 1px solid #ebf2f9;
     box-shadow: -1px 0px 4px -1px #00000066;
   }
-  .responiconfawdit {
+  body[data-route="roster"] .responiconfawdit {
     height: 15px;
     width: 15px !important;
     vertical-align: text-bottom;
   }
-  .responsivebluebtn {
+  body[data-route="roster"] .responsivebluebtn {
     background: #2c77ff !important;
     border-radius: 4px;
     color: #fff !important;
@@ -1784,7 +1901,10 @@ span[data-notify="title"] {
     margin: 10px 20px 10px 0;
     line-height: 1.3;
   }
-  .responsivebluebtn.customizebluebtnres .customdrodownicon .dropdowncustomres {
+  body[data-route="roster"]
+    .responsivebluebtn.customizebluebtnres
+    .customdrodownicon
+    .dropdowncustomres {
     max-width: 90%;
     min-width: 90%;
     white-space: nowrap;
@@ -1796,56 +1916,56 @@ span[data-notify="title"] {
   }
 }
 @media (max-width: 767px) {
-  .footerfont {
+  body[data-route="roster"] .footerfont {
     font-size: 12px;
   }
-  .fixed-top {
+  body[data-route="roster"] .fixed-top {
     background: #19253d;
   }
-  .footerdiv {
+  body[data-route="roster"] .footerdiv {
     position: fixed;
     width: 100%;
     bottom: 0;
   }
-  .landingbtn {
+  body[data-route="roster"] .landingbtn {
     padding: 10px 29px !important;
     border-radius: 0 !important;
     color: #fff;
     line-height: 1.3;
     outline: 0;
   }
-  .bg-overlay {
+  body[data-route="roster"] .bg-overlay {
     background: rgba(0, 13, 36, 0);
     height: 100vh;
     overflow-y: auto;
   }
-  .mobpadres {
+  body[data-route="roster"] .mobpadres {
     padding-top: 22%;
   }
-  .loginpadding {
+  body[data-route="roster"] .loginpadding {
     padding-top: 18%;
   }
-  .intro-header {
+  body[data-route="roster"] .intro-header {
     background: url(../Content/img/loginbg.jpg) no-repeat center center fixed;
     background-size: cover;
     min-height: 100vh !important;
   }
-  .minsectionheight {
+  body[data-route="roster"] .minsectionheight {
     height: 100%;
   }
-  .adminpadding {
+  body[data-route="roster"] .adminpadding {
     padding-top: 16.5%;
   }
-  .navbar-brand {
+  body[data-route="roster"] .navbar-brand {
     margin-right: 0;
   }
-  .media {
+  body[data-route="roster"] .media {
     flex-direction: column;
   }
-  .media-body {
+  body[data-route="roster"] .media-body {
     margin-top: 15px;
   }
-  .img_block_responsive {
+  body[data-route="roster"] .img_block_responsive {
     height: 80px;
     width: 80px;
     margin: 0 !important;
@@ -1855,7 +1975,7 @@ span[data-notify="title"] {
     display: inline-block;
     background: #ececec;
   }
-  #sidenav-backdrop {
+  body[data-route="roster"] #sidenav-backdrop {
     background: rgba(0, 0, 0, 0.5);
     position: fixed;
     width: 100%;
@@ -1865,7 +1985,7 @@ span[data-notify="title"] {
     z-index: 0;
     display: none;
   }
-  .sb-sidenav-toggled #sidenav-backdrop {
+  body[data-route="roster"] .sb-sidenav-toggled #sidenav-backdrop {
     background: rgba(0, 0, 0, 0.5);
     position: fixed;
     width: 100%;
@@ -1875,7 +1995,7 @@ span[data-notify="title"] {
     z-index: 999;
     display: block;
   }
-  .btnpink {
+  body[data-route="roster"] .btnpink {
     background: #00a759;
     padding: 4px 0;
     width: 110px !important;
@@ -1885,7 +2005,7 @@ span[data-notify="title"] {
     text-align: center;
     border-radius: 4px;
   }
-  .btngreen {
+  body[data-route="roster"] .btngreen {
     background: #f53c56;
     padding: 4px 0;
     width: 110px;
@@ -1895,49 +2015,49 @@ span[data-notify="title"] {
     text-align: center;
     border-radius: 4px;
   }
-  .customplantable {
+  body[data-route="roster"] .customplantable {
     display: inline-block;
     overflow-x: auto;
   }
-  .respardatatable {
+  body[data-route="roster"] .respardatatable {
     display: inline-block;
     white-space: nowrap;
   }
-  .custommobrescard {
+  body[data-route="roster"] .custommobrescard {
     display: flex; /* align-items: center; */
     width: 100%;
     flex-direction: column;
     justify-content: center;
   }
-  #nav {
+  body[data-route="roster"] #nav {
     background-color: transparent;
     position: absolute;
     left: -22%;
   }
-  #menu,
-  #menuclose {
+  body[data-route="roster"] #menu,
+  body[data-route="roster"] #menuclose {
     height: 40px;
     width: 45px;
     background-position: 0 0;
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
   }
-  #menu {
+  body[data-route="roster"] #menu {
     background-color: #7e88a3 !important;
   }
-  #menuclose {
+  body[data-route="roster"] #menuclose {
     background-color: #fff !important;
   }
-  #menu:hover,
-  #menuclose:hover {
+  body[data-route="roster"] #menu:hover,
+  body[data-route="roster"] #menuclose:hover {
     background-position: 50px 0;
     cursor: pointer;
   }
-  #menuclose,
-  #menuclose:hover {
+  body[data-route="roster"] #menuclose,
+  body[data-route="roster"] #menuclose:hover {
     display: none;
   }
-  .sidedrawer {
+  body[data-route="roster"] .sidedrawer {
     position: absolute;
     top: 5px;
     right: -201px;
@@ -1945,12 +2065,12 @@ span[data-notify="title"] {
     z-index: 1;
     background: #fff !important;
   }
-  .sidebackground {
+  body[data-route="roster"] .sidebackground {
     background: #fff !important;
     width: 199px; /* margin-left: 25%; */
     display: inline-block;
   }
-  .drawer-backdrop {
+  body[data-route="roster"] .drawer-backdrop {
     position: fixed;
     top: 0;
     right: 0;
@@ -1960,12 +2080,12 @@ span[data-notify="title"] {
     background-color: rgba(0, 0, 0, 0.46);
     display: none;
   }
-  .drawer-backdrop.show {
+  body[data-route="roster"] .drawer-backdrop.show {
     opacity: 0.26;
     display: block;
     z-index: 99 !important;
   }
-  .iconresponsiveerrow {
+  body[data-route="roster"] .iconresponsiveerrow {
     margin: 0 auto;
     left: 32%;
     top: 25%;
@@ -1973,10 +2093,10 @@ span[data-notify="title"] {
     font-size: 20px;
     color: #33439e;
   }
-  .iconresponsiveerrow.sidearrowres {
+  body[data-route="roster"] .iconresponsiveerrow.sidearrowres {
     left: 40% !important;
   }
-  .sidedrawer-header {
+  body[data-route="roster"] .sidedrawer-header {
     height: 40px !important;
     background: #fff !important;
     color: #33429d;
@@ -1986,7 +2106,7 @@ span[data-notify="title"] {
     font-size: 18px;
     vertical-align: middle;
   }
-  .sidedrawer-tab {
+  body[data-route="roster"] .sidedrawer-tab {
     border-bottom: 0.7px solid #ccc !important;
     font-size: 17px;
     padding: 7px 15px;
@@ -2005,68 +2125,74 @@ span[data-notify="title"] {
     background: #33439e !important;
     color: #fff !important;
   }
-  .responsiveoverflowfilter {
+  body[data-route="roster"] .responsiveoverflowfilter {
     height: calc(100vh - 178px);
     overflow-y: auto;
   }
-  .accordianclass[aria-expanded="true"] .accordianarrow i:before {
+  body[data-route="roster"]
+    .accordianclass[aria-expanded="true"]
+    .accordianarrow
+    i:before {
     content: "\f106" !important;
   }
-  .accordianclass[aria-expanded="false"] .accordianarrow i:before {
+  body[data-route="roster"]
+    .accordianclass[aria-expanded="false"]
+    .accordianarrow
+    i:before {
     content: "\f107" !important;
   }
-  .accordiandarr {
+  body[data-route="roster"] .accordiandarr {
     font-size: 16px !important;
   }
-  .backgrounmobile {
+  body[data-route="roster"] .backgrounmobile {
     background: #f6f7f9 !important;
   }
-  .accordiancontent:first-child {
+  body[data-route="roster"] .accordiancontent:first-child {
     padding-top: 0 !important;
   }
-  .accordiancontent {
+  body[data-route="roster"] .accordiancontent {
     margin-top: 6px !important;
   }
-  .backgrounmobile {
+  body[data-route="roster"] .backgrounmobile {
     background: #f6f7f9 !important;
   }
-  .backgrounddark {
+  body[data-route="roster"] .backgrounddark {
     background: #d7ddeb !important;
   }
-  .padd6 {
+  body[data-route="roster"] .padd6 {
     padding: 8px 10px 5px 10px !important;
     min-height: 39px !important;
   }
-  .modalopenmobile {
+  body[data-route="roster"] .modalopenmobile {
     top: auto !important;
     bottom: 0px !important;
     max-height: calc(100vh - 87px) !important;
     margin: 0 !important;
     overflow-y: auto !important;
   }
-  .modalopenmobile.fade.show .modal-dialog {
+  body[data-route="roster"] .modalopenmobile.fade.show .modal-dialog {
     transform: translateY(0) !important;
     margin: 0 !important;
   }
-  .modalopenmobile.fade .modal-dialog {
+  body[data-route="roster"] .modalopenmobile.fade .modal-dialog {
     transform: translateY(25%) !important;
     margin: 0 !important;
   }
-  .margintopmobile {
+  body[data-route="roster"] .margintopmobile {
     margin-top: 20px !important;
   }
-  .filtercloseclick {
+  body[data-route="roster"] .filtercloseclick {
     background: #63799b !important;
     color: #fff;
     padding: 5.5px 10px;
   }
-  .rostercustomstafftab > li {
+  body[data-route="roster"] .rostercustomstafftab > li {
     width: 100% !important;
   }
-  .customiconhover {
+  body[data-route="roster"] .customiconhover {
     background: #d2ddf6 !important;
   }
-  .fontawesomeicon {
+  body[data-route="roster"] .fontawesomeicon {
     text-align: center;
     border: 1px solid #63799b;
     border-radius: 50%;
@@ -2075,7 +2201,7 @@ span[data-notify="title"] {
     height: 32px;
     width: 32px;
   }
-  .customheightbtn {
+  body[data-route="roster"] .customheightbtn {
     font-size: 16px;
     border: 1px solid #2c77ff !important;
     width: 60px;
@@ -2085,7 +2211,7 @@ span[data-notify="title"] {
     display: inline-block;
     color: #2680eb !important;
   }
-  .iconfont {
+  body[data-route="roster"] body[data-route="roster"] .iconfont {
     padding: 5px 0 !important;
     border-radius: 50%;
     font-size: 16px;
@@ -2097,12 +2223,12 @@ span[data-notify="title"] {
     border: 1px solid #ebf2f9;
     box-shadow: -1px 0px 4px -1px #00000066;
   }
-  .responiconfawdit {
+  body[data-route="roster"] .responiconfawdit {
     height: 15px;
     width: 15px !important;
     vertical-align: text-bottom;
   }
-  #userDropdown + .dropdown-menu {
+  body[data-route="roster"] #userDropdown + .dropdown-menu {
     margin-top: 0;
     right: -25px !important;
     top: 60px;
@@ -2113,27 +2239,27 @@ span[data-notify="title"] {
     -webkit-box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.1607843137254902);
     box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.1607843137254902);
   }
-  .customiconhover {
+  body[data-route="roster"] .customiconhover {
     padding: 8px 8px;
     background: none;
     border-radius: 4px;
   }
-  .customiconhover:hover {
+  body[data-route="roster"] .customiconhover:hover {
     padding: 8px 8px;
     background: none;
     border-radius: 4px;
   }
-  .customizepanel > .panel-heading {
+  body[data-route="roster"] .customizepanel > .panel-heading {
     padding: 20px !important;
   }
-  .custommobmodal .modal-dialog {
+  body[data-route="roster"] .custommobmodal .modal-dialog {
     min-height: 800px;
     overflow-y: auto;
   }
-  .mobborder {
+  body[data-route="roster"] .mobborder {
     border-top: 1px solid #e8f3ff !important;
   }
-  .responsivebluebtn {
+  body[data-route="roster"] .responsivebluebtn {
     background: #2c77ff !important;
     border-radius: 4px;
     color: #fff !important;
@@ -2143,7 +2269,7 @@ span[data-notify="title"] {
     margin: 10px 0;
     line-height: 1.3;
   }
-  .dateblock {
+  body[data-route="roster"] .dateblock {
     padding-bottom: 10px;
     border-bottom: 2px solid #e9ecef;
   }
@@ -2166,18 +2292,21 @@ span[data-notify="title"] {
         -webkit-transform: translate3d(0,25%,0);
         transform: translate3d(0,25%,0);
     }*/
-  .card-header.customheadermobpadd {
+  body[data-route="roster"] .card-header.customheadermobpadd {
     padding: 15px !important;
   }
-  .customarrowtab {
+  body[data-route="roster"] .customarrowtab {
     color: #63799b !important;
     width: 40px !important;
   }
-  .customarrowtab:hover {
+  body[data-route="roster"] .customarrowtab:hover {
     color: #63799b !important;
     width: 40px !important;
   }
-  .responsivebluebtn.customizebluebtnres .customdrodownicon .dropdowncustomres {
+  body[data-route="roster"]
+    .responsivebluebtn.customizebluebtnres
+    .customdrodownicon
+    .dropdowncustomres {
     max-width: 90%;
     min-width: 90%;
     white-space: nowrap;
@@ -2189,56 +2318,56 @@ span[data-notify="title"] {
   }
 }
 @media (max-width: 480px) {
-  .footerfont {
+  body[data-route="roster"] .footerfont {
     font-size: 12px;
   }
-  .fixed-top {
+  body[data-route="roster"] .fixed-top {
     background: #19253d;
   }
-  .footerdiv {
+  body[data-route="roster"] .footerdiv {
     position: fixed;
     width: 100%;
     bottom: 0;
   }
-  .landingbtn {
+  body[data-route="roster"] .landingbtn {
     padding: 10px 25px !important;
     border-radius: 0 !important;
     color: #fff;
     line-height: 1.3;
     outline: 0;
   }
-  .bg-overlay {
+  body[data-route="roster"] .bg-overlay {
     background: rgba(0, 13, 36, 0);
     height: 100vh;
     overflow-y: auto;
   }
-  .mobpadres {
+  body[data-route="roster"] .mobpadres {
     padding-top: 22%;
   }
-  .loginpadding {
+  body[data-route="roster"] .loginpadding {
     padding-top: 18%;
   }
-  .intro-header {
+  body[data-route="roster"] .intro-header {
     background: url(../Content/img/loginbg.jpg) no-repeat center center fixed;
     background-size: cover;
     min-height: 100vh !important;
   }
-  .minsectionheight {
+  body[data-route="roster"] .minsectionheight {
     height: 100%;
   }
-  .adminpadding {
+  body[data-route="roster"] .adminpadding {
     padding-top: 14.9%;
   }
-  .navbar-brand {
+  body[data-route="roster"] .navbar-brand {
     margin-right: 0;
   }
-  .media {
+  body[data-route="roster"] .media {
     flex-direction: column;
   }
-  .media-body {
+  body[data-route="roster"] .media-body {
     margin-top: 15px;
   }
-  .img_block_responsive {
+  body[data-route="roster"] .img_block_responsive {
     height: 80px;
     width: 80px;
     margin: 0 !important;
@@ -2248,7 +2377,7 @@ span[data-notify="title"] {
     display: inline-block;
     background: #ececec;
   }
-  #sidenav-backdrop {
+  body[data-route="roster"] #sidenav-backdrop {
     background: rgba(0, 0, 0, 0.5);
     position: fixed;
     width: 100%;
@@ -2258,7 +2387,7 @@ span[data-notify="title"] {
     z-index: 0;
     display: none;
   }
-  .sb-sidenav-toggled #sidenav-backdrop {
+  body[data-route="roster"] .sb-sidenav-toggled #sidenav-backdrop {
     background: rgba(0, 0, 0, 0.5);
     position: fixed;
     width: 100%;
@@ -2268,7 +2397,7 @@ span[data-notify="title"] {
     z-index: 999;
     display: block;
   }
-  .btnpink {
+  body[data-route="roster"] .btnpink {
     background: #00a759;
     padding: 4px 0;
     width: 110px !important;
@@ -2278,7 +2407,7 @@ span[data-notify="title"] {
     text-align: center;
     border-radius: 4px;
   }
-  .btngreen {
+  body[data-route="roster"] .btngreen {
     background: #f53c56;
     padding: 4px 0;
     width: 110px;
@@ -2288,18 +2417,18 @@ span[data-notify="title"] {
     text-align: center;
     border-radius: 4px;
   }
-  .customplantable {
+  body[data-route="roster"] .customplantable {
     display: inline-block;
     overflow-x: auto;
   }
-  .respardatatable {
+  body[data-route="roster"] .respardatatable {
     display: inline-block;
     white-space: nowrap;
   }
-  .customiconhover {
+  body[data-route="roster"] .customiconhover {
     background: #d2ddf6 !important;
   }
-  .dropdowncustomres {
+  body[data-route="roster"] .dropdowncustomres {
     max-width: 120px;
     padding-right: 0px;
     display: inline-block;
@@ -2307,7 +2436,7 @@ span[data-notify="title"] {
     overflow: hidden;
     vertical-align: middle;
   }
-  .fontawesomeicon {
+  body[data-route="roster"] .fontawesomeicon {
     text-align: center;
     border: 1px solid #63799b;
     border-radius: 50%;
@@ -2316,7 +2445,7 @@ span[data-notify="title"] {
     height: 32px;
     width: 32px;
   }
-  .customheightbtn {
+  body[data-route="roster"] .customheightbtn {
     font-size: 16px;
     border: 1px solid #2c77ff !important;
     width: 60px;
@@ -2326,7 +2455,7 @@ span[data-notify="title"] {
     display: inline-block;
     color: #2680eb !important;
   }
-  .iconfont {
+  body[data-route="roster"] .iconfont {
     padding: 5px 0 !important;
     border-radius: 50%;
     font-size: 16px;
@@ -2338,66 +2467,66 @@ span[data-notify="title"] {
     border: 1px solid #ebf2f9;
     box-shadow: -1px 0px 4px -1px #00000066;
   }
-  .responiconfawdit {
+  body[data-route="roster"] .responiconfawdit {
     height: 15px;
     width: 15px !important;
     vertical-align: text-bottom;
   }
 }
 @media (max-width: 320px) {
-  .footerfont {
+  body[data-route="roster"] .footerfont {
     font-size: 12px !important;
   }
-  .font50 {
+  body[data-route="roster"] .font50 {
     font-size: 20px !important;
   }
-  .font43 {
+  body[data-route="roster"] .font43 {
     font-size: calc(43px - 25px) !important;
   }
-  .font34 {
+  body[data-route="roster"] .font34 {
     font-size: calc(34px - 17px) !important;
   }
-  .fixed-top {
+  body[data-route="roster"] .fixed-top {
     background: #19253d !important;
   }
-  .landingbtn {
+  body[data-route="roster"] .landingbtn {
     padding: 10px 20px !important;
     border-radius: 0 !important;
     color: #fff;
     line-height: 1.3;
     outline: 0;
   }
-  .footerdiv {
+  body[data-route="roster"] .footerdiv {
     position: fixed;
     width: 100%;
     bottom: 0;
   }
-  .bg-overlay {
+  body[data-route="roster"] .bg-overlay {
     background: rgba(0, 13, 36, 0);
     height: 100vh;
     overflow-y: auto;
   }
-  .mobpadres {
+  body[data-route="roster"] .mobpadres {
     padding-top: 22%;
   }
-  .loginpadding {
+  body[data-route="roster"] .loginpadding {
     padding-top: 18%;
   }
-  .intro-header {
+  body[data-route="roster"] .intro-header {
     background: url(../Content/img/loginbg.jpg) no-repeat center center fixed;
     background-size: cover;
     min-height: 100vh !important;
   }
-  .minsectionheight {
+  body[data-route="roster"] .minsectionheight {
     height: 100%;
   }
-  .adminpadding {
+  body[data-route="roster"] .adminpadding {
     padding-top: 16.5%;
   }
-  .navbar-brand {
+  body[data-route="roster"] .navbar-brand {
     margin-right: 0;
   }
-  #sidenav-backdrop {
+  body[data-route="roster"] #sidenav-backdrop {
     background: rgba(0, 0, 0, 0.5);
     position: fixed;
     width: 100%;
@@ -2407,7 +2536,7 @@ span[data-notify="title"] {
     z-index: 0;
     display: none;
   }
-  .sb-sidenav-toggled #sidenav-backdrop {
+  body[data-route="roster"] .sb-sidenav-toggled #sidenav-backdrop {
     background: rgba(0, 0, 0, 0.5);
     position: fixed;
     width: 100%;
@@ -2417,16 +2546,16 @@ span[data-notify="title"] {
     z-index: 999;
     display: block;
   }
-  .media {
+  body[data-route="roster"] .media {
     flex-direction: column;
   }
-  a {
+  body[data-route="roster"] a {
     text-decoration: none;
   }
-  .media-body {
+  body[data-route="roster"] .media-body {
     margin-top: 15px;
   }
-  .img_block_responsive {
+  body[data-route="roster"] .img_block_responsive {
     height: 80px;
     width: 80px;
     margin: 0 !important;
@@ -2436,7 +2565,7 @@ span[data-notify="title"] {
     display: inline-block;
     background: #ececec;
   }
-  .btnpink {
+  body[data-route="roster"] .btnpink {
     background: #00a759;
     padding: 4px 0;
     width: 100px !important;
@@ -2446,7 +2575,7 @@ span[data-notify="title"] {
     text-align: center;
     border-radius: 4px;
   }
-  .btngreen {
+  body[data-route="roster"] .btngreen {
     background: #f53c56;
     padding: 4px 0;
     width: 100px;
@@ -2456,15 +2585,15 @@ span[data-notify="title"] {
     text-align: center;
     border-radius: 4px;
   }
-  .customplantable {
+  body[data-route="roster"] .customplantable {
     display: inline-block;
     overflow-x: auto;
   }
-  .respardatatable {
+  body[data-route="roster"] .respardatatable {
     display: inline-block;
     white-space: nowrap;
   }
-  .fontawesomeicon {
+  body[data-route="roster"] .fontawesomeicon {
     text-align: center;
     border: 1px solid #63799b;
     border-radius: 50%;
@@ -2473,7 +2602,7 @@ span[data-notify="title"] {
     height: 32px;
     width: 32px;
   }
-  .customheightbtn {
+  body[data-route="roster"] .customheightbtn {
     font-size: 16px;
     border: 1px solid #2c77ff !important;
     width: 60px;
@@ -2483,7 +2612,7 @@ span[data-notify="title"] {
     display: inline-block;
     color: #2680eb !important;
   }
-  .iconfont {
+  body[data-route="roster"] .iconfont {
     padding: 5px 0 !important;
     border-radius: 50%;
     font-size: 16px;
@@ -2495,13 +2624,13 @@ span[data-notify="title"] {
     border: 1px solid #ebf2f9;
     box-shadow: -1px 0px 4px -1px #00000066;
   }
-  .responiconfawdit {
+  body[data-route="roster"] .responiconfawdit {
     height: 15px;
     width: 15px !important;
     vertical-align: text-bottom;
   }
 }
 
-.forbidden {
+body[data-route="roster"] .forbidden {
   cursor: not-allowed;
 }

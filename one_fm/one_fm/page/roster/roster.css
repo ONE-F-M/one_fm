@@ -66,6 +66,11 @@ body[data-route="roster"] .sticky {
   position: sticky;
   left: 0;
 }
+body[data-route="roster"] .vertical-sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+}
 
 /*--------------------------------------------------*/
 /*---------------------SPINNER----------------------*/
@@ -114,5 +119,10 @@ body[data-route="roster"] #cover-spin::after {
   border-radius: 50%;
   -webkit-animation: spin 0.8s linear infinite;
   animation: spin 0.8s linear infinite;
+}
+body[data-route="roster"] .table-parent {
+  overflow-x: scroll;
+  float: left;
+  height: calc(80vh - 40px);
 }
 /*--------------------------------------------------*/
