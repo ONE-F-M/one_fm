@@ -1,5 +1,5 @@
 frappe.treeview_settings['Warehouse'] = {
-	get_tree_nodes: "erpnext.stock.doctype.warehouse.warehouse.get_children",
+	get_tree_nodes: "one_fm.utils.get_warehouse_children",
 	add_tree_node: "erpnext.stock.doctype.warehouse.warehouse.add_node",
 	get_tree_root: false,
 	root_label: "Warehouses",
@@ -27,6 +27,9 @@ frappe.treeview_settings['Warehouse'] = {
 			$('<span class="balance-area pull-right text-muted small">'
 			+ format_currency(Math.abs(node.data.balance), node.data.company_currency)
 			+ '</span>').insertBefore(node.$ul);
+		}
+		if(!node.data.value.includes(node.data.warehouse_name)){
+			$(`<a class="tree-label grey h6">:${node.data.warehouse_name}</a>`).appendTo(node.$tree_link);
 		}
 	}
 }
