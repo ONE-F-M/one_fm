@@ -1067,6 +1067,29 @@ def create_new_project_code(project_id):
     frappe.db.set_value('Project', project_id, 'one_fm_project_code', str(int(new_project_code)).zfill(4))
     return str(int(new_project_code)).zfill(4)
 
+@frappe.whitelist()
+def get_warehouse_children(doctype, parent=None, company=None, is_root=False):
+	from erpnext.stock.utils import get_stock_value_from_bin
+
+	if is_root:
+		parent = ""
+
+	fields = ['name as value', 'is_group as expandable', 'warehouse_name']
+	filters = [
+		['docstatus', '<', '2'],
+		['ifnull(`parent_warehouse`, "")', '=', parent],
+		['company', 'in', (company, None,'')]
+	]
+
+	warehouses = frappe.get_list(doctype, fields=fields, filters=filters, order_by='name')
+
+	# return warehouses
+	for wh in warehouses:
+		wh["balance"] = get_stock_value_from_bin(warehouse=wh.value)
+		if company:
+			wh["company_currency"] = frappe.db.get_value('Company', company, 'default_currency')
+	return warehouses
+
 @frappe.whitelist(allow_guest=True)
 def item_group_naming_series(doc, method):
     # doc.name = doc.item_group_code+'-'+doc.item_group_name

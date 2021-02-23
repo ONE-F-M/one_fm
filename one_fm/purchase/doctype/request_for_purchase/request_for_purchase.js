@@ -3,6 +3,7 @@
 
 frappe.ui.form.on('Request for Purchase', {
 	refresh: function(frm) {
+		set_intro_related_to_status(frm);
 		frm.events.make_custom_buttons(frm);
 		if(!frm.doc.approver || (frm.doc.approver != frm.doc.__onload.approver)){
 			frm.set_value('approver', frm.doc.__onload.approver);
@@ -76,7 +77,9 @@ frappe.ui.form.on('Request for Purchase', {
 						if (!r.exc) {
 							frm.reload_doc();
 						}
-					}
+					},
+					freeze: true,
+					freeze_message: "Sending ..!"
 				});
 			},
 			function(){} // No
@@ -110,7 +113,8 @@ frappe.ui.form.on('Request for Purchase', {
 				if (!r.exc) {
 					frm.reload_doc();
 				}
-			}
+			},
+			freeze: true
 		});
 	},
 	make_request_for_quotation: function(frm) {
@@ -160,6 +164,41 @@ frappe.ui.form.on('Request for Purchase', {
 		set_supplier_to_items_to_order(frm);
 	}
 });
+
+var set_intro_related_to_status = function(frm) {
+	if (frm.doc.docstatus == 1){
+		if(frm.doc.status == 'Draft') {
+			frm.set_intro(__("Create Request for Quotation (Optional)."), 'yellow');
+			frm.set_intro(__("Compare Quotations if Quotaiton Available (Optional)."), 'yellow');
+			frm.set_intro(__("Fill Items to Order - Check Supplier and Item Code set Correctly."), 'yellow');
+			frm.set_intro(__("Requester Click Send Request Button to notify Accepter"), 'yellow');
+			frm.set_intro(__("On Accept notify Approver"), 'yellow');
+			frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
+		}
+		if(frm.doc.status == 'Approved'){
+			frappe.db.get_value("Purchase Order", {"one_fm_request_for_purchase": frm.doc.name}, "name", function(r) {
+				if(!r || !r.name){
+					frm.set_intro(__("Requester can create PO"), 'yellow');
+				}
+			})
+		}
+	}
+	if (frm.doc.docstatus == 1){
+		if(frm.doc.status == "Draft" && !frm.doc.items_to_order){
+			frm.set_intro(__("Fill Items to Order - Check Supplier and Item Code set Correctly."), 'yellow');
+			frm.set_intro(__("Requester Click Send Request Button to notify Accepter"), 'yellow');
+			frm.set_intro(__("On Accept notify Approver"), 'yellow');
+			frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
+		}
+		if(frm.doc.status == "Draft Request"){
+			frm.set_intro(__("On Accept notify Approver"), 'yellow');
+			frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
+		}
+		if(frm.doc.status == "Accepted"){
+			frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
+		}
+	}
+};
 
 var set_supplier_to_items_to_order = function(frm){
 	if(frm.doc.items_to_order){

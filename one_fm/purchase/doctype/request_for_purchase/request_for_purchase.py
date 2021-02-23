@@ -64,15 +64,20 @@ class RequestforPurchase(Document):
 		create_notification_log(subject, message, recipients, self)
 
 def send_email(doc, recipients, message, subject):
-	frappe.sendmail(
-		recipients= recipients,
-		subject=subject,
-		message=message,
-		reference_doctype=doc.doctype,
-		reference_name=doc.name
-	)
+	if 'Administrator' in recipients:
+		recipients.remove('Administrator')
+	if recipients and len(recipients) > 0:
+		frappe.sendmail(
+			recipients= recipients,
+			subject=subject,
+			message=message,
+			reference_doctype=doc.doctype,
+			reference_name=doc.name
+		)
 
 def create_notification_log(subject, message, for_users, reference_doc):
+	if 'Administrator' in for_users:
+		for_users.remove('Administrator')
 	for user in for_users:
 		doc = frappe.new_doc('Notification Log')
 		doc.subject = subject
