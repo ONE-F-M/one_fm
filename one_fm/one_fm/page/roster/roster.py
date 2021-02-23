@@ -398,7 +398,8 @@ def set_post_off(post, date, post_off_paid, post_off_unpaid):
 @frappe.whitelist()
 def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[], repeat_till=None):
 	from one_fm.api.mobile.roster import month_range
-	if selected_dates:
+	print(selected_dates, type(selected_dates))
+	if cint(selected_dates):
 		for employee in json.loads(employees):
 			set_dayoff(employee["employee"], employee["date"])
 	else:
@@ -408,22 +409,22 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 			if repeat_freq == "Daily":
 				for employee in json.loads(employees):
 					for date in	pd.date_range(start=employee["date"], end=end_date):
-						frappe.enqueue(set_dayoff, employee["employee"], cstr(date.date()), queue='short')
+						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Weekly":
 				for employee in json.loads(employees):
 					for date in	pd.date_range(start=employee["date"], end=end_date):
 						if getdate(date).strftime('%A') in week_days:
-							frappe.enqueue(set_dayoff, employee["employee"], cstr(date.date()), queue='short')
+							frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Monthly":
 				for employee in json.loads(employees):
 					for date in	month_range(employee["date"], repeat_till):
-						frappe.enqueue(set_dayoff, employee["employee"], cstr(date.date()), queue='short')
+						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Yearly":
 				for date in	pd.date_range(start=employee["date"], end=repeat_till, freq=pd.DateOffset(years=1)):
-					frappe.enqueue(set_dayoff, employee["employee"], cstr(date.date()), queue='short')
+					frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 def set_dayoff(employee, date):
 	if frappe.db.exists("Employee Schedule", {"date": date, "employee": employee}):

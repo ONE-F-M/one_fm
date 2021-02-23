@@ -829,7 +829,7 @@ function get_roster_data(page){
 		for(post_type_name in post_types_data){
 			let pt_row = `
 			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
-				<td class="clickablerow">
+				<td class="clickablerow clickablerow">
 					<div class="d-flex">
 						<div class="font16 paddingdiv cursorpointer orangecolor">
 							<i class="fa fa-plus" aria-hidden="true"></i>
@@ -940,7 +940,7 @@ function get_roster_data(page){
 			// </tr>`;
 			// $('.rosterMonth').find(`#rowchildtable tbody"]`).append(employee_modal);
 		}
-		frappe.show_alert({message:__("Roster updated"), indicator:'green'});
+		// frappe.show_alert({message:__("Roster updated"), indicator:'green'});
 		bind_events(page);
 
 	});
@@ -960,7 +960,7 @@ function get_roster_week_data(page){
 		for(post_type_name in post_types_data){
 			let pt_row = `
 			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
-				<td class="clickablerow">
+				<td class="clickablerow clickablerow">
 					<div class="d-flex">
 						<div class="font16 paddingdiv cursorpointer orangecolor">
 							<i class="fa fa-plus" aria-hidden="true"></i>
@@ -1072,7 +1072,7 @@ function get_roster_week_data(page){
 			// </tr>`;
 			// $('.rosterMonth').find(`#rowchildtable tbody"]`).append(employee_modal);
 		}
-		frappe.show_alert({message:__("Roster updated"), indicator:'green'});
+		// frappe.show_alert({message:__("Roster updated"), indicator:'green'});
 		bind_events(page);
 	});	
 }
@@ -1148,7 +1148,7 @@ function get_post_data(page){
 			}		
 			$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
 		}			
-		frappe.show_alert({message:__("Postview updated"), indicator:'green'});
+		// frappe.show_alert({message:__("Postview updated"), indicator:'green'});
 		bind_events(page);
 	});
 }
@@ -1224,7 +1224,7 @@ function get_post_week_data(page){
 			}
 			$('.postWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(`<td></td>`);		
 		}
-		frappe.show_alert({message:__("Postview updated"), indicator:'green'});
+		// frappe.show_alert({message:__("Postview updated"), indicator:'green'});
 		bind_events(page);
 	});
 }
@@ -1498,8 +1498,8 @@ const search_staff = () => {
 function GetHeaders(IsMonthSet, element) {
 
 	var thHTML = "";
-	var thStartHTML = `<th class="sticky">Post Type / Days</th>`;
-	var thEndHTML = "<th>Total</th>";
+	var thStartHTML = `<th class="sticky vertical-sticky">Post Type / Days</th>`;
+	var thEndHTML = `<th class="vertical-sticky">Total</th>`;
 	element = get_wrapper_element(element);
 	var selectedMonth;
 	if (IsMonthSet == 0) {
@@ -1518,11 +1518,11 @@ function GetHeaders(IsMonthSet, element) {
 			var todayDaydate = calDate.format("DD");
 			var th = "";// "<th id="data-day_" + i + "" onclick="ChangeRosteringDate(" + i + ",this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
-				th = '<th id="data-day_' + i + '" class="greytablebg"  onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="greytablebg vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}else if (todayDaydate === getdateres){
-				th = '<th id="data-day_' + i + '" class="hightlightedtable"  onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class=" vertical-sticky" id="data-day_' + i + '" class="hightlightedtable"  onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}else {
-				th = '<th id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class=" vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			dataHTML = dataHTML + th;
 		}
@@ -1544,10 +1544,10 @@ function GetHeaders(IsMonthSet, element) {
 
 			var th = "";// "<th id="data-day_" + i + "" onclick="ChangeRosteringDate(" + i + ",this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
-				th = '<th id="data-day_' + i + '" class="greytablebg"  onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="greytablebg vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			else {
-				th = '<th id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="greytablebg vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			dataHTML = dataHTML + th;
 
@@ -2097,8 +2097,8 @@ function update_staff_view(){
 //function for dynamic set calender header data on right calender
 function GetWeekHeaders(IsMonthSet, element) {
 	var thHTML = "";
-	var thStartHTML = `<th class="sticky">Post Type / Days</th>`;
-	var thEndHTML = "<th>Total</th>";
+	var thStartHTML = `<th class="sticky vertical-sticky">Post Type / Days</th>`;
+	var thEndHTML = `<th class="vertical-sticky">Total</th>`;
 	var selectedMonth;
 	element = get_wrapper_element(element);
 	(element);
@@ -2123,13 +2123,13 @@ function GetWeekHeaders(IsMonthSet, element) {
 
 			var th = "";
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
-				th = `<th id="data-day_${i}" class="greytablebg"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+				th = `<th class="greytablebg vertical-sticky" id="data-day_${i}" onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
 			}
 			else if (todayDaydate === getdateres) {
-				th = `<th id="data-day_${i}" class="hightlightedtable"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+				th = `<th class=" vertical-sticky" id="data-day_${i}" class="hightlightedtable"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
 			}
 			else {
-				th = `<th id="data-day_${i}"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+				th = `<th class=" vertical-sticky" id="data-day_${i}"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
 			}
 			dataHTML = dataHTML + th;
 			calDate = calDate.add(1, "Days");
@@ -2157,10 +2157,10 @@ function GetWeekHeaders(IsMonthSet, element) {
 			var weekNumber = getWeekOfMonth(calDate.toDate());
 			var th = "";
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
-				th = `<th id="data-day_${i}" class="greytablebg"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+				th = `<th class="greytablebg vertical-sticky" id="data-day_${i}" onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
 			}
 			else {
-				th = `<th id="data-day_${i}"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+				th = `<th class=" vertical-sticky" id="data-day_${i}"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
 			}
 			dataHTML = dataHTML + th;
 
@@ -2540,7 +2540,7 @@ function dayoff(page){
 					args["repeat_freq"] = repeat_freq;			
 				}
 			}
-			
+			console.log(args);
 			frappe.xcall('one_fm.one_fm.page.roster.roster.dayoff', args)
 			.then(res => {
 				d.hide();
