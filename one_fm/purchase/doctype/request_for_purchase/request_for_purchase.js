@@ -77,7 +77,9 @@ frappe.ui.form.on('Request for Purchase', {
 						if (!r.exc) {
 							frm.reload_doc();
 						}
-					}
+					},
+					freeze: true,
+					freeze_message: "Sending ..!"
 				});
 			},
 			function(){} // No
@@ -111,7 +113,8 @@ frappe.ui.form.on('Request for Purchase', {
 				if (!r.exc) {
 					frm.reload_doc();
 				}
-			}
+			},
+			freeze: true
 		});
 	},
 	make_request_for_quotation: function(frm) {
