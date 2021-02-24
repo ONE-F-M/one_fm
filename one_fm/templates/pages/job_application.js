@@ -2,8 +2,6 @@ const baseUrl = (frappe.base_url || window.location.origin);
 if(baseUrl.substr(baseUrl.length-1, 1)=='/') baseUrl = baseUrl.substr(0, baseUrl.length-1);
 const listOfLanguages = [];
 const listOfSkills = [];
-const basicSkills = "basic-skills";
-const language = "rating";
 
 $(document).ready(function () {
   if(window.localStorage.getItem("job-application-auth")){
@@ -29,11 +27,11 @@ function set_jobs_info_to_application() {
         var erf = r.message;
         window.localStorage.setItem("erf", erf.name);
         erf.designation_skill.map(a=>{
-            listOfSkills.push({
-              skill: a.skill,
-              proficiency: ""
-            })
-            placeSkills(basicSkills, a.skill)
+          listOfSkills.push({
+            skill: a.skill,
+            proficiency: ""
+          })
+          set_basic_skill_ratings(a.skill);
         })
         erf.languages.map(a=>{
           listOfLanguages.push({
@@ -43,7 +41,7 @@ function set_jobs_info_to_application() {
             read: 0,
             write: 0
           });
-          placeSkills(language, "none", a.language_name)
+          set_language_section_ratings(a.language_name)
         })
         starEffects();
       }
@@ -51,109 +49,41 @@ function set_jobs_info_to_application() {
   });
 };
 
-// Place Skills
-const placeSkills = (location, skill="none", language="none") => {
-    document.getElementById(location).innerHTML +=
-    skill != "none" ? `
-    <div class="form-group col-md-6">
-    <p>${skill}</p>
-    </div>
-    <div class="form-group col-md-6">
-    <div class='rating-stars'>
-        <ul class='stars'>
-            <li class='star' data-skill=${skill} title='skill' data-value='1'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-skill=${skill} title='skill' data-value='2'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-skill=${skill} title='skill' data-value='3'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-skill=${skill} title='skill' data-value='4'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-skill=${skill} title='skill' data-value='5'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-        </ul>
-    </div>
-</div>
-    ` : `
-<div class="form-group col-md-4">
-    <p>${language}</p>
-</div>
-<div class="form-group col-md-2">
-<div class=''>
-Speak
-</div>
-<div class='mt-3'>
-Read
-</div>
-<div class='mt-3'>
-Write
-</div>
-</div>
-<div class="form-group col-md-6">
-    <div class='rating-stars'>
-        <ul class='stars'>
-            <li class='star' data-language=${language} title='speak' data-value='1'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='speak' data-value='2'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='speak' data-value='3'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='speak' data-value='4'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='speak' data-value='5'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-        </ul>
-    </div>
-    <div class='rating-stars'>
-        <ul class='stars'>
-            <li class='star' data-language=${language} title='read' data-value='1'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='read' data-value='2'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='read' data-value='3'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='read' data-value='4'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='read' data-value='5'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-        </ul>
-    </div>
-    <div class='rating-stars'>
-        <ul class='stars'>
-            <li class='star' data-language=${language} title='write' data-value='1'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='write' data-value='2'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='write' data-value='3'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='write' data-value='4'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='write' data-value='5'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-        </ul>
-    </div>
-</div>
-`
+var set_basic_skill_ratings = (skill) => {
+  var skills_html =`<div class="form-group col-md-6"><p>${skill}</p></div><div class="form-group col-md-6">
+    <div class='rating-stars'><ul class='stars'>`;
+  for (var i = 1; i <= 5; i++) {
+    skills_html += `<li class='star' data-skill=${skill} title='skill' data-value='${i}'>
+      <i class='fa fa-star fa-fw'></i></li>`
+  }
+  skills_html += `</ul></div></div>`;
+  document.getElementById('basic-skills').innerHTML += skills_html;
+}
+
+var set_language_section_ratings = function(language) {
+  var srw = ['speak', 'read', 'write'];
+  var language_section_html = `<div class="form-group col-md-4"><p>${language}</p></div><div class="form-group col-md-2">`;
+  srw.forEach((item, i) => {
+    let mt_3_class = (i > 0)?'mt-3':'';
+    language_section_html += `<div class='${mt_3_class}'>${titleCase(item)}</div>`
+  });
+  language_section_html += `</div><div class="form-group col-md-6">`;
+  srw.forEach((item, j) => {
+    language_section_html += `<div class='rating-stars'> <ul class='stars'>`;
+    for (var i = 1; i <= 5; i++) {
+      language_section_html += `<li class='star' data-language=${language} title='${item}' data-value='${i}'>
+          <i class='fa fa-star fa-fw'></i></li>`
+    }
+    language_section_html += `</ul></div>`;
+  });
+  language_section_html += `</div>`;
+  document.getElementById('language-rating').innerHTML += language_section_html;
+};
+
+function titleCase(str) {
+  return str.toLowerCase().split(' ').map(function(word) {
+    return word.replace(word[0], word[0].toUpperCase());
+  }).join(' ');
 }
 
 // Auto complete scripts
