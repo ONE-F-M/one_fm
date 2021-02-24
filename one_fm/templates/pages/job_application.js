@@ -5,13 +5,89 @@ const listOfSkills = [];
 
 $(document).ready(function () {
   if(window.localStorage.getItem("job-application-auth")){
+    $(".nationality_details_menu").hide();
+    $(".nationality-details").hide();
+    $('.current_employment_menu').hide();
+    $('.current-employment').hide();
+    $('.visa_and_residency_details').hide();
     set_jobs_info_to_application();
+    set_masters_to_application();
   }
   else {
       alert("Please Signup or Login!");
       window.location = "applicant-sign-up";
   }
 });
+
+function onchange_nationality() {
+  var x = document.getElementById("nationality").value;
+  if(x=='Kuwaiti'){
+    $(".nationality-details").show();
+    $(".nationality_details_menu").show();
+  }
+  else{
+    $(".nationality_details_menu").hide();
+    $(".nationality-details").hide();
+  }
+
+  frappe.call({
+    method: 'one_fm.templates.pages.job_application.get_country_from_nationality',
+    args: {nationality: x},
+    callback: function(r) {
+      if(r && r.message){
+        document.getElementById("passportHolderOf").value = r.message;
+      }
+      else{
+        document.getElementById("passportHolderOf").value = '';
+      }
+    }
+  });
+};
+
+function onclick_do_you_have_perv_work_exp() {
+  var x = document.getElementById("do_you_have_perv_work_exp").checked;
+  if(x){
+    $('.current_employment_menu').show();
+    $('.current-employment').show();
+  }
+  else{
+    $('.current_employment_menu').hide();
+    $('.current-employment').hide();
+  }
+};
+
+function onclick_valid_visa() {
+  var x = document.getElementById("ValidVisa").checked;
+  if(x){
+    $('.visa_and_residency_details').show();
+  }
+  else{
+    $('.visa_and_residency_details').hide();
+  }
+};
+
+function set_masters_to_application() {
+  frappe.call({
+    method: "one_fm.templates.pages.job_application.get_master_details",
+    callback: function(r) {
+      var data = r.message?r.message:[];
+      set_options_from_master(data);
+    }
+  });
+};
+
+var set_options_from_master = function(data) {
+  var keys = ['gender', 'nationality', 'passportHolderOf', 'country_of_employment', 'visaType'];
+  keys.forEach((key, i) => {
+    var options_html = `<option></option>`;
+    if(key in data && data[key]){
+      data[key].forEach((item, i) => {
+        options_html += `<option>${item.name}</option>`;
+      });
+    }
+    document.getElementById(key).innerHTML += options_html;
+  });
+}
 
 function set_jobs_info_to_application() {
   const job = localStorage.getItem("currentJobOpening");
@@ -44,9 +120,52 @@ function set_jobs_info_to_application() {
           set_language_section_ratings(a.language_name)
         })
         starEffects();
+        set_work_details_section(erf)
       }
     }
   });
+};
+
+var set_work_details_section = function(erf) {
+  var exists_a_field = false;
+  if(erf.shift_working){
+    exists_a_field = true;
+    $('.rotationalShift').show();
+  }
+  else{
+    $('.rotationalShift').hide();
+  }
+  if(erf.night_shift){
+    exists_a_field = true;
+    $('.nightShift').show();
+  }
+  else{
+    $('.nightShift').hide();
+  }
+  if(erf.travel_required){
+    exists_a_field = true;
+    $('.canYouTravel').show();
+  }
+  else{
+    $('.canYouTravel').hide();
+  }
+
+  var options_html = `<option></option>`;
+  if(erf.travel_required && erf.type_of_travel){
+    let options = ['I Will Travel '+erf.type_of_travel, 'I Cant Travel '+erf.type_of_travel];
+    options.forEach((option, i) => {
+      options_html += `<option>${option}</option>`;
+    });
+  }
+  document.getElementById('canYouTravel').innerHTML += options_html;
+  if(!exists_a_field){
+    $('.work-details').hide();
+    $('.work-details-menu').hide();
+  }
+  else{
+    $('.work-details').show();
+    $('.work-details-menu').show();
+  }
 };
 
 var set_basic_skill_ratings = (skill) => {

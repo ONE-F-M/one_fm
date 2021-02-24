@@ -45,7 +45,7 @@
                             Language
                         </div>
                     </a>
-                    <a href="#nationality-details" class="sidebar-item list-group-item">
+                    <a href="#nationality-details" class="sidebar-item list-group-item nationality_details_menu">
                         <div class="sidebar-item-text">
                             Nationality Details
                         </div>
@@ -60,17 +60,17 @@
                             Visa and residency
                         </div>
                     </a>
-                    <!-- <a href="#current-employment" class="sidebar-item list-group-item">
+                    <a href="#current-employment" class="sidebar-item list-group-item current_employment_menu">
                         <div class="sidebar-item-text">
                             Current employment
                         </div>
-                    </a> -->
+                    </a>
                     <a href="#educational-qualification" class="sidebar-item list-group-item">
                         <div class="sidebar-item-text">
                             Educational qualification
                         </div>
                     </a>
-                    <a href="#work-details" class="sidebar-item list-group-item">
+                    <a href="#work-details" class="sidebar-item list-group-item work-details-menu">
                         <div class="sidebar-item-text">
                             Work details
                         </div>
@@ -106,14 +106,8 @@
                                 <div class="form-group col-md-6">
                                     <label for="gender">Gender</label>
                                     <select class="form-control" name="gender" id="gender">
-                                        <option></option>
-                                        <option>Male</option>
-                                        <option>Female</option>
+                                      <!-- Gender shows here -->
                                     </select>
-                                    <!-- <div class="ui-widget">
-                                        <label for="tags">Tags: </label>
-                                        <input id="tags">
-                                    </div> -->
                                 </div>
                             </div>
                             <div class="row">
@@ -141,11 +135,6 @@
                                     <label for="thirdName">Third Name</label>
                                     <input type="text" class="form-control" id="thirdName" placeholder="Third Name">
                                 </div> -->
-                            <!-- <div class="form-group col-md-6">
-                                    <label for="dob">Date of Birth</label>
-                                    <input type="date" class="form-control" id="dob" placeholder="Date of Birth">
-                                </div> -->
-                            <!-- </div> -->
                             <div class="row">
                                 <div class="form-group col-md-6">
                                     <label for="dob">Date of Birth</label>
@@ -177,18 +166,16 @@
                             <div class="row">
                               <div class="form-group col-md-6">
                                 <div class="form-check">
-                                  <input class="form-check-input" type="checkbox" id="gridCheck">
-                                  <label class="form-check-label" for="gridCheck">
+                                  <input class="form-check-input do_you_have_perv_work_exp" type="checkbox" id="do_you_have_perv_work_exp" onclick="onclick_do_you_have_perv_work_exp()">
+                                  <label class="form-check-label" for="do_you_have_perv_work_exp">
                                       Do You Have Previous Work Experience
                                   </label>
                                 </div>
                               </div>
                               <div class="form-group col-md-6">
                                   <label for="Nationality">Nationality</label>
-                                  <select class="form-control" name="Nationality" id="Nationality">
-                                      <option></option>
-                                      <option>Kuwaiti</option>
-                                      <option>Indian</option>
+                                  <select class="form-control" name="Nationality" id="nationality" onchange="onchange_nationality()">
+                                      <!-- Nationality shows here -->
                                   </select>
                               </div>
                             </div>
@@ -215,21 +202,12 @@
                             <div class="row">
                                 <div class="form-group col-md-6">
                                     <label for="primaryContactNumber">Primary Contact Number</label> <br />
-                                    <!-- <input type="text" class="form-control" id="primaryContactNumber"
-                                        placeholder="Primary Contact Number"> -->
                                     <input type="tel" placeholder="Enter Your Number" id="phone">
                                 </div>
                             </div>
                             <div class="row">
-                                <!-- <div class="form-group col-md-6">
-                                    <label for="countryCodeSecondary">Country Code for Secondary Contact Number</label>
-                                    <input type="text" class="form-control" id="countryCodeSecondary"
-                                        placeholder="Country Code">
-                                </div> -->
                                 <div class="form-group col-md-6">
                                     <label for="secondaryContactNumber">Secondary Contact Number</label>
-                                    <!-- <input type="text" class="form-control" id="secondaryContactNumber"
-                                        placeholder="Secondary Contact Number"> -->
                                     <input type="tel" placeholder="Enter Your Number" id="phone1">
                                 </div>
                             </div>
@@ -243,7 +221,7 @@
                             <div class="question-block-icon"><i class="uil uil-letter-english-a"></i></div>
                             <div class="question-block-info">
                                 Language
-                                <!-- <span>Enter your personal details. Fields with * are mandatory.</span> -->
+                                <span>Rate Language. Fields with * are mandatory.</span>
                             </div>
                         </div>
                         <div class="question-block-form">
@@ -262,7 +240,7 @@
                             </a>
                         </div>
                     </div>
-                    <div class="questions-block" id="nationality-details">
+                    <div class="questions-block nationality-details" id="nationality-details">
                         <div class="question-block-head">
                             <div class="question-block-icon"><i class="uil uil-diary-alt"></i></div>
                             <div class="question-block-info">
@@ -279,14 +257,9 @@
                             <div class="form-group">
                                 <label for="NationalitySubject">Nationality Subject</label>
                                 <select class="form-control" name="NationalitySubject" id="NationalitySubject">
-                                    <option></option>
-                                    <option>الأولي</option>
-                                    <option>الثانية</option>
-                                    <option>الثالثة</option>
-                                    <option>الرابعة</option>
-                                    <option>الخامسة</option>
-                                    <option>السابعة</option>
-                                    <option>الثامنة</option>
+                                    <option></option><option>الأولي</option><option>الثانية</option>
+                                    <option>الثالثة</option><option>الرابعة</option><option>الخامسة</option>
+                                    <option>السابعة</option><option>الثامنة</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -304,7 +277,7 @@
                             <div class="question-block-icon"><i class="uil uil-diary-alt"></i></div>
                             <div class="question-block-info">
                                 Passport
-                                <span>Enter your contact details. Fields with * are mandatory.</span>
+                                <span>Enter your Passport details. Fields with * are mandatory.</span>
                             </div>
                         </div>
                         <div class="question-block-form">
@@ -316,8 +289,9 @@
                             <div class="row">
                                 <div class="form-group col-md-6">
                                     <label for="passportHolderOf">Passport Holder of</label>
-                                    <input type="text" class="form-control" id="passportHolderOf"
-                                        placeholder="Passport Holder of">
+                                    <select class="form-control" name="passportHolderOf" id="passportHolderOf">
+                                      <!-- Passport Holder of - List of countries -->
+                                    </select>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="passportIssued">Passport Issued on</label>
@@ -355,29 +329,23 @@
                         <div class="question-block-form">
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <input required type="checkbox" id="ValidVisa" class="floatLabel" name="ValidVisa">
-                                    <label for="firstName2">I Have a Valid Visa in Kuwait</label> <br />
-                                    <input required type="checkbox" id="presentInKuwait" class="floatLabel"
-                                        name="ValidVisa">
-                                    <label for="dob">Are You in Kuwait at Present:</label>
+                                    <input type="checkbox" id="ValidVisa" class="floatLabel" name="ValidVisa" onclick="onclick_valid_visa()">
+                                    <label for="ValidVisa">I Have a Valid Visa in Kuwait</label> <br />
+                                    <input type="checkbox" id="presentInKuwait" class="floatLabel visa_and_residency_details" name="presentInKuwait">
+                                    <label for="presentInKuwait" class="visa_and_residency_details">Are You in Kuwait at Present</label>
                                 </div>
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-6 visa_and_residency_details">
                                     <label for="gender">Visa Type</label>
-                                    <input type="text" class="form-control" id="visaType" placeholder="Visa Type">
+                                    <select class="form-control" name="visaType" id="visaType">
+                                      <!-- List of Visa Type -->
+                                    </select>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="form-group col-md-6">
-                                    <label for="visaIssuedOn">Visa Issued on</label>
-                                    <input type="date" class="form-control" id="visaIssuedOn"
-                                        placeholder="Visa Issued on">
-                                </div>
+                            <div class="row visa_and_residency_details">
                                 <div class="form-group col-md-6">
                                     <label for="civilId">Civil ID Number</label>
                                     <input type="text" class="form-control" id="civilId" placeholder="Civil ID">
                                 </div>
-                            </div>
-                            <div class="row">
                                 <div class="form-group col-md-6">
                                     <label for="civilValidTill">Civil ID Valid Till</label>
                                     <input type="date" class="form-control" id="civilValidTill"
@@ -389,75 +357,72 @@
                             </a>
                         </div>
                     </div>
-                    <!-- <div class="questions-block" id="current-employment">
+                    <div class="questions-block current-employment" id="current-employment">
                         <div class="question-block-head">
                             <div class="question-block-icon"><i class="uil uil-envelope-alt"></i></div>
                             <div class="question-block-info">
                                 CURRENT EMPLOYMENT
-                                <span>Enter your contact details. Fields with * are mandatory.</span>
+                                <span>Enter your employment details. Fields with * are mandatory.</span>
                             </div>
                         </div>
                         <div class="question-block-form">
-                            <div class="form-group">
-                                <input required type="checkbox" id="ValidVisa" class="floatLabel" name="ValidVisa">
-                                <label for="email">Do You have Previous Work Experience</label>
-                            </div>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label for="countryCodePrimary">Current Employer</label>
-                                    <input type="text" class="form-control" id="countryCodePrimary"
-                                        placeholder="Country Code">
+                                    <label for="current_employer">Current Employer</label>
+                                    <input type="text" class="form-control" id="current_employer"
+                                        placeholder="Current Employer">
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="primaryContactNumber">Current Employer Website Link</label>
-                                    <input type="text" class="form-control" id="primaryContactNumber"
+                                    <label for="current_employer_website">Current Employer Website Link</label>
+                                    <input type="text" class="form-control" id="current_employer_website"
                                         placeholder="Current Employer Website Link">
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label for="countryCodeSecondary">Start Date</label>
-                                    <input type="date" class="form-control" id="countryCodeSecondary"
+                                    <label for="employment_start_date">Start Date</label>
+                                    <input type="date" class="form-control" id="employment_start_date"
                                         placeholder="Start Date">
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="secondaryContactNumber">End Date</label>
-                                    <input type="date" class="form-control" id="secondaryContactNumber"
+                                    <label for="employment_end_date">End Date</label>
+                                    <input type="date" class="form-control" id="employment_end_date"
                                         placeholder="End Date">
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label for="countryCodeSecondary">Current Job Title</label>
-                                    <input type="text" class="form-control" id="countryCodeSecondary"
+                                    <label for="current_job_title">Current Job Title</label>
+                                    <input type="text" class="form-control" id="current_job_title"
                                         placeholder="Current Job Title">
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="secondaryContactNumber">Current Monthly Salary in KWD</label>
-                                    <input type="text" class="form-control" id="secondaryContactNumber"
-                                        placeholder="End text">
+                                    <label for="current_salary">Current Monthly Salary in KWD</label>
+                                    <input type="text" class="form-control" id="current_salary"
+                                        placeholder="Salary in KWD">
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label for="countryCodeSecondary">Country of Employment</label>
-                                    <input type="text" class="form-control" id="countryCodeSecondary"
-                                        placeholder="Country of Employment">
+                                    <label for="country_of_employment">Country of Employment</label>
+                                    <select class="form-control" name="country_of_employment" id="country_of_employment">
+                                      <!-- List of countries -->
+                                    </select>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="secondaryContactNumber">Notice Period in Days</label>
-                                    <input type="text" class="form-control" id="secondaryContactNumber"
+                                    <label for="notice_period">Notice Period in Days</label>
+                                    <input type="text" class="form-control" id="notice_period"
                                         placeholder="Notice Period in Days">
                                 </div>
                             </div>
                         </div>
-                    </div> -->
+                    </div>
                     <div class="questions-block" id="educational-qualification">
                         <div class="question-block-head">
                             <div class="question-block-icon"><i class="uil uil-user"></i></div>
                             <div class="question-block-info">
                                 EDUCATIONAL QUALIFICATION
-                                <span>Enter your personal details. Fields with * are mandatory.</span>
+                                <span>Enter your qualification details. Fields with * are mandatory.</span>
                             </div>
                         </div>
                         <div class="question-block-form">
@@ -491,17 +456,17 @@
                                 <div class="btn">Next</div>
                             </a>
                         </div>
-                        <div class="questions-block" id="work-details">
+                        <div class="questions-block work-details" id="work-details">
                             <div class="question-block-head">
                                 <div class="question-block-icon"><i class="uil uil-envelope-alt"></i></div>
                                 <div class="question-block-info">
                                     Work Details
-                                    <span>Enter your Work Details. Fields with * are mandatory.</span>
+                                    <span>Select Work Details. Fields with * are mandatory.</span>
                                 </div>
                             </div>
                             <div class="question-block-form">
                                 <div class="row">
-                                    <div class="form-group col-md-6">
+                                    <div class="form-group col-md-6 rotationalShift">
                                         <label for="rotationalShift">Rotation Shift</label>
                                         <select class="form-control" name="rotationalShift" id="rotationalShift">
                                             <option></option>
@@ -509,7 +474,7 @@
                                             <option>No, I Cant Work in Rotation Shift</option>
                                         </select>
                                     </div>
-                                    <div class="form-group col-md-6">
+                                    <div class="form-group col-md-6 nightShift">
                                         <label for="nightShift">Night Shift</label>
                                         <select class="form-control" name="nightShift" id="nightShift">
                                             <option></option>
@@ -519,15 +484,13 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="form-group col-md-6">
+                                    <div class="form-group col-md-6 canYouTravel">
                                         <label for="canYouTravel">Can you Travel?</label>
                                         <select class="form-control" name="canYouTravel" id="canYouTravel">
-                                            <option></option>
-                                            <option>No I Cant Travel</option>
-                                            <option>Yes I will Travel</option>
+                                            <!-- Travel options will be set here -->
                                         </select>
                                     </div>
-                                    <div class="form-group col-md-6">
+                                    <div class="form-group col-md-6 canYouTravel">
                                         <label for="typeOfDrivingLicense">Type of Driving License</label>
                                         <select class="form-control" name="typeOfDrivingLicense" id="typeOfDrivingLicense">
                                             <option></option>
@@ -548,7 +511,7 @@
                                 <div class="question-block-icon"><i class="uil uil-user"></i></div>
                                 <div class="question-block-info">
                                     Basic Skill
-                                    <span>Enter your personal details. Fields with * are mandatory.</span>
+                                    <span>Rate your skills. Fields with * are mandatory.</span>
                                 </div>
                             </div>
                             <div class="question-block-form">

@@ -151,6 +151,19 @@ def get_job_details(job):
     return erf
 
 @frappe.whitelist(allow_guest=True)
+def get_country_from_nationality(nationality):
+    return frappe.db.get_value('Nationality', nationality, 'country')
+
+@frappe.whitelist(allow_guest=True)
+def get_master_details():
+    gender = frappe.db.get_list('Gender')
+    nationality = frappe.db.get_list('Nationality')
+    country = frappe.db.get_list('Country')
+    visaType = frappe.db.get_list('Visa Type')
+    return {'gender': gender, 'nationality': nationality, 'passportHolderOf': country,
+        'country_of_employment': country, 'visaType': visaType}
+
+@frappe.whitelist(allow_guest=True)
 def get_required_documents(job, visa_type=None):
     filters = {}
     source_of_hire = frappe.db.get_value('Job Opening', job, 'one_fm_source_of_hire')
