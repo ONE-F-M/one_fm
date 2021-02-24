@@ -5,6 +5,7 @@ const listOfSkills = [];
 
 $(document).ready(function () {
   if(window.localStorage.getItem("job-application-auth")){
+    set_menu();
     $(".nationality_details_menu").hide();
     $(".nationality-details").hide();
     $('.current_employment_menu').hide();
@@ -18,6 +19,21 @@ $(document).ready(function () {
       window.location = "applicant-sign-up";
   }
 });
+
+var set_menu = () => {
+  var menus = ['Applicant Personal Details', 'Contact Details', 'Language', 'Nationality Details', 'Passport',
+    'Visa and Residency', 'Current Employment', 'Educational Qualification', 'Work Details', 'Basic Skill',
+    'Documents Required'];
+  var menu_html = '';
+  menus.forEach((menu, i) => {
+    menu_html += `<a href="#${menu.toLowerCase().replace(/ /g, '-')}" class="sidebar-item list-group-item ${menu.toLowerCase().replace(/ /g, '_')+'_menu'}">
+        <div class="sidebar-item-text">
+            ${menu}
+        </div>
+    </a>`;
+  });
+  document.getElementById('sidebar-application-menu').innerHTML += menu_html;
+};
 
 function onchange_nationality() {
   var x = document.getElementById("nationality").value;
@@ -160,11 +176,11 @@ var set_work_details_section = function(erf) {
   document.getElementById('canYouTravel').innerHTML += options_html;
   if(!exists_a_field){
     $('.work-details').hide();
-    $('.work-details-menu').hide();
+    $('.work_details_menu').hide();
   }
   else{
     $('.work-details').show();
-    $('.work-details-menu').show();
+    $('.work_details_menu').show();
   }
 };
 
