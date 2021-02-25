@@ -282,7 +282,7 @@
                                 </div>
                                 <div class="form-group col-md-6 visa_and_residency_details">
                                     <label for="gender">Visa Type</label>
-                                    <select class="form-control" name="visaType" id="visaType">
+                                    <select class="form-control" name="visaType" id="visaType" onchange="onchange_visa_type()">
                                       <!-- List of Visa Type -->
                                     </select>
                                 </div>
@@ -482,26 +482,11 @@
                             <div class="question-block-icon"><i class="uil uil-envelope-alt"></i></div>
                             <div class="question-block-info">
                                 Documents Required
-                                <span>Enter your contact details. Fields with * are mandatory.</span>
+                                <span>Attach Your Documents.</span>
                             </div>
                         </div>
-                        <div class="question-block-form">
-                          <div class="row">
-                              <div class="form-group col-md-4">
-                                  <label for="countryCodePrimary">Passport</label>
-                              </div>
-                              <div class="form-group col-md-8">
-                                  <input type="file" />
-                              </div>
-                          </div>
-                          <div class="row">
-                              <div class="form-group col-md-4">
-                                  <label for="countryCodePrimary">Civil ID</label>
-                              </div>
-                              <div class="form-group col-md-8">
-                                  <input type="file" />
-                              </div>
-                          </div>
+                        <div class="question-block-form required_docs" id="required_docs">
+                          <!-- Required Docs Shows here -->
                         </div>
                     </div>
                 </form>
