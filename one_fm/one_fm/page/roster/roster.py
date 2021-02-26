@@ -81,7 +81,7 @@ def get_staff_filters_data():
 def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None, limit_start=100, limit_page_length=101):
 	start = time.time()
 	master_data, formatted_employee_data, post_count_data, employee_filters={}, {}, {}, {}
-	post_types_list, post_list = [], []
+	post_types_list = []
 
 	filters = {
 		'date': ['between', (start_date, end_date)]
@@ -140,17 +140,29 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 		
 
 		for key, group in itertools.groupby(post_types_list, key=lambda x: (x['post_abbrv'], x['post_type'])):
+			post_list = []
+			post_filters = employee_filters
+			post_filters.update({'date':  ['between', (start_date, end_date)], 'post_type': key[1]})
+			post_filled_count = frappe.db.get_list("Employee Schedule",["name", "employee", "date"] ,{'date':  ['between', (start_date, end_date)],'post_type': key[1] }, order_by="date asc")
+			post_filters.update({"post_status": "Planned"})
+			post_schedule_count = frappe.db.get_list("Post Schedule", ["name", "date"], post_filters)
+			post_filters.pop("post_status", None)
+
 			for date in	pd.date_range(start=start_date, end=end_date):
-				post_filters = employee_filters
-				post_filters.update({'date': cstr(date).split(" ")[0], 'post_type': key[1]})
+				filled_schedule = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_filled_count)
+				filled_post = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_schedule_count)
+				# post_filters = employee_filters
+				# post_filters.update({'date': cstr(date).split(" ")[0], 'post_type': key[1]})
+				# print("[POST FILTERS]", post_filters)
 
-				post_filled_count = frappe.db.get_list("Employee Schedule", post_filters)
+				# post_filled_count = frappe.db.get_list("Employee Schedule", post_filters)
 
-				post_filters.update({"post_status": "Planned"})
-				post_schedule_count = frappe.db.get_list("Post Schedule", post_filters)
-				post_filters.pop("post_status", None)
+				# post_filters.update({"post_status": "Planned"})
+				# post_schedule_count = frappe.db.get_list("Post Schedule", post_filters)
+				# post_filters.pop("post_status", None)
 
-				count = cstr(len(post_schedule_count))+"/"+cstr(len(post_filled_count))
+				# count = cstr(len(post_schedule_count))+"/"+cstr(len(post_filled_count))
+				count = cstr(filled_post)+"/"+cstr(filled_schedule)
 				post_list.append({'count': count, 'post_type': key[0], 'date': cstr(date).split(" ")[0] })
 
 			post_count_data.update({key[0]: post_list })
