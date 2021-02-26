@@ -837,7 +837,7 @@ function get_roster_data(page){
 		for(post_type_name in post_types_data){
 			let pt_row = `
 			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
-				<td class="clickablerow clickablerow">
+				<td class="sticky">
 					<div class="d-flex">
 						<div class="font16 paddingdiv cursorpointer orangecolor">
 							<i class="fa fa-plus" aria-hidden="true"></i>
@@ -968,7 +968,7 @@ function get_roster_week_data(page){
 		for(post_type_name in post_types_data){
 			let pt_row = `
 			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
-				<td class="clickablerow clickablerow">
+				<td class="sticky">
 					<div class="d-flex">
 						<div class="font16 paddingdiv cursorpointer orangecolor">
 							<i class="fa fa-plus" aria-hidden="true"></i>
