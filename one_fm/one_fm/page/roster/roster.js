@@ -586,6 +586,8 @@ function setup_topbar_events(page){
 
 //Bind events to Edit options in Roster/Post view
 function bind_events(page){
+	paginateTable(page);
+	$('#paginate-parent').pageMe({pagerSelector:'#myPager',showPrevNext:false,hidePageNumbers:false,perPage:100});
 	if(["Operations Manager", "Site Supervisor", "Shift Manager", "Projects Manager"].some(i => frappe.user_roles.includes(i))){
 		$('.postMonth').find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
@@ -822,9 +824,15 @@ function get_roster_data(page){
 	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, department, post_type} = page.filters;
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type})
+	let {limit_start, limit_page_length} = page.pagination;
+	console.log(limit_start, limit_page_length);
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type, limit_start, limit_page_length})
 	.then(res => {
-		let {post_types_data, employees_data}= res;
+		let {post_types_data, employees_data, total}= res;
+		page.pagination.total = total;
+				
+		// page.pagination.limit_start = Object.keys(employees_data).length;
+		// page.pagination.length = Object.keys(employees_data).length;
 		$('.rosterMonth').find('#calenderviewtable tbody').empty();
 		for(post_type_name in post_types_data){
 			let pt_row = `
@@ -861,7 +869,7 @@ function get_roster_data(page){
 		<tr class="collapse tableshowclass show">
 			<td colspan="33" class="p-0">
 				<table id="rowchildtable" class="table subtable mb-0 text-center" style="width:100%">
-					<tbody>
+					<tbody id="paginate-parent">
 					</tbody>
 				</table>
 			</td>
@@ -992,7 +1000,7 @@ function get_roster_week_data(page){
 		<tr class="collapse tableshowclass show">
 			<td colspan="33" class="p-0">
 				<table id="rowchildtable" class="table subcalenderweektable mb-0 text-center" style="width:100%">
-					<tbody>
+					<tbody id="paginate-parent">
 					</tbody>
 				</table>
 			</td>
@@ -1912,11 +1920,18 @@ function setup_staff_filters(page){
 		designation: '',
 		post_type: ''
 	};
+	let pagination = {
+		limit_start: 0,
+		limit_page_length: 100
+	};
 	if(page){
 		page.filters = filters;
+		page.pagination = pagination;
 	}else{
 		cur_page.page.page.filters = filters;
+		cur_page.page.page.pagination = pagination;
 	}
+	console.log(page);
 }
 
 function setup_staff_filters_data(){
@@ -2470,7 +2485,121 @@ function update_roster_view(element, page)	{
 		page[element](page);
 	});
 }
+function paginateTable(page){
+	$.fn.pageMe = function(opts){
+		var $this = this,
+			defaults = {
+				perPage: 100,
+				showPrevNext: false,
+				hidePageNumbers: false
+			},
+			settings = $.extend(defaults, opts);
+		
+		var listElement = $this;
+		var perPage = settings.perPage; 
+		var children = listElement.children();
+		var pager = $('.pager');
+		
+		if (typeof settings.childSelector!="undefined") {
+			children = listElement.find(settings.childSelector);
+		}
+		
+		if (typeof settings.pagerSelector!="undefined") {
+			pager = $(settings.pagerSelector);
+		}
+		
+		// var numItems = children.size();
+		var numItems = page.pagination.total;
+		var numPages = Math.ceil(numItems/perPage);
 
+		pager.data("curr",0);
+		$(pager).empty();
+		if (settings.showPrevNext){
+			$('<li><a href="#" class="prev_link">«</a></li>').appendTo(pager);
+		}
+		
+		var curr = 0;
+
+		while(numPages > curr && (settings.hidePageNumbers==false)){
+			$('<li><a href="#" class="page_link">'+(curr+1)+'</a></li>').appendTo(pager);
+			curr++;
+		}
+		
+		if (settings.showPrevNext){
+			$('<li><a href="#" class="next_link">»</a></li>').appendTo(pager);
+		}
+		
+		// pager.find('.page_link:first').addClass('active');
+		pager.find('.prev_link').hide();
+		if (numPages<=1) {
+			pager.find('.next_link').hide();
+		}
+		// pager.children().eq(1).addClass("active");
+		let active_page = (page.pagination.limit_start / page.pagination.limit_page_length);
+		pager.children().eq(active_page).addClass("active");
+		
+		children.hide();
+		children.slice(0, perPage).show();
+		pager.find('li .page_link').click(function(){
+			var clickedPage = $(this).html().valueOf()-1;
+			let limit_start = ((clickedPage+1) * 100) - 100;
+			console.log(clickedPage, limit_start);
+			page.pagination.limit_start = limit_start;
+			// goTo(clickedPage,perPage);
+			let element = get_wrapper_element().slice(1);
+			page[element](page);
+			return false;
+		});
+		pager.find('li .prev_link').click(function(){
+			let start = page.pagination.current + 1;
+			let page_len = 100;
+			previous();
+			return false;
+		});
+		pager.find('li .next_link').click(function(){
+			let start = page.pagination.current + 1;
+			let page_len = 100;
+			next();
+			return false;
+		});
+		
+		function previous(){
+			var goToPage = parseInt(pager.data("curr")) - 1;
+			goTo(goToPage);
+		}
+		
+		function next(){
+			goToPage = parseInt(pager.data("curr")) + 1;
+			goTo(goToPage);
+		}
+		
+		function goTo(page){
+			var startAt = page * perPage,
+				endOn = startAt + perPage;
+			
+			children.css('display','none').slice(startAt, endOn).show();
+			
+			if (page>=1) {
+				pager.find('.prev_link').show();
+			}
+			else {
+				pager.find('.prev_link').hide();
+			}
+			
+			if (page<(numPages-1)) {
+				pager.find('.next_link').show();
+			}
+			else {
+				pager.find('.next_link').hide();
+			}
+			
+			pager.data("curr",page);
+			pager.children().removeClass("active");
+			pager.children().eq(page+1).addClass("active");
+		
+		}
+	};
+}
 
 function dayoff(page){
 	let employees =  [];
@@ -2483,7 +2612,7 @@ function dayoff(page){
 	let d = new frappe.ui.Dialog({
 		'title': 'Day Off',
 		'fields': [
-			{'label': 'Selected days only', 'fieldname': 'selected_dates', 'fieldtype': 'Check', 'default': 1},
+			{'label': 'Selected days only', 'fieldname': 'selected_dates', 'fieldtype': 'Check', 'default': 0},
 			{'label': 'Repeat', 'fieldname': 'repeat', 'fieldtype': 'Select', 'depends_on': 'eval:this.get_value("selected_dates")==0', 'options': 'Does not repeat\nDaily\nWeekly\nMonthly\nYearly'},
 			{'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("repeat")=="Weekly" && this.get_value("selected_dates")==0'},
 			{'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check'},

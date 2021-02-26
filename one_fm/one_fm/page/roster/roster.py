@@ -61,12 +61,12 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
 
 @frappe.whitelist(allow_guest=True)
 def get_staff_filters_data():
-	company = frappe.get_list("Company", limit_page_length=9999)
-	projects = frappe.get_list("Project", limit_page_length=9999)
-	sites = frappe.get_list("Operations Site", limit_page_length=9999)
-	shifts = frappe.get_list("Operations Shift", limit_page_length=9999)
-	departments = frappe.get_list("Department", limit_page_length=9999)
-	designations = frappe.get_list("Designation", limit_page_length=9999)
+	company = frappe.get_list("Company", limit_page_length=9999, order_by="name asc")
+	projects = frappe.get_list("Project", limit_page_length=9999, order_by="name asc")
+	sites = frappe.get_list("Operations Site", limit_page_length=9999, order_by="name asc")
+	shifts = frappe.get_list("Operations Shift", limit_page_length=9999, order_by="name asc")
+	departments = frappe.get_list("Department", limit_page_length=9999, order_by="name asc")
+	designations = frappe.get_list("Designation", limit_page_length=9999, order_by="name asc")
 
 	return {
 		"company": company,
@@ -78,7 +78,7 @@ def get_staff_filters_data():
 	}
 
 @frappe.whitelist(allow_guest=True)
-def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None, limit_start=0, limit_page_length=100):
+def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None, limit_start=100, limit_page_length=101):
 	start = time.time()
 	master_data, formatted_employee_data, post_count_data, employee_filters={}, {}, {}, {}
 	post_types_list, post_list = [], []
@@ -103,8 +103,10 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 		
 		roster_total = len(frappe.db.get_list("Employee", employee_filters))
 		master_data.update({'total': roster_total})
-	
 		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
+		print("[LENGTH]",len(employees))
+		for employee in employees:
+			print(employee)
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 
 		if department:
