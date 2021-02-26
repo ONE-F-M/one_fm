@@ -13,11 +13,11 @@ if(window.localStorage.getItem("job-application-auth")){
                     return false;
                 }
                 $(".image-upload-wrap").hide();
-    
+
                 $(".file-upload-image").attr("src", e.target.result);
                 console.log(e);
                 $(".file-upload-content").show();
-    
+
                 $(".image-title").html(input.files[0].name);
                 Tesseract.recognize(e.target.result, "eng", {
                     logger: (m) => {
@@ -25,21 +25,21 @@ if(window.localStorage.getItem("job-application-auth")){
                         loaderElement.style = "";
                     },
                 })
-                    .then(({ data: { text } }) => {
-                        console.log(text);
-                        window.localStorage.setItem("civilId", text);
-                    })
-                    .then((a) => {
-                        window.location = "./job_application";
-                    });
+                .then(({ data: { text } }) => {
+                    console.log(text);
+                    window.localStorage.setItem("civilId", text);
+                })
+                .then((a) => {
+                    // window.location = "./job_application";
+                });
             };
-    
+
             reader.readAsDataURL(input.files[0]);
         } else {
             removeUpload();
         }
     }
-    
+
     function removeUpload() {
         $(".file-upload-input").replaceWith($(".file-upload-input").clone());
         $(".file-upload-content").hide();
@@ -51,7 +51,7 @@ if(window.localStorage.getItem("job-application-auth")){
     $(".image-upload-wrap").bind("dragleave", function () {
         $(".image-upload-wrap").removeClass("image-dropping");
     });
-    
+
     const getLinkedInData = async () => {
         window.localStorage.setItem("linkedIn", false);
         const code = window.location.search.slice(6);
@@ -67,11 +67,11 @@ if(window.localStorage.getItem("job-application-auth")){
                 // Do somthing
             });
     };
-    
+
     if (window.localStorage.getItem("linkedIn")) {
         getLinkedInData();
     }
-    
+
     }
     else {
         alert("Please Signup or Login!");
@@ -79,7 +79,7 @@ if(window.localStorage.getItem("job-application-auth")){
     }
     const skipSignup = () => {
         if(localStorage.getItem("currentEasyJobOpening"))
-            window.location = "easy_apply";        
+            window.location = "easy_apply";
         else
             window.location = "job_application";
 
