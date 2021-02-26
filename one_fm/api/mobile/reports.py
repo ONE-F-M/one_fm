@@ -88,6 +88,7 @@ def edit_shift_report(report_name, importance=None, report_type=None, comments=N
 				if frappe._dict(image) in attachments:
 					diff.append(image)
 			result = len(diff) == 0
+		shift_report.save()	
 		if len(new_images) > 0:
 			for attachment in ast.literal_eval(new_images):
 				attach_file(filename=random_string(6)+".jpg", filedata=base64.b64decode(attachment), doctype=shift_report.doctype, docname=shift_report.name)

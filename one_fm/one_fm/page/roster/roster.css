@@ -122,7 +122,23 @@ body[data-route="roster"] #cover-spin::after {
 }
 body[data-route="roster"] .table-parent {
   overflow-x: scroll;
-  float: left;
+  /* float: left; */
   height: calc(80vh - 40px);
 }
 /*--------------------------------------------------*/
+body[data-route="roster"] .pagination {
+  justify-content: center;
+}
+body[data-route="roster"] .pager li > a,
+body[data-route="roster"] .pager li > span {
+  border-radius: 0px;
+}
+body[data-route="roster"] .pagination > .active > a,
+body[data-route="roster"] .pagination > .active > span,
+body[data-route="roster"] .pagination > .active > a:hover,
+body[data-route="roster"] .pagination > .active > span:hover,
+body[data-route="roster"] .pagination > .active > a:focus,
+body[data-route="roster"] .pagination > .active > span:focus {
+  background: #2c77ff !important;
+  border-color: #2c77ff;
+}
