@@ -1074,7 +1074,7 @@ def get_warehouse_children(doctype, parent=None, company=None, is_root=False):
 	if is_root:
 		parent = ""
 
-	fields = ['name as value', 'is_group as expandable', 'warehouse_name']
+	fields = ['name as value', 'is_group as expandable', 'warehouse_name', 'one_fm_project']
 	filters = [
 		['docstatus', '<', '2'],
 		['ifnull(`parent_warehouse`, "")', '=', parent],

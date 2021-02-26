@@ -29,7 +29,13 @@ frappe.treeview_settings['Warehouse'] = {
 			+ '</span>').insertBefore(node.$ul);
 		}
 		if(!node.data.value.includes(node.data.warehouse_name)){
-			$(`<a class="tree-label grey h6">:${node.data.warehouse_name}</a>`).appendTo(node.$tree_link);
+			var show_wh_name = node.data.warehouse_name;
+			if(node.data.one_fm_project && !node.data.one_fm_project.includes(node.data.warehouse_name)){
+				show_wh_name = node.data.one_fm_project + " - " + node.data.warehouse_name;
+			}
+			if(show_wh_name){
+				$(`<a class="tree-label grey h6">:${show_wh_name}</a>`).appendTo(node.$tree_link);
+			}
 		}
 	}
 }
