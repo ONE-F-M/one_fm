@@ -2,18 +2,144 @@ const baseUrl = (frappe.base_url || window.location.origin);
 if(baseUrl.substr(baseUrl.length-1, 1)=='/') baseUrl = baseUrl.substr(0, baseUrl.length-1);
 const listOfLanguages = [];
 const listOfSkills = [];
-const basicSkills = "basic-skills";
-const language = "rating";
 
 $(document).ready(function () {
   if(window.localStorage.getItem("job-application-auth")){
+    set_menu();
+    $(".nationality_details_menu").hide();
+    $(".nationality-details").hide();
+    $('.current_employment_menu').hide();
+    $('.current-employment').hide();
+    $('.visa_and_residency_details').hide();
     set_jobs_info_to_application();
+    set_masters_to_application();
+    $('#required_docs').on('change', ':file', function() {
+      var $input = $(this);
+      var file_input = $input.get(0);
+      if (file_input.files[0].size > 5242880) {
+        alert('max upload size is 5 Mega Byte');
+      }
+      if(file_input.files.length) {
+        file_input.filedata = { "files_data" : [] };
+      }
+      window.file_reading = true;
+      //this will handle multi files input
+      $.each(file_input.files, function(key, value) {
+        setupReader(value, file_input);
+      });
+      window.file_reading = false;
+    });
   }
   else {
       alert("Please Signup or Login!");
       window.location = "applicant-sign-up";
   }
 });
+
+function setupReader(file, input) {
+	let name = file.name;
+	var reader = new FileReader();
+	reader.onload = function(e) {
+	  input.filedata.files_data.push({
+	    "__file_attachment": 1,
+	    "filename": file.name,
+	    "dataurl": reader.result
+	  })
+	}
+	reader.readAsDataURL(file);
+}
+
+var set_menu = () => {
+  var menus = ['Applicant Personal Details', 'Contact Details', 'Language', 'Nationality Details', 'Passport',
+    'Visa and Residency', 'Current Employment', 'Educational Qualification', 'Work Details', 'Basic Skill',
+    'Documents Required'];
+  var menu_html = '';
+  menus.forEach((menu, i) => {
+    menu_html += `<a href="#${menu.toLowerCase().replace(/ /g, '-')}" class="sidebar-item list-group-item ${menu.toLowerCase().replace(/ /g, '_')+'_menu'}">
+        <div class="sidebar-item-text">
+            ${menu}
+        </div>
+    </a>`;
+  });
+  document.getElementById('sidebar-application-menu').innerHTML += menu_html;
+};
+
+function onchange_nationality() {
+  var x = document.getElementById("nationality").value;
+  if(x=='Kuwaiti'){
+    $(".nationality-details").show();
+    $(".nationality_details_menu").show();
+  }
+  else{
+    $(".nationality_details_menu").hide();
+    $(".nationality-details").hide();
+  }
+
+  frappe.call({
+    method: 'one_fm.templates.pages.job_application.get_country_from_nationality',
+    args: {nationality: x},
+    callback: function(r) {
+      if(r && r.message){
+        document.getElementById("passportHolderOf").value = r.message;
+      }
+      else{
+        document.getElementById("passportHolderOf").value = '';
+      }
+    }
+  });
+
+  set_required_docs();
+};
+
+function onchange_visa_type() {
+  set_required_docs();
+};
+
+function onclick_do_you_have_perv_work_exp() {
+  var x = document.getElementById("do_you_have_perv_work_exp").checked;
+  if(x){
+    $('.current_employment_menu').show();
+    $('.current-employment').show();
+  }
+  else{
+    $('.current_employment_menu').hide();
+    $('.current-employment').hide();
+  }
+};
+
+function onclick_valid_visa() {
+  var x = document.getElementById("ValidVisa").checked;
+  if(x){
+    $('.visa_and_residency_details').show();
+  }
+  else{
+    $('.visa_and_residency_details').hide();
+  }
+  set_required_docs();
+};
+
+function set_masters_to_application() {
+  frappe.call({
+    method: "one_fm.templates.pages.job_application.get_master_details",
+    callback: function(r) {
+      var data = r.message?r.message:[];
+      set_options_from_master(data);
+    }
+  });
+};
+
+var set_options_from_master = function(data) {
+  var keys = ['gender', 'nationality', 'passportHolderOf', 'country_of_employment', 'visaType'];
+  keys.forEach((key, i) => {
+    var options_html = `<option></option>`;
+    if(key in data && data[key]){
+      data[key].forEach((item, i) => {
+        options_html += `<option>${item.name}</option>`;
+      });
+    }
+    document.getElementById(key).innerHTML += options_html;
+  });
+}
 
 function set_jobs_info_to_application() {
   const job = localStorage.getItem("currentJobOpening");
@@ -29,11 +155,11 @@ function set_jobs_info_to_application() {
         var erf = r.message;
         window.localStorage.setItem("erf", erf.name);
         erf.designation_skill.map(a=>{
-            listOfSkills.push({
-              skill: a.skill,
-              proficiency: ""
-            })
-            placeSkills(basicSkills, a.skill)
+          listOfSkills.push({
+            skill: a.skill,
+            proficiency: ""
+          })
+          set_basic_skill_ratings(a.skill);
         })
         erf.languages.map(a=>{
           listOfLanguages.push({
@@ -43,117 +169,135 @@ function set_jobs_info_to_application() {
             read: 0,
             write: 0
           });
-          placeSkills(language, "none", a.language_name)
+          set_language_section_ratings(a.language_name)
         })
         starEffects();
+        set_work_details_section(erf)
       }
     }
   });
 };
 
-// Place Skills
-const placeSkills = (location, skill="none", language="none") => {
-    document.getElementById(location).innerHTML +=
-    skill != "none" ? `
-    <div class="form-group col-md-6">
-    <p>${skill}</p>
-    </div>
-    <div class="form-group col-md-6">
-    <div class='rating-stars'>
-        <ul class='stars'>
-            <li class='star' data-skill=${skill} title='skill' data-value='1'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-skill=${skill} title='skill' data-value='2'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-skill=${skill} title='skill' data-value='3'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-skill=${skill} title='skill' data-value='4'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-skill=${skill} title='skill' data-value='5'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-        </ul>
-    </div>
-</div>
-    ` : `
-<div class="form-group col-md-4">
-    <p>${language}</p>
-</div>
-<div class="form-group col-md-2">
-<div class=''>
-Speak
-</div>
-<div class='mt-3'>
-Read
-</div>
-<div class='mt-3'>
-Write
-</div>
-</div>
-<div class="form-group col-md-6">
-    <div class='rating-stars'>
-        <ul class='stars'>
-            <li class='star' data-language=${language} title='speak' data-value='1'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='speak' data-value='2'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='speak' data-value='3'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='speak' data-value='4'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='speak' data-value='5'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-        </ul>
-    </div>
-    <div class='rating-stars'>
-        <ul class='stars'>
-            <li class='star' data-language=${language} title='read' data-value='1'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='read' data-value='2'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='read' data-value='3'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='read' data-value='4'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='read' data-value='5'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-        </ul>
-    </div>
-    <div class='rating-stars'>
-        <ul class='stars'>
-            <li class='star' data-language=${language} title='write' data-value='1'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='write' data-value='2'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='write' data-value='3'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='write' data-value='4'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-            <li class='star' data-language=${language} title='write' data-value='5'>
-                <i class='fa fa-star fa-fw'></i>
-            </li>
-        </ul>
-    </div>
-</div>
-`
+var set_required_docs = function() {
+  var filters = {};
+  var nationality = $("#nationality option:selected").text();
+  var valid_visa = document.getElementById("ValidVisa").checked;
+  var visa_type = false;
+  if(valid_visa){
+    visa_type = $("#visaType").val();
+    filters['valid_kuwait_visa'] = valid_visa;
+    if(visa_type){
+      filters['visa_type'] = visa_type;
+    }
+  }
+  if(nationality){
+    filters['nationality'] = nationality;
+  }
+
+  frappe.call({
+    method: 'one_fm.templates.pages.job_application.get_required_documents',
+    args: filters,
+    callback: function(r) {
+      var required_docs_html = '';
+      document.getElementById('required_docs').innerHTML = "";
+      if(r && r.message && r.message.recruitment_documents){
+        var required_docs = r.message.recruitment_documents;
+        required_docs.forEach((item, i) => {
+          if(item.required_when == "Pre Interview"){
+            required_docs_html += `<div class="row">
+                <div class="form-group col-md-4">
+                    <label>${item.document_required}</label>
+                </div>
+                <div class="form-group col-md-8">
+                    <input class="${item.document_required.toLowerCase().replace(/ /g, '-')}" type="file"
+                     id="${item.document_required.replace(/ /g, '-')}"/>
+                </div>
+            </div>`
+          }
+        });
+      }
+      document.getElementById('required_docs').innerHTML += required_docs_html;
+    }
+  });
+};
+
+var set_work_details_section = function(erf) {
+  var exists_a_field = false;
+  if(erf.shift_working){
+    exists_a_field = true;
+    $('.rotationalShift').show();
+  }
+  else{
+    $('.rotationalShift').hide();
+  }
+  if(erf.night_shift){
+    exists_a_field = true;
+    $('.nightShift').show();
+  }
+  else{
+    $('.nightShift').hide();
+  }
+  if(erf.travel_required){
+    exists_a_field = true;
+    $('.canYouTravel').show();
+  }
+  else{
+    $('.canYouTravel').hide();
+  }
+
+  var options_html = `<option></option>`;
+  if(erf.travel_required && erf.type_of_travel){
+    let options = ['I Will Travel '+erf.type_of_travel, 'I Cant Travel '+erf.type_of_travel];
+    options.forEach((option, i) => {
+      options_html += `<option>${option}</option>`;
+    });
+  }
+  document.getElementById('canYouTravel').innerHTML += options_html;
+  if(!exists_a_field){
+    $('.work-details').hide();
+    $('.work_details_menu').hide();
+  }
+  else{
+    $('.work-details').show();
+    $('.work_details_menu').show();
+  }
+};
+
+var set_basic_skill_ratings = (skill) => {
+  var skills_html =`<div class="form-group col-md-6"><p>${skill}</p></div><div class="form-group col-md-6">
+    <div class='rating-stars'><ul class='stars'>`;
+  for (var i = 1; i <= 5; i++) {
+    skills_html += `<li class='star' data-skill='${skill}' title='skill' data-value='${i}'>
+      <i class='fa fa-star fa-fw'></i></li>`
+  }
+  skills_html += `</ul></div></div>`;
+  document.getElementById('basic-skills').innerHTML += skills_html;
+}
+
+var set_language_section_ratings = function(language) {
+  var srw = ['speak', 'read', 'write'];
+  var language_section_html = `<div class="form-group col-md-4"><p>${language}</p></div><div class="form-group col-md-2">`;
+  srw.forEach((item, i) => {
+    let mt_3_class = (i > 0)?'mt-3':'';
+    language_section_html += `<div class='${mt_3_class}'>${titleCase(item)}</div>`
+  });
+  language_section_html += `</div><div class="form-group col-md-6">`;
+  srw.forEach((item, j) => {
+    language_section_html += `<div class='rating-stars'> <ul class='stars'>`;
+    for (var i = 1; i <= 5; i++) {
+      language_section_html += `<li class='star' data-language='${language}' title='${item}' data-value='${i}'>
+          <i class='fa fa-star fa-fw'></i></li>`
+    }
+    language_section_html += `</ul></div>`;
+  });
+  language_section_html += `</div>`;
+  document.getElementById('language-rating').innerHTML += language_section_html;
+};
+
+function titleCase(str) {
+  return str.toLowerCase().split(' ').map(function(word) {
+    return word.replace(word[0], word[0].toUpperCase());
+  }).join(' ');
 }
 
 // Auto complete scripts
@@ -168,11 +312,9 @@ $(function() {
 
 // Star Component
 const starEffects = () =>{
-
     /* 1. Visualizing things on Hover - See next part for action on click */
     $('.stars li').on('mouseover', function(){
       var onStar = parseInt($(this).data('value'), 10); // The star currently mouse on
-
       // Now highlight all the stars that's not after the current hovered star
       $(this).parent().children('li.star').each(function(e){
         if (e < onStar) {
@@ -182,27 +324,22 @@ const starEffects = () =>{
           $(this).removeClass('hover');
         }
       });
-
     }).on('mouseout', function(){
       $(this).parent().children('li.star').each(function(e){
         $(this).removeClass('hover');
       });
     });
 
-
     /* 2. Action to perform on click */
     $('.stars li').on('click', function(){
       var onStar = parseInt($(this).data('value'), 10); // The star currently selected
       var stars = $(this).parent().children('li.star');
-
       for (i = 0; i < stars.length; i++) {
         $(stars[i]).removeClass('selected');
       }
-
       for (i = 0; i < onStar; i++) {
         $(stars[i]).addClass('selected');
       }
-
       // RESPONSE
       var ratingValue = parseInt($('.stars li.selected').last().data('value'), 10);
       if(this.title != "skill"){
@@ -217,13 +354,6 @@ const starEffects = () =>{
           if(a.skill == this.getAttribute('data-skill'))
             a.proficiency = ratingValue;
         })
-      }
-      var msg = "";
-      if (ratingValue > 1) {
-          msg = "Thanks! You rated this " + ratingValue + " stars.";
-      }
-      else {
-          msg = "We will improve ourselves. You rated this " + ratingValue + " stars.";
       }
     });
 }
@@ -319,6 +449,10 @@ const starEffects = () =>{
 
 // Submit
 const submitForm = () => {
+    var file_data = {};
+    $("[type='file']").each(function(i){
+      file_data[$(this).attr("id")] = $('#'+$(this).attr("id")).prop('filedata');
+    });
     frappe.call({
       method: 'one_fm.templates.pages.job_application.create_job_applicant',
       args: {
@@ -343,7 +477,7 @@ const submitForm = () => {
           one_fm_passport_issued: $('#passportIssued').val(),
           one_fm_passport_expire: $('#passportExpiry').val(),
           one_fm_passport_type: $('#PassportType option:selected').text(),
-          one_fm_have_a_valid_visa_in_kuwait: $('#ValidVisa').val(),
+          one_fm_have_a_valid_visa_in_kuwait: document.getElementById("ValidVisa").checked,
           one_fm_visa_type: $('#visaType').val(),
           one_fm_visa_issued: $('#visaIssuedOn').val(),
           one_fm_cid_number: $('#civilId').val(),
@@ -357,7 +491,7 @@ const submitForm = () => {
         },
         languages: listOfLanguages,
         skills: listOfSkills,
-        // files: $('#resume').val(),
+        files: file_data
       },
       callback: function (r) {
         if (r) {

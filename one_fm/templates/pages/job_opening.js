@@ -1,14 +1,12 @@
 const baseUrl = (frappe.base_url || window.location.origin);
 $(document).ready(function () {
+  console.log("Ready .....!!");
   get_jobs_info();
 });
 if(baseUrl.substr(baseUrl.length-1, 1)=='/') baseUrl = baseUrl.substr(0, baseUrl.length-1);
 const signUp = (job) => {
-    localStorage.setItem("currentJobOpening", job)
-    if(window.localStorage.getItem("job-application-auth"))
-        location.href = "./job_application"
-    else
-        location.href = "./applicant-sign-up"
+  localStorage.setItem("currentJobOpening", job)
+  location.href = "./applicant-sign-up"
 }
 const easySignUp = (job) => {
   localStorage.setItem("currentEasyJobOpening", job)

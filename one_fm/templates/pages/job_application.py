@@ -94,28 +94,24 @@ def create_job_applicant(job_opening, email_id, job_applicant_fields, languages=
         if skills:
             skills_json = json.loads(skills)
             set_skills(job_applicant, skills_json)
-        # if files:
-        #     files_json = json.loads(files)
-        #     files_obj = frappe._dict(files_json)
-        #     set_files_to_job_applicant(job_applicant, files_obj)
-        job_applicant.insert(ignore_permissions=True)
+        job_applicant.save(ignore_permissions=True)
+        if files:
+            files_json = json.loads(files)
+            files_obj = frappe._dict(files_json)
+            for file in files_obj:
+                attach_file_to_application(files_obj[file]['files_data'], job_applicant, file)
+            job_applicant.save(ignore_permissions=True)
         return 1
 
-def set_files_to_job_applicant(doc, files):
-    for file in files:
-        documents_required = doc.append('one_fm_documents_required')
-        documents_required.document_required = file.document_required
-        attach_file_to_application(file.filedata, doc.name)
-        # documents_required.attach = file.url
-
 @frappe.whitelist()
-def attach_file_to_application(filedata, job_applicant_id):
+def attach_file_to_application(filedata, job_applicant, document_required):
     from frappe.utils.file_manager import save_file
     if filedata:
-        fd_json = json.loads(filedata)
-        fd_list = list(fd_json["files_data"])
-        for fd in fd_list:
-            filedoc = save_file(fd["filename"], fd["dataurl"], "Job Applicant", job_applicant_id, decode=True, is_private=0)
+        for fd in filedata:
+            filedoc = save_file(fd["filename"], fd["dataurl"], "Job Applicant", job_applicant.name, decode=True, is_private=0)
+            for documents_required in job_applicant.one_fm_documents_required:
+                if documents_required.document_required == document_required.replace("-", " "):
+                    documents_required.attach = filedoc.file_url
 
 def set_job_applicant_fields(doc, fields):
     for field in fields:
@@ -131,7 +127,7 @@ def set_skills(doc, skills):
     for designation_skill in skills:
         skill = doc.append('one_fm_designation_skill')
         skill.skill = designation_skill['skill']
-        skill.proficiency = designation_skill['proficiency']
+        skill.one_fm_proficiency = designation_skill['proficiency']
 
 def set_languages(doc, languages):
     for language in languages:
@@ -151,12 +147,37 @@ def get_job_details(job):
     return erf
 
 @frappe.whitelist(allow_guest=True)
-def get_required_documents(job, visa_type=None):
+def get_country_from_nationality(nationality):
+    return frappe.db.get_value('Nationality', nationality, 'country')
+
+@frappe.whitelist(allow_guest=True)
+def get_master_details():
+    gender = frappe.db.get_list('Gender')
+    nationality = frappe.db.get_list('Nationality')
+    country = frappe.db.get_list('Country')
+    visaType = frappe.db.get_list('Visa Type')
+    return {'gender': gender, 'nationality': nationality, 'passportHolderOf': country,
+        'country_of_employment': country, 'visaType': visaType}
+
+@frappe.whitelist(allow_guest=True)
+def get_required_documents(job=None, visa_type=None, nationality=None, valid_kuwait_visa=None):
     filters = {}
-    source_of_hire = frappe.db.get_value('Job Opening', job, 'one_fm_source_of_hire')
-    if source_of_hire == 'Local and Overseas' and visa_type:
+    source_of_hire = ''
+
+    if job:
+        source_of_hire = frappe.db.get_value('Job Opening', job, 'one_fm_source_of_hire')
+        if source_of_hire == 'Local and Overseas' and visa_type:
+            source_of_hire = 'Local'
+
+    if nationality == 'Kuwaiti':
+        source_of_hire = 'Kuwaiti'
+    elif valid_kuwait_visa:
         source_of_hire = 'Local'
-    filters['visa_type'] = visa_type if visa_type else ''
+    else:
+        source_of_hire = 'Overseas'
+
+    if valid_kuwait_visa and visa_type:
+        filters['visa_type'] = visa_type
     filters['source_of_hire'] = source_of_hire
 
     from one_fm.one_fm.doctype.recruitment_document_checklist.recruitment_document_checklist import get_recruitment_document_checklist

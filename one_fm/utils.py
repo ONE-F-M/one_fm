@@ -1074,7 +1074,7 @@ def get_warehouse_children(doctype, parent=None, company=None, is_root=False):
 	if is_root:
 		parent = ""
 
-	fields = ['name as value', 'is_group as expandable', 'warehouse_name']
+	fields = ['name as value', 'is_group as expandable', 'warehouse_name', 'one_fm_project']
 	filters = [
 		['docstatus', '<', '2'],
 		['ifnull(`parent_warehouse`, "")', '=', parent],
@@ -1327,8 +1327,8 @@ def validate_job_applicant(doc, method):
         validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
     set_average_score(doc, method)
-    # if doc.is_new():
-    #     set_childs_for_application_web_form(doc, method)
+    if doc.is_new():
+        set_childs_for_application_web_form(doc, method)
     if frappe.session.user != 'Guest' and not doc.one_fm_is_easy_apply:
         validate_mandatory_childs(doc)
     if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
@@ -1391,18 +1391,16 @@ def set_designation_skill(doc, skills):
         skill.skill = designation_skill.skill
 
 def set_required_documents(doc, method):
-    if doc.one_fm_source_of_hire and not doc.one_fm_documents_required:
+    if not doc.one_fm_documents_required:
         filters = {}
         source_of_hire = 'Overseas'
-        if doc.one_fm_source_of_hire == 'Local':
+        if doc.one_fm_nationality == 'Kuwaiti':
+            source_of_hire = 'Kuwaiti'
+        elif doc.one_fm_have_a_valid_visa_in_kuwait:
             source_of_hire = 'Local'
-        elif doc.one_fm_source_of_hire == 'Local and Overseas' and doc.one_fm_have_a_valid_visa_in_kuwait and doc.one_fm_visa_type:
-            source_of_hire = 'Local'
+        if doc.one_fm_have_a_valid_visa_in_kuwait and doc.visa_type:
+            filters['visa_type'] = doc.visa_type
         filters['source_of_hire'] = source_of_hire
-        if source_of_hire == 'Local' and doc.one_fm_visa_type:
-            filters['visa_type'] = doc.one_fm_visa_type
-        else:
-            filters['visa_type'] = ''
 
         from one_fm.one_fm.doctype.recruitment_document_checklist.recruitment_document_checklist import get_recruitment_document_checklist
         document_checklist_obj = get_recruitment_document_checklist(filters)

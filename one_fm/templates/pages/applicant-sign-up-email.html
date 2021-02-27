@@ -34,11 +34,12 @@
 
                         <!-- Formulario -->
                         <form action="fakeurl.php" class="form">
-                            <input type="email" name="user-email" id="user-email" placeholder="Type your email">
-                            <input type="password" name="user-password" id="user-password"
-                                placeholder="Type your password">
+                            <input type="email" name="signup-user-email" id="signup-user-email"
+                              placeholder="Type your email">
+                            <input type="password" name="signup-user-pwd" id="signup-user-pwd"
+                              placeholder="Type your password">
                             <!-- <a href="#" class="forgot-pass">Forgot your password?</a> -->
-                            <a onclick="signup()" class="login-button">Sign Up Now</a>
+                            <a href="#" onclick="signup()" class="login-button">Sign Up Now</a>
                         </form>
 
                         <!-- Separador entre botón y opciones -->
@@ -50,6 +51,7 @@
                             <p class="login-text">You can also Sign Up with:</p>
 
                             <div class="login-icons">
+                                <a href="/applicant-docs"><i class="fa fa-upload"></i></a>
                                 <a href="#" onclick="linkedIn()"><i class="fab fa-linkedin"></i></a>
                                 <a href="#"><i class="fab fa-google g-signin2" data-onsuccess="onSignIn"></i></a>
                             </div>
