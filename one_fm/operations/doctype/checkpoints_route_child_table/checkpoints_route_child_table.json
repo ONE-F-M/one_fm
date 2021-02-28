@@ -7,7 +7,7 @@
   "checkpoint_name",
   "site",
   "project",
-  "time__date",
+  "time",
   "tolerance",
   "checkpoints_form",
   "checkpoints_form_template"
@@ -18,7 +18,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Checkpoint Name",
-   "options": "Checkpoints"
+   "options": "Checkpoints",
+   "reqd": 1
   },
   {
    "fetch_from": "checkpoint_name.site_name",
@@ -35,16 +36,12 @@
    "label": "Project"
   },
   {
-   "fieldname": "time__date",
+   "default": "0",
+   "fieldname": "tolerance",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "Time / Date"
-  },
-  {
-   "fieldname": "tolerance",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Tolerance (Minutes) "
+   "label": "Tolerance (End Time)",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -59,10 +56,18 @@
    "in_list_view": 1,
    "label": "Checkpoints Form Template",
    "options": "Checkpoints Form Template"
+  },
+  {
+   "default": "0",
+   "fieldname": "time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Time (Start Time)",
+   "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2020-12-11 17:57:44.434737",
+ "modified": "2020-12-29 15:54:14.024136",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Checkpoints Route Child Table",

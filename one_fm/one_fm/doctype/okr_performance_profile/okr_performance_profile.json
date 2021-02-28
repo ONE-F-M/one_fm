@@ -1,5 +1,4 @@
 {
- "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:okr_title",
@@ -10,6 +9,7 @@
  "field_order": [
   "okr_title_section",
   "okr_title",
+  "company_objective",
   "help_section",
   "help_text",
   "objectives_and_key_results_section",
@@ -70,10 +70,16 @@
   {
    "fieldname": "okr_title_section",
    "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "company_objective",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Company Objective"
   }
  ],
- "links": [],
- "modified": "2020-07-23 20:19:45.931731",
+ "modified": "2020-12-20 14:06:40.492764",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile",

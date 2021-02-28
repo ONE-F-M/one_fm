@@ -1,0 +1,61 @@
+{
+ "creation": "2021-02-20 08:15:06.871786",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "task_name",
+  "object_name",
+  "size",
+  "space",
+  "object_task_time"
+ ],
+ "fields": [
+  {
+   "fieldname": "task_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Task Name",
+   "options": "Cleaning Object Tasks"
+  },
+  {
+   "fetch_from": "task_name.object_name",
+   "fieldname": "object_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Object Name"
+  },
+  {
+   "fetch_from": "task_name.size",
+   "fieldname": "size",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Size"
+  },
+  {
+   "fetch_from": "task_name.space",
+   "fieldname": "space",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Space"
+  },
+  {
+   "fetch_from": "task_name.object_task_time",
+   "fieldname": "object_task_time",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Object Task Time"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-02-22 09:29:12.040500",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Cleaning SOP Task Child Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

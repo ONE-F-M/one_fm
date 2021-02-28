@@ -1,5 +1,4 @@
 {
- "actions": [],
  "creation": "2020-05-07 22:49:41.652284",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -11,7 +10,8 @@
   "from_date",
   "to_date",
   "time_frame",
-  "objective_linking_with"
+  "objective_linking_with",
+  "objective_link"
  ],
  "fields": [
   {
@@ -31,12 +31,12 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval:parent.company_objective == '0'",
    "fieldname": "objective_linking_with",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Objective Linking With",
-   "options": "Designation",
-   "reqd": 1
+   "options": "Objective\nKey Result"
   },
   {
    "columns": 4,
@@ -59,11 +59,16 @@
    "fieldname": "to_date",
    "fieldtype": "Date",
    "label": "To Date"
+  },
+  {
+   "depends_on": "eval:parent.company_objective == '0'",
+   "fieldname": "objective_link",
+   "fieldtype": "Select",
+   "label": "Objective Link"
   }
  ],
  "istable": 1,
- "links": [],
- "modified": "2020-05-14 14:55:26.808804",
+ "modified": "2020-12-23 18:15:42.115931",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile Objective",
