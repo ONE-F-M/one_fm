@@ -1,0 +1,165 @@
+{
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:okr_title",
+ "creation": "2020-12-20 13:09:05.655588",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "okr_title_section",
+  "okr_title",
+  "column_break_4",
+  "employee",
+  "section_break_5",
+  "company_objective",
+  "column_break_5",
+  "start_date",
+  "column_break_7",
+  "end_date",
+  "help_section",
+  "help_text",
+  "objectives_and_key_results_section",
+  "description",
+  "objective_description",
+  "objectives",
+  "key_results"
+ ],
+ "fields": [
+  {
+   "fieldname": "okr_title_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "okr_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Objective & Key Result Title",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "help_section",
+   "fieldtype": "Section Break",
+   "label": "You should ask these questions before you fill the OKR"
+  },
+  {
+   "fieldname": "help_text",
+   "fieldtype": "HTML",
+   "label": "Help Text",
+   "options": "<p style=\"font-size: 12px; color: #8d99a6;\">Objective:</p>\n<ol>\n<li style=\"font-size: 12px; color: #8d99a6;\">On this job what types of projects and tasks would you need to complete?</li>\n<li style=\"font-size: 12px; color: #8d99a6;\">What are the objectives that you really would like to do?</li>\n</ol>\n<p style=\"font-size: 12px; color: #8d99a6;\">Key Results:</p>\n<ol>\n<li style=\"font-size: 12px; color: #8d99a6;\">What would you need to accomplish in doing this work that indicates you are accomplishing your Objective?</li>\n</ol>"
+  },
+  {
+   "fieldname": "objectives_and_key_results_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Please write A short Description of the Job that connects with his primary objectives",
+   "fieldname": "description",
+   "fieldtype": "Small Text"
+  },
+  {
+   "fieldname": "objective_description",
+   "fieldtype": "HTML",
+   "hidden": 1
+  },
+  {
+   "fieldname": "objectives",
+   "fieldtype": "Table",
+   "label": "Your Primary Objective is are as below",
+   "options": "OKR Performance Profile Objective",
+   "reqd": 1
+  },
+  {
+   "fieldname": "key_results",
+   "fieldtype": "Table",
+   "label": "Below are the Key results you would need to achieve to reach the primary objectives in the given time frame",
+   "options": "OKR Performance Profile Key Result",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "company_objective",
+   "fieldtype": "Check",
+   "label": "Company Objective"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "modified": "2020-12-23 18:14:57.957407",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Objective Key Result",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

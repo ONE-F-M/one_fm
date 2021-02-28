@@ -1,0 +1,42 @@
+{
+ "creation": "2021-02-20 12:43:10.713721",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "tool_name",
+  "tool_type",
+  "tool_quantity"
+ ],
+ "fields": [
+  {
+   "fieldname": "tool_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tool Name"
+  },
+  {
+   "fieldname": "tool_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tool Type"
+  },
+  {
+   "fieldname": "tool_quantity",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tool Quantity"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-02-20 12:54:25.648378",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Cleaning SOP Tools Child Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

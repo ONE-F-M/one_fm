@@ -10,6 +10,7 @@ from one_fm.api.notification import create_notification_log
 from frappe import _
 from one_fm.api.tasks import issue_penalty
 from frappe.utils.data import nowdate
+from datetime import datetime
 
 # bench execute one_fm.operations.doctype.mom_followup.mom_followup.mom_project_followup
 # bench execute one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder
@@ -57,7 +58,8 @@ def mom_sites_followup():
 		FROM `tabMOM` 
 		WHERE `date` BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 1 WEEK) AND CURRENT_DATE()
 		""", as_dict=1)
-
+	
+	
 
 ##################################
 	# Make a list of all POC's in the MOM based on the SQL Query 
@@ -94,7 +96,7 @@ def mom_sites_followup():
 			followup = frappe.new_doc('MOM Followup')
 			followup.poc = site.poc
 			followup.project = site.project 
-			followup.site = site.site_name 
+			followup.site = site.name 
 			followup.site_supervisor = site.account_supervisor
 			followup.insert()
 			add_assignment({
@@ -121,10 +123,8 @@ def mom_followup_reminder():
 		})
 
 def test_function():
-	test = frappe.db.sql("""
-	SELECT * 
-	FROM `tabMOM Followup Penalty Child Table`
-	""", as_dict=1)
+	test = datetime.now()
+	
 	print(test)
 
 # WHERE creation < DATE_SUB(NOW(), INTERVAL 48 HOUR) AND (workflow_state = 'Assign to Site Supervisor')	

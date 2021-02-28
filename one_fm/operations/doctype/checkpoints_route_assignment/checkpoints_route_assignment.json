@@ -9,26 +9,59 @@
   "column_break_2",
   "route_description",
   "column_break_4",
-  "route_type",
+  "route_status",
   "section_break_6",
   "project",
   "column_break_10",
   "site",
   "section_break_11",
+  "assign_to_employee",
+  "assign_to_post",
+  "column_break_57",
   "employee",
-  "column_break_12",
   "post",
+  "column_break_16",
+  "employee_name",
+  "post_name",
   "section_break_10",
   "loose_schedule",
+  "column_break_35",
+  "start_time",
+  "column_break_23",
+  "end_time",
   "section_break_13",
   "checkpoints_route_table",
   "checkpoints_route_assignment_loose_schedule_table",
+  "section_break_20",
+  "daily_repeat",
+  "column_break_21",
+  "weekly_repeat",
+  "section_break_23",
+  "start_date",
+  "column_break_28",
+  "end_date",
+  "column_break_54",
+  "never_ending",
+  "section_break_29",
+  "sunday",
+  "column_break_31",
+  "monday",
+  "column_break_33",
+  "tuesday",
+  "column_break_22",
+  "wednesday",
+  "column_break_37",
+  "thursday",
+  "column_break_39",
+  "friday",
+  "column_break_41",
+  "saturday",
   "section_break_18",
   "hourly_repeat",
-  "section_break_20",
-  "scheduled_repeat",
-  "column_break_22",
-  "single_schedule"
+  "column_break_25",
+  "repeat_duration",
+  "column_break_56",
+  "repeat_end_time"
  ],
  "fields": [
   {
@@ -45,24 +78,23 @@
    "label": "Route Description"
   },
   {
-   "fieldname": "route_type",
-   "fieldtype": "Data",
-   "label": "Route Type"
-  },
-  {
    "fieldname": "project",
-   "fieldtype": "Data",
-   "label": "Project"
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
   },
   {
    "fieldname": "site",
-   "fieldtype": "Data",
-   "label": "Site"
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
   },
   {
+   "depends_on": "eval:doc.assign_to_post == '1'",
    "fieldname": "post",
-   "fieldtype": "Data",
-   "label": "Post"
+   "fieldtype": "Link",
+   "label": "Post",
+   "options": "Operations Post"
   },
   {
    "fieldname": "section_break_10",
@@ -98,14 +130,11 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_12",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "section_break_6",
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval:doc.daily_repeat == '1' || doc.weekly_repeat == '1'",
    "fieldname": "section_break_18",
    "fieldtype": "Section Break"
   },
@@ -120,29 +149,19 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "0",
-   "fieldname": "scheduled_repeat",
-   "fieldtype": "Check",
-   "label": "Scheduled Repeat"
-  },
-  {
    "fieldname": "column_break_22",
    "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "single_schedule",
-   "fieldtype": "Check",
-   "label": "Single Schedule"
   },
   {
    "fieldname": "section_break_11",
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval:doc.assign_to_employee == '1'",
    "fieldname": "employee",
-   "fieldtype": "Data",
-   "label": "Employee"
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
   },
   {
    "depends_on": "eval:doc.loose_schedule == '1'",
@@ -150,9 +169,207 @@
    "fieldtype": "Table",
    "label": "Checkpoints Route Assignment Loose Schedule Table",
    "options": "Checkpoints Route Assignment Loose Schedule Child Table"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.loose_schedule == '1'",
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "label": "Start Time"
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.loose_schedule == '1'",
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "label": "End Time"
+  },
+  {
+   "fieldname": "column_break_25",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "weekly_repeat",
+   "fieldtype": "Check",
+   "label": "Weekly Repeat"
+  },
+  {
+   "depends_on": "eval:doc.daily_repeat == '1' || doc.weekly_repeat == '1'",
+   "fieldname": "section_break_23",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "column_break_28",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "never_ending",
+   "fieldtype": "Check",
+   "label": "Never Ending"
+  },
+  {
+   "depends_on": "eval:doc.weekly_repeat == '1'",
+   "fieldname": "section_break_29",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "sunday",
+   "fieldtype": "Check",
+   "label": "Sunday"
+  },
+  {
+   "fieldname": "column_break_31",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "monday",
+   "fieldtype": "Check",
+   "label": "Monday"
+  },
+  {
+   "fieldname": "column_break_33",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "tuesday",
+   "fieldtype": "Check",
+   "label": "Tuesday"
+  },
+  {
+   "fieldname": "column_break_35",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "wednesday",
+   "fieldtype": "Check",
+   "label": "Wednesday"
+  },
+  {
+   "fieldname": "column_break_37",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "thursday",
+   "fieldtype": "Check",
+   "label": "Thursday"
+  },
+  {
+   "fieldname": "column_break_39",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "friday",
+   "fieldtype": "Check",
+   "label": "Friday"
+  },
+  {
+   "fieldname": "column_break_41",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "saturday",
+   "fieldtype": "Check",
+   "label": "Saturday"
+  },
+  {
+   "default": "0",
+   "fieldname": "daily_repeat",
+   "fieldtype": "Check",
+   "label": "Daily Repeat"
+  },
+  {
+   "fieldname": "column_break_54",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "assign_to_post",
+   "fieldtype": "Check",
+   "label": "Assign to Post"
+  },
+  {
+   "default": "0",
+   "fieldname": "assign_to_employee",
+   "fieldtype": "Check",
+   "label": "Assign to Employee"
+  },
+  {
+   "fieldname": "column_break_57",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.assign_to_employee == '1'",
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.assign_to_post == '1'",
+   "fetch_from": "post.post_name",
+   "fieldname": "post_name",
+   "fieldtype": "Data",
+   "label": "Post Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "route_status",
+   "fieldtype": "Select",
+   "label": "Route Status",
+   "options": "Active\nIn-Active"
+  },
+  {
+   "fieldname": "column_break_56",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.hourly_repeat == '1'",
+   "fieldname": "repeat_end_time",
+   "fieldtype": "Time",
+   "label": "Repeat End Time"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.hourly_repeat == '1'",
+   "fieldname": "repeat_duration",
+   "fieldtype": "Time",
+   "label": "Repeat  Duration"
   }
  ],
- "modified": "2020-12-12 08:34:14.930046",
+ "modified": "2020-12-29 09:22:42.964386",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Checkpoints Route Assignment",

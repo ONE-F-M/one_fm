@@ -1,0 +1,44 @@
+{
+ "creation": "2021-01-16 13:29:01.456492",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "tool",
+  "tool_type",
+  "quantity"
+ ],
+ "fields": [
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Quantity"
+  },
+  {
+   "fetch_from": "tool.tool_type",
+   "fieldname": "tool_type",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Tool Type"
+  },
+  {
+   "fieldname": "tool",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Tool ",
+   "options": "Cleaning Tools"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-01-16 13:52:47.690990",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Cleaning Master Tasks Tools Child Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
