@@ -65,7 +65,8 @@ doctype_js = {
 	"Asset Movement": "public/js/doctype_js/asset_movement.js",
 	"Job Opening": "public/js/doctype_js/job_opening.js",
 	"Warehouse": "public/js/doctype_js/warehouse.js",
-	"Loan": "public/js/doctype_js/loan.js"
+	"Loan": "public/js/doctype_js/loan.js",
+	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -380,15 +381,15 @@ fixtures = [
 	},
 	{
 		"dt": "Print Format"
-	},
-	{
-		"dt": "Role",
-		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	},
-	{
-		"dt": "Custom DocPerm",
-		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
 	}
+	# {
+	# 	"dt": "Role",
+	# 	"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	# },
+	# {
+	# 	"dt": "Custom DocPerm",
+	# 	"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	# }
 ]
 
 # before_tests = "one_fm.install.before_tests"
