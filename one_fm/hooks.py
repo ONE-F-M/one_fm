@@ -65,7 +65,10 @@ doctype_js = {
 	"Asset Movement": "public/js/doctype_js/asset_movement.js",
 	"Job Opening": "public/js/doctype_js/job_opening.js",
 	"Warehouse": "public/js/doctype_js/warehouse.js",
+<<<<<<< HEAD
 	"Loan": "public/js/doctype_js/loan.js",
+=======
+>>>>>>> bug fix
 	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js"
 }
 doctype_list_js = {
@@ -381,7 +384,7 @@ fixtures = [
 	},
 	{
 		"dt": "Print Format"
-	}
+	},
 	{
 		"dt": "Role",
 		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
