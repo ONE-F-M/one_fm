@@ -382,14 +382,14 @@ fixtures = [
 	{
 		"dt": "Print Format"
 	}
-	# {
-	# 	"dt": "Role",
-	# 	"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	# },
-	# {
-	# 	"dt": "Custom DocPerm",
-	# 	"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	# }
+	{
+		"dt": "Role",
+		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Custom DocPerm",
+		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	}
 ]
 
 # before_tests = "one_fm.install.before_tests"
