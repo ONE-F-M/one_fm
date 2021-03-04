@@ -857,9 +857,9 @@ function get_roster_data(page){
 			let day = start_date; 
 			while(day <= end_date){
 			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
-				let {date, post_type, count} = post_types_data[post_type_name][i];	
+				let {date, post_type, count, highlight} = post_types_data[post_type_name][i];	
 				let pt_count = `
-				<td>
+				<td class="${highlight}">
 					<div class="text-center" data-selectid="${post_type+"|"+date}">${count}</div>
 				</td>`;
 				$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_type)}']`).append(pt_count);
@@ -995,14 +995,18 @@ function get_roster_week_data(page){
 			start_date = moment(start_date);
 			end_date = moment(end_date);	
 			let i =0;
-			for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
-				let {date, post_type, count} = post_types_data[post_type_name][i];	
+			let day = start_date; 
+			while(day <= end_date){
+			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+				let {date, post_type, count, highlight} = post_types_data[post_type_name][i];	
+				console.log(count, typeof(count));
 				let pt_count = `
-				<td>
+				<td class="${highlight}">
 					<div class="text-center" data-selectid="${post_type+"|"+date}">${count}</div>
 				</td>`;
 				$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_type)}"]`).append(pt_count);
 				i++;
+				start_date.add(1, 'days');
 			}
 			$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_types_data[post_type_name][i-1]['post_type'])}"]`).append(`<td></td>`);
 		}
@@ -1037,7 +1041,9 @@ function get_roster_week_data(page){
 			end_date = moment(end_date);				
 			let i=0; 
 			let j=0;
-			for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+			let day = start_date; 
+			while(day <= end_date){
+			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 				let sch = ``;
 				let classmap = {
 					'Working': 'bluebox',
@@ -1075,6 +1081,7 @@ function get_roster_week_data(page){
 					</td>`;
 				}
 				i++;
+				start_date.add(1, 'days');
 				$rosterWeek.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
 			}
 			$rosterWeek.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i-1]['employee_name']}"]`).append(`<td>${j}</td>`);
@@ -1131,7 +1138,9 @@ function get_post_data(page){
 			start_date = moment(start_date);
 			end_date = moment(end_date);				
 			let i =0;
-			for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+			let day = start_date; 
+			while(day <= end_date){
+			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 				let schedule = ``;
 				let classmap = {
 					'Planned': 'bluebox',
@@ -1168,6 +1177,7 @@ function get_post_data(page){
 					</td>`;
 				}
 				i++;
+				start_date.add(1, 'days');
 				$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(schedule);
 			}		
 			$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
@@ -1213,7 +1223,9 @@ function get_post_week_data(page){
 			start_date = moment(start_date);
 			end_date = moment(end_date);			
 			let i = 0;
-			for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+			let day = start_date; 
+			while(day <= end_date){
+			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 				let schedule = ``;
 				let classmap = {
 					'Planned': 'blueboxcolor',
@@ -1226,7 +1238,7 @@ function get_post_week_data(page){
 				if(name){
 					schedule = `
 					<td>
-						<div class="hoverselectclass tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} hoverselectclass tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
 							data-selectid="${post+'_'+date}"
 							data-date="${date}"
 							data-project="${project}"
@@ -1242,7 +1254,7 @@ function get_post_week_data(page){
 				else{
 					schedule = `
 					<td>
-						<div class="hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
 							data-selectid="${post_name+'_'+start_date.format('YYYY-MM-DD')}"	
 							data-date="${start_date.format('YYYY-MM-DD')}"
 							data-post="${post_name}"
@@ -1250,6 +1262,7 @@ function get_post_week_data(page){
 					</td>`;
 				}
 				i++;
+				start_date.add(1, 'days');
 				$postWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(schedule);
 			}
 			$postWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(`<td></td>`);		
