@@ -121,7 +121,7 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 		if post_type:
 			employee_filters.update({'post_type': post_type})
 
-		post_types_list = frappe.db.get_list("Post Schedule", employee_filters, ["post_type", "post_abbrv"])
+		post_types_list = frappe.db.get_list("Post Schedule", employee_filters, ["distinct post_type", "post_abbrv"])
 		if post_type:
 			employee_filters.pop('post_type', None)
 		employee_filters.pop('date')
