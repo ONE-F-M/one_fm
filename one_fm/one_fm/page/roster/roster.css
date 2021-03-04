@@ -142,3 +142,16 @@ body[data-route="roster"] .pagination > .active > span:focus {
   background: #2c77ff !important;
   border-color: #2c77ff;
 }
+
+body[data-route="roster"] .green {
+  background-color: green;
+  color: white;
+}
+body[data-route="roster"] .red {
+  background-color: red;
+  color: white;
+}
+body[data-route="roster"] .yellow {
+  background-color: yellow;
+  color: black;
+}

@@ -174,8 +174,13 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 				# post_filters.pop("post_status", None)
 
 				# count = cstr(len(post_schedule_count))+"/"+cstr(len(post_filled_count))
-				count = cstr(filled_post)+"/"+cstr(filled_schedule)
-				post_list.append({'count': count, 'post_type': key[0], 'date': cstr(date).split(" ")[0] })
+				count = cstr(filled_schedule)+"/"+cstr(filled_post)
+				highlight = "green"
+				if filled_schedule > filled_post:
+					highlight = "yellow"  
+				elif filled_schedule < filled_post:
+					highlight = "red"
+				post_list.append({'count': count, 'post_type': key[0], 'date': cstr(date).split(" ")[0], 'highlight': highlight})
 
 			post_count_data.update({key[0]: post_list })
 			c2 = time.time()
