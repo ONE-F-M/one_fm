@@ -192,8 +192,7 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 
 @frappe.whitelist(allow_guest=True)
 def get_post_view(start_date, end_date,  project=None, site=None, shift=None, post_type=None, active_posts=1, limit_start=0, limit_page_length=100):
-	a1 = time.time()
-	filters = {}
+	filters, master_data, post_data = {}, {}, {}
 	if project:
 		filters.update({'project': project})	
 	if site:
@@ -202,14 +201,10 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 		filters.update({'site_shift': shift})	
 	if post_type:
 		filters.update({'post_template': post_type})	
-	post_total = len(frappe.get_list("Operations Post", filters))
-	post_list = frappe.get_list("Operations Post", filters, "name", order_by="name asc", limit_start=limit_start, limit_page_length=limit_page_length)
+	post_total = len(frappe.db.get_list("Operations Post", filters))
+	post_list = frappe.db.get_list("Operations Post", filters, "name", order_by="name asc", limit_start=limit_start, limit_page_length=limit_page_length)
 	fields = ['name', 'post', 'post_type','date', 'post_status', 'site', 'shift', 'project']	
-	a2 = time.time()
-	print("A", a2-a1)
-	a1 = time.time()
-	master_data = {}
-	post_data = {}
+
 	filters.pop('post_template', None)
 	filters.pop('site_shift', None)
 	if post_type:
@@ -220,7 +215,6 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 		schedule_list = []
 		filters.update({'date': ['between', (start_date, end_date)], 'post': key})
 		schedules = frappe.db.get_list("Post Schedule", filters, fields, order_by="date asc, post asc")
-		print(schedules, key)
 		for date in	pd.date_range(start=start_date, end=end_date):
 			if not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
 				schedule = {
@@ -230,17 +224,6 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, po
 			else:
 				schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {}) 
 			schedule_list.append(schedule)
-
-
-			# filters.update({'date': cstr(date).split(" ")[0], 'post': key})
-			# schedule = frappe.get_value("Post Schedule", filters, fields, order_by="post asc, date asc", as_dict=1)
-			# if not schedule:
-			# 	schedule = {
-			# 		'post': key,
-			# 		'date': cstr(date).split(" ")[0]
-			# 	}
-			# schedule_list.append(schedule)
-		print(schedule_list)
 		post_data.update({key: schedule_list})
 	
 	master_data.update({"post_data": post_data, "total": post_total})	
