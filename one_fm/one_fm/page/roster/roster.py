@@ -77,8 +77,9 @@ def get_staff_filters_data():
 		"designations": designations
 	}
 
-@frappe.whitelist(allow_guest=True)
-def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None, limit_start=0, limit_page_length=100):
+
+@frappe.whitelist()
+def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=None, project=None, site=None, shift=None, department=None, post_type=None, limit_start=0, limit_page_length=100):
 	start = time.time()
 	master_data, formatted_employee_data, post_count_data, employee_filters={}, {}, {}, {}
 	post_types_list = []
@@ -91,104 +92,80 @@ def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, projec
 		filters.update({'post_type': post_type})	
 	fields = ["employee", "employee_name", "date", "post_type", "post_abbrv", "employee_availability", "shift"]
 
-	if all:
-		a1 = time.time()
-		if project:
-			employee_filters.update({'project': project})
-		if site:
-			employee_filters.update({'site': site})	
-		if shift:
-			employee_filters.update({'shift': shift})	
-		if department:
-			employee_filters.update({'department': department})
-		
+	if search_key:
+		employee_filters.update({'employee_name': ("like", "%" + search_key + "%")})
+	if project:
+		employee_filters.update({'project': project})
+	if site:
+		employee_filters.update({'site': site})	
+	if shift:
+		employee_filters.update({'shift': shift})	
+	if department:
+		employee_filters.update({'department': department})
+	
 
-		roster_total = len(frappe.db.get_list("Employee", employee_filters))  
-		master_data.update({'total': roster_total})
+	roster_total = len(frappe.db.get_list("Employee", employee_filters))  
+	master_data.update({'total': roster_total})
 
-		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
+	employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
+	employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
+	
 
-		a3 = time.time()
-		print("A2", a3-a1)
-		a4 = time.time()
-		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
-		print(employee_filters)
-		a5 = time.time()
-		print("A3", a5-a4)
+	if search_key:
+		employee_filters.pop('employee_name')
+	if department:
+		employee_filters.pop('department', None)
+	if post_type:
+		employee_filters.update({'post_type': post_type})
 
-		if department:
-			employee_filters.pop('department', None)
-		if post_type:
-			employee_filters.update({'post_type': post_type})
+	post_types_list = frappe.db.get_list("Post Schedule", employee_filters, ["distinct post_type", "post_abbrv"])
+	if post_type:
+		employee_filters.pop('post_type', None)
+	employee_filters.pop('date')
+	employee_filters.pop('post_status')
 
-		post_types_list = frappe.db.get_list("Post Schedule", employee_filters, ["distinct post_type", "post_abbrv"])
-		if post_type:
-			employee_filters.pop('post_type', None)
-		employee_filters.pop('date')
-		employee_filters.pop('post_status')
-		a5 = time.time()
-		print("A4", a5-a4)
+	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
+		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
+		schedules = frappe.db.get_list("Employee Schedule", filters, fields, order_by="date asc, employee_name asc")
+		schedule_list = []
+		schedule = {}
+		for date in	pd.date_range(start=start_date, end=end_date):
+			if not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
+				schedule = {
+					'employee': key[0],
+					'employee_name': key[1],
+					'date': cstr(date).split(" ")[0]
+				}
+			else:
+				schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {}) 
+			schedule_list.append(schedule)
+		formatted_employee_data.update({key[1]: schedule_list})
 
-		for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
-			filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
-			schedules = frappe.db.get_list("Employee Schedule", filters, fields, order_by="date asc, employee_name asc")
-			schedule_list = []
-			schedule = {}
-			for date in	pd.date_range(start=start_date, end=end_date):
-				if not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
-					schedule = {
-						'employee': key[0],
-						'employee_name': key[1],
-						'date': cstr(date).split(" ")[0]
-					}
-				else:
-					schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {}) 
-				schedule_list.append(schedule)
-			formatted_employee_data.update({key[1]: schedule_list})
+	master_data.update({'employees_data': formatted_employee_data})
 
-		master_data.update({'employees_data': formatted_employee_data})
-		a6 = time.time()
-		print("A5", a6-a5)
+	for key, group in itertools.groupby(post_types_list, key=lambda x: (x['post_abbrv'], x['post_type'])):
+		post_list = []
+		post_filters = employee_filters
+		post_filters.update({'date':  ['between', (start_date, end_date)], 'post_type': key[1]})
+		post_filled_count = frappe.db.get_list("Employee Schedule",["name", "employee", "date"] ,{'date':  ['between', (start_date, end_date)],'post_type': key[1] }, order_by="date asc")
+		post_filters.update({"post_status": "Planned"})
+		post_schedule_count = frappe.db.get_list("Post Schedule", ["name", "date"], post_filters)
+		post_filters.pop("post_status", None)
 
-		for key, group in itertools.groupby(post_types_list, key=lambda x: (x['post_abbrv'], x['post_type'])):
-			post_list = []
-			post_filters = employee_filters
-			post_filters.update({'date':  ['between', (start_date, end_date)], 'post_type': key[1]})
-			post_filled_count = frappe.db.get_list("Employee Schedule",["name", "employee", "date"] ,{'date':  ['between', (start_date, end_date)],'post_type': key[1] }, order_by="date asc")
-			post_filters.update({"post_status": "Planned"})
-			post_schedule_count = frappe.db.get_list("Post Schedule", ["name", "date"], post_filters)
-			post_filters.pop("post_status", None)
-			c1 = time.time()
+		for date in	pd.date_range(start=start_date, end=end_date):
+			filled_schedule = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_filled_count)
+			filled_post = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_schedule_count)
+			count = cstr(filled_schedule)+"/"+cstr(filled_post)
+			highlight = "bggreen"
+			if filled_schedule > filled_post:
+				highlight = "bgyellow"  
+			elif filled_schedule < filled_post:
+				highlight = "bgred"
+			post_list.append({'count': count, 'post_type': key[0], 'date': cstr(date).split(" ")[0], 'highlight': highlight})
 
-			for date in	pd.date_range(start=start_date, end=end_date):
-				filled_schedule = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_filled_count)
-				filled_post = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_schedule_count)
-				# post_filters = employee_filters
-				# post_filters.update({'date': cstr(date).split(" ")[0], 'post_type': key[1]})
-				# print("[POST FILTERS]", post_filters)
+		post_count_data.update({key[0]: post_list })
 
-				# post_filled_count = frappe.db.get_list("Employee Schedule", post_filters)
-
-				# post_filters.update({"post_status": "Planned"})
-				# post_schedule_count = frappe.db.get_list("Post Schedule", post_filters)
-				# post_filters.pop("post_status", None)
-
-				# count = cstr(len(post_schedule_count))+"/"+cstr(len(post_filled_count))
-				count = cstr(filled_schedule)+"/"+cstr(filled_post)
-				highlight = "green"
-				if filled_schedule > filled_post:
-					highlight = "yellow"  
-				elif filled_schedule < filled_post:
-					highlight = "red"
-				post_list.append({'count': count, 'post_type': key[0], 'date': cstr(date).split(" ")[0], 'highlight': highlight})
-
-			post_count_data.update({key[0]: post_list })
-			c2 = time.time()
-			# print("C", c2-c1)
-
-		master_data.update({'post_types_data': post_count_data})
-		a7 = time.time()
-		print("A7", a7-a6)
+	master_data.update({'post_types_data': post_count_data})
 		
 
 	end = time.time()

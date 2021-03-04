@@ -125,7 +125,6 @@ function load_js(page){
 			$rosterWeek.addClass("d-none");
 			$postWeek.addClass("d-none");
 			displayCalendar(calendarSettings1, page);
-			
 			GetHeaders(1, ".postMonth");
 			get_post_data(page);
 		});
@@ -136,6 +135,10 @@ function load_js(page){
 			$postWeek.addClass("d-none");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
+			let wrapper_element = get_wrapper_element()
+			if(page.search_key){
+				$(wrapper_element).find(".search-employee").val(page.search_key);
+			}
 			get_roster_data(page);
 		});
 		//tab click for week view data function call
@@ -146,6 +149,10 @@ function load_js(page){
 			$postWeek.addClass("d-none");			
 			displayWeekCalendar(weekCalendarSettings, page);
 			GetWeekHeaders(0, ".rosterWeek");
+			let wrapper_element = get_wrapper_element()
+			if(page.search_key){
+				$(wrapper_element).find(".search-employee").val(page.search_key);
+			}
 			get_roster_week_data(page);
 		});
 		//tab click for week view data function call
@@ -810,7 +817,33 @@ function bind_events(page){
 	}
 	let d2 = performance.now()
 	console.log("EVENTS TIME", d2-d1);
+	bind_search_bar_event(page);
 }
+
+function bind_search_bar_event(page){
+	let wrapper_element = get_wrapper_element();
+	$(wrapper_element).find(".search-employee").keypress(function(event) {
+		if (event.which == 13) {
+			// alert("You pressed enter");
+			page.search_key = frappe.utils.xss_sanitise($(wrapper_element).find(".search-employee").val());
+			if(wrapper_element == ".rosterMonth"){
+				get_roster_data(page);
+			}else if(wrapper_element == ".rosterWeek"){
+				get_roster_week_data(page);
+			}
+		}
+	});
+	$('.closed').on('click', function(event){
+		$(wrapper_element).find(".search-employee").val('');
+		page.search_key = '';
+		if(wrapper_element == ".rosterMonth"){
+			get_roster_data(page);
+		}else if(wrapper_element == ".rosterWeek"){
+			get_roster_week_data(page);
+		}
+	})
+}
+
 
 // Get data for Roster monthly view and render it
 function get_roster_data(page){
@@ -818,156 +851,169 @@ function get_roster_data(page){
 	let a1 = performance.now();
 	classgrt = [];
 	classgrtw = [];
+	let search_key = '';
+	if(page.search_key){
+		search_key = page.search_key;
+	}
 	let {start_date, end_date} = page;
 	let {project, site, shift, department, post_type} = page.filters;
 	let {limit_start, limit_page_length} = page.pagination;
 	console.log(limit_start, limit_page_length);
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type, limit_start, limit_page_length})
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, search_key, project, site, shift, department, post_type, limit_start, limit_page_length})
 	.then(res => {
 		let a2 = performance.now();
 		console.log("REQ TIME", a2-a1);
 		// $('#cover-spin').hide();
-		let {post_types_data, employees_data, total}= res;
-		page.pagination.total = total;
-				
-		let b1 = performance.now();
-		let $rosterMonth = $('.rosterMonth');
-		let $rosterMonthbody = $('.rosterMonth').find('#calenderviewtable tbody');
-		$rosterMonthbody.empty();
-		for(post_type_name in post_types_data){
-			let pt_row = `
-			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
-				<td class="sticky">
-					<div class="d-flex">
-						<div class="font16 paddingdiv cursorpointer orangecolor">
-							<i class="fa fa-plus" aria-hidden="true"></i>
-						</div>
-						<div class="font16 paddingdiv borderleft cursorpointer">
-							${post_type_name}
-						</div>
-					</div>
-				</td>
-			</tr>
-			`;
-			$rosterMonthbody.append(pt_row);
-			let {start_date, end_date} = page;
-			start_date = moment(start_date);
-			end_date = moment(end_date);	
-			let i =0;
-			let day = start_date; 
-			while(day <= end_date){
-			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
-				let {date, post_type, count, highlight} = post_types_data[post_type_name][i];	
-				let pt_count = `
-				<td class="${highlight}">
-					<div class="text-center" data-selectid="${post_type+"|"+date}">${count}</div>
-				</td>`;
-				$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_type)}']`).append(pt_count);
-				i++;
-				start_date.add(1, 'days');
-			}
-			$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_types_data[post_type_name][i-1]["post_type"])}']`).append(`<td></td>`);
-		}
-		let b2 = performance.now()
-		console.log("POST TYPE TIME", b2-b1);
-
-		let c1 = performance.now()
-
-		let emp_row_wrapper = `
-		<tr class="collapse tableshowclass show">
-			<td colspan="33" class="p-0">
-				<table id="rowchildtable" class="table subtable mb-0 text-center" style="width:100%">
-					<tbody id="paginate-parent">
-					</tbody>
-				</table>
-			</td>
-		</tr>`;
-
-		$rosterMonthbody.append(emp_row_wrapper);
-		for(employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})){
-			let {employee_name, employee, date} = employees_data[employee_key];
-			let emp_row = `
-			<tr data-name="${employee_key}">
-				<td class="sticky">
-					<label class="checkboxcontainer simplecheckbox">
-						<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
-						<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
-						<span class="checkmark"></span>
-					</label>
-				</td>
-			</tr>
-			`;
-			$rosterMonth.find('#rowchildtable tbody').append(emp_row);
-
-			let {start_date, end_date} = page;
-			start_date = moment(start_date);
-			end_date = moment(end_date);				
-			let i=0; 
-			let j=0;
-			let day = start_date;
-			while(day <= end_date){
-			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
-				let sch = ``;
-				let classmap = {
-					'Working': 'bluebox',
-					'Day Off': 'greyboxcolor',
-					'Sick Leave': 'purplebox',
-					'Emergency Leave': 'purplebox',
-					'Annual Leave': 'purplebox'
-				}
-				let leavemap = {
-					'Day Off': 'DO',
-					'Sick Leave': 'SL',
-					'Annual Leave': 'AL',
-					'Emergency Leave': 'EL'
-				}
-				let {employee, employee_name, date, post_type, post_abbrv, employee_availability, shift} = employees_data[employee_key][i];
-				
-				if(post_abbrv){
-					j++;
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-							data-selectid="${employee+"|"+date+"|"+post_type+"|"+shift+"|"+employee_availability}">${post_abbrv}</div>
-					</td>`;	
-				} else if(employee_availability && !post_abbrv){
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-							data-selectid="${employee+"|"+date+"|"+employee_availability}">${leavemap[employee_availability]}</div>
-					</td>`;	
-				} else {
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
-							data-selectid="${employee+"|"+date}"></div>
-					</td>`;
-				}
-				i++;
-				start_date.add(1, 'days');
-				$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
-			}
-			$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i-1]['employee_name']}"]`).append(`<td>${j}</td>`);
-
-		}
-		let c2 = performance.now()
-		console.log("EMPLOYEES TIME", c2-c1);
-
-		// frappe.show_alert({message:__("Roster updated"), indicator:'green'});
-		bind_events(page);
-
+		render_roster(res, page);
 	});
 }
+
+function render_roster(res, page){
+	let {post_types_data, employees_data, total}= res;
+	page.pagination.total = total;
+			
+	let b1 = performance.now();
+	let $rosterMonth = $('.rosterMonth');
+	let $rosterMonthbody = $('.rosterMonth').find('#calenderviewtable tbody');
+	$rosterMonthbody.empty();
+	for(post_type_name in post_types_data){
+		let pt_row = `
+		<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
+			<td class="sticky">
+				<div class="d-flex">
+					<div class="font16 paddingdiv cursorpointer orangecolor">
+						<i class="fa fa-plus" aria-hidden="true"></i>
+					</div>
+					<div class="font16 paddingdiv borderleft cursorpointer">
+						${post_type_name}
+					</div>
+				</div>
+			</td>
+		</tr>
+		`;
+		$rosterMonthbody.append(pt_row);
+		let {start_date, end_date} = page;
+		start_date = moment(start_date);
+		end_date = moment(end_date);	
+		let i =0;
+		let day = start_date; 
+		while(day <= end_date){
+		// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+			let {date, post_type, count, highlight} = post_types_data[post_type_name][i];	
+			let pt_count = `
+			<td class="${highlight}">
+				<div class="text-center" data-selectid="${post_type+"|"+date}">${count}</div>
+			</td>`;
+			$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_type)}']`).append(pt_count);
+			i++;
+			start_date.add(1, 'days');
+		}
+		$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_types_data[post_type_name][i-1]["post_type"])}']`).append(`<td></td>`);
+	}
+	let b2 = performance.now()
+	console.log("POST TYPE TIME", b2-b1);
+
+	let c1 = performance.now()
+
+	let emp_row_wrapper = `
+	<tr class="collapse tableshowclass show">
+		<td colspan="33" class="p-0">
+			<table id="rowchildtable" class="table subtable mb-0 text-center" style="width:100%">
+				<tbody id="paginate-parent">
+				</tbody>
+			</table>
+		</td>
+	</tr>`;
+
+	$rosterMonthbody.append(emp_row_wrapper);
+	for(employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})){
+		let {employee_name, employee, date} = employees_data[employee_key];
+		let emp_row = `
+		<tr data-name="${employee_key}">
+			<td class="sticky">
+				<label class="checkboxcontainer simplecheckbox">
+					<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
+					<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
+					<span class="checkmark"></span>
+				</label>
+			</td>
+		</tr>
+		`;
+		$rosterMonth.find('#rowchildtable tbody').append(emp_row);
+
+		let {start_date, end_date} = page;
+		start_date = moment(start_date);
+		end_date = moment(end_date);				
+		let i=0; 
+		let j=0;
+		let day = start_date;
+		while(day <= end_date){
+		// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+			let sch = ``;
+			let classmap = {
+				'Working': 'bluebox',
+				'Day Off': 'greyboxcolor',
+				'Sick Leave': 'purplebox',
+				'Emergency Leave': 'purplebox',
+				'Annual Leave': 'purplebox'
+			}
+			let leavemap = {
+				'Day Off': 'DO',
+				'Sick Leave': 'SL',
+				'Annual Leave': 'AL',
+				'Emergency Leave': 'EL'
+			}
+			let {employee, employee_name, date, post_type, post_abbrv, employee_availability, shift} = employees_data[employee_key][i];
+			
+			if(post_abbrv){
+				j++;
+				sch = `
+				<td>
+					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+						data-selectid="${employee+"|"+date+"|"+post_type+"|"+shift+"|"+employee_availability}">${post_abbrv}</div>
+				</td>`;	
+			} else if(employee_availability && !post_abbrv){
+				sch = `
+				<td>
+					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+						data-selectid="${employee+"|"+date+"|"+employee_availability}">${leavemap[employee_availability]}</div>
+				</td>`;	
+			} else {
+				sch = `
+				<td>
+					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
+						data-selectid="${employee+"|"+date}"></div>
+				</td>`;
+			}
+			i++;
+			start_date.add(1, 'days');
+			$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
+		}
+		$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i-1]['employee_name']}"]`).append(`<td>${j}</td>`);
+
+	}
+	let c2 = performance.now()
+	console.log("EMPLOYEES TIME", c2-c1);
+
+	// frappe.show_alert({message:__("Roster updated"), indicator:'green'});
+	bind_events(page);
+
+}
+
 
 // Get data for Roster weekly view and render it
 function get_roster_week_data(page){
 	classgrt = [];
 	classgrtw = [];
+	let search_key = '';
+	if(page.search_key){
+		search_key = page.search_key;
+	}
 	let {start_date, end_date} = page;
 	let {project, site, shift, department, post_type} = page.filters;
 	let {limit_start, limit_page_length} = page.pagination;
 	console.log(limit_start, limit_page_length);
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type, limit_start, limit_page_length})
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, search_key, project, site, shift, department, post_type, limit_start, limit_page_length})
 	.then(res => {
 		let {post_types_data, employees_data, total}= res;
 		page.pagination.total = total;
@@ -1963,7 +2009,8 @@ function setup_staff_filters(page){
 		shift: '',
 		department: '',
 		designation: '',
-		post_type: ''
+		post_type: '',
+		search_key: ''
 	};
 	let pagination = {
 		limit_start: 0,

@@ -123,7 +123,8 @@ body[data-route="roster"] #cover-spin::after {
 body[data-route="roster"] .table-parent {
   overflow-x: scroll;
   /* float: left; */
-  height: calc(80vh - 40px);
+  /* height: calc(80vh - 40px); */
+  height: 1200px;
 }
 /*--------------------------------------------------*/
 body[data-route="roster"] .pagination {
@@ -143,15 +144,35 @@ body[data-route="roster"] .pagination > .active > span:focus {
   border-color: #2c77ff;
 }
 
-body[data-route="roster"] .green {
+body[data-route="roster"] .bggreen {
   background-color: green;
   color: white;
 }
-body[data-route="roster"] .red {
+body[data-route="roster"] .bgred {
   background-color: red;
   color: white;
 }
-body[data-route="roster"] .yellow {
+body[data-route="roster"] .bgyellow {
   background-color: yellow;
   color: black;
+}
+
+body[data-route="roster"] .search-employee {
+  padding: 5px;
+  height: 100%;
+  border: none;
+  width: 270px;
+}
+body[data-route="roster"] .closed {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  right: 0%;
+  font-size: 20px;
+  font-weight: 300;
+  padding: 10px 10px;
+  transform: translate(0%, -50%);
+}
+body[data-route="roster"] .closed:hover {
+  background: #63799b;
 }
