@@ -69,11 +69,15 @@ function load_js(page){
 		$('.flatpickr-prev-month').on('click', function(){
 			decrementMonth(page);
 		})
+		$rosterMonth = $('.rosterMonth');
+		$postMonth = $('.postMonth');		
+		$rosterWeek = $('.rosterWeek');
+		$postWeek = $('.postWeek');
 		$(".rosterviewclick").click(function () {
-			$('.rosterMonth').removeClass("d-none");
-			$('.postMonth').addClass("d-none");		
-			$('.rosterWeek').addClass("d-none");
-			$('.postWeek').addClass("d-none");
+			$rosterMonth.removeClass("d-none");
+			$postMonth.addClass("d-none");		
+			$rosterWeek.addClass("d-none");
+			$postWeek.addClass("d-none");
 			$(".maintabclick").removeClass("active");
 			$(this).parent().addClass("active");
 			$(".Postfilterhideshow").addClass("d-none");
@@ -86,10 +90,10 @@ function load_js(page){
 	
 		});
 		$(".postviewclick").click(function () {
-			$('.rosterMonth').addClass("d-none");
-			$('.postMonth').removeClass("d-none");
-			$('.rosterWeek').addClass("d-none");
-			$('.postWeek').addClass("d-none");
+			$rosterMonth.addClass("d-none");
+			$postMonth.removeClass("d-none");
+			$rosterWeek.addClass("d-none");
+			$postWeek.addClass("d-none");
 			$(".maintabclick").removeClass("active");
 			$(this).parent().addClass("active");
 			$(".Postfilterhideshow").addClass("d-none");
@@ -105,10 +109,10 @@ function load_js(page){
 		
 		//week view click jquery
 		$('.postweekviewclick').click(function () {
-			$('.rosterMonth').addClass("d-none");
-			$('.postMonth').addClass("d-none");
-			$('.rosterWeek').addClass("d-none");
-			$('.postWeek').removeClass("d-none");
+			$rosterMonth.addClass("d-none");
+			$postMonth.addClass("d-none");
+			$rosterWeek.addClass("d-none");
+			$postWeek.removeClass("d-none");
 			displayWeekCalendar(weekCalendarSettings, page);
 			
 			GetWeekHeaders(0, ".postWeek");
@@ -116,30 +120,30 @@ function load_js(page){
 		});
 		//week view click jquery
 		$('.postmonthviewclick').click(function () {
-			$('.rosterMonth').addClass("d-none");
-			$('.postMonth').removeClass("d-none");
-			$('.rosterWeek').addClass("d-none");
-			$('.postWeek').addClass("d-none");
+			$rosterMonth.addClass("d-none");
+			$postMonth.removeClass("d-none");
+			$rosterWeek.addClass("d-none");
+			$postWeek.addClass("d-none");
 			displayCalendar(calendarSettings1, page);
 			
 			GetHeaders(1, ".postMonth");
 			get_post_data(page);
 		});
 		$('.monthviewclick').click(function () {
-			$('.rosterMonth').removeClass("d-none");
-			$('.postMonth').addClass("d-none");
-			$('.rosterWeek').addClass("d-none");
-			$('.postWeek').addClass("d-none");
+			$rosterMonth.removeClass("d-none");
+			$postMonth.addClass("d-none");
+			$rosterWeek.addClass("d-none");
+			$postWeek.addClass("d-none");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
 			get_roster_data(page);
 		});
 		//tab click for week view data function call
 		$(".weekviewclick").click(function () {
-			$('.rosterMonth').addClass("d-none");
-			$('.postMonth').addClass("d-none");
-			$('.rosterWeek').removeClass("d-none");
-			$('.postWeek').addClass("d-none");
+			$rosterMonth.addClass("d-none");
+			$postMonth.addClass("d-none");
+			$rosterWeek.removeClass("d-none");
+			$postWeek.addClass("d-none");			
 			displayWeekCalendar(weekCalendarSettings, page);
 			GetWeekHeaders(0, ".rosterWeek");
 			get_roster_week_data(page);
@@ -586,10 +590,17 @@ function setup_topbar_events(page){
 
 //Bind events to Edit options in Roster/Post view
 function bind_events(page){
+	let d1 = performance.now()
+	let wrapper_element = $(get_wrapper_element());
 	paginateTable(page);
-	$('#paginate-parent').pageMe({pagerSelector:'#myPager',showPrevNext:false,hidePageNumbers:false,perPage:100});
+	// console.log(wrapper_element.find('#paginate-parent'));
+	wrapper_element.find('#paginate-parent').pageMe({pagerSelector:'#myPager',showPrevNext:false,hidePageNumbers:false,perPage:100});
 	if(["Operations Manager", "Site Supervisor", "Shift Manager", "Projects Manager"].some(i => frappe.user_roles.includes(i))){
-		$('.postMonth').find(".hoverselectclass").on("click", function () {
+		let $rosterMonth = $('.rosterMonth');
+		let $postMonth = $('.postMonth');		
+		let $rosterWeek = $('.rosterWeek');
+		let $postWeek = $('.postWeek');
+		$postMonth.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it  
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
@@ -602,7 +613,7 @@ function bind_events(page){
 			}
 		});
 
-		$('.postWeek').find(".hoverselectclass").on("click", function () {
+		$postWeek.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it  
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
@@ -616,7 +627,7 @@ function bind_events(page){
 		});
 
 		//add array on each of data select from calender
-		$('.rosterMonth').find(".hoverselectclass").on("click", function () {
+		$rosterMonth.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it  
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
@@ -630,7 +641,7 @@ function bind_events(page){
 		});
 
 		//add array on each of data select from calender
-		$('.rosterWeek').find(".hoverselectclass").on("click", function () {
+		$rosterWeek.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it  
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
@@ -644,7 +655,7 @@ function bind_events(page){
 		});
 
 		/*on checkbox select change*/
-		$('.postWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
+		$postWeek.find(`input[name="selectallcheckbox"]`).on("change", function () {
 			if ($(this).is(":checked")) {
 				$(this).parent().parent().parent().children("td").children().not("label").each(function(i,v){
 					let date = $(v).attr('data-date');
@@ -667,21 +678,11 @@ function bind_events(page){
 			$(".selectclass").map(function () {
 				classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
-				// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-				// 	console.log(isMonth, classgrt);
-				// 	if (isMonth == 1) {
-				// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-				// 		classgrt.push($(this).attr("data-selectid"));
-				// 	}
-				// 	else {
-				// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-				// 		classgrtw.push($(this).attr("data-selectid"));
-				// 	}
-				// }
+
 			});
 		});
 		/*on checkbox select change*/
-		$('.postMonth').find(`input[name="selectallcheckbox"]`).on("change", function () {
+		$postMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
 			if ($(this).is(":checked")) {
 				$(this).parent().parent().parent().children("td").children().not("label").each(function(i,v){
 					let date = $(v).attr('data-date');
@@ -703,21 +704,12 @@ function bind_events(page){
 			$(".selectclass").map(function () {
 				classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
-				// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-				// 	if (isMonth == 1) {
-				// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-				// 		classgrt.push($(this).attr("data-selectid"));
-				// 	}
-				// 	else {
-				// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrtw.push(this.getAttribute("data-selectid")) : classgrtw.splice(classgrtw.indexOf(this.getAttribute("data-selectid")), 1);
-				// 		classgrtw.push($(this).attr("data-selectid"));
-				// 	}
-				// }
+
 			});
 
 		});
 		//on checkbox select change
-		$('.rosterWeek').find(`input[name="selectallcheckbox"]`).on("change", function () {
+		$rosterWeek.find(`input[name="selectallcheckbox"]`).on("change", function () {
 			if ($(this).is(":checked")) {
 
 				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
@@ -752,7 +744,7 @@ function bind_events(page){
 			});
 		});
 		//on checkbox select change
-		$('.rosterMonth').find(`input[name="selectallcheckbox"]`).on("change", function () {
+		$rosterMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
 			if ($(this).is(":checked")) {
 				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
 					let [employee, date] = $(v).attr('data-selectid').split('|');
@@ -816,10 +808,14 @@ function bind_events(page){
 		});
 		//on checkbox select change
 	}
+	let d2 = performance.now()
+	console.log("EVENTS TIME", d2-d1);
 }
 
 // Get data for Roster monthly view and render it
 function get_roster_data(page){
+	// $('#cover-spin').show(0);
+	let a1 = performance.now();
 	classgrt = [];
 	classgrtw = [];
 	let {start_date, end_date} = page;
@@ -828,12 +824,16 @@ function get_roster_data(page){
 	console.log(limit_start, limit_page_length);
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type, limit_start, limit_page_length})
 	.then(res => {
+		let a2 = performance.now();
+		console.log("REQ TIME", a2-a1);
+		// $('#cover-spin').hide();
 		let {post_types_data, employees_data, total}= res;
 		page.pagination.total = total;
 				
-		// page.pagination.limit_start = Object.keys(employees_data).length;
-		// page.pagination.length = Object.keys(employees_data).length;
-		$('.rosterMonth').find('#calenderviewtable tbody').empty();
+		let b1 = performance.now();
+		let $rosterMonth = $('.rosterMonth');
+		let $rosterMonthbody = $('.rosterMonth').find('#calenderviewtable tbody');
+		$rosterMonthbody.empty();
 		for(post_type_name in post_types_data){
 			let pt_row = `
 			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
@@ -849,22 +849,30 @@ function get_roster_data(page){
 				</td>
 			</tr>
 			`;
-			$('.rosterMonth').find('#calenderviewtable tbody').append(pt_row);
+			$rosterMonthbody.append(pt_row);
 			let {start_date, end_date} = page;
 			start_date = moment(start_date);
 			end_date = moment(end_date);	
 			let i =0;
-			for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+			let day = start_date; 
+			while(day <= end_date){
+			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 				let {date, post_type, count} = post_types_data[post_type_name][i];	
 				let pt_count = `
 				<td>
 					<div class="text-center" data-selectid="${post_type+"|"+date}">${count}</div>
 				</td>`;
-				$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_type)}']`).append(pt_count);
+				$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_type)}']`).append(pt_count);
 				i++;
+				start_date.add(1, 'days');
 			}
-			$('.rosterMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_types_data[post_type_name][i-1]["post_type"])}']`).append(`<td></td>`);
+			$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_types_data[post_type_name][i-1]["post_type"])}']`).append(`<td></td>`);
 		}
+		let b2 = performance.now()
+		console.log("POST TYPE TIME", b2-b1);
+
+		let c1 = performance.now()
+
 		let emp_row_wrapper = `
 		<tr class="collapse tableshowclass show">
 			<td colspan="33" class="p-0">
@@ -874,7 +882,8 @@ function get_roster_data(page){
 				</table>
 			</td>
 		</tr>`;
-		$('.rosterMonth').find('#calenderviewtable tbody').append(emp_row_wrapper);
+
+		$rosterMonthbody.append(emp_row_wrapper);
 		for(employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})){
 			let {employee_name, employee, date} = employees_data[employee_key];
 			let emp_row = `
@@ -888,14 +897,16 @@ function get_roster_data(page){
 				</td>
 			</tr>
 			`;
-			$('.rosterMonth').find('#rowchildtable tbody').append(emp_row);
+			$rosterMonth.find('#rowchildtable tbody').append(emp_row);
 
 			let {start_date, end_date} = page;
 			start_date = moment(start_date);
 			end_date = moment(end_date);				
 			let i=0; 
 			let j=0;
-			for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+			let day = start_date;
+			while(day <= end_date){
+			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 				let sch = ``;
 				let classmap = {
 					'Working': 'bluebox',
@@ -933,21 +944,15 @@ function get_roster_data(page){
 					</td>`;
 				}
 				i++;
-				$('.rosterMonth').find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
+				start_date.add(1, 'days');
+				$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
 			}
-			$('.rosterMonth').find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i-1]['employee_name']}"]`).append(`<td>${j}</td>`);
-			// $('.rosterMonth').find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(`<td></td>`);
-			// let employee_modal = `
-			// <tr>
-			// 	<td> 
-			// 		<a href="#" class="lightbluecolor cursorpointer addpostmodalclick">
-			// 			<span class="fa fa-plus" aria-hidden="true"></span>
-			// 			<span class="pl-2"> Add Employees</span>
-			// 		</a>
-			// 	</td>
-			// </tr>`;
-			// $('.rosterMonth').find(`#rowchildtable tbody"]`).append(employee_modal);
+			$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i-1]['employee_name']}"]`).append(`<td>${j}</td>`);
+
 		}
+		let c2 = performance.now()
+		console.log("EMPLOYEES TIME", c2-c1);
+
 		// frappe.show_alert({message:__("Roster updated"), indicator:'green'});
 		bind_events(page);
 
@@ -960,11 +965,16 @@ function get_roster_week_data(page){
 	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, department, post_type} = page.filters;
-
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type})
+	let {limit_start, limit_page_length} = page.pagination;
+	console.log(limit_start, limit_page_length);
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, project, site, shift, department, post_type, limit_start, limit_page_length})
 	.then(res => {
-		let {post_types_data, employees_data}= res;
-		$('.rosterWeek').find('#calenderweekviewtable tbody').empty();
+		let {post_types_data, employees_data, total}= res;
+		page.pagination.total = total;
+		// $('.rosterWeek').find('#calenderweekviewtable tbody').empty();
+		let $rosterWeek = $('.rosterWeek');
+		let $rosterWeekbody = $rosterWeek.find('#calenderweekviewtable tbody');
+		$rosterWeekbody.empty();
 		for(post_type_name in post_types_data){
 			let pt_row = `
 			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
@@ -980,7 +990,7 @@ function get_roster_week_data(page){
 				</td>
 			</tr>
 			`;
-			$('.rosterWeek').find('#calenderweekviewtable tbody').append(pt_row);
+			$rosterWeekbody.append(pt_row);
 			let {start_date, end_date} = page;
 			start_date = moment(start_date);
 			end_date = moment(end_date);	
@@ -991,10 +1001,10 @@ function get_roster_week_data(page){
 				<td>
 					<div class="text-center" data-selectid="${post_type+"|"+date}">${count}</div>
 				</td>`;
-				$('.rosterWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_type)}"]`).append(pt_count);
+				$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_type)}"]`).append(pt_count);
 				i++;
 			}
-			$('.rosterWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_types_data[post_type_name][i-1]['post_type'])}"]`).append(`<td></td>`);
+			$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_types_data[post_type_name][i-1]['post_type'])}"]`).append(`<td></td>`);
 		}
 		let emp_row_wrapper = `
 		<tr class="collapse tableshowclass show">
@@ -1005,7 +1015,7 @@ function get_roster_week_data(page){
 				</table>
 			</td>
 		</tr>`;
-		$('.rosterWeek').find('#calenderweekviewtable tbody').append(emp_row_wrapper);
+		$rosterWeekbody.append(emp_row_wrapper);
 
 		for(employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})){
 			let {employee_name, employee, date} = employees_data[employee_key];
@@ -1020,7 +1030,7 @@ function get_roster_week_data(page){
 				</td>
 			</tr>
 			`;
-			$('.rosterWeek').find('#rowchildtable tbody').append(emp_row);
+			$rosterWeek.find('#rowchildtable tbody').append(emp_row);
 
 			let {start_date, end_date} = page;
 			start_date = moment(start_date);
@@ -1065,9 +1075,9 @@ function get_roster_week_data(page){
 					</td>`;
 				}
 				i++;
-				$('.rosterWeek').find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
+				$rosterWeek.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
 			}
-			$('.rosterWeek').find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i-1]['employee_name']}"]`).append(`<td>${j}</td>`);
+			$rosterWeek.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i-1]['employee_name']}"]`).append(`<td>${j}</td>`);
 			// $('.rosterMonth').find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(`<td></td>`);
 			// let employee_modal = `
 			// <tr>
@@ -1091,9 +1101,15 @@ function get_post_data(page){
 	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, post_type} = page.filters;
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view',{start_date, end_date, project, site, shift, post_type})
+	let {limit_start, limit_page_length} = page.pagination;
+	// console.log(start_date, end_date, project, site, shift, post_type,limit_start, limit_page_length);
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view',{start_date, end_date, project, site, shift, post_type, limit_start, limit_page_length})
 	.then(res =>{ 
-		$('.postMonth').find('#calenderviewtable tbody').empty();
+		// console.log(res);
+		page.pagination.total = res.total;
+		let $postMonth = $('.postMonth'); 
+		let $postMonthbody = $('.postMonth').find('#calenderviewtable tbody');
+		$postMonthbody.empty();
 		for(post_name in res.post_data){
 			let row = `
 			<tr class="colorclass" data-name="${post_name}">
@@ -1110,7 +1126,7 @@ function get_post_data(page){
 					</label>
 				</td>
 			</tr>`;
-			$('.postMonth').find('#calenderviewtable tbody').append(row);
+			$postMonthbody.append(row);
 			let {start_date, end_date} = page;
 			start_date = moment(start_date);
 			end_date = moment(end_date);				
@@ -1152,9 +1168,9 @@ function get_post_data(page){
 					</td>`;
 				}
 				i++;
-				$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(schedule);
+				$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(schedule);
 			}		
-			$('.postMonth').find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
+			$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
 		}			
 		// frappe.show_alert({message:__("Postview updated"), indicator:'green'});
 		bind_events(page);
@@ -1167,9 +1183,15 @@ function get_post_week_data(page){
 	classgrtw = [];
 	let {start_date, end_date} = page;
 	let {project, site, shift, post_type} = page.filters;
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view',{start_date, end_date, project, site, shift, post_type})
+	// console.log(page.start_date, page.end_date);
+	let {limit_start, limit_page_length} = page.pagination;
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view',{start_date, end_date, project, site, shift, post_type,limit_start, limit_page_length})
 	.then(res =>{ 
-		$('.postWeek').find('#calenderweekviewtable tbody').empty();
+		// console.log(res);
+		page.pagination.total = res.total;
+		let $postWeek = $('.postWeek'); 
+		let $postWeekbody = $('.postWeek').find('#calenderweekviewtable tbody');
+		$postWeekbody.empty();
 
 		for(post_name in res.post_data){
 			let row = `
@@ -1186,7 +1208,7 @@ function get_post_week_data(page){
 					</label>
 				</td>
 			</tr>`;
-			$('.postWeek').find('#calenderweekviewtable tbody').append(row);
+			$postWeekbody.append(row);
 			let {start_date, end_date} = page;
 			start_date = moment(start_date);
 			end_date = moment(end_date);			
@@ -1228,9 +1250,9 @@ function get_post_week_data(page){
 					</td>`;
 				}
 				i++;
-				$('.postWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(schedule);
+				$postWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(schedule);
 			}
-			$('.postWeek').find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(`<td></td>`);		
+			$postWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(`<td></td>`);		
 		}
 		// frappe.show_alert({message:__("Postview updated"), indicator:'green'});
 		bind_events(page);
@@ -1282,6 +1304,7 @@ function get_projects(page){
 			get_sites(page);
 			get_shifts(page);
 			let element = get_wrapper_element().slice(1);
+			console.log("1");
 			page[element](page);			
 		});
 	})
@@ -1305,6 +1328,8 @@ function get_sites(page){
 			page.filters.site = $(this).val();
 			get_shifts(page);
 			let element = get_wrapper_element().slice(1);
+			console.log("2");
+
 			page[element](page);
 		});
 	})
@@ -1327,6 +1352,8 @@ function get_shifts(page){
 		$(parent).on('select2:select', function (e) {
 			page.filters.shift = $(this).val();
 			let element = get_wrapper_element().slice(1);
+			console.log("3");
+
 			page[element](page);
 		});
 	})
@@ -1346,6 +1373,8 @@ function get_post_types(page){
 		$(parent).on('select2:select', function (e) {
 			page.filters.post_type = $(this).val();
 			let element = get_wrapper_element().slice(1);
+			console.log("4");
+
 			page[element](page);
 		});
 
@@ -1365,6 +1394,8 @@ function get_departments(page){
 		$(parent).on('select2:select', function (e) {
 			page.filters.department = $(this).val();
 			let element = get_wrapper_element().slice(1);
+			console.log("5");
+
 			page[element](page);
 		});
 
@@ -1528,7 +1559,7 @@ function GetHeaders(IsMonthSet, element) {
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
 				th = '<th class="greytablebg vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}else if (todayDaydate === getdateres){
-				th = '<th class=" vertical-sticky" id="data-day_' + i + '" class="hightlightedtable"  onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="hightlightedtable vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}else {
 				th = '<th class=" vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
@@ -1555,7 +1586,7 @@ function GetHeaders(IsMonthSet, element) {
 				th = '<th class="greytablebg vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			else {
-				th = '<th class="greytablebg vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			dataHTML = dataHTML + th;
 
@@ -1743,7 +1774,8 @@ function render_staff_list_view(data){
 		table = $('[data-page-route="roster"] #staffdatatable').DataTable();
 		table.clear();
 		table.destroy();
-	} 
+	}
+	let $staffdatatable = $('#staffdatatable tbody');
 	data.forEach(function(employee){
 		let {name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department} = employee;
 		let row = `
@@ -1791,7 +1823,7 @@ function render_staff_list_view(data){
 				${department || 'N/A'}
 			</td>
 		</tr>`;
-		$('#staffdatatable tbody').append(row);	
+		$staffdatatable.append(row);	
 		$(".datatablecjeckbox").change(function () {
 			let getdatatableval = this.checked;
 			if (getdatatableval === true) {
@@ -1939,29 +1971,35 @@ function setup_staff_filters_data(){
 	.then(res => {
 		cur_page.page.page.staff_filters_data = res;
 		let {company, projects, sites, shifts, departments, designations} = res;
+		let $companydropdown = $('.company-dropdown');
+		let $projectdropdown = $('.project-dropdown');
+		let $sitedropdown = $('.site-dropdown');
+		let $shiftdropdown = $('.shift-dropdown');
+		let $departmentdropdown = $('.department-dropdown');
+		let $designationdropdown = $('.designation-dropdown');
 		company.forEach(function(element){
 			let companies = `<a class="dropdown-item filteronserviceboard">${element.name}</a>`;
-			$('.company-dropdown').append(companies);
+			$companydropdown.append(companies);
 		});
 		projects.forEach(function(element){
 			let project = `<a class="dropdown-item filteronserviceboard">${element.name}</a>`;
-			$('.project-dropdown').append(project);
+			$projectdropdown.append(project);
 		});
 		sites.forEach(function(element){
 			let site = `<a class="dropdown-item filteronserviceboard">${element.name}</a>`;
-			$('.site-dropdown').append(site);
+			$sitedropdown.append(site);
 		});
 		shifts.forEach(function(element){
 			let shift = `<a class="dropdown-item filteronserviceboard">${element.name}</a>`;
-			$('.shift-dropdown').append(shift);
+			$shiftdropdown.append(shift);
 		});
 		departments.forEach(function(element){
 			let department = `<a class="dropdown-item filteronserviceboard">${element.name}</a>`;
-			$('.department-dropdown').append(department);
+			$departmentdropdown.append(department);
 		});
 		designations.forEach(function(element){
 			let designation = `<a class="dropdown-item filteronserviceboard">${element.name}</a>`;
-			$('.designation-dropdown').append(designation);
+			$designationdropdown.append(designation);
 		});
 
 		/*dropdown for assign set text on hide show clear filter text*/
@@ -2141,7 +2179,7 @@ function GetWeekHeaders(IsMonthSet, element) {
 				th = `<th class="greytablebg vertical-sticky" id="data-day_${i}" onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
 			}
 			else if (todayDaydate === getdateres) {
-				th = `<th class=" vertical-sticky" id="data-day_${i}" class="hightlightedtable"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
+				th = `<th class="hightlightedtable vertical-sticky" id="data-day_${i}" onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
 			}
 			else {
 				th = `<th class=" vertical-sticky" id="data-day_${i}"  onclick="ChangeRosteringDate(${i} ,this)"> ${calDate.format("ddd") + " " + calDate.format("DD")}</th>`;
@@ -2261,13 +2299,25 @@ function displayWeekCalendar(weekCalendarSettings, page) {
 	}
 	let element = get_wrapper_element();
 	const weekcalendar = $(element).find('.calenderweektitlechange')[0];
-	const startcalendarmonth = weekCalendarSettings.date.startOf("week").format("MMM");
-	const endcalendarmonth = weekCalendarSettings.date.endOf("week").format("MMM");
-	const calendaryear = weekCalendarSettings.date.format("YYYY");
-	const startofday = weekCalendarSettings.date.startOf("week").date();
-	const endofday = weekCalendarSettings.date.endOf("week").date();
-	page.start_date =  weekCalendarSettings.date.startOf("week").format('YYYY-MM-DD');
-	page.end_date = weekCalendarSettings.date.endOf("week").format('YYYY-MM-DD');
+	let startcalendarmonth = weekCalendarSettings.date.startOf("week").format("MMM");
+	let endcalendarmonth = weekCalendarSettings.date.endOf("week").format("MMM");
+	let calendaryear = weekCalendarSettings.date.format("YYYY");
+	let startofday, endofday;
+	console.log(page.start_date, page.end_date);
+	if(page.start_date){
+		startofday = moment(page.start_date, 'YYYY-MM-DD').startOf("week").date();	
+		endofday = moment(page.start_date, 'YYYY-MM-DD').endOf("week").date();
+		page.start_date = moment(page.start_date, 'YYYY-MM-DD').startOf("week").format('YYYY-MM-DD');
+		page.end_date = moment(page.start_date, 'YYYY-MM-DD').endOf("week").format('YYYY-MM-DD');
+		startcalendarmonth = moment(page.start_date, 'YYYY-MM-DD').startOf("week").format("MMM");
+		endcalendarmonth = moment(page.start_date, 'YYYY-MM-DD').endOf("week").format("MMM");
+	}else{
+		startofday = weekCalendarSettings.date.startOf("week").date();
+		endofday = weekCalendarSettings.date.endOf("week").date();
+		page.start_date =  weekCalendarSettings.date.startOf("week").format('YYYY-MM-DD');
+		page.end_date = weekCalendarSettings.date.endOf("week").format('YYYY-MM-DD');
+	}
+
 	weekcalendar.innerHTML = ""
 	weekcalendar.innerHTML = "Month of <span> " + startcalendarmonth + "</span> <span> " + startofday + "</span> - <span> " + endcalendarmonth + " </span> <span> " + endofday + "</span>, " + calendaryear + "";
 }
@@ -2498,14 +2548,15 @@ function paginateTable(page){
 		var listElement = $this;
 		var perPage = settings.perPage; 
 		var children = listElement.children();
-		var pager = $('.pager');
-		
+		let wrapper_element = $(get_wrapper_element());
+		var pager = wrapper_element.find('.pager');
+		console.log(listElement, children, pager);
 		if (typeof settings.childSelector!="undefined") {
 			children = listElement.find(settings.childSelector);
 		}
 		
 		if (typeof settings.pagerSelector!="undefined") {
-			pager = $(settings.pagerSelector);
+			pager = wrapper_element.find(settings.pagerSelector);
 		}
 		
 		// var numItems = children.size();
