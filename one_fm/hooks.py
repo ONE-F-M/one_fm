@@ -3,8 +3,6 @@ from __future__ import unicode_literals
 from . import __version__ as app_version
 import frappe
 from frappe import _
-from erpnext.hr.doctype.shift_request.shift_request import ShiftRequest
-from one_fm.api.doc_methods.shift_request import shift_request_submit
 
 app_name = "one_fm"
 app_title = "One Fm"
@@ -28,16 +26,20 @@ app_include_js = [
 # web_include_js = "/assets/one_fm/js/one_fm.js"
 
 # include js in page
-page_js = {"roster" : [
-	# "public/js/roster_js/jquery-ui.min.js",
-	# "public/js/roster_js/bootstrap-datepicker.min.js",
-	"public/js/roster_js/bootstrap-notify.min.js",
-	"public/js/roster_js/select2.min.js",
-	"public/js/roster_js/jquery.dataTables.min.js",
-	"public/js/roster_js/jquery.validate.min.js",
-	"public/js/roster_js/additional-methods.min.js",
-	"public/js/roster_js/rosteringmodalvalidation.js",
-	"public/js/roster_js/flatpickr.min.js"
+page_js = {
+	"roster" : [
+		# "public/js/roster_js/jquery-ui.min.js",
+		# "public/js/roster_js/bootstrap-datepicker.min.js",
+		"public/js/roster_js/bootstrap-notify.min.js",
+		"public/js/roster_js/select2.min.js",
+		"public/js/roster_js/jquery.dataTables.min.js",
+		"public/js/roster_js/jquery.validate.min.js",
+		"public/js/roster_js/additional-methods.min.js",
+		"public/js/roster_js/rosteringmodalvalidation.js",
+		"public/js/roster_js/flatpickr.min.js"
+	],
+	"checkpoint-scan": [
+		"public/js/html5-qrcode.min.js"
 	]
 }
 
@@ -62,7 +64,8 @@ doctype_js = {
 	"Purchase Receipt": "public/js/doctype_js/purchase_receipt.js",
 	"Asset Movement": "public/js/doctype_js/asset_movement.js",
 	"Job Opening": "public/js/doctype_js/job_opening.js",
-	"Warehouse": "public/js/doctype_js/warehouse.js"
+	"Warehouse": "public/js/doctype_js/warehouse.js",
+	"Loan": "public/js/doctype_js/loan.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -396,6 +399,3 @@ fixtures = [
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
-
-
-ShiftRequest.on_submit = shift_request_submit
