@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2021-03-08 12:37:03.440676",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2021-03-08 12:37:13.255078",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "checkpoint-scan",
+ "owner": "Administrator",
+ "page_name": "Checkpoint Scan",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Checkpoint Scan"
+}
