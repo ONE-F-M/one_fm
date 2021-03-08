@@ -3,10 +3,6 @@ from __future__ import unicode_literals
 from . import __version__ as app_version
 import frappe
 from frappe import _
-from erpnext.hr.doctype.shift_request.shift_request import ShiftRequest 
-from erpnext.hr.doctype.payroll_entry.payroll_entry import PayrollEntry
-from one_fm.api.doc_methods.shift_request import shift_request_submit
-from one_fm.api.doc_methods.payroll_entry import validate_employee_attendance, get_count_holidays_of_employee, get_count_employee_attendance
 
 app_name = "one_fm"
 app_title = "One Fm"
@@ -403,9 +399,3 @@ fixtures = [
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
-
-
-ShiftRequest.on_submit = shift_request_submit
-PayrollEntry.validate_employee_attendance = validate_employee_attendance
-PayrollEntry.get_count_holidays_of_employee = get_count_holidays_of_employee
-PayrollEntry.get_count_employee_attendance = get_count_employee_attendance
