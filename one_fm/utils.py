@@ -1398,8 +1398,8 @@ def set_required_documents(doc, method):
             source_of_hire = 'Kuwaiti'
         elif doc.one_fm_have_a_valid_visa_in_kuwait:
             source_of_hire = 'Local'
-        if doc.one_fm_have_a_valid_visa_in_kuwait and doc.visa_type:
-            filters['visa_type'] = doc.visa_type
+        if doc.one_fm_have_a_valid_visa_in_kuwait and doc.one_fm_visa_type:
+            filters['visa_type'] = doc.one_fm_visa_type
         filters['source_of_hire'] = source_of_hire
 
         from one_fm.one_fm.doctype.recruitment_document_checklist.recruitment_document_checklist import get_recruitment_document_checklist
