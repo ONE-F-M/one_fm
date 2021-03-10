@@ -66,7 +66,7 @@ doctype_js = {
 	"Job Opening": "public/js/doctype_js/job_opening.js",
 	"Warehouse": "public/js/doctype_js/warehouse.js",
 	"Loan": "public/js/doctype_js/loan.js",
-	"Purchase Invoice": "public/js/doctype_js/purcha se_invoice.js"
+	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
