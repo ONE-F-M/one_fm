@@ -1,5 +1,5 @@
 {
- "autoname": "format:{site_shift}|{post_name}-{gender}",
+ "autoname": "format:{post_name}-{gender}|{site_shift}",
  "creation": "2020-05-02 16:31:15.111264",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -118,7 +118,7 @@
    "label": "Post Handover Required"
   }
  ],
- "modified": "2020-10-01 01:22:03.444409",
+ "modified": "2021-03-12 10:27:39.978665",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",
@@ -138,6 +138,7 @@
   }
  ],
  "quick_entry": 1,
+ "search_fields": "site_shift, post_template",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1
