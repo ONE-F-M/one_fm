@@ -7,13 +7,32 @@ frappe.ui.form.on('Cleaning Object Tasks', {
 	// }
 	task_time_calculation: function(frm){
 		
-		if(frm.doc.task_rate == undefined){
+		if(!frm.doc.task_rate){
+			
 			var tasktime = frm.doc.task_time;
 			frm.set_value("object_task_time", tasktime);
 		}
 		else {
-			var tasktime = frm.doc.size * frm.doc.task_rate;
-			frm.set_value("object_task_time", tasktime);
+			
+			frm.toggle_display("task_time", true);
+			var tasktime = frm.doc.size / frm.doc.task_rate;
+			var tasktimehour = parseInt(tasktime).toLocaleString('en-US', {
+				minimumIntegerDigits: 2,
+				useGrouping: false
+			  });
+			var tasktimeminute = Math.ceil((tasktime % 1)*60).toLocaleString('en-US', {
+				minimumIntegerDigits: 2,
+				useGrouping: false
+			  });
+			var tasktimesecond = Math.ceil((tasktimeminute % 1)*60).toLocaleString('en-US', {
+				minimumIntegerDigits: 2,
+				useGrouping: false
+			  });
+			
+			var tasktimeformat = tasktimehour+':'+tasktimeminute+':'+tasktimesecond;
+				// tasktimehour+':'+tasktimeminute+':'+tasktimesecond;
+				console.log(tasktimeformat);
+			frm.set_value("object_task_time", tasktimeformat);
 		}
 		
 
@@ -25,12 +44,13 @@ frappe.ui.form.on('Cleaning Object Tasks', {
 	},
 
 	task: function(frm) {
+		console.log(frm.doc.cleaning_tools)
 		if(frm.doc.task){
 			frappe.call({
 				method: 'frappe.client.get',
 				args: {
 					doctype: 'Cleaning Master Tasks',
-					filters: {name: frm.doc.cleaning_tools}
+					filters: {name: frm.doc.task}
 				},
 				callback: function(r) {
 						if(r.message && r.message.cleaning_tools){
@@ -45,7 +65,7 @@ frappe.ui.form.on('Cleaning Object Tasks', {
 							
 						}
 						else{
-							frm.set_value('cleaning_tools', '');
+							frm.clear_table('cleaning_tools');
 						}
 						frm.refresh_fields();
 				}
@@ -55,7 +75,7 @@ frappe.ui.form.on('Cleaning Object Tasks', {
 				method: 'frappe.client.get',
 				args: {
 					doctype: 'Cleaning Master Tasks',
-					filters: {name: frm.doc.cleaning_consumables}
+					filters: {name: frm.doc.task}
 				},
 				callback: function(r) {
 						if(r.message && r.message.cleaning_consumables){
@@ -70,7 +90,7 @@ frappe.ui.form.on('Cleaning Object Tasks', {
 							
 						}
 						else{
-							frm.set_value('cleaning_consumables', '');
+							frm.clear_table('cleaning_consumables');
 						}
 						frm.refresh_fields();
 				}
