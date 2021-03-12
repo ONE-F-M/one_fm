@@ -16,12 +16,20 @@ class Agency(Document):
 		self.validate_active_agency()
 		if self.agency_website:
 			validate_website_adress(self.agency_website)
+		create_supplier_for_agency(self)
+		self.create_user_for_agency()
 
-	def after_insert(self):
-		supplier = self.create_supplier_if_not_created()
-		if supplier:
-			self.supplier_code = supplier.name
-		self.save(ignore_permissions=True)
+	def create_user_for_agency(self):
+		if self.company_email and not frappe.db.exists ("User", self.company_email):
+			user = frappe.get_doc({
+				"doctype": "User",
+				"first_name": self.agency,
+				"email": self.company_email,
+				"user_type": "Website User"
+			})
+			user.flags.ignore_permissions = True
+			user.add_roles("Supplier")
+			user.add_roles("Agency")
 
 	def onload(self):
 		"""Load address and contacts in `__onload`"""
@@ -29,10 +37,6 @@ class Agency(Document):
 
 	def on_trash(self):
 		delete_contact_and_address('Customer', self.name)
-
-	def create_supplier_if_not_created(self):
-		if not self.supplier_code:
-			return create_supplier_for_agency(self)
 
 	def validate_active_agency(self):
 		if self.active:
@@ -54,12 +58,14 @@ def validate_website_adress(website):
 	return False
 
 def create_supplier_for_agency(agency):
-	supplier = frappe.new_doc('Supplier')
-	supplier.supplier_name = agency.agency
-	supplier.country = agency.country
-	supplier.website = agency.agency_website
-	supplier.save(ignore_permissions=True)
-	return supplier
+	if not agency.supplier_code:
+		supplier = frappe.new_doc('Supplier')
+		supplier.supplier_name = agency.agency
+		supplier.country = agency.country
+		supplier.website = agency.agency_website
+		supplier.supplier_group = 'Services'
+		supplier.save(ignore_permissions=True)
+		agency.supplier_code = supplier.name
 
 def is_agency_active(agency):
 	active = True
@@ -86,3 +92,6 @@ def make_agency_active(agency):
 	if is_agency_active(agency)['active']:
 		agency.active = True
 		agency.save(ignore_permissions=True)
+
+def agency_has_website_permission(doc, ptype, user, verbose=False):
+    return True

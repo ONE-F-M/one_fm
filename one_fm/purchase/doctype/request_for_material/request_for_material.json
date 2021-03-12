@@ -24,6 +24,7 @@
   "request_for_material_approver",
   "type_details_section",
   "project",
+  "contract_number",
   "project_details",
   "employee",
   "employee_name",
@@ -296,7 +297,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "\nIndividual\nProject\nStock\nSafety Stock",
+   "options": "\nIndividual\nProject Mobilization\nStock",
    "print_hide": 1,
    "reqd": 1
   },
@@ -332,7 +333,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval: doc.type=='Project'",
+   "depends_on": "eval: doc.type=='Project Mobilization'",
    "fieldname": "project",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -340,7 +341,7 @@
    "options": "Project"
   },
   {
-   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project' || doc.type == 'Stock' || doc.type == 'Safety Stock'",
+   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project Mobilization' || doc.type == 'Stock'",
    "fieldname": "type_details_section",
    "fieldtype": "Section Break"
   },
@@ -381,7 +382,7 @@
    "label": "Technical Remarks"
   },
   {
-   "depends_on": "eval: doc.type=='Project'",
+   "depends_on": "eval: doc.type=='Project Mobilization'",
    "fieldname": "project_details",
    "fieldtype": "Small Text",
    "label": "Project Details"
@@ -417,12 +418,18 @@
    "label": "Request for Material Approver",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.type == 'Project Mobilization'",
+   "fieldname": "contract_number",
+   "fieldtype": "Data",
+   "label": "Contract Number"
   }
  ],
  "icon": "fa fa-ticket",
  "is_submittable": 1,
  "links": [],
- "modified": "2021-01-31 18:39:10.120147",
+ "modified": "2021-03-13 01:36:01.291959",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",

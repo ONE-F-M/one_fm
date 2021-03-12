@@ -9,7 +9,36 @@ $(document).ready(function() {
 	doc.currency = "{{ doc.currency }}"
 	doc.number_format = "{{ doc.number_format }}"
 	doc.buying_price_list = "{{ doc.buying_price_list }}"
+	$('#qtn-attachment-file').on('change', ':file', function() {
+		var $input = $(this);
+		var file_input = $input.get(0);
+		if (file_input.files[0].size > 5242880) {
+			alert('max upload size is 5 Mega Byte');
+		}
+		if(file_input.files.length) {
+			file_input.filedata = { "files_data" : [] };
+		}
+		window.file_reading = true;
+		//this will handle multi files input
+		$.each(file_input.files, function(key, value) {
+			setupReader(value, file_input);
+		});
+		window.file_reading = false;
+	});
 });
+
+function setupReader(file, input) {
+	let name = file.name;
+	var reader = new FileReader();
+	reader.onload = function(e) {
+	  input.filedata.files_data.push({
+	    "__file_attachment": 1,
+	    "filename": file.name,
+	    "dataurl": reader.result
+	  })
+	}
+	reader.readAsDataURL(file);
+}
 
 rfq1 = Class.extend({
 	init: function(){
@@ -73,12 +102,18 @@ rfq1 = Class.extend({
 
 	submit_rfq1: function(){
 		$('.btn-sm').click(function(){
+			var file_data = {};
+			$("[type='file']").each(function(i){
+	      file_data[$(this).attr("id")] = $('#'+$(this).attr("id")).prop('filedata');
+	    });
+			console.log(file_data);
 			frappe.freeze();
 			frappe.call({
 				type: "POST",
 				method: "one_fm.one_fm.doctype.request_for_supplier_quotation.request_for_supplier_quotation.create_supplier_quotation",
 				args: {
-					doc: doc
+					doc: doc,
+					files: file_data
 				},
 				btn: this,
 				callback: function(r){

@@ -43,11 +43,21 @@ frappe.ui.form.on('Request for Material', {
 		}
 		if(frm.doc.docstatus == 0){
 			if (frappe.user.has_role("Stock User")){
-				frm.set_df_property('type', 'options', "\nIndividual\nProject\nStock\nSafety Stock");
+				frm.set_df_property('type', 'options', "\nIndividual\nProject Mobilization\nStock");
 			}
 			else{
-				frm.set_df_property('type', 'options', "\nIndividual\nProject");
+				frm.set_df_property('type', 'options', "\nIndividual\nProject Mobilization");
 			}
+		}
+		if(frm.is_new()){
+			frappe.db.get_value('Stock Settings', '', 'default_warehouse', function(r) {
+				if(r && r.default_warehouse){
+					frm.set_value('warehouse', r.default_warehouse);
+				}
+				else{
+					frm.set_value('warehouse', '');
+				}
+			});
 		}
 		// frm.set_query('warehouse', function () {
 		// 	if(frm.doc.type == 'Project'){
@@ -237,10 +247,10 @@ frappe.ui.form.on('Request for Material', {
 
 var set_item_field_property = function(frm) {
 	if((frm.doc.docstatus == 1 && frappe.session.user == frm.doc.request_for_material_accepter)
-		|| (frm.doc.type == 'Stock' || frm.doc.type == 'Safety Stock')){
+		|| frm.doc.type == 'Stock'){
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
 	}
-	if(frm.doc.type == 'Stock' || frm.doc.type == 'Safety Stock'){
+	if(frm.doc.type == 'Stock'){
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).read_only = true;
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = false;
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).read_only = true;
@@ -331,6 +341,7 @@ erpnext.buying.MaterialRequestController = erpnext.buying.BuyingController.exten
 
 	items_add: function(doc, cdt, cdn) {
 		var row = frappe.get_doc(cdt, cdn);
+		this.frm.script_manager.copy_from_first_row("items", row, ["uom"]);
 		if(doc.schedule_date) {
 			row.schedule_date = doc.schedule_date;
 			refresh_field("schedule_date", cdn, "items");

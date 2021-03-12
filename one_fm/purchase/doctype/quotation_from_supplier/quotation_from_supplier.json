@@ -83,6 +83,7 @@
   "terms_section_break",
   "tc_name",
   "terms",
+  "attach_sq",
   "printing_settings",
   "select_print_heading",
   "group_same_items",
@@ -833,12 +834,17 @@
    "in_standard_filter": 1,
    "label": "Request For Purchase",
    "options": "Request for Purchase"
+  },
+  {
+   "fieldname": "attach_sq",
+   "fieldtype": "Attach",
+   "label": "Quotation"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2021-01-31 18:41:14.757951",
+ "modified": "2021-03-13 02:24:54.565080",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Quotation From Supplier",
