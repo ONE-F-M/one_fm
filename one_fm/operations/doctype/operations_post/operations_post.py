@@ -13,7 +13,7 @@ class OperationsPost(Document):
 		self.validate_name()
 
 	def validate_name(self):
-		condition = self.site_shift+"|"+self.post_name+"-"+self.gender
+		condition = self.post_name+"-"+self.gender+"|"+self.site_shift
 		if condition != self.name:
 			rename_doc(self.doctype, self.name, condition, force=True)
 		
