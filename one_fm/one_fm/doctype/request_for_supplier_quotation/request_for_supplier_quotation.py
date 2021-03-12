@@ -92,7 +92,7 @@ def get_list_context(context=None):
 
 # This method is used to make supplier quotation from supplier's portal.
 @frappe.whitelist()
-def create_supplier_quotation(doc):
+def create_supplier_quotation(doc, files=None):
     if isinstance(doc, string_types):
         doc = json.loads(doc)
 
@@ -109,10 +109,24 @@ def create_supplier_quotation(doc):
     sq_doc.flags.ignore_permissions = True
     sq_doc.run_method("set_missing_values")
     sq_doc.save()
+    if files:
+        files_json = json.loads(files)
+        files_obj = frappe._dict(files_json)
+        for file in files_obj:
+            attach_file_to_sq(files_obj[file]['files_data'], sq_doc)
+        sq_doc.save(ignore_permissions=True)
     frappe.msgprint(_("Quotation From Supplier {0} created").format(sq_doc.name))
     return sq_doc.name
     # except Exception:
     # return None
+
+@frappe.whitelist()
+def attach_file_to_sq(filedata, sq_doc):
+    from frappe.utils.file_manager import save_file
+    if filedata:
+        for fd in filedata:
+            filedoc = save_file(fd["filename"], fd["dataurl"], "Quotation From Supplier", sq_doc.name, decode=True, is_private=0)
+            sq_doc.attach_sq = filedoc.file_url
 
 def add_items(sq_doc, supplier, items):
 	for data in items:
