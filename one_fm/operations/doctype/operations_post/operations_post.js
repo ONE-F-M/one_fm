@@ -32,8 +32,3 @@ frappe.ui.form.on('Operations Post', {
 		}
 	}
 });
-
-
-frappe.ui.form.on('Operations Post', {
-	refresh: function(frm){}
-})
