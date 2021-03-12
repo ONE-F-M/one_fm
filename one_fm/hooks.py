@@ -208,10 +208,12 @@ doc_events = {
 standard_portal_menu_items = [
 	{"title": "Job Applications", "route": "/job-applications", "reference_doctype": "Job Applicant", "role": "Job Applicant"},
 	{"title": _("Request for Supplier Quotations"), "route": "/rfq1", "reference_doctype": "Request for Supplier Quotation", "role": "Supplier"},
+	{"title": _("Job Openings"), "route": "/agency_job_opening", "reference_doctype": "Job Opening", "role": "Agency"}
 ]
 
 has_website_permission = {
-	"Job Applicant": "one_fm.utils.applicant_has_website_permission"
+	"Job Applicant": "one_fm.utils.applicant_has_website_permission",
+	"Job Opening": "one_fm.one_fm.doctype.agency.agency.agency_has_website_permission"
 }
 
 website_route_rules = [
