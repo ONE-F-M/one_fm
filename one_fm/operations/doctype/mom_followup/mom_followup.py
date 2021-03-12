@@ -17,6 +17,7 @@ from datetime import datetime
 # bench execute one_fm.operations.doctype.mom_followup.mom_followup.mom_sites_followup
 # bench execute one_fm.operations.doctype.mom_followup.mom_followup.on_update
 # bench execute one_fm.operations.doctype.mom_followup.mom_followup.test_function
+# bench execute one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_penalty
 
 class MOMFollowup(Document):
 	def on_update(self):
@@ -121,6 +122,24 @@ def mom_followup_reminder():
 					'assign_to': frappe.db.get_value('Employee',re.project_manager, 'user_id'),
 					'description': _('Please take Action')
 		})
+
+@frappe.whitelist()
+def mom_followup_penalty():
+	print(frappe.session.user)
+	mom_followup = frappe.db.sql("""
+	SELECT * 
+	FROM `tabMOM Followup` 
+	WHERE (`creation` BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 2 WEEK) AND DATE_SUB(CURRENT_DATE(), INTERVAL 1 WEEK)) AND (workflow_state = 'Assign to Site Supervisor')
+	""", as_dict=1)
+
+	for each in mom_followup:
+		mom = frappe.get_doc('MOM Followup', each.name) 
+		mom.workflow_state = 'Issue Penalty'
+		mom.save(ignore_permissions=True)
+		# issue_penalty(mom.site_supervisor, nowdate(),mom.penalty_code,frappe.get_value('Shift Assignment',{'employee':mom.site_supervisor,'date':nowdate()},'shift'), mom.project_manager,"Head Office")
+
+
+
 
 def test_function():
 	test = datetime.now()

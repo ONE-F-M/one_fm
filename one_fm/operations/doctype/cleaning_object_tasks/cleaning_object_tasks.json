@@ -1,5 +1,5 @@
 {
- "autoname": "format:{object}-(task}",
+ "autoname": "format:{object_name}-{task}",
  "creation": "2021-01-18 19:41:02.870130",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -60,14 +60,17 @@
   {
    "fetch_from": "task.task_rate",
    "fieldname": "task_rate",
-   "fieldtype": "Read Only",
-   "label": "Task Rate"
+   "fieldtype": "Float",
+   "label": "Task Rate",
+   "read_only": 1
   },
   {
+   "default": "0",
    "fetch_from": "task.task_time",
    "fieldname": "task_time",
-   "fieldtype": "Read Only",
-   "label": "Task Time"
+   "fieldtype": "Time",
+   "label": "Task Time",
+   "read_only": 1
   },
   {
    "fetch_from": "task.manpower_requirement",
@@ -100,13 +103,13 @@
    "fieldtype": "Section Break"
   },
   {
+   "default": "0",
    "fieldname": "object_task_time",
-   "fieldtype": "Float",
-   "label": "Object Task Time",
-   "read_only": 1
+   "fieldtype": "Time",
+   "label": "Object Task Time"
   }
  ],
- "modified": "2021-02-22 09:34:39.263533",
+ "modified": "2021-03-10 19:31:46.795157",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Cleaning Object Tasks",

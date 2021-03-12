@@ -9,7 +9,6 @@
   "task_type",
   "task_category",
   "task_rate",
-  "task_speed",
   "task_time",
   "manpower_requirement",
   "object_link_section",
@@ -41,18 +40,16 @@
    "options": "EMPTY AND FILL TIMES\nCLEAN-UP MATERIALS & EQUIPMENT AFTER USE\nCHANGE AND REPLACE\nCLEANING WORKER TRAVEL SPEEDS"
   },
   {
+   "depends_on": "eval: doc.task_type !== 'Instructions'",
    "fieldname": "task_rate",
-   "fieldtype": "Data",
-   "label": "Task Rate"
+   "fieldtype": "Float",
+   "label": "Task Rate (sq.m/hr)"
   },
   {
-   "fieldname": "task_speed",
-   "fieldtype": "Data",
-   "label": "Task Speed"
-  },
-  {
+   "default": "0",
+   "depends_on": "eval: doc.task_type == 'Instructions'",
    "fieldname": "task_time",
-   "fieldtype": "Data",
+   "fieldtype": "Time",
    "label": "Task Time"
   },
   {
@@ -102,7 +99,7 @@
    "label": "Manpower Requirement"
   }
  ],
- "modified": "2021-01-18 19:20:35.948445",
+ "modified": "2021-03-09 20:49:51.485969",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Cleaning Master Tasks",

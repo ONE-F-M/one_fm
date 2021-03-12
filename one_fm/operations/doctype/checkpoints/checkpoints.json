@@ -1,6 +1,6 @@
 {
  "allow_rename": 1,
- "autoname": "field:checkpoint_name",
+ "autoname": "format:{checkpoint_name} - {site_name}",
  "creation": "2020-07-06 17:40:03.390855",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -21,8 +21,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Checkpoint Name",
-   "reqd": 1,
-   "unique": 1
+   "reqd": 1
   },
   {
    "fieldname": "checkpoint_qr",
@@ -38,13 +37,15 @@
    "fieldname": "project_name",
    "fieldtype": "Link",
    "label": "Project",
-   "options": "Project"
+   "options": "Project",
+   "reqd": 1
   },
   {
    "fieldname": "site_name",
    "fieldtype": "Link",
    "label": "Site ",
-   "options": "Operations Site"
+   "options": "Operations Site",
+   "reqd": 1
   },
   {
    "fetch_from": "site_name.site_location",
@@ -63,7 +64,7 @@
    "fieldtype": "Column Break"
   }
  ],
- "modified": "2020-12-11 17:41:50.908782",
+ "modified": "2021-03-07 18:15:59.552725",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Checkpoints",
