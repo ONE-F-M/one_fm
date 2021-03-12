@@ -63,7 +63,7 @@ class RequestforMaterial(Document):
 		self.set_title()
 
 	def set_item_fields(self):
-		if self.items and self.type in ['Stock', 'Safety Stock']:
+		if self.items and self.type == 'Stock':
 			for item in self.items:
 				item.requested_item_name = item.item_name
 				item.requested_description = item.description
