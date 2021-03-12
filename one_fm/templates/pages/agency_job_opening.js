@@ -4,7 +4,8 @@ $(document).ready(function () {
 });
 if(baseUrl.substr(baseUrl.length-1, 1)=='/') baseUrl = baseUrl.substr(0, baseUrl.length-1);
 const signUp = (job) => {
-  localStorage.setItem("currentJobOpening", job)
+  localStorage.setItem("currentJobOpening", job);
+	localStorage.setItem("job-application-auth", `Agency-Login`);
   location.href = "./applicant-docs"
 }
 const easySignUp = (job) => {
