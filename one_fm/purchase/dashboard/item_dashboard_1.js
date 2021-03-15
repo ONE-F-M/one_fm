@@ -73,9 +73,7 @@ one_fm.purchase.ItemDashboard = Class.extend({
 		frappe.call({
 			method: 'one_fm.purchase.dashboard.item_dashboard_1.get_data',
 			args: {
-				item_code: this.item_code,
-				warehouse: this.warehouse,
-				item_group: this.item_group,
+				rfm: this.rfm,
 				start: this.start,
 				sort_by: this.sort_by,
 				sort_order: this.sort_order,
