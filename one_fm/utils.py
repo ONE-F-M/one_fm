@@ -1298,9 +1298,26 @@ def validate_get_item_group_parent(doc, method):
 def get_item_id_series(parent_item_group, subitem_group, item_group):
     previous_item_id = frappe.db.sql("select item_id from `tabItem` where parent_item_group='{0}' and subitem_group='{1}' and item_group='{2}' order by item_id desc".format(parent_item_group, subitem_group, item_group))
     if previous_item_id:
+        item_group_abbr = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
+        if item_group_abbr:
+            abbr_item_group_list = frappe.db.get_list('Item Group', {'one_fm_item_group_abbr': item_group_abbr})
+            if abbr_item_group_list and len(abbr_item_group_list) > 1:
+                item_id_list = []
+                for abbr_item_group in abbr_item_group_list:
+                    item_id = frappe.db.sql("select item_id from `tabItem` where item_group='{0}' order by item_id desc".format(abbr_item_group['name']))
+                    if item_id:
+                        item_id_list.append(item_id[0][0])
+                return get_sorted_item_id(item_id_list)
         return previous_item_id[0][0]
     else:
         return '0000'
+
+def get_sorted_item_id(item_id_list):
+    max = item_id_list[0]
+    for item_id in item_id_list:
+        if item_id > max:
+            max = item_id
+    return max
 
 def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, filters):
 	query = """
