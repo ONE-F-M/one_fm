@@ -82,6 +82,8 @@ frappe.ui.form.on('Request for Material', {
 				if(item_exist_in_stock){
 					frm.add_custom_button(__("Transfer Material"),
 						() => frm.events.make_stock_entry(frm), __('Create'));
+						frm.add_custom_button(__("Sales Invoice"),
+							() => frm.events.make_sales_invoice(frm), __('Create'));
 				}
 			}
 
@@ -224,6 +226,17 @@ frappe.ui.form.on('Request for Material', {
 		else{
 			frappe.model.open_mapped_doc({
 				method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_stock_entry",
+				frm: frm
+			});
+		}
+	},
+	make_sales_invoice: function(frm) {
+		if(frm.is_dirty()){
+			frappe.msgprint(__("Please Update the Document and Create."))
+		}
+		else{
+			frappe.model.open_mapped_doc({
+				method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_sales_invoice",
 				frm: frm
 			});
 		}
