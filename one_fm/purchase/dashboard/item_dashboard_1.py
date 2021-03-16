@@ -15,7 +15,7 @@ def get_data(rfm=None, rfp=None, por=None,
 	try:
 		# check if user has any restrictions based on user permissions on warehouse
 		if DatabaseQuery('Warehouse', user=frappe.session.user).build_match_conditions():
-			filters.append(['warehouse', 'in', [w.name for w in frappe.get_list('Warehouse')]])
+			pass # filters.append(['warehouse', 'in', [w.name for w in frappe.get_list('Warehouse')]])
 	except frappe.PermissionError:
 		# user does not have access on warehouse
 		return []
