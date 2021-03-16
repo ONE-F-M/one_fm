@@ -6,16 +6,16 @@ frappe.pages['stock-balance-1'].on_page_load = function(wrapper) {
 	});
 	page.start = 0;
 
-	// page.warehouse_field = page.add_field({
-	// 	fieldname: 'warehouse',
-	// 	label: __('Warehouse'),
-	// 	fieldtype:'Link',
-	// 	options:'Warehouse',
-	// 	change: function() {
-	// 		page.item_dashboard.start = 0;
-	// 		page.item_dashboard.refresh();
-	// 	}
-	// });
+	page.rfm_field = page.add_field({
+		fieldname: 'rfm',
+		label: __('RFM'),
+		fieldtype:'Link',
+		options:'Request for Material',
+		change: function() {
+			page.item_dashboard.start = 0;
+			page.item_dashboard.refresh();
+		}
+	});
 	//
 	// page.item_field = page.add_field({
 	// 	fieldname: 'item_code',
@@ -67,6 +67,10 @@ frappe.pages['stock-balance-1'].on_page_load = function(wrapper) {
 			parent: page.main,
 		})
 
+		page.item_dashboard.before_refresh = function() {
+			this.rfm = page.rfm_field.get_value();
+		}
+
 		page.item_dashboard.refresh();
 
 		var setup_click = function(doctype, doc_abbr) {
@@ -78,6 +82,7 @@ frappe.pages['stock-balance-1'].on_page_load = function(wrapper) {
 
 		setup_click('Request for Material', 'rfm');
 		setup_click('Request for Purchase', 'rfp');
+		setup_click('Quotation Comparison Sheet', 'qcs');
 		setup_click('Purchase Order', 'po');
 		setup_click('Purchase Receipt', 'pr');
 		setup_click('Purchase Invoice', 'pi');

@@ -213,6 +213,41 @@ def make_stock_entry(source_name, target_doc=None):
 	return doclist
 
 @frappe.whitelist()
+def make_sales_invoice(source_name, target_doc=None):
+	def update_item(obj, target, source_parent):
+		qty = flt(flt(obj.stock_qty) - flt(obj.ordered_qty))/ target.conversion_factor \
+			if flt(obj.stock_qty) > flt(obj.ordered_qty) else 0
+		target.qty = qty
+		target.transfer_qty = qty * obj.conversion_factor
+		target.conversion_factor = obj.conversion_factor
+
+		# target.t_warehouse = obj.warehouse
+
+	def set_missing_values(source, target):
+		target.ignore_pricing_rule = 1
+		target.run_method("set_missing_values")
+		target.run_method("calculate_taxes_and_totals")
+
+	doclist = get_mapped_doc("Request for Material", source_name, {
+		"Request for Material": {
+			"doctype": "Sales Invoice",
+			"validation": {
+				"docstatus": ["=", 1]
+			}
+		},
+		"Request for Material Item": {
+			"doctype": "Sales Invoice Item",
+			"field_map": {
+				"uom": "stock_uom"
+			},
+			"postprocess": update_item,
+			"condition": lambda doc: doc.item_code
+		}
+	}, target_doc, set_missing_values)
+
+	return doclist
+
+@frappe.whitelist()
 def make_request_for_quotation(source_name, target_doc=None):
 	doclist = get_mapped_doc("Request for Material", source_name, 	{
 		"Request for Material": {

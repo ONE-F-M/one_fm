@@ -27,6 +27,23 @@
 				{% endif %}
 			</div>
 			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.qcs %}
+					{% if d.qcs_status == 1 %}
+						<span class="indicator blue"></span>
+					{% else %}
+						<span class="indicator red"></span>
+					{% endif %}
+					<a data-type="qcs"
+						data-name="{{ d.qcs }}">{{ d.qcs }}
+					</a>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
 				{% if d.po %}
 					{% if d.po_status == 1 %}
 						{% if d.po_workflow == "Approved" %}
@@ -86,7 +103,7 @@
 					</a>
 				{% endif %}
 			</div>
-			<div class="col-sm-2 small">
+			<div class="col-sm-1 small">
 				{% if d.pr && !d.pi %}
 					<div class="btn btn-primary" data-type="pri" data-name="{{ d.pr }}">Invoice
 					</div>
@@ -108,7 +125,7 @@
 					{% endif %}
 				{% endif %}
 			</div>
-			<div class="col-sm-2 small">
+			<div class="col-sm-1 small">
 				<div class="progress level" style="margin: 0px;">
 					<div class="progress-bar progress-bar-success" role="progressbar"
 						aria-valuenow={{d.progress}}
