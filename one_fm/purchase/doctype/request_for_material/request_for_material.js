@@ -43,10 +43,10 @@ frappe.ui.form.on('Request for Material', {
 		}
 		if(frm.doc.docstatus == 0){
 			if (frappe.user.has_role("Stock User")){
-				frm.set_df_property('type', 'options', "\nIndividual\nProject Mobilization\nStock");
+				frm.set_df_property('type', 'options', "\nIndividual\nProject Mobilization\nStock\nProject");
 			}
 			else{
-				frm.set_df_property('type', 'options', "\nIndividual\nProject Mobilization");
+				frm.set_df_property('type', 'options', "\nIndividual\nProject Mobilization\nProject");
 			}
 		}
 		if(frm.is_new()){
@@ -281,6 +281,7 @@ var set_employee_or_project = function(frm) {
 	if(frm.doc.type){
 		frm.set_df_property('employee', 'reqd', (frm.doc.type=='Individual')?true:false);
 		frm.set_df_property('project', 'reqd', (frm.doc.type=='Project Mobilization')?true:false);
+		frm.set_df_property('project', 'reqd', (frm.doc.type=='Project')?true:false);
 	}
 	else{
 		frm.set_df_property('employee', 'reqd', false);

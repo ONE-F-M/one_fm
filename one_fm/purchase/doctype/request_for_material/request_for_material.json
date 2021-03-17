@@ -1,5 +1,4 @@
 {
- "actions": [],
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2020-06-02 07:48:21.946737",
@@ -13,6 +12,7 @@
   "customer",
   "requested_by",
   "type",
+  "material_request_attach",
   "status",
   "reason_for_rejection",
   "column_break_2",
@@ -297,7 +297,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "\nIndividual\nProject Mobilization\nStock",
+   "options": "\nIndividual\nProject Mobilization\nStock\nProject",
    "print_hide": 1,
    "reqd": 1
   },
@@ -333,7 +333,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval: doc.type=='Project Mobilization'",
+   "depends_on": "eval: doc.type=='Project Mobilization' || doc.type=='Project'",
    "fieldname": "project",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -341,7 +341,7 @@
    "options": "Project"
   },
   {
-   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project Mobilization' || doc.type == 'Stock'",
+   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project Mobilization' || doc.type == 'Stock' || doc.type == 'Project'",
    "fieldname": "type_details_section",
    "fieldtype": "Section Break"
   },
@@ -382,7 +382,7 @@
    "label": "Technical Remarks"
   },
   {
-   "depends_on": "eval: doc.type=='Project Mobilization'",
+   "depends_on": "eval: doc.type=='Project Mobilization' || doc.type=='Project'",
    "fieldname": "project_details",
    "fieldtype": "Small Text",
    "label": "Project Details"
@@ -424,12 +424,16 @@
    "fieldname": "contract_number",
    "fieldtype": "Data",
    "label": "Contract Number"
+  },
+  {
+   "fieldname": "material_request_attach",
+   "fieldtype": "Attach",
+   "label": "Material Request"
   }
  ],
  "icon": "fa fa-ticket",
  "is_submittable": 1,
- "links": [],
- "modified": "2021-03-13 01:36:01.291959",
+ "modified": "2021-03-17 11:05:34.418399",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
