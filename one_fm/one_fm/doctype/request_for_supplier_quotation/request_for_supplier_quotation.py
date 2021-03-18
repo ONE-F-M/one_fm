@@ -48,13 +48,17 @@ class RequestforSupplierQuotation(Document):
         else:
             return None
 
+    def get_link(self):
+		# RFQ link for supplier portal
+		return get_url("/rfq1/" + self.name)
 
     def send_supplier_quotation_emails(self):
         for supplier in self.suppliers:
             if not supplier.email_id:
                 frappe.throw(_("Row {0}: For supplier {0} Email Address is required to send email").format(supplier.idx, supplier.supplier))
 
-            msg = frappe.render_template('one_fm/templates/emails/request_for_supplier_quotation.html', context={"items": self.items,"message_for_supplier": self.message_for_supplier,"terms": self.terms})
+            msg = frappe.render_template('one_fm/templates/emails/request_for_supplier_quotation.html',
+                context={"items": self.items,"message_for_supplier": self.message_for_supplier,"terms": self.terms, "rfq_link": self.get_link()})
 
             sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 

@@ -11,15 +11,24 @@ from frappe import _
 
 class RequestforMaterial(Document):
 	def on_submit(self):
-		self.notify_request_for_material_accepter()
+		# self.notify_request_for_material_accepter()
+		self.notify_request_for_material_approver()
 
-	def notify_request_for_material_accepter(self):
-		if self.request_for_material_accepter:
+	# def notify_request_for_material_accepter(self):
+	# 	if self.request_for_material_accepter:
+	# 		page_link = get_url("/desk#Form/Request for Material/" + self.name)
+	# 		message = "<p>Please Review and Accept or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
+	# 		subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
+	# 		send_email(self, [self.request_for_material_accepter], message, subject)
+	# 		create_notification_log(subject, message, [self.request_for_material_accepter], self)
+
+	def notify_request_for_material_approver(self):
+		if self.request_for_material_approver:
 			page_link = get_url("/desk#Form/Request for Material/" + self.name)
-			message = "<p>Please Review and Accept or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
+			message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
-			send_email(self, [self.request_for_material_accepter], message, subject)
-			create_notification_log(subject, message, [self.request_for_material_accepter], self)
+			send_email(self, [self.request_for_material_approver], message, subject)
+			create_notification_log(subject, message, [self.request_for_material_approver], self)
 
 	def accept_approve_reject_request_for_material(self, status, reason_for_rejection=None):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:

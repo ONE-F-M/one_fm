@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "RFSQS.#######",
  "creation": "2020-04-19 15:02:19.907712",
  "doctype": "DocType",
@@ -43,6 +44,7 @@
   {
    "columns": 3,
    "fetch_from": "contact.email_id",
+   "fetch_if_empty": 1,
    "fieldname": "email_id",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -75,8 +77,9 @@
   }
  ],
  "istable": 1,
- "modified": "2020-04-30 11:39:45.646001",
- "modified_by": "omar.ja93@gmail.com",
+ "links": [],
+ "modified": "2021-03-18 08:03:42.873863",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Request for Supplier Quotation Supplier",
  "owner": "omar.ja93@gmail.com",

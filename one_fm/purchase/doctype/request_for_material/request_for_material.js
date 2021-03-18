@@ -104,11 +104,11 @@ frappe.ui.form.on('Request for Material', {
 		// }
 
 		if (frm.doc.docstatus == 1){
-			if(frappe.session.user==frm.doc.request_for_material_accepter && frm.doc.status == "Draft"){
-				frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_approve_request_for_material(frm, 'Accepted')).addClass('btn-primary');
-				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_material(frm, 'Rejected')).addClass('btn-danger');
-			}
-			if(frappe.session.user==frm.doc.request_for_material_approver && frm.doc.status == "Accepted"){
+			// if(frappe.session.user==frm.doc.request_for_material_accepter && frm.doc.status == "Draft"){
+			// 	frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_approve_request_for_material(frm, 'Accepted')).addClass('btn-primary');
+			// 	frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_material(frm, 'Rejected')).addClass('btn-danger');
+			// }
+			if(frappe.session.user==frm.doc.request_for_material_approver && (frm.doc.status == "Accepted" || frm.doc.status == "Draft")){
 				frm.add_custom_button(__('Approve'), () => frm.events.confirm_accept_approve_request_for_material(frm, 'Approved')).addClass('btn-primary');
 				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_material(frm, 'Rejected')).addClass('btn-danger');
 			}
@@ -259,7 +259,11 @@ frappe.ui.form.on('Request for Material', {
 });
 
 var set_item_field_property = function(frm) {
-	if((frm.doc.docstatus == 1 && frappe.session.user == frm.doc.request_for_material_accepter)
+	// if((frm.doc.docstatus == 1 && frappe.session.user == frm.doc.request_for_material_accepter)
+	// 	|| frm.doc.type == 'Stock'){
+	// 	frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
+	// }
+	if((frm.doc.docstatus == 1 && frm.doc.status == 'Approved')
 		|| frm.doc.type == 'Stock'){
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
 	}
