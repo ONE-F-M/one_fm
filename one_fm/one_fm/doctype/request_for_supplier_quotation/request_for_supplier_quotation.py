@@ -49,8 +49,8 @@ class RequestforSupplierQuotation(Document):
             return None
 
     def get_link(self):
-		# RFQ link for supplier portal
-		return get_url("/rfq1/" + self.name)
+        # RFQ link for supplier portal
+        return get_url("/rfq1/" + self.name)
 
     def send_supplier_quotation_emails(self):
         for supplier in self.suppliers:
