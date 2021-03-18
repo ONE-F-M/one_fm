@@ -1,0 +1,193 @@
+{
+ "autoname": "format: test-{###}",
+ "creation": "2021-03-18 05:36:46.483805",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "scan_datetime",
+  "column_break_2",
+  "scanned_by",
+  "column_break_4",
+  "employee_name",
+  "column_break_1",
+  "scan_location",
+  "checkpoint_scanned_data_section",
+  "checkpoint_name",
+  "column_break_8",
+  "project",
+  "column_break_10",
+  "site",
+  "checkpoint_assignment_check_section",
+  "has_assignment",
+  "column_break_14",
+  "route_name",
+  "same_employeepost",
+  "column_break_17",
+  "employee",
+  "column_break_19",
+  "post",
+  "within_distance",
+  "column_break_22",
+  "distance_off",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "scan_datetime",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Scan Date/Time"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "scanned_by",
+   "fieldtype": "Link",
+   "label": "Scanned By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "scan_location",
+   "fieldtype": "Data",
+   "label": "Scan Location"
+  },
+  {
+   "fieldname": "checkpoint_scanned_data_section",
+   "fieldtype": "Section Break",
+   "label": "Checkpoint Scanned Data"
+  },
+  {
+   "fieldname": "checkpoint_name",
+   "fieldtype": "Link",
+   "label": "Checkpoint Name",
+   "options": "Checkpoints"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "checkpoint_name.project_name",
+   "fieldname": "project",
+   "fieldtype": "Data",
+   "label": "Project"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "checkpoint_name.site_name",
+   "fieldname": "site",
+   "fieldtype": "Data",
+   "label": "Site"
+  },
+  {
+   "fieldname": "checkpoint_assignment_check_section",
+   "fieldtype": "Section Break",
+   "label": "Checkpoint Assignment Check"
+  },
+  {
+   "fieldname": "has_assignment",
+   "fieldtype": "Select",
+   "label": "Has Assignment?",
+   "options": "YES\nNO"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "route_name",
+   "fieldtype": "Data",
+   "label": "Route Name"
+  },
+  {
+   "fieldname": "same_employeepost",
+   "fieldtype": "Select",
+   "label": "Same Employee/Post?",
+   "options": "YES\nNO"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Data",
+   "label": "Employee"
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "post",
+   "fieldtype": "Data",
+   "label": "Post"
+  },
+  {
+   "fieldname": "column_break_22",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "distance_off",
+   "fieldtype": "Data",
+   "label": "Distance off"
+  },
+  {
+   "fieldname": "within_distance",
+   "fieldtype": "Data",
+   "label": "Within Distance?",
+   "options": "YES\nNO"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Checkpoint Assignment Scan",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "scanned_by.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Read Only",
+   "label": "Employee Name"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "modified": "2021-03-18 15:10:58.026074",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Checkpoint Assignment Scan",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
