@@ -92,6 +92,10 @@ class RequestforMaterial(Document):
 				self.employee = ''
 				self.employee_name = ''
 				self.department = ''
+			if self.type == 'Project':
+				self.employee = ''
+				self.employee_name = ''
+				self.department = ''
 
 	def set_title(self):
 		'''Set title as comma separated list of items'''
