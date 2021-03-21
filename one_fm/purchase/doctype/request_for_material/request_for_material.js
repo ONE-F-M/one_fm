@@ -86,6 +86,10 @@ frappe.ui.form.on('Request for Material', {
 							() => frm.events.make_sales_invoice(frm), __('Create'));
 				}
 			}
+			if (frm.doc.type === "Stock") {
+				frm.add_custom_button(__("Make Delivery Note"),
+				    () => frm.events.make_delivery_note(frm), __('Create'));
+			}
 
 			if (frm.doc.material_request_type === "Purchase") {
 				frm.add_custom_button(__("Request for Purchase"),
@@ -207,6 +211,17 @@ frappe.ui.form.on('Request for Material', {
 			frm: frm,
 			run_link_triggers: true
 		});
+	},
+	make_delivery_note: function(frm) {
+		if(frm.is_dirty()){
+			frappe.msgprint(__("Please Update the Document and Create."))
+		}
+		else{
+			frappe.model.open_mapped_doc({
+				method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_delivery_note",
+				frm: frm
+			});
+		}
 	},
 	make_request_for_purchase: function(frm) {
 		if(frm.is_dirty()){
