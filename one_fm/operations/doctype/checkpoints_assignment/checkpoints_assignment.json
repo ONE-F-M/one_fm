@@ -26,14 +26,16 @@
   {
    "fetch_from": "checkpoint_name.site_name",
    "fieldname": "site",
-   "fieldtype": "Data",
-   "label": "Site"
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
   },
   {
    "fetch_from": "checkpoint_name.project_name",
    "fieldname": "project",
-   "fieldtype": "Data",
-   "label": "Project"
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
   },
   {
    "fieldname": "employee",
@@ -75,7 +77,7 @@
    "label": "End Date Time"
   }
  ],
- "modified": "2020-12-29 10:00:38.444453",
+ "modified": "2021-03-21 19:28:16.627113",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Checkpoints Assignment",
