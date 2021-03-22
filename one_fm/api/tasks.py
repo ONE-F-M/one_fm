@@ -1,10 +1,12 @@
-import frappe, erpnext
-from frappe import _
-from frappe.utils import now_datetime, cstr, getdate, get_datetime, cint, add_to_date
+import itertools
 from datetime import timedelta
 from string import Template
 from calendar import month
 from datetime import timedelta
+
+import frappe, erpnext
+from frappe import _
+from frappe.utils import now_datetime, cstr, getdate, get_datetime, cint, add_to_date
 from one_fm.api.doc_events import get_employee_user_id
 from erpnext.hr.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import create_payroll_entry
@@ -300,7 +302,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 
 def automatic_shift_assignment():
 	date = cstr(getdate())
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working", "project": ("in", ["Mighty Zinger", "Sample Mobile App Project"]) }, ["*"])
+	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working", "site": ("in", ["HO", "Mahboula Camp", "Farwaniyah Camp", "Plot 40", "Head Office"]) }, ["*"])
 	for schedule in roster:
 		create_shift_assignment(schedule, date)
 
@@ -360,3 +362,101 @@ def generate_payroll():
 			frappe.log_error(frappe.get_traceback())
 
 
+
+def generate_penalties():
+	start_date = add_to_date(getdate(), months=-1)
+	end_date = get_end_date(start_date, 'monthly')['end_date']
+	# start_date = '2020-06-24'
+	# end_date = '2020-07-23'
+	filters = {
+		'penalty_issuance_time': ['between', (start_date, end_date)],
+		'workflow_state': 'Penalty Accepted'
+	}
+	logs = frappe.db.get_list('Penalty', filters=filters, fields="*", order_by="recipient_employee,penalty_issuance_time")
+	# print(logs)
+	for key, group in itertools.groupby(logs, key=lambda x: (x['recipient_employee'])):
+		employee_penalties = list(group)
+		calculate_penalty_amount(key, start_date, end_date, employee_penalties)
+		# print(key, employee_penalties)
+		print("-----------------------------------")
+
+
+
+def calculate_penalty_amount(employee, start_date, end_date, logs):
+	filters = {
+		'docstatus': 1,
+		'employee': employee
+	}
+	salary_structure = frappe.get_value("Salary Structure Assignment", filters, "salary_structure", order_by="from_date desc")
+	# print(employee, salary_structure)
+	basic_salary = frappe.db.sql("""
+		SELECT amount FROM `tabSalary Detail`
+		WHERE parenttype="Salary Structure" 
+		AND parent=%s 
+		AND salary_component="Basic"
+	""",(salary_structure), as_dict=1)
+	
+	#Single day salary of employee = Basic Salary(WP salary) divided by 26 days
+	single_day_salary = basic_salary[0].amount / 26 
+
+	#Existing balance amount
+	existing_balance = 0.00
+	if frappe.db.exists("Penalty Deduction", {'employee': employee}):
+		existing_balance = frappe.get_value("Penalty Deduction", {'employee': employee}, "balance_amount", order_by='posting_time desc')
+	
+	#Calculate new amount
+	references =  ', '.join(['"{}"'.format(log.name) for log in logs])
+
+	# references = '"HR-EMP-00002-006", "HR-EMP-00002-004"'
+	damages_amount = frappe.db.sql("""
+		SELECT sum(py.damage_amount) as damages_amount, py.name
+		FROM `tabPenalty` as py 
+		WHERE py.name in ({refs})
+	""".format(refs=references), as_dict=1)
+	# print(damages_amount)
+
+	days_deduction = frappe.db.sql("""
+		SELECT sum(pd.deduction) as days_deduction, pd.name 
+		FROM `tabPenalty Issuance Details` as pd
+		WHERE
+			pd.parenttype="Penalty"
+		AND pd.parent in ({refs})
+	""".format(refs=references), as_dict=1)
+	print(damages_amount, days_deduction)
+
+	# Days deduction
+	days_deduction_amount = days_deduction[0].days_deduction * single_day_salary
+
+	# Damages amount
+	damages_amount = damages_amount[0].damages_amount
+
+	# Sum of previous balance amount, days deduction amount and damages amount
+	total_penalty_amount = existing_balance + days_deduction_amount + damages_amount
+	
+	# Maxmimum allowed deductible salary according to Kuwaiti law (5 days for penalties)
+	max_amount = single_day_salary * 5
+	
+	#Amount to be deducted this time
+	if total_penalty_amount > max_amount:
+		deducted_amount = max_amount
+		balance_amount = total_penalty_amount - max_amount
+	else:
+		deducted_amount = total_penalty_amount
+		balance_amount = 0
+	print(employee, start_date, end_date, total_penalty_amount, single_day_salary, max_amount, deducted_amount, balance_amount)
+	create_penalty_deduction(start_date, end_date, employee, total_penalty_amount, single_day_salary, max_amount, deducted_amount, balance_amount)
+
+
+def create_penalty_deduction(start_date, end_date, employee, total_penalty_amount, single_day_amount, max_amount, deducted_amount, balance_amount):
+	penalty_deduction = frappe.new_doc("Penalty Deduction")
+	penalty_deduction.posting_time = get_datetime()
+	penalty_deduction.employee = employee
+	penalty_deduction.from_date = start_date
+	penalty_deduction.to_date = end_date
+	penalty_deduction.total_penalty_amount = total_penalty_amount
+	penalty_deduction.single_day_amount = single_day_amount
+	penalty_deduction.maximum_amount = max_amount
+	penalty_deduction.deducted_amount = deducted_amount
+	penalty_deduction.balance_amount = balance_amount
+	penalty_deduction.insert()
+	penalty_deduction.submit()
