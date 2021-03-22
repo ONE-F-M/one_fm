@@ -1,5 +1,9 @@
 .scanner-parent {
-  max-width: 700px;
+  max-height: calc(40vh - 40px);
   margin: auto;
   display: block;
 }
+
+/* .map-parent {
+  height: 400px;
+} */

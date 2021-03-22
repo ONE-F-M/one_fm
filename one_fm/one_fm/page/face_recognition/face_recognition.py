@@ -68,6 +68,7 @@ def enroll():
 				print("Enrolling Success")
 		return _("Successfully Enrolled!")
 	except Exception as exc:
+		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
 		raise exc
 
@@ -197,6 +198,8 @@ def create_encodings(directory, detection_method="hog"):# detection_method can b
 	# dump the facial encodings + names to disk	
 	data = {"encodings": knownEncodings}
 	print(data)
+	if len(knownEncodings) == 0:
+		frappe.throw(_("No face found in the video. Please make sure you position your face correctly in front of the camera."))
 	data = json.dumps(data, cls=NumpyArrayEncoder)
 	with open(encoding_path,"w") as f:
  		f.write(data)

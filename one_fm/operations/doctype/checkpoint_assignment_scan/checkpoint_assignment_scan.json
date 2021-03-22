@@ -20,15 +20,13 @@
   "site",
   "checkpoint_assignment_check_section",
   "has_assignment",
-  "column_break_14",
   "route_name",
-  "same_employeepost",
-  "column_break_17",
+  "column_break_14",
+  "same_assignment",
   "employee",
-  "column_break_19",
   "post",
+  "column_break_17",
   "within_distance",
-  "column_break_22",
   "distance_off",
   "amended_from"
  ],
@@ -76,8 +74,9 @@
   {
    "fetch_from": "checkpoint_name.project_name",
    "fieldname": "project",
-   "fieldtype": "Data",
-   "label": "Project"
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
   },
   {
    "fieldname": "column_break_10",
@@ -86,8 +85,9 @@
   {
    "fetch_from": "checkpoint_name.site_name",
    "fieldname": "site",
-   "fieldtype": "Data",
-   "label": "Site"
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
   },
   {
    "fieldname": "checkpoint_assignment_check_section",
@@ -105,46 +105,37 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.has_assignment==\"YES\"",
    "fieldname": "route_name",
    "fieldtype": "Data",
    "label": "Route Name"
-  },
-  {
-   "fieldname": "same_employeepost",
-   "fieldtype": "Select",
-   "label": "Same Employee/Post?",
-   "options": "YES\nNO"
   },
   {
    "fieldname": "column_break_17",
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.same_assignment==\"NO\"",
    "fieldname": "employee",
    "fieldtype": "Data",
    "label": "Employee"
   },
   {
-   "fieldname": "column_break_19",
-   "fieldtype": "Column Break"
-  },
-  {
+   "depends_on": "eval:doc.same_assignment==\"NO\"",
    "fieldname": "post",
    "fieldtype": "Data",
    "label": "Post"
   },
   {
-   "fieldname": "column_break_22",
-   "fieldtype": "Column Break"
-  },
-  {
+   "depends_on": "eval:doc.within_distance==\"NO\"",
+   "description": "in metres",
    "fieldname": "distance_off",
-   "fieldtype": "Data",
+   "fieldtype": "Float",
    "label": "Distance off"
   },
   {
    "fieldname": "within_distance",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "Within Distance?",
    "options": "YES\nNO"
   },
@@ -166,9 +157,15 @@
   {
    "fieldname": "column_break_1",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "same_assignment",
+   "fieldtype": "Select",
+   "label": "Same Employee/Post?",
+   "options": "YES\nNO"
   }
  ],
- "modified": "2021-03-18 15:10:58.026074",
+ "modified": "2021-03-21 20:38:12.757891",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Checkpoint Assignment Scan",
