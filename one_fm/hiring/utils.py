@@ -246,3 +246,10 @@ def notify_finance_job_offer_salary_advance(job_offer_id=None, job_offer_list=No
             message=message,
             header=['Payment Request for Job Offer Advance Salary', 'yellow'],
         )
+
+@frappe.whitelist()
+def get_onboarding_details(parent, parenttype):
+	return frappe.get_all("Onboard Employee Activity",
+		fields=["action", "role", "user", "required_for_employee_creation", "description"],
+		filters={"parent": parent, "parenttype": parenttype},
+		order_by= "idx")
