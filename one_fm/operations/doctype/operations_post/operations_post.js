@@ -14,18 +14,22 @@ frappe.ui.form.on('Operations Post', {
 				callback: function(r) {
 					if(!r.exc) {
 						let {designations, skills} = r.message;
+						frm.clear_table("skills");
 						skills.forEach((skill) => {
 							let child_row = frappe.model.add_child(frm.doc, "skills");
 							child_row.skill = skill.skill;
 							child_row.minimum_proficiency_required = skill.minimum_proficiency_required;
 						});
 						frm.refresh_fields("skills");
+					
+						frm.clear_table("designations");
 						designations.forEach((designation) => {
 							let child_row = frappe.model.add_child(frm.doc, "designations");
 							child_row.designation = designation.designation;
 							child_row.primary = designation.primary;
 						});										
 						frm.refresh_fields("designations");
+					
 					}
 				}
 			});
