@@ -82,7 +82,7 @@ def get_data():
 					"onboard": 1,
 					"type": "doctype",
 					"name": "Employee Schedule",
-					"label": _("Roster")
+					"label": _("Employee Schedule")
 				},
 				{
 					# "color": "grey",
