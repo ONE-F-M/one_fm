@@ -65,7 +65,6 @@ doctype_js = {
 	"Asset Movement": "public/js/doctype_js/asset_movement.js",
 	"Job Opening": "public/js/doctype_js/job_opening.js",
 	"Warehouse": "public/js/doctype_js/warehouse.js",
-	"Loan": "public/js/doctype_js/loan.js",
 	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js"
 }
 doctype_list_js = {
@@ -203,6 +202,9 @@ doc_events = {
 	},
 	"Sales Invoice":{
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice"
+	},
+	"Salary Slip": {
+		"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit"
 	}
 }
 
@@ -321,6 +323,12 @@ scheduler_events = {
 		],
 		"0 */48 * * *": [
 			'one_fm.one_fm.pifss.doctype.pifss_form_103.pifss_form_103.notify_open_pifss'
+		],
+		"00 00 24 * *": [
+			'one_fm.api.tasks.generate_penalties'
+		],
+		"00 02 24 * *": [
+			'one_fm.api.tasks.generate_payroll'
 		]
 	}
 }

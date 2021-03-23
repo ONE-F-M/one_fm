@@ -366,19 +366,15 @@ def generate_payroll():
 def generate_penalties():
 	start_date = add_to_date(getdate(), months=-1)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
-	# start_date = '2020-06-24'
-	# end_date = '2020-07-23'
+
 	filters = {
 		'penalty_issuance_time': ['between', (start_date, end_date)],
 		'workflow_state': 'Penalty Accepted'
 	}
 	logs = frappe.db.get_list('Penalty', filters=filters, fields="*", order_by="recipient_employee,penalty_issuance_time")
-	# print(logs)
 	for key, group in itertools.groupby(logs, key=lambda x: (x['recipient_employee'])):
 		employee_penalties = list(group)
 		calculate_penalty_amount(key, start_date, end_date, employee_penalties)
-		# print(key, employee_penalties)
-		print("-----------------------------------")
 
 
 
@@ -388,7 +384,6 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		'employee': employee
 	}
 	salary_structure = frappe.get_value("Salary Structure Assignment", filters, "salary_structure", order_by="from_date desc")
-	# print(employee, salary_structure)
 	basic_salary = frappe.db.sql("""
 		SELECT amount FROM `tabSalary Detail`
 		WHERE parenttype="Salary Structure" 
@@ -422,7 +417,6 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 			pd.parenttype="Penalty"
 		AND pd.parent in ({refs})
 	""".format(refs=references), as_dict=1)
-	print(damages_amount, days_deduction)
 
 	# Days deduction
 	days_deduction_amount = days_deduction[0].days_deduction * single_day_salary
@@ -443,7 +437,7 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 	else:
 		deducted_amount = total_penalty_amount
 		balance_amount = 0
-	print(employee, start_date, end_date, total_penalty_amount, single_day_salary, max_amount, deducted_amount, balance_amount)
+
 	create_penalty_deduction(start_date, end_date, employee, total_penalty_amount, single_day_salary, max_amount, deducted_amount, balance_amount)
 
 
