@@ -5,7 +5,11 @@
  "engine": "InnoDB",
  "field_order": [
   "notify_users_section",
-  "pifss"
+  "pifss",
+  "contribution_breakup_section",
+  "employer_contribution",
+  "column_break_5",
+  "employee_contribution"
  ],
  "fields": [
   {
@@ -19,10 +23,32 @@
    "fieldtype": "Table",
    "label": "PIFSS ",
    "options": "PIFSS Settings Users"
+  },
+  {
+   "fieldname": "contribution_breakup_section",
+   "fieldtype": "Section Break",
+   "label": "Contribution Breakup"
+  },
+  {
+   "description": "%age of Total Subscription",
+   "fieldname": "employer_contribution",
+   "fieldtype": "Percent",
+   "label": "Employer Contribution"
+  },
+  {
+   "description": "%age of Total Subscription",
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "%age of Total Subscription",
+   "fieldname": "employee_contribution",
+   "fieldtype": "Percent",
+   "label": "Employee Contribution"
   }
  ],
  "issingle": 1,
- "modified": "2020-11-12 18:51:35.406200",
+ "modified": "2021-03-23 16:39:07.653380",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Settings",

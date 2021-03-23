@@ -5,7 +5,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "penalty_code",
+  "reference_doctype",
+  "column_break_3",
+  "reference_docname",
   "investigation_details_section",
   "investigation_subject",
   "investigation_lead",
@@ -14,6 +16,12 @@
   "column_break_6",
   "start_date",
   "end_date",
+  "damages_section",
+  "company_damage",
+  "asset_damage",
+  "column_break_15",
+  "customer_property_damage",
+  "other_damages",
   "section_break_9",
   "legal_investigation_employees",
   "results_section",
@@ -26,14 +34,6 @@
   "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "penalty_code",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Penalty Code",
-   "options": "Penalty"
-  },
   {
    "fieldname": "investigation_details_section",
    "fieldtype": "Section Break",
@@ -142,10 +142,60 @@
    "hidden": 1,
    "label": "Investigation Lead User",
    "read_only": 1
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Select",
+   "label": "Reference Document",
+   "options": "\nPenalty\nPenalty Issuance"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_docname",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "damages_section",
+   "fieldtype": "Section Break",
+   "label": "Damages"
+  },
+  {
+   "default": "0",
+   "fieldname": "company_damage",
+   "fieldtype": "Check",
+   "label": "Company Damage"
+  },
+  {
+   "default": "0",
+   "fieldname": "asset_damage",
+   "fieldtype": "Check",
+   "label": "Asset Damage"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "customer_property_damage",
+   "fieldtype": "Check",
+   "label": "Customer Property Damage"
+  },
+  {
+   "default": "0",
+   "fieldname": "other_damages",
+   "fieldtype": "Check",
+   "label": "Other Damages"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-07-27 18:40:34.547744",
+ "modified": "2021-01-25 11:16:24.912024",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Legal Investigation",
@@ -164,6 +214,7 @@
    "write": 1
   }
  ],
+ "search_fields": "investigation_subject,reference_docname",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

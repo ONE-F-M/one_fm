@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
+from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date,get_link_to_form
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from frappe.desk.form.assign_to import add as assign_to
@@ -15,14 +15,50 @@ class PenaltyIssuance(Document):
 		self.validate_location()
 	
 	def on_submit(self):
-		self.issue_penalty()
+		if self.company_damage or self.asset_damage or self.customer_property_damage or self.other_damages:
+			self.open_legal_investigation()
+		else:
+			self.issue_penalty()
 
 	def validate_location(self):
 		if self.different_location:
 			subject = _("Penalty Issuance Review")
-			message = _("Please review the penalty issuance. The penalty location details were added manually by the supervisor.")
-			recipient = ["legal@one-fm.com"]
+			link = get_link_to_form(self.doctype, self.name)
+			message = _("Please review the penalty issuance. The penalty location details were added manually by the supervisor.<br> Link: {link}".format(link=link))
+			recipient = [frappe.get_value("Legal Settings", "Legal Settings", "legal_department_email")]
 			frappe.sendmail(recipient, subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
+
+	def open_legal_investigation(self):
+		if frappe.db.exists("Legal Investigation", {"reference_doctype": self.doctype, "reference_name": self.name}):
+			frappe.throw(_("Legal Investigaton already created."))
+		legal_inv = frappe.new_doc("Legal Investigation")
+		legal_inv.investigation_subject = "Penalty Issued with damages"
+		legal_inv.reference_doctype = self.doctype
+		legal_inv.reference_docname = self.name
+		legal_inv.investigation_lead = None
+		legal_inv.company_damage = self.company_damage
+		legal_inv.asset_damage = self.asset_damage
+		legal_inv.customer_property_damage = self.customer_property_damage
+		legal_inv.other_damages = self.other_damages
+		legal_inv.append("legal_investigation_employees", {
+			"employee_id": self.issuing_employee,
+			"employee_name": self.employee_name,
+			"designation": self.designation,
+			"party": "Plaintiff"
+		})	
+		for employee in self.employees:
+			legal_inv.append("legal_investigation_employees", {
+				"employee_id": employee.employee_id,
+				"employee_name": employee.employee_name,
+				"designation": employee.designation,
+				"party": "Defendant"
+			})	
+
+		legal_inv.start_date = add_to_date(getdate(), days=2)
+		legal_inv.save(ignore_permissions=True)
+
+		# self.db_set("legal_investigation_code", legal_inv.name)		
+		frappe.db.commit()
 
 	def issue_penalty(self):
 		for employee in self.employees:
@@ -51,6 +87,11 @@ class PenaltyIssuance(Document):
 			penalty.site = self.site
 			penalty.site_location = self.site_location
 			penalty.project = self.project
+			
+			penalty.company_damage = self.company_damage
+			penalty.asset_damage = self.asset_damage
+			penalty.customer_property_damage = self.customer_property_damage
+			penalty.other_damages = self.other_damages
 
 			for penalty_detail in self.penalty_issuance_details:
 				penalty_details = {
@@ -66,7 +107,8 @@ class PenaltyIssuance(Document):
 
 					#If penalty occurence date is between start and lapse date, it means it occured in existing period. Otherwise reset the occurence counter
 					if cstr(occurences[0].period_start_date) <= cstr(getdate(self.penalty_occurence_time)) <= cstr(occurences[0].period_lapse_date):
-						existing_occurences = self.get_existing_occurences(employee.employee_id, penalty_detail.penalty_type, occurences[0].period_start_date, occurences[0].period_lapse_date, )
+						existing_occurences = self.get_existing_occurences(employee.employee_id, penalty_detail.penalty_type, occurences[0].period_start_date, occurences[0].period_lapse_date)
+						print("[EXISTING]", existing_occurences)
 						if len(existing_occurences) < 7:
 							occurence = len(existing_occurences) + 1
 							penalty_details.update({
@@ -104,14 +146,14 @@ class PenaltyIssuance(Document):
 					print(penalty_details)
 					penalty.append("penalty_details", penalty_details)
 
-			penalty.save()
-			assign_to({
-				"assign_to": user_id,
-				"doctype": penalty.doctype,
-				"name": penalty.name,
-				"description": "Penalty Issued by {employee_id}:{issuer}.".format(employee_id=self.issuing_employee, issuer=self.employee_name)
-			})
-		frappe.db.commit()
+			# penalty.save()
+		# 	assign_to({
+		# 		"assign_to": user_id,
+		# 		"doctype": penalty.doctype,
+		# 		"name": penalty.name,
+		# 		"description": "Penalty Issued by {employee_id}:{issuer}.".format(employee_id=self.issuing_employee, issuer=self.employee_name)
+		# 	})
+		# frappe.db.commit()
 
 	def get_occurences(self, employee_id, penalty_type):
 		penalties = frappe.db.sql("""
@@ -125,6 +167,7 @@ class PenaltyIssuance(Document):
 			AND PID.parenttype="Penalty"
 			ORDER BY P.penalty_occurence_time DESC
 		""".format(penalty_type=penalty_type, emp=employee_id), as_dict=1)
+		print("[PENALTIES]",penalties)
 		return [penalties[0]] if penalties else []
 
 	def get_existing_occurences(self, employee_id, penalty_type, start_date, lapse_date):
@@ -268,7 +311,6 @@ def get_current_penalty_location(location, penalty_occurence_time):
 
 @frappe.whitelist()
 def filter_employees(doctype, txt, searchfield, start, page_len, filters):
-	print("CALLED",filters)
 	shift = filters.get('shift')
 	time = filters.get('penalty_occurence_time')
 	print("""

@@ -1,0 +1,97 @@
+{
+ "modified": "2021-02-07 15:27:32.134826",
+ "editable_grid": 1,
+ "name": "Penalty Deduction Schedules",
+ "permissions": [
+  {
+   "print": 1,
+   "export": 1,
+   "create": 1,
+   "role": "System Manager",
+   "report": 1,
+   "read": 1,
+   "email": 1,
+   "write": 1,
+   "share": 1
+  }
+ ],
+ "engine": "InnoDB",
+ "sort_order": "DESC",
+ "module": "Legal",
+ "creation": "2021-02-04 10:40:30.189188",
+ "modified_by": "Administrator",
+ "quick_entry": 1,
+ "field_order": [
+  "employee",
+  "column_break_2",
+  "employee_name",
+  "section_break_4",
+  "deduction_details",
+  "section_break_6",
+  "total_deduction_days",
+  "column_break_6",
+  "settled_deduction_days",
+  "column_break_8",
+  "remaining_days"
+ ],
+ "fields": [
+  {
+   "fieldtype": "Link",
+   "label": "Employee",
+   "fieldname": "employee",
+   "options": "Employee"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_break_2"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "fieldname": "employee_name",
+   "read_only": 1
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_break_4"
+  },
+  {
+   "fieldtype": "Int",
+   "label": "Total Deduction Days",
+   "fieldname": "total_deduction_days"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_break_6"
+  },
+  {
+   "fieldtype": "Int",
+   "label": "Settled Deduction Days",
+   "fieldname": "settled_deduction_days"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_break_8"
+  },
+  {
+   "fieldtype": "Int",
+   "label": "Remaining Days",
+   "fieldname": "remaining_days"
+  },
+  {
+   "fieldtype": "Table",
+   "label": "Deduction Details",
+   "fieldname": "deduction_details",
+   "options": "Penalty Deduction Details"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_break_6"
+  }
+ ],
+ "sort_field": "modified",
+ "owner": "Administrator",
+ "track_changes": 1,
+ "doctype": "DocType"
+}
