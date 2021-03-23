@@ -28,11 +28,17 @@ class Penalty(Document):
 	def on_update(self):
 		doc_before_update = self.get_doc_before_save()
 		print(self.as_dict())
+		if (doc_before_update and doc_before_update.workflow_state != "Penalty Accepted") and self.workflow_state == "Penalty Accepted":
+			self.update_penalty_deductions()
+
 		if (doc_before_update and doc_before_update.workflow_state != "Penalty Rejected") and self.workflow_state == "Penalty Rejected":
 			self.create_legal_investigation()
+	
+	def update_penalty_deductions(self):
+		pass
 
 	def create_legal_investigation(self):
-		if frappe.db.exists("Legal Investigation", {"penalty_code": self.name}):
+		if frappe.db.exists("Legal Investigation",{"reference_doctype": self.doctype, "reference_name": self.name}):
 			frappe.throw(_("Legal Investigaton already created."))
 		legal_inv = frappe.new_doc("Legal Investigation")
 		legal_inv.penalty_code = self.name
@@ -104,7 +110,7 @@ def reject_penalty(rejection_reason, docname):
 	frappe.db.commit()
 
 def send_email_to_legal(penalty, message=None):
-	legal = "legal@one-fm.com"
+	legal = frappe.get_value("Legal Settings", "Legal Settings", "legal_department_email")
 	link = get_link_to_form(penalty.doctype, penalty.name)
 	subject = _("Review Penalty: {penalty}".format(penalty=penalty.name))
 	message = _("Face verification did not match while accepting the penalty.<br> Please review and take necessary action.<br> Link: {link}".format(link=link)) if not message else message
@@ -190,3 +196,5 @@ def automatic_accept():
 		penalty.workflow_state = "Penalty Accepted"
 		penalty.save(ignore_permissions=True)
 		send_email_to_legal(penalty, _("Penalty was accepted after 48 hours automatically. Please review."))
+	
+	frappe.db.commit()

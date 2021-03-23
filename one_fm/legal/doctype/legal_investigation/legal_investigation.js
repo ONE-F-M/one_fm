@@ -70,3 +70,44 @@ function validate_dates(frm){
 		}
 	}
 }
+
+
+frappe.ui.form.on('Legal Investigation Penalty', {
+	use_penalty_details: function(frm, cdt, cdn){
+		let row = locals[cdt][cdn];
+		let {use_penalty_details} = row;
+		if(use_penalty_details){
+			let grid_row = frm.open_grid_row();
+			let {reference_doctype, reference_docname} = frm.doc;
+			frappe.db.get_value(reference_doctype, {'name': reference_docname}, 
+			["asset_damage", "company_damage","other_damages" ,"customer_property_damage", 
+			"penalty_location", "penalty_occurence_time", "shift", "site","project", "site_location"])
+			.then(res => {
+				console.log(res);
+				let {asset_damage,company_damage,other_damages,customer_property_damage, penalty_location, penalty_occurence_time, shift, site,project, site_location} = res.message;
+				row.penalty_location = penalty_location;
+				row.penalty_occurence_time = penalty_occurence_time;
+				row.shift = shift;
+				row.site = site;
+				row.project = project;
+				row.site_location = site_location;
+				row.asset_damage = asset_damage;
+				row.customer_property_damage = customer_property_damage;
+				row.other_damages = other_damages;
+				row.company_damage = company_damage;
+				//Set fields to read-only
+				grid_row.grid_form.fields_dict.penalty_location.df.read_only = true;
+				grid_row.grid_form.fields_dict.penalty_occurence_time.df.read_only = true;
+				grid_row.grid_form.fields_dict.shift.df.read_only = true;
+				grid_row.grid_form.fields_dict.site.df.read_only = true;
+				grid_row.grid_form.fields_dict.project.df.read_only = true;
+				grid_row.grid_form.fields_dict.site_location.df.read_only = true;
+				grid_row.grid_form.fields_dict.asset_damage.df.read_only = true;
+				grid_row.grid_form.fields_dict.customer_property_damage.df.read_only = true;
+				grid_row.grid_form.fields_dict.company_damage.df.read_only = true;
+				grid_row.grid_form.fields_dict.other_damages.df.read_only = true;
+				frm.refresh_field('legal_investigation_penalty');
+			})
+		}
+	}
+})

@@ -8,9 +8,20 @@ frappe.ui.form.on('Penalty Issuance', {
 			get_location(frm);
             set_issuing_employee(frm);
         }	
-        set_employee_filters(frm);
         frm.fields_dict["penalty_issuance_details"].grid.set_column_disp(["penalty_levied"], 0);
         frm.fields_dict["penalty_issuance_details"].grid.set_column_disp(["occurence_number"], 0);
+    },
+    penalty_category: function(frm){
+        let {penalty_category} = frm.doc;
+        if(penalty_category == "Performance"){
+            frm.set_df_property('shift', 'reqd', true);
+            frm.set_df_property('site', 'reqd', true);
+            console.log("1");
+            set_employee_filters(frm);
+        } else {
+            frm.set_df_property('shift', 'reqd', false);
+            frm.set_df_property('site', 'reqd', false); 
+        }
     },
     pull_as_current: function(frm){
         if(frm.doc.docstatus < 1){
@@ -22,6 +33,7 @@ frappe.ui.form.on('Penalty Issuance', {
         //Add 10 days validation
         let {penalty_occurence_time, doctype, name, shift} = frm.doc;
         frm.clear_table('employees');
+        console.log("2");
         set_employee_filters(frm);
         if(penalty_occurence_time !== undefined){
             let now = moment();
@@ -41,18 +53,11 @@ frappe.ui.form.on('Penalty Issuance', {
     shift: function(frm){
         frm.clear_table('employees');
         frappe.model.set_value(frm.doctype, frm.docname, "different_location", 1);
+        console.log("3");
         set_employee_filters(frm);
     }
 
 });
-
-frappe.ui.form.on('Penalty Issuance Employees', {
-    form_render: function(frm, cdt, cdn){
-
-    }
-})
-
-
 
 function get_location(frm){
     if (navigator.geolocation) {

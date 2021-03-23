@@ -5,15 +5,17 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "penalty_category",
+  "cb1",
   "issuing_time",
   "column_break_2",
   "location",
   "section_break_6",
   "penalty_location",
   "penalty_occurence_time",
-  "shift",
   "pull_as_current",
   "column_break_10",
+  "shift",
   "site",
   "project",
   "site_location",
@@ -28,7 +30,13 @@
   "column_break_21",
   "designation",
   "amended_from",
-  "different_location"
+  "different_location",
+  "additional_damages_section",
+  "company_damage",
+  "asset_damage",
+  "column_break_28",
+  "customer_property_damage",
+  "other_damages"
  ],
  "fields": [
   {
@@ -66,24 +74,24 @@
    "label": "Penalty Details"
   },
   {
+   "depends_on": "eval:doc.penalty_category==\"Performance\"",
    "fetch_from": "shift.site",
    "fieldname": "site",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Site",
-   "options": "Operations Site",
-   "reqd": 1
+   "options": "Operations Site"
   },
   {
+   "depends_on": "eval:doc.penalty_category==\"Performance\"",
    "fieldname": "shift",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Shift",
-   "options": "Operations Shift",
-   "reqd": 1
+   "options": "Operations Shift"
   },
   {
-   "depends_on": "eval:doc.docstatus<1",
+   "depends_on": "eval:doc.penalty_category==\"Performance\" && doc.docstatus<1",
    "fieldname": "pull_as_current",
    "fieldtype": "Button",
    "label": "Pull As Current"
@@ -93,12 +101,14 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.penalty_category==\"Performance\"",
    "fetch_from": "site.site_location",
    "fieldname": "site_location",
    "fieldtype": "Data",
    "label": "Site Location"
   },
   {
+   "depends_on": "eval:doc.penalty_category==\"Performance\"",
    "fetch_from": "shift.project",
    "fieldname": "project",
    "fieldtype": "Link",
@@ -182,10 +192,55 @@
    "hidden": 1,
    "label": "different_location",
    "read_only": 1
+  },
+  {
+   "fieldname": "additional_damages_section",
+   "fieldtype": "Section Break",
+   "label": "Additional Damages"
+  },
+  {
+   "default": "0",
+   "fieldname": "company_damage",
+   "fieldtype": "Check",
+   "label": "Company Damage"
+  },
+  {
+   "default": "0",
+   "fieldname": "asset_damage",
+   "fieldtype": "Check",
+   "label": "Asset Damage"
+  },
+  {
+   "fieldname": "column_break_28",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "customer_property_damage",
+   "fieldtype": "Check",
+   "label": "Customer property damage"
+  },
+  {
+   "default": "0",
+   "fieldname": "other_damages",
+   "fieldtype": "Check",
+   "label": "Other damages"
+  },
+  {
+   "fieldname": "penalty_category",
+   "fieldtype": "Select",
+   "in_global_search": 1,
+   "in_standard_filter": 1,
+   "label": "Penalty Category",
+   "options": "\nPerformance\nAccomodation\nTransportation"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-07-02 14:38:40.952537",
+ "modified": "2021-01-18 19:04:01.142869",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty Issuance",
@@ -204,6 +259,7 @@
    "write": 1
   }
  ],
+ "search_fields": "penalty_category, employee_name, penalty_location",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1
