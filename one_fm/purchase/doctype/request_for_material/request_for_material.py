@@ -8,19 +8,21 @@ from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import flt, get_url
 from frappe import _
+from frappe.utils.user import get_users_with_role
+from frappe.permissions import has_permission
 
 class RequestforMaterial(Document):
 	def on_submit(self):
 		# self.notify_request_for_material_accepter()
 		self.notify_request_for_material_approver()
 
-	# def notify_request_for_material_accepter(self):
-	# 	if self.request_for_material_accepter:
-	# 		page_link = get_url("/desk#Form/Request for Material/" + self.name)
-	# 		message = "<p>Please Review and Accept or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
-	# 		subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
-	# 		send_email(self, [self.request_for_material_accepter], message, subject)
-	# 		create_notification_log(subject, message, [self.request_for_material_accepter], self)
+	def notify_request_for_material_accepter(self):
+		if self.request_for_material_accepter:
+			page_link = get_url("/desk#Form/Request for Material/" + self.name)
+			message = "<p>Please Review and Accept or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
+			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
+			send_email(self, [self.request_for_material_accepter], message, subject)
+			create_notification_log(subject, message, [self.request_for_material_accepter], self)
 
 	def notify_request_for_material_approver(self):
 		if self.request_for_material_approver:
@@ -52,7 +54,14 @@ class RequestforMaterial(Document):
 				# Notify Stock Manager - Stock Manger Check If Item Available
 				# If Item Available then Create SE Issue and Transfer and update qty issued in the RFMItem
 				# If Qty - qty Issued > 0 then Create RFP button appear
-				pass
+				users = get_users_with_role('Stock Manager')
+				filtered_users = []
+				for user in users:
+					if has_permission(doctype=self.doctype, user=user):
+						filtered_users.append(user)
+				if filtered_users and len(filtered_users) > 0:
+					self.notify_requester_accepter(page_link, status, filtered_users)
+
 			self.reason_for_rejection = reason_for_rejection
 			self.save()
 			self.reload()

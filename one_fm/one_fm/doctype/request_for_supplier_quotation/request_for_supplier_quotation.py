@@ -146,7 +146,7 @@ def create_rfq_items(sq_doc, supplier, data):
 		"item_name": data.item_name,
 		"description": data.description,
 		"qty": data.qty,
-        "uom": "Nos",
+        "uom": "PCS",
 		"rate": data.rate,
         "amount": data.amount,
 		"supplier_part_no": frappe.db.get_value("Item Supplier", {'parent': data.item_code, 'supplier': supplier}, "supplier_part_no"),
