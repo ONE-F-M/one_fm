@@ -9,6 +9,7 @@ from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from frappe.utils import today, get_url
 from frappe.utils.user import get_user_fullname
 from frappe import _
+from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
 
 class ERF(Document):
 	def onload(self):
@@ -239,6 +240,15 @@ class ERF(Document):
 			frappe.throw(_('If You Need Assign One More Recruiter, Please fill the Secondary Recruiter Assigned.!'))
 
 	def create_event_for_okr_workshop(self):
+		# user= userVar.replace(" ","")
+		# start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
+		# summary= 'ERF meeting'
+		# location= 'Hawally'
+		# description= 'Employee Requisition meeting'
+		# erf_requester_email='o.asim@armor-services.com'
+		# hr_manager_email_= 'osamaasim1409@gmail.com'
+
+		# CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email_)
 		self.draft_erf_to_hrm_for_submit()
 		if self.schedule_for_okr_workshop_with_recruiter and self.okr_workshop_with:
 			return set_event_for_okr_workshop(self)
