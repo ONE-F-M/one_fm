@@ -240,20 +240,6 @@ class ERF(Document):
 			frappe.throw(_('If You Need Assign One More Recruiter, Please fill the Secondary Recruiter Assigned.!'))
 
 	def create_event_for_okr_workshop(self):
-<<<<<<< HEAD
-		# user= 'OsamaAsim'
-=======
-		# user= userVar.replace(" ","")
->>>>>>> feature:Delivery note linked
-		# start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
-		# summary= 'ERF meeting'
-		# location= 'Hawally'
-		# description= 'Employee Requisition meeting'
-<<<<<<< HEAD
-		# erf_requester_email='d.john@armor-services.com'
-		# hr_manager_email_= 'osamaasim1409@gmail.com'
-
-		# CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email_)
 		# user= 'Onefm'
 		# start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
 		# summary= 'ERF meeting'
@@ -263,13 +249,6 @@ class ERF(Document):
 		# hr_manager_email_= '{}'.format(self.okr_workshop_with)
 
 		# CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email_)
-		
-=======
-		# erf_requester_email='o.asim@armor-services.com'
-		# hr_manager_email_= 'osamaasim1409@gmail.com'
-
-		# CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email_)
->>>>>>> feature:Delivery note linked
 		self.draft_erf_to_hrm_for_submit()
 		if self.schedule_for_okr_workshop_with_recruiter and self.okr_workshop_with:
 			return set_event_for_okr_workshop(self)
