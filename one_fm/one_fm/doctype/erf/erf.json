@@ -431,7 +431,8 @@
   {
    "fieldname": "column_break_44",
    "fieldtype": "Column Break",
-   "label": "Other Benefits"
+   "label": "Other Benefits",
+   "permlevel": 1
   },
   {
    "fieldname": "recruiter_assigned",
@@ -621,7 +622,7 @@
    "depends_on": "eval: !doc.event_for_okr_workshop && !doc.__islocal",
    "fieldname": "okr_workshop_submit_to_hr",
    "fieldtype": "Button",
-   "label": "Submit to HR"
+   "label": "Create Event for Workshop"
   },
   {
    "fieldname": "project_for_recruiter",
@@ -723,7 +724,8 @@
   {
    "fieldname": "provide_health_insurance_html",
    "fieldtype": "HTML",
-   "label": "Provide Health Insurance HTML"
+   "label": "Provide Health Insurance HTML",
+   "permlevel": 1
   },
   {
    "default": "0",
@@ -829,7 +831,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-02-17 16:23:26.117113",
+ "modified": "2021-03-25 11:48:53.684580",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
@@ -897,16 +899,6 @@
    "role": "Hiring Manager",
    "share": 1,
    "write": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "permlevel": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Hiring Manager",
-   "share": 1
   }
  ],
  "search_fields": "designation, project",
