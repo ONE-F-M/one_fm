@@ -12,23 +12,20 @@ def execute(filters=None):
 def get_columns():
     return [
 		_("ERF") + ":Link/ERF:120",
-		_("Initiation") + ":Date:120",
-		_("Project") + ":Link/Project:120",
-		_("Department") + ":Data:120",
-		_("Designation") + ":Data:120",
-		_("Type of Recruitment") + ":Data:120",
-		_("Requested By") + ":Data:120",
 		_("Status") + ":Data:80",
+		_("Initiation") + ":Date:120",
 		_("Requirement") + ":Data:100",
-		_("Applicants") + ":Data:80",
+		_("Open Position") + ":Data:100",
+		_("Applicants") + ":Data:100",
 		_("Selected") + ":Data:80",
         _("Rejected") + ":Data:80",
         _("Joined") + ":Data:80",
-		_("No Action") + ":Data:80"
-        ]
+		_("Requested By") + ":Data:120"
+    ]
 
 def get_data(filters):
 	data=[]
+	filters['status'] = ['!=', 'Draft']
 	erf_list = frappe.db.get_list("ERF", filters=filters)
 	for erf_name in erf_list:
 		erf = frappe.get_doc('ERF', erf_name.name)
@@ -40,21 +37,20 @@ def get_data(filters):
 		# percentage_count = (total_no_of_joined / erf.number_of_candidates_required)*100
 		source_of_hire = frappe.db.get_value('Job Opening', {'one_fm_erf': erf.erf_code}, 'one_fm_source_of_hire');
 
+		status = erf.status
+		if erf.status == 'Accepted':
+			status = 'Open'
 		row = [
 			erf.erf_code,
+			status,
 			erf.erf_initiation,
-			erf.project,
-			erf.department,
-			erf.designation,
-			source_of_hire,
-			erf.erf_requested_by_name,
-			erf.status,
 			erf.number_of_candidates_required,
+			erf.number_of_candidates_required - total_no_of_joined,
 			total_no_of_applicants,
 			total_no_of_selected,
 			total_no_of_rejected,
 			total_no_of_joined,
-			total_no_of_no_action
+			erf.erf_requested_by_name
 		]
 		data.append(row)
 	return data

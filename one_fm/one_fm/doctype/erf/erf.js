@@ -136,6 +136,7 @@ frappe.ui.form.on('ERF', {
 					method: 'draft_erf_to_hrm_for_submit',
 					callback(r) {
 						if (!r.exc) {
+							frm.events.draft_erf_to_hrm(frm)
 							frm.reload_doc();
 						}
 					},
@@ -227,6 +228,7 @@ frappe.ui.form.on('ERF', {
 	},
 	okr_workshop_submit_to_hr: function(frm) {
 		create_event_for_okr_workshop(frm);
+		frm.events.draft_erf_to_hrm(frm)
 	},
 	recruiter_assigned: function(frm) {
 		if(frm.doc.recruiter_assigned && !frm.doc.project_for_recruiter){
