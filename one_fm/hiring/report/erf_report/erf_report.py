@@ -25,7 +25,7 @@ def get_columns():
 
 def get_data(filters):
 	data=[]
-	filters['status'] = ['!=', 'Draft']
+	if 'status' not in filters.keys(): filters['status'] = ['!=', 'Draft']
 	erf_list = frappe.db.get_list("ERF", filters=filters)
 	for erf_name in erf_list:
 		erf = frappe.get_doc('ERF', erf_name.name)
