@@ -9,7 +9,7 @@ from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from frappe.utils import today, get_url
 from frappe.utils.user import get_user_fullname
 from frappe import _
-from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
+#from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
 
 class ERF(Document):
 	def onload(self):
