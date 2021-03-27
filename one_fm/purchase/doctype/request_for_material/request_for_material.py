@@ -188,6 +188,35 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		doc.document_name = reference_doc.name
 		doc.from_user = reference_doc.modified_by
 		doc.insert(ignore_permissions=True)
+@frappe.whitelist()
+def bring_designation_items(designation):
+	designation_doc = frappe.get_doc('Designation Profile', designation)
+	item_list = []
+	if designation_doc != null:
+		for item in designation_doc.get("uniforms"):
+			item_list.append({
+				'item':item.item,
+				'item_name':item.item_name,
+				'quantity':item.quantity,
+				'uom':item.uom
+			})
+		for item in designation_doc.get("accommodation_assets"):
+			item_list.append({
+				'item':item.item,
+				'item_name':item.item_name,
+				'quantity':item.quantity,
+				'uom':item.uom
+			})
+		for item in designation_doc.get("accommodation_consumables"):
+			item_list.append({
+				'item':item.item,
+				'item_name':item.item_name,
+				'quantity':item.quantity,
+				'uom':item.uom
+			})
+	else:
+		frappe.throw(_("No profile found for {}").format(designation))
+	return {'item_list': item_list}
 
 @frappe.whitelist()
 def update_status(name, status):

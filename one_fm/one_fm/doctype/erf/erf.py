@@ -240,15 +240,25 @@ class ERF(Document):
 			frappe.throw(_('If You Need Assign One More Recruiter, Please fill the Secondary Recruiter Assigned.!'))
 
 	def create_event_for_okr_workshop(self):
-		user= 'OsamaAsim'
+		# user= 'OsamaAsim'
+		# start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
+		# summary= 'ERF meeting'
+		# location= 'Hawally'
+		# description= 'Employee Requisition meeting'
+		# erf_requester_email='d.john@armor-services.com'
+		# hr_manager_email_= 'osamaasim1409@gmail.com'
+
+		# CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email_)
+		user= 'Onefm'
 		start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
 		summary= 'ERF meeting'
 		location= 'Hawally'
 		description= 'Employee Requisition meeting'
-		erf_requester_email='o.asim@armor-services.com'
-		hr_manager_email_= 'osamaasim1409@gmail.com'
+		erf_requester_email='{}'.format(self.erf_requested_by)
+		hr_manager_email_= '{}'.format(self.okr_workshop_with)
 
 		CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email_)
+		
 		self.draft_erf_to_hrm_for_submit()
 		if self.schedule_for_okr_workshop_with_recruiter and self.okr_workshop_with:
 			return set_event_for_okr_workshop(self)
@@ -265,6 +275,7 @@ class ERF(Document):
 				self.notify_finance_department()
 			create_job_opening_from_erf(self)
 		self.reload()
+
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")

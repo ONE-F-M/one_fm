@@ -24,6 +24,7 @@
   "request_for_material_approver",
   "type_details_section",
   "project",
+  "designation",
   "contract_number",
   "project_details",
   "employee",
@@ -297,7 +298,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "\nIndividual\nProject Mobilization\nStock\nProject",
+   "options": "\nIndividual\nProject Mobilization\nStock\nProject\nOnboarding",
    "print_hide": 1,
    "reqd": 1
   },
@@ -333,7 +334,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval: doc.type=='Project Mobilization' || doc.type=='Project'",
+   "depends_on": "eval: doc.type=='Project Mobilization' || doc.type=='Project' || doc.type=='Onboarding'",
    "fieldname": "project",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -341,7 +342,7 @@
    "options": "Project"
   },
   {
-   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project Mobilization' || doc.type == 'Stock' || doc.type == 'Project'",
+   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Project Mobilization' || doc.type == 'Stock' || doc.type == 'Project' || doc.type == 'Onboarding'",
    "fieldname": "type_details_section",
    "fieldtype": "Section Break"
   },
@@ -429,11 +430,19 @@
    "fieldname": "material_request_attach",
    "fieldtype": "Attach",
    "label": "Material Request"
+  },
+  {
+   "depends_on": "eval: doc.type=='Onboarding'",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Designation",
+   "options": "Designation"
   }
  ],
  "icon": "fa fa-ticket",
  "is_submittable": 1,
- "modified": "2021-03-17 11:05:34.418399",
+ "modified": "2021-03-27 06:13:12.036320",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
