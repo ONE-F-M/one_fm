@@ -249,15 +249,15 @@ class ERF(Document):
 		# hr_manager_email_= 'osamaasim1409@gmail.com'
 
 		# CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email_)
-		user= 'Onefm'
-		start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
-		summary= 'ERF meeting'
-		location= 'Hawally'
-		description= 'Employee Requisition meeting'
-		erf_requester_email='{}'.format(self.erf_requested_by)
-		hr_manager_email_= '{}'.format(self.okr_workshop_with)
+		# user= 'Onefm'
+		# start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
+		# summary= 'ERF meeting'
+		# location= 'Hawally'
+		# description= 'Employee Requisition meeting'
+		# erf_requester_email='{}'.format(self.erf_requested_by)
+		# hr_manager_email_= '{}'.format(self.okr_workshop_with)
 
-		CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email_)
+		# CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email_)
 		
 		self.draft_erf_to_hrm_for_submit()
 		if self.schedule_for_okr_workshop_with_recruiter and self.okr_workshop_with:
