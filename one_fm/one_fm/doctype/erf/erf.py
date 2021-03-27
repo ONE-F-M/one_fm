@@ -240,6 +240,7 @@ class ERF(Document):
 			frappe.throw(_('If You Need Assign One More Recruiter, Please fill the Secondary Recruiter Assigned.!'))
 
 	def create_event_for_okr_workshop(self):
+		
 		# user= 'Onefm'
 		# start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
 		# summary= 'ERF meeting'
