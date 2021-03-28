@@ -164,7 +164,7 @@ doc_events = {
 	"Item Group": {
 		"autoname": "one_fm.utils.item_group_naming_series",
 		"before_insert": "one_fm.utils.validate_get_item_group_parent",
-		"validate": "one_fm.utils.validate_item_group"
+		"after_insert": "one_fm.utils.after_insert_item_group"
 	},
 	"Item": {
 		"autoname": "one_fm.utils.item_naming_series",

@@ -98,6 +98,10 @@ frappe.ui.form.on('Item', {
 					frm.set_value('have_uniform_type_and_description', false);
 					frm.clear_table('item_descriptions');
 					if(ret && ret.message){
+						if(ret.message.is_fixed_asset){
+							frm.set_value('is_fixed_asset', ret.message.is_fixed_asset);
+							frm.set_value('asset_category', ret.message.asset_category);
+						}
 					  if(ret.message.one_fm_item_group_descriptions){
 					    ret.message.one_fm_item_group_descriptions.forEach((item, i) => {
 								if(item.description_attribute == "Uniform Type" || item.description_attribute == "Uniform Type Description"){

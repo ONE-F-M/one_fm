@@ -1199,9 +1199,10 @@ def set_warehouse_code(doc):
         doc.warehouse_code = str(int(new_warehouse_code_final)).zfill(4)
 
 @frappe.whitelist()
-def validate_item_group(doc, method):
-    if doc.parent_item_group and doc.parent_item_group != 'All Item Group' and not doc.one_fm_item_group_descriptions:
+def after_insert_item_group(doc, method):
+    if doc.parent_item_group and doc.parent_item_group != 'All Item Group':
         set_item_group_description_form_parent(doc)
+    doc.save(ignore_permissions=True)
 
 @frappe.whitelist()
 def before_insert_item(doc, method):
@@ -1271,7 +1272,10 @@ def set_item_description(doc):
 
 def set_item_group_description_form_parent(doc):
     parent = frappe.get_doc('Item Group', doc.parent_item_group)
-    if parent.one_fm_item_group_descriptions:
+    doc.is_fixed_asset = parent.is_fixed_asset
+    if parent.is_fixed_asset and parent.asset_category and not doc.asset_category:
+        doc.asset_category = parent.asset_category
+    if not doc.one_fm_item_group_descriptions and parent.one_fm_item_group_descriptions:
         for desc in parent.one_fm_item_group_descriptions:
             item_group_description = doc.append('one_fm_item_group_descriptions')
             item_group_description.description_attribute = desc.description_attribute
