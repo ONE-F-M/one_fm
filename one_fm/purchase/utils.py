@@ -97,3 +97,20 @@ def get_payment_details_for_po(po):
 def before_submit_purchase_receipt(doc, method):
     if not doc.one_fm_attach_delivery_note:
         frappe.throw(_('Please Attach Signed and Stamped Delivery Note'))
+
+def filter_description_specific_for_item_group(doctype, txt, searchfield, start, page_len, filters):
+    description_values = False
+    query = "select name from `tab{0}` where"
+    if filters.get("item_group") and filters.get("doctype") and frappe.db.has_column(filters.get("doctype"), 'item_group'):
+        query += " item_group = %(item_group)s and"
+    query += " name like %(txt)s limit %(start)s, %(page_len)s"
+    description_values = frappe.db.sql(query.format(filters.get("doctype")),
+        {'item_group': filters.get("item_group"), 'start': start, 'page_len': page_len, 'txt': "%%%s%%" % txt}
+    )
+    if description_values:
+        return description_values
+    else:
+        query = "select name from `tab{0}` where item_group IS NULL and name like %(txt)s limit %(start)s, %(page_len)s"
+        return frappe.db.sql(query.format(filters.get("doctype")),
+            {'start': start, 'page_len': page_len, 'txt': "%%%s%%" % txt}
+        )

@@ -8,6 +8,14 @@ frappe.ui.form.on('Item', {
 			};
 		});
 
+		frm.set_query("value", "item_descriptions", function(doc, cdt, cdn) {
+			var child = locals[cdt][cdn];
+			return {
+				query: "one_fm.purchase.utils.filter_description_specific_for_item_group",
+				filters: {'doctype': child.description_attribute, 'item_group': doc.subitem_group}
+			};
+		});
+
 		frm.set_query("item_group", function() {
 			return {
 				filters: [

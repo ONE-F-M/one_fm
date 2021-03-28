@@ -1,20 +1,21 @@
 {
  "actions": [],
- "autoname": "field:item_type",
- "creation": "2021-02-06 10:10:04.995726",
+ "allow_rename": 1,
+ "autoname": "field:model",
+ "creation": "2021-03-28 20:04:45.474951",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "item_type",
+  "model",
   "item_group"
  ],
  "fields": [
   {
-   "fieldname": "item_type",
+   "fieldname": "model",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Item Type",
+   "label": "Model",
    "reqd": 1,
    "unique": 1
   },
@@ -26,10 +27,10 @@
   }
  ],
  "links": [],
- "modified": "2021-03-26 14:43:02.208555",
+ "modified": "2021-03-28 20:04:45.474951",
  "modified_by": "Administrator",
  "module": "Purchase",
- "name": "Item Type",
+ "name": "Item Model",
  "owner": "Administrator",
  "permissions": [
   {
