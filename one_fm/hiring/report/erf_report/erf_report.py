@@ -13,6 +13,7 @@ def get_columns():
     return [
 		_("ERF") + ":Link/ERF:120",
 		_("Status") + ":Data:80",
+		_("Designation") + ":Data:100",
 		_("Initiation") + ":Date:120",
 		_("Requirement") + ":Data:100",
 		_("Open Position") + ":Data:100",
@@ -43,6 +44,7 @@ def get_data(filters):
 		row = [
 			erf.erf_code,
 			status,
+			erf.designation,
 			erf.erf_initiation,
 			erf.number_of_candidates_required,
 			erf.number_of_candidates_required - total_no_of_joined,
