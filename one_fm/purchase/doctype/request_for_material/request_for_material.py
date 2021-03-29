@@ -13,9 +13,8 @@ from frappe.permissions import has_permission
 
 class RequestforMaterial(Document):
 	def on_submit(self):
-		pass
-		# self.notify_request_for_material_accepter()
-		#self.notify_request_for_material_approver()
+		self.notify_request_for_material_accepter()
+		self.notify_request_for_material_approver()
 
 	def notify_request_for_material_accepter(self):
 		if self.request_for_material_accepter:
@@ -37,7 +36,7 @@ class RequestforMaterial(Document):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
 			page_link = get_url("/desk#Form/Request for Material/" + self.name)
 			# Notify Requester
-			#self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
+			self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
 
 			# Notify Approver
 			if status == 'Accepted' and frappe.session.user == self.request_for_material_accepter and self.request_for_material_approver:
@@ -48,8 +47,7 @@ class RequestforMaterial(Document):
 
 			# Notify Accepter
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
-				pass
-				#self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
+				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
 
 			self.status = status
 			if status == "Approved":
@@ -237,6 +235,47 @@ def make_stock_entry(source_name, target_doc=None):
 
 	def set_missing_values(source, target):
 		target.purpose = 'Material Transfer'
+		target.run_method("calculate_rate_and_amount")
+		target.set_stock_entry_type()
+		target.set_job_card_data()
+
+	doclist = get_mapped_doc("Request for Material", source_name, {
+		"Request for Material": {
+			"doctype": "Stock Entry",
+			"field_map": [
+				["name", "one_fm_request_for_material"]
+			],
+			"validation": {
+				"docstatus": ["=", 1]
+			}
+		},
+		"Request for Material Item": {
+			"doctype": "Stock Entry Detail",
+			"field_map": {
+				"uom": "stock_uom",
+				"name": "one_fm_request_for_material_item",
+				"parent": "one_fm_request_for_material"
+			},
+			"postprocess": update_item,
+			"condition": lambda doc: doc.item_code
+		}
+	}, target_doc, set_missing_values)
+
+	return doclist
+
+@frappe.whitelist()
+def make_stock_entry_issue(source_name, target_doc=None):
+	def update_item(obj, target, source_parent):
+		qty = flt(flt(obj.stock_qty) - flt(obj.ordered_qty))/ target.conversion_factor \
+			if flt(obj.stock_qty) > flt(obj.ordered_qty) else 0
+		target.qty = qty
+		target.transfer_qty = qty * obj.conversion_factor
+		target.conversion_factor = obj.conversion_factor
+
+		target.t_warehouse = obj.warehouse
+
+	def set_missing_values(source, target):
+		target.purpose = 'Material Issue'
 		target.run_method("calculate_rate_and_amount")
 		target.set_stock_entry_type()
 		target.set_job_card_data()
