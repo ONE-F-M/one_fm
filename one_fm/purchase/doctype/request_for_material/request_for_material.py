@@ -13,8 +13,9 @@ from frappe.permissions import has_permission
 
 class RequestforMaterial(Document):
 	def on_submit(self):
-		self.notify_request_for_material_accepter()
-		self.notify_request_for_material_approver()
+		pass
+		# self.notify_request_for_material_accepter()
+		#self.notify_request_for_material_approver()
 
 	def notify_request_for_material_accepter(self):
 		if self.request_for_material_accepter:
@@ -36,7 +37,7 @@ class RequestforMaterial(Document):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
 			page_link = get_url("/desk#Form/Request for Material/" + self.name)
 			# Notify Requester
-			self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
+			#self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
 
 			# Notify Approver
 			if status == 'Accepted' and frappe.session.user == self.request_for_material_accepter and self.request_for_material_approver:
@@ -47,7 +48,8 @@ class RequestforMaterial(Document):
 
 			# Notify Accepter
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
-				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
+				pass
+				#self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
 
 			self.status = status
 			if status == "Approved":
