@@ -1,0 +1,107 @@
+{
+ "autoname": "REF-.posting_date.-.####",
+ "creation": "2021-03-23 11:09:48.271797",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "series",
+  "posting_date",
+  "rpr_list",
+  "column_break_4",
+  "hr_approval",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "REF-.posting_date.-.####",
+   "fieldname": "series",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "series",
+   "options": "REF-.posting_date.-.####",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Pre RPR",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date"
+  },
+  {
+   "allow_bulk_edit": 1,
+   "fieldname": "rpr_list",
+   "fieldtype": "Table",
+   "label": "RPR List",
+   "options": "RPR List",
+   "permlevel": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "No",
+   "fieldname": "hr_approval",
+   "fieldtype": "Select",
+   "label": "HR Approval",
+   "options": "\nYes\nNo",
+   "permlevel": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2021-03-29 09:14:20.702023",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Pre RPR",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

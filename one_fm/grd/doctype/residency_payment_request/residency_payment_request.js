@@ -2,11 +2,11 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Residency Payment Request', {
-	setup: function(frm) {
-		frm.set_query("company_bank_account", function() {
+	setup: function(frm) {//query for filtering the bank account field based on 1 value
+		frm.set_query("company_bank_account", function() {//set query for specific field
 			return {
 				filters: {
-					"is_company_account":1
+					"is_company_account":1//this field in the Bank Account DT
 				}
 			}
 		});

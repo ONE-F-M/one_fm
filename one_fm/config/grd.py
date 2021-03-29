@@ -33,6 +33,12 @@ def get_data():
 					"name": "PAM Authorized Signatory List",
 					"onboard": 1,
 				},
+				{
+					"type": "doctype",
+					"name": "PAM File Modified",
+					"onboard": 1,
+				},
+			
 			]
 		},
 		 {

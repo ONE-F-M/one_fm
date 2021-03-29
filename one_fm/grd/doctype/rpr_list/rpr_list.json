@@ -1,0 +1,68 @@
+{
+ "autoname": "REF.{DD, MM, YYYY}",
+ "creation": "2021-03-22 10:47:10.043375",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee_civil_id",
+  "employee_full_name",
+  "employee_number",
+  "employee_residency_expiry_date",
+  "renewal_or_extend"
+ ],
+ "fields": [
+  {
+   "fetch_from": "Employee.one_fm_civil_id.",
+   "fieldname": "employee_civil_id",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Employee Civil Id",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "Employee.employee_name",
+   "fieldname": "employee_full_name",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Employee Full Name",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "Employee.expiry_residency_date",
+   "fieldname": "employee_residency_expiry_date",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Employee Residency Expiry Date",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "renewal_or_extend",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Renewal or extend",
+   "options": "\nRenewal\nExtend 1 month\nExtend 2 month\nExtend 3 month"
+  },
+  {
+   "fetch_from": "Employee.employee_id",
+   "fieldname": "employee_number",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Employee Number",
+   "options": "Employee"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-03-29 08:23:30.619817",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "RPR List",
+ "name_case": "Title Case",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

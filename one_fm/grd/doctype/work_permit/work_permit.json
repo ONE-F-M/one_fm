@@ -1,5 +1,4 @@
 {
- "actions": [],
  "autoname": "naming_series:",
  "creation": "2020-08-13 08:46:25.338850",
  "doctype": "DocType",
@@ -104,7 +103,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Work Permit Type",
-   "options": "\nRenewal Overseas\nRenewal Kuwaiti\nNew Overseas\nNew Kuwait\nTransfer",
+   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nNew Overseas\nNew Kuwait\nNew Non Kuwaiti\nTransfer",
    "reqd": 1
   },
   {
@@ -597,8 +596,7 @@
   }
  ],
  "is_submittable": 1,
- "links": [],
- "modified": "2020-09-01 11:02:12.251620",
+ "modified": "2021-03-23 13:40:59.937953",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

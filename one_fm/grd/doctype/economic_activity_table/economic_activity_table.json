@@ -1,0 +1,39 @@
+{
+ "creation": "2021-03-18 12:31:05.006263",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "activity_code",
+  "activity_description",
+  "mainly"
+ ],
+ "fields": [
+  {
+   "fieldname": "activity_code",
+   "fieldtype": "Data",
+   "label": "Activity Code"
+  },
+  {
+   "fieldname": "activity_description",
+   "fieldtype": "Data",
+   "label": "Activity Description"
+  },
+  {
+   "fieldname": "mainly",
+   "fieldtype": "Data",
+   "label": "Mainly"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-03-18 12:50:58.858063",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Economic Activity Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

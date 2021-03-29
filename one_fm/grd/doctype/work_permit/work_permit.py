@@ -34,8 +34,8 @@ class WorkPermit(Document):
 			{'CIVIL ID':'civil_id'}, {'PAM Designation':'pam_designation'}, {'Salary':'salary'}, {'Salary Type':'religion'},
 			{'Duration of Work Permit':'duration_of_work_permit'}, {'Visa Reference Number':'visa_reference_number'},
 			{'Date of Issuance of Visa':'date_of_issuance_of_visa'}, {'Date of Entry in Kuwait':'date_of_entry_in_kuwait'},
-			{'Documents Required':'documents_required'}]
-
+			{'Documents Required':'documents_required'}]#Check the second and third name or no need? | salary Type | religion been mentioned twice
+# Checking if both second and third names are filled to add the arabic fields
 		if self.second_name and not self.second_name_in_arabic:
 			field_list.extend({'Second Name in Arabic': 'second_name_in_arabic'})
 		if self.third_name and not self.third_name_in_arabic:
@@ -59,25 +59,27 @@ class WorkPermit(Document):
 
 def set_required_documents(doc):
 	if frappe.db.exists('Work Permit Required Documents Template', {'work_permit_type':doc.work_permit_type}):
+		#getting the required documents template based on the wp type
 		document_list_template = frappe.get_doc('Work Permit Required Documents Template', {'work_permit_type':doc.work_permit_type})
-		employee = frappe.get_doc('Employee', doc.employee)
-		if document_list_template and document_list_template.work_permit_document:
+		employee = frappe.get_doc('Employee', doc.employee)#getting employee info.
+		if document_list_template and document_list_template.work_permit_document:####### Don't get 
 			for wpd in document_list_template.work_permit_document:
-				documents_required = doc.append('documents_required')
+				documents_required = doc.append('documents_required')#in work permit doctype points to Work Permit Required Documents
 				documents_required.required_document = wpd.required_document
-				if employee.one_fm_employee_documents:
+				if employee.one_fm_employee_documents:# from employee dt
 					for ed in employee.one_fm_employee_documents:
-						if wpd.required_document == ed.document_name and ed.attach:
-							documents_required.attach = ed.attach
+						if wpd.required_document == ed.document_name and ed.attach:#check if both documents are equal
+							documents_required.attach = ed.attach#add the attach document from (Employee Document)dt to (Work permit Required Document) attch field
 			frappe.db.commit()
 
 @frappe.whitelist()
+# will craete a list of work permit based on employee renewals
 def get_employee_data_for_work_permit(employee_name):
 	# employee = frappe.get_doc("Employee", employee_name)
 	work_permit_exist = frappe.db.exists('Work Permit', {'employee': employee_name, 'docstatus': 1})
 	return work_permit_exist
 
-# Create Draft Work Permit Daily
+# Create Draft Work Permit Daily   +++++++++ will add the code for the list that needs renewal from Pre RPR
 def create_work_permit_renewal():
     date_after_14_days = add_days(today(), 14)
     # Get employee list
@@ -88,10 +90,17 @@ def create_work_permit_renewal():
             tabEmployee
         where
             active=1 and one_fm_work_permit is NOT NUL and
-            (one_fm_renewal_date is NOT NULL and one_fm_work_permit_renewal_date = %(date_after_14_days)))
+            (one_fm_renewal_date is NOT NULL and one_fm_work_permit_renewal_date = %(date_after_14_days))
     """
     employee_list = frappe.db.sql(query.format(), {'date_after_14_days': date_after_14_days}, as_dict=True)
-
+	# employee_entries = frappe.db.get_list('Employee',
+	# 						filters={
+	# 							'expiry_residency_date': ['between',(first_day,Last_day)],
+	# 							'status': 'Active'
+	# 						},
+	# 						fields=['one_fm_civil_id','employee_name','employee_id','expiry_residency_date']
+							
+							)
     for employee in employee_list:
         create_work_permit(employee)
 
@@ -126,7 +135,7 @@ def work_permit_notify_grd_supervisor_to_approve():
 def work_permit_notify_grd_supervisor_to_approve():
 	work_permit_notify_grd_supervisor('red')
 
-# Notify GRD Supervisor 8:30 am after 2 Days of Approval
+# Notify GRD Supervisor 8:30 am after 2 Days of Approval //use it for 7 days++++++
 def work_permit_notify_grd_supervisor_check_approval():
 	work_permit_notify_grd_supervisor_to_check_approval('yellow', add_days(today(), -2))
 

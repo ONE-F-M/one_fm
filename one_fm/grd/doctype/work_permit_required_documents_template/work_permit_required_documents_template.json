@@ -1,5 +1,4 @@
 {
- "actions": [],
  "autoname": "field:template",
  "creation": "2020-08-13 10:19:14.948637",
  "doctype": "DocType",
@@ -23,7 +22,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Work Permit Type",
-   "options": "\nRenewal Overseas\nRenewal Kuwaiti\nNew Overseas\nNew Kuwait\nTransfer",
+   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nNew Overseas\nNew Kuwaiti\nNew Non Kuwaiti\nTransfer",
    "reqd": 1
   },
   {
@@ -39,8 +38,7 @@
    "reqd": 1
   }
  ],
- "links": [],
- "modified": "2020-08-13 10:19:14.948637",
+ "modified": "2021-03-29 11:30:42.031553",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit Required Documents Template",

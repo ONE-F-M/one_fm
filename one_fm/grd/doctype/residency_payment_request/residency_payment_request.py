@@ -45,8 +45,8 @@ def create_residency_payment_request():
 	get_residency_entries(doc)
 	doc.save(ignore_permissions=True)
 
-def get_residency_entries(doc):
-	residency_doctypes = [{'dt': 'Work Permit', 'amount_field': 'amount_to_pay'}]
+def get_residency_entries(doc):#
+	residency_doctypes = [{'dt': 'Work Permit', 'amount_field': 'amount_to_pay'}]#dectionary in work permit dotype => get amount_to_pay
 	res = []
 	for residency_doctype in residency_doctypes:
 		residency_entries = frappe.db.sql("""
@@ -60,7 +60,7 @@ def get_residency_entries(doc):
 			""".format(residency_doctype['amount_field'], residency_doctype['dt']), as_dict=1)
 		res += list(residency_entries)
 
-	doc.set("references", [])
+	doc.set("references", [])#setting the list that been stored in (res) in the child table references
 	doc.total_amount = 0
 	for d in res:
 		doc.total_amount += flt(d.amount)

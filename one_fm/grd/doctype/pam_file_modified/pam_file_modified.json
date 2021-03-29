@@ -1,0 +1,442 @@
+{
+ "autoname": "field:file_name",
+ "creation": "2021-03-18 08:50:16.805627",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "file_details_section",
+  "file_type",
+  "legal_entity",
+  "company_trade_number",
+  "file_classification",
+  "property_class",
+  "column_break_7",
+  "file_number",
+  "file_name",
+  "governate_work",
+  "file_status",
+  "create_date",
+  "license_details_section",
+  "is_contract_file",
+  "pam_contract_number",
+  "pam_file_number",
+  "license_type",
+  "operating_sector",
+  "unified_number",
+  "license_start_date",
+  "license_expiry_date",
+  "column_break_20",
+  "license_issuer",
+  "license_name",
+  "license_number_based_on_issuer",
+  "the_gender_of_the_worker_on_the_license",
+  "license_category",
+  "the_main_activity",
+  "permit_category",
+  "license_status",
+  "address_number_details_section",
+  "floor",
+  "the_block",
+  "address",
+  "column_break_33",
+  "city",
+  "region",
+  "block",
+  "street",
+  "column_break_38",
+  "address_number",
+  "building_location",
+  "building_type",
+  "building_name",
+  "license_status_section",
+  "total_license_for_employment",
+  "number_of_active_permits",
+  "number_of_cancelled_permits",
+  "column_break_47",
+  "total_non_kuwaiti_employment",
+  "total_kuwaiti_employment",
+  "total_gcc_employment",
+  "total_other_employment",
+  "required_estimation_section",
+  "required_estimation",
+  "economic_activities_section",
+  "table_55",
+  "couriers_section",
+  "table_57",
+  "authorizers_section",
+  "table_59",
+  "percentage_of_kuwaiti_employment_section",
+  "table_61"
+ ],
+ "fields": [
+  {
+   "fieldname": "file_details_section",
+   "fieldtype": "Section Break",
+   "label": "File Details"
+  },
+  {
+   "default": "\u0634\u0631\u0643\u0629",
+   "fieldname": "file_type",
+   "fieldtype": "Data",
+   "label": "File Type"
+  },
+  {
+   "default": "\u063a\u064a\u0631 \u0645\u062d\u062f\u062f",
+   "fieldname": "legal_entity",
+   "fieldtype": "Data",
+   "label": "Legal Entity"
+  },
+  {
+   "default": "331568",
+   "fieldname": "company_trade_number",
+   "fieldtype": "Data",
+   "label": "Company Trade Number"
+  },
+  {
+   "default": "\u062a\u062c\u0627\u0631\u064a \u0639\u0627\u062f\u064a",
+   "fieldname": "file_classification",
+   "fieldtype": "Data",
+   "label": "File Classification"
+  },
+  {
+   "default": "\u0643\u0648\u064a\u062a\u064a",
+   "fieldname": "property_class",
+   "fieldtype": "Data",
+   "label": "Property Class"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "100068481",
+   "fieldname": "file_number",
+   "fieldtype": "Data",
+   "label": "File Number"
+  },
+  {
+   "default": "\u0634\u0631\u0643\u0629 \u0648\u0646 \u0644\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0645\u0631\u0627\u0641\u0642",
+   "fieldname": "file_name",
+   "fieldtype": "Data",
+   "label": "File Name",
+   "unique": 1
+  },
+  {
+   "default": "\u0645\u062d\u0627\u0641\u0638\u0629 \u062d\u0648\u0644\u064a",
+   "fieldname": "governate_work",
+   "fieldtype": "Data",
+   "label": "Governate Work"
+  },
+  {
+   "default": "\u0641\u0639\u0627\u0644",
+   "fieldname": "file_status",
+   "fieldtype": "Data",
+   "label": "File Status"
+  },
+  {
+   "default": "30/06/2009",
+   "fieldname": "create_date",
+   "fieldtype": "Data",
+   "label": "Create Date"
+  },
+  {
+   "fieldname": "license_details_section",
+   "fieldtype": "Section Break",
+   "label": "License Details"
+  },
+  {
+   "fieldname": "license_type",
+   "fieldtype": "Data",
+   "label": "License Type",
+   "read_only": 1
+  },
+  {
+   "default": "\u0627\u0644\u062a\u062c\u0627\u0631\u064a",
+   "fieldname": "operating_sector",
+   "fieldtype": "Data",
+   "label": "Operating Sector"
+  },
+  {
+   "default": "306992",
+   "fieldname": "unified_number",
+   "fieldtype": "Data",
+   "label": "Unified Number"
+  },
+  {
+   "fieldname": "license_start_date",
+   "fieldtype": "Data",
+   "label": "License Start Date"
+  },
+  {
+   "fieldname": "license_expiry_date",
+   "fieldtype": "Data",
+   "label": "License Expiry Date"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "license_issuer",
+   "fieldtype": "Data",
+   "label": "License Issuer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "license_name",
+   "fieldtype": "Data",
+   "label": "License Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "license_number_based_on_issuer",
+   "fieldtype": "Data",
+   "label": "License Number Based on Issuer"
+  },
+  {
+   "default": "\u0627\u0644\u0643\u0644",
+   "fieldname": "the_gender_of_the_worker_on_the_license",
+   "fieldtype": "Data",
+   "label": "The Gender of the worker on the License"
+  },
+  {
+   "fieldname": "license_category",
+   "fieldtype": "Data",
+   "label": "License Category"
+  },
+  {
+   "fieldname": "the_main_activity",
+   "fieldtype": "Data",
+   "label": "The Main Activity",
+   "read_only": 1
+  },
+  {
+   "fieldname": "permit_category",
+   "fieldtype": "Data",
+   "label": "Permit Category",
+   "read_only": 1
+  },
+  {
+   "default": "\u0641\u0639\u0627\u0644",
+   "fieldname": "license_status",
+   "fieldtype": "Data",
+   "label": "License Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "address_number_details_section",
+   "fieldtype": "Section Break",
+   "label": "Address Number Details"
+  },
+  {
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "label": "Floor"
+  },
+  {
+   "fieldname": "the_block",
+   "fieldtype": "Data",
+   "label": "The Block"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Data",
+   "label": "Address"
+  },
+  {
+   "fieldname": "column_break_33",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "\u0645\u062d\u0627\u0641\u0638\u0629 \u062d\u0648\u0644\u064a",
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "region",
+   "fieldtype": "Data",
+   "label": "Region"
+  },
+  {
+   "fieldname": "block",
+   "fieldtype": "Data",
+   "label": "Block "
+  },
+  {
+   "fieldname": "street",
+   "fieldtype": "Data",
+   "label": "Street"
+  },
+  {
+   "fieldname": "column_break_38",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "address_number",
+   "fieldtype": "Data",
+   "label": "Address Number"
+  },
+  {
+   "fieldname": "building_location",
+   "fieldtype": "Data",
+   "label": "Building Location"
+  },
+  {
+   "fieldname": "building_type",
+   "fieldtype": "Data",
+   "label": "Building Type"
+  },
+  {
+   "fieldname": "building_name",
+   "fieldtype": "Data",
+   "label": "Building Name"
+  },
+  {
+   "fieldname": "license_status_section",
+   "fieldtype": "Section Break",
+   "label": "License Status"
+  },
+  {
+   "fieldname": "total_license_for_employment",
+   "fieldtype": "Data",
+   "label": "Total License for Employment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "number_of_active_permits",
+   "fieldtype": "Data",
+   "label": "Number Of Active Permits",
+   "read_only": 1
+  },
+  {
+   "fieldname": "number_of_cancelled_permits",
+   "fieldtype": "Data",
+   "label": "Number of Cancelled permits",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_47",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_non_kuwaiti_employment",
+   "fieldtype": "Data",
+   "label": "Total non Kuwaiti Employment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_kuwaiti_employment",
+   "fieldtype": "Data",
+   "label": "Total Kuwaiti Employment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_gcc_employment",
+   "fieldtype": "Data",
+   "label": "Total GCC Employment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_other_employment",
+   "fieldtype": "Data",
+   "label": "Total Other Employment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "required_estimation_section",
+   "fieldtype": "Section Break",
+   "label": "Required Estimation"
+  },
+  {
+   "fieldname": "required_estimation",
+   "fieldtype": "Table",
+   "label": "Required Estimation",
+   "options": "PAM File Table"
+  },
+  {
+   "fieldname": "economic_activities_section",
+   "fieldtype": "Section Break",
+   "label": "Economic Activities"
+  },
+  {
+   "fieldname": "table_55",
+   "fieldtype": "Table",
+   "options": "Economic Activity Table"
+  },
+  {
+   "fieldname": "couriers_section",
+   "fieldtype": "Section Break",
+   "label": "Couriers"
+  },
+  {
+   "fieldname": "table_57",
+   "fieldtype": "Table",
+   "options": "PAM File Table"
+  },
+  {
+   "fieldname": "authorizers_section",
+   "fieldtype": "Section Break",
+   "label": "Authorizers"
+  },
+  {
+   "fieldname": "table_59",
+   "fieldtype": "Table",
+   "options": "PAM File Table"
+  },
+  {
+   "fieldname": "percentage_of_kuwaiti_employment_section",
+   "fieldtype": "Section Break",
+   "label": "Percentage of Kuwaiti Employment"
+  },
+  {
+   "fieldname": "table_61",
+   "fieldtype": "Table",
+   "options": "PAM File Table"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_contract_file",
+   "fieldtype": "Check",
+   "label": "Is Contract File"
+  },
+  {
+   "default": "Private - 2921143",
+   "depends_on": "eval: doc.is_contract_file == 0",
+   "fieldname": "pam_file_number",
+   "fieldtype": "Data",
+   "label": "PAM File Number"
+  },
+  {
+   "depends_on": "eval: doc.is_contract_file == 1",
+   "fieldname": "pam_contract_number",
+   "fieldtype": "Select",
+   "label": "PAM Contract Number",
+   "options": "\nT4 - 20201800005\nOpera - 15201800010"
+  }
+ ],
+ "modified": "2021-03-20 10:21:50.502121",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PAM File Modified",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

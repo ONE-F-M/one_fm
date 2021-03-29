@@ -12,7 +12,8 @@ frappe.ui.form.on('Work Permit', {
 						frm.set_value('work_permit_type', 'Renewal Kuwaiti');
 					}
 					else{
-						frm.set_value('work_permit_type', 'Renewal Overseas');
+						frm.set_value('work_permit_type', 'Renewal Overseas');//instead
+						//frm.set_value('work_permit_type', 'Renewal Non Kuwaiti');//Renewal Non Kuwaiti 
 					}
 				}
 				else{
@@ -21,11 +22,12 @@ frappe.ui.form.on('Work Permit', {
 					}
 					else{
 						frm.set_value('work_permit_type', 'New Overseas');
-					}
+						//frm.set_value('work_permit_type', 'New Non Kuwaiti');//Add new option for (New Non Kuwaiti)
+					}	
 				}
 			}
 		});
-	},
+	},//the work permit type will be set automatically based on employee nationality
 	work_permit_type: function(frm) {
 		set_required_documents(frm);
 	},
@@ -70,7 +72,7 @@ var set_grd_supervisor = function(frm) {
 	if(frm.is_new()){
 		frappe.db.get_value('GRD Settings', {name: 'GRD Settings'}, 'default_grd_supervisor', function(r) {
 			if(r && r.default_grd_supervisor){
-				frm.set_value('grd_supervisor', r.default_grd_supervisor);
+				frm.set_value('grd_supervisor', r.default_grd_supervisor);//the field in the work permit will be set based on the default_grd_supervisor field in GRD settings
 			}
 		});
 	}

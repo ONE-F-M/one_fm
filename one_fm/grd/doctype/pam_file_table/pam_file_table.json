@@ -20,26 +20,28 @@
   },
   {
    "fieldname": "inside",
-   "fieldtype": "Data",
+   "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Inside",
    "reqd": 1
   },
   {
    "fieldname": "outside",
-   "fieldtype": "Data",
+   "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Outside",
    "reqd": 1
   },
   {
    "fieldname": "total",
-   "fieldtype": "Data",
-   "label": "Total"
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Total",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2019-12-15 22:06:02.787338",
+ "modified": "2021-03-19 18:53:38.874354",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM File Table",

@@ -266,6 +266,7 @@ scheduler_events = {
 
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly"
+		"one_fm.grd.doctype.pre_rpr.pre_rpr.create_pre_rpr"# call the method 
 	],
 
 	"cron": {
