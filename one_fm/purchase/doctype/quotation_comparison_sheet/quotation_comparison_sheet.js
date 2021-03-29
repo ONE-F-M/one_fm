@@ -87,6 +87,7 @@ var set_quotation_against_rfq = function(frm) {
 						qtn.estimated_delivery_date = quotation.estimated_delivery_date
 						qtn.grand_total = quotation.grand_total
 						qtn.item_details = get_quotation_item_details(frm, quotation);
+						qtn.attach_sq = quotation.attach_sq
 					});
 					frm.refresh_field('quotations');
 					frm.refresh_field('quotation_items');
