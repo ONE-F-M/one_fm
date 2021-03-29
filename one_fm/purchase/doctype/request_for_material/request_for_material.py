@@ -192,7 +192,7 @@ def create_notification_log(subject, message, for_users, reference_doc):
 def bring_designation_items(designation):
 	designation_doc = frappe.get_doc('Designation Profile', designation)
 	item_list = []
-	if designation_doc != null:
+	if designation_doc:
 		for item in designation_doc.get("uniforms"):
 			item_list.append({
 				'item':item.item,
