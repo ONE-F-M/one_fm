@@ -133,6 +133,13 @@ frappe.ui.form.on('Contracts', {
                     disabled: 0
                 }
             }
+		}
+		frm.fields_dict['assets'].grid.get_field('site').get_query = function() {
+            return {    
+                filters:{
+					project: frm.doc.project
+                }
+            }
         }
         frm.refresh_field("assets");
 	},
