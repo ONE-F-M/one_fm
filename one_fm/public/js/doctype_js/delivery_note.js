@@ -11,6 +11,14 @@ frappe.ui.form.on('Delivery Note', {
             });
             frm.refresh_field("project");
         }
+        frm.fields_dict['items'].grid.get_field('site').get_query = function() {
+            return {    
+                filters:{
+					project: frm.doc.project
+                }
+            }
+        }
+        frm.refresh_field("site");
     },
     customer: function(frm){
         if(frm.doc.project){
