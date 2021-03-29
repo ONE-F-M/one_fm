@@ -409,6 +409,7 @@
   {
    "fieldname": "request_for_material_accepter",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Request for Material Accepter",
    "options": "User",
    "read_only": 1
@@ -442,7 +443,7 @@
  ],
  "icon": "fa fa-ticket",
  "is_submittable": 1,
- "modified": "2021-03-27 06:13:12.036320",
+ "modified": "2021-03-29 17:26:20.864735",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",

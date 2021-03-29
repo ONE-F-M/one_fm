@@ -44,6 +44,7 @@
    "allow_on_submit": 1,
    "fieldname": "item_name",
    "fieldtype": "Data",
+   "hidden": 1,
    "in_global_search": 1,
    "label": "Actual Item Name",
    "oldfieldname": "item_name",
@@ -331,7 +332,7 @@
   }
  ],
  "istable": 1,
- "modified": "2021-03-21 23:22:28.576758",
+ "modified": "2021-03-29 17:27:26.497383",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material Item",
