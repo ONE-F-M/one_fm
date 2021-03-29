@@ -13,8 +13,9 @@ from frappe.permissions import has_permission
 
 class RequestforMaterial(Document):
 	def on_submit(self):
+		pass
 		# self.notify_request_for_material_accepter()
-		self.notify_request_for_material_approver()
+		#self.notify_request_for_material_approver()
 
 	def notify_request_for_material_accepter(self):
 		if self.request_for_material_accepter:
@@ -36,7 +37,7 @@ class RequestforMaterial(Document):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
 			page_link = get_url("/desk#Form/Request for Material/" + self.name)
 			# Notify Requester
-			self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
+			#self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
 
 			# Notify Approver
 			if status == 'Accepted' and frappe.session.user == self.request_for_material_accepter and self.request_for_material_approver:
@@ -47,7 +48,8 @@ class RequestforMaterial(Document):
 
 			# Notify Accepter
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
-				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
+				pass
+				#self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
 
 			self.status = status
 			if status == "Approved":
@@ -186,6 +188,35 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		doc.document_name = reference_doc.name
 		doc.from_user = reference_doc.modified_by
 		doc.insert(ignore_permissions=True)
+@frappe.whitelist()
+def bring_designation_items(designation):
+	designation_doc = frappe.get_doc('Designation Profile', designation)
+	item_list = []
+	if designation_doc != null:
+		for item in designation_doc.get("uniforms"):
+			item_list.append({
+				'item':item.item,
+				'item_name':item.item_name,
+				'quantity':item.quantity,
+				'uom':item.uom
+			})
+		for item in designation_doc.get("accommodation_assets"):
+			item_list.append({
+				'item':item.item,
+				'item_name':item.item_name,
+				'quantity':item.quantity,
+				'uom':item.uom
+			})
+		for item in designation_doc.get("accommodation_consumables"):
+			item_list.append({
+				'item':item.item,
+				'item_name':item.item_name,
+				'quantity':item.quantity,
+				'uom':item.uom
+			})
+	else:
+		frappe.throw(_("No profile found for {}").format(designation))
+	return {'item_list': item_list}
 
 @frappe.whitelist()
 def update_status(name, status):
@@ -285,6 +316,31 @@ def make_request_for_quotation(source_name, target_doc=None):
 				["parent", "request_for_material"]
 			],
 			"condition": lambda doc: not doc.item_code
+		}
+	}, target_doc)
+
+	return doclist
+
+@frappe.whitelist()
+def make_delivery_note(source_name, target_doc=None):
+	doclist = get_mapped_doc("Request for Material", source_name, 	{
+		"Request for Material": {
+			"doctype": "Delivery Note",			
+			"field_map": [
+				["name", "request_for_material"]
+			],
+			"validation": {
+				"docstatus": ["=", 1]
+			}
+		},
+		"Request for Material Item": {
+			"doctype": "Delivery Note Item",
+			"field_map": [
+				["requested_description", "description"],
+				["requested_item_name", "item_name"],
+				["name", "request_for_material_item"],
+				["parent", "request_for_material"]
+			]
 		}
 	}, target_doc)
 

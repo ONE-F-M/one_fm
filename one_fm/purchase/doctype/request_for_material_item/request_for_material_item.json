@@ -1,5 +1,4 @@
 {
- "actions": [],
  "autoname": "hash",
  "creation": "2020-06-02 07:49:10.080116",
  "doctype": "DocType",
@@ -332,8 +331,7 @@
   }
  ],
  "istable": 1,
- "links": [],
- "modified": "2021-03-13 01:53:42.075417",
+ "modified": "2021-03-21 23:22:28.576758",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material Item",
