@@ -5,7 +5,6 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "source_warehouse",
   "item_code",
   "requested_item_name",
   "item_name",
@@ -17,6 +16,7 @@
   "description",
   "column_break_12",
   "quantity_and_warehouse",
+  "warehouse",
   "qty",
   "uom",
   "conversion_factor",
@@ -25,8 +25,8 @@
   "schedule_date",
   "rate",
   "amount",
+  "actual_qty",
   "stock_qty",
-  "warehouse",
   "remarks_and_manufacturers_details_section",
   "remarks",
   "manufacture_details",
@@ -36,7 +36,6 @@
   "lead_time_date",
   "min_order_qty",
   "projected_qty",
-  "actual_qty",
   "ordered_qty",
   "received_qty"
  ],
@@ -192,8 +191,7 @@
    "columns": 3,
    "fieldname": "warehouse",
    "fieldtype": "Link",
-   "hidden": 1,
-   "label": "For Warehouse",
+   "label": "Source Warehouse",
    "oldfieldname": "warehouse",
    "oldfieldtype": "Link",
    "options": "Warehouse",
@@ -236,10 +234,11 @@
    "allow_on_submit": 1,
    "fieldname": "stock_qty",
    "fieldtype": "Float",
-   "label": "Stock Qty",
+   "label": "Stock Qty to Update",
    "no_copy": 1,
    "print_hide": 1,
-   "read_only": 1
+   "read_only": 1,
+   "report_hide": 1
   },
   {
    "fieldname": "more_info",
@@ -286,11 +285,10 @@
    "allow_on_submit": 1,
    "fieldname": "actual_qty",
    "fieldtype": "Float",
-   "label": "Actual Qty",
+   "label": "Actual Qty in Stock",
    "no_copy": 1,
    "print_hide": 1,
-   "read_only": 1,
-   "report_hide": 1
+   "read_only": 1
   },
   {
    "fieldname": "ordered_qty",
@@ -328,20 +326,13 @@
    "label": "Remarks"
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "source_warehouse",
-   "fieldtype": "Link",
-   "label": "Source Warehouse",
-   "options": "Warehouse"
-  },
-  {
    "fieldname": "remarks_and_manufacturers_details_section",
    "fieldtype": "Section Break",
    "label": "Remarks and manufacturers details"
   }
  ],
  "istable": 1,
- "modified": "2021-03-30 16:52:23.703170",
+ "modified": "2021-03-30 18:33:06.791664",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material Item",

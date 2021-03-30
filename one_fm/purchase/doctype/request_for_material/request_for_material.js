@@ -34,7 +34,6 @@ frappe.ui.form.on('Request for Material', {
 	},
 	onload_post_render: function(frm) {
 		frm.get_field("items").grid.set_multiple_add("item_code", "qty");
-		console.log("Something");
 	},
 	refresh: function(frm) {
 		frm.events.make_custom_buttons(frm);
@@ -216,6 +215,7 @@ frappe.ui.form.on('Request for Material', {
 			},
 			callback: function(r) {
 				const d = item;
+				//console.log(r.message);
 				if(!r.exc) {
 					$.each(r.message, function(k, v) {
 						if(!d[k]) d[k] = v;
