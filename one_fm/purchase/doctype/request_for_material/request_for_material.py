@@ -192,7 +192,7 @@ def create_notification_log(subject, message, for_users, reference_doc):
 def bring_designation_items(designation):
 	designation_doc = frappe.get_doc('Designation Profile', designation)
 	item_list = []
-	if designation_doc != null:
+	if designation_doc:
 		for item in designation_doc.get("uniforms"):
 			item_list.append({
 				'item':item.item,
@@ -237,6 +237,47 @@ def make_stock_entry(source_name, target_doc=None):
 
 	def set_missing_values(source, target):
 		target.purpose = 'Material Transfer'
+		target.run_method("calculate_rate_and_amount")
+		target.set_stock_entry_type()
+		target.set_job_card_data()
+
+	doclist = get_mapped_doc("Request for Material", source_name, {
+		"Request for Material": {
+			"doctype": "Stock Entry",
+			"field_map": [
+				["name", "one_fm_request_for_material"]
+			],
+			"validation": {
+				"docstatus": ["=", 1]
+			}
+		},
+		"Request for Material Item": {
+			"doctype": "Stock Entry Detail",
+			"field_map": {
+				"uom": "stock_uom",
+				"name": "one_fm_request_for_material_item",
+				"parent": "one_fm_request_for_material"
+			},
+			"postprocess": update_item,
+			"condition": lambda doc: doc.item_code
+		}
+	}, target_doc, set_missing_values)
+
+	return doclist
+
+@frappe.whitelist()
+def make_stock_entry_issue(source_name, target_doc=None):
+	def update_item(obj, target, source_parent):
+		qty = flt(flt(obj.stock_qty) - flt(obj.ordered_qty))/ target.conversion_factor \
+			if flt(obj.stock_qty) > flt(obj.ordered_qty) else 0
+		target.qty = qty
+		target.transfer_qty = qty * obj.conversion_factor
+		target.conversion_factor = obj.conversion_factor
+
+		target.t_warehouse = obj.warehouse
+
+	def set_missing_values(source, target):
+		target.purpose = 'Material Issue'
 		target.run_method("calculate_rate_and_amount")
 		target.set_stock_entry_type()
 		target.set_job_card_data()
