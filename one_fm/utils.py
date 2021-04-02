@@ -1547,6 +1547,7 @@ def set_erf_details(job_offer, erf):
     job_offer.erf = erf.name
     job_offer.designation = erf.designation
     job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
+    job_offer.one_fm_provide_transportation_by_company = erf.provide_transportation_by_company
     set_salary_details(job_offer, erf)
     set_other_benefits_to_terms(job_offer, erf)
 
@@ -1567,7 +1568,8 @@ def set_other_benefits_to_terms(job_offer, erf):
     #         terms.offer_term = benefit.benefit
     #         terms.value = 'Company Provided'
     options = [{'provide_mobile_with_line':'Mobile with Line'}, {'provide_health_insurance':'Health Insurance'},
-        {'provide_company_insurance': 'Company Insurance'}]
+        {'provide_company_insurance': 'Company Insurance'}, {'provide_laptop_by_company': 'Personal Laptop'},
+        {'provide_vehicle_by_company': 'Personal Vehicle'}]
     for option in options:
         if erf.get(option):
             terms = job_offer.append('offer_terms')

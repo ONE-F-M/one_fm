@@ -25,10 +25,13 @@ frappe.ui.form.on('ERF', {
 		set_is_id_card_needed_for_employee_btn(frm);
 		set_provide_health_insurance_btn(frm);
 		set_provide_mobile_with_line_btn(frm);
-		set_provide_company_insurance_btn(frm);
+		// set_provide_company_insurance_btn(frm);
 		set_provide_salary_advance_btn(frm);
 		set_provide_accommodation_by_company_btn(frm);
 		set_provide_transportation_by_company_btn(frm);
+		set_provide_vehicle_by_company_btn(frm);
+		set_provide_laptop_by_company_btn(frm);
+		set_email_access_needed_btn(frm);
 		set_type_of_license_btn(frm);
 		set_night_shift_btn(frm);
 		set_shift_hours_btn(frm);
@@ -591,27 +594,42 @@ var set_type_of_license_btn = function(frm) {
 
 var set_provide_salary_advance_btn = function(frm) {
 	yes_no_html_buttons(frm, frm.doc.provide_salary_advance, 'provide_salary_advance_html',
-		'provide_salary_advance', 'Provide Salary Advance?');
+		'provide_salary_advance', 'Will this Position Require an Advance Salary?');
 };
 
 var set_provide_accommodation_by_company_btn = function(frm) {
 	yes_no_html_buttons(frm, frm.doc.provide_accommodation_by_company, 'provide_accommodation_by_company_html',
-		'provide_accommodation_by_company', 'Provide Accommodation by Company?');
+		'provide_accommodation_by_company', 'Will Accommodation be Provided?');
 };
 
 var set_provide_transportation_by_company_btn = function(frm) {
 	yes_no_html_buttons(frm, frm.doc.provide_transportation_by_company, 'provide_transportation_by_company_html',
-		'provide_transportation_by_company', 'Provide Transportation by Company?');
+		'provide_transportation_by_company', 'Will Transportation be Provided?');
+};
+
+var set_provide_vehicle_by_company_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.provide_vehicle_by_company, 'provide_vehicle_by_company_html',
+		'provide_vehicle_by_company', 'Will Vehicle be Provided?');
+};
+
+var set_provide_laptop_by_company_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.provide_laptop_by_company, 'provide_laptop_by_company_html',
+		'provide_laptop_by_company', 'Will Laptop be Provided?');
+};
+
+var set_email_access_needed_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.email_access_needed, 'email_access_needed_html',
+		'email_access_needed', 'Will Email Access be Needed?');
 };
 
 var set_provide_health_insurance_btn = function(frm) {
 	yes_no_html_buttons(frm, frm.doc.provide_health_insurance, 'provide_health_insurance_html',
-		'provide_health_insurance', 'Provide Health Insurance?');
+		'provide_health_insurance', 'Private Self-Health Insurance Provide?');
 };
 
 var set_provide_mobile_with_line_btn = function(frm) {
 	yes_no_html_buttons(frm, frm.doc.provide_mobile_with_line, 'provide_mobile_with_line_html',
-		'provide_mobile_with_line', 'Provide Mobile with Line?');
+		'provide_mobile_with_line', 'Provide Private Mobile with Line?');
 };
 
 var set_provide_company_insurance_btn = function(frm) {
