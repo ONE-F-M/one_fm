@@ -13,7 +13,7 @@ frappe.ui.form.on('Item', {
 			var child = locals[cdt][cdn];
 			return {
 				query: "one_fm.purchase.utils.filter_description_specific_for_item_group",
-				filters: {'doctype': child.description_attribute, 'item_group': doc.subitem_group}
+				filters: {'doctype': child.description_attribute, 'item_group': doc.item_group}
 			};
 		});
 
