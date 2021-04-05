@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from . import __version__ as app_version
-import frappe
+import frappe as _frappe
 from frappe import _
+from erpnext.hr.doctype.shift_type.shift_type import ShiftType
+from one_fm.api.doc_methods.shift_type import process_auto_attendance
+
 
 app_name = "one_fm"
 app_title = "One Fm"
@@ -411,3 +414,7 @@ fixtures = [
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
+
+
+
+ShiftType.process_auto_attendance = process_auto_attendance
