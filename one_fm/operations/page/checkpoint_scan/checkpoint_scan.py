@@ -1,6 +1,8 @@
 import frappe
 from frappe.utils import get_datetime, add_to_date, cstr, flt
 from one_fm.api.doc_events import haversine
+from frappe import _
+
 
 @frappe.whitelist()
 def scan_checkpoint(qr_code, latitude, longitude):
@@ -44,18 +46,21 @@ def scan_checkpoint(qr_code, latitude, longitude):
 		if checkpoint_assignment.employee and checkpoint_assignment.employee == employee:
 			newscan.same_assignment = "YES"
 		elif checkpoint_assignment.post and checkpoint_assignment.post == employee:
+			# ToDo Integrate once post allocation is Done
 			print("TO BE DONE!!!")
 		else:
 			newscan.same_assignment = "NO"
 			newscan.employee = checkpoint_assignment.employee_name
 
 		print(newscan.as_dict())
-	else:
+	elif frappe.db.exists("Checkpoints", {"checkpoint_code": qr_code}, ["name", "project_name", "site_name"]):
 		checkpoint_name, project, site = frappe.get_value("Checkpoints", {"checkpoint_code": qr_code}, ["name", "project_name", "site_name"])
 		newscan.checkpoint_name = checkpoint_name
 		newscan.project = project
 		newscan.site = site
 		newscan.has_assignment = "NO"
+	else:
+		frappe.throw(_("Checkpoint not found in the system. Please check again."))
 	newscan.save()
 	frappe.db.commit()		
 	#Compare the scan time with the nearest start ckeckpoint assignment Start time, select that checkpoint
