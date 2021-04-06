@@ -4,6 +4,11 @@
   display: block;
 }
 
+#stop-scan,
+#torch-btn {
+  display: none;
+}
+
 /* .map-parent {
   height: 400px;
 } */
