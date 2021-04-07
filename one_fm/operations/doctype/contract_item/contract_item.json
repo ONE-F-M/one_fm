@@ -12,6 +12,7 @@
   "column_break_4",
   "item_name",
   "shift_hours",
+  "days",
   "days_off"
  ],
  "fields": [
@@ -72,10 +73,15 @@
    "fieldtype": "Select",
    "label": "Weekly Days Off",
    "options": "1\n2\n3\n4\n5\n6"
+  },
+  {
+   "fieldname": "days",
+   "fieldtype": "Int",
+   "label": "Days"
   }
  ],
  "istable": 1,
- "modified": "2021-03-25 00:47:13.596834",
+ "modified": "2021-03-31 03:35:41.424685",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",
