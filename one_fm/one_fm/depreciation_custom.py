@@ -11,8 +11,7 @@ def post_depreciation_entries(date=None):
 		return
 
 	if not date:
-		#date = today()
-		date = getdate("2020-12-30")
+		date = today()
 	for asset in get_depreciable_assets(date):
 		make_depreciation(asset, date)
 		frappe.db.commit()

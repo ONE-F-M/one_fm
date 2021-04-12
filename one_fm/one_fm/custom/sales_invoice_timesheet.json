@@ -22,7 +22,7 @@
    "fieldname": "item",
    "fieldtype": "Link",
    "hidden": 0,
-   "idx": 4,
+   "idx": 5,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -56,6 +56,30 @@
  ],
  "custom_perms": [],
  "doctype": "Sales Invoice Timesheet",
- "property_setters": [],
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2020-12-30 15:20:18.286593",
+   "default_value": null,
+   "doc_type": "Sales Invoice Timesheet",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "timesheet_detail",
+   "idx": 0,
+   "modified": "2020-12-30 15:20:18.286593",
+   "modified_by": "Administrator",
+   "name": "Sales Invoice Timesheet-timesheet_detail-hidden",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "hidden",
+   "property_type": "Check",
+   "value": "0"
+  }
+ ],
  "sync_on_migrate": 1
 }

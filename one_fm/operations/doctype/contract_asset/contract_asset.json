@@ -9,7 +9,8 @@
   "unit_rate",
   "column_break_4",
   "item_name",
-  "uom"
+  "uom",
+  "site"
  ],
  "fields": [
   {
@@ -49,10 +50,16 @@
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
   }
  ],
  "istable": 1,
- "modified": "2020-10-02 12:08:16.905505",
+ "modified": "2021-02-01 09:38:06.296344",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Asset",
