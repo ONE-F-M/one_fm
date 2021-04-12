@@ -21,7 +21,6 @@ function apply_post_allocation_filters(frm){
 	let {operations_shift, date} = frm.doc;
 
 	if(operations_shift != undefined && date != undefined){
-		console.log(operations_shift, date);
 		frm.set_query("post", "assignments", function() {
 			return {
 				query: "one_fm.operations.doctype.post_allocation_plan.post_allocation_plan.filter_posts",
@@ -29,7 +28,6 @@ function apply_post_allocation_filters(frm){
 			}
 		});
 	} else if(operations_shift != undefined && date == undefined){
-		console.log(operations_shift, date);
 		frm.set_query("post", "assignments", function() {
 			return {
 				"filters": [
@@ -47,20 +45,16 @@ function add_employees(frm){
 		frappe.xcall('one_fm.operations.doctype.post_allocation_plan.post_allocation_plan.get_table_data',{operations_shift, date})
 		.then(res => {
 			let {employees, posts} = res;
+			
 			frm.set_value('assignments', '');
 
-			posts.forEach(function(i,v){
-				let match = get_best_employee_match(posts[v], employees)
-				frm.add_child('assignments', {
-					employee: match.employee ? match.employee : undefined,
-					employee_name: match.employee ? match.employee_name : undefined,
-					post: posts[v] ? posts[v].post : undefined 
-				});
-				if(match.employee){
-					employees = employees.filter(x => x.employee !== match.employee)
-				}
-			})
-			console.log(employees);
+			//PRIORITY 2
+			employees = posts[2] && assign_post(frm, posts[2], employees);
+			//PRIORITY 1
+			employees = posts[1] && assign_post(frm, posts[1], employees);
+			//PRIORITY 0
+			employees = posts[0] && assign_post(frm, posts[0], employees);
+		
 			if(employees.length > 0){
 				employees.forEach(function(i,v){
 					frm.add_child('assignments', {
@@ -74,48 +68,57 @@ function add_employees(frm){
 	}
 }
 
+function assign_post(frm, posts, employees){
+	posts.forEach(function(i,v){
+		let {designations} = posts[v];
+
+		// Select matching designations employees only and pass to get_best_employee_match
+		let matching_employees = employees.filter(emp => designations.includes(emp.designation))
+		let match = get_best_employee_match(posts[v], matching_employees);
+
+		frm.add_child('assignments', {
+			employee: match.employee ? match.employee : undefined,
+			employee_name: match.employee ? match.employee_name : undefined,
+			post: posts[v] ? posts[v].post : undefined 
+		}); 
+		if(match.employee){
+			employees = employees.filter(x => x.employee !== match.employee)
+		}
+	})
+	return employees;
+}
+
 function get_best_employee_match(post, employees){
-	console.log(post);
-	console.log(employees);
+	// Create score based by summing up every (Employee Skill/Post Skill) and sorting based on the score.
 	let scores = [];
-	// let score = 0;
 	let {skills, designations, gender} = post;
 
-	employees.forEach(function(i,v){
-		let employee = employees[v];
-		//Increase score if designation matches
-		let designation_score = designations.includes(employees[v].designation) ? 1 : 0;
+	employees.forEach(function(employee,i){
+		let skill_score = 0;
+		skills.forEach(function(skill, i){
+			employee.skills.forEach(function(e_skill, i){
+				if(skill.skill == e_skill.skill){
+					skill_score += roundNumber(e_skill.proficiency/ skill.proficiency, 2)
+				}
+			})
+		})
 
-		// Increase if skill match 
-		let post_skill_list = skills.map(a => a.skill);
-		let employee_skill_list = employee.skills.map(a => a.skill);
-		let skill_score = employee_skill_list.every(val => post_skill_list.includes(val)) ? 1 : 0;
 		let gender_score = 0;
 		//Increase if gender matches
 		if(gender == "Both"){
-			gender_score = 1;
+			scores.push({'employee': employee.employee, 'employee_name': employee.employee_name, 'final_score': skill_score + gender_score});
 		}
 		else if(gender == "Male" && employee.gender == "Male"){
-			gender_score = 1;
+			scores.push({'employee': employee.employee, 'employee_name': employee.employee_name, 'final_score': skill_score + gender_score});
 		}
 		else if(gender == "Female" && employee.gender == "Female"){
-			gender_score = 1;
+			scores.push({'employee': employee.employee, 'employee_name': employee.employee_name, 'final_score': skill_score + gender_score});
 		}
 
-		if(designation_score && gender_score && skill_score){
-			scores.push({'employee': employee.employee, 'employee_name': employee.employee_name});
-		}
 	})
 	//Sort descending by score 
-	scores.sort((a, b) => (a.employee_name < b.employee_name) ? 1 : -1)
-	console.log(scores);
+	scores.sort((a, b) => (a.final_score < b.final_score) ? 1 : -1)
 
 	let match = scores.length > 0 ? scores[0] : {'employee': undefined, 'score': 0};
 	return match;
-}
-
-function get_best_post_match(employee, posts){
-	console.log(posts);
-	console.log(employee);
-
 }

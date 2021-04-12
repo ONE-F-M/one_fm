@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe import _
+import itertools
 
 class PostAllocationPlan(Document):
 	pass
@@ -26,14 +27,18 @@ def filter_posts(doctype, txt, searchfield, start, page_len, filters):
 
 @frappe.whitelist()
 def get_table_data(operations_shift, date):
-	print(operations_shift, date)
 	employees = frappe.get_all("Employee Schedule", {'date': date, 'shift': operations_shift, 'employee_availability': 'Working'}, ["employee", "employee_name"])
-	posts = frappe.db.get_all("Post Schedule", {'date': date, 'shift': operations_shift, 'post_status': 'Planned'}, ["post"])
+	posts = get_posts(operations_shift, date)
 	
-	post_details_list = []
-	for post in posts:
-		post_data = get_post_data_map(post)
-		post_details_list.append(post_data)
+	post_list = {}
+	for key, group in itertools.groupby(posts, key=lambda x: (x['priority_level'])):
+		post_details_list = []
+		priority_posts = list(group)
+		for post in priority_posts:
+			post_data = get_post_data_map(post)
+			post_details_list.append(post_data)
+
+		post_list.update({key: post_details_list})	
 
 	employee_details_list = []
 	for employee in employees:
@@ -42,8 +47,23 @@ def get_table_data(operations_shift, date):
 
 	return {
 		'employees': employee_details_list, 
-		'posts': post_details_list
+		'posts': post_list
 	}
+
+def get_posts(operations_shift, date):
+	return frappe.db.sql("""
+		SELECT ps.post, p.priority_level
+		FROM `tabPost Schedule` ps, `tabOperations Post` p
+		WHERE 
+			ps.post=p.name
+		AND	ps.post_status="Planned"
+		AND ps.shift=%(shift)s
+		AND ps.date=%(date)s 
+		ORDER BY p.priority_level DESC, p.gender DESC
+	""", {
+		'shift':operations_shift,
+		'date': date
+	}, as_dict=1)
 
 def get_employee_data_map(employee):
 	employee_skills = frappe._dict()
@@ -63,8 +83,9 @@ def get_post_data_map(post):
 	post_data = frappe._dict()
 	post_doc = frappe.get_doc("Operations Post", post.post).as_dict()
 	post_data.gender = post_doc.gender
+	post_data.priority_level = post_doc.priority_level
 	post_data.skills =  [{'skill': skill.skill, 'proficiency': skill.minimum_proficiency_required } for skill in post_doc.skills]
 	post_data.designations = [designation.designation for designation in post_doc.designations]
 	post_data.post = post.post
-	print(post_data)
 	return post_data
+
