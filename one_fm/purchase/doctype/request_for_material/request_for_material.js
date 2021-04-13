@@ -82,16 +82,19 @@ frappe.ui.form.on('Request for Material', {
 					if(item.item_code && item_balance>=0){
 						item_exist_in_stock = true;
 					}
+					// else{
+					// 	frappe.msgprint(__("Warning: Requested Qty exceeds Qty in warehouse"));
+					// }
 				});
 				
 				if(item_exist_in_stock){
 					if(frm.doc.type=="Individual" || frm.doc.type=="Onboarding"){
 						frm.add_custom_button(__("Material Issue"),
-						() => frm.events.make_stock_entry_issue(frm), __('Create'));
-					frm.add_custom_button(__("Sales Invoice"),
-						() => frm.events.make_sales_invoice(frm), __('Create'));
-					frm.add_custom_button(__("Make Delivery Note"),
-						() => frm.events.make_delivery_note(frm), __('Create'));	
+							() => frm.events.make_stock_entry_issue(frm), __('Create'));
+						frm.add_custom_button(__("Sales Invoice"),
+							() => frm.events.make_sales_invoice(frm), __('Create'));
+						frm.add_custom_button(__("Make Delivery Note"),
+							() => frm.events.make_delivery_note(frm), __('Create'));	
 					}
 					else if (frm.doc.type=="Stock"){
 						frm.add_custom_button(__("Transfer Material"),

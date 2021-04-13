@@ -13,7 +13,7 @@ from frappe.permissions import has_permission
 
 class RequestforMaterial(Document):
 	def on_submit(self):
-		self.notify_request_for_material_accepter()
+		#self.notify_request_for_material_accepter()
 		self.notify_request_for_material_approver()
 
 	def notify_request_for_material_accepter(self):
