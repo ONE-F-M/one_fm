@@ -1,4 +1,5 @@
 {
+ "allow_import": 1,
  "autoname": "format:{client}-{project}-{start_date}",
  "creation": "2020-04-28 11:07:30.373279",
  "doctype": "DocType",
@@ -35,16 +36,20 @@
   "is_public_holiday_rate",
   "public_holiday_rate",
   "column_break_33",
+  "holiday_list",
   "section_break_35",
   "items",
   "section_break_28",
   "frequency",
   "assets",
   "section_break_30",
-  "is_attendance_for_invoice",
-  "is_invoice_for_project",
   "is_invoice_for_site",
+  "site_wise_option",
+  "is_seperate_invoice_for_site",
+  "is_invoice_for_full_amount",
+  "is_invoice_for_day_by_post",
   "column_break_38",
+  "is_attendance_for_invoice",
   "is_po_for_invoice",
   "use_portal_for_invoice",
   "section_break_36",
@@ -205,12 +210,6 @@
   },
   {
    "default": "0",
-   "fieldname": "is_invoice_for_project",
-   "fieldtype": "Check",
-   "label": "Is Require Invoice For Each Project"
-  },
-  {
-   "default": "0",
    "fieldname": "is_invoice_for_site",
    "fieldtype": "Check",
    "label": "Is Require Invoice For Each Site"
@@ -358,9 +357,40 @@
    "label": "Price List",
    "options": "Price List",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_seperate_invoice_for_site",
+   "fieldtype": "Check",
+   "label": "Is Require Seperate Invoice For Site"
+  },
+  {
+   "fieldname": "holiday_list",
+   "fieldtype": "Link",
+   "label": "Holiday List",
+   "options": "Holiday List"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_invoice_for_full_amount",
+   "fieldtype": "Check",
+   "label": "Is Require Invoice For Full Amount"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_invoice_for_day_by_post",
+   "fieldtype": "Check",
+   "label": "Is require Invoice For Day By Post"
+  },
+  {
+   "depends_on": "is_invoice_for_site",
+   "fieldname": "site_wise_option",
+   "fieldtype": "Select",
+   "label": "Site Wise Option",
+   "options": "Add With Hours\nGroup By Days"
   }
  ],
- "modified": "2020-10-28 21:29:11.674533",
+ "modified": "2021-03-30 00:40:19.616224",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
@@ -383,6 +413,6 @@
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "client",
+ "title_field": "project",
  "track_changes": 1
 }

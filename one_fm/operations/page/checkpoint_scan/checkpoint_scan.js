@@ -10,25 +10,57 @@ frappe.pages['checkpoint-scan'].on_page_load = function(wrapper) {
 	
 	//Initialize qrcode
 	const html5QrCode = new Html5Qrcode("reader");
-	const config = { fps: 10 };
+	const config = { 
+		fps: 24, 
+		qrbox : 350, 
+		aspectRatio: 1.0,
+		// videoConstraints : {
+		// 	torch: true 
+		// }
+	};
 	page.qr_code = html5QrCode;
 	
 
 	//Start scanning on clicking button
 	$('#scan').on('click', function(){
-		// If you want to prefer back camera
+		$(this).hide();
+		$('#stop-scan').show();
+		$('#torch-btn').show();
+		//Open back camera
 		html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+
 	})	
+
+	$('#stop-scan').on('click', function(){
+		page.qr_code.stop();
+		$(this).hide();
+		$('#scan').show();
+		$('#torch-btn').show();
+	})
+
+	$('#torch-btn').on('click', function(){
+		const track = page.qr_code._localMediaStream.getVideoTracks()[0];
+
+		//Create image capture object and get camera capabilities
+		const imageCapture = new ImageCapture(track)
+		const photoCapabilities = imageCapture.getPhotoCapabilities()
+		.then((r) => {
+			track.applyConstraints({
+				advanced: [{torch: true}]
+			});
+		});
+	});
 }
 
 
 function onScanSuccess(qrMessage) {
 	// handle the scanned code as you like
-	console.log(`QR matched = ${qrMessage}`);
 	let {latitude, longitude} = cur_page.page.page.position.coords;
 	let qr_code = qrMessage;
 	//Stop scanning
 	cur_page.page.page.qr_code.stop();
+	$('#stop-scan').hide();
+	$('#scan').show();
 	
 	frappe.xcall('one_fm.operations.page.checkpoint_scan.checkpoint_scan.scan_checkpoint', {qr_code, latitude, longitude})
 	.then(res => {
@@ -42,7 +74,6 @@ function get_location(page){
 		window.markers = [];
 		window.circles = [];
 		// JS API is loaded and available
-		console.log("Called")
 		navigator.geolocation.getCurrentPosition(
             position => {
 				page.position = position;
@@ -80,9 +111,8 @@ function get_location(page){
 }
 
 function load_gmap(position){
-	console.log(position);
 	let {latitude, longitude} = position.coords;
-	var map = new google.maps.Map(document.getElementById('map'), {
+	var map = new google.maps.Map(document.getElementById('scan-map'), {
 		zoom: 15,
 		center: {lat: latitude, lng: longitude}
 	});
@@ -96,7 +126,6 @@ function load_gmap(position){
 }
 
 function addYourLocationButton (map, marker){
-	console.log(map, marker);
     var controlDiv = document.createElement('div');
 
     var firstChild = document.createElement('button');

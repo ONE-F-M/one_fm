@@ -13,9 +13,8 @@ from frappe.permissions import has_permission
 
 class RequestforMaterial(Document):
 	def on_submit(self):
-		pass
-		# self.notify_request_for_material_accepter()
-		#self.notify_request_for_material_approver()
+		#self.notify_request_for_material_accepter()
+		self.notify_request_for_material_approver()
 
 	def notify_request_for_material_accepter(self):
 		if self.request_for_material_accepter:
@@ -37,7 +36,7 @@ class RequestforMaterial(Document):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
 			page_link = get_url("/desk#Form/Request for Material/" + self.name)
 			# Notify Requester
-			#self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
+			self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
 
 			# Notify Approver
 			if status == 'Accepted' and frappe.session.user == self.request_for_material_accepter and self.request_for_material_approver:
@@ -48,8 +47,7 @@ class RequestforMaterial(Document):
 
 			# Notify Accepter
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
-				pass
-				#self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
+				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
 
 			self.status = status
 			if status == "Approved":
@@ -233,7 +231,8 @@ def make_stock_entry(source_name, target_doc=None):
 		target.transfer_qty = qty * obj.conversion_factor
 		target.conversion_factor = obj.conversion_factor
 
-		target.t_warehouse = obj.warehouse
+		target.s_warehouse = obj.warehouse
+		target.t_warehouse = obj.t_warehouse
 
 	def set_missing_values(source, target):
 		target.purpose = 'Material Transfer'
@@ -274,7 +273,8 @@ def make_stock_entry_issue(source_name, target_doc=None):
 		target.transfer_qty = qty * obj.conversion_factor
 		target.conversion_factor = obj.conversion_factor
 
-		target.t_warehouse = obj.warehouse
+		target.s_warehouse = obj.warehouse
+		target.t_warehouse = obj.t_warehouse
 
 	def set_missing_values(source, target):
 		target.purpose = 'Material Issue'
