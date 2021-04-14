@@ -176,3 +176,7 @@ body[data-route="roster"] .closed {
 body[data-route="roster"] .closed:hover {
   background: #63799b;
 }
+body[data-route="roster"] .switch-container {
+  width: 300px;
+  margin: 0 auto;
+}

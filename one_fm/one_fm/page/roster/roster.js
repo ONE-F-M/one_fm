@@ -8,7 +8,7 @@ frappe.pages['roster'].on_page_load = function(wrapper) {
 
 	load_js(page);
 }
-
+console.log("hey",$("#customSwitch1"));
 function load_js(page){
     $(this).scrollTop(0);
 	
@@ -70,8 +70,10 @@ function load_js(page){
 			decrementMonth(page);
 		})
 		$rosterMonth = $('.rosterMonth');
+		$rosterOtMonth = $('.rosterOtMonth');
 		$postMonth = $('.postMonth');		
 		$rosterWeek = $('.rosterWeek');
+		$rosterOtWeek = $('.rosterOtWeek');
 		$postWeek = $('.postWeek');
 		$(".rosterviewclick").click(function () {
 			$rosterMonth.removeClass("d-none");
@@ -79,6 +81,7 @@ function load_js(page){
 			$rosterWeek.addClass("d-none");
 			$postWeek.addClass("d-none");
 			$(".maintabclick").removeClass("active");
+			$(".switch-container").removeClass("d-none");
 			$(this).parent().addClass("active");
 			$(".Postfilterhideshow").addClass("d-none");
 			$(".filterhideshow").addClass("d-none");
@@ -87,7 +90,7 @@ function load_js(page){
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
 			get_roster_data(page);
-	
+			
 		});
 		$(".postviewclick").click(function () {
 			$rosterMonth.addClass("d-none");
@@ -95,6 +98,7 @@ function load_js(page){
 			$rosterWeek.addClass("d-none");
 			$postWeek.addClass("d-none");
 			$(".maintabclick").removeClass("active");
+			$(".switch-container").addClass("d-none");
 			$(this).parent().addClass("active");
 			$(".Postfilterhideshow").addClass("d-none");
 			$(".filterhideshow").addClass("d-none");
@@ -104,9 +108,35 @@ function load_js(page){
 			GetHeaders(0, ".postMonth");
 			get_post_data(page);
 		});
-	
-	
-		
+		function basicRosterClick() {
+			$(".rosterClick").removeClass("active");
+			$rosterMonth.removeClass("d-none");
+			$rosterOtMonth.addClass("d-none");		
+			$rosterWeek.addClass("d-none");
+			$rosterOtWeek.addClass("d-none");
+			$(".switch-container").removeClass("d-none");
+			$(this).parent().addClass("active");
+			displayCalendar(calendarSettings1, page);
+			GetHeaders(1, ".rosterMonth");
+			get_roster_data(page);
+		};
+		function otRosterClick() {	
+			$(".rosterClick").removeClass("active");
+			$rosterMonth.addClass("d-none");
+			$rosterOtMonth.removeClass("d-none");
+			$rosterWeek.addClass("d-none");
+			$rosterOtWeek.removeClass("d-none");
+			$(".switch-container").removeClass("d-none");
+			$(this).parent().addClass("active");
+			displayCalendar(calendarSettings1, page);
+			GetHeaders(1, ".rosterOtMonth");
+			get_roster_data(page);
+			// OT Roster get Function here
+			
+		};
+		$(".basicRosterClick").click(basicRosterClick);
+		$(".otRosterClick").click(otRosterClick);
+
 		//week view click jquery
 		$('.postweekviewclick').click(function () {
 			$rosterMonth.addClass("d-none");
@@ -358,7 +388,7 @@ function load_js(page){
 		page.postWeek = get_post_week_data;
 		page.postMonth = get_post_data;
 		
-	}	
+	}
 
 
     $(`input[name="neverselectallcheckbox"]`).on("change", function () {
