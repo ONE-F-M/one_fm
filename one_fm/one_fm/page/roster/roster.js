@@ -75,39 +75,6 @@ function load_js(page){
 		$rosterWeek = $('.rosterWeek');
 		$rosterOtWeek = $('.rosterOtWeek');
 		$postWeek = $('.postWeek');
-		$(".rosterviewclick").click(function () {
-			$rosterMonth.removeClass("d-none");
-			$postMonth.addClass("d-none");		
-			$rosterWeek.addClass("d-none");
-			$postWeek.addClass("d-none");
-			$(".maintabclick").removeClass("active");
-			$(".switch-container").removeClass("d-none");
-			$(this).parent().addClass("active");
-			$(".Postfilterhideshow").addClass("d-none");
-			$(".filterhideshow").addClass("d-none");
-			$(".rosterviewfilterbg").removeClass("d-none");
-			$(".postviewfilterbg").addClass("d-none");
-			displayCalendar(calendarSettings1, page);
-			GetHeaders(1, ".rosterMonth");
-			get_roster_data(page);
-			
-		});
-		$(".postviewclick").click(function () {
-			$rosterMonth.addClass("d-none");
-			$postMonth.removeClass("d-none");
-			$rosterWeek.addClass("d-none");
-			$postWeek.addClass("d-none");
-			$(".maintabclick").removeClass("active");
-			$(".switch-container").addClass("d-none");
-			$(this).parent().addClass("active");
-			$(".Postfilterhideshow").addClass("d-none");
-			$(".filterhideshow").addClass("d-none");
-			$(".rosterviewfilterbg").addClass("d-none");
-			$(".postviewfilterbg").removeClass("d-none");
-			displayCalendar(calendarSettings1, page);
-			GetHeaders(0, ".postMonth");
-			get_post_data(page);
-		});
 		function basicRosterClick() {
 			$(".rosterClick").removeClass("active");
 			$rosterMonth.removeClass("d-none");
@@ -130,12 +97,47 @@ function load_js(page){
 			$(this).parent().addClass("active");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterOtMonth");
-			get_roster_data(page);
 			// OT Roster get Function here
 			
 		};
+		$(".rosterviewclick").click(function () {
+			$rosterMonth.removeClass("d-none");
+			$postMonth.addClass("d-none");		
+			$rosterWeek.addClass("d-none");
+			$postWeek.addClass("d-none");
+			$(".maintabclick").removeClass("active");
+			$(".switch-container").removeClass("d-none");
+			$(this).parent().addClass("active");
+			$(".Postfilterhideshow").addClass("d-none");
+			$(".filterhideshow").addClass("d-none");
+			$(".rosterviewfilterbg").removeClass("d-none");
+			$(".postviewfilterbg").addClass("d-none");
+			displayCalendar(calendarSettings1, page);
+			GetHeaders(1, ".rosterMonth");
+			$(".basicRosterClick").click(basicRosterClick);
+			$(".otRosterClick").click(otRosterClick);
+			get_roster_data(page);				
+		});
 		$(".basicRosterClick").click(basicRosterClick);
 		$(".otRosterClick").click(otRosterClick);
+		$(".postviewclick").click(function () {
+			$(".basicRosterClick").off('click');
+			$(".otRosterClick").off('click');
+			$rosterMonth.addClass("d-none");
+			$postMonth.removeClass("d-none");
+			$rosterWeek.addClass("d-none");
+			$postWeek.addClass("d-none");
+			$(".maintabclick").removeClass("active");
+			$(".switch-container").addClass("d-none");
+			$(this).parent().addClass("active");
+			$(".Postfilterhideshow").addClass("d-none");
+			$(".filterhideshow").addClass("d-none");
+			$(".rosterviewfilterbg").addClass("d-none");
+			$(".postviewfilterbg").removeClass("d-none");
+			displayCalendar(calendarSettings1, page);
+			GetHeaders(0, ".postMonth");
+			get_post_data(page);
+		});				
 
 		//week view click jquery
 		$('.postweekviewclick').click(function () {
