@@ -71,7 +71,7 @@ class RequestforMaterial(Document):
 		if status == 'Rejected' and reason_for_rejection:
 			message += " due to {0}".format(reason_for_rejection)
 		subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
-		send_email(self, recipients, message, subject)
+		#send_email(self, recipients, message, subject)
 		create_notification_log(subject, message, recipients, self)
 
 	def validate(self):
@@ -79,6 +79,28 @@ class RequestforMaterial(Document):
 		self.set_request_for_material_accepter_and_approver()
 		self.set_item_fields()
 		self.set_title()
+		self.validate_item_qty()
+    #in process
+	def validate_item_qty(self):
+		pass
+		# for d in self.get('items'):
+		# 	previous_sle = get_previous_sle({
+		# 		"item_code": d.item_code,
+		# 		"warehouse": d.s_warehouse or d.t_warehouse
+		# 		# "posting_date": self.posting_date,
+		# 		# "posting_time": self.posting_time
+		# 	})
+
+		# 	# get actual stock at source warehouse
+		# 	d.actual_qty = previous_sle.get("qty_after_transaction") or 0
+
+		# 	# validate qty during submitfr
+		# 	if d.docstatus==1 and d.s_warehouse and flt(d.actual_qty, d.precision("actual_qty")) < flt(d.stock_qty, d.precision("actual_qty")):
+		# 		frappe.warn(_("Row {0}: Quantity not available for {4} in warehouse {1} at posting time of the entry ({2} {3})").format(d.idx,
+		# 			frappe.bold(d.s_warehouse), formatdate(self.posting_date),
+		# 			format_time(self.posting_time), frappe.bold(d.item_code))
+		# 			+ '<br><br>' + _("Available quantity is {0}, you need {1}").format(frappe.bold(d.actual_qty),
+		# 				frappe.bold(d.stock_qty)), title=_('Insufficient Stock'))
 
 	def set_item_fields(self):
 		if self.items and self.type == 'Stock':
