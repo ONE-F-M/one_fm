@@ -14,7 +14,7 @@ class OperationsPost(Document):
 	def after_insert(self):
 		start_date = cstr(getdate())
 		end_date = add_to_date(start_date, years=1)
-		frappe.enqueue(set_post_active, start_date=start_date, end_date=end_date, is_async=True, queue="long")
+		frappe.enqueue(set_post_active, post=self, start_date=start_date, end_date=end_date, is_async=True, queue="long")
 
 	def on_update(self):
 		self.validate_name()
@@ -28,9 +28,6 @@ class OperationsPost(Document):
 @frappe.whitelist()
 def set_post_active(post, start_date, end_date):
 	for date in	pd.date_range(start=start_date, end=end_date):
-		# if frappe.db.exists("Post Schedule", {"post": post, "date": cstr(date.date())}):
-		# 	sch = frappe.get_doc("Post Schedule", {"post": post, "date": cstr(date.date())})
-		# else:
 		sch = frappe.new_doc("Post Schedule")
 		sch.post = post.name
 		sch.date = cstr(date.date())

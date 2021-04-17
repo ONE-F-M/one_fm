@@ -33,13 +33,14 @@ def get_table_data(operations_shift, date):
 	post_list = {}
 	for key, group in itertools.groupby(posts, key=lambda x: (x['priority_level'])):
 		post_details_list = []
-		priority_posts = list(group)
+		# Sort descending by length of skills in post
+		priority_posts = sorted(list(group), key=post_sorting, reverse=True)
 		for post in priority_posts:
 			post_data = get_post_data_map(post)
 			post_details_list.append(post_data)
 
 		post_list.update({key: post_details_list})	
-
+	
 	employee_details_list = []
 	for employee in employees:
 		employee_skills = get_employee_data_map(employee)
@@ -49,6 +50,9 @@ def get_table_data(operations_shift, date):
 		'employees': employee_details_list, 
 		'posts': post_list
 	}
+
+def post_sorting(post):
+	return len(post.skills) if post.skills else 0
 
 def get_posts(operations_shift, date):
 	return frappe.db.sql("""

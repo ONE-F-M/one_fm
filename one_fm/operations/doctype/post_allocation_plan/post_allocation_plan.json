@@ -1,4 +1,5 @@
 {
+ "autoname": "format: {operations_shift}|{date} ",
  "creation": "2021-01-26 11:06:49.199315",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -38,7 +39,7 @@
    "options": "Post Allocation Employee Assignment"
   }
  ],
- "modified": "2021-01-26 11:06:49.199315",
+ "modified": "2021-04-15 11:13:27.367744",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Allocation Plan",
