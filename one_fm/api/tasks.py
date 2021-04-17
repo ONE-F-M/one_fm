@@ -54,7 +54,6 @@ def final_reminder():
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
 		# shift_start is equal to now time - notification reminder in mins
-		# print(shift.name, now_datetime(), now_time, shift.start_time)
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			
@@ -73,7 +72,6 @@ def final_reminder():
 				AND date(empChkin.time)="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
-			print(recipients)
 
 			if len(recipients) > 0:
 				recipients = [recipient[0] for recipient in recipients if recipient[0]]
@@ -87,7 +85,6 @@ def final_reminder():
 		# shift_end is equal to now time - notification reminder in mins
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-			print(shift.name, now_time, shift.end_time)
 		
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp  
@@ -104,7 +101,6 @@ def final_reminder():
 				AND date(empChkin.time)="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
-			print(recipients)
 
 			if len(recipients) > 0:	
 				recipients = [recipient[0] for recipient in recipients if recipient[0]]
@@ -116,7 +112,7 @@ def final_reminder():
 def supervisor_reminder():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
-	print("SUPERVISOR REMINDER", now_time, now_datetime())
+
 	for shift in shifts_list:
 		#Send notification to supervisor of those who haven't checked in
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.late_entry_grace_period))).time()):
@@ -137,7 +133,6 @@ def supervisor_reminder():
 						AND date(empChkin.time)="{date}"
 						AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
-			print("SUPERVISOR REMINDER", recipients)
 
 			if len(recipients) > 0:
 				for recipient in recipients:
@@ -178,7 +173,6 @@ def supervisor_reminder():
 		# 				send_notification(subject, message, [for_user])
 
 def send_notification(subject, message, recipients):
-	print("181", recipients)
 	for user in recipients:
 		notification = frappe.new_doc("Notification Log")
 		notification.subject = subject
@@ -186,10 +180,8 @@ def send_notification(subject, message, recipients):
 		notification.document_type = "Notification Log"
 		notification.for_user = user
 		notification.save()
-		print("188" ,notification.as_dict())
 		notification.document_name = notification.name
 		notification.save()
-		# print(notification.as_dict())
 		frappe.db.commit()	
 
 def get_active_shifts(now_time):
@@ -353,10 +345,17 @@ def update_shift_details_in_attendance(doc, method):
 def generate_payroll():
 	start_date = add_to_date(getdate(), months=-1)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
+	
+	# Hardcoded dates for testing, remove below 2 lines for live
+	start_date = "2021-02-24"
+	end_date = "2021-03-23"
+
 	departments = frappe.get_all("Department", {"company": erpnext.get_default_company()})
 	for department in departments:
 		try:
-			create_payroll_entry(department.name, start_date, end_date)
+			# If condition for testing. 
+			if department.name != "IT - ONEFM":
+				create_payroll_entry(department.name, start_date, end_date)
 		except Exception:
 			print(frappe.get_traceback())
 			frappe.log_error(frappe.get_traceback())
