@@ -77,10 +77,13 @@ frappe.ui.form.on('Request for Material', {
 			// console.log(frm.doc.items[0].actual_qty-frm.doc.items[0].qty);
 			if(frm.doc.items){
 				var item_exist_in_stock = false;
+				var purchase_item_exist = false;
 				frm.doc.items.forEach((item, i) => {
-					let item_balance = item.actual_qty-item.qty;
-					if(item.item_code && item_balance>=0){
+					if(item.item_code && item.actual_qty>=0){
 						item_exist_in_stock = true;
+					}
+					if(item.pur_qty > 0){
+						purchase_item_exist = true;
 					}
 					// else{
 					// 	frappe.msgprint(__("Warning: Requested Qty exceeds Qty in warehouse"));
@@ -93,10 +96,12 @@ frappe.ui.form.on('Request for Material', {
 							() => frm.events.make_stock_entry_issue(frm), __('Create'));
 						frm.add_custom_button(__("Sales Invoice"),
 							() => frm.events.make_sales_invoice(frm), __('Create'));
-						if(frm.doc.status=='Transferred'){
-							frm.add_custom_button(__("Make Delivery Note"),
-							    () => frm.events.make_delivery_note(frm), __('Create'));
+						if(purchase_item_exist){
+							frm.add_custom_button(__("Request for Purchase"),
+							    () => frm.events.make_request_for_purchase(frm), __('Create'));
 						}
+						// frm.add_custom_button(__("Make Delivery Note"),
+						// 	() => frm.events.make_delivery_note(frm), __('Create'));
 							
 					}
 					else if (frm.doc.type=="Stock"){
@@ -104,10 +109,8 @@ frappe.ui.form.on('Request for Material', {
 							() => frm.events.make_stock_entry(frm), __('Create'));
 						frm.add_custom_button(__("Sales Invoice"),
 							() => frm.events.make_sales_invoice(frm), __('Create'));
-						if(frm.doc.status=='Transferred'){
-							frm.add_custom_button(__("Make Delivery Note"),
-								() => frm.events.make_delivery_note(frm), __('Create'));
-						}
+						// frm.add_custom_button(__("Make Delivery Note"),
+						// 	() => frm.events.make_delivery_note(frm), __('Create'));
 					}
 					
 				}
@@ -235,6 +238,9 @@ frappe.ui.form.on('Request for Material', {
 				if(!r.exc) {
 					$.each(r.message, function(k, v) {
 						if(!d[k]) d[k] = v;
+						if(d.qty>d.actual_qty){
+							d.pur_qty = d.qty-d.actual_qty
+						}
 					});
 				}
 			}
@@ -469,6 +475,7 @@ frappe.ui.form.on("Request for Material Item", {
 			frappe.model.set_value(item.doctype, item.name, 'item_name', '');
 		}
 		frm.events.get_item_data(frm, item);
+		// if(item.qty>item.actual_qty){}
 	},
 
 	schedule_date: function(frm, cdt, cdn) {
