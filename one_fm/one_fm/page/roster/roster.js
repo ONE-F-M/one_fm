@@ -45,7 +45,7 @@ function load_js(page){
 				today: moment()
 			}
 			let element = get_wrapper_element();
-			if(element == '.rosterMonth' || element == '.postMonth'){
+			if(element == '.rosterMonth' || element == '.rosterOtMonth' || element == '.postMonth'){
 				displayCalendar(calendarSettings1, page);
 				GetHeaders(0);
 				
@@ -89,6 +89,7 @@ function load_js(page){
 		};
 		function otRosterClick() {	
 			$(".rosterClick").removeClass("active");
+			$(".filterhideshow").addClass("d-none");
 			$rosterMonth.addClass("d-none");
 			$rosterOtMonth.removeClass("d-none");
 			$rosterWeek.addClass("d-none");
@@ -97,6 +98,7 @@ function load_js(page){
 			$(this).parent().addClass("active");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterOtMonth");
+			get_roster_data(page, true);
 			// OT Roster get Function here
 			
 		};
@@ -117,9 +119,7 @@ function load_js(page){
 			$(".basicRosterClick").click(basicRosterClick);
 			$(".otRosterClick").click(otRosterClick);
 			get_roster_data(page);				
-		});
-		$(".basicRosterClick").click(basicRosterClick);
-		$(".otRosterClick").click(otRosterClick);
+		});		
 		$(".postviewclick").click(function () {
 			$(".basicRosterClick").off('click');
 			$(".otRosterClick").off('click');
@@ -138,6 +138,8 @@ function load_js(page){
 			GetHeaders(0, ".postMonth");
 			get_post_data(page);
 		});				
+		$(".basicRosterClick").click(basicRosterClick);
+		$(".otRosterClick").click(otRosterClick);
 
 		//week view click jquery
 		$('.postweekviewclick').click(function () {
@@ -386,6 +388,7 @@ function load_js(page){
 		GetTodaySelectedDate();
 		 
 		page.rosterMonth = get_roster_data;
+		page.rosterOtMonth = get_roster_data;
 		page.rosterWeek = get_roster_week_data;
 		page.postWeek = get_post_week_data;
 		page.postMonth = get_post_data;
@@ -636,6 +639,7 @@ function bind_events(page){
 	wrapper_element.find('#paginate-parent').pageMe({pagerSelector:'#myPager',showPrevNext:false,hidePageNumbers:false,perPage:100});
 	if(["Operations Manager", "Site Supervisor", "Shift Manager", "Projects Manager"].some(i => frappe.user_roles.includes(i))){
 		let $rosterMonth = $('.rosterMonth');
+		let $rosterOtMonth = $('.rosterOtMonth');
 		let $postMonth = $('.postMonth');		
 		let $rosterWeek = $('.rosterWeek');
 		let $postWeek = $('.postWeek');
@@ -667,6 +671,19 @@ function bind_events(page){
 
 		//add array on each of data select from calender
 		$rosterMonth.find(".hoverselectclass").on("click", function () {
+			$(this).toggleClass("selectclass");
+			// If the id is not already in the array, add it. If it is, remove it  
+			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+
+			if (classgrt.join(",") === "") {
+				$(".filterhideshow").addClass("d-none");
+			}
+			else {
+				$(".filterhideshow").removeClass("d-none");
+			}
+		});
+		
+		$rosterOtMonth.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it  
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
@@ -815,6 +832,28 @@ function bind_events(page){
 				// }
 			});
 		});
+		$rosterOtMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
+			if ($(this).is(":checked")) {
+				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
+					let [employee, date] = $(v).attr('data-selectid').split('|');
+					if(moment(date).isAfter(moment())){
+						$(v).addClass("selectclass");
+					}
+				})
+				$(".filterhideshow").removeClass("d-none");
+			}
+			else {
+				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
+					classgrt.splice(classgrt.indexOf( $(v).attr('data-selectid')), 1)
+				})
+				$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
+				$(".filterhideshow").addClass("d-none");
+			}
+			$(".selectclass").map(function () {
+				classgrt.push($(this).attr("data-selectid"));
+				classgrt = [... new Set(classgrt)];				
+			});
+		});
 		//on checkbox select change
 		$("input[name='selectallcheckboxes']").on("change", function () {
 			
@@ -862,6 +901,10 @@ function bind_search_bar_event(page){
 				get_roster_data(page);
 			}else if(wrapper_element == ".rosterWeek"){
 				get_roster_week_data(page);
+			}else if(wrapper_element == ".rosterOtMonth"){
+				get_roster_data(page);
+			}else if(wrapper_element == ".rosterOtWeek"){
+				get_roster_week_data(page);
 			}
 		}
 	});
@@ -872,13 +915,17 @@ function bind_search_bar_event(page){
 			get_roster_data(page);
 		}else if(wrapper_element == ".rosterWeek"){
 			get_roster_week_data(page);
+		}else if(wrapper_element == ".rosterOtMonth"){
+			get_roster_data(page);
+		}else if(wrapper_element == ".rosterOtWeek"){
+			get_roster_week_data(page);
 		}
 	})
 }
 
 
 // Get data for Roster monthly view and render it
-function get_roster_data(page){
+function get_roster_data(page, isOt){
 	// $('#cover-spin').show(0);
 	let a1 = performance.now();
 	classgrt = [];
@@ -896,17 +943,17 @@ function get_roster_data(page){
 		let a2 = performance.now();
 		console.log("REQ TIME", a2-a1);
 		// $('#cover-spin').hide();
-		render_roster(res, page);
+		render_roster(res, page, isOt);
 	});
 }
 
-function render_roster(res, page){
+function render_roster(res, page, isOt){
 	let {post_types_data, employees_data, total}= res;
 	page.pagination.total = total;
 			
 	let b1 = performance.now();
-	let $rosterMonth = $('.rosterMonth');
-	let $rosterMonthbody = $('.rosterMonth').find('#calenderviewtable tbody');
+	let $rosterMonth = isOt ? $('.rosterOtMonth') : $('.rosterMonth');
+	let $rosterMonthbody = isOt ? $('.rosterOtMonth').find('#calenderviewtable tbody') : $('.rosterMonth').find('#calenderviewtable tbody');
 	$rosterMonthbody.empty();
 	for(post_type_name in post_types_data){
 		let pt_row = `
@@ -1503,7 +1550,7 @@ function incrementMonth(page) {
 	calendarSettings1.date.add(1, "Months");
 
 	let element = get_wrapper_element();
-	if(element == '.rosterMonth' || element == '.postMonth'){
+	if(element == '.rosterMonth' || element == '.rosterOtMonth' || element == '.postMonth'){
 		GetHeaders(1);
 		displayCalendar(calendarSettings1);
 		element = element.slice(1);
@@ -1524,7 +1571,7 @@ function decrementMonth(page) {
 	}
 	calendarSettings1.date.subtract(1, "Months");
 	let element = get_wrapper_element();
-	if(element == '.rosterMonth' || element == '.postMonth'){
+	if(element == '.rosterMonth' || element == 'rosterOtMonth' || element == '.postMonth'){
 		GetHeaders(1);
 		displayCalendar(calendarSettings1);
 		element = element.slice(1);
@@ -1573,6 +1620,7 @@ function ChangeRosteringDate(seldate, this1) {
 function get_wrapper_element(element){
 	if(element) return element;
 	let roster_element = $(".rosterMonth").attr("class").split(/\s+/).includes("d-none");
+	let roster_ot_element = $(".rosterOtMonth").attr("class").split(/\s+/).includes("d-none");
 	let roster_week_element = $(".rosterWeek").attr("class").split(/\s+/).includes("d-none");
 	let post_element = $(".postMonth").attr("class").split(/\s+/).includes("d-none");
 	let post_week_element = $(".postWeek").attr("class").split(/\s+/).includes("d-none");
@@ -1582,6 +1630,9 @@ function get_wrapper_element(element){
 		return element;
 	}else if(!roster_element && roster_week_element && post_element && post_week_element){
 		element = '.rosterMonth';
+		return element;
+	}else if(!roster_ot_element && roster_week_element && post_element && post_week_element){
+		element = '.rosterOtMonth';
 		return element;
 	}else if(roster_element && roster_week_element && post_element && !post_week_element){
 		element = '.postWeek';
