@@ -1,5 +1,4 @@
 {
- "actions": [],
  "autoname": "naming_series:",
  "creation": "2020-10-04 17:18:51.846231",
  "doctype": "DocType",
@@ -7,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
+  "work_permit",
   "category",
   "civil_id",
   "moi_number",
@@ -28,8 +28,16 @@
   "items",
   "grd_section",
   "grd_operator",
+  "apply_medical_insurance_online",
+  "submission_of_application",
+  "upload_medical_insurance",
+  "medical_insurance_submitted_by",
   "completed",
   "column_break_23",
+  "apply_medical_insurance_online_date",
+  "submission_of_application_date",
+  "upload_medical_insurance_date",
+  "medical_insurance_submitted_on",
   "grd_supervisor",
   "payment_done"
  ],
@@ -44,6 +52,7 @@
    "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "moi_number",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "MOI Number"
   },
   {
@@ -52,6 +61,7 @@
   },
   {
    "depends_on": "eval:doc.category == 'Individual'",
+   "fetch_from": "work_permit.pam_file_number",
    "fieldname": "insurance_type",
    "fieldtype": "Data",
    "label": "Insurance Type"
@@ -68,12 +78,14 @@
    "fieldtype": "Section Break"
   },
   {
+   "fetch_from": "work_permit.gender",
    "fieldname": "gender",
    "fieldtype": "Link",
    "label": "Gender",
    "options": "Gender"
   },
   {
+   "fetch_from": "work_permit.nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
    "label": "Nationality"
@@ -81,6 +93,7 @@
   {
    "fieldname": "passport_expiry_date",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Passport Expiry Date"
   },
   {
@@ -88,6 +101,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "\"work_permit.duration_of_work_permit",
    "fieldname": "no_of_years",
    "fieldtype": "Int",
    "label": "No of Years"
@@ -125,6 +139,7 @@
    "options": "MI-.YYYY.-"
   },
   {
+   "fetch_from": "work_permit.employee_full_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
    "label": "Employee Name"
@@ -140,6 +155,7 @@
    "options": "Medical Insurance Item"
   },
   {
+   "default": "Individual",
    "fieldname": "category",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -181,11 +197,61 @@
    "fieldname": "payment_done",
    "fieldtype": "Check",
    "label": "Payment Done"
+  },
+  {
+   "fieldname": "work_permit",
+   "fieldtype": "Link",
+   "label": "Work Permit",
+   "options": "Work Permit"
+  },
+  {
+   "default": "No",
+   "fieldname": "apply_medical_insurance_online",
+   "fieldtype": "Select",
+   "label": "Apply Medical Insurance Online",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "apply_medical_insurance_online_date",
+   "fieldtype": "Datetime",
+   "label": "Apply Medical Insurance Online Date"
+  },
+  {
+   "default": "No",
+   "fieldname": "submission_of_application",
+   "fieldtype": "Data",
+   "label": "Submission of application",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "submission_of_application_date",
+   "fieldtype": "Datetime",
+   "label": "Submission of application Date"
+  },
+  {
+   "fieldname": "upload_medical_insurance",
+   "fieldtype": "Attach",
+   "label": "Upload medical insurance"
+  },
+  {
+   "fieldname": "upload_medical_insurance_date",
+   "fieldtype": "Datetime",
+   "label": "Upload medical insurance Date"
+  },
+  {
+   "fieldname": "medical_insurance_submitted_by",
+   "fieldtype": "Link",
+   "label": "Medical Insurance Submitted By",
+   "options": "User"
+  },
+  {
+   "fieldname": "medical_insurance_submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Medical Insurance Submitted on"
   }
  ],
  "is_submittable": 1,
- "links": [],
- "modified": "2020-10-04 18:54:28.826191",
+ "modified": "2021-04-19 10:43:05.592290",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
@@ -200,6 +266,30 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
    "share": 1,
    "write": 1
   }
