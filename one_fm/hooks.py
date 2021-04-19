@@ -142,7 +142,7 @@ doc_events = {
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
 	},
 	"Leave Type": {
-		"validate": "one_fm.utils.validate_leave_type_for_paid_sick_leave"
+		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
 	"Employee": {
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",

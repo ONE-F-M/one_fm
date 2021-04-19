@@ -614,13 +614,25 @@ def get_leave_payment_breakdown(leave_type):
     leave_type_doc = frappe.get_doc("Leave Type", leave_type)
     return leave_type_doc.one_fm_leave_payment_breakdown if leave_type_doc.one_fm_leave_payment_breakdown else False
 
-def validate_leave_type_for_paid_sick_leave(doc, method):
-    if doc.one_fm_is_paid_sick_leave:
+def validate_leave_type_for_one_fm_paid_leave(doc, method):
+    if doc.is_lwp:
+        doc.one_fm_is_paid_sick_leave = False
+        doc.one_fm_is_paid_annual_leave = False
+    elif doc.one_fm_is_paid_sick_leave:
         doc.is_lwp = False
+        doc.one_fm_is_paid_annual_leave = False
+        doc.one_fm_is_hajj_leave = False
         if not doc.one_fm_paid_sick_leave_deduction_salary_component and not doc.one_fm_leave_payment_breakdown:
             frappe.throw(_('Either Paid Sick Leave Deduction Salary Component or Leave Payment Breakdown is Mandatory'))
-    elif doc.is_lwp:
+    elif doc.one_fm_is_paid_annual_leave:
+        doc.is_lwp = False
         doc.one_fm_is_paid_sick_leave = False
+        doc.one_fm_is_hajj_leave = False
+        if not doc.one_fm_annual_leave_allocation_reduction:
+            frappe.throw(_('Annual Leave Allocation Reduction is Mandatory'))
+    elif doc.one_fm_is_hajj_leave:
+        doc.one_fm_is_paid_annual_leave = False
+        doc.one_fm_is_hajj_leave = False
 
 @frappe.whitelist(allow_guest=True)
 def bereavement_leave_validation(doc, method):
