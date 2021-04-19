@@ -540,164 +540,85 @@ def create_gp_letter_request():
 
 
 
+@frappe.whitelist(allow_guest=True)
+def leave_appillication_on_submit(doc, method):
+    if doc.status == "Approved":
+        leave_appillication_paid_sick_leave(doc, method)
+        update_employee_hajj_status(doc, method)
 
 @frappe.whitelist(allow_guest=True)
-def paid_sick_leave_validation(doc, method):
+def leave_appillication_on_cancel(doc, method):
+    update_employee_hajj_status(doc, method)
+
+@frappe.whitelist(allow_guest=True)
+def leave_appillication_paid_sick_leave(doc, method):
+    if doc.leave_type and frappe.db.get_value("Leave Type", doc.leave_type, 'one_fm_is_paid_sick_leave') == 1:
+        create_additional_salary_for_paid_sick_leave(doc)
+
+def create_additional_salary_for_paid_sick_leave(doc):
     salary = get_salary(doc.employee)
     daily_rate = salary/30
+    from erpnext.hr.doctype.leave_application.leave_application import get_leave_details
+    leave_details = get_leave_details(doc.employee, nowdate())
+    curr_year_applied_days = 0
+    if doc.leave_type in leave_details['leave_allocation'] and leave_details['leave_allocation'][doc.leave_type]:
+        curr_year_applied_days = leave_details['leave_allocation'][doc.leave_type]['leaves_taken']
+    if curr_year_applied_days == 0:
+        curr_year_applied_days = doc.total_leave_days
 
-    allocation_records = get_leave_allocation_records(nowdate(), doc.employee, "Sick Leave - مرضية")
-    allocation_from_date = allocation_records[doc.employee]["Sick Leave - مرضية"].from_date
-    allocation_to_date = allocation_records[doc.employee]["Sick Leave - مرضية"].to_date
+    leave_payment_breakdown = get_leave_payment_breakdown(doc.leave_type)
 
-    curr_year_applied_days = get_approved_leaves_for_period(doc.employee, "Sick Leave - مرضية", allocation_from_date, allocation_to_date)
+    total_payment_days = 0
+    if leave_payment_breakdown:
+        for payment_breakdown in leave_payment_breakdown:
+            payment_days = 0
+            if total_payment_days < doc.total_leave_days:
+                if curr_year_applied_days >= payment_breakdown.threshold_days and (curr_year_applied_days - doc.total_leave_days) < payment_breakdown.threshold_days:
+                    payment_days = payment_breakdown.threshold_days - (curr_year_applied_days-doc.total_leave_days) - total_payment_days
+                elif curr_year_applied_days <= payment_breakdown.threshold_days: # Gives true this also doc.total_leave_days <= payment_breakdown.threshold_days:
+                    payment_days = doc.total_leave_days - total_payment_days
+                create_additional_salary(salary, daily_rate, payment_days, doc, payment_breakdown)
+                total_payment_days += payment_days
 
-    remain_paid = 0
-    remain_three_quarter_paid = 0
-    remain_half_paid = 0
-    remain_quarter_paid = 0
-    remain_without_paid = 0
+    if total_payment_days < doc.total_leave_days and doc.total_leave_days-total_payment_days > 0:
+        create_additional_salary(salary, daily_rate, doc.total_leave_days-total_payment_days, doc)
 
-    if curr_year_applied_days>=0 and curr_year_applied_days<=15:
-        remain_paid = 15-curr_year_applied_days
-        if doc.total_leave_days > remain_paid:
-            remain_three_quarter_paid = doc.total_leave_days-remain_paid
-            if remain_three_quarter_paid>10:
-                remain_three_quarter_paid = 10
-                remain_half_paid = (doc.total_leave_days-remain_paid)-10
-                if remain_half_paid>10:
-                    remain_half_paid = 10
-                    remain_quarter_paid = ((doc.total_leave_days-remain_paid)-10)-10
-                    if remain_quarter_paid>10:
-                        remain_quarter_paid = 10
-                        remain_without_paid = (((doc.total_leave_days-remain_paid)-10)-10)-10
-
-    elif curr_year_applied_days>15 and curr_year_applied_days<=25:
-        remain_three_quarter_paid = 25-curr_year_applied_days
-        if doc.total_leave_days>remain_three_quarter_paid:
-            remain_half_paid = doc.total_leave_days-remain_three_quarter_paid
-            if remain_half_paid>10:
-                remain_half_paid = 10
-                remain_quarter_paid = (doc.total_leave_days-remain_three_quarter_paid)-10
-                if remain_quarter_paid>10:
-                    remain_quarter_paid = 10
-                    remain_without_paid = ((doc.total_leave_days-remain_three_quarter_paid)-10)-10
-        else:
-            remain_three_quarter_paid = doc.total_leave_days
-
-
-    elif curr_year_applied_days>25 and curr_year_applied_days<=35:
-        remain_half_paid = 35-curr_year_applied_days
-        if doc.total_leave_days>remain_half_paid:
-            remain_quarter_paid = doc.total_leave_days-remain_half_paid
-            if remain_quarter_paid>10:
-                remain_quarter_paid = 10
-                remain_without_paid = (doc.total_leave_days-remain_half_paid)-10
-        else:
-            remain_half_paid = doc.total_leave_days
-
-
-    elif curr_year_applied_days>35 and curr_year_applied_days<=45:
-        remain_quarter_paid = 45-curr_year_applied_days
-        if doc.total_leave_days>remain_quarter_paid:
-            remain_quarter_paid = doc.total_leave_days-remain_quarter_paid
-            if remain_quarter_paid>10:
-                remain_quarter_paid = 10
-                remain_without_paid = (curr_year_applied_days-35)-10
-
-    elif curr_year_applied_days>45 and curr_year_applied_days<=75:
-        remain_without_paid = 75-curr_year_applied_days
-        if doc.total_leave_days<remain_without_paid:
-            remain_without_paid = doc.total_leave_days
-
-
-    # frappe.msgprint('Year Applied days : '+cstr(curr_year_applied_days))
-    # frappe.msgprint('Employee Salary : '+cstr(salary))
-    # frappe.msgprint('Daily Rate : '+cstr(daily_rate))
-    # frappe.msgprint('Remain Paid : '+cstr(remain_paid))
-
-    # frappe.msgprint('Remain Three Quarter Paid : '+cstr(remain_three_quarter_paid))
-    # frappe.msgprint('Remain Half Paid : '+cstr(remain_half_paid))
-    # frappe.msgprint('Remain Quarter Paid : '+cstr(remain_quarter_paid))
-    # frappe.msgprint('Remain Without Paid : '+cstr(remain_without_paid))
-
-    if remain_three_quarter_paid>0:
+def create_additional_salary(salary, daily_rate, payment_days, leave_application, payment_breakdown=False):
+    if payment_days > 0:
+        deduction_percentage = 1
+        salary_component = frappe.db.get_value("Leave Type", leave_application.leave_type, "one_fm_paid_sick_leave_deduction_salary_component")
+        if payment_breakdown:
+            deduction_percentage = payment_breakdown.salary_deduction_percentage/100
+            salary_component = payment_breakdown.salary_component
         deduction_notes = """
             Employee Salary: <b>{0}</b><br>
             Daily Rate: <b>{1}</b><br>
             Deduction Days Number: <b>{2}</b><br>
-            Paid Percent: <b>75%</b>
-        """.format(salary,daily_rate,remain_three_quarter_paid)
+            Deduction Percent: <b>{3}%</b>
+        """.format(salary, daily_rate, payment_days, deduction_percentage*100)
 
-        frappe.get_doc({
+        additional_salary = frappe.get_doc({
             "doctype":"Additional Salary",
-            "employee": doc.employee,
-            "docstatus": 1,
-            "salary_component": 'Sick Leave Deduction',
-            "payroll_date": doc.from_date,
-            "leave_application": doc.name,
+            "employee": leave_application.employee,
+            "salary_component": salary_component,
+            "payroll_date": leave_application.from_date,
+            "leave_application": leave_application.name,
             "notes": deduction_notes,
-            "amount": remain_three_quarter_paid*daily_rate*0.25
+            "amount": payment_days*daily_rate*deduction_percentage
         }).insert(ignore_permissions=True)
+        additional_salary.submit()
 
-    if remain_half_paid>0:
-        deduction_notes = """
-            Employee Salary: <b>{0}</b><br>
-            Daily Rate: <b>{1}</b><br>
-            Deduction Days Number: <b>{2}</b><br>
-            Paid Percent: <b>50%</b>
-        """.format(salary,daily_rate,remain_half_paid)
+def get_leave_payment_breakdown(leave_type):
+    leave_type_doc = frappe.get_doc("Leave Type", leave_type)
+    return leave_type_doc.one_fm_leave_payment_breakdown if leave_type_doc.one_fm_leave_payment_breakdown else False
 
-        frappe.get_doc({
-            "doctype":"Additional Salary",
-            "employee": doc.employee,
-            "docstatus": 1,
-            "salary_component": 'Sick Leave Deduction',
-            "payroll_date": doc.from_date,
-            "leave_application": doc.name,
-            "notes": deduction_notes,
-            "amount": remain_half_paid*daily_rate*0.5
-        }).insert(ignore_permissions=True)
-
-    if remain_quarter_paid>0:
-        deduction_notes = """
-            Employee Salary: <b>{0}</b><br>
-            Daily Rate: <b>{1}</b><br>
-            Deduction Days Number: <b>{2}</b><br>
-            Paid Percent: <b>25%</b>
-        """.format(salary,daily_rate,remain_quarter_paid)
-
-        frappe.get_doc({
-            "doctype":"Additional Salary",
-            "employee": doc.employee,
-            "docstatus": 1,
-            "salary_component": 'Sick Leave Deduction',
-            "payroll_date": doc.from_date,
-            "leave_application": doc.name,
-            "notes": deduction_notes,
-            "amount": remain_quarter_paid*daily_rate*0.75
-        }).insert(ignore_permissions=True)
-
-    if remain_without_paid>0:
-        deduction_notes = """
-            Employee Salary: <b>{0}</b><br>
-            Daily Rate: <b>{1}</b><br>
-            Deduction Days Number: <b>{2}</b><br>
-            Paid Percent: <b>0%</b>
-        """.format(salary,daily_rate,remain_without_paid)
-
-        frappe.get_doc({
-            "doctype":"Additional Salary",
-            "employee": doc.employee,
-            "docstatus": 1,
-            "salary_component": 'Sick Leave Deduction',
-            "payroll_date": doc.from_date,
-            "leave_application": doc.name,
-            "notes": deduction_notes,
-            "amount": remain_without_paid*daily_rate
-        }).insert(ignore_permissions=True)
-
-
+def validate_leave_type_for_paid_sick_leave(doc, method):
+    if doc.one_fm_is_paid_sick_leave:
+        doc.is_lwp = False
+        if not doc.one_fm_paid_sick_leave_deduction_salary_component and not doc.one_fm_leave_payment_breakdown:
+            frappe.throw(_('Either Paid Sick Leave Deduction Salary Component or Leave Payment Breakdown is Mandatory'))
+    elif doc.is_lwp:
+        doc.one_fm_is_paid_sick_leave = False
 
 @frappe.whitelist(allow_guest=True)
 def bereavement_leave_validation(doc, method):
@@ -730,20 +651,17 @@ def bereavement_leave_validation(doc, method):
 
 @frappe.whitelist(allow_guest=True)
 def update_employee_hajj_status(doc, method):
-    if doc.leave_type == 'Hajj leave - حج':
-        emp_doc = frappe.get_doc('Employee', doc.employee)
-        emp_doc.went_to_hajj = 1
-        emp_doc.flags.ignore_mandatory = True
-        emp_doc.save()
-        frappe.db.commit()
+    if doc.leave_type and frappe.db.get_value('Leave Type', doc.leave_type, 'one_fm_is_hajj_leave') == 1:
+        if method == "on_submit":
+            frappe.db.set_value("Employee", doc.employee, 'went_to_hajj', True)
+        if method == "on_cancel":
+            frappe.db.set_value("Employee", doc.employee, 'went_to_hajj', False)
 
 @frappe.whitelist(allow_guest=True)
 def validate_hajj_leave(doc, method):
-    if doc.leave_type == 'Hajj leave - حج':
-        emp_doc = frappe.get_doc('Employee', doc.employee)
-        if emp_doc.went_to_hajj:
-            frappe.throw("You can't apply for hajj leave twice")
-
+    if doc.leave_type and frappe.db.get_value('Leave Type', doc.leave_type, 'one_fm_is_hajj_leave') == 1:
+        if frappe.db.get_value('Employee', doc.employee, 'went_to_hajj') == 1:
+            frappe.throw(_("You can't apply for hajj leave twice"))
 
 def get_salary(employee):
     salary_amount = 0

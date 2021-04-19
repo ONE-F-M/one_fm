@@ -137,10 +137,12 @@ doc_events = {
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty"
 	},
 	"Leave Application": {
-		"before_submit": "one_fm.utils.paid_sick_leave_validation",
-		"on_submit": "one_fm.utils.bereavement_leave_validation",
-		"before_submit": "one_fm.utils.update_employee_hajj_status",
-		"validate": "one_fm.utils.validate_hajj_leave"
+		"on_submit": "one_fm.utils.leave_appillication_on_submit",
+		"validate": "one_fm.utils.validate_hajj_leave",
+		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
+	},
+	"Leave Type": {
+		"validate": "one_fm.utils.validate_leave_type_for_paid_sick_leave"
 	},
 	"Employee": {
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",
@@ -429,7 +431,4 @@ fixtures = [
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
-
-
-
 ShiftType.process_auto_attendance = process_auto_attendance
