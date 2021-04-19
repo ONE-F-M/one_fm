@@ -570,12 +570,14 @@ def create_additional_salary_for_paid_sick_leave(doc):
 
     total_payment_days = 0
     if leave_payment_breakdown:
+        threshold_days = 0
         for payment_breakdown in leave_payment_breakdown:
             payment_days = 0
+            threshold_days += payment_breakdown.threshold_days
             if total_payment_days < doc.total_leave_days:
-                if curr_year_applied_days >= payment_breakdown.threshold_days and (curr_year_applied_days - doc.total_leave_days) < payment_breakdown.threshold_days:
-                    payment_days = payment_breakdown.threshold_days - (curr_year_applied_days-doc.total_leave_days) - total_payment_days
-                elif curr_year_applied_days <= payment_breakdown.threshold_days: # Gives true this also doc.total_leave_days <= payment_breakdown.threshold_days:
+                if curr_year_applied_days >= threshold_days and (curr_year_applied_days - doc.total_leave_days) < threshold_days:
+                    payment_days = threshold_days - (curr_year_applied_days-doc.total_leave_days) - total_payment_days
+                elif curr_year_applied_days <= threshold_days: # Gives true this also doc.total_leave_days <= threshold_days:
                     payment_days = doc.total_leave_days - total_payment_days
                 create_additional_salary(salary, daily_rate, payment_days, doc, payment_breakdown)
                 total_payment_days += payment_days
