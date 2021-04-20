@@ -291,7 +291,10 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"0 4 * * *": [
-			'one_fm.utils.check_grp_operator_submission_four'
+			'one_fm.utils.check_grp_operator_submission_four',
+			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_supervisor_submit_application_online',
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_finance_dept_for_payment'
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
@@ -301,7 +304,15 @@ scheduler_events = {
 			'one_fm.utils.send_gp_letter_attachment_no_response'
 		],
 		"0 9 * * *": [
-			'one_fm.utils.check_upload_tasriah_submission_nine'
+			'one_fm.utils.check_upload_tasriah_submission_nine',
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator',
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_grd_supervisor_check_approval'
+
+		],
+		"30 9 * * *": [
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator'
+			
+			
 		],
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'
