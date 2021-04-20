@@ -7,10 +7,11 @@ def get_data():
 		'non_standard_fieldnames': {
 			'Sales Invoice': 'contracts',
 			'Delivery Note': 'contracts',
+			'Additional Deployment': 'contracts'
 		},
 		'transactions': [
 			{
-				'items': ['Sales Invoice', 'Delivery Note']
+				'items': ['Sales Invoice', 'Delivery Note','Additional Deployment']
 			},
 		]
 	}
