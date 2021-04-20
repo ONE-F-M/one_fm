@@ -7,14 +7,12 @@
  "field_order": [
   "naming_series",
   "posting_date",
-  "data_3",
+  "preparation_record",
   "section_break_4",
   "hr_approval",
-  "amended_from",
-  "grd_operator",
-  "grd_supervisor",
   "submitted_by",
-  "submitted_on"
+  "submitted_on",
+  "amended_from"
  ],
  "fields": [
   {
@@ -22,12 +20,6 @@
    "fieldname": "posting_date",
    "fieldtype": "Data",
    "label": "Posting Date"
-  },
-  {
-   "fieldname": "data_3",
-   "fieldtype": "Table",
-   "label": "Preparation Record",
-   "options": "Preparation Record"
   },
   {
    "fieldname": "section_break_4",
@@ -39,8 +31,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "HR Approval",
-   "options": "\nYes\nNo",
-   "permlevel": 1
+   "options": "\nYes\nNo"
   },
   {
    "fieldname": "amended_from",
@@ -49,20 +40,6 @@
    "no_copy": 1,
    "options": "Preparation",
    "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "grd_operator",
-   "fieldtype": "Link",
-   "label": "GRD operator",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "grd_supervisor",
-   "fieldtype": "Link",
-   "label": "GRD Supervisor",
-   "options": "User",
    "read_only": 1
   },
   {
@@ -84,17 +61,23 @@
    "fieldtype": "Select",
    "label": "Series",
    "options": "REF-.MM.-"
+  },
+  {
+   "fieldname": "preparation_record",
+   "fieldtype": "Table",
+   "label": "Preparation Record",
+   "options": "Preparation Record"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-04-19 12:49:05.502857",
+ "modified": "2021-04-20 04:36:00.646727",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation",
  "owner": "Administrator",
  "permissions": [
   {
-   "create": 1,
+   "cancel": 1,
    "delete": 1,
    "email": 1,
    "export": 1,
@@ -103,6 +86,18 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
