@@ -888,28 +888,24 @@ def get_approved_leaves_for_period(employee, leave_type, from_date, to_date):
 
 
 @frappe.whitelist()
-def get_item_code(parent_item_group = None ,subitem_group = None ,item_group = None ,cur_item_id = None):
-    item_code = None
-    if parent_item_group:
-        # parent_item_group_code = frappe.db.get_value('Item Group', parent_item_group, 'item_group_code')
-        parent_item_group_code = ""
-        item_code = parent_item_group_code
-
-        if subitem_group:
-            # subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'item_group_code')
-            subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'one_fm_item_group_abbr')
+def get_item_code(subitem_group = None ,item_group = None ,cur_item_id = None):
+    item_code = ""
+    if subitem_group:
+        subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'one_fm_item_group_abbr')
+        if subitem_group_code:
             item_code = subitem_group_code
-
-            if item_group:
-                # item_group_code = frappe.db.get_value('Item Group', item_group, 'item_group_code')
-                item_group_code = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
+        else:
+            frappe.msgprint(_("Set Abbreviation for the Item Group {0}".format(subitem_group)),
+                alert=True, indicator='orange')
+        if item_group:
+            item_group_code = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
+            if item_group_code:
                 item_code = subitem_group_code+"-"+item_group_code
-
-                if cur_item_id:
-                    item_code = subitem_group_code+"-"+item_group_code+"-"+cur_item_id
-
+            else:
+                frappe.msgprint(_("Set Abbreviation for the Item Group {0}".format(item_group)),
+					alert=True, indicator='orange')
+    item_code += ("-"+cur_item_id) if cur_item_id else ""
     return item_code
-
 
 @frappe.whitelist(allow_guest=True)
 def pam_salary_certificate_expiry_date():
@@ -1120,8 +1116,8 @@ def after_insert_item_group(doc, method):
 def before_insert_item(doc, method):
     if not doc.item_id:
         set_item_id(doc)
-    if not doc.item_code:
-        set_item_code(doc)
+    if not doc.item_code and doc.item_id:
+        doc.item_code = get_item_code(doc.subitem_group, doc.item_group, doc.item_id)
 
 @frappe.whitelist()
 def validate_item(doc, method):
@@ -1133,16 +1129,12 @@ def validate_item(doc, method):
 
 def set_item_id(doc):
     next_item_id = "000000"
-    item_id = get_item_id_series("All Item Groups", doc.subitem_group, doc.item_group)
+    item_id = get_item_id_series(doc.subitem_group, doc.item_group)
     if item_id:
         next_item_id = str(int(item_id)+1)
         for i in range(0, 6-len(next_item_id)):
             next_item_id = '0'+next_item_id
     doc.item_id = next_item_id
-
-def set_item_code(doc):
-    if doc.item_id:
-        doc.item_code = get_item_code("All Item Groups", doc.subitem_group, doc.item_group, doc.item_id)
 
 def set_item_description(doc):
     final_description = ""
@@ -1211,8 +1203,8 @@ def validate_get_item_group_parent(doc, method):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_item_id_series(parent_item_group, subitem_group, item_group):
-    previous_item_id = frappe.db.sql("select item_id from `tabItem` where parent_item_group='{0}' and subitem_group='{1}' and item_group='{2}' order by item_id desc".format(parent_item_group, subitem_group, item_group))
+def get_item_id_series(subitem_group, item_group):
+    previous_item_id = frappe.db.sql("select item_id from `tabItem` where subitem_group='{0}' and item_group='{1}' order by item_id desc".format(subitem_group, item_group))
     if previous_item_id:
         item_group_abbr = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
         if item_group_abbr:

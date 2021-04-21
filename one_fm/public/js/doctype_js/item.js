@@ -179,7 +179,6 @@ frappe.ui.form.on('Item', {
 			frm.call({
 				method: "one_fm.utils.get_item_id_series",
 				args: {
-					"parent_item_group": cur_frm.doc.parent_item_group,
 					"subitem_group": cur_frm.doc.subitem_group,
 					"item_group": cur_frm.doc.item_group
 				},
@@ -260,7 +259,6 @@ function get_item_code(frm){
 	frappe.call({
 		method: "one_fm.utils.get_item_code",
 		args: {
-			'parent_item_group': cur_frm.doc.parent_item_group,
 			'subitem_group': cur_frm.doc.subitem_group,
 			'item_group': cur_frm.doc.item_group,
 			'cur_item_id': cur_frm.doc.item_id
