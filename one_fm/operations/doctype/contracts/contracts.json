@@ -35,6 +35,7 @@
   "invoice_output_format",
   "invoice_frequency",
   "duration",
+  "duration_in_days",
   "is_auto_renewal",
   "section_break_26",
   "is_public_holiday_rate",
@@ -414,10 +415,15 @@
    "fieldname": "duration",
    "fieldtype": "Read Only",
    "label": "Duration"
+  },
+  {
+   "fieldname": "duration_in_days",
+   "fieldtype": "Read Only",
+   "label": "Duration In Days"
   }
  ],
- "modified": "2021-04-20 11:53:17.977287",
- "modified_by": "Administrator",
+ "modified": "2021-04-21 21:23:09.397752",
+ "modified_by": "a.yayalil@armor-services.com",
  "module": "Operations",
  "name": "Contracts",
  "owner": "Administrator",
