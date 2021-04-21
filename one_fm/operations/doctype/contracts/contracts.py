@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import cstr,month_diff,today,getdate
+from frappe.utils import cstr,month_diff,today,getdate,date_diff,add_years
 
 class Contracts(Document):
 	def validate(self):
@@ -15,6 +15,8 @@ class Contracts(Document):
 		add_contracts_assets_item_price(self)
 
 	def calculate_contract_duration(self):
+		duration_in_days = date_diff(self.end_date, self.start_date)
+		self.duration_in_days = cstr(duration_in_days)
 		full_months = month_diff(self.end_date, self.start_date)
 		years = int(full_months / 12)
 		months = int(full_months % 12)
@@ -104,3 +106,16 @@ def insert_login_credential(url, user_name, password, client):
     )
 
 	return 	password_management
+
+#renew contracts by one year
+def auto_renew_contracts():
+	filters = {
+		'end_date' : today(),
+		'is_auto_renewal' : 1
+	}
+	contracts_list = frappe.db.get_list('Contracts', fields="name", filters=filters, order_by="start_date")
+	for contract in contracts_list:
+		contract_doc = frappe.get_doc('Contracts', contract)
+		contract_doc.end_date = add_years(contract_doc.end_date, 1)
+		contract_doc.save()
+		frappe.db.commit()
