@@ -1,3 +1,4 @@
+// Frappe Init function to render Roster
 frappe.pages['roster'].on_page_load = function(wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
@@ -8,7 +9,7 @@ frappe.pages['roster'].on_page_load = function(wrapper) {
 
 	load_js(page);
 }
-console.log("hey",$("#customSwitch1"));
+// Initializes the page with default values 
 function load_js(page){
     $(this).scrollTop(0);
 	
@@ -93,19 +94,24 @@ function load_js(page){
 			$rosterMonth.addClass("d-none");
 			$rosterOtMonth.removeClass("d-none");
 			$rosterWeek.addClass("d-none");
-			$rosterOtWeek.removeClass("d-none");
+			$rosterOtWeek.addClass("d-none");
 			$(".switch-container").removeClass("d-none");
 			$(this).parent().addClass("active");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterOtMonth");
-			get_roster_data(page, true);
-			// OT Roster get Function here
+			let wrapper_element = get_wrapper_element()
+			if(page.search_key){
+				$(wrapper_element).find(".search-employee").val(page.search_key);
+			}
+			get_roster_data(page, true);			
 			
 		};
 		$(".rosterviewclick").click(function () {
 			$rosterMonth.removeClass("d-none");
+			$rosterOtMonth.addClass("d-none");
 			$postMonth.addClass("d-none");		
 			$rosterWeek.addClass("d-none");
+			$rosterOtWeek.addClass("d-none");
 			$postWeek.addClass("d-none");
 			$(".maintabclick").removeClass("active");
 			$(".switch-container").removeClass("d-none");
@@ -124,8 +130,10 @@ function load_js(page){
 			$(".basicRosterClick").off('click');
 			$(".otRosterClick").off('click');
 			$rosterMonth.addClass("d-none");
+			$rosterOtMonth.addClass("d-none");
 			$postMonth.removeClass("d-none");
 			$rosterWeek.addClass("d-none");
+			$rosterOtWeek.addClass("d-none");
 			$postWeek.addClass("d-none");
 			$(".maintabclick").removeClass("active");
 			$(".switch-container").addClass("d-none");
@@ -918,13 +926,14 @@ function bind_search_bar_event(page){
 		}else if(wrapper_element == ".rosterOtMonth"){
 			get_roster_data(page);
 		}else if(wrapper_element == ".rosterOtWeek"){
-			get_roster_week_data(page);
+			get_roster_week_data(page, isOt);
 		}
 	})
 }
 
 
 // Get data for Roster monthly view and render it
+// isOt Parms is passed for Roster OT
 function get_roster_data(page, isOt){
 	// $('#cover-spin').show(0);
 	let a1 = performance.now();
@@ -946,7 +955,8 @@ function get_roster_data(page, isOt){
 		render_roster(res, page, isOt);
 	});
 }
-
+// Function responsible for Rendering the Table
+// Renders on get_roster_data function
 function render_roster(res, page, isOt){
 	let {post_types_data, employees_data, total}= res;
 	page.pagination.total = total;
@@ -1081,7 +1091,7 @@ function render_roster(res, page, isOt){
 
 
 // Get data for Roster weekly view and render it
-function get_roster_week_data(page){
+function get_roster_week_data(page, isOt){
 	classgrt = [];
 	classgrtw = [];
 	let search_key = '';
@@ -1097,7 +1107,9 @@ function get_roster_week_data(page){
 		let {post_types_data, employees_data, total}= res;
 		page.pagination.total = total;
 		// $('.rosterWeek').find('#calenderweekviewtable tbody').empty();
-		let $rosterWeek = $('.rosterWeek');
+		let $rosterWeek;
+		if (isOt) $rosterWeek = $('.rosterOtWeek');
+		else $rosterWeek = $('.rosterWeek');
 		let $rosterWeekbody = $rosterWeek.find('#calenderweekviewtable tbody');
 		$rosterWeekbody.empty();
 		for(post_type_name in post_types_data){
