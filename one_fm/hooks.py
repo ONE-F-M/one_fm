@@ -132,6 +132,10 @@ home_page = "landing_page"
 
 
 doc_events = {
+	"Stock Entry": {
+		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty",
+		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty"
+	},
 	"Leave Application": {
 		"before_submit": "one_fm.utils.paid_sick_leave_validation",
 		"on_submit": "one_fm.utils.bereavement_leave_validation",
