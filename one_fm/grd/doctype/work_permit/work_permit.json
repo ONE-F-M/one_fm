@@ -6,6 +6,7 @@
  "field_order": [
   "naming_series",
   "employee",
+  "preparation",
   "pam_file",
   "pam_file_number",
   "work_permit_type",
@@ -26,7 +27,7 @@
   "visa_reference_number",
   "date_of_issuance_of_visa",
   "column_break_33",
-  "salary",
+  "work_permit_salary",
   "documents_required_section",
   "documents_required",
   "amended_from",
@@ -40,18 +41,13 @@
   "column_break_49",
   "grd_supervisor",
   "grd_supervisor_check_and_approval_wp_online",
-  "work_permit_submitted_by",
   "grd_supervisor_approved_work_permit",
   "work_permit_approved",
   "work_permit_status",
   "column_break_42",
   "grd_supervisor_check_and_approval_wp_online_date",
-  "work_permit_submitted_on",
-  "grd_supervisor_approved_work_permit_date",
+  "new_work_permit_expiry_date",
   "upload_work_permit",
-  "work_permit_expiry_date",
-  "work_permit_approved_by",
-  "work_permit_approved_on",
   "reason_for_rejection",
   "section_break_61",
   "notify_finance_user",
@@ -59,7 +55,6 @@
   "rpr_ref",
   "column_break_65",
   "payment_transferred_from_finance_dept",
-  "payment_done",
   "attach_invoice"
  ],
  "fields": [
@@ -157,12 +152,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "employee.work_permit_salary",
-   "fieldname": "salary",
-   "fieldtype": "Currency",
-   "label": "Salary"
-  },
-  {
    "fetch_from": "employee.one_fm_salary_type",
    "fieldname": "salary_type",
    "fieldtype": "Data",
@@ -172,7 +161,7 @@
    "fetch_from": "employee.one_fm_duration_of_work_permit",
    "fieldname": "duration_of_work_permit",
    "fieldtype": "Data",
-   "label": "Duration of Work Permit"
+   "label": "Duration Of Work Permit"
   },
   {
    "depends_on": "eval:doc.work_permit_type ==  \"New Overseas\" || doc.work_permit_type == \"Transfer\"",
@@ -186,7 +175,7 @@
    "fetch_from": "employee.one_fm_date_of_issuance_of_visa",
    "fieldname": "date_of_issuance_of_visa",
    "fieldtype": "Date",
-   "label": "Date of issuance of Visa"
+   "label": "Date Of Issuance Of Visa"
   },
   {
    "fieldname": "section_break_21",
@@ -235,13 +224,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "work_permit_submitted_by",
-   "fieldtype": "Link",
-   "label": "Work Permit Submitted By",
-   "no_copy": 1,
-   "options": "User"
-  },
-  {
    "default": "0",
    "fieldname": "reminded_grd_operator",
    "fieldtype": "Check",
@@ -262,40 +244,10 @@
    "default": "Draft",
    "fieldname": "work_permit_status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Work Permit Status",
    "no_copy": 1,
    "options": "Draft\nSubmitted\nApproved\nCancelled\nRejected",
-   "permlevel": 1
-  },
-  {
-   "fieldname": "work_permit_submitted_on",
-   "fieldtype": "Date",
-   "label": "Work Permit Submitted on",
-   "no_copy": 1
-  },
-  {
-   "fieldname": "work_permit_approved_on",
-   "fieldtype": "Date",
-   "label": "Work Permit Approved On",
-   "no_copy": 1,
-   "permlevel": 1
-  },
-  {
-   "fieldname": "work_permit_approved_by",
-   "fieldtype": "Link",
-   "label": "Work Permit Approved By",
-   "no_copy": 1,
-   "options": "User",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval: doc.work_permit_status=='Approved'",
-   "fetch_from": "employee.work_permit_expiry_date",
-   "fieldname": "work_permit_expiry_date",
-   "fieldtype": "Date",
-   "label": "Work Permit Expiry Date",
-   "no_copy": 1,
    "permlevel": 1
   },
   {
@@ -329,15 +281,6 @@
    "permlevel": 1
   },
   {
-   "allow_on_submit": 1,
-   "default": "0",
-   "depends_on": "eval: doc.work_permit_status=='Approved'",
-   "fieldname": "payment_done",
-   "fieldtype": "Check",
-   "label": "Payment Done",
-   "permlevel": 1
-  },
-  {
    "fieldname": "column_break_65",
    "fieldtype": "Column Break"
   },
@@ -360,7 +303,7 @@
    "depends_on": "eval: doc.work_permit_status=='Approved'",
    "fieldname": "amount_to_pay",
    "fieldtype": "Currency",
-   "label": "Amount to Pay",
+   "label": "Amount To Pay",
    "permlevel": 1
   },
   {
@@ -384,8 +327,9 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "grd_operator_apply_work_permit_on_ashal_date",
-   "fieldtype": "Datetime",
+   "fieldtype": "Data",
    "label": "GRD Operator Apply Work permit on ASHAL Date"
   },
   {
@@ -401,8 +345,9 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "grd_supervisor_check_and_approval_wp_online_date",
-   "fieldtype": "Datetime",
+   "fieldtype": "Data",
    "label": "GRD Supervisor Check and Approval WP Online Date",
    "permlevel": 1
   },
@@ -443,19 +388,32 @@
    "options": "\nYes\nNo"
   },
   {
-   "fieldname": "grd_supervisor_approved_work_permit_date",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "GRD Supervisor Approved Work Permit Date"
-  },
-  {
    "fieldname": "upload_work_permit",
    "fieldtype": "Attach",
    "label": "Upload Work Permit"
+  },
+  {
+   "fetch_from": "employee.work_permit_salary",
+   "fieldname": "work_permit_salary",
+   "fieldtype": "Currency",
+   "label": "Work Permit Salary"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "preparation",
+   "options": "Preparation"
+  },
+  {
+   "fieldname": "new_work_permit_expiry_date",
+   "fieldtype": "Date",
+   "label": "New Work Permit Expiry Date"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-04-19 14:01:15.743583",
+ "modified": "2021-04-25 20:09:45.196080",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
@@ -478,9 +436,6 @@
   },
   {
    "amend": 1,
-   "cancel": 1,
-   "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -494,7 +449,6 @@
   {
    "amend": 1,
    "cancel": 1,
-   "create": 1,
    "delete": 1,
    "email": 1,
    "export": 1,
