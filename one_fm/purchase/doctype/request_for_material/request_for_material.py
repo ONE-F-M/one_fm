@@ -22,16 +22,16 @@ class RequestforMaterial(BuyingController):
 			page_link = get_url("/desk#Form/Request for Material/" + self.name)
 			message = "<p>Please Review and Accept or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
-			#send_email(self, [self.request_for_material_accepter], message, subject)
-			#create_notification_log(subject, message, [self.request_for_material_accepter], self)
+			send_email(self, [self.request_for_material_accepter], message, subject)
+			create_notification_log(subject, message, [self.request_for_material_accepter], self)
 
 	def notify_request_for_material_approver(self):
 		if self.request_for_material_approver:
 			page_link = get_url("/desk#Form/Request for Material/" + self.name)
 			message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
-			#send_email(self, [self.request_for_material_approver], message, subject)
-			#create_notification_log(subject, message, [self.request_for_material_approver], self)
+			send_email(self, [self.request_for_material_approver], message, subject)
+			create_notification_log(subject, message, [self.request_for_material_approver], self)
 
 	def accept_approve_reject_request_for_material(self, status, reason_for_rejection=None):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
@@ -43,8 +43,8 @@ class RequestforMaterial(BuyingController):
 			if status == 'Accepted' and frappe.session.user == self.request_for_material_accepter and self.request_for_material_approver:
 				message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
 				subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
-				#send_email(self, [self.request_for_material_approver], message, subject)
-				#create_notification_log(subject, message, [self.request_for_material_approver], self)
+				send_email(self, [self.request_for_material_approver], message, subject)
+				create_notification_log(subject, message, [self.request_for_material_approver], self)
 
 			# Notify Accepter
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
@@ -72,8 +72,8 @@ class RequestforMaterial(BuyingController):
 		if status == 'Rejected' and reason_for_rejection:
 			message += " due to {0}".format(reason_for_rejection)
 		subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
-		#send_email(self, recipients, message, subject)
-		#create_notification_log(subject, message, recipients, self)
+		send_email(self, recipients, message, subject)
+		create_notification_log(subject, message, recipients, self)
 
 	def validate(self):
 		self.validate_details_against_type()
