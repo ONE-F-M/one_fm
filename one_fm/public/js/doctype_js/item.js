@@ -1,5 +1,6 @@
 frappe.ui.form.on('Item', {
 	refresh(frm) {
+		set_item_field_property(frm);
 		frm.set_query("subitem_group", function() {
 			return {
 				filters: [
@@ -22,6 +23,13 @@ frappe.ui.form.on('Item', {
 					['Item Group', 'parent_item_group', '=', cur_frm.doc.subitem_group]
 				]
 			};
+		});
+		frm.set_query("item_link", function(){
+			return{
+				filters: [
+					['Item', 'subitem_group', '=', cur_frm.doc.subitem_group]
+				]
+			}
 		});
 		frm.set_query("uniform_type_description", function() {
 			return {
@@ -65,8 +73,43 @@ frappe.ui.form.on('Item', {
 			frm.set_value('item_group', '');
 			get_item_code(frm);
 		}
+		// Item life: Date block 
+		if(frm.doc.subitem_group == 'Service'){
+			frm.set_value('is_service', true);
+			frm.set_df_property('start_date', 'reqd', true);
+			frm.set_df_property('end_date', 'reqd', true);
+		}
+		else if(frm.doc.subitem_group == 'Uniform' || frm.doc.subitem_group == 'Bedding'){
+			frm.set_value('is_service', true);
+			frm.set_df_property('start_date', 'reqd', false);
+			frm.set_df_property('end_date', 'reqd', false);
+		}
+		else{
+			frm.set_value('is_service', false);
+			frm.set_df_property('start_date', 'reqd', false);
+			frm.set_df_property('end_date', 'reqd', false);
+		}
+		//Project and designation requirements
+		if(frm.doc.subitem_group == 'Uniform'){
+			frm.set_df_property('one_fm_project', 'reqd', true);
+			frm.set_df_property('one_fm_designation', 'reqd', true);
+		}
+		else{
+			frm.set_df_property('one_fm_project', 'reqd', false);
+			frm.set_df_property('one_fm_designation', 'reqd', false);
+		}
+		//Supplier requirements block
+		if(frm.doc.subitem_group == 'Uniform' || frm.doc.subitem_group == 'Bedding'){
+			frm.set_df_property('item_supplier', 'reqd', true);
+		}
+		else{
+			frm.set_df_property('item_supplier', 'reqd', false);
+		}
+		//Description table block
+		
 	},
 	item_group: function(frm) {
+		set_item_field_property(frm);
 		if(cur_frm.doc.parent_item_group){
 			get_item_code(frm);
 		}
@@ -87,6 +130,15 @@ frappe.ui.form.on('Item', {
 				}
 			})
 		}
+		if(frm.doc.item_group == "Electronics Spare parts" || frm.doc.item_group == "Equipment Spare parts" || frm.doc.item_group == "Vehicles Spare parts" || frm.doc.item_group == "Furniture Spare parts"){
+			frm.set_value('is_spare_part', true);
+			frm.set_df_property('item_link', 'reqd', true);
+		}
+		else{
+			frm.set_value('is_spare_part', false);
+			frm.set_df_property('item_link', 'reqd', false);
+		}
+
 		if(frm.doc.item_group){
 			frappe.call({
 				method: 'frappe.client.get',
@@ -130,6 +182,10 @@ frappe.ui.form.on('Item', {
 		}
 	}
 })
+
+var set_item_field_property = function(frm) {
+	frm.set_df_property('item_link', 'reqd', false);
+}
 
 function get_item_code(frm){
 	frm.set_value('item_code','')
