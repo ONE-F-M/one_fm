@@ -10,8 +10,9 @@ from frappe.utils import flt, get_url
 from frappe import _
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
+from erpnext.controllers.buying_controller import BuyingController
 
-class RequestforMaterial(Document):
+class RequestforMaterial(BuyingController):
 	def on_submit(self):
 		#self.notify_request_for_material_accepter()
 		self.notify_request_for_material_approver()
@@ -177,6 +178,51 @@ class RequestforMaterial(Document):
 						format(_(self.doctype), self.name),
 					frappe.InvalidStatusError
 				)
+
+	def update_completed_qty(self, mr_items=None, update_modified=True):
+		if not mr_items:
+			mr_items = [d.name for d in self.get("items")]
+
+		for d in self.get("items"):
+			if d.name in mr_items:
+				if self.type in ("Individual", "Project", "Project", "Project Mobilization","Stock","Onboarding"):
+					d.ordered_qty =  flt(frappe.db.sql("""select sum(qty)
+						from `tabStock Entry Detail` where one_fm_request_for_material = %s
+						and one_fm_request_for_material_item = %s and docstatus = 1""",
+						(self.name, d.name))[0][0])
+
+					if d.ordered_qty and d.ordered_qty > d.stock_qty:
+						frappe.throw(_("The total Issue / Transfer quantity {0} in Material Request {1}  \
+							cannot be greater than requested quantity {2} for Item {3}").format(d.ordered_qty, d.parent, d.qty, d.item_code))
+
+				frappe.db.set_value(d.doctype, d.name, "ordered_qty", d.ordered_qty)
+
+		self._update_percent_field({
+			"target_dt": "Request for Material Item",
+			"target_parent_dt": self.doctype,
+			"target_parent_field": "per_ordered",
+			"target_ref_field": "stock_qty",
+			"target_field": "ordered_qty",
+			"name": self.name,
+		}, update_modified)
+	
+def update_completed_and_requested_qty(stock_entry, method):
+		if stock_entry.doctype == "Stock Entry":
+			material_request_map = {}
+
+			for d in stock_entry.get("items"):
+				if d.one_fm_request_for_material:
+					material_request_map.setdefault(d.one_fm_request_for_material, []).append(d.one_fm_request_for_material_item)
+
+			for mr, mr_item_rows in material_request_map.items():
+				if mr and mr_item_rows:
+					mr_obj = frappe.get_doc("Request for Material", mr)
+
+					if mr_obj.status in ["Stopped", "Cancelled"]:
+						frappe.throw(_("{0} {1} is cancelled or stopped").format(_("Request for Material"), mr),
+							frappe.InvalidStatusError)
+
+					mr_obj.update_completed_qty(mr_item_rows)
 
 def send_email(doc, recipients, message, subject):
 	frappe.sendmail(

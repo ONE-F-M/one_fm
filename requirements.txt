@@ -3,3 +3,4 @@ scipy
 face_recognition
 imutils
 opencv-contrib-python-headless
+datefinder

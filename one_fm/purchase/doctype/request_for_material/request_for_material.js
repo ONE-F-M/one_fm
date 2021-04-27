@@ -91,9 +91,9 @@ frappe.ui.form.on('Request for Material', {
 				});
 				
 				if(item_exist_in_stock){
-					if(frm.doc.type=="Individual" || frm.doc.type=="Onboarding" || frm.doc.type=="Project"|| frm.doc.type=="Project Mobilization"){
-						frm.add_custom_button(__("Material Issue"),
-							() => frm.events.make_stock_entry_issue(frm), __('Create'));
+					if(frm.doc.type=="Individual" || frm.doc.type=="Onboarding" || frm.doc.type=="Project"|| frm.doc.type=="Project Mobilization" || frm.doc.type=="Stock"){
+						frm.add_custom_button(__("Material Transfer"),
+							() => frm.events.make_stock_entry(frm), __('Create'));
 						frm.add_custom_button(__("Sales Invoice"),
 							() => frm.events.make_sales_invoice(frm), __('Create'));
 						if(purchase_item_exist){
@@ -104,14 +104,14 @@ frappe.ui.form.on('Request for Material', {
 						// 	() => frm.events.make_delivery_note(frm), __('Create'));
 							
 					}
-					else if (frm.doc.type=="Stock"){
-						frm.add_custom_button(__("Transfer Material"),
-							() => frm.events.make_stock_entry(frm), __('Create'));
-						frm.add_custom_button(__("Sales Invoice"),
-							() => frm.events.make_sales_invoice(frm), __('Create'));
-						// frm.add_custom_button(__("Make Delivery Note"),
-						// 	() => frm.events.make_delivery_note(frm), __('Create'));
-					}
+					// else if (frm.doc.type=="Stock"){
+					// 	frm.add_custom_button(__("Transfer Material"),
+					// 		() => frm.events.make_stock_entry(frm), __('Create'));
+					// 	frm.add_custom_button(__("Sales Invoice"),
+					// 		() => frm.events.make_sales_invoice(frm), __('Create'));
+					// 	// frm.add_custom_button(__("Make Delivery Note"),
+					// 	// 	() => frm.events.make_delivery_note(frm), __('Create'));
+					// }
 					
 				}
 				else {

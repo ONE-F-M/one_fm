@@ -245,7 +245,6 @@
   {
    "fieldname": "more_info",
    "fieldtype": "Section Break",
-   "hidden": 1,
    "label": "More Information"
   },
   {
@@ -336,7 +335,7 @@
    "allow_on_submit": 1,
    "fieldname": "t_warehouse",
    "fieldtype": "Link",
-   "label": "Target warehouse",
+   "label": "Target Warehouse",
    "options": "Warehouse"
   },
   {
@@ -351,8 +350,8 @@
   }
  ],
  "istable": 1,
- "modified": "2021-04-18 21:08:42.263140",
- "modified_by": "o.asim@armor-services.com",
+ "modified": "2021-04-21 01:41:17.286218",
+ "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material Item",
  "owner": "Administrator",
