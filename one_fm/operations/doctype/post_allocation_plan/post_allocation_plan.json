@@ -9,7 +9,9 @@
   "column_break_2",
   "date",
   "employee_assignment_post_wise_section",
-  "assignments"
+  "assignments",
+  "section_break_6",
+  "dayoff_wrapper"
  ],
  "fields": [
   {
@@ -28,6 +30,7 @@
    "label": "Date"
   },
   {
+   "description": "Use Ctrl+F to search",
    "fieldname": "employee_assignment_post_wise_section",
    "fieldtype": "Section Break",
    "label": "Employee Assignment Post wise"
@@ -37,9 +40,17 @@
    "fieldtype": "Table",
    "label": "Assignments",
    "options": "Post Allocation Employee Assignment"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "dayoff_wrapper",
+   "fieldtype": "HTML"
   }
  ],
- "modified": "2021-04-15 11:13:27.367744",
+ "modified": "2021-04-27 16:03:33.162645",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Allocation Plan",
