@@ -27,7 +27,7 @@ frappe.ui.form.on('Item', {
 		frm.set_query("item_type", function() {
 			return {
 				filters: [
-					['Item Type', 'item_group', '=', cur_frm.doc.subitem_group]
+					['Item Type', 'item_group', '=', cur_frm.doc.item_group]
 				]
 			};
 		});
@@ -38,7 +38,7 @@ frappe.ui.form.on('Item', {
 				]
 			};
 		});
-		var fields = ["item_link"];
+		var fields = ["linked_items"];
 		for ( var i=0; i< fields.length; i++ ){
 			//console.log("here");
 			frm.set_query(fields[i], function(){
@@ -194,11 +194,11 @@ frappe.ui.form.on('Item', {
 		}
 		if(frm.doc.item_group == "Electronics Spare parts" || frm.doc.item_group == "Equipment Spare parts" || frm.doc.item_group == "Vehicles Spare parts" || frm.doc.item_group == "Furniture Spare parts"){
 			frm.set_value('is_spare_part', true);
-			frm.set_df_property('item_link', 'reqd', true);
+			frm.set_df_property('linked_items', 'reqd', true);
 		}
 		else{
 			frm.set_value('is_spare_part', false);
-			frm.set_df_property('item_link', 'reqd', false);
+			frm.set_df_property('linked_items', 'reqd', false);
 		}
 		if(frm.doc.item_group == "Electronics Spare parts" || frm.doc.item_group == "Electronics Accessories"){
 			frm.set_df_property('item_color', 'reqd', false);
@@ -252,7 +252,7 @@ frappe.ui.form.on('Item', {
 })
 
 var set_item_field_property = function(frm) {
-	frm.set_df_property('item_link', 'reqd', false);
+	frm.set_df_property('linked_items', 'reqd', false);
 }
 
 function get_item_code(frm){
