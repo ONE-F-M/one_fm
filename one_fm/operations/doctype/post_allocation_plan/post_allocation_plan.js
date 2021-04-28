@@ -5,14 +5,17 @@ frappe.ui.form.on('Post Allocation Plan', {
 	refresh: function(frm){
 		frm.add_fetch("employee", "employee_name", "employee_name");
 		frm.add_fetch("employee", "employee_id", "employee_id");
+		render_day_off_table(frm);
 	},
 	operations_shift: function(frm) {
 		apply_post_allocation_filters(frm);
 		add_employees(frm);
+		render_day_off_table(frm);
 	},
 	date: function(frm) {
 		apply_post_allocation_filters(frm);
 		add_employees(frm);
+		render_day_off_table(frm);
 	}
 });
 
@@ -97,7 +100,6 @@ function get_best_employee_match(post, employees){
 
 	employees.forEach(function(employee,i){
 		let skill_score = 0;
-
 		// Check if all the employee skills are matching the post skills.
 		let post_skill_list = skills.map(a => a.skill);
 		let employee_skill_list = employee.skills.map(a => a.skill);
@@ -116,16 +118,26 @@ function get_best_employee_match(post, employees){
 					}
 				})
 			})
+
 			//Match percentage
 			let match_percent = roundNumber((skill_score * 100) / skill_length);
+
+			// 
+			let rotation_check = true;
+			let day_off_check = true;
+			if(post.allow_staff_rotation){
+				rotation_check = post.post == employee.previous_day_schedule ? false : true;
+				day_off_check = post.day_off_priority && employee.previous_day == "Day Off" ? true : false;
+			}
+
 			//Push the score to list if gender matches
-			if(gender == "Both"){
+			if(gender == "Both" && rotation_check && day_off_check){
 				scores.push({'employee': employee.employee, 'employee_name': employee.employee_name, 'final_score': skill_score, 'score_details': score_detail, 'match_percentage': `${match_percent}%`});
 			}
-			else if(gender == "Male" && employee.gender == "Male"){
+			else if(gender == "Male" && employee.gender == "Male" && rotation_check && day_off_check){
 				scores.push({'employee': employee.employee, 'employee_name': employee.employee_name, 'final_score': skill_score, 'score_details': score_detail, 'match_percentage': `${match_percent}%`});
 			}
-			else if(gender == "Female" && employee.gender == "Female"){
+			else if(gender == "Female" && employee.gender == "Female" && rotation_check && day_off_check){
 				scores.push({'employee': employee.employee, 'employee_name': employee.employee_name, 'final_score': skill_score, 'score_details': score_detail, 'match_percentage': `${match_percent}%`});
 			}
 		}
@@ -148,8 +160,8 @@ frappe.ui.form.on('Post Allocation Employee Assignment', {
 			frappe.model.set_value("Post Allocation Employee Assignment", doc.name, "match_percentage", undefined);
 		}
 		else{
-			let {employee, post} = doc;
-			frappe.xcall('one_fm.operations.doctype.post_allocation_plan.post_allocation_plan.get_post_employee_data', {employee, post}).then(res => {
+			let {employee, post, operations_shift, date} = doc;
+			frappe.xcall('one_fm.operations.doctype.post_allocation_plan.post_allocation_plan.get_post_employee_data', {employee, post, operations_shift, date}).then(res => {
 				let {employee, post} = res;
 				let match = get_best_employee_match(post, [employee]);
 				if(match){
@@ -162,3 +174,41 @@ frappe.ui.form.on('Post Allocation Employee Assignment', {
 		}
 	}
 });
+
+
+function render_day_off_table(frm){
+	let {operations_shift, date} = frm.doc;
+	if(operations_shift != undefined && date != undefined){
+		frappe.xcall('one_fm.operations.doctype.post_allocation_plan.post_allocation_plan.get_day_off_employees', {operations_shift, date})
+		.then(employees => {
+			let wrapper = frm.fields_dict["dayoff_wrapper"].$wrapper;
+
+			wrapper.append(`
+			<div class="container">
+				<h2>Employees on Day Off</h2>            
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+						<th>Employee</th>
+						<th>Employee Name</th>
+						<th>Designation</th>
+						</tr>
+					</thead>
+					<tbody id="post-allocation-day-off">
+					</tbody>
+				</table>
+			</div>
+			`);
+
+			let $tbody = $('#post-allocation-day-off');
+			employees.forEach(function(employee,i){
+				$tbody.append(`
+				<tr>
+					<td>${employee.name}</td>
+					<td>${employee.employee_name}</td>
+					<td>${employee.designation}</td>
+			  	</tr>`)
+			});
+		})
+	}
+}

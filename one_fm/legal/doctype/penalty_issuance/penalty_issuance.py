@@ -146,14 +146,14 @@ class PenaltyIssuance(Document):
 					print(penalty_details)
 					penalty.append("penalty_details", penalty_details)
 
-			# penalty.save()
-		# 	assign_to({
-		# 		"assign_to": user_id,
-		# 		"doctype": penalty.doctype,
-		# 		"name": penalty.name,
-		# 		"description": "Penalty Issued by {employee_id}:{issuer}.".format(employee_id=self.issuing_employee, issuer=self.employee_name)
-		# 	})
-		# frappe.db.commit()
+			penalty.save()
+			assign_to({
+				"assign_to": user_id,
+				"doctype": penalty.doctype,
+				"name": penalty.name,
+				"description": "Penalty Issued by {employee_id}:{issuer}.".format(employee_id=self.issuing_employee, issuer=self.employee_name)
+			})
+		frappe.db.commit()
 
 	def get_occurences(self, employee_id, penalty_type):
 		penalties = frappe.db.sql("""
