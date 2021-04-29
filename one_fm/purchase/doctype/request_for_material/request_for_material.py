@@ -185,7 +185,7 @@ class RequestforMaterial(BuyingController):
 
 		for d in self.get("items"):
 			if d.name in mr_items:
-				if self.type in ("Individual", "Project", "Project", "Project Mobilization","Stock","Onboarding"):
+				if self.type in ("Individual", "Project", "Project Mobilization","Stock","Onboarding"):
 					d.ordered_qty =  flt(frappe.db.sql("""select sum(qty)
 						from `tabStock Entry Detail` where one_fm_request_for_material = %s
 						and one_fm_request_for_material_item = %s and docstatus = 1""",
@@ -224,6 +224,23 @@ def update_completed_and_requested_qty(stock_entry, method):
 
 					mr_obj.update_completed_qty(mr_item_rows)
 
+def update_completed_purchase_qty(purchase_doc, method):
+		if purchase_doc.doctype == "Request for Purchase":
+			material_request_map = {}
+
+			for d in purchase_doc.get("items"):
+				if d.request_for_material:
+					material_request_map.setdefault(d.request_for_material, []).append(d.request_for_material_item)
+
+			for mr, mr_item_rows in material_request_map.items():
+				if mr and mr_item_rows:
+					mr_obj = frappe.get_doc("Request for Material", mr)
+
+					if mr_obj.status in ["Stopped", "Cancelled"]:
+						frappe.throw(_("{0} {1} is cancelled or stopped").format(_("Request for Material"), mr),
+							frappe.InvalidStatusError)
+
+					mr_obj.update_completed_qty(mr_item_rows)
 def send_email(doc, recipients, message, subject):
 	frappe.sendmail(
 		recipients= recipients,

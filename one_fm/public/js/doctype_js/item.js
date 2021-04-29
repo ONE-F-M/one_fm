@@ -101,11 +101,11 @@ frappe.ui.form.on('Item', {
 		if(frm.doc.item_supplier){
 			final_description+=(final_description?' - ':'')+frm.doc.item_supplier
 		}
-		if(frm.doc.item_descriptions){
-			frm.doc.item_descriptions.forEach((item, i) => {
-				final_description+=(final_description?' - ':'')+item.value
-			});
-		}
+		// if(frm.doc.item_descriptions){
+		// 	frm.doc.item_descriptions.forEach((item, i) => {
+		// 		final_description+=(final_description?' - ':'')+item.value
+		// 	});
+		// }
 		if(frm.doc.other_description){
 			final_description+=(final_description?' - ':'')+frm.doc.other_description
 		}
@@ -181,6 +181,10 @@ frappe.ui.form.on('Item', {
 			frm.set_df_property('end_date', 'reqd', false);
 			frm.set_df_property('item_brand', 'reqd', true);
 			frm.set_df_property('item_model', 'reqd', true);
+			frm.set_df_property('one_fm_project', 'hidden', 1);
+			frm.set_df_property('one_fm_designation', 'hidden', 1);
+			frm.set_df_property('one_fm_project', 'reqd', false);
+			frm.set_df_property('one_fm_designation', 'reqd', false);
 			frm.set_df_property('item_material', 'reqd', true);
 			frm.set_df_property('item_area_of_use', 'reqd', true);
 			frm.set_df_property('item_color', 'reqd', true);
