@@ -1168,7 +1168,7 @@ def validate_item(doc, method):
         doc.item_barcode = doc.item_code
     if not doc.parent_item_group:
         doc.parent_item_group = "All Item Groups"
-    set_item_description(doc)
+    #set_item_description(doc)
 
 def set_item_id(doc):
     next_item_id = "000000"

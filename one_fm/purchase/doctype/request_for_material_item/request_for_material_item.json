@@ -36,7 +36,7 @@
   "manufacturer_part_no",
   "more_info",
   "lead_time_date",
-  "min_order_qty",
+  "purchased_qty",
   "projected_qty",
   "ordered_qty",
   "received_qty"
@@ -258,18 +258,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "min_order_qty",
-   "fieldtype": "Float",
-   "label": "Min Order Qty",
-   "no_copy": 1,
-   "oldfieldname": "min_order_qty",
-   "oldfieldtype": "Currency",
-   "print_hide": 1,
-   "print_width": "70px",
-   "read_only": 1,
-   "width": "70px"
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "projected_qty",
    "fieldtype": "Float",
@@ -347,11 +335,23 @@
    "print_hide": 1,
    "read_only": 1,
    "report_hide": 1
+  },
+  {
+   "fieldname": "purchased_qty",
+   "fieldtype": "Float",
+   "label": "Purchased Quantity",
+   "no_copy": 1,
+   "oldfieldname": "min_order_qty",
+   "oldfieldtype": "Currency",
+   "print_hide": 1,
+   "print_width": "70px",
+   "read_only": 1,
+   "width": "70px"
   }
  ],
  "istable": 1,
- "modified": "2021-04-21 01:41:17.286218",
- "modified_by": "Administrator",
+ "modified": "2021-04-30 03:27:04.490768",
+ "modified_by": "o.asim@armor-services.com",
  "module": "Purchase",
  "name": "Request for Material Item",
  "owner": "Administrator",

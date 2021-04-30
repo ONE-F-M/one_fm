@@ -1,5 +1,4 @@
 {
- "actions": [],
  "allow_rename": 1,
  "autoname": "field:model",
  "creation": "2021-03-28 20:04:45.474951",
@@ -8,7 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "model",
-  "item_group"
+  "item_brand"
  ],
  "fields": [
   {
@@ -20,14 +19,14 @@
    "unique": 1
   },
   {
-   "fieldname": "item_group",
+   "fieldname": "item_brand",
    "fieldtype": "Link",
-   "label": "Item Group",
-   "options": "Item Group"
+   "label": "Item Brand",
+   "options": "Brand",
+   "reqd": 1
   }
  ],
- "links": [],
- "modified": "2021-03-28 20:04:45.474951",
+ "modified": "2021-04-30 13:15:25.419277",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Item Model",

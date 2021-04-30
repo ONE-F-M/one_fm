@@ -35,6 +35,7 @@ var set_items = function(frm) {
 			callback: function(r) {
 				if(r && r.message){
 					var rfq = r.message;
+					frm.doc.request_for_material = rfq.request_for_material;
 					if(rfq.items){
 						rfq.items.forEach((r_item, i) => {
 							var item = frm.add_child('items');

@@ -157,6 +157,8 @@ frappe.ui.form.on('Request for Purchase', {
 			items_to_order.description = item.description
 			items_to_order.uom = item.uom
 			items_to_order.qty = item.qty
+			items_to_order.delivery_date = item.schedule_date
+			items_to_order.request_for_material = item.request_for_material
 		});
 		frm.refresh_fields();
 	},
