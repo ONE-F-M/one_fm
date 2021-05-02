@@ -812,6 +812,13 @@ def increase_daily_leave_balance():
         allocation = frappe.get_doc("Leave Allocation", alloc.name)
         leave_type = frappe.get_doc("Leave Type", alloc.leave_type)
 
+        # Check if employee absent today then not allow annual leave allocation for today
+        is_absent = frappe.db.sql("""select name, status from `tabEmployee Attendance` where employee = %s and
+            attendance_date = %s and docstatus = 1 and status = 'Absent' """,
+			(allocation.employee, getdate(nowdate())), as_dict=True)
+        if is_absent and len(is_absent) > 0:
+            allow_allocation = False
+
         # Check if employee on leave today and allow annual leave allocation for today
         leave_appln = frappe.db.sql("""select name, status, leave_type from `tabLeave Application` where employee = %s and
             (%s between from_date and to_date) and docstatus = 1""",
