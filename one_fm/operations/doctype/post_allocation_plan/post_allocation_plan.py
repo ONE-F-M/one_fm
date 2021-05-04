@@ -93,3 +93,19 @@ def get_post_data_map(post):
 	post_data.post = post.post
 	return post_data
 
+@frappe.whitelist()
+def get_post_employee_data(employee, post):
+	return {
+		'employee': get_employee_data_map(frappe.get_value("Employee", employee, ["name as employee", "employee_name"], as_dict=1)),
+		'post': get_post_data_map(frappe.get_value("Operations Post", post, ["name as post", "priority_level"], as_dict=1))
+	}
+
+
+
+@frappe.whitelist()
+def get_sorted_post_list(assignments):
+	# Converting into list of tuple
+	assignments = [(key,)+tuple(val) for assignment in assignments for key,val in assignment.items()]
+	col = 1
+	sorted(assignments, key=lambda k: (k[col] is None, k[col] == "", k[col])) 
+	print(assignments)

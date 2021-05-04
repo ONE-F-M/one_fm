@@ -6,12 +6,12 @@ frappe.ui.form.on('Work Permit', {
     onload: function(frm) {
 		if (!frm.is_new()){
             set_employee_details(frm);
-        }
+            
+        }      
     },
     employee: function(frm){
-        set_employee_details(frm);
+        set_employee_details(frm);  
     },
-
     work_permit_type: function(frm) {
         set_required_documents(frm);
     },
@@ -29,8 +29,14 @@ frappe.ui.form.on('Work Permit', {
     },
     grd_supervisor_check_and_approval_wp_online: function(frm){
         set_dates_grd_supervisor(frm);
-    }
-
+    },
+    upload_work_permit: function(frm){
+        set_upload_work_permit(frm);
+    },
+    attach_invoice: function(frm){
+        set_upload_work_permit_invoice(frm);
+    },
+    
 });
 var set_employee_details = function(frm){
     if(frm.doc.employee){
@@ -41,7 +47,7 @@ var set_employee_details = function(frm){
                 filters: {
                 name: frm.doc.employee
                 },
-                fieldname:["one_fm_duration_of_work_permit","employee_name","one_fm_nationality","one_fm_civil_id","gender","date_of_birth","work_permit_salary"]
+                fieldname:["one_fm_duration_of_work_permit","employee_name","one_fm_nationality","one_fm_civil_id","gender","date_of_birth","work_permit_salary","pam_file_number","employee_id","valid_upto"]
             }, 
             callback: function(r) { 
         
@@ -53,10 +59,14 @@ var set_employee_details = function(frm){
                 frm.set_value('gender',r.message.gender);
                 frm.set_value('date_of_birth', r.message.date_of_birth);
                 frm.set_value('work_permit_salary', r.message.work_permit_salary);
+                frm.set_value('pam_file_number', r.message.pam_file_number);
+                frm.set_value('employee_id', r.message.employee_id);
+                frm.set_value('passport_expiry_date', r.message.valid_upto);
             }
         })
     }
 };
+
 var set_authorized_signatory_name_arabic = function(frm) {
     if(frm.doc.pam_file){
         frappe.call({
@@ -97,16 +107,8 @@ var set_dates_grd_operator = function(frm)
 {
 	if(((frm.doc.grd_operator_apply_work_permit_on_ashal == "Yes") && (!frm.doc.grd_operator_apply_work_permit_on_ashal_date)))
     {
-		frappe.call({
-			method: 'one_fm.grd.doctype.work_permit.work_permit.set_dates',
-			callback: function(r)
-            {
-				if(r.message)
-                {
-                    frm.set_value('grd_operator_apply_work_permit_on_ashal_date',r.message);
-                }
-            }
-        });
+        frm.set_value('grd_operator_apply_work_permit_on_ashal_date',frappe.datetime.now_datetime())
+        frm.set_value('work_permit_status',"Pending")
     }
 };
 //Check the fixed time
@@ -114,18 +116,23 @@ var set_dates_grd_supervisor = function(frm)
 {
 	if(((frm.doc.grd_supervisor_check_and_approval_wp_online == "Yes")&&(!frm.doc.grd_supervisor_check_and_approval_wp_online_date)))
     {
-		frappe.call({
-			method: 'one_fm.grd.doctype.work_permit.work_permit.set_dates',
-			callback: function(r)
-            {
-				if(r.message)
-                {
-                    frm.set_value('grd_supervisor_check_and_approval_wp_online_date',r.message);
-                    frm.set_value('work_permit_status','Submitted');
-                }
-            }
-        });
+		frm.set_value('grd_supervisor_check_and_approval_wp_online_date',frappe.datetime.now_datetime())
+        frm.set_value('work_permit_status','Accepted');
     }
+};
+var set_upload_work_permit = function(frm) //3
+{
+	if(((frm.doc.upload_work_permit)&&(!frm.doc.upload_work_permit_on)))
+    {
+        frm.set_value('upload_work_permit_on',frappe.datetime.now_datetime())
+    }
+};
+var set_upload_work_permit_invoice = function(frm){
+    if(((frm.doc.attach_invoice)&&(!frm.doc.upload_payment_invoice_on)))
+    {
+        frm.set_value('upload_payment_invoice_on',frappe.datetime.now_datetime())
+    }
+
 };
 var set_required_documents = function(frm) {
     frm.clear_table("documents_required");

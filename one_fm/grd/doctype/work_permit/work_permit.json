@@ -1,7 +1,9 @@
 {
  "autoname": "naming_series:",
+ "color": "green",
  "creation": "2020-08-13 08:46:25.338850",
  "doctype": "DocType",
+ "document_type": "Document",
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
@@ -10,52 +12,52 @@
   "pam_file",
   "pam_file_number",
   "work_permit_type",
+  "work_permit_status",
   "column_break_8",
-  "work_permit_application_type",
   "date_of_application",
   "duration_of_work_permit",
+  "salary_type",
+  "work_permit_salary",
   "employee_details_section",
   "employee_name",
   "nationality",
   "gender",
-  "column_break_22",
   "civil_id",
+  "column_break_22",
+  "employee_id",
   "date_of_birth",
   "pam_designation",
+  "passport_expiry_date",
   "section_break_21",
-  "salary_type",
   "visa_reference_number",
+  "column_break_23",
   "date_of_issuance_of_visa",
-  "column_break_33",
-  "work_permit_salary",
   "documents_required_section",
   "documents_required",
   "amended_from",
   "grd_section",
   "grd_operator",
+  "grd_supervisor",
   "grd_operator_apply_work_permit_on_ashal",
   "reminded_grd_operator",
+  "grd_supervisor_check_and_approval_wp_online",
+  "work_permit_approved",
+  "upload_work_permit",
+  "attach_invoice",
   "column_break_32",
   "grd_operator_apply_work_permit_on_ashal_date",
   "reminded_grd_operator_again",
-  "column_break_49",
-  "grd_supervisor",
-  "grd_supervisor_check_and_approval_wp_online",
-  "grd_supervisor_approved_work_permit",
-  "work_permit_approved",
-  "work_permit_status",
-  "column_break_42",
   "grd_supervisor_check_and_approval_wp_online_date",
   "new_work_permit_expiry_date",
-  "upload_work_permit",
+  "upload_work_permit_on",
+  "upload_payment_invoice_on",
   "reason_for_rejection",
   "section_break_61",
   "notify_finance_user",
   "amount_to_pay",
   "rpr_ref",
   "column_break_65",
-  "payment_transferred_from_finance_dept",
-  "attach_invoice"
+  "payment_transferred_from_finance_dept"
  ],
  "fields": [
   {
@@ -68,15 +70,13 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
   },
   {
    "fieldname": "work_permit_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
+   "fieldtype": "Read Only",
    "label": "Work Permit Type",
    "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nLocal Transfer\nNew Kuwaiti",
    "reqd": 1
@@ -91,9 +91,9 @@
    "read_only": 1
   },
   {
-   "fetch_from": "pam_file.pam_file_number",
+   "fetch_from": "employee.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "PAM File Number"
   },
   {
@@ -109,42 +109,44 @@
    "reqd": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "employee_details_section",
    "fieldtype": "Section Break",
-   "label": "Employee Details"
+   "label": "Employee Details",
+   "no_copy": 1
   },
   {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
-   "fieldtype": "Data",
-   "label": "CIVIL ID"
+   "fieldtype": "Read Only",
+   "label": "Civil ID"
   },
   {
    "fetch_from": "employee.date_of_birth",
    "fetch_if_empty": 1,
    "fieldname": "date_of_birth",
-   "fieldtype": "Date",
+   "fieldtype": "Read Only",
    "label": "Date of Birth"
   },
   {
    "fetch_from": "employee.gender",
    "fetch_if_empty": 1,
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Read Only",
    "label": "Gender",
    "options": "Gender"
   },
   {
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
-   "fieldtype": "Link",
+   "fieldtype": "Read Only",
    "label": "Nationality",
    "options": "Nationality"
   },
   {
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "pam_designation",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "PAM Designation"
   },
   {
@@ -154,13 +156,14 @@
   {
    "fetch_from": "employee.one_fm_salary_type",
    "fieldname": "salary_type",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Salary Type"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_duration_of_work_permit",
    "fieldname": "duration_of_work_permit",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Duration Of Work Permit"
   },
   {
@@ -182,10 +185,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "column_break_33",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "documents_required_section",
    "fieldtype": "Section Break",
    "hidden": 1
@@ -198,6 +197,7 @@
    "options": "Work Permit Required Documents"
   },
   {
+   "collapsible": 1,
    "fieldname": "grd_section",
    "fieldtype": "Section Break",
    "label": "GRD "
@@ -211,22 +211,10 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_49",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "grd_supervisor",
-   "fieldtype": "Link",
-   "label": "GRD Supervisor",
-   "no_copy": 1,
-   "options": "User",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
    "default": "0",
    "fieldname": "reminded_grd_operator",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Reminded GRD Operator",
    "no_copy": 1,
    "read_only": 1
@@ -235,6 +223,7 @@
    "default": "0",
    "fieldname": "reminded_grd_operator_again",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Reminded GRD Operator Again",
    "no_copy": 1,
    "read_only": 1
@@ -243,12 +232,12 @@
    "allow_on_submit": 1,
    "default": "Draft",
    "fieldname": "work_permit_status",
-   "fieldtype": "Select",
+   "fieldtype": "Read Only",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Work Permit Status",
    "no_copy": 1,
-   "options": "Draft\nSubmitted\nApproved\nCancelled\nRejected",
-   "permlevel": 1
+   "options": "\nDraft\nPending\nAccepted\nApproved\nCancelled\nRejected"
   },
   {
    "allow_on_submit": 1,
@@ -285,13 +274,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Online",
-   "fieldname": "work_permit_application_type",
-   "fieldtype": "Select",
-   "label": "Work Permit Application Type",
-   "options": "\nOnline\nOffline"
-  },
-  {
    "fieldname": "pam_file",
    "fieldtype": "Link",
    "hidden": 1,
@@ -319,8 +301,8 @@
    "fetch_from": "employee.employee_name",
    "fetch_if_empty": 1,
    "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "label": "Employee Name"
+   "fieldtype": "Read Only",
+   "label": "Name"
   },
   {
    "fieldname": "column_break_32",
@@ -330,31 +312,27 @@
    "allow_on_submit": 1,
    "fieldname": "grd_operator_apply_work_permit_on_ashal_date",
    "fieldtype": "Data",
-   "label": "GRD Operator Apply Work permit on ASHAL Date"
+   "label": "Apply On"
   },
   {
    "default": "No",
    "fieldname": "grd_supervisor_check_and_approval_wp_online",
    "fieldtype": "Select",
-   "label": "GRD Supervisor Check and Approval WP Online",
+   "label": "Check and Accept WP Online",
    "options": "\nYes\nNo",
    "permlevel": 1
-  },
-  {
-   "fieldname": "column_break_42",
-   "fieldtype": "Column Break"
   },
   {
    "allow_on_submit": 1,
    "fieldname": "grd_supervisor_check_and_approval_wp_online_date",
    "fieldtype": "Data",
-   "label": "GRD Supervisor Check and Approval WP Online Date",
+   "label": " Check and Accept WP Online On",
    "permlevel": 1
   },
   {
    "fieldname": "attach_invoice",
    "fieldtype": "Attach",
-   "label": "Attach Invoice"
+   "label": "Upload Payment Invoice"
   },
   {
    "fieldname": "rpr_ref",
@@ -365,20 +343,9 @@
    "default": "No",
    "fieldname": "grd_operator_apply_work_permit_on_ashal",
    "fieldtype": "Select",
-   "label": "GRD Operator Apply Work permit on ASHAL",
+   "label": "Apply Online",
    "no_copy": 1,
    "options": "\nYes\nNo"
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "No",
-   "fieldname": "grd_supervisor_approved_work_permit",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "GRD Supervisor Approved Work Permit",
-   "no_copy": 1,
-   "options": "\nYes\nNo",
-   "permlevel": 1
   },
   {
    "default": "No",
@@ -393,27 +360,67 @@
    "label": "Upload Work Permit"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.work_permit_salary",
    "fieldname": "work_permit_salary",
-   "fieldtype": "Currency",
+   "fieldtype": "Read Only",
    "label": "Work Permit Salary"
   },
   {
    "fieldname": "preparation",
    "fieldtype": "Link",
    "hidden": 1,
-   "in_list_view": 1,
-   "label": "preparation",
+   "label": "Preparation",
    "options": "Preparation"
   },
   {
    "fieldname": "new_work_permit_expiry_date",
    "fieldtype": "Date",
    "label": "New Work Permit Expiry Date"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "label": "GRD Supervisor",
+   "no_copy": 1,
+   "options": "User",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_work_permit_on",
+   "fieldtype": "Data",
+   "label": "Upload Work Permit On"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_payment_invoice_on",
+   "fieldtype": "Data",
+   "label": "Upload Payment Invoice On"
+  },
+  {
+   "fetch_from": "employee.valid_upto",
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Read Only",
+   "label": "Passport Expiry Date",
+   "options": "Employee"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-04-25 20:09:45.196080",
+ "modified": "2021-04-30 18:10:20.953392",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
@@ -449,6 +456,7 @@
   {
    "amend": 1,
    "cancel": 1,
+   "create": 1,
    "delete": 1,
    "email": 1,
    "export": 1,
@@ -504,6 +512,7 @@
    "write": 1
   }
  ],
+ "search_fields": "date_of_application,employee_id,civil_id",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

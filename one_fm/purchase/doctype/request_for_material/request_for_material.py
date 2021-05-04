@@ -79,6 +79,16 @@ class RequestforMaterial(Document):
 		self.set_request_for_material_accepter_and_approver()
 		self.set_item_fields()
 		self.set_title()
+    #in process
+	def validate_item_qty(self):
+		if self.items:
+			for d in self.items:
+				# validate qty during submitfr
+				if d.warehouse and flt(d.actual_qty, d.precision("actual_qty")) < flt(d.qty, d.precision("actual_qty")):
+					frappe.msgprint(_("Row {0}: Quantity not available for {2} in warehouse {1}").format(d.idx,
+						frappe.bold(d.warehouse), frappe.bold(d.item_code))
+						+ '<br><br>' + _("Available quantity is {0}, Requested quantity is {1}. Please make a purchase request for the remaining.").format(frappe.bold(d.actual_qty),
+							frappe.bold(d.qty)), title=_('Insufficient Stock'))
 
 	def set_item_fields(self):
 		if self.items and self.type == 'Stock':
@@ -113,6 +123,7 @@ class RequestforMaterial(Document):
 		self.title = _('Material Request for {0}').format(items)[:100]
 
 	def on_update_after_submit(self):
+		self.validate_item_qty()
 		from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment
 		if self.technical_verification_needed == 'Yes' and self.technical_verification_from and not self.technical_remarks:
 			try:
@@ -225,8 +236,8 @@ def update_status(name, status):
 @frappe.whitelist()
 def make_stock_entry(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
-		qty = flt(flt(obj.stock_qty) - flt(obj.ordered_qty))/ target.conversion_factor \
-			if flt(obj.stock_qty) > flt(obj.ordered_qty) else 0
+		qty = flt(obj.qty)/ target.conversion_factor \
+			if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.actual_qty)
 		target.qty = qty
 		target.transfer_qty = qty * obj.conversion_factor
 		target.conversion_factor = obj.conversion_factor
@@ -267,8 +278,8 @@ def make_stock_entry(source_name, target_doc=None):
 @frappe.whitelist()
 def make_stock_entry_issue(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
-		qty = flt(flt(obj.stock_qty) - flt(obj.ordered_qty))/ target.conversion_factor \
-			if flt(obj.stock_qty) > flt(obj.ordered_qty) else 0
+		qty = flt(obj.qty)/ target.conversion_factor \
+			if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.actual_qty)
 		target.qty = qty
 		target.transfer_qty = qty * obj.conversion_factor
 		target.conversion_factor = obj.conversion_factor
@@ -389,6 +400,9 @@ def make_delivery_note(source_name, target_doc=None):
 
 @frappe.whitelist()
 def make_request_for_purchase(source_name, target_doc=None):
+	def update_item(obj, target, source_parent):
+		qty = obj.pur_qty
+		target.qty = qty
 	doclist = get_mapped_doc("Request for Material", source_name, 	{
 		"Request for Material": {
 			"doctype": "Request for Purchase",
@@ -406,7 +420,9 @@ def make_request_for_purchase(source_name, target_doc=None):
 				["requested_item_name", "item_name"],
 				["name", "request_for_material_item"],
 				["parent", "request_for_material"]
-			]
+			],
+			"postprocess": update_item,
+			"condition": lambda doc: doc.item_code
 		}
 	}, target_doc)
 
