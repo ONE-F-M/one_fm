@@ -1,0 +1,229 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "naming_series:",
+ "creation": "2021-05-03 23:25:48.039106",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "employee",
+  "employee_name",
+  "department",
+  "basic_salary",
+  "column_break1",
+  "transaction_date",
+  "date_of_joining",
+  "exit_status",
+  "exit_date",
+  "section_break_6",
+  "indemnity_allocation",
+  "total_indemnity_allocated",
+  "indemnity_policy",
+  "indemnity_percentage",
+  "column_break_10",
+  "total_indemnity_days_allowed",
+  "indemnity_amount",
+  "notes",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "no_copy": 1,
+   "options": "EMP-INT-.YYYY.-",
+   "print_hide": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "oldfieldname": "employee",
+   "oldfieldtype": "Link",
+   "options": "Employee",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break1",
+   "fieldtype": "Column Break",
+   "width": "50%"
+  },
+  {
+   "default": "Today",
+   "fieldname": "transaction_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break",
+   "label": "Allocation"
+  },
+  {
+   "fieldname": "indemnity_policy",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Indemnity Policy",
+   "options": "Indemnity Policy",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "indemnity_allocation.total_indemnity_allocated",
+   "fieldname": "total_indemnity_allocated",
+   "fieldtype": "Float",
+   "label": "Total Indemnity Allocated",
+   "precision": "9",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "indemnity_percentage",
+   "fieldtype": "Percent",
+   "label": "Indemnity Percentage",
+   "read_only": 1
+  },
+  {
+   "fieldname": "indemnity_amount",
+   "fieldtype": "Currency",
+   "label": "Indemnity Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Employee Indemnity",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "indemnity_allocation",
+   "fieldtype": "Link",
+   "label": "Indemnity Allocation",
+   "options": "Indemnity Allocation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "exit_status",
+   "fieldtype": "Select",
+   "label": "Exit Status",
+   "options": "\nResignation\nTermination\nEnd of Service",
+   "reqd": 1
+  },
+  {
+   "fieldname": "exit_date",
+   "fieldtype": "Date",
+   "label": "Exit Date",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.date_of_joining",
+   "fieldname": "date_of_joining",
+   "fieldtype": "Date",
+   "label": "Date of Joining",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_basic_salary",
+   "fieldname": "basic_salary",
+   "fieldtype": "Currency",
+   "label": "Basic Salary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_indemnity_days_allowed",
+   "fieldtype": "Float",
+   "label": "Total Indemnity Days Allowed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes",
+   "oldfieldname": "reason",
+   "oldfieldtype": "Small Text",
+   "width": "300px"
+  }
+ ],
+ "icon": "fa fa-ok",
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-05-05 02:34:14.005814",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Employee Indemnity",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "employee,employee_name",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "timeline_field": "employee",
+ "track_changes": 1
+}
