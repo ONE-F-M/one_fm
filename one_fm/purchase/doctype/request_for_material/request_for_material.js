@@ -1,4 +1,4 @@
-// Copyright (c) 2020, omar jaber and contributors
+// fstatus// Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
 // eslint-disable-next-line
@@ -76,8 +76,12 @@ frappe.ui.form.on('Request for Material', {
 			// console.log(frm.doc.items[0].actual_qty);
 			// console.log(frm.doc.items[0].actual_qty-frm.doc.items[0].qty);
 			if(frm.doc.items){
+				var any_items_ordered = false;
 				var item_exist_in_stock = false;
 				var purchase_item_exist = false;
+				if(frm.doc.per_ordered>0){
+					any_items_ordered = true;
+				}
 				frm.doc.items.forEach((item, i) => {
 					if(item.item_code && item.actual_qty>=0){
 						item_exist_in_stock = true;
@@ -100,9 +104,11 @@ frappe.ui.form.on('Request for Material', {
 							frm.add_custom_button(__("Request for Purchase"),
 							    () => frm.events.make_request_for_purchase(frm), __('Create'));
 						}
-						// frm.add_custom_button(__("Make Delivery Note"),
-						// 	() => frm.events.make_delivery_note(frm), __('Create'));
-							
+						if(any_items_ordered){
+							frm.add_custom_button(__("Make Delivery Note"),
+						 	    () => frm.events.make_delivery_note(frm), __('Create'));
+						}
+						
 					}
 					// else if (frm.doc.type=="Stock"){
 					// 	frm.add_custom_button(__("Transfer Material"),
@@ -120,6 +126,10 @@ frappe.ui.form.on('Request for Material', {
 					    () => frm.events.make_sales_invoice(frm), __('Create'));
 					frm.add_custom_button(__("Request for Purchase"),
 					    () => frm.events.make_request_for_purchase(frm), __('Create'));
+					if(any_items_ordered){
+						frm.add_custom_button(__("Make Delivery Note"),
+							() => frm.events.make_delivery_note(frm), __('Create'));
+					}
 				}
 			}
 
