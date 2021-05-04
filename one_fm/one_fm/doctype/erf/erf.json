@@ -103,6 +103,12 @@
   "provide_accommodation_by_company",
   "provide_transportation_by_company_html",
   "provide_transportation_by_company",
+  "provide_vehicle_by_company_html",
+  "provide_vehicle_by_company",
+  "provide_laptop_by_company_html",
+  "provide_laptop_by_company",
+  "email_access_needed_html",
+  "email_access_needed",
   "other_benefits",
   "benefit_cost_to_company",
   "total_cost_to_company",
@@ -827,11 +833,47 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Provide Transportation by Company"
+  },
+  {
+   "fieldname": "provide_vehicle_by_company_html",
+   "fieldtype": "HTML",
+   "label": "Provide Vehicle by Company HTML"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_vehicle_by_company",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Provide Vehicle by Company"
+  },
+  {
+   "fieldname": "provide_laptop_by_company_html",
+   "fieldtype": "HTML",
+   "label": "Provide Laptop by Company HTML"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_laptop_by_company",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Provide Laptop by Company"
+  },
+  {
+   "fieldname": "email_access_needed_html",
+   "fieldtype": "HTML",
+   "label": "Email Access Needed HTML"
+  },
+  {
+   "default": "0",
+   "fieldname": "email_access_needed",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Email Access Needed"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-03-25 11:48:53.684580",
+ "modified": "2021-04-02 21:45:29.086441",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
@@ -850,16 +892,6 @@
    "share": 1,
    "submit": 1,
    "write": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "permlevel": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1
   },
   {
    "amend": 1,
@@ -897,6 +929,32 @@
    "read": 1,
    "report": 1,
    "role": "Hiring Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Senior Recruiter",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Senior Recruiter",
    "share": 1,
    "write": 1
   }

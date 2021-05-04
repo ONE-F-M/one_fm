@@ -27,6 +27,7 @@
   "rate",
   "amount",
   "actual_qty",
+  "pur_qty",
   "stock_qty",
   "remarks_and_manufacturers_details_section",
   "remarks",
@@ -244,7 +245,6 @@
   {
    "fieldname": "more_info",
    "fieldtype": "Section Break",
-   "hidden": 1,
    "label": "More Information"
   },
   {
@@ -335,13 +335,23 @@
    "allow_on_submit": 1,
    "fieldname": "t_warehouse",
    "fieldtype": "Link",
-   "label": "Target warehouse",
+   "label": "Target Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "pur_qty",
+   "fieldtype": "Float",
+   "label": "Quantity to purchase",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1,
+   "report_hide": 1
   }
  ],
  "istable": 1,
- "modified": "2021-03-31 03:03:55.894541",
- "modified_by": "o.asim@armor-services.com",
+ "modified": "2021-04-21 01:41:17.286218",
+ "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material Item",
  "owner": "Administrator",

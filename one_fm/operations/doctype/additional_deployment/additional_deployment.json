@@ -5,7 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "customer",
+  "client",
   "project",
   "contracts",
   "due_date",
@@ -20,7 +20,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Project",
-   "options": "Project"
+   "options": "Project",
+   "read_only": 1
   },
   {
    "fieldname": "contracts",
@@ -56,17 +57,18 @@
    "read_only": 1
   },
   {
-   "fieldname": "customer",
+   "fieldname": "client",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Customer",
-   "options": "Customer"
+   "options": "Customer",
+   "read_only": 1
   }
  ],
- "modified": "2021-03-31 10:37:33.841742",
+ "modified": "2021-04-10 11:56:59.976772",
  "modified_by": "Administrator",
  "module": "Operations",
- "name": "Emergency Deployment",
+ "name": "Additional Deployment",
  "owner": "Administrator",
  "permissions": [
   {

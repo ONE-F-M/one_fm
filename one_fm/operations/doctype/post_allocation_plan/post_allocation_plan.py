@@ -6,7 +6,8 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe import _
-import itertools
+from frappe.utils import getdate, cstr, add_to_date
+import itertools, time
 
 class PostAllocationPlan(Document):
 	pass
@@ -31,9 +32,11 @@ def get_table_data(operations_shift, date):
 	posts = get_posts(operations_shift, date)
 	
 	post_list = {}
+
 	for key, group in itertools.groupby(posts, key=lambda x: (x['priority_level'])):
 		post_details_list = []
-		priority_posts = list(group)
+		# Sort descending by length of skills in post
+		priority_posts = sorted(list(group), key=post_sorting, reverse=True)
 		for post in priority_posts:
 			post_data = get_post_data_map(post)
 			post_details_list.append(post_data)
@@ -42,13 +45,16 @@ def get_table_data(operations_shift, date):
 
 	employee_details_list = []
 	for employee in employees:
-		employee_skills = get_employee_data_map(employee)
+		employee_skills = get_employee_data_map(employee, operations_shift, date)
 		employee_details_list.append(employee_skills)		
 
 	return {
 		'employees': employee_details_list, 
 		'posts': post_list
 	}
+
+def post_sorting(post):
+	return len(post.skills) if post.skills else 0
 
 def get_posts(operations_shift, date):
 	return frappe.db.sql("""
@@ -65,7 +71,7 @@ def get_posts(operations_shift, date):
 		'date': date
 	}, as_dict=1)
 
-def get_employee_data_map(employee):
+def get_employee_data_map(employee, shift, date):
 	employee_skills = frappe._dict()
 	if frappe.db.exists("Employee Skill Map", employee.employee):
 		employee_skill = frappe.get_doc("Employee Skill Map", employee.employee).as_dict()
@@ -73,8 +79,12 @@ def get_employee_data_map(employee):
 		employee_skills.designation = employee_skill.designation
 	else:
 		frappe.throw(_("Employee Skill Map not found for {id}:{name}".format(id=employee.employee, name=employee.employee_name)))
-	
+
+	prev_date = cstr(add_to_date(getdate(date), days=-1))
+	previous_day = frappe.db.get_value("Employee Schedule", {"employee": employee.employee, "date": prev_date}, ["employee_availability"])
+	previous_day_schedule = frappe.db.get_value("Post Allocation Employee Assignment", {"parent": shift+"|"+prev_date, "employee": employee.employee}, ["post"])
 	gender = frappe.db.get_value("Employee", employee.employee, "gender")
+	employee_skills.update({"previous_day": previous_day, "previous_day_schedule": previous_day_schedule})
 	employee_skills.update({"gender": gender})
 	employee_skills.update(employee)
 	return employee_skills
@@ -87,5 +97,34 @@ def get_post_data_map(post):
 	post_data.skills =  [{'skill': skill.skill, 'proficiency': skill.minimum_proficiency_required } for skill in post_doc.skills]
 	post_data.designations = [designation.designation for designation in post_doc.designations]
 	post_data.post = post.post
+	post_data.allow_staff_rotation = post_doc.allow_staff_rotation
+	post_data.day_off_priority = post_doc.day_off_priority
 	return post_data
 
+@frappe.whitelist()
+def get_post_employee_data(employee, operations_shift, post, date):
+	return {
+		'employee': get_employee_data_map(frappe.get_value("Employee", employee, ["name as employee", "employee_name"], as_dict=1), operations_shift, date),
+		'post': get_post_data_map(frappe.get_value("Operations Post", post, ["name as post", "priority_level"], as_dict=1))
+	}
+
+@frappe.whitelist()
+def get_day_off_employees(operations_shift, date):
+	employees = frappe.db.sql("""
+		SELECT DISTINCT name, employee_name, designation
+		FROM `tabEmployee` 
+		WHERE shift=%(shift)s AND NAME IN(SELECT employee FROM `tabEmployee Schedule` WHERE date=%(date)s AND employee_availability="Day Off")  """, {
+		'shift': operations_shift,
+		'date': date
+	}, as_dict=1)
+	print(employees, len(employees))
+	return employees
+
+
+@frappe.whitelist()
+def get_sorted_post_list(assignments):
+	# Converting into list of tuple
+	assignments = [(key,)+tuple(val) for assignment in assignments for key,val in assignment.items()]
+	col = 1
+	sorted(assignments, key=lambda k: (k[col] is None, k[col] == "", k[col])) 
+	print(assignments)

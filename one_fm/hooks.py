@@ -132,11 +132,17 @@ home_page = "landing_page"
 
 
 doc_events = {
+	"Stock Entry": {
+		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty",
+		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty"
+	},
 	"Leave Application": {
-		"before_submit": "one_fm.utils.paid_sick_leave_validation",
-		"on_submit": "one_fm.utils.bereavement_leave_validation",
-		"before_submit": "one_fm.utils.update_employee_hajj_status",
-		"validate": "one_fm.utils.validate_hajj_leave"
+		"on_submit": "one_fm.utils.leave_appillication_on_submit",
+		"validate": "one_fm.utils.validate_hajj_leave",
+		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
+	},
+	"Leave Type": {
+		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
 	"Employee": {
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",
@@ -291,7 +297,10 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"0 4 * * *": [
-			'one_fm.utils.check_grp_operator_submission_four'
+			'one_fm.utils.check_grp_operator_submission_four',
+			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_supervisor_submit_application_online',
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_finance_dept_for_payment'
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
@@ -301,7 +310,15 @@ scheduler_events = {
 			'one_fm.utils.send_gp_letter_attachment_no_response'
 		],
 		"0 9 * * *": [
-			'one_fm.utils.check_upload_tasriah_submission_nine'
+			'one_fm.utils.check_upload_tasriah_submission_nine',
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator',
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_grd_supervisor_check_approval'
+
+		],
+		"30 9 * * *": [
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator'
+			
+			
 		],
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'
@@ -414,7 +431,4 @@ fixtures = [
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
-
-
-
 ShiftType.process_auto_attendance = process_auto_attendance
