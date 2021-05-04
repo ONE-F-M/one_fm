@@ -813,7 +813,7 @@ def increase_daily_leave_balance():
         leave_type = frappe.get_doc("Leave Type", alloc.leave_type)
 
         # Check if employee absent today then not allow annual leave allocation for today
-        is_absent = frappe.db.sql("""select name, status from `tabEmployee Attendance` where employee = %s and
+        is_absent = frappe.db.sql("""select name, status from `tabAttendance` where employee = %s and
             attendance_date = %s and docstatus = 1 and status = 'Absent' """,
 			(allocation.employee, getdate(nowdate())), as_dict=True)
         if is_absent and len(is_absent) > 0:
@@ -863,7 +863,27 @@ def increase_daily_leave_balance():
             allocation.new_leaves_allocated = allocation.new_leaves_allocated+new_leaves_allocated
             allocation.total_leaves_allocated = allocation.new_leaves_allocated+allocation.unused_leaves
             allocation.save()
-            frappe.db.commit()
+
+            ''' Delete old ledger entry'''
+            frappe.db.sql("""DELETE FROM `tabLeave Ledger Entry`
+                WHERE `transaction_name`=%s""", (allocation.name))
+
+            ''' Create new ledger entry'''
+            ledger = frappe._dict(
+                doctype='Leave Ledger Entry',
+                employee=allocation.employee,
+                leave_type=leave_type.name,
+                transaction_type='Leave Allocation',
+                transaction_name=allocation.name,
+                leaves = allocation.total_leaves_allocated,
+                from_date = allocation.from_date,
+                to_date = allocation.to_date,
+                is_carry_forward=leave_type.is_carry_forward,
+                is_expired=0,
+                is_lwp=0
+            )
+            frappe.get_doc(ledger).submit()
+
 
 def get_leave_allocation_records(date, employee=None, leave_type=None):
     conditions = (" and employee='%s'" % employee) if employee else ""
