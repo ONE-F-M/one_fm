@@ -1,0 +1,38 @@
+{
+ "actions": [],
+ "creation": "2021-05-02 23:16:04.033717",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "threshold_year",
+  "indemnity_percentage"
+ ],
+ "fields": [
+  {
+   "fieldname": "threshold_year",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Threshold Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "indemnity_percentage",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Indemnity Percentage",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-05-02 23:16:04.033717",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Indemnity Policy Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
