@@ -278,9 +278,14 @@ scheduler_events = {
 
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly"
+		
 	],
 
 	"cron": {
+		"0 8 1 * *":[# Monthy event at 8 am
+			"one_fm.one_fm.grd.doctype.preparation.create_preparation"
+
+		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_accept",
 			"one_fm.api.tasks.update_shift_type"
@@ -296,11 +301,14 @@ scheduler_events = {
 		"45 10 * * *": [
 			'one_fm.utils.send_travel_agent_email'
 		],
+		"0 16 * * *":[
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_finance_dept_for_payment',
+			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online'
+		],
 		"0 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four',
 			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_supervisor_submit_application_online',
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_finance_dept_for_payment'
+			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
@@ -312,19 +320,20 @@ scheduler_events = {
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',
 			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator',
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_grd_supervisor_check_approval'
-
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_grd_operator_check_approval'
+		
 		],
 		"30 9 * * *": [
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator'
-			
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator',
+			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first'
 			
 		],
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'
 		],
 		"0 10 * * *": [
-			'one_fm.utils.check_upload_tasriah_reminder2'
+			'one_fm.utils.check_upload_tasriah_reminder2',
+			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
 		],
 		"30 6 * * *": [
 			'one_fm.utils.check_pam_visa_approval_submission_six_half'

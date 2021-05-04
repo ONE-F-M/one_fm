@@ -1,4 +1,5 @@
 {
+ "autoname": "employee:",
  "creation": "2021-04-19 11:02:23.451743",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -8,8 +9,8 @@
   "employee_id",
   "full_name",
   "civil_id",
+  "nationality",
   "residency_expiry_date",
-  "employee_status",
   "renewal_or_extend",
   "ref_doctype",
   "ref_name"
@@ -49,17 +50,11 @@
    "label": "Residency Expiry Date"
   },
   {
-   "fetch_from": "employee.resignation_letter_date",
-   "fieldname": "employee_status",
-   "fieldtype": "Data",
-   "label": "Employee Status"
-  },
-  {
    "fieldname": "renewal_or_extend",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Renewal or extend",
-   "options": "\nRenewal\nExtend 1 month\nExtend 2 month\nExtend 3 month"
+   "label": "Renewal Or Extend",
+   "options": "\nRenewal\nExtend 1 month\nExtend 2 months\nExtend 3 months"
   },
   {
    "allow_on_submit": 1,
@@ -67,8 +62,7 @@
    "fieldtype": "Link",
    "label": "Ref DocType",
    "options": "DocType",
-   "read_only": 1,
-   "reqd": 1
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -76,12 +70,17 @@
    "fieldtype": "Dynamic Link",
    "label": "Ref Name",
    "options": "ref_doctype",
-   "read_only": 1,
-   "reqd": 1
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
   }
  ],
  "istable": 1,
- "modified": "2021-04-19 13:46:27.177778",
+ "modified": "2021-04-24 19:54:55.085533",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation Record",
