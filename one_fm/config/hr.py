@@ -121,5 +121,33 @@ def get_data():
 					"name": "Training Evaluation Form Response",
 				}
 			]
-		}
+		},
+		{
+			"label": _("Indemnity"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Employee Indemnity",
+				},
+                {
+					"type": "doctype",
+					"name": "Indemnity Allocation",
+				},
+                {
+					"type": "doctype",
+					"name": "Indemnity Policy",
+				}
+			]
+		},
+		{
+			"label": _("Leaves"),
+			"items": [
+				{
+					"type": "report",
+					"is_query_report": True,
+					"name": "Employee Annual Leave Calculation",
+					"doctype": "Employee"
+				}
+			]
+		},
 	]
