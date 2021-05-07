@@ -117,11 +117,11 @@
    "label": "Post Handover Required"
   },
   {
-   "description": "1- Lowest <br>\n5 - Highest",
+   "description": "10 - Highest <br>\n1- Lowest\n",
    "fieldname": "priority_level",
    "fieldtype": "Select",
    "label": "Priority Level",
-   "options": "1\n2\n3\n4\n5",
+   "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
    "reqd": 1
   },
   {
@@ -142,7 +142,7 @@
    "label": "Day Off Priority"
   }
  ],
- "modified": "2021-04-23 21:01:56.226655",
+ "modified": "2021-05-06 10:55:03.703840",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",
