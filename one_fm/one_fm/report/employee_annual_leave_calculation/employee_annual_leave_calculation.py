@@ -78,6 +78,7 @@ def get_data(filters, leave_types):
 
 				# opening balance
 				opening = get_leave_balance_on(employee.name, leave_type, filters.from_date)
+				opening_leave_amount = opening * salary_per_day
 
 				# closing balance
 				closing = max(opening - leaves_taken, 0)
@@ -91,8 +92,6 @@ def get_data(filters, leave_types):
 					month_diff_factor = month_diff(relieving_date, from_date)
 					# else:
 					# 	month_diff_factor = month_diff(from_date, relieving_date)
-					print("\n\n\n\n######\n\n\n")
-					print(month_diff_factor)
 					if month_diff_factor > 0 and relieving_date < add_days(from_date, 30):
 						day_diff = date_diff(add_days(from_date, 30), getdate(employee.relieving_date))
 						provision_days_of_alloc = (30/365)*day_diff
@@ -101,7 +100,7 @@ def get_data(filters, leave_types):
 				provision_days_of_alloc_amount = provision_days_of_alloc * salary_per_day
 
 				# row += [opening, leaves_taken, closing]
-				row += [closing, closing_leave_amount, provision_days_of_alloc, provision_days_of_alloc_amount]
+				row += [opening, opening_leave_amount, provision_days_of_alloc, provision_days_of_alloc_amount]
 
 
 			data.append(row)

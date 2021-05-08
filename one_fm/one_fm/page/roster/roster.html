@@ -31,30 +31,11 @@
                         </li>
                         <li class="maintabclick"><a class="residenavli postviewclick" id="">Post View</a></li>
                     </ul>
-                    <div class="switch-container">
-                        <div class="d-none d-md-inline-block">
-                            <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab">
-                                <li class="active rosterClick"><a class="residenavli basicRosterClick" id="">Basic
-                                        Roster</a>
-                                </li>
-                                <li class="rosterClick"><a class="residenavli otRosterClick" id="">OT Roster</a></li>
-                            </ul>
-                        </div>
-                    </div>
                 </div>
                 <div class="text-md-right">
                     <a href="#" class="responsivebluebtnright"><i class="fas fa-print"></i></a>
                 </div>
             </div>
-            <!-- <div class="switch-container">
-                <div class="d-none d-md-inline-block">
-                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab">
-                        <li class="active rosterClick"><a class="residenavli basicRosterClick" id="">Basic Roster</a>
-                        </li>
-                        <li class="rosterClick"><a class="residenavli otRosterClick" id="">OT Roster</a></li>
-                    </ul>
-                </div>
-            </div> -->
             <div class="d-md-none pt30 pb30 pl30 pr30 ">
                 <div class="">
                     <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
@@ -295,63 +276,7 @@
                                             <ul
                                                 class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
                                                 <li class="calenderlink">
-                                                    <input class="residenavli search-employee" type="text"
-                                                        placeholder="Type and Press Enter (↵)">
-                                                    <span class="closed"><i class="fas fa-times"></i></span>
-                                                </li>
-                                                <li class="active calenderlink"><a href="#"
-                                                        class="residenavli active monthviewclick">Month</a></li>
-                                                <li class="calenderlink"><a href="#"
-                                                        class="residenavli weekviewclick">Week</a></li>
-                                            </ul>
-                                        </div>
-                                        <div class="ml20">
-                                            <ul
-                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-                                                <li class=""><a href="#" class="residenavli customarrowtab bg-white"
-                                                        style="background:#fff !important"
-                                                        onClick="decrementMonth();"><i
-                                                            class="fas fa-chevron-left"></i></a></li>
-                                                <li class="bordertableft"><a href="#"
-                                                        class="residenavli customarrowtab bg-white"
-                                                        style="background:#fff !important"
-                                                        onClick="incrementMonth();"><i
-                                                            class="fas fa-chevron-right"></i></a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body p-0" id="tableviewchange">
-                                <div class="table-responsive table-bordered table-parent">
-                                    <table id="calenderviewtable"
-                                        class="mb-0 table table-striped customcarddetailtable structuredetaildatatable"
-                                        style="width:100%">
-                                        <thead>
-                                            <tr class="rosterViewTH">
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <ul class="pagination pagination-lg pager" id="myPager"></ul>
-                            </div>
-                        </div>
-                        <div class="cardheadercolor rosterOtMonth border-0 shadow-0 d-none">
-                            <div
-                                class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
-                                <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
-                                    <div class="font20 cardheadercolor fontw600 textchange calendertitlechange">Month of
-                                        April 1-30, 2020</div>
-                                    <div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
-                                        <div class="">
-                                            <ul
-                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-                                                <li class="calenderlink">
-                                                    <input class="residenavli search-employee" type="text"
-                                                        placeholder="Type and Press Enter (↵)">
+                                                    <input class="residenavli search-employee" type="text" placeholder="Type and Press Enter (↵)">
                                                     <span class="closed"><i class="fas fa-times"></i></span>
                                                 </li>
                                                 <li class="active calenderlink"><a href="#"
@@ -406,71 +331,7 @@
                                             <ul
                                                 class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
                                                 <li class="calenderlink">
-                                                    <input class="residenavli search-employee" type="text"
-                                                        placeholder="Type and Press Enter (↵)">
-                                                    <span class="closed"><i class="fas fa-times"></i></span>
-                                                </li>
-                                                <li class="calenderlink">
-                                                    <a href="#" class="residenavli active monthviewclick">Month</a>
-                                                </li>
-                                                <li class="active  calenderlink">
-                                                    <a href="#" class="residenavli weekviewclick">Week</a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        <div class="ml20">
-                                            <ul
-                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-                                                <li class="">
-                                                    <a href="#" class="residenavli customarrowtab bg-white"
-                                                        style="background:#fff !important"
-                                                        onclick="rosterweekdecrement()">
-                                                        <i class="fas fa-chevron-left"></i>
-                                                    </a>
-                                                </li>
-                                                <li class="bordertableft">
-                                                    <a href="#" class="residenavli customarrowtab bg-white"
-                                                        style="background:#fff !important"
-                                                        onclick="rosterweekincrement()">
-                                                        <i class="fas fa-chevron-right"></i>
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive table-bordered table-parent">
-                                    <table id="calenderweekviewtable"
-                                        class="mb-0 table table-striped customcarddetailtable structuredetaildatatable"
-                                        style="width:100%">
-                                        <thead>
-                                            <tr class="rosterViewTH">
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <ul class="pagination pagination-lg pager" id="myPager"></ul>
-                            </div>
-                        </div>
-                        <div class="cardheadercolor rosterOtWeek border-0 shadow-0 d-none">
-                            <div
-                                class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
-                                <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
-                                    <div class="font20 cardheadercolor fontw600 textchange calenderweektitlechange">
-                                        Month of April 1-30, 2020
-                                    </div>
-                                    <div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
-                                        <div class="">
-                                            <ul
-                                                class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-                                                <li class="calenderlink">
-                                                    <input class="residenavli search-employee" type="text"
-                                                        placeholder="Type and Press Enter (↵)">
+                                                    <input class="residenavli search-employee" type="text" placeholder="Type and Press Enter (↵)">
                                                     <span class="closed"><i class="fas fa-times"></i></span>
                                                 </li>
                                                 <li class="calenderlink">

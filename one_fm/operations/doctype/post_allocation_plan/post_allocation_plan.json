@@ -11,7 +11,9 @@
   "employee_assignment_post_wise_section",
   "assignments",
   "section_break_6",
-  "dayoff_wrapper"
+  "yesterday_dayoff",
+  "section_break_8",
+  "today_dayoff"
  ],
  "fields": [
   {
@@ -46,11 +48,19 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "dayoff_wrapper",
+   "fieldname": "yesterday_dayoff",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "today_dayoff",
    "fieldtype": "HTML"
   }
  ],
- "modified": "2021-04-27 16:03:33.162645",
+ "modified": "2021-05-06 14:17:52.206712",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Allocation Plan",
