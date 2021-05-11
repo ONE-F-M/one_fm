@@ -178,7 +178,7 @@ class RequestforMaterial(BuyingController):
 						format(_(self.doctype), self.name),
 					frappe.InvalidStatusError
 				)
-
+    #For quantities available in warehouse
 	def update_completed_qty(self, mr_items=None, update_modified=True):
 		if not mr_items:
 			mr_items = [d.name for d in self.get("items")]
@@ -195,6 +195,22 @@ class RequestforMaterial(BuyingController):
 						frappe.throw(_("The total Issue / Transfer quantity {0} in Material Request {1}  \
 							cannot be greater than requested quantity {2} for Item {3}").format(d.ordered_qty, d.parent, d.qty, d.item_code))
 
+				frappe.db.set_value(d.doctype, d.name, "ordered_qty", d.ordered_qty)
+	#for quantities that had to be purchased
+	def update_purchased_qty(self, mr_items=None, update_modified=True):
+		if not mr_items:
+			mr_items = [d.name for d in self.get("items")]
+
+		for d in self.get("items"):
+			if d.name in mr_items:
+				if self.type in ("Individual", "Project", "Project Mobilization","Stock","Onboarding"):
+					d.purchased_qty =  flt(frappe.db.sql("""select sum(qty)
+						from `tabPurchase Order Item` where material_request = %s
+						and material_request_item = %s and docstatus = 1""",
+						(self.name, d.name))[0][0])
+					d.ordered_qty = d.ordered_qty + d.purchased_qty
+				
+				frappe.db.set_value(d.doctype, d.name, "purchased_qty", d.purchased_qty)
 				frappe.db.set_value(d.doctype, d.name, "ordered_qty", d.ordered_qty)
 
 		self._update_percent_field({
@@ -224,13 +240,13 @@ def update_completed_and_requested_qty(stock_entry, method):
 
 					mr_obj.update_completed_qty(mr_item_rows)
 
-def update_completed_purchase_qty(purchase_doc, method):
-		if purchase_doc.doctype == "Request for Purchase":
+def update_completed_purchase_qty(purchase_order, method):
+		if purchase_order.doctype == "Purchase Order":
 			material_request_map = {}
 
-			for d in purchase_doc.get("items"):
-				if d.request_for_material:
-					material_request_map.setdefault(d.request_for_material, []).append(d.request_for_material_item)
+			for d in purchase_order.get("items"):
+				if d.material_request:
+					material_request_map.setdefault(d.request_for_material, []).append(d.material_request_item)
 
 			for mr, mr_item_rows in material_request_map.items():
 				if mr and mr_item_rows:
@@ -240,7 +256,7 @@ def update_completed_purchase_qty(purchase_doc, method):
 						frappe.throw(_("{0} {1} is cancelled or stopped").format(_("Request for Material"), mr),
 							frappe.InvalidStatusError)
 
-					mr_obj.update_completed_qty(mr_item_rows)
+					mr_obj.update_purchased_qty(mr_item_rows)
 def send_email(doc, recipients, message, subject):
 	frappe.sendmail(
 		recipients= recipients,

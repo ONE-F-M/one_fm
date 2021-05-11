@@ -1,4 +1,4 @@
-// fstatus// Copyright (c) 2020, omar jaber and contributors
+// Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
 // eslint-disable-next-line

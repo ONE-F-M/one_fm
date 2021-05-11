@@ -136,6 +136,10 @@ doc_events = {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty"
 	},
+	"Purchase Order": {
+		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
+		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty"
+	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
 		"validate": "one_fm.utils.validate_hajj_leave",

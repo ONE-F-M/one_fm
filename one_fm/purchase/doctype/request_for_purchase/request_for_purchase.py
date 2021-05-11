@@ -153,8 +153,8 @@ def make_purchase_order(source_name, target_doc=None):
 			"field_map": [
 				["quotation_item", "supplier_quotation_item"],
 				["quotation", "supplier_quotation"],
-				["request_for_material", "material_request"],
-				["request_for_material_item", "material_request_item"],
+				["request_for_material", "request_for_material"],
+				["request_for_material_item", "request_for_material_item"],
 				["sales_order", "sales_order"]
 			],
 			"postprocess": update_item

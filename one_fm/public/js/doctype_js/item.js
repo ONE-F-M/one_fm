@@ -9,13 +9,13 @@ frappe.ui.form.on('Item', {
 			};
 		});
 
-		frm.set_query("value", "item_descriptions", function(doc, cdt, cdn) {
-			var child = locals[cdt][cdn];
-			return {
-				query: "one_fm.purchase.utils.filter_description_specific_for_item_group",
-				filters: {'doctype': child.description_attribute, 'item_group': doc.item_group}
-			};
-		});
+		// frm.set_query("value", "item_descriptions", function(doc, cdt, cdn) {
+		// 	var child = locals[cdt][cdn];
+		// 	return {
+		// 		query: "one_fm.purchase.utils.filter_description_specific_for_item_group",
+		// 		filters: {'doctype': child.description_attribute, 'item_group': doc.item_group}
+		// 	};
+		// });
 
 		frm.set_query("item_group", function() {
 			return {
@@ -34,7 +34,7 @@ frappe.ui.form.on('Item', {
 		frm.set_query("item_model", function() {
 			return {
 				filters: [
-					['Item Model', 'item_brand', '=', cur_frm.doc.item_brand]
+					['Item Model', 'item_brand', '=', cur_frm.doc.brand]
 				]
 			};
 		});
@@ -65,17 +65,17 @@ frappe.ui.form.on('Item', {
 		if(frm.doc.one_fm_designation){
 			final_description+=(final_description?' - ':'')+frm.doc.one_fm_designation
 		}
-		if(frm.doc.uniform_type){
-			final_description+=(final_description?' - ':'')+frm.doc.uniform_type
-		}
-		if(frm.doc.uniform_type_description){
-			final_description+=(final_description?' - ':'')+frm.doc.uniform_type_description
-		}
+		// if(frm.doc.uniform_type){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.uniform_type
+		// }
+		// if(frm.doc.uniform_type_description){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.uniform_type_description
+		// }
 		if(frm.doc.item_type){
 			final_description+=(final_description?' - ':'')+frm.doc.item_type
 		}
-		if(frm.doc.item_brand){
-			final_description+=(final_description?' - ':'')+frm.doc.item_brand
+		if(frm.doc.brand){
+			final_description+=(final_description?' - ':'')+frm.doc.brand
 		}
 		if(frm.doc.item_model){
 			final_description+=(final_description?' - ':'')+frm.doc.item_model
@@ -98,8 +98,10 @@ frappe.ui.form.on('Item', {
 		if(frm.doc.origin){
 			final_description+=(final_description?' - ':'')+frm.doc.origin
 		}
-		if(frm.doc.item_supplier){
-			final_description+=(final_description?' - ':'')+frm.doc.item_supplier
+		if(frm.doc.supplier_items){
+			frm.doc.supplier_items.forEach((item, i) => {
+				final_description+=(final_description?' - ':'')+item.supplier
+			});
 		}
 		// if(frm.doc.item_descriptions){
 		// 	frm.doc.item_descriptions.forEach((item, i) => {
@@ -119,76 +121,116 @@ frappe.ui.form.on('Item', {
 		}
 	},
 	subitem_group: function(frm) {
+		frm.set_df_property('is_fixed_asset', 'read_only', true);
 		if(cur_frm.doc.parent_item_group){
 			frm.set_value('item_group', '');
 			get_item_code(frm);
 		}
 		if(frm.doc.subitem_group == 'Equipment'){
 			frm.set_df_property('item_color', 'reqd', false);
+			frm.set_value('have_uniform_type_and_description', false);
+			frm.set_df_property('brand', 'reqd', true);
+			frm.set_df_property('item_model', 'reqd', true);
+			frm.set_df_property('item_material', 'reqd', true);
+			frm.set_df_property('item_area_of_use', 'reqd', true);
+			frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Fixture'){
 			frm.set_df_property('item_color', 'reqd', false);
 			frm.set_df_property('item_area_of_use', 'reqd', false);
+			frm.set_value('have_uniform_type_and_description', false);
+			frm.set_df_property('brand', 'reqd', true);
+			frm.set_df_property('item_model', 'reqd', true);
+			frm.set_df_property('item_material', 'reqd', true);
+			frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Vehicle'){
 			frm.set_df_property('item_material', 'reqd', false);
+			frm.set_value('have_uniform_type_and_description', false);
+			frm.set_df_property('brand', 'reqd', true);
+			frm.set_df_property('item_model', 'reqd', true);
+			frm.set_df_property('item_area_of_use', 'reqd', true);
+			frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Intangible'){
 			frm.set_df_property('item_material', 'hidden', 1);
 			frm.set_df_property('item_color', 'hidden', 1);
+			frm.set_df_property('item_material', 'reqd', false);
+			frm.set_df_property('item_color', 'reqd', false);
 			frm.set_df_property('item_packaging', 'hidden', 1);
-			frm.set_df_property('item_brand', 'reqd', false);
+			frm.set_df_property('brand', 'reqd', false);
 			frm.set_df_property('item_model', 'reqd', false);
 			frm.set_df_property('item_area_of_use', 'reqd', false);
+			
+			frm.set_df_property('item_uom', 'reqd', false);
+			frm.set_value('have_uniform_type_and_description', false);
 		}
 		else if(frm.doc.subitem_group == 'Service'){
 			frm.set_value('is_service', true);
 			frm.set_df_property('start_date', 'reqd', true);
 			frm.set_df_property('end_date', 'reqd', true);
-			frm.set_df_property('item_brand', 'reqd', false);
+			frm.set_df_property('brand', 'reqd', false);
 			frm.set_df_property('item_model', 'reqd', false);
 			frm.set_df_property('item_material', 'reqd', false);
 			frm.set_df_property('item_area_of_use', 'reqd', false);
 			frm.set_df_property('item_color', 'reqd', false);
 			frm.set_df_property('item_uom', 'reqd', false);
+			frm.set_value('have_uniform_type_and_description', false);
 		}
 		else if(frm.doc.subitem_group == 'Consumables'){
 			frm.set_df_property('item_color', 'reqd', false);
+			frm.set_value('have_uniform_type_and_description', false);
+			frm.set_df_property('brand', 'reqd', true);
+			frm.set_df_property('item_model', 'reqd', true);
+			frm.set_df_property('item_material', 'reqd', true);
+			frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Tools'){
 			frm.set_df_property('item_color', 'reqd', false);
+			frm.set_value('have_uniform_type_and_description', false);
+			frm.set_df_property('brand', 'reqd', true);
+			frm.set_df_property('item_model', 'reqd', true);
+			frm.set_df_property('item_material', 'reqd', true);
+			frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Uniform'){
 			frm.set_value('is_service', true);
+			frm.set_value('have_uniform_type_and_description', true);
 			frm.set_df_property('start_date', 'reqd', false);
 			frm.set_df_property('end_date', 'reqd', false);
-			frm.set_df_property('one_fm_project', 'hidden', 0);
-			frm.set_df_property('one_fm_designation', 'hidden', 0);
-			frm.set_df_property('one_fm_project', 'reqd', true);
-			frm.set_df_property('one_fm_designation', 'reqd', true);
-			frm.set_df_property('item_gender', 'reqd', true);
-			frm.set_df_property('item_size', 'reqd', true);
-			
+			frm.set_df_property('brand', 'reqd', true);
+			frm.set_df_property('item_model', 'reqd', true);
+			frm.set_df_property('item_material', 'reqd', true);
+			frm.set_df_property('item_uom', 'reqd', true);
+			frm.set_df_property('item_area_of_use', 'reqd', false);
+			frm.set_df_property('item_color', 'reqd', true);
+			frm.set_df_property('supplier_items', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Bedding'){
 			frm.set_value('is_service', true);
+			frm.set_value('have_uniform_type_and_description', false);
 			frm.set_df_property('start_date', 'reqd', false);
 			frm.set_df_property('end_date', 'reqd', false);
+			frm.set_df_property('brand', 'reqd', true);
+			frm.set_df_property('item_model', 'reqd', false);
+			frm.set_df_property('item_material', 'reqd', true);
+			frm.set_df_property('item_area_of_use', 'reqd', false);
+			frm.set_df_property('item_color', 'reqd', true);
+			frm.set_df_property('item_uom', 'reqd', true);
+			frm.set_df_property('item_uom', 'reqd', true);
+			frm.set_df_property('supplier_items', 'reqd', true);
 		}
 		else{
 			frm.set_value('is_service', false);
 			frm.set_df_property('start_date', 'reqd', false);
+			frm.set_value('have_uniform_type_and_description', false);
 			frm.set_df_property('end_date', 'reqd', false);
-			frm.set_df_property('item_brand', 'reqd', true);
+			frm.set_df_property('brand', 'reqd', true);
 			frm.set_df_property('item_model', 'reqd', true);
-			frm.set_df_property('one_fm_project', 'hidden', 1);
-			frm.set_df_property('one_fm_designation', 'hidden', 1);
-			frm.set_df_property('one_fm_project', 'reqd', false);
-			frm.set_df_property('one_fm_designation', 'reqd', false);
 			frm.set_df_property('item_material', 'reqd', true);
 			frm.set_df_property('item_area_of_use', 'reqd', true);
 			frm.set_df_property('item_color', 'reqd', true);
-			frm.set_df_property('item_uom', 'reqd', true);
+			
 		}	
 	},
 	item_group: function(frm) {
@@ -223,50 +265,53 @@ frappe.ui.form.on('Item', {
 		if(frm.doc.item_group == "Electronics Spare parts" || frm.doc.item_group == "Electronics Accessories" || frm.doc.item_group == "Vehicle Spare parts" || frm.doc.item_group == "Vehicle Accessories"){
 			frm.set_df_property('item_color', 'reqd', false);
 		}
-		else{
-			frm.set_df_property('item_color', 'reqd', true);
-		}
+	
 
-		if(frm.doc.item_group){
-			frappe.call({
-				method: 'frappe.client.get',
-				args: {
-					doctype: 'Item Group',
-					filters: {'name': frm.doc.item_group}
-				},
-				callback: function(ret) {
-					frm.set_value('have_uniform_type_and_description', false);
-					frm.clear_table('item_descriptions');
-					if(ret && ret.message){
-						if(ret.message.is_fixed_asset){
-							frm.set_value('is_fixed_asset', ret.message.is_fixed_asset);
-							frm.set_value('asset_category', ret.message.asset_category);
-						}
-					  if(ret.message.one_fm_item_group_descriptions){
-					    ret.message.one_fm_item_group_descriptions.forEach((item, i) => {
-								if(item.description_attribute == "Uniform Type" || item.description_attribute == "Uniform Type Description"){
-									frm.set_value('have_uniform_type_and_description', true);
-								}
-								else{
-									let desc = frappe.model.add_child(frm.doc, 'Item Description', 'item_descriptions');
-						      frappe.model.set_value(desc.doctype, desc.name, 'description_attribute', item.description_attribute);
-								}
-					    });
-					  }
-					}
-					frm.refresh_field('item_descriptions');
-				}
-			});
-		}
-		else{
-			frm.set_value('have_uniform_type_and_description', false);
-			frm.clear_table('item_descriptions');
-			frm.refresh_field('item_descriptions');
-		}
+		// if(frm.doc.item_group){
+		// 	frappe.call({
+		// 		method: 'frappe.client.get',
+		// 		args: {
+		// 			doctype: 'Item Group',
+		// 			filters: {'name': frm.doc.item_group}
+		// 		},
+		// 		callback: function(ret) {
+		// 			frm.set_value('have_uniform_type_and_description', false);
+		// 			frm.clear_table('item_descriptions');
+		// 			if(ret && ret.message){
+		// 				if(ret.message.is_fixed_asset){
+		// 					frm.set_value('is_fixed_asset', ret.message.is_fixed_asset);
+		// 					frm.set_value('asset_category', ret.message.asset_category);
+		// 				}
+		// 			  if(ret.message.one_fm_item_group_descriptions){
+		// 			    ret.message.one_fm_item_group_descriptions.forEach((item, i) => {
+		// 						if(item.description_attribute == "Uniform Type" || item.description_attribute == "Uniform Type Description"){
+		// 							frm.set_value('have_uniform_type_and_description', true);
+		// 						}
+		// 						else{
+		// 							let desc = frappe.model.add_child(frm.doc, 'Item Description', 'item_descriptions');
+		// 				      frappe.model.set_value(desc.doctype, desc.name, 'description_attribute', item.description_attribute);
+		// 						}
+		// 			    });
+		// 			  }
+		// 			}
+		// 			frm.refresh_field('item_descriptions');
+		// 		}
+		// 	});
+		// }
+		// else{
+		// 	frm.set_value('have_uniform_type_and_description', false);
+		// 	frm.clear_table('item_descriptions');
+		// 	frm.refresh_field('item_descriptions');
+		// }
 	},
 	item_id: function(frm) {
 		if(cur_frm.doc.item_id){
 			get_item_code(frm);
+		}
+	},
+	end_date: function(frm) {
+		if(frm.doc.start_date>frm.doc.end_date){
+			frappe.throw(__('Start Date cannot be set at a date after End Date'))
 		}
 	}
 })

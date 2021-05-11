@@ -1,5 +1,4 @@
 {
- "actions": [],
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2020-06-07 18:00:40.176995",
@@ -843,9 +842,8 @@
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
- "links": [],
- "modified": "2021-03-13 02:24:54.565080",
- "modified_by": "Administrator",
+ "modified": "2021-04-30 04:55:55.809849",
+ "modified_by": "o.asim@armor-services.com",
  "module": "Purchase",
  "name": "Quotation From Supplier",
  "owner": "Administrator",
