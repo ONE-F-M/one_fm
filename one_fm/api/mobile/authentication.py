@@ -13,36 +13,37 @@ from frappe.utils.password import update_password as _update_password
 
 @frappe.whitelist(allow_guest=True)
 def login(client_id, grant_type, employee_id, password):
+	"""
+	Params:
+	Client Id: Can be found in Social Login Key doctype.
+	Grant_type: implicit
+	Employee Id: Employee Id of user
+	Password: Erpnext Password 
+
+	Returns: 
+		Access token, refresh token, Enrollment status for checkin, Employee Id, Employee name, Employee image, Employee/Supervisor flag. 
+	"""
 	try:
-		username = frappe.get_value("Employee", employee_id, "user_id")
+		# username = frappe.get_value("Employee", employee_id, "user_id")
+		username = frappe.get_value("Employee", employee_id, "employee_id")
 		if not username:
 			return {'error': _('Employee ID is incorrect. Please check again.')}
-		# login_manager = frappe.local.login_manager
-		# login_manager.authenticate(employee_user_id, password)
 		args = {
 			'client_id': client_id,
 			'grant_type': grant_type,
 			'username': username,
 			'password': password
 		}
-		print(args, dir(frappe.local.session_obj))
-
+		headers = {'Accept': 'application/json'}
 		session = requests.Session()
 
 		# Login
 		response = session.post(
 		 	"https://dev.one-fm.com/api/method/frappe.integrations.oauth2.get_token",
-		 	data=args
+		 	data=args, headers=headers
 		)
-		#response = session.post(
-		#	"http://192.168.0.152/api/method/frappe.integrations.oauth2.get_token",
-		#	data=args
-		#)
-		print(response.status_code)# response.text)
+
 		if response.status_code == 200:
-			print(response.text)
-			print(frappe.session.user)
-			#conn = FrappeClient("http://192.168.0.152",username=username, password=password)
 			conn = FrappeClient("https://dev.one-fm.com",username=username, password=password)
 			user, user_roles, user_employee =  conn.get_api("one_fm.api.mobile.roster.get_current_user_details")
 			res = response.json()
@@ -55,24 +56,34 @@ def login(client_id, grant_type, employee_id, password):
 
 			return res
 		else:
-			return {'error': response.status_code}
+			frappe.throw(_(response.text))
+
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 	
 
 @frappe.whitelist(allow_guest=True)
 def forgot_password(employee_id):
+	"""
+	Params: employee_id
+	
+	Returns: 
+		Temp Id: To be used in next api call for verifying the SMS OTP. 
+	Sends an OTP to mobile number assosciated with User	
+	"""
 	try:
-		employee_user_id = frappe.get_value("Employee", employee_id, "user_id")
+		# employee_user_id = frappe.get_value("Employee", employee_id, "user_id")
+		employee_user_id = frappe.get_value("Employee", employee_id, "employee_id")
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
 		cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
 		verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
-		print(token, tmp_id)
+
 		# Save data in local
-		frappe.local.response['verification'] = verification_obj
-		frappe.local.response['tmp_id'] = tmp_id
+		# frappe.local.response['verification'] = verification_obj
+		# frappe.local.response['tmp_id'] = tmp_id
+
 		return {
 			'message': _('Password reset instruction sms has been sent to your registered mobile number.'),
 			'temp_id': tmp_id
@@ -83,9 +94,15 @@ def forgot_password(employee_id):
 
 @frappe.whitelist(allow_guest=True)
 def update_password(otp, id, employee_id, new_password):
+	"""
+	Params: 
+	otp: OTP received via SMS
+	id: Temp Id returned in forgot_password call response
+	employee_id 
+	new_password : new password to update
+	"""
 	try:
 		login_manager = frappe.local.login_manager
-		print(login_manager)
 		if confirm_otp_token(login_manager, otp, id):
 			user_id = frappe.get_value("Employee", employee_id, ["user_id"])
 			_update_password(user_id, new_password)
@@ -96,17 +113,6 @@ def update_password(otp, id, employee_id, new_password):
 		return frappe.utils.response.report_error(e.http_status_code)
 
 		
-@frappe.whitelist(allow_guest=True)
-def confirm_otp(otp, id):
-	try:
-		login_manager = frappe.local.login_manager
-		confirm_otp_token(login_manager, otp, id) 
-		return {
-			'message': _('Verified successfully!')
-		}
-	except Exception as e:
-		return frappe.utils.response.report_error(e.http_status_code)
-
 def cache_2fa_data(user, token, otp_secret, tmp_id):
 	'''Cache and set expiry for data.'''
 	pwd = frappe.form_dict.get('pwd')
@@ -119,7 +125,8 @@ def cache_2fa_data(user, token, otp_secret, tmp_id):
 		frappe.cache().set("{0}{1}".format(tmp_id, k), v)
 		frappe.cache().expire("{0}{1}".format(tmp_id, k), expiry_time)
 
-@frappe.whitelist(allow_guest=True)
+
+#Not needed or being used
 def signup(employee_id):
 	try:
 		user = frappe.get_value("Employee", employee_id, "user_id")
@@ -141,7 +148,7 @@ def signup(employee_id):
 		frappe.clear_messages()
 		return frappe.utils.response.report_error(e.http_status_code)
 
-
+# Not needed or being used
 def reset_password(user, password_expired=False):
 	from frappe.utils import random_string, get_url
 

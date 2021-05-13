@@ -7,14 +7,14 @@ import json, base64, ast, itertools, datetime
 from frappe.client import attach_file
 from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view#, get_roster_view as _get_roster_view
 
-# @frappe.whitelist(allow_guest=True)
+# @frappe.whitelist()
 # def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None):
 # 	try:
 # 		return _get_roster_view(start_date, end_date, all, assigned, scheduled, project, site, shift, department, post_type)
 # 	except Exception as e:
 # 		return frappe.utils.response.report_error(e.http_status_code)
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_roster_view(date, shift=None, site=None, project=None, department=None):
 	try:
 		filters = {
@@ -78,7 +78,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
 
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_weekly_staff_roster(start_date, end_date):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
@@ -99,11 +99,11 @@ def get_weekly_staff_roster(start_date, end_date):
 def get_current_user_details():
 	user = frappe.session.user
 	user_roles = frappe.get_roles(user)
-	user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_id", "employee_name", "image", "enrolled"], as_dict=1)
+	user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_id", "employee_name", "image", "enrolled", "designation"], as_dict=1)
 	return user, user_roles, user_employee
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_post_view(date, shift=None, site=None, project=None, department=None):
 	try:
 		filters = {
@@ -172,7 +172,7 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 		return frappe.utils.response.report_error(e.http_status_code)
 
 
-# @frappe.whitelist(allow_guest=True)
+# @frappe.whitelist()
 # def edit_post(post_type, shift, post_status, date_list, paid=0, repeat=None):
 # 	"""
 # 		post_status: Post Off/Suspend Post/Cancel Post
@@ -206,7 +206,7 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 # 	except Exception as e:
 # 		return frappe.utils.response.report_error(e.http_status_code)
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def edit_post(post, post_status, start_date, end_date, paid=0, never_end=0, repeat=0, repeat_freq=None):
 	try:
 		if never_end:
@@ -436,7 +436,7 @@ def get_post_details(post_name):
 		return frappe.utils.response.report_error(e.http_status_code)
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def unschedule_staff(employee, start_date, end_date=None, never_end=0):
 	try:
 		if never_end:
@@ -455,7 +455,7 @@ def unschedule_staff(employee, start_date, end_date=None, never_end=0):
 		return frappe.utils.response.report_error(e.http_status_code)
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def schedule_staff(employee, shift, post_type, start_date, end_date=None, never=0, day_off=None):
 	try:
 		print(getdate(start_date).strftime('%A'))
@@ -503,7 +503,7 @@ def schedule_staff(employee, shift, post_type, start_date, end_date=None, never=
 		frappe.throw(_(e))
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def schedule_leave(employee, leave_type, start_date, end_date):
 	try:
 		for date in	pd.date_range(start=start_date, end=end_date):
@@ -560,6 +560,7 @@ def get_handover_posts(shift=None):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
+
 @frappe.whitelist()
 def get_current_shift(employee):
 	try:
@@ -579,6 +580,7 @@ def get_current_shift(employee):
 	except Exception as e:
 		print(frappe.get_traceback())
 		return frappe.utils.response.report_error(e.http_status_code)
+
 
 @frappe.whitelist()
 def get_report_comments(report_name):
