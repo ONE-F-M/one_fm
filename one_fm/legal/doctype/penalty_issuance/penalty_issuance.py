@@ -108,7 +108,7 @@ class PenaltyIssuance(Document):
 					#If penalty occurence date is between start and lapse date, it means it occured in existing period. Otherwise reset the occurence counter
 					if cstr(occurences[0].period_start_date) <= cstr(getdate(self.penalty_occurence_time)) <= cstr(occurences[0].period_lapse_date):
 						existing_occurences = self.get_existing_occurences(employee.employee_id, penalty_detail.penalty_type, occurences[0].period_start_date, occurences[0].period_lapse_date)
-						print("[EXISTING]", existing_occurences)
+
 						if len(existing_occurences) < 7:
 							occurence = len(existing_occurences) + 1
 							penalty_details.update({
@@ -143,7 +143,6 @@ class PenaltyIssuance(Document):
 						'penalty_levied': penalty_levied,
 						'deduction': deduction
 					})
-					print(penalty_details)
 					penalty.append("penalty_details", penalty_details)
 
 			penalty.save()
@@ -167,7 +166,6 @@ class PenaltyIssuance(Document):
 			AND PID.parenttype="Penalty"
 			ORDER BY P.penalty_occurence_time DESC
 		""".format(penalty_type=penalty_type, emp=employee_id), as_dict=1)
-		print("[PENALTIES]",penalties)
 		return [penalties[0]] if penalties else []
 
 	def get_existing_occurences(self, employee_id, penalty_type, start_date, lapse_date):
@@ -182,68 +180,8 @@ class PenaltyIssuance(Document):
 			AND tpd.parenttype="Penalty"
 			AND DATE(tp.penalty_occurence_time) BETWEEN DATE("{start_date}") AND DATE("{lapse_date}")
 		""".format(penalty_type=penalty_type, emp=employee_id, start_date=cstr(start_date), lapse_date=cstr(lapse_date)), as_dict=1)
-		print(penalties)
 		return penalties
 
-
-	# def get_occurence(self, employee_id, penalty_type):
-	# 	print(employee_id, penalty_type)
-	# 	penalties = frappe.db.sql("""
-	# 		SELECT PID.parent, DATE(P.penalty_occurence_time) as penalty_date
-	# 		FROM `tabPenalty Issuance Details` PID, `tabPenalty` P 
-	# 		WHERE
-	# 			PID.penalty_type="{penalty_type}"
-	# 		AND P.recipient_employee="{emp}"
-	# 		AND PID.parent=P.name
-	# 		AND PID.parenttype="Penalty"
-	# 		ORDER BY P.penalty_occurence_time ASC
-	# 	""".format(penalty_type=penalty_type, emp=employee_id), as_dict=1)
-	# 	#AND P.workflow_state="Penalty Accepted"
-	# 	#Start and end penalty duration date
-	# 	year, month, date = cstr(getdate(self.penalty_occurence_time)).split("-")
-	# 	if len(penalties) > 0:
-	# 		start_year, start_month, start_date = cstr(penalties[0].penalty_date).split("-")
-	# 	else:
-	# 		start_year, start_month, start_date = cstr(getdate(self.penalty_occurence_time)).split("-")
-
-	# 	penalty_duration_start = year+"-"+start_month+"-"+start_date
-	# 	penalty_duration_end = cstr(add_to_date(year+"-"+start_month+"-"+start_date, years=1))
-	# 	print(penalty_duration_start, penalty_duration_end)
-
-	# 	penalties = frappe.db.sql("""
-	# 		SELECT PID.parent, DATE(P.penalty_occurence_time) as penalty_date
-	# 		FROM `tabPenalty Issuance Details` PID, `tabPenalty` P 
-	# 		WHERE
-	# 			PID.penalty_type="{penalty_type}"
-	# 		AND P.recipient_employee="{emp}"
-	# 		AND PID.parent=P.name
-	# 		AND PID.parenttype="Penalty"
-	# 		AND DATE(P.penalty_occurence_time) BETWEEN DATE("{penalty_duration_start}") AND DATE("{penalty_duration_end}")
-	# 		ORDER BY P.penalty_occurence_time ASC
-	# 	""".format(
-	# 		penalty_type=penalty_type, 
-	# 		emp=employee_id, 
-	# 		penalty_duration_start=penalty_duration_start, 
-	# 		penalty_duration_end=penalty_duration_end
-	# 	), as_dict=1)
-
-
-	# 	occurences = len(penalties) + 1
-	# 	penalty_list_field_map = {
-	# 		"1": "first_occurence",
-	# 		"2": "second_occurence",
-	# 		"3": "third_occurence",
-	# 		"4": "fourth_occurence",
-	# 		"5": "fifth_occurence"
-	# 	}
-
-	# 	occurence_count = "1"
-	# 	if 0 < occurences <= 5:
-	# 		occurence_count = cstr(occurences)
-	# 	elif occurences > 5:
-	# 		occurence_count = "5" 
-
-	# 	return penalty_list_field_map[occurence_count], occurence_count
 
 	def get_penalty_levied(self, occurence, penalty_type):
 		field1 = "occurence_type"+cstr(occurence)
@@ -258,6 +196,8 @@ class PenaltyIssuance(Document):
 			AND pd.penalty_description_english="{penalty_type}"
 		""".format(field1=field1, field2=field2, penalty_type=penalty_type))
 		return penalty_levied[0] if penalty_levied else False
+
+
 
 @frappe.whitelist()
 def get_current_penalty_location(location, penalty_occurence_time):
@@ -277,8 +217,6 @@ def get_current_penalty_location(location, penalty_occurence_time):
 
 	site_name = site[0].name
 
-	print(site[0])
-	print(not site or (site and site[0].distance > 100))
 	if not site or (site and site[0].distance > 100):
 		frappe.throw(_("No active shift and site found matching current time and location. Please enter manually."))
 
@@ -297,7 +235,6 @@ def get_current_penalty_location(location, penalty_occurence_time):
 			
 	""".format(current_time=penalty_occurence_time, site_name=site_name), as_dict=1)
 
-	print(active_shift)
 	if len(active_shift) > 0:
 		return {
 			'shift': active_shift[0].name,
@@ -311,13 +248,17 @@ def get_current_penalty_location(location, penalty_occurence_time):
 
 @frappe.whitelist()
 def filter_employees(doctype, txt, searchfield, start, page_len, filters):
-	shift = filters.get('shift')
-	time = filters.get('penalty_occurence_time')
-	print("""
-		SELECT employee, employee_name FROM `tabShift Assignment` WHERE shift="{shift}" AND date=DATE({date})
-	""".format(shift=shift, date=time))
+	return get_filtered_employees(filters.get('shift'), filters.get('penalty_occurence_time'))
+
+
+
+@frappe.whitelist()
+def get_filtered_employees(shift, penalty_occurence_time, as_dict=None):
+	if as_dict is None:
+		as_dict = 0
+
 	return frappe.db.sql("""
-		SELECT employee, employee_name
-		FROM `tabShift Assignment`
-		WHERE shift="{shift}" AND date=DATE("{date}")
-	""".format(shift=shift, date=time))
+		SELECT sh.employee, sh.employee_name, emp.designation
+		FROM `tabShift Assignment` as sh, `tabEmployee` as emp
+		WHERE sh.shift="{shift}" AND sh.date=DATE("{date}") AND sh.employee=emp.name
+	""".format(shift=shift, date=penalty_occurence_time), as_dict=as_dict)
