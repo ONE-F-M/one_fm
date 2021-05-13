@@ -7,7 +7,6 @@
  "field_order": [
   "project",
   "column_break_2",
-  "project_name",
   "section_break_4",
   "site_name",
   "site_location",
@@ -56,15 +55,6 @@
   {
    "fieldname": "column_break_7",
    "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "project.project_name",
-   "fieldname": "project_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Project Name",
-   "read_only": 1
   },
   {
    "fieldname": "project",
@@ -172,7 +162,7 @@
    "label": "Contact Html"
   }
  ],
- "modified": "2020-06-06 20:37:56.533222",
+ "modified": "2021-05-13 13:37:16.149674",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Site",
