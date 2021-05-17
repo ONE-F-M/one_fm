@@ -136,6 +136,12 @@ def get_data():
                 {
 					"type": "doctype",
 					"name": "Indemnity Policy",
+				},
+				{
+					"type": "report",
+					"is_query_report": True,
+					"name": "Employee Indemnity Calculation",
+					"doctype": "Employee"
 				}
 			]
 		},
