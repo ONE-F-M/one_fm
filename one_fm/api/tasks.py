@@ -350,6 +350,13 @@ def generate_payroll():
 	start_date = "2021-02-24"
 	end_date = "2021-03-23"
 
+	try:
+			create_payroll_entry(start_date, end_date)
+	except Exception:
+			print(frappe.get_traceback())
+			frappe.log_error(frappe.get_traceback())
+
+"""
 	departments = frappe.get_all("Department", {"company": erpnext.get_default_company()})
 	for department in departments:
 		try:
@@ -359,7 +366,7 @@ def generate_payroll():
 		except Exception:
 			print(frappe.get_traceback())
 			frappe.log_error(frappe.get_traceback())
-
+"""
 
 
 def generate_penalties():
