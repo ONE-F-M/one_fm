@@ -85,6 +85,12 @@ def get_data():
                 {
 					"type": "doctype",
 					"name": "Applicant Lead",
+				},
+				{
+					"type": "report",
+					"is_query_report": True,
+					"name": "Applicant Lead Report",
+					"doctype": "Applicant Lead"
 				}
 			]
 		},
