@@ -9,6 +9,7 @@ frappe.pages['roster'].on_page_load = function(wrapper) {
 
 	load_js(page);
 }
+
 // Initializes the page with default values 
 function load_js(page){
     $(this).scrollTop(0);
@@ -947,7 +948,7 @@ function get_roster_data(page, isOt){
 	let {project, site, shift, department, post_type} = page.filters;
 	let {limit_start, limit_page_length} = page.pagination;
 	console.log(limit_start, limit_page_length);
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, search_key, project, site, shift, department, post_type, limit_start, limit_page_length})
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, search_key, project, site, shift, department, post_type, isOt, limit_start, limit_page_length})
 	.then(res => {
 		let a2 = performance.now();
 		console.log("REQ TIME", a2-a1);
@@ -1102,7 +1103,7 @@ function get_roster_week_data(page, isOt){
 	let {project, site, shift, department, post_type} = page.filters;
 	let {limit_start, limit_page_length} = page.pagination;
 	console.log(limit_start, limit_page_length);
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, search_key, project, site, shift, department, post_type, limit_start, limit_page_length})
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, search_key, project, site, shift, department, post_type, isOt, limit_start, limit_page_length})
 	.then(res => {
 		let {post_types_data, employees_data, total}= res;
 		page.pagination.total = total;
@@ -2612,7 +2613,7 @@ function schedule_change_post(page){
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
 	let employees =  [];
 	let selected = [... new Set(classgrt)];
-	
+	let otRoster = false;
 	if(selected.length > 1){
 		selected.forEach(function(i){
 			let [employee, date] = i.split("|");
@@ -2670,15 +2671,21 @@ function schedule_change_post(page){
 			
 			let {shift, site, post_type, project, start_date, end_date} = d.get_values();
 			$('#cover-spin').show(0);
+			let element = get_wrapper_element();
+			if (element == ".rosterOtMonth"){
+				otRoster = true;
+			}else if(element == ".rosterMonth"){
+				otRoster = false;
+			}
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-			{employees, shift, post_type, start_date, end_date})
+			{employees, shift, post_type, otRoster, start_date, end_date})
 			.then(res => {
 				d.hide();
 				$('#cover-spin').hide();
 				let element = get_wrapper_element().slice(1);
 				update_roster_view(element, page);
 			});
-		}
+	}
 	});
 	d.show();
 }

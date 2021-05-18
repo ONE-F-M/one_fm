@@ -20,7 +20,8 @@
   "site",
   "project",
   "attendance_status_section",
-  "attended_status"
+  "attended_status",
+  "roster_type"
  ],
  "fields": [
   {
@@ -130,10 +131,17 @@
    "fieldtype": "Data",
    "label": "Post Abbreviation",
    "read_only": 1
+  },
+  {
+   "default": "Basic",
+   "fieldname": "roster_type",
+   "fieldtype": "Select",
+   "label": "Roster Type",
+   "options": "Basic\nOver Time"
   }
  ],
- "modified": "2020-09-01 23:09:10.924020",
- "modified_by": "Administrator",
+ "modified": "2021-05-09 10:46:46.863091",
+ "modified_by": "m.ahmed@armor-services.com",
  "module": "Operations",
  "name": "Employee Schedule",
  "owner": "Administrator",
