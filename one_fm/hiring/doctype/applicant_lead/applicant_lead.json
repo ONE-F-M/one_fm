@@ -15,8 +15,9 @@
   "email_id",
   "gender",
   "nationality",
-  "col_break123",
   "sugested_position",
+  "col_break123",
+  "date",
   "lead_owner_type",
   "lead_owner_dt",
   "lead_owner",
@@ -210,12 +211,18 @@
    "fieldtype": "Link",
    "label": "Sugested Position",
    "options": "Designation"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
   }
  ],
  "icon": "fa fa-user",
  "image_field": "image",
  "links": [],
- "modified": "2021-02-17 08:06:05.484931",
+ "modified": "2021-05-18 03:01:15.492398",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Applicant Lead",
