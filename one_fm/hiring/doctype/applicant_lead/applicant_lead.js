@@ -15,7 +15,13 @@ frappe.ui.form.on('Applicant Lead', {
 		if(frm.is_new()){
 			frm.set_value('lead_owner_dt', 'User');
 		}
-		frm.add_custom_button(__("Create Job Applicant"), frm.events.make_job_applicant);
+		else{
+			frappe.db.get_value("Job Applicant", {"applicant_lead": frm.doc.name}, "name", function(r) {
+				if(!r || !r.name){
+					frm.add_custom_button(__("Create Job Applicant"), frm.events.make_job_applicant);
+				}
+			});
+		}
 	},
 	make_job_applicant: function () {
 		frappe.model.open_mapped_doc({

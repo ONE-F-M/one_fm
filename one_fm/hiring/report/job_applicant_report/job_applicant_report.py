@@ -12,7 +12,7 @@ def execute(filters=None):
 def get_columns():
     return [
 		_("Applicant Name") + ":Link/Job Applicant:150",
-		_("Job Oppening") + ":Link/ob Oppening:150",
+		_("Job Oppening") + ":Link/Job Opening:150",
 		_("Designation") + ":Link/Designation:150",
 		_("Final Status") + ":Data:150",
 		_("Applicant Status") + ":Data:150",

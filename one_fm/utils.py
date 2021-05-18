@@ -1328,13 +1328,17 @@ def set_childs_for_application_web_form(doc, method):
 
 def set_job_languages(doc, method):
     if not doc.one_fm_languages:
-        job = frappe.get_doc('Job Opening', doc.job_title)
-        if job.one_fm_languages:
-            set_languages(doc, job.one_fm_languages)
-        elif doc.one_fm_erf:
+        languages = False
+        if doc.job_title:
+            job = frappe.get_doc('Job Opening', doc.job_title)
+            if job.one_fm_languages:
+                languages = job.one_fm_languages
+        elif doc.one_fm_erf and not languages:
             erf = frappe.get_doc('ERF', doc.one_fm_erf)
             if erf.languages:
-                set_languages(doc, erf.languages)
+                languages = erf.languages
+        if languages:
+            set_languages(doc, languages)
 
 def set_languages(doc, languages):
     for language in languages:
@@ -1347,13 +1351,17 @@ def set_languages(doc, languages):
 
 def set_job_basic_skill(doc, method):
     if not doc.one_fm_designation_skill:
-        job = frappe.get_doc('Job Opening', doc.job_title)
-        if job.one_fm_designation_skill:
-            set_designation_skill(doc, job.one_fm_designation_skill)
-        elif doc.one_fm_erf:
+        designation_skill = False
+        if doc.job_title:
+            job = frappe.get_doc('Job Opening', doc.job_title)
+            if job.one_fm_designation_skill:
+                designation_skill = job.one_fm_designation_skill
+        elif doc.one_fm_erf and not designation_skill:
             erf = frappe.get_doc('ERF', doc.one_fm_erf)
             if erf.designation_skill:
-                set_designation_skill(doc, erf.designation_skill)
+                designation_skill = erf.designation_skill
+        if designation_skill:
+            set_designation_skill(doc, designation_skill)
 
 def set_designation_skill(doc, skills):
     for designation_skill in skills:
@@ -1419,8 +1427,8 @@ def get_mandatory_for_dependent_fields(doc):
     return field_list
 
 def get_mandatory_fields_work_details(doc):
+    field_list = []
     if doc.one_fm_erf:
-        field_list = []
         erf = frappe.get_doc('ERF', doc.one_fm_erf)
         if erf.shift_working:
             field_list.append({'Rotation Shift': 'one_fm_rotation_shift'})
@@ -1430,7 +1438,7 @@ def get_mandatory_fields_work_details(doc):
             if erf.type_of_travel:
                 field_list.append({'Type of Travel': 'one_fm_type_of_travel'})
             field_list.append({'Type of Driving License': 'one_fm_type_of_driving_license'})
-        return field_list
+    return field_list
 
 def get_mandatory_fields_contact_details(doc):
     # if not doc.one_fm_is_agency_applying:
