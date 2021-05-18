@@ -30,7 +30,8 @@ class RequestforPurchase(Document):
 	def make_purchase_order_for_quotation(self):
 		if self.items_to_order:
 			for item in self.items_to_order:
-				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
+				#supplier=item.supplier, 
+				create_purchase_order(request_for_purchase=self.name, item_code=item.item_code,
 					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description,
 					warehouse=self.warehouse)
 
