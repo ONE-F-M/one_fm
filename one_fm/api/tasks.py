@@ -110,24 +110,21 @@ def final_reminder():
 				send_notification(subject, message, recipients)
 
 def insert_Contact():
-	U_id = frappe.db.get_list('Employee', "user_id")
-	email = frappe.db.get_list('User', "email")
-	for i in U_id:
-		for e in email:
+	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
+	for i in Us:
+		if frappe.db.exists("User", i.user_id):			
 			uid = i.user_id
-			em = e.email
-			if uid == em :
-				mob = frappe.db.get_value('Employee', {"user_id":uid}, "cell_number")
-				if len(str(mob))==8:
-					new_Mob= int(str("965") + str(mob))
-					frappe.db.set_value('User', {"email":uid}, 'mobile_no', new_Mob)
-					print(new_Mob)
-				elif len(str(mob))==10:
-					new_Mob= int(str("91") + str(mob))
-					frappe.db.set_value('User', {"email":uid}, 'mobile_no', new_Mob)
-					print(new_Mob)
-				else:
-					print("Not valid")
+			mob = i.cell_number
+			if len(str(mob))==8:
+				new_Mob= int(str("965") + str(mob))
+				frappe.db.set_value('User', {"email":uid}, 'mobile_no', new_Mob)
+				print(new_Mob)
+			elif len(str(mob))==10:
+				new_Mob= int(str("91") + str(mob))
+				frappe.db.set_value('User', {"email":uid}, 'mobile_no', new_Mob)
+				print(new_Mob)
+			else:
+				print("Not valid")
 
 		
 def supervisor_reminder():
