@@ -104,7 +104,7 @@ def update_password(otp, id, employee_id, new_password):
 	try:
 		login_manager = frappe.local.login_manager
 		if confirm_otp_token(login_manager, otp, id):
-			user_id = frappe.get_value("Employee", employee_id, ["user_id"])
+			user_id = frappe.get_value("Employee", {'employee_id':employee_id}, ["user_id"])
 			_update_password(user_id, new_password)
 		return {
 			'message': _('Password Updated!')
