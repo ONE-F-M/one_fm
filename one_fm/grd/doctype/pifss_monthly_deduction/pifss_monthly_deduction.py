@@ -56,13 +56,8 @@ def create_additional_salary(employee, amount):
 @frappe.whitelist()
 def import_deduction_data(file_url):#file_url
 	url = frappe.get_site_path() + file_url
-	#df = pd.read_csv(url, encoding='utf-8', nrows=13)#.drop([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
 	data = {}
-	#Due Date Process 
-	# for index, row in df.iterrows():
-	# 	if index == 3:
-	# 		date = row[3].replace("/", "-")
-	# 		data.update({'deduction_month': date})
+	
 	table_data = []
 	df = pd.read_csv(url, encoding='utf-8', skiprows = 3)
 	for index, row in df.iterrows():

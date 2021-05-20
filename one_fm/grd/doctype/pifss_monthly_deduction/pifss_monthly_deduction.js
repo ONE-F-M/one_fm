@@ -4,7 +4,6 @@
 frappe.ui.form.on('PIFSS Monthly Deduction', {
 	attach_report: function(frm) {
 		let file_url = frm.doc.attach_report;
-		// console.log(file_url);
 		if(file_url){
 			frappe.xcall('one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.import_deduction_data', {file_url})
 			.then(res => {
