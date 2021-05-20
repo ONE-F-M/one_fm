@@ -681,6 +681,15 @@ function bind_events(page){
 		//add array on each of data select from calender
 		$rosterMonth.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
+
+			//Show Day Off and Schedule Leave button if hidden for basic roster
+			if($(".dayoff").is(":hidden")){
+				$(".dayoff").show();
+			}
+			if($(".scheduleleave").is(":hidden")){
+				$(".scheduleleave").show();
+			}
+
 			// If the id is not already in the array, add it. If it is, remove it  
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
@@ -694,6 +703,11 @@ function bind_events(page){
 		
 		$rosterOtMonth.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
+
+			//Hide Day Off and schedule leave button for OT Roster
+			$(".dayoff").hide();
+			$(".scheduleleave").hide();
+		
 			// If the id is not already in the array, add it. If it is, remove it  
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
@@ -810,6 +824,15 @@ function bind_events(page){
 		});
 		//on checkbox select change
 		$rosterMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
+
+			//Show Day Off and Schedule Leave button if hidden for basic roster
+			if($(".dayoff").is(":hidden")){
+				$(".dayoff").show();
+			}
+			if($(".scheduleleave").is(":hidden")){
+				$(".scheduleleave").show();
+			}
+
 			if ($(this).is(":checked")) {
 				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
 					let [employee, date] = $(v).attr('data-selectid').split('|');
@@ -842,6 +865,10 @@ function bind_events(page){
 			});
 		});
 		$rosterOtMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
+
+			//Hide Day Off and schedule leave button for OT Roster
+			$(".dayoff").hide();
+			$(".scheduleleave").hide();
 			if ($(this).is(":checked")) {
 				$(this).closest('tr').children("td").children().not("label").each(function(i,v){
 					let [employee, date] = $(v).attr('data-selectid').split('|');
