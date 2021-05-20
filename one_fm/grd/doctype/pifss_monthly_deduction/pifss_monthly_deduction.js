@@ -8,7 +8,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 		if(file_url){
 			frappe.xcall('one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.import_deduction_data', {file_url})
 			.then(res => {
-				// console.log(res);
+				console.log(res);
 				let {deduction_month, table_data} = res;
 				frm.set_value("deduction_month", deduction_month);
 				if(!res.exc && table_data.length > 0){
