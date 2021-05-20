@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "autoname": "EMP-ONT-.#####",
+ "creation": "2021-03-15 15:10:06.847823",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "department",
+  "column_break_7",
+  "designation",
+  "employee_grade",
+  "section_break_7",
+  "actions"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Designation",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "employee_grade",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee Grade",
+   "options": "Employee Grade"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break",
+   "label": "Actions"
+  },
+  {
+   "fieldname": "actions",
+   "fieldtype": "Table",
+   "label": "Actions",
+   "options": "Onboard Employee Activity"
+  }
+ ],
+ "links": [],
+ "modified": "2021-03-15 15:10:42.195760",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Onboard Employee Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "designation",
+ "track_changes": 1
+}

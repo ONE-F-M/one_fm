@@ -1,0 +1,538 @@
+{
+ "actions": [],
+ "autoname": "EMP-ONB-.YYYY.-.#####",
+ "creation": "2021-03-15 11:54:56.014421",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "job_offer",
+  "job_applicant",
+  "employee_name",
+  "employee",
+  "date_of_joining",
+  "boarding_status",
+  "erf",
+  "notify_users_by_email",
+  "applicant_is_overseas_or_local",
+  "is_transferable",
+  "column_break_7",
+  "employee_onboarding_template",
+  "onboard_employee_template",
+  "company",
+  "department",
+  "designation",
+  "employee_grade",
+  "project",
+  "applicant_details_section",
+  "gender",
+  "date_of_birth",
+  "place_of_birth",
+  "religion",
+  "marital_status",
+  "column_break_20",
+  "height",
+  "agency",
+  "nationality",
+  "source",
+  "contact_details_section",
+  "email_id",
+  "contact_number",
+  "secondary_contact_number",
+  "nationality_details_section",
+  "nationality_no",
+  "nationality_subject",
+  "column_break_35",
+  "date_of_naturalization",
+  "passport_section",
+  "passport_number",
+  "passport_holder_of",
+  "passport_issued",
+  "column_break_42",
+  "passport_expire",
+  "passport_type",
+  "visa_and_residency_section",
+  "visa_type",
+  "civil_id",
+  "cid_expire",
+  "job_offer_details_section",
+  "salary_structure",
+  "job_offer_total_salary",
+  "provide_salary_advance",
+  "salary_advance_amount",
+  "provide_accommodation_by_company",
+  "provide_transportation_by_company",
+  "column_break_26",
+  "salary_details",
+  "uniform_measurements_section",
+  "uniform_needed_for_this_job",
+  "shoulder_width",
+  "column_break_58",
+  "waist_size",
+  "shoe_size",
+  "actions_section",
+  "actions",
+  "documents_section",
+  "applicant_documents",
+  "table_for_activity",
+  "activities",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "fieldname": "job_offer",
+   "fieldtype": "Link",
+   "label": "Job Offer",
+   "options": "Job Offer",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.applicant_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date_of_joining",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date of Joining"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "boarding_status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nPending\nIn Process\nCompleted"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "notify_users_by_email",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify users by email"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_onboarding_template",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Employee Onboarding Template",
+   "options": "Employee Onboarding Template"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Designation",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "employee_grade",
+   "fieldtype": "Link",
+   "label": "Employee Grade",
+   "options": "Employee Grade"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fieldname": "table_for_activity",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "activities",
+   "fieldtype": "Table",
+   "label": "Activities",
+   "options": "Employee Boarding Activity"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Onboard Employee",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "documents_section",
+   "fieldtype": "Section Break",
+   "label": "Documents"
+  },
+  {
+   "fieldname": "applicant_documents",
+   "fieldtype": "Table",
+   "label": "Applicant Documents",
+   "options": "Job Applicant Required Document"
+  },
+  {
+   "depends_on": "onboard_employee_template",
+   "fieldname": "actions_section",
+   "fieldtype": "Section Break",
+   "label": "Actions"
+  },
+  {
+   "fieldname": "actions",
+   "fieldtype": "Table",
+   "options": "Onboard Employee Activity",
+   "read_only": 1
+  },
+  {
+   "fieldname": "onboard_employee_template",
+   "fieldtype": "Link",
+   "label": "Onboard Employee Template",
+   "options": "Onboard Employee Template"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "applicant_details_section",
+   "fieldtype": "Section Break",
+   "label": "Applicant Details"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "job_offer_details_section",
+   "fieldtype": "Section Break",
+   "label": "Job Offer Details"
+  },
+  {
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "label": "Email Address",
+   "options": "Email"
+  },
+  {
+   "fieldname": "agency",
+   "fieldtype": "Link",
+   "label": "Agency",
+   "options": "Agency"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "label": "Religion"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "salary_structure",
+   "fieldtype": "Link",
+   "label": "Salary Structure",
+   "options": "Salary Structure"
+  },
+  {
+   "fieldname": "job_offer_total_salary",
+   "fieldtype": "Currency",
+   "label": "Job Offer Total Salary"
+  },
+  {
+   "fieldname": "column_break_26",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "salary_details",
+   "fieldtype": "Table",
+   "label": "Salary Details",
+   "options": "ERF Salary Detail",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Link",
+   "label": "Source",
+   "options": "Job Applicant Source"
+  },
+  {
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "label": "ERF",
+   "options": "ERF"
+  },
+  {
+   "fieldname": "place_of_birth",
+   "fieldtype": "Data",
+   "label": "Place of Birth"
+  },
+  {
+   "fieldname": "marital_status",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "\nSingle\nMarried\nDivorced\nWidowed"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "contact_details_section",
+   "fieldtype": "Section Break",
+   "label": "Contact Details"
+  },
+  {
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number"
+  },
+  {
+   "fieldname": "secondary_contact_number",
+   "fieldtype": "Data",
+   "label": "Secondary Contact Number"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "nationality_details_section",
+   "fieldtype": "Section Break",
+   "label": "Nationality Details"
+  },
+  {
+   "fieldname": "nationality_no",
+   "fieldtype": "Data",
+   "label": "Nationality No"
+  },
+  {
+   "fieldname": "nationality_subject",
+   "fieldtype": "Data",
+   "label": "Nationality Subject",
+   "options": "\n\u0627\u0644\u0623\u0648\u0644\u064a\n\u0627\u0644\u062b\u0627\u0646\u064a\u0629\n\u0627\u0644\u062b\u0627\u0644\u062b\u0629\n\u0627\u0644\u0631\u0627\u0628\u0639\u0629\n\u0627\u0644\u062e\u0627\u0645\u0633\u0629\n\u0627\u0644\u0633\u0627\u0628\u0639\u0629\n\u0627\u0644\u062b\u0627\u0645\u0646\u0629"
+  },
+  {
+   "fieldname": "column_break_35",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "date_of_naturalization",
+   "fieldtype": "Date",
+   "label": "Date of Naturalization"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "passport_section",
+   "fieldtype": "Section Break",
+   "label": "Passport"
+  },
+  {
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "passport_holder_of",
+   "fieldtype": "Link",
+   "label": "Passport Holder of",
+   "options": "Country"
+  },
+  {
+   "fieldname": "column_break_42",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "passport_type",
+   "fieldtype": "Select",
+   "label": "Passport Type",
+   "options": "\nDiplomat\nNormal"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "visa_and_residency_section",
+   "fieldtype": "Section Break",
+   "label": "Visa and Residency"
+  },
+  {
+   "fieldname": "visa_type",
+   "fieldtype": "Link",
+   "label": "Visa Type",
+   "options": "Visa Type"
+  },
+  {
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "fieldname": "cid_expire",
+   "fieldtype": "Date",
+   "label": "Civil ID Valid Till"
+  },
+  {
+   "fieldname": "applicant_is_overseas_or_local",
+   "fieldtype": "Select",
+   "label": "Applicant Is Overseas or Local",
+   "options": "\nLocal\nOverseas"
+  },
+  {
+   "fieldname": "is_transferable",
+   "fieldtype": "Select",
+   "label": "Is Transferable",
+   "options": "\nYes\nNo"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "uniform_measurements_section",
+   "fieldtype": "Section Break",
+   "label": "Uniform Measurements"
+  },
+  {
+   "default": "0",
+   "fieldname": "uniform_needed_for_this_job",
+   "fieldtype": "Check",
+   "label": "Is Uniform Needed for This Job"
+  },
+  {
+   "fieldname": "shoulder_width",
+   "fieldtype": "Float",
+   "label": "Shoulder Width in Centi Meter"
+  },
+  {
+   "fieldname": "column_break_58",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "waist_size",
+   "fieldtype": "Float",
+   "label": "Waist Size in Centi Meter"
+  },
+  {
+   "fieldname": "shoe_size",
+   "fieldtype": "Float",
+   "label": "Shoe Size in Centi Meter"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_salary_advance",
+   "fieldtype": "Check",
+   "label": "Provide Salary Advance"
+  },
+  {
+   "depends_on": "provide_salary_advance",
+   "fieldname": "salary_advance_amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_accommodation_by_company",
+   "fieldtype": "Check",
+   "label": "Provide Accommodation by Company"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_transportation_by_company",
+   "fieldtype": "Check",
+   "label": "Provide Transportation by Company"
+  },
+  {
+   "fieldname": "height",
+   "fieldtype": "Float",
+   "label": "Height in cm"
+  },
+  {
+   "fieldname": "passport_issued",
+   "fieldtype": "Date",
+   "label": "Passport Issued on"
+  },
+  {
+   "fieldname": "passport_expire",
+   "fieldtype": "Date",
+   "label": "Passport Expires on"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-04-28 12:47:25.879128",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Onboard Employee",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "employee_name",
+ "track_changes": 1
+}

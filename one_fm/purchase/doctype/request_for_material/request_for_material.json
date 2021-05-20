@@ -87,6 +87,7 @@
    "fieldname": "material_request_type",
    "fieldtype": "Select",
    "hidden": 1,
+   "in_standard_filter": 1,
    "label": "Type",
    "options": "Purchase",
    "print_hide": 1
@@ -110,6 +111,7 @@
    "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
@@ -204,6 +206,8 @@
   {
    "fieldname": "per_ordered",
    "fieldtype": "Percent",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "% Ordered",
    "no_copy": 1,
    "oldfieldname": "per_ordered",
@@ -297,6 +301,8 @@
   {
    "fieldname": "type",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Type",
    "options": "\nIndividual\nProject Mobilization\nStock\nProject\nOnboarding",
    "print_hide": 1,
@@ -443,7 +449,7 @@
  ],
  "icon": "fa fa-ticket",
  "is_submittable": 1,
- "modified": "2021-03-31 03:10:03.081938",
+ "modified": "2021-04-21 00:47:58.763208",
  "modified_by": "o.asim@armor-services.com",
  "module": "Purchase",
  "name": "Request for Material",

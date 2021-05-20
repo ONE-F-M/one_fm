@@ -1,6 +1,6 @@
 import frappe, erpnext
 from dateutil.relativedelta import relativedelta
-from frappe.utils import cint, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff
+from frappe.utils import cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff
 from frappe import _
 from erpnext.hr.doctype.payroll_entry.payroll_entry import get_end_date
 
@@ -12,11 +12,8 @@ def validate_employee_attendance(self):
 	for employee_detail in self.employees:
 		days_holiday = self.get_count_holidays_of_employee(employee_detail.employee)
 		days_attendance_marked, days_scheduled = self.get_count_employee_attendance(employee_detail.employee)
-		print("days_holiday", days_holiday)
-		print(days_attendance_marked)
 
 		days_in_payroll = date_diff(self.end_date, self.start_date) + 1
-		print(days_in_payroll ,(days_holiday + days_attendance_marked),(days_holiday + days_scheduled))
 		if days_in_payroll != (days_holiday + days_attendance_marked) != (days_holiday + days_scheduled) :
 			employees_to_mark_attendance.append({
 				"employee": employee_detail.employee,
@@ -50,30 +47,23 @@ def get_count_employee_attendance(self, employee):
 
 
 
-def create_payroll_entry():
+def create_payroll_entry(department, start_date, end_date):
 	try:
-		departments = frappe.get_all("Department")
-		start_date = add_to_date(nowdate(), months=-1)
-		end_date = get_end_date(start_date, 'monthly')['end_date']
-		start_date = '2020-11-24'
-		end_date = '2020-12-23'
-		selected_dept = ''
-		for department in departments:
-			selected_dept = department.name
-			payroll_entry = frappe.new_doc("Payroll Entry")
-			payroll_entry.posting_date = getdate()
-			payroll_entry.department = department.name
-			payroll_entry.payroll_frequency = "Monthly"
-			payroll_entry.company = erpnext.get_default_company()
-			payroll_entry.start_date = start_date
-			payroll_entry.end_date = end_date
-			payroll_entry.cost_center = frappe.get_value("Company", erpnext.get_default_company(), "cost_center")
-			payroll_entry.save()
-			payroll_entry.fill_employee_details()
-			payroll_entry.save()
-			payroll_entry.submit()
+		selected_dept = department
+		payroll_entry = frappe.new_doc("Payroll Entry")
+		payroll_entry.posting_date = getdate()
+		payroll_entry.department = department
+		payroll_entry.payroll_frequency = "Monthly"
+		payroll_entry.company = erpnext.get_default_company()
+		payroll_entry.start_date = start_date
+		payroll_entry.end_date = end_date
+		payroll_entry.cost_center = frappe.get_value("Company", erpnext.get_default_company(), "cost_center") or "Payroll Test - ONEFM"
+		payroll_entry.save()
+		payroll_entry.fill_employee_details()
+		payroll_entry.save()
+		payroll_entry.submit()
 	except Exception:
-		frappe.log_error(frappe.get_traceback(), selected_dept+' | '+start_date+' | '+end_date)
+		frappe.log_error(frappe.get_traceback(), selected_dept+' | '+cstr(start_date)+' | '+cstr(end_date))
 
 
 
@@ -90,7 +80,7 @@ def get_basic_salary(employee):
 			AND parent=%s 
 			AND salary_component="Basic"
 		""",(salary_structure), as_dict=1)
-		print(basic_salary)
+
 		return basic_salary[0].amount if len(basic_salary) > 0 else 0.00
 	else: 
 		frappe.throw(_("No Assigned Salary Structure found for the selected employee."))

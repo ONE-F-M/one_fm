@@ -1,4 +1,5 @@
 {
+ "autoname": "format: {operations_shift}|{date} ",
  "creation": "2021-01-26 11:06:49.199315",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -8,7 +9,11 @@
   "column_break_2",
   "date",
   "employee_assignment_post_wise_section",
-  "assignments"
+  "assignments",
+  "section_break_6",
+  "yesterday_dayoff",
+  "section_break_8",
+  "today_dayoff"
  ],
  "fields": [
   {
@@ -27,6 +32,7 @@
    "label": "Date"
   },
   {
+   "description": "Use Ctrl+F to search",
    "fieldname": "employee_assignment_post_wise_section",
    "fieldtype": "Section Break",
    "label": "Employee Assignment Post wise"
@@ -36,9 +42,25 @@
    "fieldtype": "Table",
    "label": "Assignments",
    "options": "Post Allocation Employee Assignment"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "yesterday_dayoff",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "today_dayoff",
+   "fieldtype": "HTML"
   }
  ],
- "modified": "2021-01-26 11:06:49.199315",
+ "modified": "2021-05-06 14:17:52.206712",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Allocation Plan",

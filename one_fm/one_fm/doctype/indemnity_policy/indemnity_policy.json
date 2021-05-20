@@ -1,0 +1,111 @@
+{
+ "actions": [],
+ "autoname": "HR-IPOL-.YYYY.-.#####",
+ "creation": "2021-05-02 23:18:51.475227",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "exit_status",
+  "payment_cycle",
+  "indemnity_policy_details",
+  "column_break_5",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "exit_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Exit Status",
+   "options": "\nResignation\nTermination\nEnd of Service",
+   "reqd": 1
+  },
+  {
+   "default": "Monthly",
+   "fieldname": "payment_cycle",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Payment Cycle",
+   "options": "\nMonthly\nHourly",
+   "reqd": 1
+  },
+  {
+   "fieldname": "indemnity_policy_details",
+   "fieldtype": "Table",
+   "label": "Indemnity Policy Details",
+   "options": "Indemnity Policy Detail",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Indemnity Policy",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-05-05 00:25:23.349674",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Indemnity Policy",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

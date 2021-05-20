@@ -1,7 +1,7 @@
 // Copyright (c) 2021, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Emergency Deployment', {
+frappe.ui.form.on('Additional Deployment', {
 	refresh: function(frm){
 		frm.set_query("project", function() {
 			return {

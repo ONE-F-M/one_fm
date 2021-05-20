@@ -7,8 +7,10 @@
   "post",
   "column_break_4",
   "employee",
-  "cb3",
-  "employee_name"
+  "employee_name",
+  "column_break_6",
+  "match_percentage",
+  "skill_score"
  ],
  "fields": [
   {
@@ -38,12 +40,25 @@
    "read_only": 1
   },
   {
-   "fieldname": "cb3",
+   "fieldname": "column_break_6",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "skill_score",
+   "fieldtype": "Small Text",
+   "label": "Skill score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "match_percentage",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Match Percentage",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2021-01-26 22:05:18.572864",
+ "modified": "2021-04-20 11:06:34.886644",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Allocation Employee Assignment",

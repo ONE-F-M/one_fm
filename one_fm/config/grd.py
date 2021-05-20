@@ -63,6 +63,11 @@ def get_data():
 					"name": "PACI Number",
 					"onboard": 1,
 				},
+				{
+					"type": "doctype",
+					"name": "PACI",
+					"onboard": 1,
+				},
 			]
 		},
 		{
@@ -104,5 +109,36 @@ def get_data():
 					"onboard": 1,
 				},
 			]
-		}
+		},
+		{
+			"label": _("Ministry of Interior Residency Jawazat"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "MOI Residency Jawazat",
+					"onboard": 1,
+				},
+			]
+		},
+		{
+			"label": _("Medical Insurance"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Medical Insurance",
+					"onboard": 1,
+				},
+			]
+		},
+		{
+			"label": _("Work Permit"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Work Permit",
+					"onboard": 1,
+				},
+			]
+		},
+
 	]

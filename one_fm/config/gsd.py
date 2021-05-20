@@ -50,6 +50,12 @@ def get_data():
 					"type": "doctype",
 					"name": "Accommodation Asset and Consumable",
 					"label": _("Accommodation Asset and Consumable")
+				},
+				{
+					"type": "report",
+					"name": "Maintenance Report",
+					"is_query_report": True,
+					"label": _("Maintenance Report")
 				}
 			]
 		},

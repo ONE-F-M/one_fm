@@ -14,9 +14,10 @@
   "project",
   "section_break_6",
   "priority_level",
+  "allow_staff_rotation",
+  "day_off_priority",
   "column_break_10",
   "post_location",
-  "column_break_8",
   "gender",
   "section_break_12",
   "post_description",
@@ -74,10 +75,6 @@
    "options": "Internal\nExternal"
   },
   {
-   "fieldname": "column_break_8",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "Both",
    "fieldname": "gender",
    "fieldtype": "Select",
@@ -120,19 +117,32 @@
    "label": "Post Handover Required"
   },
   {
-   "description": "0 - Lowest <br>\n2 - Highest",
+   "description": "10 - Highest <br>\n1- Lowest\n",
    "fieldname": "priority_level",
    "fieldtype": "Select",
    "label": "Priority Level",
-   "options": "0\n1\n2",
+   "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
    "reqd": 1
   },
   {
    "fieldname": "column_break_10",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_staff_rotation",
+   "fieldtype": "Check",
+   "label": "Rotate Staff"
+  },
+  {
+   "default": "0",
+   "description": "Employees coming from Day Off will be assigned on these posts",
+   "fieldname": "day_off_priority",
+   "fieldtype": "Check",
+   "label": "Day Off Priority"
   }
  ],
- "modified": "2021-04-09 16:54:54.521409",
+ "modified": "2021-05-06 10:55:03.703840",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",

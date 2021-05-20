@@ -9,6 +9,7 @@
   "client",
   "project",
   "monthly_working_days",
+  "type_of_service",
   "column_break_4",
   "commercial_registration",
   "customer_address",
@@ -19,6 +20,7 @@
   "poc",
   "section_break_15",
   "signature",
+  "civil_id_of_authorized_signature",
   "column_break_20",
   "paci",
   "column_break_21",
@@ -32,6 +34,9 @@
   "column_break_27",
   "invoice_output_format",
   "invoice_frequency",
+  "duration",
+  "duration_in_days",
+  "is_auto_renewal",
   "section_break_26",
   "is_public_holiday_rate",
   "public_holiday_rate",
@@ -200,7 +205,8 @@
   },
   {
    "fieldname": "section_break_30",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Invoice Types"
   },
   {
    "default": "0",
@@ -388,10 +394,36 @@
    "fieldtype": "Select",
    "label": "Site Wise Option",
    "options": "Add With Hours\nGroup By Days"
+  },
+  {
+   "fieldname": "type_of_service",
+   "fieldtype": "Small Text",
+   "label": "Type Of Service"
+  },
+  {
+   "fieldname": "civil_id_of_authorized_signature",
+   "fieldtype": "Attach",
+   "label": "Civil ID Of Authorized Signature"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_auto_renewal",
+   "fieldtype": "Check",
+   "label": "Is Auto Renewal"
+  },
+  {
+   "fieldname": "duration",
+   "fieldtype": "Read Only",
+   "label": "Duration"
+  },
+  {
+   "fieldname": "duration_in_days",
+   "fieldtype": "Read Only",
+   "label": "Duration In Days"
   }
  ],
- "modified": "2021-03-30 00:40:19.616224",
- "modified_by": "Administrator",
+ "modified": "2021-04-21 21:23:09.397752",
+ "modified_by": "a.yayalil@armor-services.com",
  "module": "Operations",
  "name": "Contracts",
  "owner": "Administrator",

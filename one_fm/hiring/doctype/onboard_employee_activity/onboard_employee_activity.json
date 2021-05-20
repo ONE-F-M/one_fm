@@ -1,0 +1,96 @@
+{
+ "actions": [],
+ "creation": "2021-03-15 15:07:36.833649",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "action",
+  "action_link",
+  "action_status",
+  "column_break_3",
+  "role",
+  "user",
+  "completed",
+  "required_for_employee_creation",
+  "section_break_6",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "action",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Action",
+   "options": "DocType"
+  },
+  {
+   "depends_on": "eval: doc.parenttype == \"Onboard Employee\"",
+   "fieldname": "action_link",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Action Link",
+   "options": "action"
+  },
+  {
+   "depends_on": "eval: doc.parenttype == \"Onboard Employee\"",
+   "fieldname": "action_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Action Status",
+   "options": "\nComplete\nPending\nDraft"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Role",
+   "options": "Role"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "User",
+   "options": "User"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.parenttype == \"Onboard Employee\"",
+   "fieldname": "completed",
+   "fieldtype": "Check",
+   "label": "Completed"
+  },
+  {
+   "default": "0",
+   "fieldname": "required_for_employee_creation",
+   "fieldtype": "Check",
+   "label": "Required for Employee Creation"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-03-15 15:12:57.581128",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Onboard Employee Activity",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

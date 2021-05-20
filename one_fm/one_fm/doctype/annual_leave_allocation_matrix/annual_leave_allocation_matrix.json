@@ -1,0 +1,38 @@
+{
+ "actions": [],
+ "creation": "2021-04-21 20:27:30.173845",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "leave_type",
+  "allocate_on_leave_application_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "leave_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Leave Type",
+   "options": "Leave Type"
+  },
+  {
+   "default": "Approved",
+   "fieldname": "allocate_on_leave_application_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Allocate on Leave Application Status",
+   "options": "\nApproved\nRejected\nOpen"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-04-21 20:30:59.134350",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Annual Leave Allocation Matrix",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

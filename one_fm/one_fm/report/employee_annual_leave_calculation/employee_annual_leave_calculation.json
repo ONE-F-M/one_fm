@@ -1,0 +1,28 @@
+{
+ "add_total_row": 1,
+ "creation": "2021-04-22 08:37:22.522460",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": "ONE FM",
+ "modified": "2021-04-22 08:37:22.522460",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Employee Annual Leave Calculation",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Employee",
+ "report_name": "Employee Annual Leave Calculation",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "HR User"
+  },
+  {
+   "role": "HR Manager"
+  }
+ ]
+}

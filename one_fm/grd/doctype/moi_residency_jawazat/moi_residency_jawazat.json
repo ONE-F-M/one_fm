@@ -1,12 +1,19 @@
 {
+ "autoname": "naming_series:",
  "creation": "2020-08-31 19:39:53.406596",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "naming_series",
   "category",
   "amended_from",
   "employee",
+  "date_of_application",
+  "preparation",
+  "column_break_5",
+  "employee_id",
+  "renewal_or_extend",
   "section_break_4",
   "first_name_arabic",
   "second_name_arabic",
@@ -29,6 +36,7 @@
   "passport_type",
   "passport_issue_date",
   "passport_expiry_date",
+  "pam_designation",
   "nationality",
   "section_break_23",
   "company_pam_file_number",
@@ -37,17 +45,42 @@
   "company_email_id",
   "paci_number",
   "governorate",
-  "column_break_34",
+  "column_break_36",
   "company_location",
   "company_block_number",
   "company_street_name",
   "company_building_name",
-  "company_contact_number"
+  "company_contact_number",
+  "section_break_42",
+  "apply_online",
+  "invoice_attachment",
+  "residency_attachment",
+  "new_residency_expiry_date",
+  "completed",
+  "column_break_34",
+  "apply_online_date",
+  "invoice_attachment_date",
+  "residency_attachment_date",
+  "new_residency_expiry_date_update_time",
+  "completed_on",
+  "section_break_40",
+  "grd_operator",
+  "grd_supervisor",
+  "reminded_grd_operator",
+  "reminded_grd_operator_again"
  ],
  "fields": [
   {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "MOI-.YYYY.-",
+   "print_hide": 1
+  },
+  {
    "fieldname": "category",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Category",
    "options": "First Time\nTransfer\nRenewal\nCancellation"
   },
@@ -61,27 +94,14 @@
    "read_only": 1
   },
   {
-   "fetch_from": "employee.date_of_birth",
-   "fieldname": "birth_date",
-   "fieldtype": "Read Only",
-   "label": "Birth Date"
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
   },
   {
-   "fieldname": "centeralized_number",
-   "fieldtype": "Read Only",
-   "label": "Centeralized Number"
-  },
-  {
-   "fetch_from": "employee.gender",
-   "fieldname": "gender",
-   "fieldtype": "Read Only",
-   "label": "Gender"
-  },
-  {
-   "fetch_from": "employee.one_fm_place_of_birth",
-   "fieldname": "place_of_birth",
-   "fieldtype": "Read Only",
-   "label": "Place of Birth"
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
   },
   {
    "fetch_from": "employee.one_fm_first_name_in_arabic",
@@ -108,6 +128,10 @@
    "label": "Last Name Arabic"
   },
   {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
    "fetch_from": "employee.first_name",
    "fieldname": "first_name_english",
    "fieldtype": "Read Only",
@@ -130,6 +154,45 @@
    "fieldname": "last_name_english",
    "fieldtype": "Read Only",
    "label": "Last Name English"
+  },
+  {
+   "fieldname": "section_break_20",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "one_fm_civil_id",
+   "fieldtype": "Read Only",
+   "label": "Civil ID Number",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Read Only",
+   "label": "Designation"
+  },
+  {
+   "fetch_from": "employee.one_fm_place_of_birth",
+   "fieldname": "place_of_birth",
+   "fieldtype": "Read Only",
+   "label": "Place Of Birth"
+  },
+  {
+   "fetch_from": "employee.gender",
+   "fieldname": "gender",
+   "fieldtype": "Read Only",
+   "label": "Gender"
+  },
+  {
+   "fetch_from": "employee.date_of_birth",
+   "fieldname": "birth_date",
+   "fieldtype": "Read Only",
+   "label": "Birth Date"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "employee.passport_number",
@@ -156,26 +219,26 @@
    "label": "Passport Expiry Date"
   },
   {
+   "fetch_from": "employee.one_fm_pam_designation",
+   "fieldname": "pam_designation",
+   "fieldtype": "Read Only",
+   "hidden": 1,
+   "label": "PAM Designation"
+  },
+  {
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Read Only",
    "label": "Nationality"
   },
   {
-   "fetch_from": "employee.designation",
-   "fieldname": "designation",
-   "fieldtype": "Read Only",
-   "label": "Designation"
+   "fieldname": "section_break_23",
+   "fieldtype": "Section Break"
   },
   {
    "fieldname": "company_pam_file_number",
    "fieldtype": "Read Only",
    "label": "Company PAM File Number"
-  },
-  {
-   "fieldname": "company_centralized_number",
-   "fieldtype": "Read Only",
-   "label": "Company Centralized Number"
   },
   {
    "fieldname": "company_trade_name",
@@ -191,6 +254,15 @@
    "fieldname": "paci_number",
    "fieldtype": "Read Only",
    "label": "PACI Number"
+  },
+  {
+   "fieldname": "governorate",
+   "fieldtype": "Read Only",
+   "label": "Governorate"
+  },
+  {
+   "fieldname": "column_break_36",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "company_location",
@@ -213,61 +285,175 @@
    "label": "Company Building Name"
   },
   {
-   "fieldname": "company_contact_number",
-   "fieldtype": "Read Only",
-   "label": "Company Contact Number"
+   "fieldname": "section_break_42",
+   "fieldtype": "Section Break",
+   "print_hide": 1
   },
   {
-   "fieldname": "employee",
-   "fieldtype": "Link",
-   "label": "Employee",
-   "options": "Employee"
+   "default": "No",
+   "fieldname": "apply_online",
+   "fieldtype": "Select",
+   "label": "Apply Online",
+   "options": "\nYes\nNo",
+   "print_hide": 1
   },
   {
-   "fetch_from": "employee.one_fm_civil_id",
-   "fieldname": "one_fm_civil_id",
-   "fieldtype": "Read Only",
-   "label": "Civil ID Number",
-   "options": "Employee"
+   "fieldname": "invoice_attachment",
+   "fieldtype": "Attach",
+   "label": "Upload Payment Invoice",
+   "print_hide": 1
   },
   {
-   "fieldname": "section_break_23",
-   "fieldtype": "Section Break"
+   "fieldname": "residency_attachment",
+   "fieldtype": "Attach",
+   "label": "Upload Residency ",
+   "print_hide": 1
   },
   {
-   "fieldname": "governorate",
-   "fieldtype": "Read Only",
-   "label": "Governorate"
+   "fieldname": "new_residency_expiry_date",
+   "fieldtype": "Date",
+   "label": "New Residency Expiry Date",
+   "print_hide": 1
   },
   {
-   "fieldname": "section_break_4",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "column_break_15",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_20",
-   "fieldtype": "Section Break"
+   "default": "No",
+   "fieldname": "completed",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Completed",
+   "options": "\nYes\nNo",
+   "print_hide": 1
   },
   {
    "fieldname": "column_break_34",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_20",
+   "fieldname": "apply_online_date",
+   "fieldtype": "Data",
+   "label": "Apply Online On",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "invoice_attachment_date",
+   "fieldtype": "Data",
+   "label": "Upload Payment Invoice On"
+  },
+  {
+   "fieldname": "residency_attachment_date",
+   "fieldtype": "Data",
+   "label": "Upload Residency On",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "new_residency_expiry_date_update_time",
+   "fieldtype": "Read Only",
+   "label": "New Residency Expiry Date Update On",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "completed_on",
+   "fieldtype": "Date",
+   "label": "Completed On",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "section_break_40",
+   "fieldtype": "Section Break",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "label": "GRD Operator",
+   "options": "User",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "label": "GRD Supervisor",
+   "options": "User",
+   "print_hide": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator",
+   "fieldtype": "Check",
+   "label": "Reminded GRD Operator",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator_again",
+   "fieldtype": "Check",
+   "label": "Reminded GRD Operator Again",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "renewal_or_extend",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Renewal Or Extend",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "column_break_5",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "Preparation",
+   "options": "Preparation"
+  },
+  {
+   "fieldname": "company_contact_number",
+   "fieldtype": "Read Only",
+   "label": "Company Contact Number"
+  },
+  {
+   "fieldname": "company_centralized_number",
+   "fieldtype": "Read Only",
+   "label": "Company Centralized Number"
+  },
+  {
+   "fieldname": "centeralized_number",
+   "fieldtype": "Read Only",
+   "label": "Centeralized Number"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Date Of Application",
+   "print_hide": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2021-01-21 14:43:22.512035",
+ "modified": "2021-04-30 19:53:01.457632",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -277,6 +463,34 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

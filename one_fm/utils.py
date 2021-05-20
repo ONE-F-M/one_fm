@@ -540,164 +540,101 @@ def create_gp_letter_request():
 
 
 
+@frappe.whitelist(allow_guest=True)
+def leave_appillication_on_submit(doc, method):
+    if doc.status == "Approved":
+        leave_appillication_paid_sick_leave(doc, method)
+        update_employee_hajj_status(doc, method)
 
 @frappe.whitelist(allow_guest=True)
-def paid_sick_leave_validation(doc, method):
+def leave_appillication_on_cancel(doc, method):
+    update_employee_hajj_status(doc, method)
+
+@frappe.whitelist(allow_guest=True)
+def leave_appillication_paid_sick_leave(doc, method):
+    if doc.leave_type and frappe.db.get_value("Leave Type", doc.leave_type, 'one_fm_is_paid_sick_leave') == 1:
+        create_additional_salary_for_paid_sick_leave(doc)
+
+def create_additional_salary_for_paid_sick_leave(doc):
     salary = get_salary(doc.employee)
     daily_rate = salary/30
+    from erpnext.hr.doctype.leave_application.leave_application import get_leave_details
+    leave_details = get_leave_details(doc.employee, nowdate())
+    curr_year_applied_days = 0
+    if doc.leave_type in leave_details['leave_allocation'] and leave_details['leave_allocation'][doc.leave_type]:
+        curr_year_applied_days = leave_details['leave_allocation'][doc.leave_type]['leaves_taken']
+    if curr_year_applied_days == 0:
+        curr_year_applied_days = doc.total_leave_days
 
-    allocation_records = get_leave_allocation_records(nowdate(), doc.employee, "Sick Leave - مرضية")
-    allocation_from_date = allocation_records[doc.employee]["Sick Leave - مرضية"].from_date
-    allocation_to_date = allocation_records[doc.employee]["Sick Leave - مرضية"].to_date
+    leave_payment_breakdown = get_leave_payment_breakdown(doc.leave_type)
 
-    curr_year_applied_days = get_approved_leaves_for_period(doc.employee, "Sick Leave - مرضية", allocation_from_date, allocation_to_date)
+    total_payment_days = 0
+    if leave_payment_breakdown:
+        threshold_days = 0
+        for payment_breakdown in leave_payment_breakdown:
+            payment_days = 0
+            threshold_days += payment_breakdown.threshold_days
+            if total_payment_days < doc.total_leave_days:
+                if curr_year_applied_days >= threshold_days and (curr_year_applied_days - doc.total_leave_days) < threshold_days:
+                    payment_days = threshold_days - (curr_year_applied_days-doc.total_leave_days) - total_payment_days
+                elif curr_year_applied_days <= threshold_days: # Gives true this also doc.total_leave_days <= threshold_days:
+                    payment_days = doc.total_leave_days - total_payment_days
+                create_additional_salary(salary, daily_rate, payment_days, doc, payment_breakdown)
+                total_payment_days += payment_days
 
-    remain_paid = 0
-    remain_three_quarter_paid = 0
-    remain_half_paid = 0
-    remain_quarter_paid = 0
-    remain_without_paid = 0
+    if total_payment_days < doc.total_leave_days and doc.total_leave_days-total_payment_days > 0:
+        create_additional_salary(salary, daily_rate, doc.total_leave_days-total_payment_days, doc)
 
-    if curr_year_applied_days>=0 and curr_year_applied_days<=15:
-        remain_paid = 15-curr_year_applied_days
-        if doc.total_leave_days > remain_paid:
-            remain_three_quarter_paid = doc.total_leave_days-remain_paid
-            if remain_three_quarter_paid>10:
-                remain_three_quarter_paid = 10
-                remain_half_paid = (doc.total_leave_days-remain_paid)-10
-                if remain_half_paid>10:
-                    remain_half_paid = 10
-                    remain_quarter_paid = ((doc.total_leave_days-remain_paid)-10)-10
-                    if remain_quarter_paid>10:
-                        remain_quarter_paid = 10
-                        remain_without_paid = (((doc.total_leave_days-remain_paid)-10)-10)-10
-
-    elif curr_year_applied_days>15 and curr_year_applied_days<=25:
-        remain_three_quarter_paid = 25-curr_year_applied_days
-        if doc.total_leave_days>remain_three_quarter_paid:
-            remain_half_paid = doc.total_leave_days-remain_three_quarter_paid
-            if remain_half_paid>10:
-                remain_half_paid = 10
-                remain_quarter_paid = (doc.total_leave_days-remain_three_quarter_paid)-10
-                if remain_quarter_paid>10:
-                    remain_quarter_paid = 10
-                    remain_without_paid = ((doc.total_leave_days-remain_three_quarter_paid)-10)-10
-        else:
-            remain_three_quarter_paid = doc.total_leave_days
-
-
-    elif curr_year_applied_days>25 and curr_year_applied_days<=35:
-        remain_half_paid = 35-curr_year_applied_days
-        if doc.total_leave_days>remain_half_paid:
-            remain_quarter_paid = doc.total_leave_days-remain_half_paid
-            if remain_quarter_paid>10:
-                remain_quarter_paid = 10
-                remain_without_paid = (doc.total_leave_days-remain_half_paid)-10
-        else:
-            remain_half_paid = doc.total_leave_days
-
-
-    elif curr_year_applied_days>35 and curr_year_applied_days<=45:
-        remain_quarter_paid = 45-curr_year_applied_days
-        if doc.total_leave_days>remain_quarter_paid:
-            remain_quarter_paid = doc.total_leave_days-remain_quarter_paid
-            if remain_quarter_paid>10:
-                remain_quarter_paid = 10
-                remain_without_paid = (curr_year_applied_days-35)-10
-
-    elif curr_year_applied_days>45 and curr_year_applied_days<=75:
-        remain_without_paid = 75-curr_year_applied_days
-        if doc.total_leave_days<remain_without_paid:
-            remain_without_paid = doc.total_leave_days
-
-
-    # frappe.msgprint('Year Applied days : '+cstr(curr_year_applied_days))
-    # frappe.msgprint('Employee Salary : '+cstr(salary))
-    # frappe.msgprint('Daily Rate : '+cstr(daily_rate))
-    # frappe.msgprint('Remain Paid : '+cstr(remain_paid))
-
-    # frappe.msgprint('Remain Three Quarter Paid : '+cstr(remain_three_quarter_paid))
-    # frappe.msgprint('Remain Half Paid : '+cstr(remain_half_paid))
-    # frappe.msgprint('Remain Quarter Paid : '+cstr(remain_quarter_paid))
-    # frappe.msgprint('Remain Without Paid : '+cstr(remain_without_paid))
-
-    if remain_three_quarter_paid>0:
+def create_additional_salary(salary, daily_rate, payment_days, leave_application, payment_breakdown=False):
+    if payment_days > 0:
+        deduction_percentage = 1
+        salary_component = frappe.db.get_value("Leave Type", leave_application.leave_type, "one_fm_paid_sick_leave_deduction_salary_component")
+        if payment_breakdown:
+            deduction_percentage = payment_breakdown.salary_deduction_percentage/100
+            salary_component = payment_breakdown.salary_component
         deduction_notes = """
             Employee Salary: <b>{0}</b><br>
             Daily Rate: <b>{1}</b><br>
             Deduction Days Number: <b>{2}</b><br>
-            Paid Percent: <b>75%</b>
-        """.format(salary,daily_rate,remain_three_quarter_paid)
+            Deduction Percent: <b>{3}%</b>
+        """.format(salary, daily_rate, payment_days, deduction_percentage*100)
 
-        frappe.get_doc({
+        additional_salary = frappe.get_doc({
             "doctype":"Additional Salary",
-            "employee": doc.employee,
-            "docstatus": 1,
-            "salary_component": 'Sick Leave Deduction',
-            "payroll_date": doc.from_date,
-            "leave_application": doc.name,
+            "employee": leave_application.employee,
+            "salary_component": salary_component,
+            "payroll_date": leave_application.from_date,
+            "leave_application": leave_application.name,
             "notes": deduction_notes,
-            "amount": remain_three_quarter_paid*daily_rate*0.25
+            "amount": payment_days*daily_rate*deduction_percentage
         }).insert(ignore_permissions=True)
+        additional_salary.submit()
 
-    if remain_half_paid>0:
-        deduction_notes = """
-            Employee Salary: <b>{0}</b><br>
-            Daily Rate: <b>{1}</b><br>
-            Deduction Days Number: <b>{2}</b><br>
-            Paid Percent: <b>50%</b>
-        """.format(salary,daily_rate,remain_half_paid)
+def get_leave_payment_breakdown(leave_type):
+    leave_type_doc = frappe.get_doc("Leave Type", leave_type)
+    return leave_type_doc.one_fm_leave_payment_breakdown if leave_type_doc.one_fm_leave_payment_breakdown else False
 
-        frappe.get_doc({
-            "doctype":"Additional Salary",
-            "employee": doc.employee,
-            "docstatus": 1,
-            "salary_component": 'Sick Leave Deduction',
-            "payroll_date": doc.from_date,
-            "leave_application": doc.name,
-            "notes": deduction_notes,
-            "amount": remain_half_paid*daily_rate*0.5
-        }).insert(ignore_permissions=True)
-
-    if remain_quarter_paid>0:
-        deduction_notes = """
-            Employee Salary: <b>{0}</b><br>
-            Daily Rate: <b>{1}</b><br>
-            Deduction Days Number: <b>{2}</b><br>
-            Paid Percent: <b>25%</b>
-        """.format(salary,daily_rate,remain_quarter_paid)
-
-        frappe.get_doc({
-            "doctype":"Additional Salary",
-            "employee": doc.employee,
-            "docstatus": 1,
-            "salary_component": 'Sick Leave Deduction',
-            "payroll_date": doc.from_date,
-            "leave_application": doc.name,
-            "notes": deduction_notes,
-            "amount": remain_quarter_paid*daily_rate*0.75
-        }).insert(ignore_permissions=True)
-
-    if remain_without_paid>0:
-        deduction_notes = """
-            Employee Salary: <b>{0}</b><br>
-            Daily Rate: <b>{1}</b><br>
-            Deduction Days Number: <b>{2}</b><br>
-            Paid Percent: <b>0%</b>
-        """.format(salary,daily_rate,remain_without_paid)
-
-        frappe.get_doc({
-            "doctype":"Additional Salary",
-            "employee": doc.employee,
-            "docstatus": 1,
-            "salary_component": 'Sick Leave Deduction',
-            "payroll_date": doc.from_date,
-            "leave_application": doc.name,
-            "notes": deduction_notes,
-            "amount": remain_without_paid*daily_rate
-        }).insert(ignore_permissions=True)
-
-
+def validate_leave_type_for_one_fm_paid_leave(doc, method):
+    if doc.is_lwp:
+        doc.one_fm_is_paid_sick_leave = False
+        doc.one_fm_is_paid_annual_leave = False
+    elif doc.one_fm_is_paid_sick_leave:
+        doc.is_lwp = False
+        doc.one_fm_is_paid_annual_leave = False
+        doc.one_fm_is_hajj_leave = False
+        if not doc.one_fm_paid_sick_leave_deduction_salary_component and not doc.one_fm_leave_payment_breakdown:
+            frappe.throw(_('Either Paid Sick Leave Deduction Salary Component or Leave Payment Breakdown is Mandatory'))
+    elif doc.one_fm_is_paid_annual_leave:
+        doc.is_lwp = False
+        doc.one_fm_is_paid_sick_leave = False
+        doc.one_fm_is_hajj_leave = False
+        # if not doc.one_fm_annual_leave_allocation_reduction:
+        #     frappe.throw(_('Annual Leave Allocation Reduction is Mandatory'))
+        if not doc.leave_allocation_matrix:
+            frappe.throw(_('Leave Allocation Matrix is Mandatory'))
+    elif doc.one_fm_is_hajj_leave:
+        doc.one_fm_is_paid_annual_leave = False
+        doc.one_fm_is_hajj_leave = False
 
 @frappe.whitelist(allow_guest=True)
 def bereavement_leave_validation(doc, method):
@@ -730,20 +667,17 @@ def bereavement_leave_validation(doc, method):
 
 @frappe.whitelist(allow_guest=True)
 def update_employee_hajj_status(doc, method):
-    if doc.leave_type == 'Hajj leave - حج':
-        emp_doc = frappe.get_doc('Employee', doc.employee)
-        emp_doc.went_to_hajj = 1
-        emp_doc.flags.ignore_mandatory = True
-        emp_doc.save()
-        frappe.db.commit()
+    if doc.leave_type and frappe.db.get_value('Leave Type', doc.leave_type, 'one_fm_is_hajj_leave') == 1:
+        if method == "on_submit":
+            frappe.db.set_value("Employee", doc.employee, 'went_to_hajj', True)
+        if method == "on_cancel":
+            frappe.db.set_value("Employee", doc.employee, 'went_to_hajj', False)
 
 @frappe.whitelist(allow_guest=True)
 def validate_hajj_leave(doc, method):
-    if doc.leave_type == 'Hajj leave - حج':
-        emp_doc = frappe.get_doc('Employee', doc.employee)
-        if emp_doc.went_to_hajj:
-            frappe.throw("You can't apply for hajj leave twice")
-
+    if doc.leave_type and frappe.db.get_value('Leave Type', doc.leave_type, 'one_fm_is_hajj_leave') == 1:
+        if frappe.db.get_value('Employee', doc.employee, 'went_to_hajj') == 1:
+            frappe.throw(_("You can't apply for hajj leave twice"))
 
 def get_salary(employee):
     salary_amount = 0
@@ -774,156 +708,177 @@ def get_salary(employee):
 
     return salary_amount
 
-
-
 @frappe.whitelist(allow_guest=True)
 def hooked_leave_allocation_builder():
-    emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name", "date_of_joining","went_to_hajj"])
-    for emp in emps:
-        lts = frappe.get_list("Leave Type", fields = ["name","max_leaves_allowed"])
-        for lt in lts:
-            allocation_records = get_leave_allocation_records(nowdate(), emp.name, lt.name)
+    # Get Active Employee List
+    employee_list = frappe.get_all("Employee", filters={"status": "Active"},
+        fields=["name", "date_of_joining", "went_to_hajj", "grade", "leave_policy"])
+    frappe.enqueue(leave_allocation_builder, timeout=600, employee_list=employee_list)
 
-            if not allocation_records:
-                allocation_from_date = ""
-                allocation_to_date = ""
-                new_leaves_allocated = 0
-                if getdate(add_years(emp.date_of_joining,1)) > getdate(nowdate()):
-                    allocation_from_date = emp.date_of_joining
-                    allocation_to_date = add_days(add_years(emp.date_of_joining,1),-1)
+def leave_allocation_builder(employee_list):
+    from erpnext.hr.doctype.leave_allocation.leave_allocation import get_leave_allocation_for_period
+    # Get Leave Policy for employee
+    leave_type_details = get_leave_type_details()
+    for employee in employee_list:
+        leave_policy = get_employee_leave_policy(employee)
+        if leave_policy and leave_policy.leave_policy_details:
+            for policy_detail in leave_policy.leave_policy_details:
+                if getdate(add_years(employee.date_of_joining, 1)) > getdate(nowdate()):
+                    from_date = getdate(employee.date_of_joining)
                 else:
-                    day = "0" + str(getdate(emp.date_of_joining).day) if len(str(getdate(emp.date_of_joining).day)) == 1 else str(getdate(emp.date_of_joining).day)
-                    month = "0" + str(getdate(emp.date_of_joining).month) if len(str(getdate(emp.date_of_joining).month)) == 1 else str(getdate(emp.date_of_joining).month)
-                    year = str(getdate(nowdate()).year)
+                    datetime1 = get_datetime(getdate(employee.date_of_joining))
+                    datetime2 = get_datetime(getdate(nowdate()))
 
-                    if getdate(emp.date_of_joining).month<=getdate(nowdate()).month:
-                        if getdate(emp.date_of_joining).day<=getdate(nowdate()).day:
-                            year = str(getdate(nowdate()).year)
-                        else:
-                            year = str(getdate(nowdate()).year-1)
-                    else:
-                        year = str(getdate(nowdate()).year-1)
+                    time_difference = relativedelta(datetime2, datetime1)
+                    difference_in_years = time_difference.years
+                    from_date = getdate(add_years(employee.date_of_joining, difference_in_years))
 
-                    allocation_from_date = year + "-" + month + "-" + day
-                    allocation_to_date = add_days(add_years(allocation_from_date,1),-1)
+                to_date = getdate(add_days(add_years(from_date, 1), -1))
 
-                if lt.name == "Annual Leave - اجازة اعتيادية":
-                    default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
-                    new_leaves_allocated = default_annual_leave_balance/365
+                # Check allocation exists for leave type in leave Policy, If not then create leave allocation
+                leave_allocated = get_leave_allocation_for_period(employee.name, policy_detail.leave_type, from_date, to_date)
+                if not leave_allocated and not (leave_type_details.get(policy_detail.leave_type).is_lwp):
+                    create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date)
 
-                    su = frappe.new_doc("Leave Allocation")
-                    su.update({
-                        "leave_type": "Annual Leave - اجازة اعتيادية",
-                        "employee": emp.name,
-                        "from_date": allocation_from_date,
-                        "to_date": allocation_to_date,
-                        "carry_forward": 1,
-                        "new_leaves_allocated": new_leaves_allocated
-                        })
-                    su.save(ignore_permissions=True)
-                    su.submit()
-                    frappe.db.commit()
-                    print('New **Annual Leave - اجازة اعتيادية** for employee {0}'.format(emp.name))
+def get_employee_leave_policy(employee):
+    leave_policy = employee.leave_policy
+    if not leave_policy and employee.grade:
+        leave_policy = frappe.db.get_value("Employee Grade", employee.grade, "default_leave_policy")
+    if leave_policy:
+        return frappe.get_doc("Leave Policy", leave_policy)
+    return False
 
-                if lt.name == "Sick Leave - مرضية":
-                    sl = frappe.new_doc("Leave Allocation")
-                    sl.update({
-                            "leave_type": "Sick Leave - مرضية",
-                            "employee": emp.name,
-                            "from_date": allocation_from_date,
-                            "to_date": allocation_to_date,
-                            "new_leaves_allocated": lt.max_leaves_allowed  #75
-                            })
-                    sl.save(ignore_permissions=True)
-                    sl.submit()
-                    frappe.db.commit()
-                    print('New **Sick Leave - مرضية** for employee {0}'.format(emp.name))
+def get_leave_type_details():
+	leave_type_details = frappe._dict()
+	leave_types = frappe.get_all("Leave Type",
+		fields=["name", "is_lwp", "is_earned_leave", "is_compensatory", "is_carry_forward",
+            "expire_carry_forwarded_leaves_after_days", "one_fm_is_hajj_leave", "one_fm_is_paid_sick_leave",
+            "one_fm_is_paid_annual_leave"])
+	for d in leave_types:
+		leave_type_details.setdefault(d.name, d)
+	return leave_type_details
 
-                if lt.name == "Hajj leave - حج" and not emp.went_to_hajj:
-                    sl = frappe.new_doc("Leave Allocation")
-                    sl.update({
-                            "leave_type": "Hajj leave - حج",
-                            "employee": emp.name,
-                            "from_date": allocation_from_date,
-                            "to_date": allocation_to_date,
-                            "new_leaves_allocated": lt.max_leaves_allowed  #21
-                            })
-                    sl.save(ignore_permissions=True)
-                    sl.submit()
-                    frappe.db.commit()
-                    print('New **Hajj leave - حج** for employee {0}'.format(emp.name))
+def create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date):
+    ''' Creates leave allocation for the given employee in the provided leave policy '''
+    leave_type = policy_detail.leave_type
+    new_leaves_allocated = policy_detail.annual_allocation
+    carry_forward = 0
+    if leave_type_details.get(leave_type).is_carry_forward:
+        carry_forward = 1
 
-                if lt.name == "Bereavement - وفاة":
-                    sl = frappe.new_doc("Leave Allocation")
-                    sl.update({
-                            "leave_type": "Bereavement - وفاة",
-                            "employee": emp.name,
-                            "from_date": allocation_from_date,
-                            "to_date": allocation_to_date,
-                            "new_leaves_allocated": lt.max_leaves_allowed  #150
-                            })
-                    sl.save(ignore_permissions=True)
-                    sl.submit()
-                    frappe.db.commit()
-                    print('New **Bereavement - وفاة** for employee {0}'.format(emp.name))
+    # Earned Leaves and Compensatory Leaves are allocated by scheduler, initially allocate 0
+    if leave_type_details.get(leave_type).is_earned_leave == 1 or leave_type_details.get(leave_type).is_compensatory == 1:
+        new_leaves_allocated = 0
 
+    # Annual Leave allocated by scheduler, initially allocate 0
+    if leave_type_details.get(leave_type).one_fm_is_paid_annual_leave == 1:
+        default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
+        new_leaves_allocated = default_annual_leave_balance/365
+
+    allocate_leave = True
+    # Hajj Leave is allocated for employees who do not perform hajj before
+    if leave_type_details.get(leave_type).one_fm_is_hajj_leave == 1 and employee.went_to_hajj:
+        allocate_leave = False
+
+    if allocate_leave:
+        allocation = frappe.get_doc(dict(
+            doctype="Leave Allocation",
+            employee=employee.name,
+            leave_type=leave_type,
+            from_date=from_date,
+            to_date=to_date,
+            new_leaves_allocated=new_leaves_allocated,
+            carry_forward=carry_forward
+        ))
+        allocation.save(ignore_permissions = True)
+        allocation.submit()
 
 def increase_daily_leave_balance():
-    emps = frappe.get_all("Employee",filters = {"status": "Active"}, fields = ["name","annual_leave_balance"])
-    for emp in emps:
-        allocation = frappe.db.sql("select name from `tabLeave Allocation` where leave_type='Annual Leave - اجازة اعتيادية' and employee='{0}' and docstatus=1 and '{1}' between from_date and to_date order by to_date desc limit 1".format(emp.name,nowdate()))
-        if allocation:
-            if emp.annual_leave_balance>0:
-                leave_balance = emp.annual_leave_balance/365
+    # Get List of Leave Allocation for today (Leave Type - Is Paid Annual Leave)
+    query = """
+        select
+            la.name, la.leave_type
+        from
+            `tabLeave Allocation` la, `tabLeave Type` lt
+        where
+            lt.one_fm_is_paid_annual_leave=1 and la.docstatus=1 and '{0}' between from_date and to_date
+            and la.leave_type=lt.name
+    """
+    allocation_list = frappe.db.sql(query.format(getdate(nowdate())), as_dict=True)
+    from erpnext.hr.doctype.leave_application.leave_application import get_leaves_for_period
+    for alloc in allocation_list:
+        allow_allocation = True
+
+        allocation = frappe.get_doc("Leave Allocation", alloc.name)
+        leave_type = frappe.get_doc("Leave Type", alloc.leave_type)
+
+        # Check if employee absent today then not allow annual leave allocation for today
+        is_absent = frappe.db.sql("""select name, status from `tabAttendance` where employee = %s and
+            attendance_date = %s and docstatus = 1 and status = 'Absent' """,
+			(allocation.employee, getdate(nowdate())), as_dict=True)
+        if is_absent and len(is_absent) > 0:
+            allow_allocation = False
+
+        # Check if employee on leave today and allow annual leave allocation for today
+        leave_appln = frappe.db.sql("""select name, status, leave_type from `tabLeave Application` where employee = %s and
+            (%s between from_date and to_date) and docstatus = 1""",
+			(allocation.employee, getdate(nowdate())), as_dict=True)
+        if leave_appln and len(leave_appln) > 0:
+            allow_allocation = False
+            if leave_type.leave_allocation_matrix:
+                for matrix in leave_type.leave_allocation_matrix:
+                    if matrix.leave_type == leave_appln[0].leave_type and matrix.allocate_on_leave_application_status == leave_appln[0].status:
+                        allow_allocation = True
+
+        if allow_allocation:
+            # Get Daily Allocation of Annual Leave
+            employee_annual_leave = frappe.db.get_value('Employee', allocation.employee, 'annual_leave_balance')
+            if employee_annual_leave > 0:
+                daily_allocation = employee_annual_leave/365
             else:
                 default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
-                leave_balance = default_annual_leave_balance/365
+                daily_allocation = default_annual_leave_balance/365
 
-            final_leave_balance = leave_balance
+            new_leaves_allocated = daily_allocation
 
-            allocation_records = get_leave_allocation_records(nowdate(), emp.name, 'Sick Leave - مرضية')
-            allocation_from_date = allocation_records[emp.name]["Sick Leave - مرضية"].from_date
-            allocation_to_date = allocation_records[emp.name]["Sick Leave - مرضية"].to_date
+            # Set Daily Allocation from annual leave dependent leave type and reduction level
+            if leave_type.one_fm_annual_leave_allocation_reduction:
+                leave_days = 0
+                if leave_type.one_fm_paid_sick_leave_type_dependent:
+                    leave_days += get_leaves_for_period(allocation.employee, leave_type.one_fm_paid_sick_leave_type_dependent, allocation.from_date, allocation.to_date)
+                else:
+                    leave_type_list = frappe.get_all('Leave Type', filters= {'one_fm_is_paid_sick_leave': 1}, fields= ["name"])
+                    for lt in leave_type_list:
+                        leave_days += get_leaves_for_period(allocation.employee, lt.name, allocation.from_date, allocation.to_date)
 
-            attendance = frappe.db.sql_list("select attendance_date from `tabAttendance` where docstatus=1 and status='On Leave' and leave_type='Sick Leave - مرضية' and employee='{0}' and attendance_date between '{1}' and '{2}' ".format(emp.name, allocation_from_date, allocation_to_date))
+                if leave_days > 0:
+                    percent_of_reduction = 0
+                    allocation_reduction = sorted(leave_type.one_fm_annual_leave_allocation_reduction, key=lambda x: x.number_of_paid_sick_leave)
+                    for alloc_reduction in allocation_reduction:
+                        if alloc_reduction.number_of_paid_sick_leave <= leave_days:
+                            percent_of_reduction = alloc_reduction.percentage_of_allocation_reduction
+                    if percent_of_reduction > 0:
+                        new_leaves_allocated = daily_allocation - daily_allocation * (percent_of_reduction/100)
 
-            attendance_until_today = frappe.db.sql("select count(attendance_date) from `tabAttendance` where docstatus=1 and status='On Leave' and leave_type='Sick Leave - مرضية' and employee='{0}' and attendance_date between '{1}' and '{2}' ".format(emp.name, allocation_from_date, getdate(nowdate())))[0][0]
+            allocation.new_leaves_allocated = allocation.new_leaves_allocated+new_leaves_allocated
+            allocation.total_leaves_allocated = allocation.new_leaves_allocated+allocation.unused_leaves
+            allocation.save()
 
-            if getdate(nowdate()) not in attendance:
-                attendance_until_today = 0
+            ''' Delete old ledger entry'''
+            frappe.db.sql("""DELETE FROM `tabLeave Ledger Entry`
+                WHERE `transaction_name`=%s""", (allocation.name))
 
-            if attendance_until_today>=0 and attendance_until_today<=15:
-                final_leave_balance = leave_balance
-            elif attendance_until_today>15 and attendance_until_today<=25:
-                final_leave_balance = leave_balance*0.75
-            elif attendance_until_today>25 and attendance_until_today<=35:
-                final_leave_balance = leave_balance*0.5
-            elif attendance_until_today>35 and attendance_until_today<=45:
-                final_leave_balance = leave_balance*0.25
-            elif attendance_until_today>45 and attendance_until_today<=75:
-                final_leave_balance = leave_balance*0.0
-
-            print(attendance_until_today)
-            print('******************************************')
-            print(final_leave_balance)
-
-            doc = frappe.get_doc('Leave Allocation', allocation[0][0])
-            doc.new_leaves_allocated = doc.new_leaves_allocated+final_leave_balance
-            doc.total_leaves_allocated = doc.new_leaves_allocated+doc.unused_leaves
-            doc.save()
-            frappe.db.commit()
-            print("Increase daily leave balance for employee {0}".format(emp.name))
-
+            ''' Create new ledger entry'''
             ledger = frappe._dict(
                 doctype='Leave Ledger Entry',
-                employee=emp.name,
-                leave_type='Annual Leave - اجازة اعتيادية',
+                employee=allocation.employee,
+                leave_type=leave_type.name,
                 transaction_type='Leave Allocation',
-                transaction_name=allocation[0][0],
-                leaves = final_leave_balance,
-                from_date = allocation_from_date,
-                to_date = allocation_to_date,
-                is_carry_forward=0,
+                transaction_name=allocation.name,
+                leaves = allocation.total_leaves_allocated,
+                from_date = allocation.from_date,
+                to_date = allocation.to_date,
+                is_carry_forward=leave_type.is_carry_forward,
                 is_expired=0,
                 is_lwp=0
             )
@@ -976,28 +931,24 @@ def get_approved_leaves_for_period(employee, leave_type, from_date, to_date):
 
 
 @frappe.whitelist()
-def get_item_code(parent_item_group = None ,subitem_group = None ,item_group = None ,cur_item_id = None):
-    item_code = None
-    if parent_item_group:
-        # parent_item_group_code = frappe.db.get_value('Item Group', parent_item_group, 'item_group_code')
-        parent_item_group_code = ""
-        item_code = parent_item_group_code
-
-        if subitem_group:
-            # subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'item_group_code')
-            subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'one_fm_item_group_abbr')
+def get_item_code(subitem_group = None ,item_group = None ,cur_item_id = None):
+    item_code = ""
+    if subitem_group:
+        subitem_group_code = frappe.db.get_value('Item Group', subitem_group, 'one_fm_item_group_abbr')
+        if subitem_group_code:
             item_code = subitem_group_code
-
-            if item_group:
-                # item_group_code = frappe.db.get_value('Item Group', item_group, 'item_group_code')
-                item_group_code = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
+        else:
+            frappe.msgprint(_("Set Abbreviation for the Item Group {0}".format(subitem_group)),
+                alert=True, indicator='orange')
+        if item_group:
+            item_group_code = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
+            if item_group_code:
                 item_code = subitem_group_code+"-"+item_group_code
-
-                if cur_item_id:
-                    item_code = subitem_group_code+"-"+item_group_code+"-"+cur_item_id
-
+            else:
+                frappe.msgprint(_("Set Abbreviation for the Item Group {0}".format(item_group)),
+					alert=True, indicator='orange')
+    item_code += ("-"+cur_item_id) if cur_item_id else ""
     return item_code
-
 
 @frappe.whitelist(allow_guest=True)
 def pam_salary_certificate_expiry_date():
@@ -1208,8 +1159,8 @@ def after_insert_item_group(doc, method):
 def before_insert_item(doc, method):
     if not doc.item_id:
         set_item_id(doc)
-    if not doc.item_code:
-        set_item_code(doc)
+    if not doc.item_code and doc.item_id:
+        doc.item_code = get_item_code(doc.subitem_group, doc.item_group, doc.item_id)
 
 @frappe.whitelist()
 def validate_item(doc, method):
@@ -1221,16 +1172,12 @@ def validate_item(doc, method):
 
 def set_item_id(doc):
     next_item_id = "000000"
-    item_id = get_item_id_series("All Item Groups", doc.subitem_group, doc.item_group)
+    item_id = get_item_id_series(doc.subitem_group, doc.item_group)
     if item_id:
         next_item_id = str(int(item_id)+1)
         for i in range(0, 6-len(next_item_id)):
             next_item_id = '0'+next_item_id
     doc.item_id = next_item_id
-
-def set_item_code(doc):
-    if doc.item_id:
-        doc.item_code = get_item_code("All Item Groups", doc.subitem_group, doc.item_group, doc.item_id)
 
 def set_item_description(doc):
     final_description = ""
@@ -1299,8 +1246,8 @@ def validate_get_item_group_parent(doc, method):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_item_id_series(parent_item_group, subitem_group, item_group):
-    previous_item_id = frappe.db.sql("select item_id from `tabItem` where parent_item_group='{0}' and subitem_group='{1}' and item_group='{2}' order by item_id desc".format(parent_item_group, subitem_group, item_group))
+def get_item_id_series(subitem_group, item_group):
+    previous_item_id = frappe.db.sql("select item_id from `tabItem` where subitem_group='{0}' and item_group='{1}' order by item_id desc".format(subitem_group, item_group))
     if previous_item_id:
         item_group_abbr = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
         if item_group_abbr:
@@ -1547,6 +1494,7 @@ def set_erf_details(job_offer, erf):
     job_offer.erf = erf.name
     job_offer.designation = erf.designation
     job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
+    job_offer.one_fm_provide_transportation_by_company = erf.provide_transportation_by_company
     set_salary_details(job_offer, erf)
     set_other_benefits_to_terms(job_offer, erf)
 
@@ -1567,7 +1515,8 @@ def set_other_benefits_to_terms(job_offer, erf):
     #         terms.offer_term = benefit.benefit
     #         terms.value = 'Company Provided'
     options = [{'provide_mobile_with_line':'Mobile with Line'}, {'provide_health_insurance':'Health Insurance'},
-        {'provide_company_insurance': 'Company Insurance'}]
+        {'provide_company_insurance': 'Company Insurance'}, {'provide_laptop_by_company': 'Personal Laptop'},
+        {'provide_vehicle_by_company': 'Personal Vehicle'}]
     for option in options:
         if erf.get(option):
             terms = job_offer.append('offer_terms')

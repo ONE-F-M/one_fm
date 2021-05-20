@@ -1,87 +1,63 @@
 {
- "actions": [],
  "autoname": "naming_series:",
+ "color": "green",
  "creation": "2020-08-13 08:46:25.338850",
  "doctype": "DocType",
+ "document_type": "Document",
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
   "employee",
+  "preparation",
   "pam_file",
   "pam_file_number",
-  "company_trade_name_arabic",
-  "contract_file_number",
-  "column_break_8",
-  "authorized_signatory_name_arabic",
-  "issuer_number",
-  "work_permit_application_type",
   "work_permit_type",
+  "work_permit_status",
+  "column_break_8",
   "date_of_application",
-  "previous_company_details_section",
-  "previous_company_trade_name_in_arabic",
-  "previous_company_authorized_signatory_name_arabic",
-  "previous_company_pam_file_number",
-  "previous_company_contract_file_number",
-  "cb_previous",
-  "previous_company_issuer_number",
-  "inform_pervious_company",
-  "inform_pervious_company_date_and_time",
-  "employee_details_section",
-  "first_name",
-  "second_name",
-  "third_name",
-  "last_name",
-  "column_break_22",
-  "first_name_in_arabic",
-  "second_name_in_arabic",
-  "third_name_in_arabic",
-  "last_name_in_arabic",
-  "section_break_21",
-  "date_of_birth",
-  "gender",
-  "religion",
-  "marital_status",
-  "column_break_28",
-  "nationality",
-  "passport_type",
-  "passport_number",
-  "pratical_qualification",
-  "column_break_33",
-  "civil_id",
-  "pam_designation",
-  "salary",
-  "salary_type",
-  "section_break_33",
   "duration_of_work_permit",
+  "salary_type",
+  "work_permit_salary",
+  "employee_details_section",
+  "employee_name",
+  "nationality",
+  "gender",
+  "civil_id",
+  "column_break_22",
+  "employee_id",
+  "date_of_birth",
+  "pam_designation",
+  "passport_expiry_date",
+  "section_break_21",
   "visa_reference_number",
-  "column_break_36",
+  "column_break_23",
   "date_of_issuance_of_visa",
-  "date_of_entry_in_kuwait",
   "documents_required_section",
   "documents_required",
   "amended_from",
   "grd_section",
   "grd_operator",
-  "work_permit_submitted",
-  "work_permit_submitted_by",
-  "work_permit_submitted_on",
-  "reminded_grd_operator",
-  "reminded_grd_operator_again",
-  "column_break_49",
   "grd_supervisor",
+  "grd_operator_apply_work_permit_on_ashal",
+  "reminded_grd_operator",
+  "grd_supervisor_check_and_approval_wp_online",
   "work_permit_approved",
-  "work_permit_approved_by",
-  "work_permit_approved_on",
-  "work_permit_status",
+  "upload_work_permit",
+  "attach_invoice",
+  "column_break_32",
+  "grd_operator_apply_work_permit_on_ashal_date",
+  "reminded_grd_operator_again",
+  "grd_supervisor_check_and_approval_wp_online_date",
+  "new_work_permit_expiry_date",
+  "upload_work_permit_on",
+  "upload_payment_invoice_on",
   "reason_for_rejection",
-  "work_permit_expiry_date",
   "section_break_61",
   "notify_finance_user",
   "amount_to_pay",
-  "payment_transferred_from_finance_dept",
-  "payment_done",
+  "rpr_ref",
   "column_break_65",
-  "attach_work_permit"
+  "payment_transferred_from_finance_dept"
  ],
  "fields": [
   {
@@ -94,17 +70,15 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
   },
   {
    "fieldname": "work_permit_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
+   "fieldtype": "Read Only",
    "label": "Work Permit Type",
-   "options": "\nRenewal Overseas\nRenewal Kuwaiti\nNew Overseas\nNew Kuwait\nTransfer",
+   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nLocal Transfer\nNew Kuwaiti",
    "reqd": 1
   },
   {
@@ -117,113 +91,62 @@
    "read_only": 1
   },
   {
-   "fetch_from": "pam_file.license_trade_name_arabic",
-   "fieldname": "company_trade_name_arabic",
-   "fieldtype": "Data",
-   "label": "Company Trade Name Arabic"
-  },
-  {
-   "fetch_from": "pam_file.contract_file_number",
-   "fieldname": "contract_file_number",
-   "fieldtype": "Data",
-   "label": "Contract File Number"
-  },
-  {
-   "fieldname": "authorized_signatory_name_arabic",
-   "fieldtype": "Data",
-   "label": "Authorized Signatory Name Arabic"
-  },
-  {
-   "fetch_from": "pam_file.pam_file_number",
+   "fetch_from": "employee.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "PAM File Number"
   },
   {
-   "fieldname": "issuer_number",
-   "fieldtype": "Data",
-   "label": "Issuer Number"
-  },
-  {
    "fieldname": "column_break_8",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "hidden": 1
   },
   {
-   "default": "Today",
    "fieldname": "date_of_application",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Date of Application",
    "reqd": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "employee_details_section",
    "fieldtype": "Section Break",
-   "label": "Employee Details"
-  },
-  {
-   "fetch_from": "employee.first_name",
-   "fetch_if_empty": 1,
-   "fieldname": "first_name",
-   "fieldtype": "Data",
-   "label": "First Name"
-  },
-  {
-   "fetch_from": "employee.middle_name",
-   "fetch_if_empty": 1,
-   "fieldname": "second_name",
-   "fieldtype": "Data",
-   "label": "Second Name"
-  },
-  {
-   "fetch_from": "employee.one_fm_third_name",
-   "fieldname": "third_name",
-   "fieldtype": "Data",
-   "label": "Third Name"
-  },
-  {
-   "fetch_from": "employee.last_name",
-   "fieldname": "last_name",
-   "fieldtype": "Data",
-   "label": "Last Name"
+   "label": "Employee Details",
+   "no_copy": 1
   },
   {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
-   "fieldtype": "Data",
-   "label": "CIVIL ID"
+   "fieldtype": "Read Only",
+   "label": "Civil ID"
   },
   {
    "fetch_from": "employee.date_of_birth",
    "fetch_if_empty": 1,
    "fieldname": "date_of_birth",
-   "fieldtype": "Date",
+   "fieldtype": "Read Only",
    "label": "Date of Birth"
   },
   {
    "fetch_from": "employee.gender",
    "fetch_if_empty": 1,
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Read Only",
    "label": "Gender",
    "options": "Gender"
   },
   {
-   "fetch_from": "employee.one_fm_religion",
-   "fieldname": "religion",
-   "fieldtype": "Data",
-   "label": "Religion"
-  },
-  {
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
-   "fieldtype": "Link",
+   "fieldtype": "Read Only",
    "label": "Nationality",
    "options": "Nationality"
   },
   {
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "pam_designation",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "PAM Designation"
   },
   {
@@ -231,129 +154,53 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "first_name",
-   "fetch_from": "employee.one_fm_first_name_in_arabic",
-   "fieldname": "first_name_in_arabic",
-   "fieldtype": "Data",
-   "label": "First Name in Arabic"
-  },
-  {
-   "depends_on": "second_name",
-   "fetch_from": "employee.one_fm_second_name_in_arabic",
-   "fieldname": "second_name_in_arabic",
-   "fieldtype": "Data",
-   "label": "Second Name in Arabic"
-  },
-  {
-   "depends_on": "third_name",
-   "fetch_from": "employee.one_fm_third_name_in_arabic",
-   "fieldname": "third_name_in_arabic",
-   "fieldtype": "Data",
-   "label": "Third Name in Arabic"
-  },
-  {
-   "depends_on": "last_name",
-   "fetch_from": "employee.one_fm_last_name_in_arabic",
-   "fieldname": "last_name_in_arabic",
-   "fieldtype": "Data",
-   "label": "Last Name in Arabic"
-  },
-  {
-   "fetch_from": "employee.passport_number",
-   "fieldname": "passport_number",
-   "fieldtype": "Data",
-   "label": "Passport Number"
-  },
-  {
-   "fetch_from": "employee.one_fm_passport_type",
-   "fieldname": "passport_type",
-   "fieldtype": "Data",
-   "label": "Passport Type"
-  },
-  {
-   "fetch_from": "employee.one_fm__highest_educational_qualification",
-   "fieldname": "pratical_qualification",
-   "fieldtype": "Data",
-   "label": "Pratical Qualification"
-  },
-  {
-   "fetch_from": "employee.marital_status",
-   "fetch_if_empty": 1,
-   "fieldname": "marital_status",
-   "fieldtype": "Data",
-   "label": "Marital Status"
-  },
-  {
-   "fetch_from": "employee.one_fm_basic_salary",
-   "fieldname": "salary",
-   "fieldtype": "Currency",
-   "label": "Salary"
-  },
-  {
    "fetch_from": "employee.one_fm_salary_type",
    "fieldname": "salary_type",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Salary Type"
   },
   {
-   "fieldname": "section_break_33",
-   "fieldtype": "Section Break"
-  },
-  {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_duration_of_work_permit",
    "fieldname": "duration_of_work_permit",
-   "fieldtype": "Data",
-   "label": "Duration of Work Permit"
+   "fieldtype": "Read Only",
+   "label": "Duration Of Work Permit"
   },
   {
+   "depends_on": "eval:doc.work_permit_type ==  \"New Overseas\" || doc.work_permit_type == \"Transfer\"",
    "fetch_from": "employee.one_fm_visa_reference_number",
    "fieldname": "visa_reference_number",
    "fieldtype": "Data",
    "label": "Visa Reference Number"
   },
   {
-   "fieldname": "column_break_36",
-   "fieldtype": "Column Break"
-  },
-  {
+   "depends_on": "eval:doc.work_permit_type == \"New Overseas\" || doc.work_permit_type == \"Transfer\"",
    "fetch_from": "employee.one_fm_date_of_issuance_of_visa",
    "fieldname": "date_of_issuance_of_visa",
    "fieldtype": "Date",
-   "label": "Date of issuance of Visa"
-  },
-  {
-   "fetch_from": "employee.one_fm_date_of_entry_in_kuwait",
-   "fieldname": "date_of_entry_in_kuwait",
-   "fieldtype": "Date",
-   "label": "Date of Entry in Kuwait"
+   "label": "Date Of Issuance Of Visa"
   },
   {
    "fieldname": "section_break_21",
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "column_break_28",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_33",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "documents_required_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hidden": 1
   },
   {
    "fieldname": "documents_required",
    "fieldtype": "Table",
+   "hidden": 1,
    "label": "Documents Required",
    "options": "Work Permit Required Documents"
   },
   {
-   "depends_on": "eval: !doc.__islocal",
+   "collapsible": 1,
    "fieldname": "grd_section",
    "fieldtype": "Section Break",
-   "label": "GRD"
+   "label": "GRD "
   },
   {
    "fieldname": "grd_operator",
@@ -364,42 +211,13 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_49",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "grd_supervisor",
-   "fieldtype": "Link",
-   "label": "GRD Supervisor",
-   "no_copy": 1,
-   "options": "User",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "default": "No",
-   "fieldname": "work_permit_submitted",
-   "fieldtype": "Select",
-   "label": "GRD Operator Submitted Work Permit",
-   "no_copy": 1,
-   "options": "\nYes\nNo",
-   "read_only": 1
-  },
-  {
-   "fieldname": "work_permit_submitted_by",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Work Permit Submitted By",
-   "no_copy": 1,
-   "options": "User"
-  },
-  {
    "default": "0",
    "fieldname": "reminded_grd_operator",
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Reminded GRD Operator",
-   "no_copy": 1
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "default": "0",
@@ -407,60 +225,19 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Reminded GRD Operator Again",
-   "no_copy": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "No",
-   "fieldname": "work_permit_approved",
-   "fieldtype": "Select",
-   "label": "GRD Supervisor Approved Work Permit",
    "no_copy": 1,
-   "options": "\nYes\nNo",
-   "permlevel": 1
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
    "default": "Draft",
    "fieldname": "work_permit_status",
-   "fieldtype": "Select",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Work Permit Status",
    "no_copy": 1,
-   "options": "Draft\nSubmitted\nApproved\nCancelled\nRejected",
-   "permlevel": 1
-  },
-  {
-   "fieldname": "work_permit_submitted_on",
-   "fieldtype": "Date",
-   "label": "Work Permit Submitted on",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "work_permit_approved_on",
-   "fieldtype": "Date",
-   "label": "Work Permit Approved On",
-   "no_copy": 1,
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "work_permit_approved_by",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Work Permit Approved By",
-   "no_copy": 1,
-   "options": "User",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval: doc.work_permit_status=='Approved'",
-   "fieldname": "work_permit_expiry_date",
-   "fieldtype": "Date",
-   "label": "Work Permit Expiry Date",
-   "no_copy": 1,
-   "permlevel": 1
+   "options": "\nDraft\nPending\nAccepted\nApproved\nCancelled\nRejected"
   },
   {
    "allow_on_submit": 1,
@@ -488,16 +265,8 @@
    "collapsible_depends_on": "eval: doc.work_permit_status=='Approved'",
    "fieldname": "section_break_61",
    "fieldtype": "Section Break",
+   "label": "Finance Department",
    "no_copy": 1,
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "0",
-   "depends_on": "eval: doc.work_permit_status=='Approved'",
-   "fieldname": "payment_done",
-   "fieldtype": "Check",
-   "label": "Payment Done",
    "permlevel": 1
   },
   {
@@ -505,86 +274,18 @@
    "fieldtype": "Column Break"
   },
   {
-   "allow_on_submit": 1,
-   "depends_on": "eval: doc.work_permit_status=='Approved'",
-   "fieldname": "attach_work_permit",
-   "fieldtype": "Attach",
-   "label": "Attach Work Permit",
-   "permlevel": 1
-  },
-  {
-   "default": "Online",
-   "fieldname": "work_permit_application_type",
-   "fieldtype": "Select",
-   "label": "Work Permit Application Type",
-   "options": "\nOnline\nOffline"
-  },
-  {
    "fieldname": "pam_file",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "PAM File",
    "options": "PAM File"
-  },
-  {
-   "collapsible": 1,
-   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
-   "fieldname": "previous_company_details_section",
-   "fieldtype": "Section Break",
-   "label": "Previous Company Details"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
-   "fieldname": "previous_company_trade_name_in_arabic",
-   "fieldtype": "Data",
-   "label": "Previous Company Trade Name in Arabic"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
-   "fieldname": "previous_company_authorized_signatory_name_arabic",
-   "fieldtype": "Data",
-   "label": "Previous Company Authorized Signatory Name Arabic"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
-   "fieldname": "previous_company_pam_file_number",
-   "fieldtype": "Data",
-   "label": "Previous Company PAM File Number"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
-   "fieldname": "previous_company_contract_file_number",
-   "fieldtype": "Data",
-   "label": "Previous Company Contract File Number"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Transfer'",
-   "fieldname": "previous_company_issuer_number",
-   "fieldtype": "Data",
-   "label": "Previous Company Issuer Number"
-  },
-  {
-   "fieldname": "cb_previous",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "No",
-   "fieldname": "inform_pervious_company",
-   "fieldtype": "Select",
-   "label": "Inform Pervious Company",
-   "options": "\nYes\nNo"
-  },
-  {
-   "depends_on": "eval:doc.inform_pervious_company == 'Yes'",
-   "fieldname": "inform_pervious_company_date_and_time",
-   "fieldtype": "Datetime",
-   "label": "Inform Pervious Company Date and Time"
   },
   {
    "allow_on_submit": 1,
    "depends_on": "eval: doc.work_permit_status=='Approved'",
    "fieldname": "amount_to_pay",
    "fieldtype": "Currency",
-   "label": "Amount to Pay",
+   "label": "Amount To Pay",
    "permlevel": 1
   },
   {
@@ -592,13 +293,134 @@
    "depends_on": "eval: doc.work_permit_status=='Rejected'",
    "fieldname": "reason_for_rejection",
    "fieldtype": "Data",
-   "label": "Reason for Rejection",
+   "hidden": 1,
+   "label": "N Reason for Rejection",
    "permlevel": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "employee_name",
+   "fieldtype": "Read Only",
+   "label": "Name"
+  },
+  {
+   "fieldname": "column_break_32",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "grd_operator_apply_work_permit_on_ashal_date",
+   "fieldtype": "Data",
+   "label": "Apply On"
+  },
+  {
+   "default": "No",
+   "fieldname": "grd_supervisor_check_and_approval_wp_online",
+   "fieldtype": "Select",
+   "label": "Check and Accept WP Online",
+   "options": "\nYes\nNo",
+   "permlevel": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "grd_supervisor_check_and_approval_wp_online_date",
+   "fieldtype": "Data",
+   "label": " Check and Accept WP Online On",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "attach_invoice",
+   "fieldtype": "Attach",
+   "label": "Upload Payment Invoice"
+  },
+  {
+   "fieldname": "rpr_ref",
+   "fieldtype": "Data",
+   "label": "RPR Ref"
+  },
+  {
+   "default": "No",
+   "fieldname": "grd_operator_apply_work_permit_on_ashal",
+   "fieldtype": "Select",
+   "label": "Apply Online",
+   "no_copy": 1,
+   "options": "\nYes\nNo"
+  },
+  {
+   "default": "No",
+   "fieldname": "work_permit_approved",
+   "fieldtype": "Select",
+   "label": "Work Permit Approved",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "upload_work_permit",
+   "fieldtype": "Attach",
+   "label": "Upload Work Permit"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.work_permit_salary",
+   "fieldname": "work_permit_salary",
+   "fieldtype": "Read Only",
+   "label": "Work Permit Salary"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Preparation",
+   "options": "Preparation"
+  },
+  {
+   "fieldname": "new_work_permit_expiry_date",
+   "fieldtype": "Date",
+   "label": "New Work Permit Expiry Date"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "label": "GRD Supervisor",
+   "no_copy": 1,
+   "options": "User",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_work_permit_on",
+   "fieldtype": "Data",
+   "label": "Upload Work Permit On"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_payment_invoice_on",
+   "fieldtype": "Data",
+   "label": "Upload Payment Invoice On"
+  },
+  {
+   "fetch_from": "employee.valid_upto",
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Read Only",
+   "label": "Passport Expiry Date",
+   "options": "Employee"
   }
  ],
  "is_submittable": 1,
- "links": [],
- "modified": "2020-09-01 11:02:12.251620",
+ "modified": "2021-04-30 18:10:20.953392",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
@@ -621,9 +443,6 @@
   },
   {
    "amend": 1,
-   "cancel": 1,
-   "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -693,6 +512,7 @@
    "write": 1
   }
  ],
+ "search_fields": "date_of_application,employee_id,civil_id",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1
