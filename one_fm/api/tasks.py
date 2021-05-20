@@ -108,6 +108,24 @@ def final_reminder():
 				subject = _("Final Reminder: Please checkout in the next five minutes.")
 				message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 				send_notification(subject, message, recipients)
+
+def insert_Contact():
+	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
+	for i in Us:
+		if frappe.db.exists("User", i.user_id):			
+			uid = i.user_id
+			mob = i.cell_number
+			if len(str(mob))==8:
+				new_Mob= int(str("965") + str(mob))
+				frappe.db.set_value('User', {"email":uid}, 'mobile_no', new_Mob)
+				print(new_Mob)
+			elif len(str(mob))==10:
+				new_Mob= int(str("91") + str(mob))
+				frappe.db.set_value('User', {"email":uid}, 'mobile_no', new_Mob)
+				print(new_Mob)
+			else:
+				print("Not valid")
+
 		
 def supervisor_reminder():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
