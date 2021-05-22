@@ -25,7 +25,7 @@ def login(client_id, grant_type, employee_id, password):
 	"""
 	try:
 		# username = frappe.get_value("Employee", employee_id, "user_id")
-		username = frappe.get_value("Employee", employee_id, "employee_id")
+		username =  frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
 		if not username:
 			return {'error': _('Employee ID is incorrect. Please check again.')}
 		args = {
@@ -73,7 +73,7 @@ def forgot_password(employee_id):
 	"""
 	try:
 		# employee_user_id = frappe.get_value("Employee", employee_id, "user_id")
-		employee_user_id = frappe.get_value("Employee", employee_id, "employee_id")
+		employee_user_id =  frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
@@ -129,7 +129,7 @@ def cache_2fa_data(user, token, otp_secret, tmp_id):
 #Not needed or being used
 def signup(employee_id):
 	try:
-		user = frappe.get_value("Employee", employee_id, "user_id")
+		user = frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
 		if user=="Administrator":
 			return 'not allowed'
 
