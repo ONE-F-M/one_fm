@@ -51,28 +51,18 @@ def create_additional_salary(employee, amount):
 	additional_salary.notes = "Social Security Deduction"
 	additional_salary.insert()
 	additional_salary.submit()
+	
 
 
 @frappe.whitelist()
 def import_deduction_data(file_url):
 	url = frappe.get_site_path() + file_url
-	print(url)
-	
-	df = pd.read_csv(url, encoding='utf-8', nrows=13)#.drop([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
-	# print("28", df)
 	data = {}
-	for index, row in df.iterrows():
-		if index == 3:
-			date = row[3].replace("/", "-")
-			data.update({'deduction_month': date})
-
-	# row_count = len(df.index)
-	# print(row_count)
+	
 	table_data = []
-	df = pd.read_csv(url, encoding='utf-8').drop([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+	df = pd.read_csv(url, encoding='utf-8', skiprows = 3)
 	for index, row in df.iterrows():
-		# print(row[0], row[22])
-		table_data.append({'pifss_id_no': row[22], 'total_subscription': flt(row[0])})
+		table_data.append({'pifss_id_no': row[12], 'total_subscription': flt(row[1])})
 
 	data.update({'table_data': table_data})
 	print(data)
