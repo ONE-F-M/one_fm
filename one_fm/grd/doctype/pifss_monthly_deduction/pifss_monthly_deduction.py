@@ -51,6 +51,7 @@ def create_additional_salary(employee, amount):
 	additional_salary.notes = "Social Security Deduction"
 	additional_salary.insert()
 	additional_salary.submit()
+	
 
 
 @frappe.whitelist()
