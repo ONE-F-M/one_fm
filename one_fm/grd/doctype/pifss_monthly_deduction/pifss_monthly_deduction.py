@@ -55,7 +55,7 @@ def create_additional_salary(employee, amount):
 
 
 @frappe.whitelist()
-def import_deduction_data(file_url):#file_url
+def import_deduction_data(file_url):
 	url = frappe.get_site_path() + file_url
 	data = {}
 	
