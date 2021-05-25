@@ -14,7 +14,10 @@ class RequestforPurchase(Document):
 		self.set_onload('approver', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver'))
 
 	def send_request_for_purchase(self):
-		self.notify_request_for_material_accepter()
+		self.status = "Approved"
+		self.save()
+		self.reload()
+		#self.notify_request_for_material_accepter()
 
 	def notify_request_for_material_accepter(self):
 		if self.accepter:

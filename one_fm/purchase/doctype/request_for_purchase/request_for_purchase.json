@@ -1,5 +1,4 @@
 {
- "actions": [],
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2020-06-04 09:29:23.914970",
@@ -229,6 +228,7 @@
    "allow_on_submit": 1,
    "fieldname": "accepter",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Accepter",
    "options": "User",
    "read_only": 1
@@ -237,6 +237,7 @@
    "allow_on_submit": 1,
    "fieldname": "approver",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Approver",
    "options": "User",
    "read_only": 1
@@ -260,9 +261,8 @@
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
- "links": [],
- "modified": "2020-12-30 11:13:13.064947",
- "modified_by": "Administrator",
+ "modified": "2021-05-20 01:14:09.054633",
+ "modified_by": "o.asim@armor-services.com",
  "module": "Purchase",
  "name": "Request for Purchase",
  "owner": "Administrator",
