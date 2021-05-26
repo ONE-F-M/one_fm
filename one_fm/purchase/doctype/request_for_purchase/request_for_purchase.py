@@ -14,7 +14,10 @@ class RequestforPurchase(Document):
 		self.set_onload('approver', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver'))
 
 	def send_request_for_purchase(self):
-		self.notify_request_for_material_accepter()
+		self.status = "Approved"
+		self.save()
+		self.reload()
+		#self.notify_request_for_material_accepter()
 
 	def notify_request_for_material_accepter(self):
 		if self.accepter:
@@ -177,7 +180,7 @@ def create_purchase_order(**args):
 		po.set_warehouse = args.warehouse
 		# po.schedule_date = add_days(nowdate(), 1)
 		# po.company = args.company
-		po.supplier = args.supplier
+		po.supplier = args.supplier or None
 		po.is_subcontracted = args.is_subcontracted or "No"
 		# po.currency = args.currency or frappe.get_cached_value('Company',  po.company,  "default_currency")
 		po.conversion_factor = args.conversion_factor or 1
