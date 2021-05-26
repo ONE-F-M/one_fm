@@ -91,7 +91,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 
 	if post_type:
 		filters.update({'post_type': post_type})	
-	fields = ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type"]
+	fields = ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"]
 
 	if search_key:
 		employee_filters.update({'employee_name': ("like", "%" + search_key + "%")})
@@ -106,13 +106,11 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 
 	if isOt:
 		employee_filters.update({'employee_availability' : 'Working'})
-		employee_filters.update({'roster_type' : 'Basic'})
 		roster_total = len(frappe.db.get_list("Employee Schedule", employee_filters))  
 		master_data.update({'total': roster_total})
 		employees = frappe.db.get_list("Employee Schedule", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 		employee_filters.pop('employee_availability')
-		employee_filters.pop('roster_type')
 	else:
 		roster_total = len(frappe.db.get_list("Employee", employee_filters))  
 		master_data.update({'total': roster_total})
@@ -134,7 +132,9 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
 		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
-		schedules = frappe.db.get_list("Employee Schedule", filters, fields, order_by="date asc, employee_name asc")
+		if isOt:
+			filters.update({'roster_type' : 'Over-Time'})
+		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc")
 		schedule_list = []
 		schedule = {}
 		for date in	pd.date_range(start=start_date, end=end_date):
@@ -249,17 +249,17 @@ def update_roster(key):
 
 def schedule(employee, shift, post_type, otRoster, start_date, end_date):
 	start = time.time()
-	roster_type = None
+
 	if otRoster == 'false':
 		roster_type = 'Basic'
 	elif otRoster == 'true':
-		roster_type = 'Over Time'
+		roster_type = 'Over-Time'
 			
 	for date in	pd.date_range(start=start_date, end=end_date):
-		if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
+		if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type}):
 			site, project, shift_type = frappe.get_value("Operations Shift", shift, ["site", "project", "shift_type"])
 			post_abbrv = frappe.get_value("Post Type", post_type, "post_abbrv")
-			roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date())})
+			roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type })
 			update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type, roster_type)
 		else:
 			roster = frappe.new_doc("Employee Schedule")
@@ -472,6 +472,7 @@ def set_dayoff(employee, date):
 	doc.project = None
 	doc.employee_availability = "Day Off"
 	doc.post_abbrv = None
+	doc.roster_type = 'Basic'
 	doc.save()
 
 
