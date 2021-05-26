@@ -4,13 +4,17 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2020-08-11 19:47:30.176667",
+ "modified": "2021-05-13 13:31:43.988786",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "roster",
  "owner": "Administrator",
  "page_name": "Roster",
- "roles": [],
+ "roles": [
+  {
+   "role": "All"
+  }
+ ],
  "script": null,
  "standard": "Yes",
  "style": null,

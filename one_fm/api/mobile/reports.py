@@ -111,7 +111,6 @@ def edit_shift_report(report_name, importance=None, report_type=None, comments=N
 def add_report_comment(report_name, content):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
-		print(report_name, content, user)
 		add_comment("Shift Report", report_name, content, user)
 		return True
 	except Exception as e:

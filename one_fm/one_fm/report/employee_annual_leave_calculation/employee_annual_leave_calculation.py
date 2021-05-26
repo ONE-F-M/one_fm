@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import flt, getdate, date_diff, add_days, month_diff
+from frappe.utils import getdate, date_diff, add_days, month_diff, formatdate, add_months
 from erpnext.hr.doctype.leave_application.leave_application \
 	import get_leave_balance_on, get_leaves_for_period
 
@@ -14,12 +14,12 @@ from erpnext.hr.report.employee_leave_balance_summary.employee_leave_balance_sum
 def execute(filters=None):
 	leave_types = frappe.db.sql_list("select name from `tabLeave Type` where one_fm_is_paid_annual_leave=1 order by name asc")
 
-	columns = get_columns(leave_types)
+	columns = get_columns(leave_types, filters)
 	data = get_data(filters, leave_types)
 
 	return columns, data
 
-def get_columns(leave_types):
+def get_columns(leave_types, filters):
 	columns = [
 		_("Employee") + ":Link.Employee:120",
 		_("Employee ID") + "::120",
@@ -28,15 +28,13 @@ def get_columns(leave_types):
 		_("Department") +"::150",
 		_("Salary") +":Currency:100",
 	]
+	date_after_a_month_formated = formatdate(add_months(getdate(filters.from_date), 1))
 
 	for leave_type in leave_types:
-		# columns.append(_(leave_type) + " " + _("Opening") + ":Float:160")
-		# columns.append(_(leave_type) + " " + _("Taken") + ":Float:160")
-		# columns.append(_(leave_type) + " " + _("Balance") + ":Float:160")
-		columns.append(_("Opening ")+_(leave_type)+_(" Days") + ":Float:160")
-		columns.append(_("Opening Leave Amount") + ":Currency:160")
-		columns.append(_("Provision days for December 2020 ")+ ":Float:160")
-		columns.append(_("Provision  Amount for December 2020") + ":Currency:160")
+		columns.append(_("Opening ")+_(leave_type)+_(" Days") + ":Float:200")
+		columns.append(_("Opening Leave Amount") + ":Currency:180")
+		columns.append(_("Provision days as on {0}").format(date_after_a_month_formated) + ":Float:240")
+		columns.append(_("Provision  Amount as on {0}").format(date_after_a_month_formated) + ":Currency:240")
 
 	return columns
 

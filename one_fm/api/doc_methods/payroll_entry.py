@@ -47,12 +47,12 @@ def get_count_employee_attendance(self, employee):
 
 
 
-def create_payroll_entry(department, start_date, end_date):
+def create_payroll_entry(start_date, end_date):
 	try:
-		selected_dept = department
+		#selected_dept = department
 		payroll_entry = frappe.new_doc("Payroll Entry")
 		payroll_entry.posting_date = getdate()
-		payroll_entry.department = department
+		#payroll_entry.department = department
 		payroll_entry.payroll_frequency = "Monthly"
 		payroll_entry.company = erpnext.get_default_company()
 		payroll_entry.start_date = start_date

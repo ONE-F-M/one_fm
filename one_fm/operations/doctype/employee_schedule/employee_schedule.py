@@ -9,7 +9,7 @@ from frappe import _
 from frappe.utils import cstr
 class EmployeeSchedule(Document):
 	def before_insert(self):
-		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": self.date}):
+		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": self.date, "roster_type" : self.roster_type}):
 			frappe.throw(_("Employee Schedule already scheduled for {employee} on {date}.".format(employee=self.employee_name, date=cstr(self.date))))
 
 

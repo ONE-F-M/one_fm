@@ -83,8 +83,14 @@ def get_employee_data_map(employee, shift, date):
 	prev_date = cstr(add_to_date(getdate(date), days=-1))
 	previous_day = frappe.db.get_value("Employee Schedule", {"employee": employee.employee, "date": prev_date}, ["employee_availability"])
 	previous_day_schedule = frappe.db.get_value("Post Allocation Employee Assignment", {"parent": shift+"|"+prev_date, "employee": employee.employee}, ["post"])
+
+	day_before_prev_date = cstr(add_to_date(getdate(date), days=-2))
+	day_before_previous_day = frappe.db.get_value("Employee Schedule", {"employee": employee.employee, "date": day_before_prev_date}, ["employee_availability"])
+	day_before_previous_day_schedule = frappe.db.get_value("Post Allocation Employee Assignment", {"parent": shift+"|"+day_before_prev_date, "employee": employee.employee}, ["post"])
+
 	gender = frappe.db.get_value("Employee", employee.employee, "gender")
 	employee_skills.update({"previous_day": previous_day, "previous_day_schedule": previous_day_schedule})
+	employee_skills.update({"day_before_previous_day": day_before_previous_day, "day_before_previous_day_schedule": day_before_previous_day_schedule})
 	employee_skills.update({"gender": gender})
 	employee_skills.update(employee)
 	return employee_skills

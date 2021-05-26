@@ -260,6 +260,8 @@ scheduler_events = {
 		'one_fm.utils.pam_authorized_signatory',
 		'one_fm.utils.hooked_leave_allocation_builder',
 		'one_fm.utils.increase_daily_leave_balance',
+		'one_fm.one_fm.hr_utils.daily_indemnity_allocation_builder',
+		'one_fm.one_fm.hr_utils.allocate_daily_indemnity',
 		'one_fm.utils.check_grp_operator_submission_daily',
 		'one_fm.utils.check_grp_supervisor_submission_daily',
 		'one_fm.utils.check_pam_visa_approval_submission_daily',
@@ -283,7 +285,7 @@ scheduler_events = {
 
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly"
-		
+
 	],
 
 	"cron": {
@@ -326,12 +328,12 @@ scheduler_events = {
 			'one_fm.utils.check_upload_tasriah_submission_nine',
 			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator',
 			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_grd_operator_check_approval'
-		
+
 		],
 		"30 9 * * *": [
 			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator',
 			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first'
-			
+
 		],
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'

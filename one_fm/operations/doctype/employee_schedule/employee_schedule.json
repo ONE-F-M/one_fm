@@ -1,5 +1,5 @@
 {
- "autoname": "format:{date}/{employee}",
+ "autoname": "format:{date}/{employee}/{roster_type}",
  "creation": "2020-05-12 15:44:18.133872",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -20,7 +20,8 @@
   "site",
   "project",
   "attendance_status_section",
-  "attended_status"
+  "attended_status",
+  "roster_type"
  ],
  "fields": [
   {
@@ -130,10 +131,17 @@
    "fieldtype": "Data",
    "label": "Post Abbreviation",
    "read_only": 1
+  },
+  {
+   "default": "Basic",
+   "fieldname": "roster_type",
+   "fieldtype": "Select",
+   "label": "Roster Type",
+   "options": "Basic\nOver-Time"
   }
  ],
- "modified": "2021-04-27 15:39:07.438622",
- "modified_by": "Administrator",
+ "modified": "2021-05-26 08:59:21.055668",
+ "modified_by": "m.ahmed@armor-services.com",
  "module": "Operations",
  "name": "Employee Schedule",
  "owner": "Administrator",
