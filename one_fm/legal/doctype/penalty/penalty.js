@@ -47,7 +47,7 @@ frappe.ui.form.on('Penalty', {
 								// Draws current image from the video element into the canvas
 								ctx.drawImage(preview, 0,0, canvas.width, canvas.height);
 								let imgUrl = canvas.toDataURL("image/png");
-								console.log(ctx, imgUrl);
+								console.log(ctx, imgUrl.split(",")[1]);
 
 								recorder.stop(); 
 								stop_cam(preview);

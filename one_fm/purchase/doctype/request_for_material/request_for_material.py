@@ -486,7 +486,8 @@ def make_request_for_purchase(source_name, target_doc=None):
 		"Request for Material": {
 			"doctype": "Request for Purchase",
 			"field_map": [
-				["name", "request_for_material"]
+				["name", "request_for_material"],
+				["t_warehouse","warehouse"]
 			],
 			"validation": {
 				"docstatus": ["=", 1]

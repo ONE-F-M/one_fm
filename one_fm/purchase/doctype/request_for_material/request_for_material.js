@@ -79,11 +79,12 @@ frappe.ui.form.on('Request for Material', {
 				var any_items_ordered = false;
 				var item_exist_in_stock = false;
 				var purchase_item_exist = false;
+
 				if(frm.doc.per_ordered>0){
 					any_items_ordered = true;
 				}
 				frm.doc.items.forEach((item, i) => {
-					if(item.item_code && item.actual_qty>=0){
+					if(item.item_code && item.actual_qty>0){
 						item_exist_in_stock = true;
 					}
 					if(item.pur_qty > 0){
@@ -101,8 +102,21 @@ frappe.ui.form.on('Request for Material', {
 						frm.add_custom_button(__("Sales Invoice"),
 							() => frm.events.make_sales_invoice(frm), __('Create'));
 						if(purchase_item_exist){
-							frm.add_custom_button(__("Request for Purchase"),
-							    () => frm.events.make_request_for_purchase(frm), __('Create'));
+							frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, 'name',function(r) {
+								if(r && r.name){
+									//console.log(r.name)
+									frappe.show_alert({
+										message:__('A purchase request ')+r.name+__(' has been made against this RFM'),
+										indicator:'green'
+									}, 5);
+								}
+								else{
+									//console.log("No Good amigo")
+									frm.add_custom_button(__("Request for Purchase"),
+							            () => frm.events.make_request_for_purchase(frm), __('Create'));
+								}
+							});
+							
 						}
 						if(any_items_ordered){
 							frm.add_custom_button(__("Make Delivery Note"),
@@ -124,8 +138,20 @@ frappe.ui.form.on('Request for Material', {
 					//Needs further dicussion with Jamsheer
 					frm.add_custom_button(__("Sales Invoice"),
 					    () => frm.events.make_sales_invoice(frm), __('Create'));
-					frm.add_custom_button(__("Request for Purchase"),
-					    () => frm.events.make_request_for_purchase(frm), __('Create'));
+					frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, 'name',function(r) {
+						if(r && r.name){
+							//console.log(r.name)
+							frappe.show_alert({
+								message:__('A purchase request ')+r.name+__(' has been made against this RFM'),
+								indicator:'green'
+							}, 5);
+						}
+						else{
+							//console.log("No Good amigo")
+							frm.add_custom_button(__("Request for Purchase"),
+								() => frm.events.make_request_for_purchase(frm), __('Create'));
+						}
+					});
 					if(any_items_ordered){
 						frm.add_custom_button(__("Make Delivery Note"),
 							() => frm.events.make_delivery_note(frm), __('Create'));
