@@ -30,7 +30,6 @@ def filter_posts(doctype, txt, searchfield, start, page_len, filters):
 def get_table_data(operations_shift, date):
 	employees = frappe.get_all("Employee Schedule", {'date': date, 'shift': operations_shift, 'employee_availability': 'Working'}, ["employee", "employee_name"])
 	posts = get_posts(operations_shift, date)
-	
 	post_list = {}
 
 	for key, group in itertools.groupby(posts, key=lambda x: (x['priority_level'])):
@@ -76,7 +75,8 @@ def get_employee_data_map(employee, shift, date):
 	if frappe.db.exists("Employee Skill Map", employee.employee):
 		employee_skill = frappe.get_doc("Employee Skill Map", employee.employee).as_dict()
 		employee_skills.skills = [{'skill': skill.skill, 'proficiency': skill.proficiency } for skill in employee_skill.employee_skills]
-		employee_skills.designation = employee_skill.designation
+		employee_doc = frappe.get_doc("Employee", employee.employee).as_dict()
+		employee_skills.designation = employee_doc.designation
 	else:
 		frappe.throw(_("Employee Skill Map not found for {id}:{name}".format(id=employee.employee, name=employee.employee_name)))
 
@@ -123,7 +123,6 @@ def get_day_off_employees(operations_shift, date):
 		'shift': operations_shift,
 		'date': date
 	}, as_dict=1)
-	print(employees, len(employees))
 	return employees
 
 
