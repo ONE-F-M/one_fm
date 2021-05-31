@@ -105,14 +105,13 @@ frappe.ui.form.on('Request for Material', {
 								}, 5);
 							}
 							else{
-								if(r.docstatus == 2){
+								if(r && r.docstatus == 2){
 									frappe.show_alert({
 										message:__('A Material Transfer')+r.name+__(' was made against this RFM, which has now been cancelled'),
 										indicator:'red'
 									}, 5);
 								}
 								if (frm.doc.type=="Stock"){
-									//console.log("No Good amigo")
 									frm.add_custom_button(__("Material Transfer"),
 									    () => frm.events.make_stock_entry(frm), __('Create'));
 								}else{
@@ -133,7 +132,7 @@ frappe.ui.form.on('Request for Material', {
 									}, 5);
 								}
 								else{
-									if(r.docstatus == 2){
+									if(r && r.docstatus == 2){
 										frappe.show_alert({
 											message:__('Request for Purchase ')+r.name+__(' was made against this RFM, which has now been cancelled'),
 											indicator:'red'
@@ -167,20 +166,18 @@ frappe.ui.form.on('Request for Material', {
 					    () => frm.events.make_sales_invoice(frm), __('Create'));
 					frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, ['name','docstatus'],function(r) {
 						if(r && r.name && r.docstatus != 2){
-							console.log(r.docstatus)
 							frappe.show_alert({
 								message:__('A purchase request ')+r.name+__(' has been made against this RFM'),
 								indicator:'green'
 							}, 5);
 						}
 						else{
-							if(r.docstatus == 2){
+							if(r && r.docstatus == 2){
 								frappe.show_alert({
 									message:__('Request for Purchase ')+r.name+__(' was made against this RFM, which has now been cancelled'),
 									indicator:'red'
 								}, 5);
 							}
-							console.log(r.docstatus)
 							frm.add_custom_button(__("Request for Purchase"),
 								() => frm.events.make_request_for_purchase(frm), __('Create'));
 						}
@@ -301,8 +298,8 @@ frappe.ui.form.on('Request for Material', {
 			},
 			callback: function(r) {
 				const d = item;
-				console.log(r.message);
-				console.log(r.message.warehouse);
+				//console.log(r.message);
+				//console.log(r.message.warehouse);
 				if(!r.exc) {
 					$.each(r.message, function(k, v) {
 						if(!d[k]) d[k] = v;
