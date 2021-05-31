@@ -75,8 +75,8 @@ def get_employee_data_map(employee, shift, date):
 	if frappe.db.exists("Employee Skill Map", employee.employee):
 		employee_skill = frappe.get_doc("Employee Skill Map", employee.employee).as_dict()
 		employee_skills.skills = [{'skill': skill.skill, 'proficiency': skill.proficiency } for skill in employee_skill.employee_skills]
-		employee_doc = frappe.get_doc("Employee", employee.employee).as_dict()
-		employee_skills.designation = employee_doc.designation
+		employee_skills.designation = frappe.db.get_value("Employee", employee.employee, "designation")
+		print(employee_skills.designation)
 	else:
 		frappe.throw(_("Employee Skill Map not found for {id}:{name}".format(id=employee.employee, name=employee.employee_name)))
 
