@@ -2,6 +2,7 @@ import frappe
 from frappe.utils import cint
 from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
 from one_fm.legal.doctype.penalty_issuance.penalty import send_email_to_legal
+from frappe import _
 import pickle, face_recognition
 import json
 
@@ -139,10 +140,8 @@ def accept_penalty(file, retries, docname):
 			}
 		else:
 			penalty.db_set("retries", retries_left)
-			return {
-				'message': 'error',
-				'retries': retries_left
-			}
+			frappe.throw(_("Face could not be recognized. You have {0} retries left.").format(frappe.bold(retries_left)), title='Validation Error')
+
 	except Exception as exc:
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
