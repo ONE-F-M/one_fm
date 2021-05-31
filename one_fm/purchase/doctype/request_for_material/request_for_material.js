@@ -97,21 +97,48 @@ frappe.ui.form.on('Request for Material', {
 				
 				if(item_exist_in_stock){
 					if(frm.doc.type=="Individual" || frm.doc.type=="Onboarding" || frm.doc.type=="Project"|| frm.doc.type=="Project Mobilization" || frm.doc.type=="Stock"){
-						frm.add_custom_button(__("Material Transfer"),
-							() => frm.events.make_stock_entry(frm), __('Create'));
+						frappe.db.get_value('Stock Entry', {'one_fm_request_for_material': frm.doc.name}, ['name', 'docstatus'],function(r) {
+							if(r && r.name && r.docstatus != 2){
+								frappe.show_alert({
+									message:__('A Material Transfer ')+r.name+__(' has been made against this RFM'),
+									indicator:'green'
+								}, 5);
+							}
+							else{
+								if(r.docstatus == 2){
+									frappe.show_alert({
+										message:__('A Material Transfer')+r.name+__(' was made against this RFM, which has now been cancelled'),
+										indicator:'red'
+									}, 5);
+								}
+								if (frm.doc.type=="Stock"){
+									//console.log("No Good amigo")
+									frm.add_custom_button(__("Material Transfer"),
+									    () => frm.events.make_stock_entry(frm), __('Create'));
+								}else{
+									frm.add_custom_button(__("Material Issue"),
+									    () => frm.events.make_stock_entry_issue(frm), __('Create'));					
+								}
+								
+							}
+						});
 						frm.add_custom_button(__("Sales Invoice"),
 							() => frm.events.make_sales_invoice(frm), __('Create'));
 						if(purchase_item_exist){
-							frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, 'name',function(r) {
-								if(r && r.name){
-									//console.log(r.name)
+							frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, ['name','docstatus'],function(r) {
+								if(r && r.name && r.docstatus != 2){
 									frappe.show_alert({
 										message:__('A purchase request ')+r.name+__(' has been made against this RFM'),
 										indicator:'green'
 									}, 5);
 								}
 								else{
-									//console.log("No Good amigo")
+									if(r.docstatus == 2){
+										frappe.show_alert({
+											message:__('Request for Purchase ')+r.name+__(' was made against this RFM, which has now been cancelled'),
+											indicator:'red'
+										}, 5);
+									}
 									frm.add_custom_button(__("Request for Purchase"),
 							            () => frm.events.make_request_for_purchase(frm), __('Create'));
 								}
@@ -138,16 +165,22 @@ frappe.ui.form.on('Request for Material', {
 					//Needs further dicussion with Jamsheer
 					frm.add_custom_button(__("Sales Invoice"),
 					    () => frm.events.make_sales_invoice(frm), __('Create'));
-					frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, 'name',function(r) {
-						if(r && r.name){
-							//console.log(r.name)
+					frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, ['name','docstatus'],function(r) {
+						if(r && r.name && r.docstatus != 2){
+							console.log(r.docstatus)
 							frappe.show_alert({
 								message:__('A purchase request ')+r.name+__(' has been made against this RFM'),
 								indicator:'green'
 							}, 5);
 						}
 						else{
-							//console.log("No Good amigo")
+							if(r.docstatus == 2){
+								frappe.show_alert({
+									message:__('Request for Purchase ')+r.name+__(' was made against this RFM, which has now been cancelled'),
+									indicator:'red'
+								}, 5);
+							}
+							console.log(r.docstatus)
 							frm.add_custom_button(__("Request for Purchase"),
 								() => frm.events.make_request_for_purchase(frm), __('Create'));
 						}
@@ -268,7 +301,6 @@ frappe.ui.form.on('Request for Material', {
 			},
 			callback: function(r) {
 				const d = item;
-				console.log(d.s_warehouse);
 				console.log(r.message);
 				console.log(r.message.warehouse);
 				if(!r.exc) {
@@ -276,6 +308,10 @@ frappe.ui.form.on('Request for Material', {
 						if(!d[k]) d[k] = v;
 						if(d.qty>d.actual_qty){
 							d.pur_qty = d.qty-d.actual_qty
+							d.quantity_to_transfer = d.actual_qty	
+						} else if(d.qty<d.actual_qty){
+							d.pur_qty = 0
+							d.quantity_to_transfer = d.qty
 						}
 					});
 				}

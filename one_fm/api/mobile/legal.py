@@ -1,6 +1,8 @@
 import frappe
 from frappe.utils import cint
 from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
+from one_fm.legal.doctype.penalty_issuance.penalty import send_email_to_legal
+import pickle, face_recognition
 import json
 
 @frappe.whitelist()
@@ -91,3 +93,81 @@ def get_penalties(employee):
 @frappe.whitelist()
 def get_penalty_details(penalty_name):
 	return frappe.get_list("Penalty", {"name": penalty_name}, ["*"])
+
+@frappe.whitelist()
+def accept_penalty(file, retries, docname):
+	"""
+	Params:
+	File: Base64 url of captured image.
+	Retries: number of tries left out of three
+	Docname: Name of the penalty doctype
+
+	Returns: 
+		'succes' message upon verification || updated retries and 'error' message || Exception. 
+	"""
+	try:
+		print(retries)
+		retries_left = cint(retries) - 1
+		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
+		penalty = frappe.get_doc("Penalty", docname)
+		if recognize_face(file, OUTPUT_IMAGE_PATH, retries_left) or retries_left == 0:
+			if retries_left == 0:
+				penalty.verified = 0
+				send_email_to_legal(penalty)
+			else:
+				penalty.verified = 1		
+			penalty.workflow_state = "Penalty Accepted"
+			penalty.save(ignore_permissions=True)
+			
+			file_doc = frappe.get_doc({
+				"doctype": "File",
+				"file_url": "/private/files/"+frappe.session.user+".png",
+				"file_name": frappe.session.user+".png",
+				"attached_to_doctype": "Penalty",
+				"attached_to_name": docname,
+				"folder": "Home/Attachments",
+				"is_private": 1
+			})
+			print(file_doc.as_dict())
+			file_doc.flags.ignore_permissions = True
+			file_doc.insert()
+
+			frappe.db.commit()
+
+			return {
+				'message': 'success'
+			}
+		else:
+			penalty.db_set("retries", retries_left)
+			return {
+				'message': 'error',
+				'retries': retries_left
+			}
+	except Exception as exc:
+		print(frappe.get_traceback())
+		frappe.log_error(frappe.get_traceback())
+		return frappe.utils.response.report_error(exc)
+
+@frappe.whitelist()
+def reject_penalty(rejection_reason, docname):
+	"""
+	Params:
+	Reason for rejection: Basis and/or reasoning due to which the employee is rejecting the issuance of penalty.
+	Docname: Name of the penalty doctype
+
+	Returns: 
+		'succes' message upon succesful refection of the penalty || Exception. 
+	"""
+	try:
+		penalty = frappe.get_doc("Penalty", docname)
+		penalty.reason_for_rejection = rejection_reason
+		penalty.workflow_state = "Penalty Rejected"
+		penalty.save(ignore_permissions=True)
+		frappe.db.commit()
+		return {
+				'message': 'success'
+			}
+	except Exception as exc:
+		print(frappe.get_traceback())
+		frappe.log_error(frappe.get_traceback())
+		return frappe.utils.response.report_error(exc)
