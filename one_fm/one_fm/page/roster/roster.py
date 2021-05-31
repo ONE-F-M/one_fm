@@ -261,6 +261,8 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date):
 			post_abbrv = frappe.get_value("Post Type", post_type, "post_abbrv")
 			roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type })
 			update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type, roster_type)
+			#Update employee assignment upon change in schedule as the roster fetches values from the employee doctype
+			update_employee_assignment(employee, project, shift, site)
 		else:
 			roster = frappe.new_doc("Employee Schedule")
 			roster.employee = employee
@@ -272,6 +274,12 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date):
 			roster.save(ignore_permissions=True)
 	end = time.time()
 	print("Scheduled employee : ", employee, end-start)
+
+def update_employee_assignment(employee, project, shift, site):
+	""" This function updates the employee project, site and shift in the employee doctype """
+	frappe.db.set_value("Employee", employee, "project", val=project)
+	frappe.db.set_value("Employee", employee, "site", val=site)
+	frappe.db.set_value("Employee", employee, "shift", val=shift)	
 
 @frappe.whitelist()
 def schedule_leave(employees, leave_type, start_date, end_date):

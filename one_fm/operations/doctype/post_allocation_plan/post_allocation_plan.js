@@ -54,8 +54,8 @@ function add_employees(frm){
 			
 			frm.set_value('assignments', '');
 
-			// Fill posts in decreasing priority level. e.g Level 5 first, Level 4 then......Level 1 at the end
-			for(let i=5; i>=1; i--){
+			// Fill posts in decreasing priority level. e.g Level 10 first, Level 9 then......Level 1 at the end
+			for(let i=10; i>=1; i--){
 				employees = (posts[i] && assign_post(frm, posts[i], employees)) || employees;
 			}
 
@@ -75,7 +75,6 @@ function add_employees(frm){
 function assign_post(frm, posts, employees){
 	posts.forEach(function(i,v){
 		let {designations} = posts[v];
-
 		// Select matching designations employees only and pass to get_best_employee_match
 		let matching_employees = employees.filter(emp => designations.includes(emp.designation))
 			
