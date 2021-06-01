@@ -65,6 +65,7 @@ frappe.ui.form.on('Request for Purchase', {
 		});
 		d.show();
 	},
+	//Currently just being used as confirmation(i.e bypassing approvals)
 	send_request_for_purchase: function(frm, status) {
 		frappe.confirm(
 			__('Do You Want to confirm this Request for Purchase'),

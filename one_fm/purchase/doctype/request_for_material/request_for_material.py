@@ -315,8 +315,9 @@ def update_status(name, status):
 @frappe.whitelist()
 def make_stock_entry(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
-		qty = flt(obj.qty)/ target.conversion_factor \
-			if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.actual_qty)
+		# qty = flt(obj.qty)/ target.conversion_factor \
+		# 	if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.quantity_to_transfer)
+		qty = obj.quantity_to_transfer
 		target.qty = qty
 		target.transfer_qty = qty * obj.conversion_factor
 		target.conversion_factor = obj.conversion_factor
@@ -357,8 +358,9 @@ def make_stock_entry(source_name, target_doc=None):
 @frappe.whitelist()
 def make_stock_entry_issue(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
-		qty = flt(obj.qty)/ target.conversion_factor \
-			if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.actual_qty)
+		# qty = flt(obj.qty)/ target.conversion_factor \
+		# 	if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.quantity_to_transfer)
+		qty = obj.quantity_to_transfer
 		target.qty = qty
 		target.transfer_qty = qty * obj.conversion_factor
 		target.conversion_factor = obj.conversion_factor
