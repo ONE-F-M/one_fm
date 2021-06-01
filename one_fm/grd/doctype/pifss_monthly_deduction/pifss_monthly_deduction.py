@@ -32,7 +32,6 @@ class PIFSSMonthlyDeduction(Document):
 				employee = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no})
 				employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))
 				amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
-				print(employee, amount)
 				create_additional_salary(employee, amount)
 			else:
 				missing_list.append(row.pifss_id_no)
@@ -65,17 +64,12 @@ def create_additional_salary(employee, amount):
 def import_deduction_data(file_url):
 	url = frappe.get_site_path() + file_url
 	data = {}
-	
 	table_data = []
 	df = pd.read_csv(url, encoding='utf-8', skiprows = 3)
 	for index, row in df.iterrows():
-		# table_data.append({'pifss_id_no': row[12], 'total_subscription': flt(row[1])})
 		employee_amount = flt(row[1] * (47.72/ 100))#employee_amount
-		# employer_amount = flt(row[1] * (52.27/ 100))#employer_amount
-		table_data.append({'pifss_id_no': row[12], 'total_subscription': flt(row[1]), 'employee_deduction':employee_amount, 'employer_deduction':employer_amount})
-
+		table_data.append({'pifss_id_no': row[12], 'total_subscription': flt(row[1]), 'employee_deduction':employee_amount})
 	data.update({'table_data': table_data})
-	print(data)
 	return data
 
 
@@ -86,15 +80,10 @@ def import_additional_deduction_data(file_url):
 	table_data = []
 	df = pd.read_csv(url, encoding='utf-8')
 	for index, row in df.iterrows():
-		# print(str(row[1])+"=> "+str(row[7]))# amount => civilID value in each heading
 		if frappe.db.exists("Employee", {"one_fm_civil_id": row[7]}):
 			employee = frappe.get_doc('Employee', {'one_fm_civil_id':row[7]})
-			# table_data.append({'pifss_id_no': row[12], 'total_subscription': flt(row[1])})
 			additional_amount = flt(row[1], precision=3)#employee_amount
 			civi_id = row[7]
 			table_data.append({'pifss_id_no': employee.pifss_id_no, 'additional_deduction': additional_amount})
-			# table_data.append({'pifss_id_no': employee.pifss_id_no, 'additional_deduction': additional_amount, 'employee': employee.employee})
-
 	data.update({'table_data': table_data})
-	print(data)
 	return data

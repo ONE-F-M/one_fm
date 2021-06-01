@@ -1,6 +1,5 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
-
 frappe.ui.form.on('PIFSS Monthly Deduction', {
 	attach_report: function(frm) {
 		let file_url = frm.doc.attach_report;
@@ -46,10 +45,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 				frm.refresh_field('deductions');
 			});
 		}
-
 	},
-
-
 });
 
 //set total value for additional deduction and employee deduction
@@ -68,7 +64,6 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 	}
 
 });
-
 //set the total values for the entire table
 frappe.ui.form.on('PIFSS Monthly Deduction', {
     refresh: function(frm){
@@ -79,16 +74,10 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 				total[1] += frappe.model.get_value(v.doctype, v.name, "employee_deduction");
 				total[2] += frappe.model.get_value(v.doctype, v.name, "additional_deduction");
 				total[3] += frappe.model.get_value(v.doctype, v.name, "total_deductions");
-				console.log(total[3])
 			})
-			console.log("Total_sub ",total[0])
-			console.log("Total_employee_deduct",total[1])
-			console.log("Total_additional_deduction",total[2])
-			console.log("total_deductions",total[3])
 		}
 		frm.set_value("total_sub", total[0])
 		frm.set_value("total_deduction", total[1])
-		// console.log(frm.doc.total_sub,total[0])
 	},
 
 });

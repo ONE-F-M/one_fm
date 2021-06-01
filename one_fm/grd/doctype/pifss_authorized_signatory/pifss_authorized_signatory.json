@@ -19,7 +19,8 @@
    "fieldname": "company_name_arabic",
    "fieldtype": "Data",
    "label": "Company Name Arabic",
-   "read_only": 1
+   "read_only": 1,
+   "unique": 1
   },
   {
    "fieldname": "column_break_3",
@@ -55,7 +56,7 @@
    "label": "Is Active"
   }
  ],
- "modified": "2021-01-21 07:58:12.764401",
+ "modified": "2021-05-31 12:29:26.331510",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Authorized Signatory",
