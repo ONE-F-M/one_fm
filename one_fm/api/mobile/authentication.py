@@ -186,8 +186,8 @@ def process_2fa_for_whatsapp(user, token, otp_secret):
 
 def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
     
-    account_sid = 'ACc68f01a917ad86a9ecf0d442d271d37a' 
-    auth_token = '05d8c0acba8f9014e7e7ac3edf16f98d' 
+    account_sid = 'Account SID' 
+    auth_token = 'TOKEN' 
     client = Client(account_sid, auth_token) 
     to = 'whatsapp:+' + phone_no
     print(to)
