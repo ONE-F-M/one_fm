@@ -6,7 +6,13 @@
  "field_order": [
   "pifss_id_no",
   "column_break_2",
-  "total_subscription"
+  "total_subscription",
+  "column_break_4",
+  "employee_deduction",
+  "column_break_6",
+  "additional_deduction",
+  "column_break_8",
+  "total_deductions"
  ],
  "fields": [
   {
@@ -24,11 +30,45 @@
    "fieldname": "total_subscription",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Total Subscription"
+   "label": "Total Subscription",
+   "precision": "3"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_deduction",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Employee Deduction ",
+   "precision": "3"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "additional_deduction",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Additional Deduction",
+   "precision": "3"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_deductions",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Employee Deduction",
+   "precision": "3"
   }
  ],
  "istable": 1,
- "modified": "2020-11-12 18:51:13.786456",
+ "modified": "2021-05-30 11:12:26.170909",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction Employees",
