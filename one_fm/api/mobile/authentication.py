@@ -19,10 +19,10 @@ def login(client_id, grant_type, employee_id, password):
 	Client Id: Can be found in Social Login Key doctype.
 	Grant_type: implicit
 	Employee Id: Employee Id of user
-	Password: Erpnext Password 
+	Password: Erpnext Password
 
-	Returns: 
-		Access token, refresh token, Enrollment status for checkin, Employee Id, Employee name, Employee image, Employee/Supervisor flag. 
+	Returns:
+		Access token, refresh token, Enrollment status for checkin, Employee Id, Employee name, Employee image, Employee/Supervisor flag.
 	"""
 	try:
 		# username = frappe.get_value("Employee", employee_id, "user_id")
@@ -61,18 +61,18 @@ def login(client_id, grant_type, employee_id, password):
 
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-	
+
 
 @frappe.whitelist(allow_guest=True)
 def forgot_password(employee_id,OTP_source):
 	"""
-	Params: 
+	Params:
 	employee_id: employee ID
 	OTP_source: SMS or Email
-	
-	Returns: 
-		Temp Id: To be used in next api call for verifying the SMS/Email OTP. 
-	Sends an OTP to mobile number assosciated with User	
+
+	Returns:
+		Temp Id: To be used in next api call for verifying the SMS/Email OTP.
+	Sends an OTP to mobile number assosciated with User
 	"""
 	try:
 		# employee_user_id = frappe.get_value("Employee", employee_id, "user_id")
@@ -106,10 +106,10 @@ def forgot_password(employee_id,OTP_source):
 @frappe.whitelist(allow_guest=True)
 def update_password(otp, id, employee_id, new_password):
 	"""
-	Params: 
+	Params:
 	otp: OTP received via SMS
 	id: Temp Id returned in forgot_password call response
-	employee_id 
+	employee_id
 	new_password : new password to update
 	"""
 	try:
@@ -123,7 +123,7 @@ def update_password(otp, id, employee_id, new_password):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
-		
+
 def cache_2fa_data(user, token, otp_secret, tmp_id):
 	'''Cache and set expiry for data.'''
 	pwd = frappe.form_dict.get('pwd')
@@ -171,7 +171,7 @@ def reset_password(user, password_expired=False):
 		url = "/update-password?key=" + key + '&password_expired=true'
 
 	link = get_url(url)
-	
+
 	msg = """Dear {username},
 
 		Please click on the following link to reset your password:
