@@ -1080,31 +1080,57 @@ function render_roster(res, page, isOt){
 				'Annual Leave': 'AL',
 				'Emergency Leave': 'EL'
 			}
-			let {employee, employee_name, date, post_type, post_abbrv, employee_availability, shift} = employees_data[employee_key][i];
-			
-			if(post_abbrv){
-				j++;
-				sch = `
-				<td>
-					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-						data-selectid="${employee+"|"+date+"|"+post_type+"|"+shift+"|"+employee_availability}">${post_abbrv}</div>
-				</td>`;	
-			} else if(employee_availability && !post_abbrv){
-				sch = `
-				<td>
-					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-						data-selectid="${employee+"|"+date+"|"+employee_availability}">${leavemap[employee_availability]}</div>
-				</td>`;	
-			} else {
-				sch = `
-				<td>
-					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
-						data-selectid="${employee+"|"+date}"></div>
-				</td>`;
-			}
-			i++;
-			start_date.add(1, 'days');
-			$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
+			let {employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type} = employees_data[employee_key][i];
+			if (isOt){
+				if(post_abbrv && roster_type == 'Over-Time'){
+					j++;
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee+"|"+date+"|"+post_type+"|"+shift+"|"+employee_availability}">${post_abbrv}</div>
+					</td>`;			
+				} else if(employee_availability && !post_abbrv){
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee+"|"+date+"|"+employee_availability}">${leavemap[employee_availability]}</div>
+					</td>`;	
+				 } else {
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
+							data-selectid="${employee+"|"+date}"></div>
+					</td>`;
+				}
+				i++;
+				start_date.add(1, 'days');
+				$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
+			}else{
+				if(post_abbrv && roster_type == 'Basic'){
+					j++;
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee+"|"+date+"|"+post_type+"|"+shift+"|"+employee_availability}">${post_abbrv}</div>
+					</td>`;			
+				} else if(employee_availability && !post_abbrv){
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee+"|"+date+"|"+employee_availability}">${leavemap[employee_availability]}</div>
+					</td>`;	
+				} else {
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
+							data-selectid="${employee+"|"+date}"></div>
+					</td>`;
+				}
+				i++;
+				start_date.add(1, 'days');
+				$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
+
+			}	
 		}
 		$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i-1]['employee_name']}"]`).append(`<td>${j}</td>`);
 
@@ -2641,14 +2667,12 @@ function schedule_change_post(page){
 	let employees =  [];
 	let selected = [... new Set(classgrt)];
 	let otRoster = false;
-	if(selected.length > 1){
+	if(selected.length > 0){
 		selected.forEach(function(i){
 			let [employee, date] = i.split("|");
 			employees.push(employee);
 			employees = [... new Set(employees)];
 		})
-	}else{
-		
 	}
 	let d = new frappe.ui.Dialog({
 		'title': 'Schedule/Change Post',

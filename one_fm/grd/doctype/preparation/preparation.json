@@ -7,6 +7,7 @@
  "field_order": [
   "naming_series",
   "posting_date",
+  "set_renewal_for_all",
   "preparation_record",
   "section_break_4",
   "hr_approval",
@@ -66,12 +67,17 @@
    "fieldname": "preparation_record",
    "fieldtype": "Table",
    "label": "Preparation Record",
-   "options": "Preparation Record",
-   "reqd": 1
+   "options": "Preparation Record"
+  },
+  {
+   "default": "0",
+   "fieldname": "set_renewal_for_all",
+   "fieldtype": "Check",
+   "label": "Set Renewal for All"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-04-24 12:40:18.257922",
+ "modified": "2021-05-03 21:01:15.530615",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation",

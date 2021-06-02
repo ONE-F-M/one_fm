@@ -68,7 +68,8 @@ doctype_js = {
 	"Asset Movement": "public/js/doctype_js/asset_movement.js",
 	"Job Opening": "public/js/doctype_js/job_opening.js",
 	"Warehouse": "public/js/doctype_js/warehouse.js",
-	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js"
+	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",
+	"Purchase Order": "public/js/doctype_js/purchase_order.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -293,7 +294,7 @@ scheduler_events = {
 
 		],
 		"0/1 * * * *": [
-			"one_fm.legal.doctype.penalty.penalty.automatic_accept",
+			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			"one_fm.api.tasks.update_shift_type"
 		],
 		"0/5 * * * *": [

@@ -9,6 +9,7 @@
   "civil_id_number",
   "nationality_english",
   "nationality_arabic",
+  "user",
   "section_break_6",
   "civil_id_copy",
   "column_break_8",
@@ -68,10 +69,16 @@
    "fieldname": "signature",
    "fieldtype": "Attach",
    "label": "Signature"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User"
   }
  ],
  "istable": 1,
- "modified": "2020-11-10 09:53:32.423135",
+ "modified": "2021-05-31 12:30:45.765299",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Authorized Signatory Table",

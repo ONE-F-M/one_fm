@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import nowdate, getdate, get_url
@@ -12,18 +13,25 @@ class RequestforPurchase(Document):
 	def onload(self):
 		self.set_onload('accepter', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_accepter'))
 		self.set_onload('approver', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver'))
+	
+	def on_submit(self):
+		self.notify_request_for_material_accepter()
+		frappe.msgprint(_("Notification sent to purchaser"))
 
 	def send_request_for_purchase(self):
-		self.notify_request_for_material_accepter()
+		self.status = "Approved"
+		self.save()
+		self.reload()
+		#self.notify_request_for_material_accepter()
 
 	def notify_request_for_material_accepter(self):
 		if self.accepter:
 			page_link = get_url("/desk#Form/Request for Purchase/" + self.name)
-			message = "<p>Please Review and Accept or Reject the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
+			message = "<p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
 			send_email(self, [self.accepter], message, subject)
 			create_notification_log(subject, message, [self.accepter], self)
-			self.status = "Draft Request"
+			# self.status = "Draft Request"
 			self.save()
 			self.reload()
 
