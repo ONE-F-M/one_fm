@@ -60,6 +60,13 @@ frappe.ui.form.on('Request for Material', {
 				}
 			});
 		}
+		frm.set_query("t_warehouse", function() {
+			return {
+				filters: [
+					['is_group', '=', 0]
+				]
+			};
+		});
 		// frm.set_query('warehouse', function () {
 		// 	if(frm.doc.type == 'Project'){
 		// 		return {
