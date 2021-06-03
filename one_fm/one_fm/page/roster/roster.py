@@ -10,6 +10,7 @@ import multiprocessing
 import os
 from multiprocessing.pool import ThreadPool as Pool
 from itertools import product
+import collections
 
 @frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
@@ -79,7 +80,7 @@ def get_staff_filters_data():
 
 
 @frappe.whitelist()
-def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=None, project=None, site=None, shift=None, department=None, post_type=None, isOt=False, limit_start=0, limit_page_length=100):
+def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=None, project=None, site=None, shift=None, department=None, post_type=None, isOt=None, limit_start=0, limit_page_length=100):
 	start = time.time()
 	master_data, formatted_employee_data, post_count_data, employee_filters={}, {}, {}, {}
 	post_types_list = []
@@ -102,13 +103,12 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 	if shift:
 		employee_filters.update({'shift': shift})	
 	if department:
-		employee_filters.update({'department': department})
+		employee_filters.update({'department': department})	
 
 	if isOt:
 		employee_filters.update({'employee_availability' : 'Working'})
-		roster_total = len(frappe.db.get_list("Employee Schedule", employee_filters))  
-		master_data.update({'total': roster_total})
 		employees = frappe.db.get_list("Employee Schedule", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
+		master_data.update({'total' : len(collections.Counter(emp.employee for emp in employees))})
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 		employee_filters.pop('employee_availability')
 	else:
@@ -334,13 +334,30 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 @frappe.whitelist()
 def edit_post(posts, values):
 	args = frappe._dict(json.loads(values))
-	if args.post_status == "Cancel Post":
+	if args.post_status == "Plan Post":
+		plan_post(posts, args)
+	elif args.post_status == "Cancel Post":
 		cancel_post(posts, args)
 	elif args.post_status == "Suspend Post":
 		suspend_post(posts, args)
 	elif args.post_status == "Post Off":
 		post_off(posts, args)
-	
+		
+def plan_post(posts, args):
+	""" This fucntion sets the post status to planned provided a post, start date and an end date """
+	for post in json.loads(posts):
+		for date in pd.date_range(start=args.plan_from_date, end=args.plan_end_date):
+			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
+				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
+			else: 
+				doc = frappe.new_doc("Post Schedule")
+				doc.post = post["post"]
+				doc.date = cstr(date.date())
+			doc.paid = args.suspend_paid
+			doc.unpaid = args.suspend_unpaid
+			doc.post_status = "Planned"
+			doc.save()	
+	frappe.db.commit()
 
 def cancel_post(posts, args):
 	for post in json.loads(posts):
@@ -348,11 +365,11 @@ def cancel_post(posts, args):
 		end_date = frappe.get_value("Contracts", {"project": project}, "end_date")
 
 		for date in	pd.date_range(start=args.cancel_from_date, end=end_date):
-			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post}):
-				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post})
+			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
+				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
 			else: 
 				doc = frappe.new_doc("Post Schedule")
-				doc.post = post
+				doc.post = post["post"]
 				doc.date = cstr(date.date())	
 			doc.paid = args.suspend_paid
 			doc.unpaid = args.suspend_unpaid
@@ -419,8 +436,8 @@ def post_off(posts, args):
 	frappe.db.commit()
 
 def set_post_off(post, date, post_off_paid, post_off_unpaid):
-	if frappe.db.exists("Post Schedule", {"date": date, "post": post}):
-		doc = frappe.get_doc("Post Schedule", {"date": date, "post": post})
+	if frappe.db.exists("Post Schedule", {"date": date, "post": post["post"]}):
+		doc = frappe.get_doc("Post Schedule", {"date": date, "post": post["post"]})
 	else: 
 		doc = frappe.new_doc("Post Schedule")
 		doc.post = post
