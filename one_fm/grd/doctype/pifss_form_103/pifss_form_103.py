@@ -7,10 +7,23 @@ import frappe
 from frappe.model.document import Document
 from one_fm.api.notification import create_notification_log
 from frappe import _
+from one_fm.grd.doctype.work_permit import work_permit
 
 class PIFSSForm103(Document):
-	pass
-
+	def on_update(self):
+		self.notify_authorized_signatory()
+		# self.create_wp_record()
+	
+	def notify_authorized_signatory(self):
+		subject = _("Reminder: Authorized Signatory on PIFSS 103 Form")
+		message = "You are requested to sgin on PIFSS 103 form. <br>".format(self.name)
+		for_users = frappe.db.sql_list("""select user from `tabPAM Authorized Signatory Table`""")
+		for user in for_users:
+			if self.user == user:
+				create_notification_log(subject, message, [self.user], self)
+	
+	def create_wp_record(self):
+		work_permit.create_work_permit_new_kuwaiti(self.name,self.employee)
 
 
 def notify_open_pifss(doc, method):
@@ -30,7 +43,6 @@ def notify_open_pifss(doc, method):
 		notification.document_type = "Notification Log"
 		notification.for_user = user
 		notification.save()
-
 		notification.document_name = notification.name
 		notification.save()
 		frappe.db.commit()
@@ -40,3 +52,8 @@ def get_signatory_name(parent):
 	name_list = frappe.db.sql("""select  authorized_signatory_name_arabic from `tabPAM Authorized Signatory Table`
 				where parent = %s  """,(parent),as_list=1)
 	return name_list
+
+@frappe.whitelist()
+def get_signatory_user(user_name):
+	user = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':user_name},['user'])
+	return user

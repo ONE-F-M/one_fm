@@ -28,12 +28,14 @@ from one_fm.grd.doctype.paci import paci
 class Preparation(Document):
     def validate(self):
         self.set_values()
+        
+        
 
     def set_values(self):# Link to HR single dt
         pass
         # if not self.hr_user:
         #   self.hr_user = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
-    
+
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.db_set('submitted_by', frappe.session.user)
@@ -62,7 +64,6 @@ class Preparation(Document):
         if self.hr_approval == "No":
             frappe.throw("Must Be Approved By HR ")
 
-
     def recall_create_work_permit_renewal(self):
         work_permit.create_work_permit_renewal(self.name)
     
@@ -74,8 +75,7 @@ class Preparation(Document):
     
     def recall_create_paci(self):
         paci.create_PACI_renewal(self.name)
-
-    
+  
     def recall_create_residency_payment_request_renewal(self):
         residency_payment_request.create_residency_payment_request(self.name)
 
@@ -88,6 +88,8 @@ def create_preparation():
     today = date.today()
     first_day = today.replace(day=1) + relativedelta(months=1)
     last_day = first_day.replace(day=calendar.monthrange(first_day.year, first_day.month)[1])
+    # print(first_day)
+    # print(last_day)
     get_employee_entries(doc,first_day,last_day)
     #doc.save(ignore_permission=True)
 
@@ -107,12 +109,14 @@ def get_employee_entries(doc,first_day,last_day):
         })
     doc.save()
 
-def notify_request_for_renewal_or_extend():# Notify finance
 
+
+
+def notify_request_for_renewal_or_extend():# Notify finance
     filters = {'docstatus': 1, 'hr_approval': ['=', "Yes"]}
     preparation_list = frappe.get_doc('Preparation', filters,['name', 'notify_finance_user'])
     page_link = get_url("/desk#Form/Preparation/"+preparation_list.name)
-    message = "<p>Please Review the Renewal and Extend List of employee {0}<a href='{1}'></a></p>".format(page_link, preparation_list.name)
+    message = "<p>Please Review the Renewal and Extend List of employee {0}<a href='{1}'></a></p>".format(page_link,preparation_list.name)
     subject = '{0} Renewal and Extend list approved'.format("Prepare Payments")
     send_email(preparation_list, [preparation_list.notify_finance_user], message, subject)
     create_notification_log(subject, message, [preparation_list.notify_finance_user], preparation_list)

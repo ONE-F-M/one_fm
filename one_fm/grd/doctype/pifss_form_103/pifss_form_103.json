@@ -12,6 +12,7 @@
   "naming_series",
   "section_break_4",
   "company_name_arabic",
+  "user",
   "column_break_8",
   "company_pifss_registration_no",
   "column_break_10",
@@ -206,13 +207,15 @@
    "label": "Nationality Details"
   },
   {
+   "fetch_from": "employee.nationality_no",
    "fieldname": "nationality_no",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Nationality No"
   },
   {
+   "fetch_from": "employee.nationality_subject",
    "fieldname": "nationality_subject",
-   "fieldtype": "Select",
+   "fieldtype": "Read Only",
    "label": "Nationality Subject",
    "options": "\n\u0627\u0644\u0623\u0648\u0644\u064a\n\u0627\u0644\u062b\u0627\u0646\u064a\u0629\n\u0627\u0644\u062b\u0627\u0644\u062b\u0629\n\u0627\u0644\u0631\u0627\u0628\u0639\u0629\n\u0627\u0644\u062e\u0627\u0645\u0633\u0629\n\u0627\u0644\u0633\u0627\u0628\u0639\u0629\n\u0627\u0644\u062b\u0627\u0645\u0646\u0629"
   },
@@ -355,9 +358,16 @@
   {
    "fieldname": "column_break_11",
    "fieldtype": "Column Break"
+  },
+  {
+   "columns": 2,
+   "depends_on": "pifss_authorized_signatory",
+   "fieldname": "user",
+   "fieldtype": "Data",
+   "label": "User"
   }
  ],
- "modified": "2021-01-21 09:06:01.064393",
+ "modified": "2021-05-31 13:40:02.763565",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",

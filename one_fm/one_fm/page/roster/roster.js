@@ -217,8 +217,37 @@ function load_js(page){
 						label: 'Post Status',
 						fieldname: 'post_status',
 						fieldtype: 'Select',
-						options: '\nPost Off\nSuspend Post\nCancel Post',
+						options: '\nPlan Post\nPost Off\nSuspend Post\nCancel Post',
 						reqd:1
+					},
+					{
+						fieldname: 'sb4',
+						fieldtype: 'Section Break',
+						depends_on: "eval:this.get_value('post_status') == 'Plan Post'",
+					},
+					{
+						label: 'Plan From Date',
+						fieldname: 'plan_from_date',
+						fieldtype: 'Date',
+						default: date,
+						onchange:function(){
+							let plan_from_date = d.get_value('plan_from_date');
+							if(plan_from_date && moment(plan_from_date).isBefore(moment(frappe.datetime.nowdate()))){
+								frappe.throw(__("Plan From Date cannot be before today."));
+							}
+						}						
+					},
+					{
+						label: 'Plan Till Date',
+						fieldname: 'plan_end_date',
+						fieldtype: 'Date',
+						default: date,
+						onchange:function(){
+							let plan_end_date = d.get_value('plan_end_date');
+							if(plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))){
+								frappe.throw(__("Plan Till Date cannot be before today."));
+							}
+						}						
 					},
 					{
 						fieldname: 'sb1',
@@ -938,9 +967,9 @@ function bind_search_bar_event(page){
 			}else if(wrapper_element == ".rosterWeek"){
 				get_roster_week_data(page);
 			}else if(wrapper_element == ".rosterOtMonth"){
-				get_roster_data(page);
+				get_roster_data(page, true);
 			}else if(wrapper_element == ".rosterOtWeek"){
-				get_roster_week_data(page);
+				get_roster_week_data(page, true);
 			}
 		}
 	});
@@ -952,9 +981,9 @@ function bind_search_bar_event(page){
 		}else if(wrapper_element == ".rosterWeek"){
 			get_roster_week_data(page);
 		}else if(wrapper_element == ".rosterOtMonth"){
-			get_roster_data(page);
+			get_roster_data(page, true);
 		}else if(wrapper_element == ".rosterOtWeek"){
-			get_roster_week_data(page, isOt);
+			get_roster_week_data(page, true);
 		}
 	})
 }
@@ -975,6 +1004,7 @@ function get_roster_data(page, isOt){
 	let {project, site, shift, department, post_type} = page.filters;
 	let {limit_start, limit_page_length} = page.pagination;
 	console.log(limit_start, limit_page_length);
+	console.log(isOt, typeof(isOt));
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view',{start_date, end_date, search_key, project, site, shift, department, post_type, isOt, limit_start, limit_page_length})
 	.then(res => {
 		let a2 = performance.now();

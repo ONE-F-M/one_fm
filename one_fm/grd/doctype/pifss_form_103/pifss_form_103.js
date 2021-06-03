@@ -47,8 +47,24 @@ frappe.ui.form.on('PIFSS Form 103', {
 			frm.set_df_property('signatory_name', "options", null);
 			frm.refresh_field("signatory_name");
 		}
-		
-
+		// if(frm.doc.signatory_name){
+		// 	frappe.call({
+		// 		method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.get_signatory_user",
+		// 		args:{
+		// 			'user_name':frm.doc.signatory_name,
+		// 			},
+		// 		callback:function(r){
+		// 			console.log(r.message)
+		// 			frm.set_value('user',r.message)
+		// 			frm.refresh_field("user");
+		// 			}
+		// 		});
+		// }
+		// else{
+		// 	//frm.set_df_property('user', "options", null);
+		// 	frm.set_value('user'," ")
+		// 	frm.refresh_field("user");
+		// }
 	},
 	pifss_authorized_signatory: function(frm){
 		if(frm.doc.pifss_authorized_signatory){
@@ -94,5 +110,25 @@ frappe.ui.form.on('PIFSS Form 103', {
 		}else if(request_type === "End of Service"){
 			frm.set_value("naming_series", "END-.{employee}.-");
 		}
+	},
+	signatory_name: function(frm){
+		if(frm.doc.signatory_name){
+		frappe.call({
+			method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.get_signatory_user",
+			args:{
+				'user_name':frm.doc.signatory_name,
+				},
+			callback:function(r){
+				console.log(r.message)
+				frm.set_value('user',r.message)
+				frm.refresh_field("user");
+				}
+			});
 	}
+	else{
+		//frm.set_df_property('user', "options", null);
+		frm.set_value('user'," ")
+		frm.refresh_field("user");
+	}
+}
 });
