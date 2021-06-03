@@ -9,7 +9,6 @@
   "naming_series",
   "title",
   "material_request_type",
-  "customer",
   "requested_by",
   "type",
   "material_request_attach",
@@ -23,9 +22,11 @@
   "request_for_material_accepter",
   "request_for_material_approver",
   "type_details_section",
+  "customer",
   "project",
   "is_refundable",
-  "designation",
+  "site",
+  "erf",
   "contract_number",
   "project_details",
   "employee",
@@ -94,9 +95,10 @@
    "print_hide": 1
   },
   {
-   "depends_on": "eval:doc.material_request_type==\"Customer Provided\"",
+   "depends_on": "eval: doc.type== 'Project'",
    "fieldname": "customer",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Customer",
    "options": "Customer"
   },
@@ -305,7 +307,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Type",
-   "options": "\nIndividual\nProject Mobilization\nStock\nProject\nOnboarding",
+   "options": "\nIndividual\nStock\nProject\nOnboarding",
    "print_hide": 1,
    "reqd": 1
   },
@@ -341,7 +343,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval: doc.type=='Project Mobilization' || doc.type=='Project' || doc.type=='Onboarding'",
+   "depends_on": "eval: doc.type== 'Project'",
    "fieldname": "project",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -432,14 +434,6 @@
    "label": "Material Request"
   },
   {
-   "depends_on": "eval: doc.type=='Onboarding'",
-   "fieldname": "designation",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Designation",
-   "options": "Designation"
-  },
-  {
    "fieldname": "t_warehouse",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -449,17 +443,33 @@
   },
   {
    "default": "0",
-   "depends_on": "eval: doc.type=='Project Mobilization' || doc.type=='Project' || doc.type=='Onboarding'",
+   "depends_on": "eval: doc.type=='Project Mobilization' || doc.type=='Project'",
    "fieldname": "is_refundable",
    "fieldtype": "Check",
    "in_standard_filter": 1,
    "label": "Refundable"
+  },
+  {
+   "depends_on": "eval: doc.type== 'Project'",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "depends_on": "eval: doc.type=='Onboarding'",
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "ERF",
+   "options": "ERF"
   }
  ],
  "icon": "fa fa-ticket",
  "is_submittable": 1,
- "modified": "2021-05-17 18:32:08.081349",
- "modified_by": "Administrator",
+ "modified": "2021-06-03 11:18:54.892247",
+ "modified_by": "o.asim@armor-services.com",
  "module": "Purchase",
  "name": "Request for Material",
  "owner": "Administrator",
