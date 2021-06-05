@@ -87,6 +87,7 @@ frappe.ui.form.on('Contracts', {
 		}
 	},
 	refresh:function(frm){
+		var days,monthly_rate_without_fee,management_fee_percentage,management_fee;
 		frm.set_query("bank_account", function() {
 			return {
 				"filters": {
@@ -142,9 +143,23 @@ frappe.ui.form.on('Contracts', {
             }
         }
         frm.refresh_field("assets");
-		var days = frappe.meta.get_docfield("Contract Item","days", frm.doc.name);
+		days = frappe.meta.get_docfield("Contract Item","days", frm.doc.name);
 		days.hidden = 1;
+		monthly_rate_without_fee = frappe.meta.get_docfield("Contract Item","monthly_rate_without_fee", frm.doc.name);
+		management_fee_percentage = frappe.meta.get_docfield("Contract Item","management_fee_percentage", frm.doc.name);
+		management_fee = frappe.meta.get_docfield("Contract Item","management_fee", frm.doc.name);
+		if(!frm.doc.is_invoice_for_airport){
+			monthly_rate_without_fee.hidden = 1;
+			management_fee_percentage.hidden = 1;
+			management_fee.hidden = 1;
+		}
+		if(frm.doc.is_invoice_for_airport){
+			monthly_rate_without_fee.hidden = 0;
+			management_fee_percentage.hidden = 0;
+			management_fee.hidden = 0;
+		}
 		frm.refresh_field("items");
+
 	},
 	customer_address:function(frm){
 		if(frm.doc.customer_address){
@@ -200,6 +215,22 @@ frappe.ui.form.on('Contracts', {
 					}
 				}
 			});
+		}
+	},
+	is_invoice_for_airport: function(frm){
+		var monthly_rate_without_fee,management_fee_percentage,management_fee;
+		monthly_rate_without_fee = frappe.meta.get_docfield("Contract Item","monthly_rate_without_fee", frm.doc.name);
+		management_fee_percentage = frappe.meta.get_docfield("Contract Item","management_fee_percentage", frm.doc.name);
+		management_fee = frappe.meta.get_docfield("Contract Item","management_fee", frm.doc.name);
+		if(!frm.doc.is_invoice_for_airport){
+			monthly_rate_without_fee.hidden = 1;
+			management_fee_percentage.hidden = 1;
+			management_fee.hidden = 1;
+		}
+		else{
+			monthly_rate_without_fee.hidden = 0;
+			management_fee_percentage.hidden = 0;
+			management_fee.hidden = 0;
 		}
 	}
 });
@@ -277,6 +308,20 @@ frappe.ui.form.on('Contract Item', {
 			});
 		}
 
+	},
+	management_fee_percentage: function(frm, cdt, cdn){
+		var d = locals[cdt][cdn];
+		var management_fee = d.monthly_rate_without_fee * (flt(d.management_fee_percentage / 100))
+		frappe.model.set_value(d.doctype, d.name, "management_fee", management_fee);
+		frappe.model.set_value(d.doctype, d.name, "monthly_rate", d.monthly_rate_without_fee + management_fee);
+		frm.refresh_field("items");
+	},
+	monthly_rate_without_fee: function(frm, cdt, cdn){
+		var d = locals[cdt][cdn];
+		var management_fee = d.monthly_rate_without_fee * (flt(d.management_fee_percentage / 100))
+		frappe.model.set_value(d.doctype, d.name, "management_fee", management_fee);
+		frappe.model.set_value(d.doctype, d.name, "monthly_rate", d.monthly_rate_without_fee + management_fee);
+		frm.refresh_field("items");
 	}
 })
 frappe.ui.form.on('Contract Asset', {
