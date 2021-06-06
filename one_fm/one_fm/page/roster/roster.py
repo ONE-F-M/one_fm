@@ -342,6 +342,8 @@ def edit_post(posts, values):
 		frappe.enqueue(suspend_post, posts, args, is_async=True, queue='long')
 	elif args.post_status == "Post Off":
 		frappe.enqueue(post_off, posts, args, is_async=True, queue='long')
+
+	frappe.enqueue(update_roster, key="staff_view", is_async=True, queue='long')	
 		
 def plan_post(posts, args):
 	""" This fucntion sets the post status to planned provided a post, start date and an end date """
@@ -353,8 +355,6 @@ def plan_post(posts, args):
 				doc = frappe.new_doc("Post Schedule")
 				doc.post = post["post"]
 				doc.date = cstr(date.date())
-			doc.paid = args.suspend_paid
-			doc.unpaid = args.suspend_unpaid
 			doc.post_status = "Planned"
 			doc.save()	
 	frappe.db.commit()
