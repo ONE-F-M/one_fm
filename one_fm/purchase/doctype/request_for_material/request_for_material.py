@@ -90,6 +90,12 @@ class RequestforMaterial(BuyingController):
 						frappe.bold(d.warehouse), frappe.bold(d.item_code))
 						+ '<br><br>' + _("Available quantity is {0}, Requested quantity is {1}. Please make a purchase request for the remaining.").format(frappe.bold(d.actual_qty),
 							frappe.bold(d.qty)), title=_('Insufficient Stock'))
+				if (d.quantity_to_transfer+d.pur_qty)>d.qty:
+					updated_total = d.quantity_to_transfer+d.pur_qty
+					frappe.throw(_("Row {0}: Total quantity to transfer and purchase cannot exceed the original requested Quantiy: {1} for the Item: {2}").format(d.idx,
+						frappe.bold(d.qty), frappe.bold(d.item_code))
+						+ '<br><br>' + _("Current total quantity to purchase/transfer is {0}, Requested quantity is {1}. Please make a purchase request for the remaining.").format(frappe.bold(updated_total),
+							frappe.bold(d.qty)), title=_('Quantity Exceeding'))
 
 	def set_item_fields(self):
 		if self.items and self.type == 'Stock':

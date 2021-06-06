@@ -1,7 +1,7 @@
 import frappe
 from frappe.utils import cint
 from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
-from one_fm.legal.doctype.penalty_issuance.penalty import send_email_to_legal
+from one_fm.legal.doctype.penalty.penalty import send_email_to_legal, recognize_face
 from frappe import _
 import pickle, face_recognition
 import json

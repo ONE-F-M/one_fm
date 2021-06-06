@@ -5,10 +5,10 @@ frappe.listview_settings['Leave Application'] = {
 			return [__("Approved"), "green", "status,=,Approved"];
 		} else if (doc.status === "Rejected") {
 			return [__("Rejected"), "red", "status,=,Rejected"];
-		} else if (doc.docstatus === 2) {
+		} else if (doc.docstatus === 2 || doc.status==="Cancelled") {
 			return [__("Cancelled"), "red", "status,=,Cancelled"];
 
-		} else {
+		} else if(doc.status==="Open"){
 			return [__("Open"), "lightblue", "status,=,Open"];
 		}
 	}
