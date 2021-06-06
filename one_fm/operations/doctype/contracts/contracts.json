@@ -53,6 +53,7 @@
   "is_seperate_invoice_for_site",
   "is_invoice_for_full_amount",
   "is_invoice_for_day_by_post",
+  "is_invoice_for_airport",
   "column_break_38",
   "is_attendance_for_invoice",
   "is_po_for_invoice",
@@ -420,10 +421,16 @@
    "fieldname": "duration_in_days",
    "fieldtype": "Read Only",
    "label": "Duration In Days"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_invoice_for_airport",
+   "fieldtype": "Check",
+   "label": "Is Invoice For Airport"
   }
  ],
- "modified": "2021-04-21 21:23:09.397752",
- "modified_by": "a.yayalil@armor-services.com",
+ "modified": "2021-05-03 06:22:16.293974",
+ "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
  "owner": "Administrator",

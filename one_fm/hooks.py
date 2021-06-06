@@ -69,7 +69,9 @@ doctype_js = {
 	"Job Opening": "public/js/doctype_js/job_opening.js",
 	"Warehouse": "public/js/doctype_js/warehouse.js",
 	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",
-	"Purchase Order": "public/js/doctype_js/purchase_order.js"
+	"Purchase Order": "public/js/doctype_js/purchase_order.js",
+	"Journal Entry": "public/js/doctype_js/journal_entry.js",
+	"Payment Entry": "public/js/doctype_js/payment_entry.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -271,6 +273,7 @@ scheduler_events = {
 		'one_fm.uniform_management.doctype.employee_uniform.employee_uniform.notify_gsd_and_employee_before_uniform_expiry',
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
+		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",

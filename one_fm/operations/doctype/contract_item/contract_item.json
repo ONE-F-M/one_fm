@@ -8,6 +8,9 @@
   "head_count",
   "type",
   "unit_rate",
+  "monthly_rate_without_fee",
+  "management_fee_percentage",
+  "management_fee",
   "monthly_rate",
   "column_break_4",
   "item_name",
@@ -63,6 +66,7 @@
    "options": "currency"
   },
   {
+   "default": "Monthly",
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
@@ -72,16 +76,36 @@
    "fieldname": "days_off",
    "fieldtype": "Select",
    "label": "Weekly Days Off",
-   "options": "1\n2\n3\n4\n5\n6"
+   "options": "0\n1\n2\n3\n4\n5\n6"
   },
   {
    "fieldname": "days",
    "fieldtype": "Int",
    "label": "Days"
+  },
+  {
+   "default": "0",
+   "fieldname": "monthly_rate_without_fee",
+   "fieldtype": "Currency",
+   "label": "Monthly Rate Without Fee",
+   "options": "currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "management_fee_percentage",
+   "fieldtype": "Percent",
+   "label": "Management Fee Percentage"
+  },
+  {
+   "fieldname": "management_fee",
+   "fieldtype": "Currency",
+   "label": "Management Fee",
+   "options": "currency",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2021-03-31 03:35:41.424685",
+ "modified": "2021-05-18 10:42:14.844445",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",
