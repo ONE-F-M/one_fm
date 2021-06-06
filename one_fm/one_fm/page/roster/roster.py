@@ -335,13 +335,13 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 def edit_post(posts, values):
 	args = frappe._dict(json.loads(values))
 	if args.post_status == "Plan Post":
-		plan_post(posts, args)
+		frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
 	elif args.post_status == "Cancel Post":
-		cancel_post(posts, args)
+		frappe.enqueue(cancel_post,posts, args, is_async=True, queue='long')
 	elif args.post_status == "Suspend Post":
-		suspend_post(posts, args)
+		frappe.enqueue(suspend_post, posts, args, is_async=True, queue='long')
 	elif args.post_status == "Post Off":
-		post_off(posts, args)
+		frappe.enqueue(post_off, posts, args, is_async=True, queue='long')
 		
 def plan_post(posts, args):
 	""" This fucntion sets the post status to planned provided a post, start date and an end date """
