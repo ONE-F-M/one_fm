@@ -1,0 +1,187 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2021-05-25 15:02:46.597616",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company",
+  "onboard_employee",
+  "job_applicant",
+  "job_offer",
+  "column_break_7",
+  "applicant_name",
+  "applicant_name_in_arabic",
+  "date",
+  "status",
+  "work_contract_details_section",
+  "nationality",
+  "civil_id",
+  "passport_number",
+  "column_break_13",
+  "designation",
+  "monthly_salary",
+  "working_hours",
+  "section_break_9",
+  "note",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "onboard_employee",
+   "fieldtype": "Link",
+   "label": "Onboard Employee",
+   "options": "Onboard Employee"
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "label": "Job Applicant",
+   "options": "Job Applicant"
+  },
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name"
+  },
+  {
+   "fieldname": "applicant_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Applicant Name in Arabic"
+  },
+  {
+   "fieldname": "job_offer",
+   "fieldtype": "Link",
+   "label": "Job Offer",
+   "options": "Job Offer"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "WC-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Work Contract",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "work_contract_details_section",
+   "fieldtype": "Section Break",
+   "label": "Work Contract Details"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality"
+  },
+  {
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "monthly_salary",
+   "fieldtype": "Currency",
+   "label": "Monthly Salary"
+  },
+  {
+   "fieldname": "working_hours",
+   "fieldtype": "Int",
+   "label": "Working Hours / Day"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Status",
+   "options": "\nOpen\nPending\nSubmitted\nCancelled"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-05-25 22:08:56.562487",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Work Contract",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Onboarding Officer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
