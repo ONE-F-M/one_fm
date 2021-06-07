@@ -361,10 +361,9 @@ def plan_post(posts, args):
 
 def cancel_post(posts, args):
 	for post in json.loads(posts):
-		project = frappe.get_value("Operations Post", post, "project")
-		end_date = frappe.get_value("Contracts", {"project": project}, "end_date")
+		project = frappe.get_value("Post Schedule", post, "project")
 
-		for date in	pd.date_range(start=args.cancel_from_date, end=end_date):
+		for date in	pd.date_range(start=args.cancel_from_date, end=args.cancel_end_date):
 			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
 				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
 			else: 
