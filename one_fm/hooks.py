@@ -296,13 +296,12 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"0 16 * * *":[
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_finance_dept_for_payment',
+			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
 			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online'
 		],
 		"0 4 * * *": [
-			'one_fm.utils.check_grp_operator_submission_four',
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.utils.check_grp_operator_submission_four'
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'

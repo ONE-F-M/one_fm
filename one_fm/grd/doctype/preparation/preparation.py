@@ -22,19 +22,18 @@ from one_fm.grd.doctype.medical_insurance import medical_insurance
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
 from one_fm.grd.doctype.moi_residency_jawazat import moi_residency_jawazat
 from one_fm.grd.doctype.paci import paci
-
-
-
 class Preparation(Document):
     def validate(self):
-        self.set_values()
-        
-        
+        self.set_grd_values()
+        #self.set_hr_values()
+    
+    def set_grd_values(self):
+        if not self.grd_supervisor:
+            self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
+        if not self.grd_operator:
+            self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
 
-    def set_values(self):# Link to HR single dt
-        pass
-        # if not self.hr_user:
-        #   self.hr_user = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
+    # def set_hr_values():
 
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
@@ -44,6 +43,7 @@ class Preparation(Document):
         self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
         self.recall_create_moi_renewal_and_extend() # create moi record for all employee
         self.recall_create_paci() # create paci record for all
+        self.send_notifications()
         #self.recall_create_residency_payment_request_renewal()
         
     def validate_mandatory_fields_on_submit(self):
@@ -76,11 +76,15 @@ class Preparation(Document):
     def recall_create_paci(self):
         paci.create_PACI_renewal(self.name)
   
-    def recall_create_residency_payment_request_renewal(self):
-        residency_payment_request.create_residency_payment_request(self.name)
+    def send_notifications(Self):
+        if self.grd_operator:
+            page_link = get_url("/desk#Form/Preparation/" + self.name)
+            message = "<p>Renewal Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
+            subject = 'Renewal Records are created for WP, MI, MOI, PACI'
+            send_email(self, [self.grd_operator], message, subject)
+            create_notification_log(subject, message, [self.grd_operator], self)
 
 
-    
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def create_preparation():
     doc = frappe.new_doc('Preparation')
@@ -88,8 +92,6 @@ def create_preparation():
     today = date.today()
     first_day = today.replace(day=1) + relativedelta(months=1)
     last_day = first_day.replace(day=calendar.monthrange(first_day.year, first_day.month)[1])
-    # print(first_day)
-    # print(last_day)
     get_employee_entries(doc,first_day,last_day)
     #doc.save(ignore_permission=True)
 
@@ -108,9 +110,6 @@ def get_employee_entries(doc,first_day,last_day):
             "employee": employee.name
         })
     doc.save()
-
-
-
 
 def notify_request_for_renewal_or_extend():# Notify finance
     filters = {'docstatus': 1, 'hr_approval': ['=', "Yes"]}
