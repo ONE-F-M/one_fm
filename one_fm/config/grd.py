@@ -54,6 +54,10 @@ def get_data():
 					"type": "doctype",
 					"name": "PIFSS Monthly Deduction",
 					"onboard": 1,
+				},{
+					"type": "doctype",
+					"name": "MGRP",
+					"onboard": 1,
 				},
 			]
 		},
@@ -102,26 +106,6 @@ def get_data():
 				},
 			]
 		},
-		# {
-		# 	"label": _("PIFSS"),
-		# 	"items": [
-		# 		{
-		# 			"type": "doctype",
-		# 			"name": "PIFSS Form 103",
-		# 			"onboard": 1,
-		# 		},
-		# 		{
-		# 			"type": "doctype",
-		# 			"name": "PIFSS Form 55",
-		# 			"onboard": 1,
-		# 		},
-		# 		{
-		# 			"type": "doctype",
-		# 			"name": "PIFSS Monthly Deduction",
-		# 			"onboard": 1,
-		# 		},
-		# 	]
-		# },
 		{
 			"label": _("Ministry of Interior Residency Jawazat"),
 			"items": [
@@ -148,6 +132,15 @@ def get_data():
 				{
 					"type": "doctype",
 					"name": "Work Permit",
+					"onboard": 1,
+				},
+			]
+		},{
+			"label": _("Fingerprint"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Fingerprint Appointment",
 					"onboard": 1,
 				},
 			]
