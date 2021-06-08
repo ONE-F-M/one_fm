@@ -36,7 +36,7 @@ var set_employee_details = function(frm){
                 },
                 fieldname:["one_fm_first_name_in_arabic","one_fm_second_name_in_arabic","one_fm_third_name_in_arabic","one_fm_last_name_in_arabic",
 				"first_name","middle_name","one_fm_third_name","last_name","one_fm_civil_id",
-				"passport_number","one_fm_pam_designation","one_fm_nationality"]
+				"passport_number","one_fm_pam_designation","one_fm_nationality","employee_id","residency_expiry_date"]
             }, 
             callback: function(r) { 
         
@@ -53,6 +53,8 @@ var set_employee_details = function(frm){
                 frm.set_value('passport_number', r.message.passport_number);
                 frm.set_value('pam_designation', r.message.one_fm_pam_designation);
                 frm.set_value('nationality', r.message.one_fm_nationality);
+				frm.set_value('employee_id',r,message.employee_id);
+                frm.set_value('residency_expiry_date',r.message.residency_expiry_date);
                
             }
         })
@@ -62,16 +64,7 @@ var set_apply_civil_id_online = function(frm)
 {//1
 	if(((frm.doc.apply_civil_id_online == "Yes") && (!frm.doc.apply_civil_id_online_datetime)))
 	{
-		// frappe.call({
-		// 	method: 'one_fm.grd.doctype.paci.paci.set_dates',
-		// 	callback: function(r)
-		// 	{
-		// 		if(r.message)
-		// 		{
-		// 			frm.set_value('apply_civil_id_online_datetime',r.message);
-		// 		}
-		// 	}
-		// });
+		
 		frm.set_value('apply_civil_id_online_datetime',frappe.datetime.now_datetime())
 	}
 };

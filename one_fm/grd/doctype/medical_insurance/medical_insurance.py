@@ -11,14 +11,14 @@ from frappe import _
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
-
+from one_fm.grd.doctype.residency_payment_request import residency_payment_request
 
 class MedicalInsurance(Document):
     
     def validate(self):
         self.set_value()
         #self.valid_work_permit_exists()
-        self.update_end_date()
+        #self.update_end_date()
         self.validate_no_of_application()
 
     def set_value(self):
@@ -32,26 +32,30 @@ class MedicalInsurance(Document):
         self.db_set('completed','Yes')
         self.db_set('medical_insurance_submitted_by', frappe.session.user)
         self.db_set('medical_insurance_submitted_on', today())
+        if self.insurance_status == "Local Transfer":
+            self.recall_create_moi_transfer()
+
+    def recall_create_moi_transfer(self):
+        moi_residency_jawazat.creat_moi_for_transfer(self.work_permit)
+
     
     def set_depend_on_fields(self):
         if self.apply_medical_insurance_online == "No":
             frappe.throw(_('Apply Medical Insurance Online Required To Submit'))
-        elif self.submission_of_application == "No":
-            frappe.throw(_('Submission of Application Is Required To Submit'))
         elif self.upload_medical_insurance == None:
             frappe.throw(_('Upload Medical Insurance Is Required To Submit'))
 
-    def validate_no_of_application(self):#### wont be used as all the records are indivitual
+    def validate_no_of_application(self):
         if self.category == "Group" and len(self.items) > 20:
             frappe.throw(_("More than 20 Application is not Possible"))
 
-    def update_end_date(self): # Set the value of end date
-        if self.category == 'Individual' and self.no_of_years and int(self.no_of_years) > 0 and self.start_date:
-            self.end_date = add_years(self.start_date, self.no_of_years)
-        elif self.category == 'Group':
-            for item in self.items:
-                if item.no_of_years and item.no_of_years > 0 and item.start_date:
-                    item.end_date = add_years(item.start_date, item.no_of_years)
+    # def update_end_date(self): # Set the value of end date
+    #     if self.category == 'Individual' and self.no_of_years and int(self.no_of_years) > 0 and self.start_date:
+    #         self.end_date = add_years(self.start_date, self.no_of_years)
+    #     elif self.category == 'Group':
+    #         for item in self.items:
+    #             if item.no_of_years and item.no_of_years > 0 and item.start_date:
+    #                 item.end_date = add_years(item.start_date, item.no_of_years)
 
 
 #need to be inside the class
@@ -64,35 +68,38 @@ def valid_work_permit_exists(preparation_name):
             if employee.renewal_or_extend == 'Renewal' and employee.nationality != 'Kuwaiti':
                 print(employee.employee)
                 create_mi_record(frappe.get_doc('Work Permit',{'preparation':preparation_name,'employee':employee.employee}))
-        
+
+#Creating mi for transfer
+def creat_medical_insurance_for_transfer(employee_name):
+    employee = frappe.get_doc('Employee',employee_name)
+    if employee:
+        create_mi_record(frappe.get_doc('Work Permit',{'employee':employee.employee}))
+
+
 def create_mi_record(WorkPermit):
+    new_medical_insurance = frappe.new_doc('Medical Insurance')
 
     if(WorkPermit.work_permit_type == "Renewal Non Kuwaiti"):
         Insurance_status = "Renewal"
+        new_medical_insurance.date_of_application = WorkPermit.date_of_application #setting the same date of application of wp
     elif(WorkPermit.work_permit_type == "New Non Kuwaiti"):#Overseas
         Insurance_status = "New" 
-    elif (WorkPermit.work_permit_type == "Local Transfer"):#for non kuwaiti <if it is for kuwait called new or renew and they don;t have MI process
+    elif (WorkPermit.work_permit_type == "Local Transfer"):#for non kuwaiti <if it is for kuwait called new or renew and they don't have MI process
         Insurance_status = "Local Transfer" # the Insurance_status will be new for overseas only 
+        new_medical_insurance.date_of_application = today() #set the date of creation
 
-    new_medical_insurance = frappe.new_doc('Medical Insurance')
     new_medical_insurance.work_permit = WorkPermit.name
     new_medical_insurance.preparation = WorkPermit.preparation
     new_medical_insurance.insurance_status = Insurance_status
+    new_medical_insurance.passport_expiry_date = WorkPermit.passport_expiry_date
+    new_medical_insurance.employee_id = WorkPermit.employee_id
     new_medical_insurance.insert()
-# Notify grd operatorwith the created mi dt
-    #notify_grd_operator_draft_new_mi()
 
 @frappe.whitelist()
 def get_employee_data_from_civil_id(civil_id):
     employee_id = frappe.db.exists('Employee', {'one_fm_civil_id': civil_id})
     if employee_id:
         return frappe.get_doc('Employee', employee_id)
-
-@frappe.whitelist()
-def set_dates():
-    currentDateTime = now_datetime()
-    return currentDateTime
-
 
 def notify_grd_operator_draft_new_mi():
     filter_mi = {'apply_medical_insurance_online': ['=', "No"],'docstatus':0 }

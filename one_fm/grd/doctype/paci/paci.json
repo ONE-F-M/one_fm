@@ -7,19 +7,22 @@
  "field_order": [
   "naming_series",
   "employee",
+  "date_of_application",
   "column_break_3",
-  "civil_id",
+  "category",
   "preparation",
   "section_break_3",
   "first_name_arabic",
   "second_name_arabic",
   "third_name_arabic",
   "last_name_arabic",
+  "civil_id",
   "column_break_8",
   "first_name_english",
   "second_name_english",
   "third_name_english",
   "last_name_english",
+  "employee_id",
   "section_break_13",
   "nationality",
   "passport_number",
@@ -52,7 +55,6 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
@@ -151,7 +153,7 @@
   {
    "fetch_from": "employee.residency_expiry_date",
    "fieldname": "residency_expiry_date",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Residency Expiry Date"
   },
   {
@@ -162,15 +164,17 @@
    "default": "No",
    "fieldname": "apply_civil_id_online",
    "fieldtype": "Select",
-   "label": "Apply Civil ID Online",
+   "label": "Apply Online",
    "options": "\nYes\nNo"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "upload_civil_id_payment",
    "fieldtype": "Attach",
-   "label": "Upload Civil ID Payment"
+   "label": "Upload Payment Invoice"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "upload_civil_id",
    "fieldtype": "Attach",
    "label": "Upload Civil ID"
@@ -196,22 +200,22 @@
   {
    "fieldname": "apply_civil_id_online_datetime",
    "fieldtype": "Data",
-   "label": "Apply Civil ID Online DateTime"
+   "label": "Apply On"
   },
   {
    "fieldname": "upload_civil_id_payment_datetime",
    "fieldtype": "Data",
-   "label": "Upload Civil ID Payment DateTime"
+   "label": "Upload Payment Invoice On"
   },
   {
    "fieldname": "upload_civil_id_datetime",
    "fieldtype": "Data",
-   "label": "Upload Civil ID DateTime"
+   "label": "Upload Civil ID On"
   },
   {
    "fieldname": "new_civil_id_expiry_date_update_time",
    "fieldtype": "Data",
-   "label": "New Civil ID Expiry Date Update Time"
+   "label": "New Civil ID Expiry Date Update On"
   },
   {
    "fieldname": "completed_on",
@@ -238,7 +242,6 @@
    "fieldname": "preparation",
    "fieldtype": "Link",
    "hidden": 1,
-   "in_list_view": 1,
    "label": "Preparation",
    "options": "Preparation"
   },
@@ -246,15 +249,37 @@
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Civil ID"
   },
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID"
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Date Of Application",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Category",
+   "options": "\nRenewal\nTransfer"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-04-25 14:15:09.177732",
+ "modified": "2021-05-10 12:44:30.693930",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",

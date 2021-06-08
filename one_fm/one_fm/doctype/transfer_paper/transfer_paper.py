@@ -37,6 +37,7 @@ class TransferPaper(Document):
             create_notification_log(subject, message, [self.grd_operator], wp_record)
 
     def resend_new_wp_record(self):
+
         if self.tp_status == "Re-send":
             self.set_previous_wp_record_rejected()
             self.check_signed_workContract_employee_completed()

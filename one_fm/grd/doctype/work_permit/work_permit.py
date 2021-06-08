@@ -4,8 +4,9 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today, add_days, get_url
+from frappe.utils import today, add_days, get_url, date_diff
 from frappe import _
+from one_fm.api.notification import create_notification_log
 from frappe.permissions import has_permission
 from frappe.utils.user import get_users_with_role
 from datetime import date, timedelta
@@ -13,83 +14,104 @@ import calendar
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
-
+from email import policy
+from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
+from one_fm.grd.doctype.medical_insurance import medical_insurance
 class WorkPermit(Document):
-    
     def validate(self):
-        #pass
         self.set_grd_values()
-        
-
+        self.check_workflow_status()
+        if self.work_permit_type == "Local Transfer":
+            self.check_inform_previous_company()
+            if self.work_permit_approved == "Yes":
+                self.recall_create_fingerprint_appointment_transfer()
+                self.notify_grd_transfer_fp_record()
+    
     def set_grd_values(self):
         if not self.grd_supervisor:
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
         if not self.grd_operator:
-            self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_operator")#frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
-    
+            self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
+
+    def check_workflow_status(self):
+        if self.work_permit_status == "Draft":
+            #if "GRD Operator" in frappe.get_roles(frappe.session.user):
+            page_link = get_url("/desk#Form/Work Permit/" + self.name)
+            message = "<p>Apply Online for Work Permit<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
+            subject = '{0} Apply Online for Work Permit'.format(self.grd_operator)
+            self.notify_grd(page_link,message,subject,"GRD Operator")
+        #elif "Accepted by Supervisor" in self.workflow_state:
+        elif self.work_permit_status == "Pending by Supervisor":
+            #if "GRD Supervisor" in frappe.get_roles(frappe.session.user):
+            page_link = get_url("/desk#Form/Work Permit/" + self.name)
+            message = "<p>Check Work Permit for Acceptance<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
+            subject = '{0} Check Work Permit for Acceptance'.format(self.grd_supervisor)
+            self.notify_grd(page_link,message,subject,"GRD Supervisor")
+        #elif "Approved by PRO" in self.workflow_state and not self.upload_work_permit and not self.attach_invoice and not self.new_work_permit_expiry_date:
+        elif self.work_permit_status == "Pending by Operator" and not self.upload_work_permit and not self.attach_invoice and not self.new_work_permit_expiry_date:
+            #if "GRD Operator" in frappe.get_roles(frappe.session.user):
+            page_link = get_url("/desk#Form/Work Permit/" + self.name)
+            message = "<p>Upload Required Documents for Work Permit<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
+            subject = '{0} Upload Required Documents for Work Permit'.format(self.grd_operator)
+            self.notify_grd(page_link,message,subject,"GRD Operator")
+
+    def check_inform_previous_company(self):
+         # 3 days with in the applied days so 2
+        if date_diff(today(),self.date_of_application) == 2 and self.approve_previous_company == "No":
+            self.work_permit_status = "Rejected"
+            self.save()
+
     def on_submit(self):
         #self.validate_mandatory_fields_on_submit()# GRD Operator # Notify # GRD Supervisor
-        self.check_wp_status()
-        if self.work_permit_approved == "Yes" and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
-            self.db_set('work_permit_status', 'Approved')
+        #self.check_wp_status()
+        if "Completed" in self.workflow_state and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
+            self.db_set('work_permit_status', 'Completed')
             self.clean_old_wp_record_in_employee_doctype()
             self.set_work_permit_attachment_in_employee_doctype()
-        elif self.work_permit_approved == "No" and not self.upload_work_permit and not self.attach_invoice and not self.new_work_permit_expiry_date and frappe.session.user == self.grd_operator:
-            frappe.throw(_("Upload The Required Documents To Submit"))
-        elif frappe.session.user == self.grd_supervisor and self.grd_supervisor_check_and_approval_wp_online == 'Yes':
-            frappe.throw(_("Thaks For Saving. Operator Needs To Upload The Required Documents To Submit"))
         else:
             frappe.throw(_("Upload The Required Documents To Submit"))
 
         
+    def recall_create_fingerprint_appointment_transfer(self):
+        fingerprint_appointment.create_fp_record_for_transfer(frappe.get_doc('Employee',self.employee))
 
+    def notify_grd_transfer_fp_record(self):
+        fp = frappe.db.get_value("Fingerprint Appointment",{'employee':self.employee,'fingerprint_appointment_type':'Local Transfer'})
+        print(fp)#printing wp name
+        if fp:
+            fp_record = frappe.get_doc('Fingerprint Appointment', fp)
+            page_link = get_url("/desk#Form/Fingerprint Appointment/" + fp_record.name)
+            subject = ("Apply for Transfer Fingerprint Appointment Online")
+            message = "<p>Please Apply for Transfer Fingerprint Appointment Online for <a href='{0}'></a>.</p>".format(fp_record.employee)
+            create_notification_log(subject, message, [self.grd_operator], fp_record)
+        
     def check_wp_status(self):
-        users1 = get_users_with_role('GRD Operator')
-        users2 = get_users_with_role('GRD Supervisor')
-        if self.work_permit_status == "Pending" and frappe.session.user == self.grd_operator and self.grd_supervisor_check_and_approval_wp_online == 'No':
-            frappe.throw(_("{0} ({1}) need to be accepted by GRD supervisor. Please wait.").format(_(self.doctype), self.name))
+        operator = frappe.utils.user.get_users_with_role("GRD Operator")#email
+        supervisor = frappe.utils.user.get_users_with_role("GRD Supervisor")#email
+        if "Accepted by Supervisor" in self.workflow_state and self.grd_operator in operator:
             self.notify_grd_supervisor()
-        if self.work_permit_status == "Accepted" and frappe.session.user == self.grd_supervisor and self.grd_supervisor_check_and_approval_wp_online == "Yes":
+        if "Approved by PRO" in self.workflow_state and supervisor == self.grd_supervisor:
             self.notify_grd_operator()
             self.validate_mandatory_fields_for_grd_operator_again()
 
     def validate_mandatory_fields_for_grd_operator_again(self):
-        users = get_users_with_role('GRD Operator')
+        users = frappe.utils.user.get_users_with_role('GRD Operator')
         filtered_users = []
         for user in users:
             if has_permission(doctype=self.doctype, user=user):
                 filtered_users.append(user)
-            if filtered_users and len(filtered_users) > 0:
-                if self.work_permit_status == "Accepted" and self.grd_supervisor_check_and_approval_wp_online == 'Yes' and frappe.session.user == self.grd_operator:
-                    if self.work_permit_approved == "No" and not self.upload_work_permit and not self.attach_invoice:
-                        frappe.throw(_("Upload Required Documents To Submit"))
+            if filtered_users and len(filtered_users) > 0: 
+                if "Approved by PRO" in self.workflow_state and not self.upload_work_permit and not self.attach_invoice:
+                    frappe.throw(_("Upload Required Documents To Submit"))
 
-
-    def notify_grd_supervisor(self):
-        print("something")
-        users = get_users_with_role('GRD Supervisor')
-        filtered_users = []
-        for user in users:
-            if has_permission(doctype=self.doctype, user=user):
-                filtered_users.append(user)
-            if filtered_users and len(filtered_users) > 0:
-                if self.grd_operator_apply_work_permit_on_ashal == "Yes" and self.work_permit_status == "Pending" and frappe.session.user == self.grd_supervisor:
-                    page_link = get_url("/desk#Form/Work Permit/" + self.name)
-                    message = "<p>Please Review and Accept WP Online<a href='{0}'>{1}</a> Applied by {2}.</p>".format(page_link, self.name, self.grd_operator)
-                    subject = 'Apply WP Online by {0}'.format(self.grd_operator)
-                    send_email(self, [self.grd_supervisor], message, subject)
-                    create_notification_log(subject, message, [self.grd_supervisor], self)             
-        self.save()
-        self.reload()
-
-    def notify_grd_operator(self):
-        if self.grd_supervisor_check_and_approval_wp_online == "Yes" and self.work_permit_status == "Accepted" and frappe.session.user == self.grd_operator:
-            page_link = get_url("/desk#Form/Work Permit/" + self.name)
-            message = "<p>Please Submit WP<a href='{0}'>{1}</a> Accepted by {2}.</p>".format(page_link, self.name, self.grd_supervisor)
-            subject = 'Check WP Online by {0}'.format(self.grd_supervisor)
+    def notify_grd(self,page_link,message,subject,user):
+        if user == "GRD Operator":
             send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
-    
+        if user == "GRD Supervisor":
+            send_email(self, [self.grd_supervisor], message, subject)
+            create_notification_log(subject, message, [self.grd_supervisor], self)
+
     def clean_old_wp_record_in_employee_doctype(self):
         """ Clean old wp records in employee """
         to_remove = []
@@ -141,6 +163,22 @@ def get_employee_data_for_work_permit(employee_name):
     work_permit_exist = frappe.db.exists('Work Permit', {'employee': employee_name, 'docstatus': 1})
     return work_permit_exist
 
+# Create Work Permit Record for new Kuwaiti
+def create_work_permit_new_kuwaiti(pifss_name,employee):
+    pifss103_form = frappe.get_doc('PIFSS Form 103',pifss_name)
+    if pifss103_form:
+        employee_in_pifss103_form = frappe.get_doc('Employee',employee)
+        if employee_in_pifss103_form:
+            create_wp_kuwaiti(frappe.get_doc('Employee',employee_in_pifss103_form.employee),"New Kuwaiti",pifss_name)
+
+# Create Work Permit Record for Transfer
+def create_work_permit_transfer(tp_name,employee):
+    tp = frappe.get_doc('Transfer Paper',tp_name)
+    if tp:
+        employee_in_tp = frappe.get_doc('Employee',employee)
+        if employee_in_tp:
+            create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)
+
 # Create Work Permit record once a month for renewals list  
 def create_work_permit_renewal(preparation_name):
 #Get employees of the choosen preparation record
@@ -148,69 +186,109 @@ def create_work_permit_renewal(preparation_name):
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
             if employee.renewal_or_extend == 'Renewal':
-                create_work_permit(frappe.get_doc('Employee',employee.employee),preparation_name)
+                create_wp_renewal(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
       
-def create_work_permit(employee,preparation_name):
-    #Set the date of application to be before 14 days of residency expriy date
-    start_day = add_days(employee.residency_expiry_date, -14)
+
+#FOR RENEWAL
+def create_wp_renewal(employee,status,name):
+    if status and status == "Renewal":
+        start_day = add_days(employee.residency_expiry_date, -14)
+        Doctype = "Preparation"
+        preparation_name = name
     # setting type of renewal work permit
-    if employee.one_fm_nationality == "Kuwaiti":
-        work_permit_type_renewal = "Renewal Kuwaiti"
-    if employee.one_fm_nationality != "Kuwaiti":
-        work_permit_type_renewal = "Renewal Non Kuwaiti"
-  
+        if employee.one_fm_nationality == "Kuwaiti":
+            work_permit_type = "Renewal Kuwaiti"
+        if employee.one_fm_nationality != "Kuwaiti":
+            work_permit_type = "Renewal Non Kuwaiti"
     if employee.one_fm_work_permit:
         # Renew Work Permit: 1. Renew Kuwaiti Work Permit, 2. Renew Overseas Work Permit
         work_permit = frappe.get_doc('Work Permit', employee.one_fm_work_permit)
         new_work_permit = frappe.copy_doc(work_permit)
         new_work_permit.preparation = preparation_name
-        new_work_permit.work_permit_type = work_permit_type_renewal
+        new_work_permit.work_permit_type = work_permit_type
         new_work_permit.date_of_application = start_day
-        new_work_permit.insert()
-        
-        
+        new_work_permit.transfer_paper = None
+        new_work_permit.ref_doctype = Doctype
+        new_work_permit.ref_name = name
+        new_work_permit.insert()  
     else:
         # Create New Work Permit: 1. New Overseas, 2. New Kuwaiti, 3. Work Transfer
         work_permit = frappe.new_doc('Work Permit')
         work_permit.employee = employee.name
         work_permit.preparation = preparation_name
-        work_permit.work_permit_type = work_permit_type_renewal
+        work_permit.work_permit_type = work_permit_type
         work_permit.date_of_application = start_day
+        work_permit.ref_doctype = Doctype
+        work_permit.ref_name = name
+        work_permit.transfer_paper = None
+        work_permit.save()
+
+#FOR Transfer
+def create_wp_transfer(employee,status,name):
+    if status == "Local Transfer":
+            start_day = today()
+            Doctype = "Transfer Paper"
+            work_permit_type = "Local Transfer"
+            preparation_name = None
+    if employee.one_fm_work_permit:
+        # Renew Work Permit: 1. Renew Kuwaiti Work Permit, 2. Renew Overseas Work Permit
+        work_permit = frappe.get_doc('Work Permit', employee.one_fm_work_permit)
+        new_work_permit = frappe.copy_doc(work_permit)
+        new_work_permit.preparation = None
+        new_work_permit.work_permit_type = work_permit_type
+        new_work_permit.date_of_application = start_day
+        new_work_permit.ref_doctype = Doctype
+        new_work_permit.ref_name = name
+        new_work_permit.transfer_paper = name
+        new_work_permit.insert()            
+    else:
+        # Create New Work Permit: 1. New Overseas, 2. New Kuwaiti, 3. Work Transfer
+        work_permit = frappe.new_doc('Work Permit')
+        work_permit.employee = employee.name
+        work_permit.preparation = None
+        work_permit.work_permit_type = work_permit_type
+        work_permit.date_of_application = start_day
+        work_permit.ref_doctype = Doctype
+        work_permit.ref_name = name
+        work_permit.transfer_paper = name
+        work_permit.save()
+
+#For New Kuwaiti New Kuwaiti
+def create_wp_kuwaiti(employee,status,name):
+    if status == "New Kuwaiti":
+        start_day = today()
+        Doctype = "PIFSS Form 103"
+        work_permit_type = "New Kuwaiti"
+    if employee.one_fm_work_permit:
+        # Renew Work Permit: 1. Renew Kuwaiti Work Permit, 2. Renew Overseas Work Permit
+        work_permit = frappe.get_doc('Work Permit', employee.one_fm_work_permit)
+        new_work_permit = frappe.copy_doc(work_permit)
+        new_work_permit.preparation = None
+        new_work_permit.work_permit_type = work_permit_type
+        new_work_permit.date_of_application = start_day
+        new_work_permit.ref_doctype = Doctype
+        new_work_permit.ref_name = name
+        new_work_permit.transfer_paper = None
+        new_work_permit.insert()         
+    else:
+        # Create New Work Permit: 1. New Overseas, 2. New Kuwaiti, 3. Work Transfer
+        work_permit = frappe.new_doc('Work Permit')
+        work_permit.employee = employee.name
+        work_permit.preparation = None
+        work_permit.work_permit_type = work_permit_type
+        work_permit.date_of_application = start_day
+        work_permit.ref_doctype = Doctype
+        work_permit.ref_name = name
+        work_permit.transfer_paper = None
         work_permit.save()
 
 #System check at 4pm if grd operator submit the application online (cron)
 def system_checks_grd_operator_submit_application_online():
-    """ Notify GRD Operator to apply for wp  System checks at 4pm """
-    today = date.today()
-    filters = {
-        'docstatus': 0,# dt is draft 
-        #'date_of_application': ['=',today],
-        'grd_operator_apply_work_permit_on_ashal': ['=','No'],
-        'grd_supervisor_check_and_approval_wp_online': ['=','No']
-    }
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator'])
-    if len(work_permit_list) > 0:
-       #print(work_permit_list)
-       work_permit_notify_first_grd_operator() # 9am
-   
-
-#System check at 4pm if grd supervisor accept the application online (cron)
-def system_checks_grd_operator_complete_application():
-    """ Notify GRD Operator to complete wp System checks at 4pm """
-    today = date.today()
-    filters = {
-    'docstatus': 0, 
-    'grd_operator_apply_work_permit_on_ashal': ['=','Yes'],
-    'grd_supervisor_check_and_approval_wp_online': ['=','Yes'], #grd_supervisor_check_and_approval_wp_online. work_permit_approved
-    'work_permit_approved': ['=','No']# grd operator task
-
-    }
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator'])
-    if len(work_permit_list) > 0:
-        work_permit_notify_grd_operator_check_approval() # 9am work_permit_notify_grd_supervisor_check_approval
+    """ Notify GRD Operator to apply for wp renewal System checks at 4pm """
+    work_permit_notify_first_grd_operator() # 9am
 
 # Notify GRD Operator at 9:00 am (cron)
-def work_permit_notify_first_grd_operator():#will notify the grd operator every 8:30 am to fill the work permit for the list of employee
+def work_permit_notify_first_grd_operator():
     work_permit_notify_grd_operator('yellow')
 
 # Notify GRD Operator at 9:30 am (cron)
@@ -219,46 +297,46 @@ def work_permit_notify_again_grd_operator():
 
 # Notify GRD Supervisor at 4:00 pm to approve and check online submit (cron)
 def work_permit_notify_grd_supervisor_to_approve():
-    work_permit_notify_grd_supervisor('yellow')
+    #""" Notify GRD supervisor to complete wp System checks at 4pm """
+    work_permit_list = frappe.db.get_list('Work Permit',{'workflow_state':'Accepted by Supervisor','date_of_application':today},['name', 'grd_supervisor'])
+    print(work_permit_list)
+    if len(work_permit_list) > 0:
+        print(work_permit_list)
+        email_notification_to_grd_user('grd_supervisor', work_permit_list, 'yellow', 'Check')
+    
 
+#System check at 4pm if grd operator accept the application online (cron)
+def system_checks_grd_operator_complete_application():
+    """ Notify GRD Operator to complete wp System checks at 4pm """
+    today = date.today()
+    work_permit_list = frappe.db.get_list('Work Permit',{'workflow_state':'Approved by PRO','date_of_application':today},['name', 'grd_operator'])
+    if len(work_permit_list) > 0:
+        email_notification_to_grd_user('grd_operator', work_permit_list, 'red', 'Complete')
 
 # Notify GRD Operator at 9 am (check approval of wp) (cron)
 def work_permit_notify_grd_operator_check_approval(): #work_permit_notify_grd_supervisor_check_approval
     work_permit_notify_grd_operator_to_check_and_complete('yellow') 
 
-# Notify Finance Dept. 4:00 pm - Work Permit is Approved by the Govt. and do Payments
-# def work_permit_notify_finance_dept_for_payment():
-#     # Get work permit list
-#     filters = {
-#         'docstatus': 1, 'work_permit_approved': 'Yes', 'work_permit_status': 'Approved',
-#         'payment_transferred_from_finance_dept': 0, 'upload_work_permit': ['!=',''],
-#         'attach_invoice':['!=','']
-#     }
-#     work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'notify_finance_user'])
-#     email_notification_to_grd_user('notify_finance_user', work_permit_list, reminder_indicator, 'Take action on Payment Transfer Requested for ')
-
 def work_permit_notify_grd_operator_to_check_and_complete(reminder_indicator):
     """ Notify GRD Operator to complete wp System checks at 4pm """
     # Get work permit list
-    filters = {'work_permit_approved': 'No','work_permit_status': 'Accepted'}
+    filters = {'work_permit_approved': 'No','work_permit_status': 'Accepted by Supervisor'}
     work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator'])
     email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Check Approval status of WP and Complete')
-
 
 def work_permit_notify_grd_operator(reminder_indicator):
     """ Notify GRD Operator first and second time to remind applying online for WP """
     # Get work permit list
     today = date.today()
-    filters = {'docstatus': 0,
-    'grd_operator_apply_work_permit_on_ashal':['=','No'] ,'reminded_grd_operator': 0, 'reminded_grd_operator_again':0,'date_of_application': ['=',today]}
+    filters = {'docstatus': 0,                                                                
+    'reminded_grd_operator': 0, 'reminded_grd_operator_again':0,'date_of_application': ['=',today]}
     if reminder_indicator == 'red':
         filters['reminded_grd_operator'] = 1
         filters['reminded_grd_operator_again'] = 0
                                                             
     work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator', 'grd_supervisor'])
-    # send grd supervisor if reminder for second time (red)
     cc = [work_permit_list[0].grd_supervisor] if reminder_indicator == 'red' else []
-    email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Submit', cc)
+    email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Apply On ASHAL', cc)
 
     # Update reminded grd operator to 1
     if reminder_indicator == 'red':
@@ -272,7 +350,7 @@ def work_permit_notify_grd_supervisor(reminder_indicator): # at 9am checks grd s
     """ Notify GRD Supervisor to remind accepting WP on ASHAL application """
     # Get work permit list
     if reminder_indicator == 'yellow':
-        filters = {'docstatus': 1, 
+        filters = {'docstatus': 0, 
         'grd_operator_apply_work_permit_on_ashal':['=','Yes'],
         'grd_supervisor_check_and_approval_wp_online':['=','No']}
 
@@ -283,7 +361,7 @@ def email_notification_to_grd_user(grd_user, work_permit_list, reminder_indicato
     recipients = {}
 
     for work_permit in work_permit_list:
-        page_link = get_url("http://192.168.8.102/desk#Form/Work Permit/"+work_permit.name)
+        page_link = get_url("/desk#Form/Work Permit/"+work_permit.name)
         message = "<a href='{0}'>{1}</a>".format(page_link, work_permit.name)
         if work_permit[grd_user] in recipients:
             recipients[work_permit[grd_user]].append(message)#add the message in the empty list
@@ -305,7 +383,7 @@ def email_notification_to_grd_user(grd_user, work_permit_list, reminder_indicato
                 header=['Work Permit Reminder', reminder_indicator],
             )
             to_do_to_grd_users(_('{0} Work Permit'.format(action)), message, recipient)
-            create_notification_log(subject, message, [work_permit.grd_user], work_permit)#added
+            #create_notification_log(subject, message, [work_permit.grd_user], work_permit)
 
 def to_do_to_grd_users(subject, description, user):
     frappe.get_doc({
@@ -324,14 +402,144 @@ def send_email(doc, recipients, message, subject):
 		reference_doctype=doc.doctype,
 		reference_name=doc.name
 	)
-def create_notification_log(subject, message, for_users, reference_doc):
-    for user in for_users:
-        doc = frappe.new_doc('Notification Log')
-        doc.subject = subject
-        doc.email_content = message
-        doc.for_user = user
-        doc.document_type = reference_doc.doctype
-        doc.document_name = reference_doc.name
-        doc.from_user = reference_doc.modified_by
-        doc.save(ignore_permissions=True)
-		
+
+#################################################
+#            Work Permit Transfer 
+#################################################
+
+def Notify_grd_operator():
+    """ Notify operator at 8 am """
+    filters = {'grd_operator_apply_work_permit_on_ashal':'No','work_permit_type':'Local Transfer','docstatus': 0}
+    twp_list = frappe.get_list('Work Permit',filters,['grd_operator','name'])
+    if len(twp_list) > 0:
+        for twp in twp_list:
+            print(twp.name)
+            page_link = get_url("/desk#Form/Work Permit/" + twp.name)
+            message = "<p>Apply for Transfer Work Permit on ASHAL <a href='{0}'>{1}</a>.</p>".format(page_link, twp.name)
+            subject = 'Apply for Transfer Work Permit by {0}'.format(twp.grd_operator)
+            create_notification_log(subject, message, [twp.grd_operator], twp)
+
+#System checks at 4pm
+def system_check_transfer_wp_apply_online():
+    """ system check at 4pm """
+    filters = {'grd_operator_apply_work_permit_on_ashal':'No','work_permit_type':'Local Transfer','docstatus': 0}
+    twp_list = frappe.get_list('Work Permit',filters,['grd_operator','name','grd_supervisor'])
+    if len(twp_list) > 0:
+        transfer_work_permit_notify_first_grd_operator()
+
+# Notify GRD Operator at 8:30 am 
+def transfer_work_permit_notify_first_grd_operator():#will notify the grd operator every 8:30 am to fill the work permit for the list of employee
+    transfer_work_permit_notify_grd_operator('yellow')
+
+# Notify GRD Operator at 9:30 am 
+def transfer_work_permit_notify_again_grd_operator():
+    transfer_work_permit_notify_grd_operator('red')
+
+# Notify GRD Supervisor to check application online at 10 am
+def Notify_grd_supervisor_to_accept_transfer_work_permit_():
+    transfer_work_permit_notify_grd_supervisor('yellow')
+
+# Notify GRD Supervisor to check application online at 10:30 am
+def Notify_grd_supervisor_to_accept_transfer_work_permit_():
+    transfer_work_permit_notify_grd_supervisor('red')
+
+def transfer_work_permit_notify_grd_supervisor(reminder_indicator): 
+    """ Notify GRD Supervisor to remind accepting TWP on ASHAL application """
+    if reminder_indicator == 'yellow':
+        filters = {'docstatus': 0, 
+        'grd_operator_apply_work_permit_on_ashal':['=','Yes'],
+        'grd_supervisor_check_and_approval_wp_online':['=','No'],
+        'work_permit_type':'Local Transfer'}
+
+    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_supervisor'])
+    if len(work_permit_list) > 0:
+        for twp in work_permit_list:
+            page_link = get_url("/desk#Form/Work Permit/" + twp.name)
+            message = "<p>Check and Accept Transfer Work Permit on ASHAL <a href='{0}'>{1}</a>.</p>".format(page_link, twp.name)
+            subject = 'Apply for Transfer Work Permit by {1}'.format(twp.grd_operator)
+            create_notification_log(subject, message, [twp.grd_operator], twp)
+    email_notification_to_grd_user('grd_supervisor', work_permit_list, reminder_indicator, 'Check and Accept')
+
+# Notify at 11 am
+def system_check_grd_operator_approve_previous_company_for_approval():
+    filters = {'docstatus': 0, 
+        'grd_operator_apply_work_permit_on_ashal':['=','Yes'],
+        'grd_supervisor_check_and_approval_wp_online':['=','Yes'],
+        'work_permit_type':'Local Transfer',
+        'approve_previous_company':'No'
+        }
+    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator'])
+    if len(work_permit_list) > 0:
+        for twp in work_permit_list:
+            page_link = get_url("/desk#Form/Work Permit/" + twp.name)
+            message = "<p>Check Approval for Previous Company <a href='{0}'>{1}</a>.</p>".format(page_link, twp.name)
+            subject = 'Check Approval for Previous Company by {1}'.format(twp.grd_operator)
+            create_notification_log(subject, message, [twp.grd_operator], twp)
+
+# Notify at 11:30 am
+def Notify_grd_operator_approve_previous_company_first():#reminded_grd_operator_approve_previous_company
+    tansfer_work_permit_notify_grd_operator_approve_previous_company('yellow')
+
+#Notify at 12 pm
+def Notify_grd_operator_approve_previous_company_again():
+    tansfer_work_permit_notify_grd_operator_approve_previous_company('red')
+
+# Notify operator to fill the required document to submit
+def Notify_grd_operator_to_upload_required_documents_to_submit_transfer_work_permit():
+    filters = {'docstatus': 0, 
+        'grd_operator_apply_work_permit_on_ashal':['=','Yes'],
+        'grd_supervisor_check_and_approval_wp_online':['=','Yes'],
+        'work_permit_type':'Local Transfer',
+        'approve_previous_company':'Yes',
+        'work_permit_approved':'No',
+        'new_work_permit_expiry_date':['='," "],
+        'upload_work_permit':['='," "],
+        'attach_invoice':['='," "]
+        }
+    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator'])
+    if len(work_permit_list) > 0:
+        for twp in work_permit_list:
+            page_link = get_url("/desk#Form/Work Permit/" + twp.name)
+            message = "<p>Upload the Required Documents <a href='{0}'>{1}</a>.</p>".format(page_link, twp.name)
+            subject = 'Upload the Required Documents by {1}'.format(twp.grd_operator)
+            create_notification_log(subject, message, [twp.grd_operator], twp)
+
+def transfer_work_permit_notify_grd_operator(reminder_indicator):
+    """ Notify GRD Operator first and second time to remind applying online for TWP """
+    filters = {'docstatus': 0,
+    'grd_operator_apply_work_permit_on_ashal':['=','No'] ,'reminded_grd_operator': 0, 'reminded_grd_operator_again':0,'work_permit_type':'Local Transfer'}
+    if reminder_indicator == 'red':
+        filters['reminded_grd_operator'] = 1
+        filters['reminded_grd_operator_again'] = 0
+                                                            
+    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator', 'grd_supervisor'])
+    
+    cc = [work_permit_list[0].grd_supervisor] if reminder_indicator == 'red' else []
+    email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Apply', cc)
+
+    if reminder_indicator == 'red':
+        field = 'reminded_grd_operator_again'
+    elif reminder_indicator == 'yellow':
+        field = 'reminded_grd_operator'
+
+    frappe.db.set_value("Work Permit", filters, field, 1)
+
+def tansfer_work_permit_notify_grd_operator_approve_previous_company(reminder_indicator):
+    """ Notify GRD Operator first and second time to check approval of previous company for TWP """
+    filters = {'docstatus': 0,
+    'grd_operator_apply_work_permit_on_ashal':['=','Yes'] ,'reminded_grd_operator_approve_previous_company': 0, 'reminded_grd_operator_approve_previous_company_again':0,'work_permit_type':'Local Transfer'}
+    if reminder_indicator == 'red':
+        filters['reminded_grd_operator_approve_previous_company'] = 1
+        filters['reminded_grd_operator_approve_previous_company_again'] = 0
+                                                            
+    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator', 'grd_supervisor'])
+    
+    cc = [work_permit_list[0].grd_supervisor] if reminder_indicator == 'red' else []
+    email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Apply', cc)
+
+    if reminder_indicator == 'red':
+        field = 'reminded_grd_operator_approve_previous_company_again'
+    elif reminder_indicator == 'yellow':
+        field = 'reminded_grd_operator_approve_previous_company'
+
+    frappe.db.set_value("Work Permit", filters, field, 1)
