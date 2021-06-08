@@ -107,11 +107,16 @@ def get_data():
 			]
 		},
 		{
-			"label": _("Ministry of Interior Residency Jawazat"),
+			"label": _("Ministry of Interior"),
 			"items": [
 				{
 					"type": "doctype",
 					"name": "MOI Residency Jawazat",
+					"onboard": 1,
+				},
+				{
+					"type": "doctype",
+					"name": "Fingerprint Appointment",
 					"onboard": 1,
 				},
 			]
@@ -132,15 +137,6 @@ def get_data():
 				{
 					"type": "doctype",
 					"name": "Work Permit",
-					"onboard": 1,
-				},
-			]
-		},{
-			"label": _("Fingerprint"),
-			"items": [
-				{
-					"type": "doctype",
-					"name": "Fingerprint Appointment",
 					"onboard": 1,
 				},
 			]
