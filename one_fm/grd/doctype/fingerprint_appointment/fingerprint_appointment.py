@@ -104,7 +104,7 @@ def notify_grd_operator_prepare_fp_documents():#(at 2 pm everyday need to be not
     filters = {'schedule_appointment':'Yes', 'preparing_documents':'No','docstatus': 0,'preparing_documents_notification': today}
     fp_records = frappe.db.get_list('Fingerprint Appointment',filters,['name', 'grd_operator','grd_supervisor','date_and_time_confirmation'])
     if len(fp_records) > 0:
-        page_link = get_url("http://192.168.8.110/desk#Form/Fingerprint Appointment/" + fp_records.name)
+        page_link = get_url("/desk#Form/Fingerprint Appointment/" + fp_records.name)
         message = "<p>Fingerprint Appointments<a href='{0}'>{1}</a> Applied by {2}.</p>".format(page_link, fp_records.name, fp_records.grd_operator)
         subject = 'Prepare Documents 1.Original Passport 2.Appointment Letter for '
         send_email(fp_records, [fp_records.grd_operator], message, subject)
@@ -117,7 +117,7 @@ def notify_grd_operator_to_submit_application():
     print(today)
     fp_records = frappe.db.get_list('Fingerprint Appointment',filters,['name', 'grd_operator','grd_supervisor','date_and_time_confirmation'])
     if len(fp_records) > 0:
-        page_link = get_url("http://192.168.8.110/desk#Form/Fingerprint Appointment/" + fp_records.name)
+        page_link = get_url("/desk#Form/Fingerprint Appointment/" + fp_records.name)
         message = "<p>Fingerprint Appointments<a href='{0}'>{1}</a>.</p>".format(page_link, fp_records.name)
         subject = 'Submit the FP for '
         send_email(fp_records, [fp_records.grd_operator], message, subject)
@@ -155,7 +155,7 @@ def notify_operations(reminder_indicator,filters):
     """ Notify Operations Dep with the fp appoitment time and date """
     fp_list = frappe.db.get_list('Fingerprint Appointment', filters, ['name', 'operations_manager'])
     if len(fp_list) > 0:
-        page_link = get_url("http://192.168.8.110/desk#Form/Fingerprint Appointment/" + fp_list.name)
+        page_link = get_url("/desk#Form/Fingerprint Appointment/" + fp_list.name)
         message = "<p>Fingerprint Appointments<a href='{0}'>{1}</a> Applied by {2}.</p>".format(page_link, fp_list.name, fp_list.grd_operator)
         subject = 'Apply for Fingerprint Appointment Online for'
         send_email(fp_list, [fp_list.operations_manager], message, subject)
@@ -217,7 +217,7 @@ def email_notification_to_grd_user(grd_user, fp_list, reminder_indicator, action
     recipients = {}
 
     for fp in fp_list:
-        page_link = get_url("http://192.168.8.102/desk#Form/Fingerprint Appointment/"+fp.name)
+        page_link = get_url("/desk#Form/Fingerprint Appointment/"+fp.name)
         message = "<a href='{0}'>{1}</a>".format(page_link, fp.name)
         if fp[grd_user] in recipients:
             recipients[fp[grd_user]].append(message)#add the message in the empty list
