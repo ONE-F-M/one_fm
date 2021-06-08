@@ -313,6 +313,22 @@ def bring_designation_items(designation):
 	return {'item_list': item_list}
 
 @frappe.whitelist()
+def bring_erf_items(erf):
+	erf_doc = frappe.get_doc('ERF', erf)
+	item_list = []
+	if erf_doc:
+		for item in erf_doc.get("tool_request_item"):
+			item_list.append({
+				# 'item':item.item,
+				'item_name':item.item,
+				'quantity':item.quantity,
+				# 'uom':item.uom
+			})
+	else:
+		frappe.throw(_("No ERF named {} exist").format(erf))
+	return {'item_list': item_list}
+
+@frappe.whitelist()
 def update_status(name, status):
 	request_for_material = frappe.get_doc('Request for Material', name)
 	request_for_material.check_permission('write')
