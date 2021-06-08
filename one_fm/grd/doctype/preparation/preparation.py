@@ -76,7 +76,7 @@ class Preparation(Document):
     def recall_create_paci(self):
         paci.create_PACI_renewal(self.name)
   
-    def send_notifications(Self):
+    def send_notifications(self):
         if self.grd_operator:
             page_link = get_url("/desk#Form/Preparation/" + self.name)
             message = "<p>Renewal Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
