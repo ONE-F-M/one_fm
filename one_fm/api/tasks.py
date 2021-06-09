@@ -8,7 +8,7 @@ import frappe, erpnext
 from frappe import _
 from frappe.utils import now_datetime, cstr, getdate, get_datetime, cint, add_to_date
 from one_fm.api.doc_events import get_employee_user_id
-from erpnext.hr.doctype.payroll_entry.payroll_entry import get_end_date
+from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import create_payroll_entry
 
 class DeltaTemplate(Template):
