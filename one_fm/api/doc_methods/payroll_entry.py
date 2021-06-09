@@ -2,7 +2,7 @@ import frappe, erpnext
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff
 from frappe import _
-from erpnext.hr.doctype.payroll_entry.payroll_entry import get_end_date
+from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 
 
 def validate_employee_attendance(self):
