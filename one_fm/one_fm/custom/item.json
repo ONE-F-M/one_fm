@@ -1519,7 +1519,7 @@
    "modified_by": "Administrator",
    "name": "Item-item_size",
    "no_copy": 0,
-   "options": "Size",
+   "options": null,
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,
