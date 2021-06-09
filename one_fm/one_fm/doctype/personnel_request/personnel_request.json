@@ -209,8 +209,7 @@
   {
    "fieldname": "height",
    "fieldtype": "Data",
-   "label": "Height",
-   "options": ""
+   "label": "Height"
   },
   {
    "fieldname": "weight",
