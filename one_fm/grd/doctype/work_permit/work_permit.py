@@ -18,7 +18,11 @@ from email import policy
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 class WorkPermit(Document):
+    def on_update(self):
+        self.set_pam_file_number()
+
     def validate(self):
+        self.set_title()
         self.set_grd_values()
         self.check_workflow_status()
         if self.work_permit_type == "Local Transfer":
@@ -27,11 +31,20 @@ class WorkPermit(Document):
                 self.recall_create_fingerprint_appointment_transfer()
                 self.notify_grd_transfer_fp_record()
     
+    def set_title(self):
+        self.title = self.civil_id
+
     def set_grd_values(self):
         if not self.grd_supervisor:
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
+
+    def set_pam_file_number(self):
+        if self.pam_file_number:
+            employee = frappe.get_doc('Employee', self.employee)
+            employee.pam_file_number = self.pam_file_number
+            employee.save()
 
     def check_workflow_status(self):
         if self.work_permit_status == "Draft":
@@ -282,26 +295,29 @@ def create_wp_kuwaiti(employee,status,name):
         work_permit.transfer_paper = None
         work_permit.save()
 
-#System check at 4pm if grd operator submit the application online (cron)
-def system_checks_grd_operator_submit_application_online():
+#System check at 4pm everyday if grd operator submit the application online FOR RENEWAL(cron)
+def system_checks_grd_operator_submit_application_online():#done
     """ Notify GRD Operator to apply for wp renewal System checks at 4pm """
-    work_permit_notify_first_grd_operator() # 9am
-
+    filter = {"date_of_application":today(),'workflow_state':'Apply Online by PRO','work_permit_type':['in',('Renewal Non Kuwaiti','Renewal Kuwaiti')],'check_record':0}
+    work_permit_records = frappe.db.get_list('Work Permit',filter,['check_record','civil_id'])
+    print(work_permit_records)
+    if work_permit_records:
+        for wp in work_permit_records:
+            wp.check_record = 1
+            
 # Notify GRD Operator at 9:00 am (cron)
-def work_permit_notify_first_grd_operator():
+def work_permit_notify_first_grd_operator():#done
     work_permit_notify_grd_operator('yellow')
 
 # Notify GRD Operator at 9:30 am (cron)
-def work_permit_notify_again_grd_operator():
+def work_permit_notify_again_grd_operator():#done
     work_permit_notify_grd_operator('red')
 
-# Notify GRD Supervisor at 4:00 pm to approve and check online submit (cron)
-def work_permit_notify_grd_supervisor_to_approve():
-    #""" Notify GRD supervisor to complete wp System checks at 4pm """
-    work_permit_list = frappe.db.get_list('Work Permit',{'workflow_state':'Accepted by Supervisor','date_of_application':today},['name', 'grd_supervisor'])
-    print(work_permit_list)
+# Notify GRD Supervisor at  4pm  to approve and check online submit (cron)
+def work_permit_notify_grd_supervisor_to_approve():#################################
+    """ Notify GRD supervisor to complete wp System checks at 4pm """
+    work_permit_list = frappe.db.get_list('Work Permit',{'workflow_state':'Accepted by Supervisor'},['name','grd_supervisor'])
     if len(work_permit_list) > 0:
-        print(work_permit_list)
         email_notification_to_grd_user('grd_supervisor', work_permit_list, 'yellow', 'Check')
     
 
@@ -324,12 +340,11 @@ def work_permit_notify_grd_operator_to_check_and_complete(reminder_indicator):
     work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator'])
     email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Check Approval status of WP and Complete')
 
-def work_permit_notify_grd_operator(reminder_indicator):
+def work_permit_notify_grd_operator(reminder_indicator):#done
     """ Notify GRD Operator first and second time to remind applying online for WP """
     # Get work permit list
-    today = date.today()
     filters = {'docstatus': 0,                                                                
-    'reminded_grd_operator': 0, 'reminded_grd_operator_again':0,'date_of_application': ['=',today]}
+    'reminded_grd_operator': 0, 'reminded_grd_operator_again':0,'check_record':1}
     if reminder_indicator == 'red':
         filters['reminded_grd_operator'] = 1
         filters['reminded_grd_operator_again'] = 0
@@ -383,7 +398,7 @@ def email_notification_to_grd_user(grd_user, work_permit_list, reminder_indicato
                 header=['Work Permit Reminder', reminder_indicator],
             )
             to_do_to_grd_users(_('{0} Work Permit'.format(action)), message, recipient)
-            #create_notification_log(subject, message, [work_permit.grd_user], work_permit)
+            create_notification_log(subject, message, [work_permit.grd_user], work_permit)
 
 def to_do_to_grd_users(subject, description, user):
     frappe.get_doc({

@@ -173,6 +173,7 @@
    "label": "Designation"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_place_of_birth",
    "fieldname": "place_of_birth",
    "fieldtype": "Read Only",
@@ -362,6 +363,7 @@
   {
    "fieldname": "section_break_40",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "print_hide": 1
   },
   {
@@ -448,7 +450,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2021-05-10 12:53:39.847603",
+ "modified": "2021-06-09 08:46:38.280723",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",

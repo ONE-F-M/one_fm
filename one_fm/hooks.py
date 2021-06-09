@@ -280,6 +280,16 @@ scheduler_events = {
 			"one_fm.one_fm.grd.doctype.preparation.create_preparation"
 
 		],
+		"* 16 * * 0-4":[#From sun. to Thur. at 4pm
+			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_grd_supervisor_to_approve'
+		],
+		"* 9 * * 0-4":[#From sun. to Thur. at 9am
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator'
+		],
+		"30 9 * * 0-4":[#From sun. to Thur. at 9:30am
+			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator'
+		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_accept",
 			"one_fm.api.tasks.update_shift_type"
@@ -296,7 +306,6 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"0 16 * * *":[
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
 			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
 			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online'
 		],
@@ -317,7 +326,6 @@ scheduler_events = {
 		
 		],
 		"30 9 * * *": [
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator',
 			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first'
 			
 		],

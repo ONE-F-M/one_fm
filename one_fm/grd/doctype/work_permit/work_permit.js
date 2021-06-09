@@ -45,14 +45,10 @@ frappe.ui.form.on('Work Permit', {
     },
     approve_previous_company: function(frm){
         set_approve_previous_company(frm);
-    }
+    },
     
 });
-// var set_wp_status_read_only = function(frm){
-//     if (frm.doc.work_permit_status == "Rejected"){
-//         cur_frm.set_df_property("work_permit_status","read_only",1);
-//     }
-// };
+
 var set_employee_details = function(frm){
     if(frm.doc.employee){
         frappe.call({
@@ -91,7 +87,7 @@ var set_approve_previous_company = function(frm){
 var set_authorized_signatory_name_arabic = function(frm) {
     if(frm.doc.pam_file){
         frappe.call({
-            method: 'frappe.client.get',
+            method: 'frappe.client.get_value',
             args: {
                 doctype: "PAM Authorized Signatory List",
                 filters: { pam_file_name: frm.doc.pam_file }
@@ -170,3 +166,4 @@ var set_required_documents = function(frm) {
   }
     frm.refresh_field('documents_required');
 };
+

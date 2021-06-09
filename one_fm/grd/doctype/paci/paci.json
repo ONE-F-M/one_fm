@@ -6,10 +6,12 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
+  "title",
   "employee",
   "date_of_application",
   "column_break_3",
   "category",
+  "paci_status",
   "preparation",
   "section_break_3",
   "first_name_arabic",
@@ -34,12 +36,10 @@
   "upload_civil_id_payment",
   "upload_civil_id",
   "new_civil_id_expiry_date",
-  "completed",
   "column_break_25",
   "apply_civil_id_online_datetime",
   "upload_civil_id_payment_datetime",
   "upload_civil_id_datetime",
-  "new_civil_id_expiry_date_update_time",
   "completed_on",
   "amended_from",
   "grd_operator",
@@ -186,14 +186,6 @@
    "label": "New Civil ID Expiry Date"
   },
   {
-   "default": "No",
-   "fieldname": "completed",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Completed",
-   "options": "\nYes\nNo"
-  },
-  {
    "fieldname": "column_break_25",
    "fieldtype": "Column Break"
   },
@@ -213,18 +205,15 @@
    "label": "Upload Civil ID On"
   },
   {
-   "fieldname": "new_civil_id_expiry_date_update_time",
-   "fieldtype": "Data",
-   "label": "New Civil ID Expiry Date Update On"
-  },
-  {
    "fieldname": "completed_on",
    "fieldtype": "Date",
-   "label": "Completed On"
+   "label": "Completed On",
+   "read_only": 1
   },
   {
    "fieldname": "grd_operator",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "GRD Operator",
    "no_copy": 1,
    "options": "User",
@@ -233,6 +222,7 @@
   {
    "fieldname": "grd_supervisor",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "GRD Supervisor",
    "no_copy": 1,
    "options": "User",
@@ -248,8 +238,7 @@
   {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
+   "fieldtype": "Read Only",
    "label": "Civil ID"
   },
   {
@@ -259,7 +248,7 @@
   {
    "fetch_from": "employee.employee_id",
    "fieldname": "employee_id",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "in_list_view": 1,
    "label": "Employee ID"
   },
@@ -276,10 +265,23 @@
    "in_list_view": 1,
    "label": "Category",
    "options": "\nRenewal\nTransfer"
+  },
+  {
+   "fieldname": "paci_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "PACI Status",
+   "options": "\nUnder-Process\nCompleted"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-05-10 12:44:30.693930",
+ "modified": "2021-06-09 11:32:19.426053",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",

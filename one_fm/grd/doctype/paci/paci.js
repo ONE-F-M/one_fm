@@ -20,9 +20,9 @@ frappe.ui.form.on('PACI', {
 	upload_civil_id: function(frm){
 		set_upload_civil_id(frm);
 	},
-	new_civil_id_expiry_date: function(frm){
-		set_new_civil_id_expiry_date(frm);
-	},
+    upload_civil_id_payment:function(frm){
+        set_status(frm);
+    },
 
 });
 var set_employee_details = function(frm){
@@ -84,11 +84,9 @@ var set_upload_civil_id = function(frm)
 		frm.set_value('upload_civil_id_datetime',frappe.datetime.now_datetime())
 	}
 };
-var set_new_civil_id_expiry_date = function(frm)
-{//4
-	if(((frm.doc.new_civil_id_expiry_date != null) && (!frm.doc.new_civil_id_expiry_date_update_time)))
-	{
-		
-		frm.set_value('new_civil_id_expiry_date_update_time',frappe.datetime.now_datetime())
-	}
+var set_status = function(frm)
+{
+    if (frm.doc.upload_civil_id_payment){
+        frm.set_value('paci_status',"Under-Process")
+    }
 };

@@ -8,15 +8,15 @@ frappe.ui.form.on('Medical Insurance', {
     onload: function(frm) {
 		if (!frm.is_new()){
             set_employee_details(frm);
-            set_insurance_type(frm);
+            set_insurance_type_value(frm);
         }
         if(frm.is_new()){
-            set_insurance_type(frm);
+            set_insurance_type_value(frm);
         }
     },
     work_permit: function(frm){
         set_employee_details(frm);
-        set_insurance_type(frm);
+        set_insurance_type_value(frm);
     },
     civil_id: function(frm) {
         if(frm.doc.civil_id){
@@ -99,22 +99,6 @@ var set_upload_payment_invoice = function(frm){
         frm.set_value('upload_payment_invoice_on',frappe.datetime.now_datetime())
     }
 };
-// var set_submission_of_application = function(frm) //2
-// {
-// 	if(((frm.doc.submission_of_application == "Yes")&&(!frm.doc.submission_of_application_date)))
-//     {
-// 		frappe.call({
-// 			method: 'one_fm.grd.doctype.medical_insurance.medical_insurance.set_dates',
-// 			callback: function(r)
-//             {
-// 				if(r.message)
-//                 {
-//                     frm.set_value('submission_of_application_date',r.message);
-//                 }
-//             }
-//         });
-//     }
-// };
 var set_upload_medical_insurance = function(frm) //3
 {
 	if(((frm.doc.upload_medical_insurance)&&(!frm.doc.upload_medical_insurance_date)))
@@ -144,11 +128,12 @@ var set_employee_details = function(frm){
                 frm.set_value('nationality',r.message.nationality);
                 frm.set_value('no_of_years', r.message.duration_of_work_permit);
                 frm.set_value('passport_expiry_date',r.message.passport_expiry_date);
+                frm.set_value('pam_file_number',r.message.pam_file_number);
             }
         });
     }
 };
-var set_insurance_type = function(frm){
+var set_insurance_type_value= function(frm){
     if(frm.doc.work_permit){
         frappe.call({
             method:"frappe.client.get_value",//api calls

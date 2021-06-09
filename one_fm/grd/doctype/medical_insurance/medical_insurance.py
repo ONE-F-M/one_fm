@@ -17,9 +17,7 @@ class MedicalInsurance(Document):
     
     def validate(self):
         self.set_value()
-        #self.valid_work_permit_exists()
-        #self.update_end_date()
-        self.validate_no_of_application()
+        self.set_title()
 
     def set_value(self):
         if not self.grd_supervisor: 
@@ -27,6 +25,9 @@ class MedicalInsurance(Document):
         if not self.grd_operator: 
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     
+    def set_title(self):
+        self.title = self.civil_id
+        
     def on_submit(self):
         self.set_depend_on_fields()
         self.db_set('completed','Yes')
@@ -44,19 +45,6 @@ class MedicalInsurance(Document):
             frappe.throw(_('Apply Medical Insurance Online Required To Submit'))
         elif self.upload_medical_insurance == None:
             frappe.throw(_('Upload Medical Insurance Is Required To Submit'))
-
-    def validate_no_of_application(self):
-        if self.category == "Group" and len(self.items) > 20:
-            frappe.throw(_("More than 20 Application is not Possible"))
-
-    # def update_end_date(self): # Set the value of end date
-    #     if self.category == 'Individual' and self.no_of_years and int(self.no_of_years) > 0 and self.start_date:
-    #         self.end_date = add_years(self.start_date, self.no_of_years)
-    #     elif self.category == 'Group':
-    #         for item in self.items:
-    #             if item.no_of_years and item.no_of_years > 0 and item.start_date:
-    #                 item.end_date = add_years(item.start_date, item.no_of_years)
-
 
 #need to be inside the class
 def valid_work_permit_exists(preparation_name):
