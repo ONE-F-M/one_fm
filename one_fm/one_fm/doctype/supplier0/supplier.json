@@ -414,8 +414,7 @@
   {
    "fieldname": "supplier_document",
    "fieldtype": "Table",
-   "label": "Supplier Document",
-   "options": "Supplier Document"
+   "label": "Supplier Document"
   },
   {
    "fieldname": "bank_account_info_section",
