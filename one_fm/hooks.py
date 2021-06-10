@@ -448,7 +448,7 @@ fixtures = [
 		"dt": "Workflow"
 	},
 	{
-		"dt": "Custom Script",
+		"dt": "Client Script",
 		'filters': [['dt', 'in', ['Stock Entry', 'Warehouse',
 		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
 	},
