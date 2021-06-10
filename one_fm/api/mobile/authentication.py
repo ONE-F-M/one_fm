@@ -9,7 +9,7 @@ from frappe import _
 import requests, json
 from one_fm.api.mobile.roster import get_current_user_details
 from frappe.utils.password import update_password as _update_password
-
+from twilio.rest import Client 
 
 @frappe.whitelist(allow_guest=True)
 def login(client_id, grant_type, employee_id, password):
@@ -78,7 +78,7 @@ def forgot_password(employee_id):
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
 		cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
-		verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+		verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
 
 		# Save data in local
 		# frappe.local.response['verification'] = verification_obj
@@ -169,3 +169,38 @@ def reset_password(user, password_expired=False):
 
 	send_sms([user.mobile_no], msg)
 
+
+def process_2fa_for_whatsapp(user, token, otp_secret):
+    '''Process sms method for 2fa.'''
+    phone = frappe.db.get_value('User', user, ['phone', 'mobile_no'], as_dict=1)
+    phone = phone.mobile_no or phone.phone
+    status = send_token_via_whatsapp(otp_secret, token=token, phone_no=phone)
+    verification_obj = {
+        'token_delivery': status,
+        'prompt': status and 'Enter verification code sent to {}'.format(phone[:4] + '******' + phone[-3:]),
+        'method': 'SMS',
+        'setup': status
+    }
+    return verification_obj
+
+
+def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
+    Twilio= frappe.db.get_value('Twilio_Setting', None, ['sid','token','t_number'])
+
+    account_sid = Twilio[0]
+    auth_token = Twilio[2]
+    client = Client(account_sid, auth_token)
+    From = 'whatsapp:' + Twilio[1]
+    to = 'whatsapp:+' + phone_no
+    print(to)
+    hotp = pyotp.HOTP(otpsecret)
+    body= 'Your verification code is {}'.format(hotp.at(int(token)))
+    
+    message = client.messages.create( 
+                              from_=From,  
+                              body=body,      
+                              to=to 
+                          ) 
+ 
+    print(message.sid)
+    return True
