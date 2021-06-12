@@ -209,18 +209,9 @@
   {
    "fieldname": "height",
    "fieldtype": "Data",
-<<<<<<< HEAD
    "label": "Height"
-=======
    "label": "Height",
    "options": ""
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 6cb7e2f (Path Changes in Payroll)
-=======
-=======
->>>>>>> 849795c (Option Removed in personnel_request)
->>>>>>> 6cb7e2f (Path Changes in Payroll)
   },
   {
    "fieldname": "weight",
