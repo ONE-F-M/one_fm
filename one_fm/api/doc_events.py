@@ -342,3 +342,25 @@ def employee_validate(self):
 		if existing_user_id:
 			remove_user_permission(
 				"Employee", self.name, existing_user_id)
+
+
+#Employee Skill Map
+@frappe.whitelist()
+def validate_certifications_and_licenses(doc, method):
+	""" This function checks validates the dates of licenses and certifications """
+	messages = []
+	certifications = doc.employee_certifications
+	licenses = doc.employee_licenses
+
+	if len(certifications) > 0:
+		for certification in certifications:
+			if(getdate(certification.expiry_date) <= getdate()):
+				messages.append("Expiry date cannot be on or before today for certification: {cert}".format(cert=certification.certification))
+
+	if len(licenses) > 0:
+		for license in licenses:
+			if(getdate(license.expiry_date) <= getdate()):
+				messages.append("Expiry date cannot be on or before today for license: {license}".format(license=license.license))
+
+	if len(messages) > 0:
+		frappe.throw(messages)			
