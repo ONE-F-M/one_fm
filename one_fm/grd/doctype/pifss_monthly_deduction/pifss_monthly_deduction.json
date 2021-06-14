@@ -1,20 +1,34 @@
 {
+ "autoname": "format: {MM}-{YYYY}",
  "creation": "2020-11-05 21:36:26.021218",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "attach_report",
+  "attach_manual_report",
   "column_break_2",
   "additional_attach_report",
+  "attach_pdf_report",
   "data_2",
   "deduction_month",
   "section_break_4",
   "deductions",
   "section_break_8",
   "total_sub",
+  "total_employee_additional_deduction",
   "column_break_10",
   "total_deduction",
+  "column_break_12",
+  "remaining_employer_payments",
+  "total_payments",
+  "section_break_17",
+  "finance_user",
+  "grd_operator",
+  "reminder_before_one_week",
+  "reminder_before_one_day",
+  "notify_finance",
+  "payment_done",
   "amended_from"
  ],
  "fields": [
@@ -75,16 +89,92 @@
   {
    "fieldname": "total_sub",
    "fieldtype": "Currency",
-   "label": "Total Subscription"
+   "label": "Total Subscription",
+   "read_only": 1
   },
   {
    "fieldname": "total_deduction",
    "fieldtype": "Currency",
-   "label": "Total Employee Deduction"
+   "label": "Total Employee Deduction",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "remaining_employer_payments",
+   "fieldtype": "Currency",
+   "label": "Remaining Employer Payments"
+  },
+  {
+   "fieldname": "total_employee_additional_deduction",
+   "fieldtype": "Currency",
+   "label": "Total Employee Additional Deduction",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attach_manual_report",
+   "fieldtype": "Attach",
+   "label": "Attach Manual Report "
+  },
+  {
+   "fieldname": "attach_pdf_report",
+   "fieldtype": "Attach",
+   "label": "Attach pdf report"
+  },
+  {
+   "fieldname": "section_break_17",
+   "fieldtype": "Section Break",
+   "label": "Payment Section"
+  },
+  {
+   "fieldname": "total_payments",
+   "fieldtype": "Currency",
+   "label": "Total Payments",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_finance",
+   "fieldtype": "Check",
+   "label": "Notify Finance"
+  },
+  {
+   "default": "amnaalshawa96@gmail.com",
+   "fieldname": "finance_user",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Finance User"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator",
+   "options": "User"
+  },
+  {
+   "default": "0",
+   "fieldname": "payment_done",
+   "fieldtype": "Check",
+   "label": "Payment Done "
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_before_one_week",
+   "fieldtype": "Check",
+   "label": "Reminder Before One Week"
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_before_one_day",
+   "fieldtype": "Check",
+   "label": "Reminder Before One Day"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-05-30 12:10:01.164921",
+ "modified": "2021-06-13 15:52:48.809056",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
@@ -101,6 +191,58 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Finance User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Finance User",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1
   }
  ],
  "sort_field": "modified",

@@ -65,13 +65,19 @@
   "work_permit_salary",
   "duration_of_work_permit",
   "visa_reference_number",
+  "section_break_46",
+  "download_work_contract",
+  "column_break_62",
+  "download_salary_certificate",
+  "column_break_64",
+  "download_iqrar",
+  "section_break_50",
   "documents_required_section",
   "documents_required",
   "amended_from",
   "grd_section",
   "grd_operator",
   "grd_supervisor",
-  "download_work_contract",
   "section_break_61",
   "grd_operator_apply_work_permit_on_ashal",
   "check_record",
@@ -113,7 +119,6 @@
    "fieldtype": "Link",
    "label": "Employee",
    "options": "Employee",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -138,7 +143,8 @@
    "description": "employee.pam_file_number",
    "fieldname": "pam_file_number",
    "fieldtype": "Data",
-   "label": "PAM File Number"
+   "label": "PAM File Number",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_8",
@@ -160,37 +166,42 @@
   {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Civil ID"
+   "label": "Civil ID",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.date_of_birth",
    "fetch_if_empty": 1,
    "fieldname": "date_of_birth",
-   "fieldtype": "Read Only",
-   "label": "Date of Birth"
+   "fieldtype": "Data",
+   "label": "Date of Birth",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.gender",
    "fetch_if_empty": 1,
    "fieldname": "gender",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Gender",
-   "options": "Gender"
+   "options": "Gender",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Nationality",
-   "options": "Nationality"
+   "options": "Nationality",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "pam_designation",
-   "fieldtype": "Read Only",
-   "label": "PAM Designation"
+   "fieldtype": "Data",
+   "label": "PAM Designation",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_22",
@@ -199,29 +210,33 @@
   {
    "fetch_from": "employee.one_fm_salary_type",
    "fieldname": "salary_type",
-   "fieldtype": "Read Only",
-   "label": "Salary Type"
+   "fieldtype": "Data",
+   "label": "Salary Type",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_duration_of_work_permit",
    "fieldname": "duration_of_work_permit",
-   "fieldtype": "Read Only",
-   "label": "Duration of Work Permit"
+   "fieldtype": "Data",
+   "label": "Duration of Work Permit",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.work_permit_type ==  \"New Overseas\" || doc.work_permit_type == \"Transfer\"",
    "fetch_from": "employee.one_fm_visa_reference_number",
    "fieldname": "visa_reference_number",
    "fieldtype": "Data",
-   "label": "Visa Reference Number"
+   "label": "Visa Reference Number",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.work_permit_type == \"New Overseas\" || doc.work_permit_type == \"Transfer\"",
    "fetch_from": "employee.one_fm_date_of_issuance_of_visa",
    "fieldname": "date_of_issuance_of_visa",
-   "fieldtype": "Read Only",
-   "label": "Date Of Issuance Of Visa"
+   "fieldtype": "Data",
+   "label": "Date Of Issuance Of Visa",
+   "read_only": 1
   },
   {
    "fieldname": "documents_required_section",
@@ -399,8 +414,9 @@
    "allow_on_submit": 1,
    "fetch_from": "employee.work_permit_salary",
    "fieldname": "work_permit_salary",
-   "fieldtype": "Read Only",
-   "label": "Work Permit Salary"
+   "fieldtype": "Data",
+   "label": "Work Permit Salary",
+   "read_only": 1
   },
   {
    "fieldname": "preparation",
@@ -418,9 +434,10 @@
   {
    "fetch_from": "employee.employee_id",
    "fieldname": "employee_id",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Employee ID"
+   "label": "Employee ID",
+   "read_only": 1
   },
   {
    "fieldname": "grd_supervisor",
@@ -448,9 +465,10 @@
   {
    "fetch_from": "employee.valid_upto",
    "fieldname": "passport_expiry_date",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Passport Expiry Date",
-   "options": "Employee"
+   "options": "Employee",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -550,27 +568,31 @@
    "fetch_from": "employee.first_name",
    "fetch_if_empty": 1,
    "fieldname": "first_name",
-   "fieldtype": "Read Only",
-   "label": "First Name"
+   "fieldtype": "Data",
+   "label": "First Name",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.middle_name",
    "fetch_if_empty": 1,
    "fieldname": "second_name",
-   "fieldtype": "Read Only",
-   "label": "Second Name"
+   "fieldtype": "Data",
+   "label": "Second Name",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name",
    "fieldname": "third_name",
-   "fieldtype": "Read Only",
-   "label": "Third Name"
+   "fieldtype": "Data",
+   "label": "Third Name",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.last_name",
    "fieldname": "last_name",
-   "fieldtype": "Read Only",
-   "label": "Last Name"
+   "fieldtype": "Data",
+   "label": "Last Name",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_27",
@@ -580,26 +602,30 @@
    "depends_on": "first_name",
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_in_arabic",
-   "fieldtype": "Read Only",
-   "label": "First Name in Arabic"
+   "fieldtype": "Data",
+   "label": "First Name in Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_in_arabic",
-   "fieldtype": "Read Only",
-   "label": "Second Name in Arabic"
+   "fieldtype": "Data",
+   "label": "Second Name in Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name_in_arabic",
-   "fieldtype": "Read Only",
-   "label": "Third Name in Arabic"
+   "fieldtype": "Data",
+   "label": "Third Name in Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_in_arabic",
-   "fieldtype": "Read Only",
-   "label": "Last Name in Arabic"
+   "fieldtype": "Data",
+   "label": "Last Name in Arabic",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_32",
@@ -608,33 +634,38 @@
   {
    "fetch_from": "employee.one_fm_religion",
    "fieldname": "religion",
-   "fieldtype": "Read Only",
-   "label": "Religion"
+   "fieldtype": "Data",
+   "label": "Religion",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.marital_status",
    "fetch_if_empty": 1,
    "fieldname": "marital_status",
-   "fieldtype": "Read Only",
-   "label": "Marital Status"
+   "fieldtype": "Data",
+   "label": "Marital Status",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_passport_type",
    "fieldname": "passport_type",
-   "fieldtype": "Read Only",
-   "label": "Passport Type"
+   "fieldtype": "Data",
+   "label": "Passport Type",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.passport_number",
    "fieldname": "passport_number",
-   "fieldtype": "Read Only",
-   "label": "Passport Number"
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm__highest_educational_qualification",
    "fieldname": "pratical_qualification",
-   "fieldtype": "Read Only",
-   "label": "Pratical Qualification"
+   "fieldtype": "Data",
+   "label": "Pratical Qualification",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_42",
@@ -643,8 +674,9 @@
   {
    "fetch_from": "employee.one_fm_date_of_entry_in_kuwait",
    "fieldname": "date_of_entry_in_kuwait",
-   "fieldtype": "Read Only",
-   "label": "Date of Entry in Kuwait"
+   "fieldtype": "Data",
+   "label": "Date of Entry in Kuwait",
+   "read_only": 1
   },
   {
    "fieldname": "previous_company_trade_name_arabic",
@@ -732,10 +764,36 @@
    "hidden": 1,
    "label": "Check Record",
    "read_only": 1
+  },
+  {
+   "fieldname": "download_iqrar",
+   "fieldtype": "Button",
+   "label": "Download Iqrar"
+  },
+  {
+   "fieldname": "download_salary_certificate",
+   "fieldtype": "Button",
+   "label": "Download Salary Certificate"
+  },
+  {
+   "fieldname": "section_break_46",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_50",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_62",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_64",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-09 12:03:18.114095",
+ "modified": "2021-06-13 14:48:58.384980",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

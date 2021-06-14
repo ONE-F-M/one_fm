@@ -10,10 +10,15 @@
   "status",
   "column_break_2",
   "naming_series",
+  "section_break_6",
+  "date_of_request",
+  "column_break_8",
+  "date_of_registeration",
+  "column_break_9",
+  "date_of_acceptance",
   "section_break_4",
   "company_name_arabic",
   "user",
-  "column_break_8",
   "company_pifss_registration_no",
   "column_break_10",
   "signatory_name",
@@ -55,9 +60,12 @@
   "column_break_41",
   "attach_signed_form",
   "civil_id_copy",
+  "employment_contract",
   "column_break_44",
+  "social_security_clearance",
   "date_of_birth_certificate",
-  "nationality_proof"
+  "nationality_proof",
+  "notify_for_signature"
  ],
  "fields": [
   {
@@ -73,10 +81,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Submitted\nUnder Process\nAccepted\nRejected"
+   "options": "\nDraft\nUnder Process\nApplied\nAccepted\nRejected"
   },
   {
    "fieldname": "column_break_2",
@@ -322,7 +331,7 @@
   {
    "fieldname": "attach_signed_form",
    "fieldtype": "Attach",
-   "label": "Attach Signed Form"
+   "label": "Attach Signed 103 Form"
   },
   {
    "fieldname": "civil_id_copy",
@@ -365,9 +374,48 @@
    "fieldname": "user",
    "fieldtype": "Data",
    "label": "User"
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_for_signature",
+   "fieldtype": "Check",
+   "label": "Notify for Signature"
+  },
+  {
+   "fieldname": "date_of_request",
+   "fieldtype": "Datetime",
+   "label": "Date Of Request"
+  },
+  {
+   "fieldname": "date_of_registeration",
+   "fieldtype": "Date",
+   "label": "Date Of Registration"
+  },
+  {
+   "fieldname": "date_of_acceptance",
+   "fieldtype": "Date",
+   "label": "Date Of Acceptance"
+  },
+  {
+   "fieldname": "employment_contract",
+   "fieldtype": "Attach",
+   "label": "Employment Contract"
+  },
+  {
+   "fieldname": "social_security_clearance",
+   "fieldtype": "Attach",
+   "label": "Social Security Clearance"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2021-05-31 13:40:02.763565",
+ "modified": "2021-06-13 09:47:06.555910",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",

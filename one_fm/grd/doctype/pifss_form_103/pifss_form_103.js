@@ -130,5 +130,17 @@ frappe.ui.form.on('PIFSS Form 103', {
 		frm.set_value('user'," ")
 		frm.refresh_field("user");
 	}
+},
+user: function(frm){
+	frm.set_value('notify_for_signature',0)
+},
+workflow_state: function(frm){
+	set_date_based_on_workflow(frm);
 }
+
 });
+var set_date_based_on_workflow = function(frm){
+	if (frm.doc.workflow_state == "Under Process"){
+		frm.set_value('date_of_request',frappe.datetime.now_datetime());
+	}
+};

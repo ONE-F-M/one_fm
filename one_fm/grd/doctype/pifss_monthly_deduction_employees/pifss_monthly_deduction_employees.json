@@ -6,6 +6,7 @@
  "field_order": [
   "pifss_id_no",
   "column_break_2",
+  "civil_id",
   "total_subscription",
   "column_break_4",
   "employee_deduction",
@@ -19,8 +20,7 @@
    "fieldname": "pifss_id_no",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "PIFSS Id No",
-   "translatable": 1
+   "label": "PIFSS Id No"
   },
   {
    "fieldname": "column_break_2",
@@ -65,10 +65,17 @@
    "in_list_view": 1,
    "label": "Total Employee Deduction",
    "precision": "3"
+  },
+  {
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Civil ID",
+   "width": "2"
   }
  ],
  "istable": 1,
- "modified": "2021-05-30 11:12:26.170909",
+ "modified": "2021-06-08 10:02:32.932972",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction Employees",

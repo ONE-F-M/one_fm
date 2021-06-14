@@ -32,12 +32,10 @@
   "pam_designation",
   "residency_expiry_date",
   "section_break_19",
-  "apply_civil_id_online",
   "upload_civil_id_payment",
   "upload_civil_id",
   "new_civil_id_expiry_date",
   "column_break_25",
-  "apply_civil_id_online_datetime",
   "upload_civil_id_payment_datetime",
   "upload_civil_id_datetime",
   "completed_on",
@@ -49,6 +47,7 @@
   {
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Series",
    "options": "PACI-.YYYY.-"
   },
@@ -66,26 +65,30 @@
   {
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "First Name Arabic"
+   "fieldtype": "Data",
+   "label": "First Name Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "Second Name Arabic"
+   "fieldtype": "Data",
+   "label": "Second Name Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "Third Name Arabic"
+   "fieldtype": "Data",
+   "label": "Third Name Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "Last Name Arabic"
+   "fieldtype": "Data",
+   "label": "Last Name Arabic",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_8",
@@ -94,26 +97,30 @@
   {
    "fetch_from": "employee.first_name",
    "fieldname": "first_name_english",
-   "fieldtype": "Read Only",
-   "label": "First Name English"
+   "fieldtype": "Data",
+   "label": "First Name English",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.middle_name",
    "fieldname": "second_name_english",
-   "fieldtype": "Read Only",
-   "label": "Second Name English"
+   "fieldtype": "Data",
+   "label": "Second Name English",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name",
    "fieldname": "third_name_english",
-   "fieldtype": "Read Only",
-   "label": "Third Name English"
+   "fieldtype": "Data",
+   "label": "Third Name English",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.last_name",
    "fieldname": "last_name_english",
-   "fieldtype": "Read Only",
-   "label": "Last Name English"
+   "fieldtype": "Data",
+   "label": "Last Name English",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -131,14 +138,16 @@
   {
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
-   "fieldtype": "Read Only",
-   "label": "Nationality"
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.passport_number",
    "fieldname": "passport_number",
-   "fieldtype": "Read Only",
-   "label": "Passport Number"
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_16",
@@ -147,25 +156,20 @@
   {
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "pam_designation",
-   "fieldtype": "Read Only",
-   "label": "PAM Designation"
+   "fieldtype": "Data",
+   "label": "PAM Designation",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.residency_expiry_date",
    "fieldname": "residency_expiry_date",
    "fieldtype": "Data",
-   "label": "Residency Expiry Date"
+   "label": "Residency Expiry Date",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_19",
    "fieldtype": "Section Break"
-  },
-  {
-   "default": "No",
-   "fieldname": "apply_civil_id_online",
-   "fieldtype": "Select",
-   "label": "Apply Online",
-   "options": "\nYes\nNo"
   },
   {
    "allow_on_submit": 1,
@@ -188,11 +192,6 @@
   {
    "fieldname": "column_break_25",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "apply_civil_id_online_datetime",
-   "fieldtype": "Data",
-   "label": "Apply On"
   },
   {
    "fieldname": "upload_civil_id_payment_datetime",
@@ -238,8 +237,9 @@
   {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
-   "fieldtype": "Read Only",
-   "label": "Civil ID"
+   "fieldtype": "Data",
+   "label": "Civil ID",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_3",
@@ -248,16 +248,18 @@
   {
    "fetch_from": "employee.employee_id",
    "fieldname": "employee_id",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Employee ID"
+   "label": "Employee ID",
+   "read_only": 1
   },
   {
    "fieldname": "date_of_application",
-   "fieldtype": "Data",
+   "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Date Of Application",
-   "print_hide": 1
+   "print_hide": 1,
+   "read_only": 1
   },
   {
    "fieldname": "category",
@@ -267,11 +269,12 @@
    "options": "\nRenewal\nTransfer"
   },
   {
+   "default": "Draft",
    "fieldname": "paci_status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "PACI Status",
-   "options": "\nUnder-Process\nCompleted"
+   "options": "\nDraft\nUnder-Process\nCompleted"
   },
   {
    "fieldname": "title",
@@ -281,7 +284,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-09 11:32:19.426053",
+ "modified": "2021-06-13 15:23:00.569785",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
@@ -325,8 +328,9 @@
    "write": 1
   }
  ],
- "quick_entry": 1,
+ "search_fields": "civil_id,date_of_application,employee_id",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "civil_id",
  "track_changes": 1
 }

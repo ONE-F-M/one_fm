@@ -1,5 +1,4 @@
 {
- "actions": [],
  "creation": "2020-08-21 15:28:44.847979",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -7,7 +6,10 @@
  "field_order": [
   "section_break_1",
   "default_grd_supervisor",
-  "default_grd_operator"
+  "default_grd_operator",
+  "default_grd_operator_transfer",
+  "default_grd_operator_overseas",
+  "default_grd_operator_pifss"
  ],
  "fields": [
   {
@@ -25,13 +27,27 @@
   {
    "fieldname": "default_grd_operator",
    "fieldtype": "Link",
-   "label": "Default GRD Operator",
+   "label": "Default GRD Operator (Renewal)",
    "options": "User"
+  },
+  {
+   "fieldname": "default_grd_operator_transfer",
+   "fieldtype": "Data",
+   "label": "Default GRD Operator (Transfer)"
+  },
+  {
+   "fieldname": "default_grd_operator_overseas",
+   "fieldtype": "Data",
+   "label": "Default GRD Operator (Overseas)"
+  },
+  {
+   "fieldname": "default_grd_operator_pifss",
+   "fieldtype": "Data",
+   "label": "Default GRD Operator (PIFSS)"
   }
  ],
  "issingle": 1,
- "links": [],
- "modified": "2020-08-21 15:59:54.862154",
+ "modified": "2021-06-10 09:37:57.078568",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "GRD Settings",

@@ -12,21 +12,18 @@ from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
+# from one_fm.api.notification import create_notification_log
 
 class MedicalInsurance(Document):
     
     def validate(self):
         self.set_value()
-        self.set_title()
 
     def set_value(self):
         if not self.grd_supervisor: 
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
         if not self.grd_operator: 
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
-    
-    def set_title(self):
-        self.title = self.civil_id
         
     def on_submit(self):
         self.set_depend_on_fields()
@@ -41,10 +38,8 @@ class MedicalInsurance(Document):
 
     
     def set_depend_on_fields(self):
-        if self.apply_medical_insurance_online == "No":
-            frappe.throw(_('Apply Medical Insurance Online Required To Submit'))
-        elif self.upload_medical_insurance == None:
-            frappe.throw(_('Upload Medical Insurance Is Required To Submit'))
+        if self.upload_medical_insurance == None:
+            frappe.throw(_('Upload Medical Insurance To Submit'))
 
 #need to be inside the class
 def valid_work_permit_exists(preparation_name):
@@ -54,7 +49,6 @@ def valid_work_permit_exists(preparation_name):
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
             if employee.renewal_or_extend == 'Renewal' and employee.nationality != 'Kuwaiti':
-                print(employee.employee)
                 create_mi_record(frappe.get_doc('Work Permit',{'preparation':preparation_name,'employee':employee.employee}))
 
 #Creating mi for transfer
@@ -77,6 +71,7 @@ def create_mi_record(WorkPermit):
         new_medical_insurance.date_of_application = today() #set the date of creation
 
     new_medical_insurance.work_permit = WorkPermit.name
+    new_medical_insurance.employee = WorkPermit.employee
     new_medical_insurance.preparation = WorkPermit.preparation
     new_medical_insurance.insurance_status = Insurance_status
     new_medical_insurance.passport_expiry_date = WorkPermit.passport_expiry_date
@@ -90,16 +85,23 @@ def get_employee_data_from_civil_id(civil_id):
         return frappe.get_doc('Employee', employee_id)
 
 def notify_grd_operator_draft_new_mi():
-    filter_mi = {'apply_medical_insurance_online': ['=', "No"],'docstatus':0 }
-    mi = frappe.get_doc('Medical Insurance',filter_mi)
-    page_link = get_url("/desk#Form/Medical Insurance/"+mi.name)
-    message = "<p>Please fill the medical insurance form for employee <a href='{0}'>{1}</a></p>".format(page_link, mi.name)
-    subject = '{0} Medical Insurance form'.format("Apply")
-    send_email(mi, [mi.grd_operator], message, subject)
-    create_notification_log(subject, message, [mi.grd_operator], mi)
+    filter_mi = {'status':"Draft",'docstatus':0, "date_of_application":['=', today()]}
+    mi_records = frappe.db.get_list('Medical Insurance',filter_mi,['name','grd_operator'])
+    print(mi_records)
+    # for mi in mi_records:
+        # print(mi.name)
+    if len(mi_records)>0:
+        for mi in mi_records:
+            # print(mi.grd_operator)
+            page_link = get_url("/desk#Form/Medical Insurance/"+mi.name)
+            message = "<p>Please Apply For Medical Insurance<a href='{0}'>{1}</a></p>".format(page_link, mi.name)
+            subject = '{0} For Medical Insurance'.format("Apply")
+            # print(subject)
+            send_email(mi, [mi.grd_operator], message, subject)
+            create_notification_log(subject, message, [mi.grd_operator], mi)
     
-def notify_grd_supervisor_to_submit_on_system():
-    notify_grd_supervisor_submit_mi_on_system('yellow')
+# def notify_grd_supervisor_to_submit_on_system():
+#     notify_grd_supervisor_submit_mi_on_system('yellow')
 
 def notify_grd_operator_to_mark_completed_first():#for the first time 9:00 am (cron)
     notify_grd_operator_to_mark_mi_complete('yellow')
@@ -108,13 +110,13 @@ def notify_grd_operator_to_mark_completed_second():#for the second time 9:30am (
     notify_grd_operator_to_mark_mi_complete('red')
 
 
-def notify_grd_supervisor_submit_mi_on_system(reminder_indicator):
-    filter_mi = {'apply_medical_insurance_online': ['=', "Yes"],
-                 'submission_of_application':['=',"No"]
-                }
-    mi_list = frappe.get_list('Medical Insurance',filter_mi, ['name', 'grd_supervisor'])
-    cc = [mi_list[0].grd_supervisor] if reminder_indicator == 'red' else []
-    email_notification_to_grd_user('grd_supervisor', mi_list, reminder_indicator, 'Submit',cc)
+# def notify_grd_supervisor_submit_mi_on_system(reminder_indicator):
+#     filter_mi = {'apply_medical_insurance_online': ['=', "Yes"],
+#                  'submission_of_application':['=',"No"]
+#                 }
+#     mi_list = frappe.get_list('Medical Insurance',filter_mi, ['name', 'grd_supervisor'])
+#     cc = [mi_list[0].grd_supervisor] if reminder_indicator == 'red' else []
+#     email_notification_to_grd_user('grd_supervisor', mi_list, reminder_indicator, 'Submit',cc)
 
 # Notify grd operator to mark mi as completed on the system (first time)
 def notify_grd_operator_to_mark_mi_complete(reminder_indicator):
@@ -181,4 +183,4 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.document_type = reference_doc.doctype
         doc.document_name = reference_doc.name
         doc.from_user = reference_doc.modified_by
-        doc.insert(ignore_permissions=True)
+        # doc.insert(ignore_permissions=True)
