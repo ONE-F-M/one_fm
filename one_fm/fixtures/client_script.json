@@ -1,7 +1,7 @@
 [
  {
   "docstatus": 0,
-  "doctype": "Custom Script",
+  "doctype": "Client Script",
   "dt": "Purchase Order",
   "modified": "2020-07-25 20:19:57.770639",
   "name": "Purchase Order-Client",
@@ -12,7 +12,7 @@
  },
  {
   "docstatus": 0,
-  "doctype": "Custom Script",
+  "doctype": "Client Script",
   "dt": "Purchase Receipt",
   "modified": "2020-07-25 20:19:19.729266",
   "name": "Purchase Receipt-Client",
@@ -23,7 +23,7 @@
  },
  {
   "docstatus": 0,
-  "doctype": "Custom Script",
+  "doctype": "Client Script",
   "dt": "Payment Entry",
   "modified": "2020-07-25 20:22:10.707850",
   "name": "Payment Entry-Client",
@@ -34,7 +34,7 @@
  },
  {
   "docstatus": 0,
-  "doctype": "Custom Script",
+  "doctype": "Client Script",
   "dt": "Payment Request",
   "modified": "2020-07-25 20:21:31.843737",
   "name": "Payment Request-Client",
@@ -45,7 +45,7 @@
  },
  {
   "docstatus": 0,
-  "doctype": "Custom Script",
+  "doctype": "Client Script",
   "dt": "Stock Entry",
   "modified": "2020-05-22 16:27:03.963651",
   "name": "Stock Entry-Client",
@@ -56,7 +56,7 @@
  },
  {
   "docstatus": 0,
-  "doctype": "Custom Script",
+  "doctype": "Client Script",
   "dt": "Supplier",
   "modified": "2020-05-21 18:45:54.006807",
   "name": "Supplier-Client",
@@ -67,7 +67,7 @@
  },
  {
   "docstatus": 0,
-  "doctype": "Custom Script",
+  "doctype": "Client Script",
   "dt": "Job Opening",
   "modified": "2020-05-13 08:29:33.400820",
   "name": "Job Opening-Client",
@@ -78,7 +78,7 @@
  },
  {
   "docstatus": 0,
-  "doctype": "Custom Script",
+  "doctype": "Client Script",
   "dt": "Warehouse",
   "modified": "2020-08-04 21:27:29.909023",
   "name": "Warehouse-Client",

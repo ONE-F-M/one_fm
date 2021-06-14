@@ -2950,7 +2950,7 @@
    "modified_by": "Administrator",
    "name": "Employee-one_fm_work_permit",
    "no_copy": 0,
-   "options": "Work Permit",
+   "options": null,
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,
