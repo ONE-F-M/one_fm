@@ -71,7 +71,8 @@ doctype_js = {
 	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",
 	"Purchase Order": "public/js/doctype_js/purchase_order.js",
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
-	"Payment Entry": "public/js/doctype_js/payment_entry.js"
+	"Payment Entry": "public/js/doctype_js/payment_entry.js",
+	"Item Price": "public/js/doctype_js/item_price.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -206,7 +207,6 @@ doc_events = {
 	},
 	"Project": {
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
-		"on_update": "one_fm.one_fm.project_custom.on_project_save"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
