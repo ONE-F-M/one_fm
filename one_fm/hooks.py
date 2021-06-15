@@ -221,6 +221,9 @@ doc_events = {
 	},
 	"Salary Slip": {
 		"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit"
+	},
+	"Employee Skill Map":{
+		"before_insert":"one_fm.api.doc_events.validate_certifications_and_licenses"
 	}
 }
 
