@@ -32,7 +32,10 @@ class PIFSSMonthlyDeduction(Document):
 				employee = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no})
 				employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))
 				amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
-				create_additional_salary(employee, amount)
+				extra = row.additional_deduction
+				create_additional_salary(employee, amount, "Social Security")
+				if(extra > 0):
+					create_additional_salary(employee, extra,  "Extra Social Security")
 			else:
 				missing_list.append(row.pifss_id_no)
 		
@@ -46,20 +49,18 @@ class PIFSSMonthlyDeduction(Document):
 		create_notification_log(subject,message,[email], self)
 		
 		
-def create_additional_salary(employee, amount):
+def create_additional_salary(employee, amount, component):
 	additional_salary = frappe.new_doc("Additional Salary")
 	additional_salary.employee = employee
-	additional_salary.salary_component = "Social Security"
+	additional_salary.salary_component = component
 	additional_salary.amount = amount
 	additional_salary.payroll_date = getdate()
 	additional_salary.company = erpnext.get_default_company()
 	additional_salary.overwrite_salary_structure_amount = 1
-	additional_salary.notes = "Social Security Deduction"
+	additional_salary.notes = component+ " Deduction"
 	additional_salary.insert()
 	additional_salary.submit()
 	
-
-
 @frappe.whitelist()
 def import_deduction_data(file_url):
 	url = frappe.get_site_path() + file_url
