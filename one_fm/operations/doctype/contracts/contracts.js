@@ -183,32 +183,6 @@ frappe.ui.form.on('Contracts', {
 			erpnext.utils.get_address_display(frm, 'customer_address', 'address_display')
 		}
 	},
-	// project: function(frm){
-	// 	if(frm.doc.project){
-	// 		frappe.call({
-	// 			method: 'frappe.client.get_value',
-	// 			args:{
-	// 				'doctype':'Price List',
-	// 				'filters':{
-	// 					'project': frm.doc.project,
-	// 					'enabled': 1,
-	// 					'selling': 1
-	// 				},
-	// 				'fieldname':[
-	// 					'name'
-	// 				]
-	// 			},
-	// 			callback:function(s){
-	// 				if (!s.exc) {
-	// 					if(s.message){
-	// 						frm.set_value("price_list",s.message.name);
-	// 						frm.refresh_field("price_list");
-	// 					}
-	// 				}
-	// 			}
-	// 		});
-	// 	}
-	// },
 	bank_account:function(frm){
 		if(frm.doc.bank_account){
 			frappe.call({
@@ -378,6 +352,7 @@ frappe.ui.form.on('Contract Asset', {
 					'filters':{
 						'item_code': d.item_code,
 						'price_list': frm.doc.price_list,
+						'customer': frm.doc.client,
 						'uom': d.uom,
 						'selling': 1
 					},
@@ -388,14 +363,12 @@ frappe.ui.form.on('Contract Asset', {
 				callback:function(s){
 					if (!s.exc) {
 						if(s.message){
-							if(s.message.price_list_rate != undefined){
-								frappe.model.set_value(d.doctype, d.name, "unit_rate", s.message.price_list_rate);
-							}
-							else{
-								frappe.model.set_value(d.doctype, d.name, "unit_rate", 0);
-								frappe.msgprint("Rate not found for item code", raise_exception=True) 
-							}
+							frappe.model.set_value(d.doctype, d.name, "unit_rate", s.message.price_list_rate);
 							frm.refresh_field("assets");
+						}
+						else{
+							frappe.model.set_value(d.doctype, d.name, "unit_rate", 0);
+							frappe.msgprint("Rate not found for item" + d.item_code) 
 						}
 					}
 				}
@@ -413,6 +386,7 @@ frappe.ui.form.on('Contract Asset', {
 					'filters':{
 						'item_code': d.item_code,
 						'price_list': frm.doc.price_list,
+						'customer': frm.doc.client,
 						'uom': d.uom,
 						'selling': 1
 					},
@@ -427,7 +401,8 @@ frappe.ui.form.on('Contract Asset', {
 							frm.refresh_field("assets");
 						}
 						else{
-							frappe.msgprint("Rate not found for item" + d.item_code) 
+							frappe.model.set_value(d.doctype, d.name, "unit_rate", 0);
+							frappe.msgprint("Rate not found for item" + d.item_code)
 						}
 					}
 				}
