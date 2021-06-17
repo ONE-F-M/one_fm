@@ -354,12 +354,20 @@ def validate_certifications_and_licenses(doc, method):
 
 	if len(certifications) > 0:
 		for certification in certifications:
-			if(getdate(certification.expiry_date) <= getdate()):
+			if(certification.issue_date and certification.expiry_date):
+				if(getdate(certification.issue_date) >= getdate(certification.expiry_date)):
+					messages.append("Expiry date cannot be on or before Issue date for certification:{cert}".format(cert=certification.certification))
+
+			elif(not certification.issue_date and certification.expiry_date and getdate(certification.expiry_date) <= getdate()):
 				messages.append("Expiry date cannot be on or before today for certification: {cert}".format(cert=certification.certification))
 
 	if len(licenses) > 0:
 		for license in licenses:
-			if(getdate(license.expiry_date) <= getdate()):
+			if(license.issue_date and license.expiry_date):
+				if(getdate(license.issue_date) >= getdate(license.expiry_date)):
+					messages.append("Expiry date cannot be on or before Issue date for license:{license}".format(license=license.license))
+
+			elif(not license.issue_date and license.expiry_date and getdate(license.expiry_date) <= getdate()):
 				messages.append("Expiry date cannot be on or before today for license: {license}".format(license=license.license))
 
 	if len(messages) > 0:
