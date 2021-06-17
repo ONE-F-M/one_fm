@@ -17,7 +17,7 @@
    "unique": 1
   }
  ],
- "modified": "2021-06-14 11:50:03.961916",
+ "modified": "2021-06-17 08:32:33.214795",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "License",
@@ -32,6 +32,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
    "share": 1,
    "write": 1
   }
