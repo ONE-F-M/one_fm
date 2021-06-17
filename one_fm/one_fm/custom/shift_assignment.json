@@ -290,7 +290,7 @@
    "parenttype": null,
    "property": "search_fields",
    "property_type": "Data",
-   "value": ""
+   "value": "start_date"
   },
   {
    "_assign": null,

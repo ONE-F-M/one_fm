@@ -312,13 +312,13 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 
 def automatic_shift_assignment():
 	date = cstr(getdate())
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" }, ["*"])
+	roster = frappe.get_all("Employee Schedule", {"start_date": date, "employee_availability": "Working" }, ["*"])
 	for schedule in roster:
 		create_shift_assignment(schedule, date)
 
 def create_shift_assignment(schedule, date):
 	shift_assignment = frappe.new_doc("Shift Assignment")
-	shift_assignment.date = date
+	shift_assignment.start_date = date
 	shift_assignment.employee = schedule.employee
 	shift_assignment.employee_name = schedule.employee_name
 	shift_assignment.department = schedule.department
