@@ -12,7 +12,6 @@ frappe.ui.form.on('Preparation',{
 	
 });
 
-
 frappe.ui.form.on('Preparation Record',{
 renewal_or_extend: function(frm, cdt, cdn){
 	var row = locals[cdt][cdn];

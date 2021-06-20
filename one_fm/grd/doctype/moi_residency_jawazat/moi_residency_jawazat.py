@@ -9,6 +9,7 @@ from frappe.model.document import Document
 from datetime import date
 from frappe.utils import today, add_days, get_url
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
+from one_fm.grd.doctype.paci import paci
 
 class MOIResidencyJawazat(Document):
     def validate(self):
@@ -25,6 +26,13 @@ class MOIResidencyJawazat(Document):
         self.set_residency_expiry_new_date_in_employee_doctype()
         self.db_set('completed','Yes')
         self.db_set('completed_on', today())
+        if self.category == "Transfer":
+            self.recall_create_paci()
+
+
+    def recall_create_paci(self):
+        paci.create_PACI_for_transfer(self.employee)
+
 
 
     def validate_mandatory_fields_on_submit(self):
@@ -60,15 +68,31 @@ def set_employee_list_for_moi(preparation_name):
                 create_moi_record(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
             if employee.renewal_or_extend != 'Renewal' and employee.nationality != 'Kuwaiti':# For extend
                 create_moi_record(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
-			
+
+# Creat moi for transfer
+def creat_moi_for_transfer(work_permit_name):
+    work_permit = frappe.get_doc('Work Permit',work_permit_name)
+    if work_permit:
+        employee = frappe.get_doc('Employee',work_permit.employee)
+        if employee:
+            create_moi_record(frappe.get_doc('Employee',employee.employee),"Transfer")
+
 #def create_mi_record(Insurance_status,work_permit_dic):
-def create_moi_record(employee,Renewal_or_Extend,preparation_name):
-    start_day = add_days(employee.residency_expiry_date, -14)
+def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
+    if Renewal_or_Extend == "Renewal":
+        category = "Renewal"
+    if Renewal_or_Extend == "Transfer":
+        category = "Transfer"
+    if Renewal_or_Extend != "Renewal" and Renewal_or_Extend != "Transfer":
+        category = "Extend"
+
+    start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
     new_moi = frappe.new_doc('MOI Residency Jawazat')
     new_moi.employee = employee.name
     new_moi.preparation = preparation_name
     new_moi.renewal_or_extend = Renewal_or_Extend#employee_data.renewal_or_extend
     new_moi.date_of_application = start_day
+    new_moi.category = category
     new_moi.insert()
 
 # Run this method at 4 pm (cron)

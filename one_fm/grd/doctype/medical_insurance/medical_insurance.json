@@ -6,10 +6,10 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
+  "date_of_application",
   "work_permit",
   "preparation",
   "category",
-  "civil_id",
   "moi_number",
   "column_break_3",
   "insurance_type",
@@ -17,12 +17,12 @@
   "details_section",
   "employee_name",
   "gender",
-  "nationality",
+  "civil_id",
+  "passport_expiry_date",
   "column_break_11",
+  "employee_id",
+  "nationality",
   "no_of_years",
-  "start_date",
-  "end_date",
-  "amount",
   "amended_from",
   "items_section",
   "items",
@@ -37,18 +37,22 @@
   "apply_medical_insurance_online_date",
   "submission_of_application_date",
   "upload_medical_insurance_date",
+  "upload_payment_invoice_on",
   "medical_insurance_submitted_on",
   "grd_supervisor",
+  "finance_department_section",
   "payment_done",
-  "rpr_ref"
+  "rpr_ref",
+  "amount"
  ],
  "fields": [
   {
    "depends_on": "eval:doc.category == 'Individual'",
    "fetch_from": "work_permit.civil_id",
    "fieldname": "civil_id",
-   "fieldtype": "Data",
-   "label": "CIVIL ID"
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Civil ID"
   },
   {
    "depends_on": "eval:doc.category == 'Individual'",
@@ -63,7 +67,6 @@
   },
   {
    "depends_on": "eval:doc.category == 'Individual'",
-   "fetch_from": "work_permit.pam_file_number",
    "fieldname": "insurance_type",
    "fieldtype": "Data",
    "label": "Insurance Type"
@@ -77,19 +80,20 @@
   {
    "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "details_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
   },
   {
    "fetch_from": "work_permit.gender",
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Read Only",
    "label": "Gender",
    "options": "Gender"
   },
   {
    "fetch_from": "work_permit.nationality",
    "fieldname": "nationality",
-   "fieldtype": "Data",
+   "fieldtype": "Read Only",
    "label": "Nationality"
   },
   {
@@ -99,19 +103,8 @@
   {
    "fetch_from": "work_permit.duration_of_work_permit",
    "fieldname": "no_of_years",
-   "fieldtype": "Int",
+   "fieldtype": "Read Only",
    "label": "No Of Years"
-  },
-  {
-   "fieldname": "start_date",
-   "fieldtype": "Date",
-   "label": "Start Date"
-  },
-  {
-   "fieldname": "end_date",
-   "fieldtype": "Date",
-   "label": "End Date",
-   "read_only": 1
   },
   {
    "fieldname": "amount",
@@ -137,8 +130,9 @@
   {
    "fetch_from": "work_permit.employee_name",
    "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "label": "Employee Name"
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Name"
   },
   {
    "depends_on": "eval:doc.category == 'Group'",
@@ -154,7 +148,6 @@
    "default": "Individual",
    "fieldname": "category",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Category",
    "options": "\nIndividual\nGroup",
    "reqd": 1
@@ -187,7 +180,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Completed",
-   "options": "\nYes\nNo"
+   "options": "\nYes\nNo",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -198,7 +192,6 @@
   {
    "fieldname": "work_permit",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Work Permit",
    "options": "Work Permit"
   },
@@ -206,27 +199,30 @@
    "default": "No",
    "fieldname": "apply_medical_insurance_online",
    "fieldtype": "Select",
-   "label": "Apply Medical Insurance Online",
+   "label": "Apply Online",
    "options": "\nYes\nNo"
   },
   {
    "fieldname": "apply_medical_insurance_online_date",
    "fieldtype": "Datetime",
-   "label": "Apply Medical Insurance Online Date"
+   "label": "Apply Online On"
   },
   {
    "default": "No",
    "fieldname": "submission_of_application",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Submission Of Application",
    "options": "\nYes\nNo"
   },
   {
    "fieldname": "submission_of_application_date",
    "fieldtype": "Datetime",
-   "label": "Submission Of Application Date"
+   "label": "Submission Of Application On",
+   "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "upload_medical_insurance",
    "fieldtype": "Attach",
    "label": "Upload Medical Insurance"
@@ -234,18 +230,20 @@
   {
    "fieldname": "upload_medical_insurance_date",
    "fieldtype": "Datetime",
-   "label": "Upload Medical Insurance Date"
+   "label": "Upload Medical Insurance On"
   },
   {
    "fieldname": "medical_insurance_submitted_by",
    "fieldtype": "Link",
-   "label": "Medical Insurance Submitted By",
-   "options": "User"
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "medical_insurance_submitted_on",
    "fieldtype": "Datetime",
-   "label": "Medical Insurance Submitted on"
+   "label": "Submitted on",
+   "read_only": 1
   },
   {
    "fieldname": "rpr_ref",
@@ -258,10 +256,41 @@
    "hidden": 1,
    "label": "Preparation",
    "options": "Preparation"
+  },
+  {
+   "fieldname": "employee_id",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Employee ID"
+  },
+  {
+   "fieldname": "upload_payment_invoice_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Upload Payment Invoice On"
+  },
+  {
+   "fetch_from": "employee.",
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Read Only",
+   "label": "Passport Expiry Date",
+   "options": "Employee"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "finance_department_section",
+   "fieldtype": "Section Break",
+   "label": "Finance Department"
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Date Of Application"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-04-25 12:56:05.863493",
+ "modified": "2021-05-10 10:04:02.258426",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",

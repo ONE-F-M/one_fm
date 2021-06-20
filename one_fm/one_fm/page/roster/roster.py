@@ -337,11 +337,11 @@ def edit_post(posts, values):
 	if args.post_status == "Plan Post":
 		frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
 	elif args.post_status == "Cancel Post":
-		frappe.enqueue(cancel_post,posts, args, is_async=True, queue='long')
+		frappe.enqueue(cancel_post,posts=posts, args=args, is_async=True, queue='long')
 	elif args.post_status == "Suspend Post":
-		frappe.enqueue(suspend_post, posts, args, is_async=True, queue='long')
+		frappe.enqueue(suspend_post, posts=posts, args=args, is_async=True, queue='long')
 	elif args.post_status == "Post Off":
-		frappe.enqueue(post_off, posts, args, is_async=True, queue='long')
+		frappe.enqueue(post_off, posts=posts, args=args, is_async=True, queue='long')
 
 	frappe.enqueue(update_roster, key="staff_view", is_async=True, queue='long')	
 		
@@ -361,10 +361,9 @@ def plan_post(posts, args):
 
 def cancel_post(posts, args):
 	for post in json.loads(posts):
-		project = frappe.get_value("Operations Post", post, "project")
-		end_date = frappe.get_value("Contracts", {"project": project}, "end_date")
+		project = frappe.get_value("Post Schedule", post, "project")
 
-		for date in	pd.date_range(start=args.cancel_from_date, end=end_date):
+		for date in	pd.date_range(start=args.cancel_from_date, end=args.cancel_end_date):
 			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
 				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
 			else: 

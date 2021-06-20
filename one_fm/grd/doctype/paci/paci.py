@@ -56,21 +56,28 @@ def create_PACI_renewal(preparation_name):
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
             if employee.renewal_or_extend == 'Renewal' and employee.nationality != 'Kuwaiti':
-                create_PACI(frappe.get_doc('Employee',employee.employee),preparation_name)
+                create_PACI(frappe.get_doc('Employee',employee.employee),"Renewal",preparation_name)
+
+def create_PACI_for_transfer(employee_name):
+    employee = frappe.get_doc('Employee',employee_name)
+    if employee:
+        create_PACI(frappe.get_doc('Employee',employee.employee),"Transfer")
 
 
-
-def create_PACI(employee,preparation_name):
-        # Create New Work Permit: 1. New Overseas, 2. New Kuwaiti, 3. Work Transfer
+def create_PACI(employee,Type,preparation_name = None):
+        # Create New PACI: 1. New Overseas, 2. New Kuwaiti, 3. Transfer
+        start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE
         PACI_new = frappe.new_doc('PACI')
         PACI_new.employee = employee.name
+        PACI_new.category = Type
         PACI_new.preparation = preparation_name
+        PACI_new.date_of_application = start_day
         PACI_new.save()
 
 #At 4pm Notify GRD Operator
 def system_checks_grd_operator_apply_online():
 	filter1 = {'apply_civil_id_online':['!=','Yes']}
-	employee_list = frappe.db.get_list('PACI',filter, ['name','grd_operator','grd_supervisor'])
+	employee_list = frappe.db.get_list('PACI',filter1, ['name','grd_operator','grd_supervisor'])
 	if len(employee_list) > 0:
 		paci_notify_first_grd_operator()
 
@@ -85,7 +92,7 @@ def paci_notify_again_grd_operator():
 #At 4pm Notify GRD Operator
 def system_checks_grd_operator_upload_and_update_civil_Id():
 	filter2 = {'upload_civil_id':['=',' '],'new_civil_id_expiry_date':['=',' ']}
-	employee_list = frappe.db.get_list('PACI',filter, ['name','grd_operator','grd_supervisor'])
+	employee_list = frappe.db.get_list('PACI',filter2, ['name','grd_operator','grd_supervisor'])
 	if len(employee_list) > 0:
 		paci_notify_first_grd_operator()
 
@@ -156,11 +163,6 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.document_type = reference_doc.doctype
         doc.document_name = reference_doc.name
         doc.from_user = reference_doc.modified_by
-        #doc.insert(ignore_permissions=True)
+        
 
 
-# Set dates automatically once each field been set by the grd operator
-@frappe.whitelist()
-def set_dates():
-    currentDateTime = now_datetime()
-    return currentDateTime

@@ -11,6 +11,8 @@
   "preparation_record",
   "section_break_4",
   "hr_approval",
+  "grd_operator",
+  "grd_supervisor",
   "submitted_by",
   "submitted_on",
   "amended_from"
@@ -74,10 +76,22 @@
    "fieldname": "set_renewal_for_all",
    "fieldtype": "Check",
    "label": "Set Renewal for All"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "label": "GRD Operator",
+   "options": "User"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "label": "GRD Supervisor",
+   "options": "User"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-05-03 21:01:15.530615",
+ "modified": "2021-06-08 11:32:47.736475",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation",
@@ -85,6 +99,7 @@
  "permissions": [
   {
    "cancel": 1,
+   "create": 1,
    "delete": 1,
    "email": 1,
    "export": 1,
@@ -97,6 +112,7 @@
    "write": 1
   },
   {
+   "create": 1,
    "email": 1,
    "export": 1,
    "print": 1,

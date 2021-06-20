@@ -2,12 +2,19 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Work Permit', {
-    
+    // validate: function(frm){
+    //     set_wp_status_read_only(frm);
+    // },
     onload: function(frm) {
 		if (!frm.is_new()){
             set_employee_details(frm);
             
         }      
+    },
+    work_permit_status: function(frm){
+        if (frm.doc.work_permit_status == "Rejected"){
+            frm.set_value("work_permit_status","read_only",1);
+        }
     },
     employee: function(frm){
         set_employee_details(frm);  
@@ -36,8 +43,16 @@ frappe.ui.form.on('Work Permit', {
     attach_invoice: function(frm){
         set_upload_work_permit_invoice(frm);
     },
+    approve_previous_company: function(frm){
+        set_approve_previous_company(frm);
+    }
     
 });
+// var set_wp_status_read_only = function(frm){
+//     if (frm.doc.work_permit_status == "Rejected"){
+//         cur_frm.set_df_property("work_permit_status","read_only",1);
+//     }
+// };
 var set_employee_details = function(frm){
     if(frm.doc.employee){
         frappe.call({
@@ -53,7 +68,7 @@ var set_employee_details = function(frm){
         
                 // set the returned value in a field
                 frm.set_value('duration_of_work_permit', r.message.one_fm_duration_of_work_permit);
-                frm.set_value('employee_name', r.message.employee_name);
+                //frm.set_value('employee_name', r.message.employee_name);
                 frm.set_value('nationality', r.message.one_fm_nationality);
                 frm.set_value('civil_id', r.message.one_fm_civil_id);
                 frm.set_value('gender',r.message.gender);
@@ -66,7 +81,13 @@ var set_employee_details = function(frm){
         })
     }
 };
-
+var set_approve_previous_company = function(frm){
+    if(((frm.doc.approve_previous_company == "Yes") && (!frm.doc.approve_previous_company_on)))
+    {
+        frm.set_value('approve_previous_company_on',frappe.datetime.now_datetime())
+        
+    }
+};
 var set_authorized_signatory_name_arabic = function(frm) {
     if(frm.doc.pam_file){
         frappe.call({
@@ -108,7 +129,7 @@ var set_dates_grd_operator = function(frm)
 	if(((frm.doc.grd_operator_apply_work_permit_on_ashal == "Yes") && (!frm.doc.grd_operator_apply_work_permit_on_ashal_date)))
     {
         frm.set_value('grd_operator_apply_work_permit_on_ashal_date',frappe.datetime.now_datetime())
-        frm.set_value('work_permit_status',"Pending")
+        frm.set_value('work_permit_status',"Pending by Supervisor")
     }
 };
 //Check the fixed time
@@ -117,7 +138,7 @@ var set_dates_grd_supervisor = function(frm)
 	if(((frm.doc.grd_supervisor_check_and_approval_wp_online == "Yes")&&(!frm.doc.grd_supervisor_check_and_approval_wp_online_date)))
     {
 		frm.set_value('grd_supervisor_check_and_approval_wp_online_date',frappe.datetime.now_datetime())
-        frm.set_value('work_permit_status','Accepted');
+        frm.set_value('work_permit_status','Accepted by Supervisor');
     }
 };
 var set_upload_work_permit = function(frm) //3

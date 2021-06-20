@@ -267,6 +267,18 @@ function load_js(page){
 						}
 					},
 					{
+						label: 'Cancel Till Date',
+						fieldname: 'cancel_end_date',
+						fieldtype: 'Date',
+						default: date,
+						onchange:function(){
+							let plan_end_date = d.get_value('cancel_end_date');
+							if(plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))){
+								frappe.throw(__("Cancel Till Date cannot be before today."));
+							}
+						}						
+					},
+					{
 						fieldname: 'sb3',
 						fieldtype: 'Section Break',
 						depends_on: "eval:this.get_value('post_status') == 'Post Off'",
