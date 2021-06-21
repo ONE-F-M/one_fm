@@ -63,7 +63,8 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 
 
 @frappe.whitelist()
-def get_site_location(employee):
+def get_site_location():
+	employee='HR-EMP-00003'
 	try:
 		shift = get_current_shift(employee)
 		if shift is not None:
