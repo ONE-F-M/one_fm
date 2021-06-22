@@ -1,10 +1,6 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
-
 frappe.ui.form.on('MOI Residency Jawazat', {
-	refresh: function(frm) {
-
-	},
 	onload: function(frm) {
 		if(frm.doc.__islocal){
 			frappe.call({
@@ -34,8 +30,7 @@ frappe.ui.form.on('MOI Residency Jawazat', {
 					fieldname:["license_trade_name_arabic","street","building"]
 				}, 
 				callback: function(r) { 
-			
-					// set the returned value in a field
+				// set the returned value in a field
 					frm.set_value('company_trade_name', r.message.license_trade_name_arabic);
 					frm.set_value('company_street_name', r.message.street);
 					frm.set_value('company_building_name', r.message.building);
@@ -67,13 +62,10 @@ frappe.ui.form.on('MOI Residency Jawazat', {
 					fieldname:["paci_number","area_name","block"]
 				}, 
 				callback: function(r) { 
-			
 					// set the returned value in a field
 					frm.set_value('paci_number', r.message.paci_number);
 					frm.set_value('company_location', r.message.area_name);
-					frm.set_value('company_block_number', r.message.block);
-					
-					
+					frm.set_value('company_block_number', r.message.block);	
 				}
 			})
 		}
@@ -84,9 +76,6 @@ frappe.ui.form.on('MOI Residency Jawazat', {
     employee: function(frm){
         set_employee_details(frm);
     },
-	apply_online: function(frm){
-		set_apply_online_date(frm);
-	},
 	invoice_attachment: function(frm){
 		set_invoice_attachment_date(frm);
 	},
@@ -96,9 +85,6 @@ frappe.ui.form.on('MOI Residency Jawazat', {
 	new_residency_expiry_date: function(frm){
 		set_new_residency_expiry_date_update_time(frm);
 	}
-
-
-
 });
 var set_employee_details = function(frm){
     if(frm.doc.employee){
@@ -126,8 +112,6 @@ var set_employee_details = function(frm){
                 frm.set_value('last_name_english',r.message.last_name);
                 frm.set_value('one_fm_civil_id', r.message.one_fm_civil_id);
                 frm.set_value('designation', r.message.designation);
-
-
                 frm.set_value('place_of_birth', r.message.place_of_issue);
                 frm.set_value('gender',r.message.gender);
                 frm.set_value('birth_date', r.message.date_of_birth);
@@ -135,57 +119,40 @@ var set_employee_details = function(frm){
                 frm.set_value('passport_type',r.message.one_fm_passport_type);
                 frm.set_value('passport_issue_date', r.message.date_of_issue);
                 frm.set_value('passport_expiry_date', r.message.valid_upto);
-				
-				//commented fields are not in the employee doctype
                 frm.set_value('pam_designation', r.message.one_fm_pam_designation);
                 frm.set_value('nationality', r.message.one_fm_nationality);
-                // frm.set_value('company_pam_file_number',r.message.gender);
-                // frm.set_value('company_centralized_number', r.message.date_of_birth);
-                // frm.set_value('company_trade_name', r.message.work_permit_salary);
-
-
                 frm.set_value('company_email_id', r.message.company_email);
-                //frm.set_value('paci_number', r.message.);
-                //frm.set_value('governorate',r.message.);
-                // frm.set_value('company_location', r.message.);
-                // frm.set_value('company_block_number', r.message.);
-
-
-                // frm.set_value('company_street_name', r.message.);
-                // frm.set_value('company_building_name', r.message.);
-                // frm.set_value('company_contact_number',r.message.);
             }
         })
     }
-};
-var set_apply_online_date = function(frm)
-{//1
-	if(((frm.doc.apply_online == "Yes") && (!frm.doc.apply_online_date)))
-	{
-		
-		frm.set_value('apply_online_date',frappe.datetime.now_datetime())
-	}
 };
 var set_invoice_attachment_date = function(frm)
 {//2
 	if(((frm.doc.invoice_attachment) && (!frm.doc.invoice_attachment_date)))
 	{
 		frm.set_value('invoice_attachment_date',frappe.datetime.now_datetime())
+	}if(((!frm.doc.invoice_attachment) && (frm.doc.invoice_attachment_date)))
+	{
+		frm.set_value('invoice_attachment_date',null)
 	}
-
 };
 var set_residency_attachment_date = function(frm)
 {//3
 	if((frm.doc.residency_attachment) && (!frm.doc.residency_attachment_date))
 	{
 		frm.set_value('residency_attachment_date',frappe.datetime.now_datetime())
+	}if((!frm.doc.residency_attachment) && (frm.doc.residency_attachment_date))
+	{
+		frm.set_value('residency_attachment_date',null)
 	}
 };
 var set_new_residency_expiry_date_update_time = function(frm)
 {//4
 	if(((frm.doc.new_residency_expiry_date != null) && (!frm.doc.new_residency_expiry_date_update_time)))
-	{
-		
+	{	
 		frm.set_value('new_residency_expiry_date_update_time',frappe.datetime.now_datetime())
+	}if(((frm.doc.new_residency_expiry_date == null) && (frm.doc.new_residency_expiry_date_update_time)))
+	{	
+		frm.set_value('new_residency_expiry_date_update_time',null)
 	}
 };
