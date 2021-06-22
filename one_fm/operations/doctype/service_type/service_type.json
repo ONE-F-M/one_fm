@@ -1,27 +1,27 @@
 {
- "autoname": "field:license_name",
- "creation": "2021-06-08 13:36:20.216186",
+ "autoname": "field:service_type",
+ "creation": "2021-06-17 10:28:06.459601",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "license_name"
+  "service_type"
  ],
  "fields": [
   {
-   "fieldname": "license_name",
+   "fieldname": "service_type",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Licencse Name",
+   "label": "Service Type",
    "reqd": 1,
    "unique": 1
   }
  ],
- "modified": "2021-06-17 08:32:33.214795",
+ "modified": "2021-06-17 10:28:06.459601",
  "modified_by": "Administrator",
  "module": "Operations",
- "name": "License",
- "owner": "m.ahmed@armor-services.com",
+ "name": "Service Type",
+ "owner": "Administrator",
  "permissions": [
   {
    "create": 1,
