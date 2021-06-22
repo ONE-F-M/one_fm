@@ -1,5 +1,5 @@
 {
- "autoname": "naming_series:",
+ "autoname": "format:PRE-{posting_date}-{######}",
  "creation": "2021-04-19 10:52:12.383997",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -11,6 +11,7 @@
   "preparation_record",
   "section_break_4",
   "hr_approval",
+  "hr_user",
   "grd_operator",
   "grd_supervisor",
   "submitted_by",
@@ -63,7 +64,7 @@
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Series",
-   "options": "REF-.MM.-"
+   "options": "PRE-.MM.YY.-"
   },
   {
    "fieldname": "preparation_record",
@@ -80,19 +81,28 @@
   {
    "fieldname": "grd_operator",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "GRD Operator",
    "options": "User"
   },
   {
    "fieldname": "grd_supervisor",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "GRD Supervisor",
+   "options": "User"
+  },
+  {
+   "fieldname": "hr_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "HR User",
    "options": "User"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-08 11:32:47.736475",
- "modified_by": "Administrator",
+ "modified": "2021-06-22 12:39:56.091844",
+ "modified_by": "amnaalshawa96@gmail.com",
  "module": "GRD",
  "name": "Preparation",
  "owner": "Administrator",

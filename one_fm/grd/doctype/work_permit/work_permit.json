@@ -1,5 +1,5 @@
 {
- "autoname": "WP-.YYYY.-MM",
+ "autoname": "WP-.YYYY.-",
  "color": "green",
  "creation": "2020-08-13 08:46:25.338850",
  "doctype": "DocType",
@@ -7,7 +7,6 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
-  "title",
   "employee",
   "date_of_application",
   "preparation",
@@ -66,11 +65,11 @@
   "duration_of_work_permit",
   "visa_reference_number",
   "section_break_46",
-  "download_work_contract",
+  "work_contract",
   "column_break_62",
-  "download_salary_certificate",
+  "salary_certificate",
   "column_break_64",
-  "download_iqrar",
+  "iqrar",
   "section_break_50",
   "documents_required_section",
   "documents_required",
@@ -79,11 +78,9 @@
   "grd_operator",
   "grd_supervisor",
   "section_break_61",
-  "grd_operator_apply_work_permit_on_ashal",
   "check_record",
   "reminded_grd_operator",
   "reminded_grd_operator_approve_previous_company",
-  "grd_supervisor_check_and_approval_wp_online",
   "approve_previous_company",
   "section_break_72",
   "work_permit_approved",
@@ -91,10 +88,8 @@
   "attach_invoice",
   "new_work_permit_expiry_date",
   "column_break_32",
-  "grd_operator_apply_work_permit_on_ashal_date",
   "reminded_grd_operator_again",
   "reminded_grd_operator_approve_previous_company_again",
-  "grd_supervisor_check_and_approval_wp_online_date",
   "approve_previous_company_on",
   "upload_work_permit_on",
   "upload_payment_invoice_on",
@@ -104,7 +99,8 @@
   "amount_to_pay",
   "rpr_ref",
   "column_break_65",
-  "payment_transferred_from_finance_dept"
+  "payment_transferred_from_finance_dept",
+  "notify_to_upload"
  ],
  "fields": [
   {
@@ -117,6 +113,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
@@ -140,7 +137,7 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "employee.pam_file_number",
+   "fetch_from": "employee.pam_file_number",
    "fieldname": "pam_file_number",
    "fieldtype": "Data",
    "label": "PAM File Number",
@@ -168,7 +165,7 @@
    "fieldname": "civil_id",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Civil ID",
+   "label": "Civil ID - \u0627\u0644\u0631\u0642\u0645 \u0627\u0644\u0645\u062f\u0646\u064a ",
    "read_only": 1
   },
   {
@@ -352,30 +349,6 @@
   },
   {
    "allow_on_submit": 1,
-   "fieldname": "grd_operator_apply_work_permit_on_ashal_date",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Apply On"
-  },
-  {
-   "default": "No",
-   "fieldname": "grd_supervisor_check_and_approval_wp_online",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Check and Accept WP Online",
-   "options": "\nYes\nNo",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "grd_supervisor_check_and_approval_wp_online_date",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Check and Accept WP Online",
-   "permlevel": 1
-  },
-  {
-   "allow_on_submit": 1,
    "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\"",
    "fieldname": "attach_invoice",
    "fieldtype": "Attach",
@@ -385,15 +358,6 @@
    "fieldname": "rpr_ref",
    "fieldtype": "Data",
    "label": "RPR Ref"
-  },
-  {
-   "default": "No",
-   "fieldname": "grd_operator_apply_work_permit_on_ashal",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Apply Online",
-   "no_copy": 1,
-   "options": "\nYes\nNo"
   },
   {
    "default": "No",
@@ -436,7 +400,7 @@
    "fieldname": "employee_id",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Employee ID",
+   "label": "Employee ID - \u0631\u0642\u0645 \u0627\u0644\u0645\u0648\u0638\u0641",
    "read_only": 1
   },
   {
@@ -453,14 +417,16 @@
    "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\"",
    "fieldname": "upload_work_permit_on",
    "fieldtype": "Data",
-   "label": "Upload Work Permit On"
+   "label": "Upload Work Permit On",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
    "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\"",
    "fieldname": "upload_payment_invoice_on",
    "fieldtype": "Data",
-   "label": "Upload Payment Invoice On"
+   "label": "Upload Payment Invoice On",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.valid_upto",
@@ -651,7 +617,8 @@
    "fieldname": "passport_type",
    "fieldtype": "Data",
    "label": "Passport Type",
-   "read_only": 1
+   "read_only": 1,
+   "translatable": 1
   },
   {
    "fetch_from": "employee.passport_number",
@@ -735,11 +702,6 @@
    "options": "\nRejected by PAM\nRejected by previous company"
   },
   {
-   "fieldname": "download_work_contract",
-   "fieldtype": "Button",
-   "label": "Download Work Contract"
-  },
-  {
    "depends_on": "eval:doc.work_permit_status == \"Rejected\"",
    "fieldname": "details_of_rejection",
    "fieldtype": "Small Text",
@@ -750,30 +712,12 @@
    "fieldtype": "Section Break"
   },
   {
-   "allow_on_submit": 1,
-   "default": "{civil_id}",
-   "fieldname": "title",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Title"
-  },
-  {
    "default": "0",
    "fieldname": "check_record",
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Check Record",
    "read_only": 1
-  },
-  {
-   "fieldname": "download_iqrar",
-   "fieldtype": "Button",
-   "label": "Download Iqrar"
-  },
-  {
-   "fieldname": "download_salary_certificate",
-   "fieldtype": "Button",
-   "label": "Download Salary Certificate"
   },
   {
    "fieldname": "section_break_46",
@@ -790,10 +734,35 @@
   {
    "fieldname": "column_break_64",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_to_upload",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify to Upload"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "work_contract",
+   "fieldtype": "Attach",
+   "label": "Work Contract"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "salary_certificate",
+   "fieldtype": "Attach",
+   "label": "Salary Certificate"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "iqrar",
+   "fieldtype": "Attach",
+   "label": "Iqrar"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-13 14:48:58.384980",
+ "modified": "2021-06-22 12:06:36.010333",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
@@ -802,6 +771,6 @@
  "search_fields": "date_of_application,employee_id,civil_id",
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "title",
+ "title_field": "civil_id",
  "track_changes": 1
 }

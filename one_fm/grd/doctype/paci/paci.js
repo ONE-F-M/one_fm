@@ -1,6 +1,5 @@
 // Copyright (c) 2021, omar jaber and contributors
 // For license information, please see license.txt
-
 frappe.ui.form.on('PACI', {
 	onload: function(frm) {
 		if (!frm.is_new()){
@@ -10,19 +9,13 @@ frappe.ui.form.on('PACI', {
     employee: function(frm){
         set_employee_details(frm);
     },
-	apply_civil_id_online: function(frm){
-		set_apply_civil_id_online(frm);
-
-	},
 	upload_civil_id_payment: function(frm){
 		set_upload_civil_id_payment(frm);
+        set_status(frm);
 	},
 	upload_civil_id: function(frm){
 		set_upload_civil_id(frm);
 	},
-    upload_civil_id_payment:function(frm){
-        set_status(frm);
-    },
 
 });
 var set_employee_details = function(frm){
@@ -60,33 +53,29 @@ var set_employee_details = function(frm){
         })
     }
 };
-var set_apply_civil_id_online = function(frm)
-{//1
-	if(((frm.doc.apply_civil_id_online == "Yes") && (!frm.doc.apply_civil_id_online_datetime)))
-	{
-		
-		frm.set_value('apply_civil_id_online_datetime',frappe.datetime.now_datetime())
-	}
-};
 var set_upload_civil_id_payment = function(frm)
 {//2
-	if(((frm.doc.upload_civil_id_payment != null) && (!frm.doc.upload_civil_id_payment_datetime)))
+	if((frm.doc.upload_civil_id_payment) && (!frm.doc.upload_civil_id_payment_datetime))
+	{ 
+		frm.set_value('upload_civil_id_payment_datetime',frappe.datetime.now_datetime());
+	}if((!frm.doc.upload_civil_id_payment) && (frm.doc.upload_civil_id_payment_datetime))
 	{
-		
-		frm.set_value('upload_civil_id_payment_datetime',frappe.datetime.now_datetime())
+		frm.set_value('upload_civil_id_payment_datetime',null);
 	}
 };
 var set_upload_civil_id = function(frm)
 {//3
 	if((frm.doc.upload_civil_id) && (!frm.doc.upload_civil_id_datetime))
 	{
-		
-		frm.set_value('upload_civil_id_datetime',frappe.datetime.now_datetime())
+		frm.set_value('upload_civil_id_datetime',frappe.datetime.now_datetime());
+	}if((!frm.doc.upload_civil_id) && (frm.doc.upload_civil_id_datetime))
+	{
+		frm.set_value('upload_civil_id_datetime',null);
 	}
 };
 var set_status = function(frm)
 {
     if (frm.doc.upload_civil_id_payment){
-        frm.set_value('paci_status',"Under-Process")
+        frm.set_value('paci_status',"Under-Process");
     }
 };

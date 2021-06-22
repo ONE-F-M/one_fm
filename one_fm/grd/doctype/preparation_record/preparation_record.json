@@ -13,7 +13,8 @@
   "residency_expiry_date",
   "renewal_or_extend",
   "ref_doctype",
-  "ref_name"
+  "ref_name",
+  "no_of_years"
  ],
  "fields": [
   {
@@ -77,10 +78,17 @@
    "fieldname": "nationality",
    "fieldtype": "Data",
    "label": "Nationality"
+  },
+  {
+   "depends_on": "eval: doc.renewal_or_extend == \"Renewal\"",
+   "fieldname": "no_of_years",
+   "fieldtype": "Select",
+   "label": "No. of Years",
+   "options": "\n1 Year\n2 Years\n3 Years"
   }
  ],
  "istable": 1,
- "modified": "2021-05-17 17:11:10.876856",
+ "modified": "2021-06-21 14:45:53.909130",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation Record",
