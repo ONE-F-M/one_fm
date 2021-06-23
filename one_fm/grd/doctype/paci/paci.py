@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2021, omar jaber and contributors
 # For license information, please see license.txt
-
 from __future__ import unicode_literals
 import frappe
 from frappe import _
@@ -11,47 +10,43 @@ from frappe.utils import today, add_days, get_url
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 
 class PACI(Document):
-	def validate(self):
-		self.set_grd_values()
+    def validate(self):
+        self.set_grd_values()
 
-	def set_grd_values(self):
-		if not self.grd_supervisor:
-			self.grd_supervisor = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
-		if not self.grd_operator:
-			self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
+    def set_grd_values(self):
+        if not self.grd_supervisor:
+            self.grd_supervisor = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
+        if not self.grd_operator:
+            self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
+
+    def on_submit(self):
+        self.validate_mandatory_fields_on_submit()
+        self.set_New_civil_id_Expiry_date_in_employee_doctype()
+        self.db_set('paci_status',"Completed")
+        self.db_set('completed_on', today())
 	
-	def on_submit(self):
-		self.validate_mandatory_fields_on_submit()
-		self.set_New_civil_id_Expiry_date_in_employee_doctype()
-		self.db_set('completed',"Yes")
-		self.db_set('completed_on', today())
-	
-	def validate_mandatory_fields_on_submit(self):
-		if self.apply_civil_id_online == "No":
-			frappe.throw(_("GRD Operator Must Apply Civil ID online to Submit"))
-		if not self.upload_civil_id_payment:
-			frappe.throw(_("GRD Operator Must Upload Paymnent Invoice to Submit"))
-		if not self.upload_civil_id:
-			frappe.throw(_("GRD Operator Must Upload Civil ID to Submit"))
-		if not self.new_civil_id_expiry_date:
-			frappe.throw(_("GRD Operator Must The New Civil ID to Submit"))
+    def validate_mandatory_fields_on_submit(self):
+        if not self.upload_civil_id_payment:
+            frappe.throw(_("GRD Operator Must Upload Paymnent Invoice to Submit"))
+        if not self.upload_civil_id:
+            frappe.throw(_("GRD Operator Must Upload Civil ID to Submit"))
+        if not self.new_civil_id_expiry_date:
+            frappe.throw(_("GRD Operator Must The New Civil ID to Submit"))
 
-	def set_New_civil_id_Expiry_date_in_employee_doctype(self):
-		today = date.today()
-		employee = frappe.get_doc('Employee', self.employee)
-		employee.civil_id_expiry_date = self.new_civil_id_expiry_date # update the date of expiry
-
-		employee.append("one_fm_employee_documents", {
-		"attach": self.upload_civil_id,
-		"document_name": "Civil ID Expiry Attachment",
-		"issued_on":today,
-		"valid_till":self.new_civil_id_expiry_date
-		})
-		employee.save()
+    def set_New_civil_id_Expiry_date_in_employee_doctype(self):
+        today = date.today()
+        employee = frappe.get_doc('Employee', self.employee)
+        employee.civil_id_expiry_date = self.new_civil_id_expiry_date # update the date of expiry
+        employee.append("one_fm_employee_documents", {
+        "attach": self.upload_civil_id,
+        "document_name": "Civil ID Expiry Attachment",
+        "issued_on":today,
+        "valid_till":self.new_civil_id_expiry_date
+        })
+        employee.save()
 
 # Create PACI record once a month for renewals list  
 def create_PACI_renewal(preparation_name):
-
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
@@ -62,7 +57,6 @@ def create_PACI_for_transfer(employee_name):
     employee = frappe.get_doc('Employee',employee_name)
     if employee:
         create_PACI(frappe.get_doc('Employee',employee.employee),"Transfer")
-
 
 def create_PACI(employee,Type,preparation_name = None):
         # Create New PACI: 1. New Overseas, 2. New Kuwaiti, 3. Transfer
@@ -76,7 +70,7 @@ def create_PACI(employee,Type,preparation_name = None):
 
 #At 4pm Notify GRD Operator
 def system_checks_grd_operator_apply_online():
-	filter1 = {'apply_civil_id_online':['!=','Yes']}
+	filter1 = {'date_of_application':['>=',today()]}
 	employee_list = frappe.db.get_list('PACI',filter1, ['name','grd_operator','grd_supervisor'])
 	if len(employee_list) > 0:
 		paci_notify_first_grd_operator()
@@ -121,7 +115,7 @@ def email_notification_to_grd_user(grd_user, paci_list, reminder_indicator, acti
     recipients = {}
 
     for paci in paci_list:
-        page_link = get_url("http://192.168.8.102/desk#Form/PACI/"+paci.name)
+        page_link = get_url("/desk#Form/PACI/"+paci.name)
         message = "<a href='{0}'>{1}</a>".format(page_link, paci.name)
         if paci[grd_user] in recipients:
             recipients[paci[grd_user]].append(message)#add the message in the empty list

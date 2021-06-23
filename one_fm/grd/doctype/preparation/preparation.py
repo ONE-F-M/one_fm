@@ -25,7 +25,7 @@ from one_fm.grd.doctype.paci import paci
 class Preparation(Document):
     def validate(self):
         self.set_grd_values()
-        #self.set_hr_values()
+        self.set_hr_values()
     
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -33,7 +33,9 @@ class Preparation(Document):
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
 
-    # def set_hr_values():
+    def set_hr_values(self):
+        if not self.hr_user:
+            self.hr_user = frappe.db.get_single_value("Hiring Settings","default_hr_user")
 
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
@@ -44,7 +46,6 @@ class Preparation(Document):
         self.recall_create_moi_renewal_and_extend() # create moi record for all employee
         self.recall_create_paci() # create paci record for all
         self.send_notifications()
-        #self.recall_create_residency_payment_request_renewal()
         
     def validate_mandatory_fields_on_submit(self):
         field_list = [{'Renewal or extend':'renewal_or_extend'}, {'Preparation Record':'preparation_record'}]
@@ -80,7 +81,7 @@ class Preparation(Document):
         if self.grd_operator:
             page_link = get_url("/desk#Form/Preparation/" + self.name)
             message = "<p>Renewal Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-            subject = 'Renewal Records are created for WP, MI, MOI, PACI'
+            subject = 'Renewal Records are created for WP, MI, MOI, PACI / '
             send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
 

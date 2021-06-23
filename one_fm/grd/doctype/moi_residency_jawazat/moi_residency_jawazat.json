@@ -11,9 +11,11 @@
   "employee",
   "date_of_application",
   "preparation",
+  "completed",
   "column_break_5",
   "employee_id",
   "renewal_or_extend",
+  "completed_on",
   "section_break_4",
   "first_name_arabic",
   "second_name_arabic",
@@ -52,17 +54,13 @@
   "company_building_name",
   "company_contact_number",
   "section_break_42",
-  "apply_online",
   "invoice_attachment",
   "residency_attachment",
   "new_residency_expiry_date",
-  "completed",
   "column_break_34",
-  "apply_online_date",
   "invoice_attachment_date",
   "residency_attachment_date",
   "new_residency_expiry_date_update_time",
-  "completed_on",
   "section_break_40",
   "grd_operator",
   "grd_supervisor",
@@ -290,14 +288,6 @@
    "print_hide": 1
   },
   {
-   "default": "No",
-   "fieldname": "apply_online",
-   "fieldtype": "Select",
-   "label": "Apply Online",
-   "options": "\nYes\nNo",
-   "print_hide": 1
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "invoice_attachment",
    "fieldtype": "Attach",
@@ -324,40 +314,41 @@
    "in_list_view": 1,
    "label": "Completed",
    "options": "\nYes\nNo",
-   "print_hide": 1
+   "print_hide": 1,
+   "read_only": 1
   },
   {
    "fieldname": "column_break_34",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "apply_online_date",
-   "fieldtype": "Data",
-   "label": "Apply Online On",
-   "print_hide": 1
-  },
-  {
+   "allow_on_submit": 1,
    "fieldname": "invoice_attachment_date",
    "fieldtype": "Data",
-   "label": "Upload Payment Invoice On"
+   "label": "Upload Payment Invoice On",
+   "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "residency_attachment_date",
    "fieldtype": "Data",
    "label": "Upload Residency On",
-   "print_hide": 1
+   "print_hide": 1,
+   "read_only": 1
   },
   {
    "fieldname": "new_residency_expiry_date_update_time",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "New Residency Expiry Date Update On",
-   "print_hide": 1
+   "print_hide": 1,
+   "read_only": 1
   },
   {
    "fieldname": "completed_on",
    "fieldtype": "Date",
    "label": "Completed On",
-   "print_hide": 1
+   "print_hide": 1,
+   "read_only": 1
   },
   {
    "fieldname": "section_break_40",
@@ -448,7 +439,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2021-05-10 12:53:39.847603",
+ "modified": "2021-06-22 10:10:52.934614",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
@@ -469,7 +460,6 @@
    "write": 1
   },
   {
-   "cancel": 1,
    "delete": 1,
    "email": 1,
    "export": 1,

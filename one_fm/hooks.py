@@ -159,7 +159,10 @@ doc_events = {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
 	},
 	"Job Applicant": {
-		"validate": "one_fm.utils.validate_job_applicant",
+		"validate": "one_fm.one_fm.utils.validate_job_applicant",
+		"validate": "one_fm.one_fm.utils.read_civil_id_image",
+		"validate": "one_fm.one_fm.utils.send_recruiter_notification_with_type_of_issues",
+		"validate": "one_fm.one_fm.utils.send_grd_notification_to_check_applicant_document",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
 	"Job Offer": {
@@ -317,7 +320,8 @@ scheduler_events = {
 		"0 16 * * *":[
 			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
 			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
-			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online'
+			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online',
+			'one_fm.one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online'
 		],
 		"0 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four'
@@ -336,9 +340,9 @@ scheduler_events = {
 
 		],
 		"30 9 * * *": [
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator',
-			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first'
-
+			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first',
+			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.moi_notify_again_grd_operator'
+			
 		],
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'

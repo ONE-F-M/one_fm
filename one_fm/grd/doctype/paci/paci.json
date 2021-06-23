@@ -198,19 +198,17 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "apply_civil_id_online_datetime",
-   "fieldtype": "Data",
-   "label": "Apply On"
-  },
-  {
+   "allow_on_submit": 1,
    "fieldname": "upload_civil_id_payment_datetime",
    "fieldtype": "Data",
-   "label": "Upload Payment Invoice On"
+   "label": "Upload Payment Invoice On",
+   "read_only": 1
   },
   {
    "fieldname": "upload_civil_id_datetime",
    "fieldtype": "Data",
-   "label": "Upload Civil ID On"
+   "label": "Upload Civil ID On",
+   "read_only": 1
   },
   {
    "fieldname": "new_civil_id_expiry_date_update_time",
@@ -276,10 +274,18 @@
    "in_list_view": 1,
    "label": "Category",
    "options": "\nRenewal\nTransfer"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "paci_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "PACI Status",
+   "options": "\nDraft\nUnder-Process\nCompleted"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-05-10 12:44:30.693930",
+ "modified": "2021-06-22 10:24:05.515917",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
