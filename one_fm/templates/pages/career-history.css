@@ -1,1 +1,9 @@
 /* career-history CSS here */
+
+header .top{
+padding: 50px;
+}
+
+.Score{
+    float: right;
+}
