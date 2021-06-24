@@ -394,9 +394,6 @@ def send_travel_agent_email():
             #     frappe.sendmail(sender=sender, recipients= recipient,
             #         content=msg, subject="GP Letter Request No Response", delayed=False)
 
-
-
-
 def send_gp_letter_reminder():
     gp_letters_request = frappe.db.sql_list("select name from `tabGP Letter Request` where (gp_status is NULL or gp_status='' or gp_status='Reject') and (supplier is not NULL or supplier!='') ")
 
