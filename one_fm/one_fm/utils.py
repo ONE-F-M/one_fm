@@ -57,16 +57,6 @@ def send_grd_notification_to_check_applicant_document(doc, method):
             create_notification_log(subject, message, [doc.one_fm_grd_operator], doc)
 
 @frappe.whitelist()
-def read_civil_id_image(doc, method):
-    if doc.one_fm_has_issue == "No":
-        employee = frappe.get_doc('Job Applicant',doc.name)
-        for document in employee.one_fm_documents_required:
-            if document.document_required == "Civil ID":
-                doc.db_set('one_fm_civil_id_image', document.document_required)
-            if document.document_required  == "Previous Company Authorised Signatory":
-                doc.db_set('one_fm_previous_company_authorized_signatory', document.document_required)
-
-@frappe.whitelist()
 def send_recruiter_notification_with_type_of_issues(doc, method):
     if doc.one_fm_has_issue == "Yes":
         if not doc.one_fm_recruiter:
