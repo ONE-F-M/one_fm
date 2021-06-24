@@ -1,2 +1,1 @@
 one_fm.patches.v1_0.schedule_posts #2021-06-23
-one_fm.patches.v1_0.change_in_naming_series_operations_post #2021-06-24
