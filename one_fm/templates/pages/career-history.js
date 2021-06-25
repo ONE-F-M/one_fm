@@ -1,3 +1,3 @@
 // career-history JS here
 
-console.log("welcome");
+document.getElementById('erfNumber').value = "987654321";
