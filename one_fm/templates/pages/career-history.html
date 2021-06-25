@@ -42,24 +42,237 @@
     <section>
         <div class="container">
             <div class="row">
-                <div class="col-md-12 offset-md-1">
+                <div class="col-md-12  mb-5 ">
                     <!-- Each parent div and input should have a Unique ID -->
                     <!-- This is a parent Div -->
                     <!-- Employee Details here!!! -->
-                    <div class="mb-3 col-md-4">
-                        <label for="erfNumber" class="form-label">ERF Number</label>
-                        <input type="text" class="form-control" id="erfNumber" placeholder="Enter Your ERF Number here"
-                            disabled> <!-- This is a Input element -->
+                    <div class="row">
+                        <div class="mb-3 col-lg-4">
+                            <label for="erfNumber" class="form-label">ERF Number</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Enter Your ERF Number here" disabled> <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-4">
+                            <label for="applicantId" class="form-label">Applicant ID</label>
+                            <input type="text" class="form-control" id="applicantId"
+                                placeholder="Enter Your Applicant ID here" disabled> <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-4">
+                            <label for="erfNumber" class="form-label">Career History Score</label>
+                            <input type="text" class="form-control" id="erfNumber" placeholder="Career Score" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-6">
+                            <label for="applicantId" class="form-label">Number Promotions & Salary Changes </label>
+                            <input type="text" class="form-control" id="applicantId"
+                                placeholder="Number Promotions & Salary Changes" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-6">
+                            <label for="applicantId" class="form-label">Total Years Of Experience </label>
+                            <input type="text" class="form-control" id="applicantId"
+                                placeholder="Total Years Of Experience" disabled> <!-- This is a Input element -->
+                        </div>
+
                     </div>
-                    <div class="mb-3 col-md-4">
-                        <label for="applicantId" class="form-label">Applicant ID</label>
-                        <input type="text" class="form-control" id="applicantId"
-                            placeholder="Enter Your Applicant ID here" disabled> <!-- This is a Input element -->
-                    </div>
+
                     <!-- This is a parent Div As well -->
                 </div>
-                <div id="companyList">
-                    Loading...
+                <div class="col-md-12  mb-5 ">
+                    <!-- Each parent div and input should have a Unique ID -->
+                    <!-- This is a parent Div -->
+                    <div class="row">
+
+                        <div class="mb-3 col-lg-4">
+                            <label for="company" class="form-label">Number of Companies</label>
+                            <select id="company" name="number">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 col-lg-4"></div>
+                        <div class="mb-3 col-lg-4"></div>
+                        <div class="col-md-12">
+                            <p>Company <span>1</span> </p>
+                        </div>
+
+                        <div class="mb-3 col-lg-4">
+                            <label for="companyName" class="form-label">Current Company Name </label>
+                            <input type="text" class="form-control" id="companyName" placeholder="Current Company Name">
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-3 ">
+                            <label for="MonthlySalary" class="form-label">Monthly Salary in $ </label>
+                            <input type="text" class="form-control" id="MonthlySalary"
+                                placeholder="Current Company Name"> <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-5 "></div>
+                        <div class="mb-3 col-lg-3 ">
+                            <label for="MonthlySalary" class="form-label">Current Job Title</label>
+                            <input type="text" class="form-control" id="MonthlySalary"
+                                placeholder="Current Company Name"> <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-3 ">
+                            <label for="MonthlySalary" class="form-label">Job Start Date</label>
+                            <input type="date" class="form-control" id="MonthlySalary"
+                                placeholder="Current Company Name"> <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-3 ">
+                            <label for="MonthlySalary" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="MonthlySalary"
+                                placeholder="Current Company Name"> <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-3 ">
+                            <label for="MonthlySalary" class="form-label">Years Of Experience</label>
+                            <input type="text" class="form-control" id="MonthlySalary" placeholder="number" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-8">
+                            <label for="jobContent1" class="form-label">Could you please tell us what is it that makes
+                                you interested in this opportunity?</label>
+                            <textarea rows="4" cols="50" name="comment" form="usrform" class="form-control jobContent"
+                                id="jobContent1"></textarea>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-8">
+                            <label for="MonthlySalary" class="form-label">What are your top 3 Responisbilities?</label>
+                            <input type="text" class="form-control mb-3" id="MonthlySalary" placeholder="1">
+                            <!-- This is a Input element -->
+                            <input type="text" class="form-control mb-3" id="MonthlySalary" placeholder="2">
+                            <input type="text" class="form-control mb-3" id="MonthlySalary" placeholder="3">
+                        </div>
+                        <div class="mb-3 col-lg-8">
+                            <label for="jobContent2" class="form-label">Could you please tell us what is it that makes
+                                you interested in this opportunity?</label>
+
+                            <textarea rows="4" cols="50" name="comment" form="usrform" class="form-control jobContent"
+                                id="jobContent2"></textarea>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="col-md-6">
+
+                            <label for="company" class="form-label">Did you get any Promotion? (Change in Job
+                                title)</label>
+
+                            <div class="col-md-4">
+                                <select id="company" name="number" class="form-control">
+                                    <option class="text-center" value="no">no</option>
+                                    <option value="yes">yes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 col-lg-2"></div>
+                        <div class="mb-3 col-lg-4">
+                            <label for="erfNumber" class="form-label">Total Promottions of Applicant</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Total Salary Changes of Applicant" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-5">
+                            <label for="MonthlySalary" class="form-label">Reason for Promotion</label>
+                            <input type="text" class="form-control" id="MonthlySalary"
+                                placeholder="Reason for Promotion"> <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-3"></div>
+                        <div class="mb-3 col-lg-4">
+                            <label for="erfNumber" class="form-label">Recruiter Validation Score</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Recruiter Validation Score" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-8">
+                            <label for="erfNumber" class="form-label">Recruiter Notes Promitions</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Recruiter Notes Promitions" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="col-md-6">
+
+                            <label for="company" class="form-label">Did you get any Salary Increase? (Change in
+                                Salary)</label>
+
+                            <div class="col-md-4">
+                                <select id="company" name="number" class="form-control">
+                                    <option class="text-center" value="no">no</option>
+                                    <option value="yes">yes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 col-lg-2"></div>
+                        <div class="mb-3 col-lg-4">
+                            <label for="erfNumber" class="form-label">Total Salary Changes of Applicant</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Total Salary Changes of Applicant" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-5">
+                            <label for="MonthlySalary" class="form-label">Reason for Salary Increase</label>
+                            <input type="text" class="form-control" id="MonthlySalary"
+                                placeholder="Reason for Salary Increase"> <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-3"></div>
+                        <div class="mb-3 col-lg-4">
+                            <label for="erfNumber" class="form-label">Recruiter Validation Score</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Recruiter Validation Score" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-8">
+                            <label for="erfNumber" class="form-label">Recruiter Notes Promitions</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Recruiter Notes Promitions" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="col-md-6">
+
+                            <label for="company" class="form-label">Did you leave the job?</label>
+
+                            <div class="col-md-4">
+                                <select id="company" name="number" class="form-control">
+                                    <option class="text-center" value="no">no</option>
+                                    <option value="yes">yes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 col-lg-8">
+                            <label for="jobContent2" class="form-label">Why do you plan to leave the job?</label>
+
+                            <textarea rows="4" cols="50" name="comment" form="usrform" class="form-control jobContent"
+                                id="jobContent2"></textarea>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-8">
+                            <label for="erfNumber" class="form-label">Recruiter Notes Promitions</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Recruiter Notes Promitions" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-8">
+                            <label for="erfNumber" class="form-label">Recruiter Notes Promitions</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Recruiter Notes Promitions" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-8">
+                            <label for="erfNumber" class="form-label">Recruiter Notes Promitions</label>
+                            <input type="text" class="form-control" id="erfNumber"
+                                placeholder="Recruiter Notes Promitions" disabled>
+                            <!-- This is a Input element -->
+                        </div>
+                        <div class="mb-3 col-lg-4"></div>
+                        <div class="mb-3 col-lg-2">
+                            <input class="form-control" type="submit">
+                        </div>
+
+                       
+                    </div>
+
+                    <!-- This is a parent Div As well -->
+                </div>
+                <div id="companyList" class="mb-5">
+                   <button class="btn">Add company</button>
                 </div>
             </div>
         </div>
