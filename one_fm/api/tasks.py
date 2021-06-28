@@ -197,6 +197,7 @@ def send_notification(subject, message, recipients):
 		notification.email_content = message
 		notification.document_type = "Notification Log"
 		notification.for_user = user
+		notification.document_name = " "
 		notification.save()
 		notification.document_name = notification.name
 		notification.save()
