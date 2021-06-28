@@ -37,24 +37,19 @@
   "section_break_24",
   "grd_operator",
   "grd_supervisor",
+  "transport_user",
   "operations_manager",
   "reminded_grd_operator",
   "reminded_grd_operator_again",
   "reminded_grd_operator_documents",
   "reminded_grd_operator_documents_again",
-  "reminded_grd_operator_submit",
-  "reminded_grd_operator_submit_again",
   "notify_operations",
-  "required_transportation",
-  "section_break_39",
-  "schedule_appointment",
-  "column_break_25",
-  "schedule_appointment_on",
-  "column_break_34",
+  "notify_transport",
   "date_and_time_confirmation",
+  "section_break_39",
+  "required_transportation",
   "section_break_36",
   "preparing_documents",
-  "preparing_documents_notification",
   "column_break_39",
   "preparing_documents_on",
   "completed_on",
@@ -88,8 +83,9 @@
   {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
-   "fieldtype": "Read Only",
-   "label": "Civil ID"
+   "fieldtype": "Data",
+   "label": "Civil ID",
+   "read_only": 1
   },
   {
    "default": "Organization",
@@ -146,8 +142,9 @@
   },
   {
    "fieldname": "moi_reference_number",
-   "fieldtype": "Read Only",
-   "label": "MOI Reference Number"
+   "fieldtype": "Data",
+   "label": "MOI Reference Number",
+   "read_only": 1
   },
   {
    "default": "One Facilities Management",
@@ -158,26 +155,30 @@
   {
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "First Name Arabic"
+   "fieldtype": "Data",
+   "label": "First Name Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "Second Name Arabic"
+   "fieldtype": "Data",
+   "label": "Second Name Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "Third Name Arabic"
+   "fieldtype": "Data",
+   "label": "Third Name Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "Last Name Arabic"
+   "fieldtype": "Data",
+   "label": "Last Name Arabic",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_18",
@@ -186,42 +187,30 @@
   {
    "fetch_from": "employee.first_name",
    "fieldname": "first_name_english",
-   "fieldtype": "Read Only",
-   "label": "First Name English"
+   "fieldtype": "Data",
+   "label": "First Name English",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.middle_name",
    "fieldname": "second_name_english",
-   "fieldtype": "Read Only",
-   "label": "Second Name English"
+   "fieldtype": "Data",
+   "label": "Second Name English",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name",
    "fieldname": "third_name_english",
-   "fieldtype": "Read Only",
-   "label": "Third Name English"
+   "fieldtype": "Data",
+   "label": "Third Name English",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.last_name",
    "fieldname": "last_name_english",
-   "fieldtype": "Read Only",
-   "label": "Last Name English"
-  },
-  {
-   "default": "No",
-   "fieldname": "schedule_appointment",
-   "fieldtype": "Select",
-   "label": "Schedule Appointment",
-   "options": "\nYes\nNo"
-  },
-  {
-   "fieldname": "column_break_25",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "schedule_appointment_on",
-   "fieldtype": "Datetime",
-   "label": "Schedule Appointment on"
+   "fieldtype": "Data",
+   "label": "Last Name English",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_24",
@@ -230,9 +219,10 @@
   {
    "fetch_from": "employee.employee_id",
    "fieldname": "employee_id",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Employee ID"
+   "label": "Employee ID",
+   "read_only": 1
   },
   {
    "fieldname": "grd_operator",
@@ -274,10 +264,6 @@
    "no_copy": 1,
    "options": "User",
    "read_only": 1
-  },
-  {
-   "fieldname": "column_break_34",
-   "fieldtype": "Column Break"
   },
   {
    "description": "Date and Time for the booked Appointment ",
@@ -322,11 +308,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "preparing_documents_notification",
-   "fieldtype": "Read Only",
-   "label": "Preparing Documents Notification"
-  },
-  {
    "default": "0",
    "fieldname": "reminded_grd_operator_documents",
    "fieldtype": "Check",
@@ -345,47 +326,33 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "reminded_grd_operator_submit",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Reminded GRD Operator Submit",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "reminded_grd_operator_submit_again",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Reminded GRD Operator Submit Again",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
-   "label": "Nationality"
+   "label": "Nationality",
+   "read_only": 1
   },
   {
    "default": "No",
    "fieldname": "required_transportation",
    "fieldtype": "Select",
    "label": "Required Transportation",
-   "options": "\nYes\nNo"
+   "options": "\nYes\nNo",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_39",
-   "fieldtype": "Section Break"
+   "fieldtype": "Column Break"
   },
   {
+   "bold": 1,
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_preview": 1,
    "label": "Status",
-   "options": "\nDraft\nSubmitted\nAccepted\nCompleted"
+   "options": "\nDraft\nBooked\nCompleted"
   },
   {
    "fieldname": "column_break_4",
@@ -402,10 +369,24 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Date of Application"
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_transport",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify Transport"
+  },
+  {
+   "fieldname": "transport_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Transport user",
+   "options": "User"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-05-25 12:51:24.931280",
+ "modified": "2021-06-27 14:14:47.711987",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Fingerprint Appointment",

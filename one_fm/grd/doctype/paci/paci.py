@@ -101,13 +101,12 @@ def paci_notify_again_grd_operator():
 def paci_notify_grd_operator(reminder_indicator):
     # Get paci list
     today = date.today()
-    filters = {'docstatus': 0,'reminded_grd_operator': 0, 'reminded_grd_operator_again':0}
+    filters = {'docstatus': 0,'date_of_application':['>=',today()],'reminded_grd_operator': 0, 'reminded_grd_operator_again':0}
     if reminder_indicator == 'red':
         filters['reminded_grd_operator'] = 1
         filters['reminded_grd_operator_again'] = 0
                                                             
     paci_list = frappe.db.get_list('PACI', filters, ['name', 'grd_operator', 'grd_supervisor'])
-    # send grd supervisor if reminder for second time (red)
     cc = [paci_list[0].grd_supervisor] if reminder_indicator == 'red' else []
     email_notification_to_grd_user('grd_operator', paci_list, reminder_indicator, 'Submit', cc)
 

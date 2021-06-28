@@ -318,10 +318,12 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"0 16 * * *":[
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
-			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online',
-			'one_fm.one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online'
+			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
+			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online',
+			'one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_first_grd_operator',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator'
 		],
 		"0 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four'
@@ -331,7 +333,12 @@ scheduler_events = {
 		],
 		"0 8 * * *": [
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
-			'one_fm.utils.send_gp_letter_attachment_no_response'
+			'one_fm.utils.send_gp_letter_attachment_no_response',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents'
+		],
+		"30 8 * * *":[
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator',
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',

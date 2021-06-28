@@ -14,7 +14,7 @@ frappe.ui.form.on('Work Permit', {
     },
     employee: function(frm){
         let {employee} = frm.doc.employee;
-        console.log("hi")
+        // console.log("hi")
         if(employee){
 			frappe.db.get_doc("Employee", employee)
             .then(res => {
