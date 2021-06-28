@@ -8,7 +8,7 @@ from frappe import _
 from datetime import date
 from one_fm.api.notification import create_notification_log
 from frappe.model.document import Document
-from frappe.utils import today, add_days, get_url, date_diff
+from frappe.utils import today, add_days, get_url, date_diff, getdate
 from frappe.model.document import Document
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 
@@ -45,13 +45,13 @@ class FingerprintAppointment(Document):
         if self.workflow_state == "Open":
             page_link = get_url("/desk#Form/Fingerprint Appointment/" + self.name)
             message = "<p>Please Apply for Fingerprint Appointment<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-            subject = 'Apply for Fingerprint Appointment Online for {}'.format(self.first_name_english)
+            subject = 'Apply for Fingerprint Appointment Online for {0}'.format(self.first_name_english)
             send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
 
     def check_appointment_date(self):
         today = date.today()
-        if date_diff(self.date_and_time_confirmation,today) < 0:
+        if getdate(self.date_and_time_confirmation) <= getdate(today):
             frappe.throw(_("You can't set previous dates"))
 
 #Auto generated everyday at 8am
