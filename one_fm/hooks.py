@@ -298,10 +298,6 @@ scheduler_events = {
 	],
 
 	"cron": {
-		"0 8 1 * *":[# Monthy event at 8 am
-			"one_fm.one_fm.grd.doctype.preparation.create_preparation"
-
-		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			"one_fm.api.tasks.update_shift_type"
@@ -335,7 +331,8 @@ scheduler_events = {
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
-			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents'
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
+			"one_fm.one_fm.grd.doctype.preparation.create_preparation"
 		],
 		"30 8 * * *":[
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator',
