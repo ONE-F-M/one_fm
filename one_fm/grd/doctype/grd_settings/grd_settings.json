@@ -37,13 +37,13 @@
   },
   {
    "fieldname": "default_grd_operator_transfer",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Default GRD Operator (Transfer)",
    "options": "User"
   }
  ],
  "issingle": 1,
- "modified": "2021-06-29 22:50:08.450807",
+ "modified": "2021-06-30 13:16:44.299264",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "GRD Settings",

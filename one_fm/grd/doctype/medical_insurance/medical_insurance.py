@@ -27,7 +27,7 @@ class MedicalInsurance(Document):
     
     def on_submit(self):
         self.set_depend_on_fields()
-        self.db_set('completed','Yes')
+        # self.db_set('completed','Yes')
         self.db_set('medical_insurance_submitted_by', frappe.session.user)
         self.db_set('medical_insurance_submitted_on', today())
         if self.insurance_status == "Local Transfer":

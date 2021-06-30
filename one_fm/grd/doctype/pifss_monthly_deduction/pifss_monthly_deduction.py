@@ -131,14 +131,3 @@ def import_additional_deduction_data(file_url):
 			table_data.append({'pifss_id_no': employee.pifss_id_no, 'additional_deduction': additional_amount})
 	data.update({'table_data': table_data})
 	return data
-
-def create_notification_log(subject, message, for_users, reference_doc):
-	for user in for_users:
-		doc = frappe.new_doc('Notification Log')
-		doc.subject = subject
-		doc.email_content = message
-		doc.for_user = user
-		doc.document_type = reference_doc.doctype
-		doc.document_name = reference_doc.name
-		# doc.from_user = reference_doc.modified_by
-		doc.save(ignore_permissions=True)

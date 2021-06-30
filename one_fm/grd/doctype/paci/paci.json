@@ -65,28 +65,28 @@
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_arabic",
    "fieldtype": "Data",
-   "label": "First Name Arabic",
+   "label": "First Name in Arabic",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_arabic",
    "fieldtype": "Data",
-   "label": "Second Name Arabic",
+   "label": "Second Name in Arabic",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name_arabic",
    "fieldtype": "Data",
-   "label": "Third Name Arabic",
+   "label": "Third Name in Arabic",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_arabic",
    "fieldtype": "Data",
-   "label": "Last Name Arabic",
+   "label": "Last Name in Arabic",
    "read_only": 1
   },
   {
@@ -97,28 +97,28 @@
    "fetch_from": "employee.first_name",
    "fieldname": "first_name_english",
    "fieldtype": "Data",
-   "label": "First Name English",
+   "label": "First Name",
    "read_only": 1
   },
   {
    "fetch_from": "employee.middle_name",
    "fieldname": "second_name_english",
    "fieldtype": "Data",
-   "label": "Second Name English",
+   "label": "Second Name",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name",
    "fieldname": "third_name_english",
    "fieldtype": "Data",
-   "label": "Third Name English",
+   "label": "Third Name",
    "read_only": 1
   },
   {
    "fetch_from": "employee.last_name",
    "fieldname": "last_name_english",
    "fieldtype": "Data",
-   "label": "Last Name English",
+   "label": "Last Name",
    "read_only": 1
   },
   {
@@ -202,7 +202,7 @@
   {
    "fieldname": "upload_civil_id_datetime",
    "fieldtype": "Data",
-   "label": "Upload Civil ID On",
+   "label": "Upload On",
    "read_only": 1
   },
   {
@@ -274,13 +274,12 @@
    "default": "Draft",
    "fieldname": "paci_status",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "PACI Status",
    "options": "\nDraft\nUnder-Process\nCompleted"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-27 15:12:41.807238",
+ "modified": "2021-06-30 14:42:15.624154",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",

@@ -13,4 +13,3 @@ from frappe.model.document import Document
 from frappe import _
 class TestPIFSSMonthlyDeduction(unittest.TestCase):
 	pass
-

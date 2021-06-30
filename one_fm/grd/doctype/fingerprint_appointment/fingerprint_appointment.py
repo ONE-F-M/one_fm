@@ -43,7 +43,7 @@ class FingerprintAppointment(Document):
              frappe.throw(_("Note: You need to prepare Passport and Appointment letter / You Can proceed before one day of the appointment."))
 
     def notify_grd_operator_fp_record(self):
-        if self.workflow_state == "Open":
+        if self.workflow_state == "Awaiting for Appointment":
             page_link = get_url("/desk#Form/Fingerprint Appointment/" + self.name)
             message = "<p>Please Apply for Fingerprint Appointment<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
             subject = 'Apply for Fingerprint Appointment Online for {0}'.format(self.first_name_english)
