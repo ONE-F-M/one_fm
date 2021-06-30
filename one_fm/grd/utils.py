@@ -34,7 +34,7 @@ def notify(**args):#Notifying operation and transportation department for finger
 def sendmail_reminder1(): #before 1 week of the new month
     today = date.today()
     first_day = today.replace(day=1) + relativedelta(months=1)
-    if date_diff(first_day,today) == 7: #7 week before the 1 day of the month
+    if date_diff(first_day,today) == 7: 
         operator = frappe.db.get_single_value('GRD Settings', 'default_grd_operator')
         supervisor = frappe.db.get_single_value('GRD Settings', 'default_grd_supervisor')
         if ('@' in operator):
@@ -48,7 +48,7 @@ def sendmail_reminder1(): #before 1 week of the new month
 def sendmail_reminder2(): #before 1 day of the new month
     today = date.today()
     first_day = today.replace(day=1) + relativedelta(months=1)
-    if date_diff(first_day,today) == 2:# before the 1 day of the new month
+    if date_diff(first_day,today) == 1:
         operator = frappe.db.get_single_value('GRD Settings', 'default_grd_operator')
         supervisor = frappe.db.get_single_value('GRD Settings', 'default_grd_supervisor')
         if ('@' in operator):

@@ -48,27 +48,44 @@ def get_salary_structure_list(doctype, txt, searchfield, start, page_len, filter
 @frappe.whitelist()
 def send_grd_notification_to_check_applicant_document(doc, method):
     if doc.one_fm_is_transferable == "Yes":
+        
         if not doc.one_fm_grd_operator:
-            doc.one_fm_grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
-            page_link = get_url("/desk#List/Job Applicant/" + doc.name)
-            message = "<p>Check If {0} Is Transferable <a href='{1}'></a>.</p>".format(doc.applicant_name,page_link)
-            subject = 'Check If {0} Is Transferable '.format(doc.applicant_name)
-            send_email(doc, [doc.one_fm_grd_operator], message, subject)
-            create_notification_log(subject, message, [doc.one_fm_grd_operator], doc)
+            doc.one_fm_grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+        print(doc.name)
+        dt = frappe.get_doc('Job Applicant',doc.name)
+        if dt:
+            page_link = get_url("/desk#List/Job Applicant/" + dt.name)
+            message = "<p>Check If {0} Is Transferable.<br>Civil id:{1} - Passport Number:{2}<a href='{3}'></a>.</p>".format(dt.applicant_name,dt.one_fm_cid_number,dt.one_fm_passport_number,page_link)
+            subject = 'Check If {0} Is Transferable.<br>Civil id:{1} - Passport Number:{2}'.format(dt.applicant_name,dt.one_fm_cid_number,dt.one_fm_passport_number)
+            send_email(dt, [dt.one_fm_grd_operator], message, subject)
+            create_notification_log(subject, message, [dt.one_fm_grd_operator], dt)
 
 @frappe.whitelist()
 def send_recruiter_notification_with_type_of_issues(doc, method):
     if doc.one_fm_has_issue == "Yes":
-        if not doc.one_fm_recruiter:
-            doc.one_fm_recruiter = frappe.db.get_single_value("GRD Settings", "default_grd_operator")###will be changed
-            page_link = get_url("/desk#List/Job Applicant/" + doc.name)
-            message = "<p>Tranfer Process to {0} has issues<a href='{1}'></a>.</p>".format(doc.applicant_name,page_link)
-            subject = 'Check If {0} Is Transferable '.format(doc.applicant_name)
-            send_email(doc, [doc.one_fm_grd_operator], message, subject)
-            create_notification_log(subject, message, [doc.one_fm_grd_operator], doc)##
+        users = []
+        for role in frappe.get_roles(frappe.session.user):
+            if role == "Senior Recruiter" or role == "Recruiter":
+                list1 = (get_users_with_role("Senior Recruiter"))
+                list2 = (get_users_with_role("Recruiter"))
+        for user in list1:
+            users.append(user)
+        for user in list2:
+            users.append(user)
+        dt = frappe.get_doc('Job Applicant',doc.name)
+        if dt:
+            email = users
+            page_link = get_url("/desk#List/Job Applicant/" + dt.name)
+            subject = 'Tranfer for {0} has issues'.format(dt.applicant_name)
+            message = "<p>Tranfer for {0} has issues<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
+            create_notification_log(subject,message,email,dt)
 
 @frappe.whitelist()
 def get_signatory_name(parent):
-	name_list,sign = frappe.db.sql("""select  authorized_signatory_name_arabic,signature from `tabPAM Authorized Signatory Table`
-				where parent = %s """,(parent),as_list=1)
-	return name_list,sign
+    name_list = frappe.get_doc('PAM Authorized Signatory List',parent)
+    names=[]
+    for line in name_list.authorized_signatory:
+        if line.authorized_signatory_name_arabic:
+            names.append(line.authorized_signatory_name_arabic)
+    return names
+   
