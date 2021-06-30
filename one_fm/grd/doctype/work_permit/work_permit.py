@@ -23,7 +23,7 @@ from PyPDF2 import PdfFileReader
 class WorkPermit(Document):
     def validate(self):
         self.set_grd_values()
-        self.check_workflow_status()
+        # self.check_workflow_status()
         if self.work_permit_type == "Local Transfer":
             self.check_inform_previous_company()
             if self.work_permit_approved == "Yes":
@@ -64,8 +64,6 @@ class WorkPermit(Document):
             self.save()
 
     def on_submit(self):
-        #self.validate_mandatory_fields_on_submit()# GRD Operator # Notify # GRD Supervisor
-        #self.check_wp_status()
         if "Completed" in self.workflow_state and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
             self.db_set('work_permit_status', 'Completed')
             self.clean_old_wp_record_in_employee_doctype()
@@ -385,7 +383,6 @@ def email_notification_to_grd_user(grd_user, work_permit_list, reminder_indicato
                 header=['Work Permit Reminder', reminder_indicator],
             )
             to_do_to_grd_users(_('{0} Work Permit'.format(action)), message, recipient)
-            #create_notification_log(subject, message, [work_permit.grd_user], work_permit)
 
 def to_do_to_grd_users(subject, description, user):
     frappe.get_doc({
@@ -413,143 +410,3 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.document_type = reference_doc.doctype
         doc.document_name = reference_doc.name
         doc.from_user = reference_doc.modified_by
-#################################################
-#            Work Permit Transfer 
-#################################################
-
-def Notify_grd_operator():
-    """ Notify operator at 8 am """
-    filters = {'grd_operator_apply_work_permit_on_ashal':'No','work_permit_type':'Local Transfer','docstatus': 0}
-    twp_list = frappe.get_list('Work Permit',filters,['grd_operator','name'])
-    if len(twp_list) > 0:
-        for twp in twp_list:
-            print(twp.name)
-            page_link = get_url("/desk#Form/Work Permit/" + twp.name)
-            message = "<p>Apply for Transfer Work Permit on ASHAL <a href='{0}'>{1}</a>.</p>".format(page_link, twp.name)
-            subject = 'Apply for Transfer Work Permit by {0}'.format(twp.grd_operator)
-            create_notification_log(subject, message, [twp.grd_operator], twp)
-
-#System checks at 4pm
-def system_check_transfer_wp_apply_online():
-    """ system check at 4pm """
-    filters = {'grd_operator_apply_work_permit_on_ashal':'No','work_permit_type':'Local Transfer','docstatus': 0}
-    twp_list = frappe.get_list('Work Permit',filters,['grd_operator','name','grd_supervisor'])
-    if len(twp_list) > 0:
-        transfer_work_permit_notify_first_grd_operator()
-
-# Notify GRD Operator at 8:30 am 
-def transfer_work_permit_notify_first_grd_operator():#will notify the grd operator every 8:30 am to fill the work permit for the list of employee
-    transfer_work_permit_notify_grd_operator('yellow')
-
-# Notify GRD Operator at 9:30 am 
-def transfer_work_permit_notify_again_grd_operator():
-    transfer_work_permit_notify_grd_operator('red')
-
-# Notify GRD Supervisor to check application online at 10 am
-def Notify_grd_supervisor_to_accept_transfer_work_permit_():
-    transfer_work_permit_notify_grd_supervisor('yellow')
-
-# Notify GRD Supervisor to check application online at 10:30 am
-def Notify_grd_supervisor_to_accept_transfer_work_permit_():
-    transfer_work_permit_notify_grd_supervisor('red')
-
-def transfer_work_permit_notify_grd_supervisor(reminder_indicator): 
-    """ Notify GRD Supervisor to remind accepting TWP on ASHAL application """
-    if reminder_indicator == 'yellow':
-        filters = {'docstatus': 0, 
-        'grd_operator_apply_work_permit_on_ashal':['=','Yes'],
-        'grd_supervisor_check_and_approval_wp_online':['=','No'],
-        'work_permit_type':'Local Transfer'}
-
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_supervisor'])
-    if len(work_permit_list) > 0:
-        for twp in work_permit_list:
-            page_link = get_url("/desk#Form/Work Permit/" + twp.name)
-            message = "<p>Check and Accept Transfer Work Permit on ASHAL <a href='{0}'>{1}</a>.</p>".format(page_link, twp.name)
-            subject = 'Apply for Transfer Work Permit by {1}'.format(twp.grd_operator)
-            create_notification_log(subject, message, [twp.grd_operator], twp)
-    email_notification_to_grd_user('grd_supervisor', work_permit_list, reminder_indicator, 'Check and Accept')
-
-# Notify at 11 am
-def system_check_grd_operator_approve_previous_company_for_approval():
-    filters = {'docstatus': 0, 
-        'date_of_application':['>=',today()],
-        'grd_supervisor_check_and_approval_wp_online':['=','Yes'],
-        'work_permit_type':'Local Transfer',
-        'approve_previous_company':'No'
-        }
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator'])
-    if len(work_permit_list) > 0:
-        for twp in work_permit_list:
-            page_link = get_url("/desk#Form/Work Permit/" + twp.name)
-            message = "<p>Check Approval for Previous Company <a href='{0}'>{1}</a>.</p>".format(page_link, twp.name)
-            subject = 'Check Approval for Previous Company by {1}'.format(twp.grd_operator)
-            create_notification_log(subject, message, [twp.grd_operator], twp)
-
-# Notify at 11:30 am
-def Notify_grd_operator_approve_previous_company_first():#reminded_grd_operator_approve_previous_company
-    tansfer_work_permit_notify_grd_operator_approve_previous_company('yellow')
-
-#Notify at 12 pm
-def Notify_grd_operator_approve_previous_company_again():
-    tansfer_work_permit_notify_grd_operator_approve_previous_company('red')
-
-# Notify operator to fill the required document to submit
-def Notify_grd_operator_to_upload_required_documents_to_submit_transfer_work_permit():
-    filters = {'docstatus': 0, 
-        'date_of_application':['>=',today()],
-        'grd_supervisor_check_and_approval_wp_online':['=','Yes'],
-        'work_permit_type':'Local Transfer',
-        'approve_previous_company':'Yes',
-        'work_permit_approved':'No',
-        'new_work_permit_expiry_date':['='," "],
-        'upload_work_permit':['='," "],
-        'attach_invoice':['='," "]
-        }
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator'])
-    if len(work_permit_list) > 0:
-        for twp in work_permit_list:
-            page_link = get_url("/desk#Form/Work Permit/" + twp.name)
-            message = "<p>Upload the Required Documents <a href='{0}'>{1}</a>.</p>".format(page_link, twp.name)
-            subject = 'Upload the Required Documents by {1}'.format(twp.grd_operator)
-            create_notification_log(subject, message, [twp.grd_operator], twp)
-
-def transfer_work_permit_notify_grd_operator(reminder_indicator):
-    """ Notify GRD Operator first and second time to remind applying online for TWP """
-    filters = {'docstatus': 0,
-    'date_of_application':['>=',today()] ,'reminded_grd_operator': 0, 'reminded_grd_operator_again':0,'work_permit_type':'Local Transfer'}
-    if reminder_indicator == 'red':
-        filters['reminded_grd_operator'] = 1
-        filters['reminded_grd_operator_again'] = 0
-                                                            
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator', 'grd_supervisor'])
-    
-    cc = [work_permit_list[0].grd_supervisor] if reminder_indicator == 'red' else []
-    email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Apply', cc)
-
-    if reminder_indicator == 'red':
-        field = 'reminded_grd_operator_again'
-    elif reminder_indicator == 'yellow':
-        field = 'reminded_grd_operator'
-
-    frappe.db.set_value("Work Permit", filters, field, 1)
-
-def tansfer_work_permit_notify_grd_operator_approve_previous_company(reminder_indicator):
-    """ Notify GRD Operator first and second time to check approval of previous company for TWP """
-    filters = {'docstatus': 0,
-    'date_of_application':['>=',today()] ,'reminded_grd_operator_approve_previous_company': 0, 'reminded_grd_operator_approve_previous_company_again':0,'work_permit_type':'Local Transfer'}
-    if reminder_indicator == 'red':
-        filters['reminded_grd_operator_approve_previous_company'] = 1
-        filters['reminded_grd_operator_approve_previous_company_again'] = 0
-                                                            
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator', 'grd_supervisor'])
-    
-    cc = [work_permit_list[0].grd_supervisor] if reminder_indicator == 'red' else []
-    email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Apply', cc)
-
-    if reminder_indicator == 'red':
-        field = 'reminded_grd_operator_approve_previous_company_again'
-    elif reminder_indicator == 'yellow':
-        field = 'reminded_grd_operator_approve_previous_company'
-
-    frappe.db.set_value("Work Permit", filters, field, 1)

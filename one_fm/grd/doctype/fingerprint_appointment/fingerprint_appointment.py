@@ -17,9 +17,10 @@ class FingerprintAppointment(Document):
     def validate(self):
         self.set_grd_values()
         self.notify_grd_operator_fp_record()
-    
+
     def on_update(self):
         self.check_appointment_date()
+        
 
     def on_submit(self):
         self.validate_mendatory_fields()
@@ -51,7 +52,7 @@ class FingerprintAppointment(Document):
 
     def check_appointment_date(self):
         today = date.today()
-        if getdate(self.date_and_time_confirmation) <= getdate(today):
+        if self.date_and_time_confirmation and getdate(self.date_and_time_confirmation) <= getdate(today):
             frappe.throw(_("You can't set previous dates"))
 
 #Auto generated everyday at 8am
