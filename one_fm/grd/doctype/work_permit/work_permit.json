@@ -124,7 +124,9 @@
    "in_list_view": 1,
    "label": "Work Permit Type",
    "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nLocal Transfer\nNew Kuwaiti",
-   "reqd": 1
+   "permlevel": 1,
+   "reqd": 1,
+   "translatable": 1
   },
   {
    "fieldname": "amended_from",
@@ -165,7 +167,7 @@
    "fieldname": "civil_id",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Civil ID - \u0627\u0644\u0631\u0642\u0645 \u0627\u0644\u0645\u062f\u0646\u064a ",
+   "label": "Civil ID",
    "read_only": 1
   },
   {
@@ -289,7 +291,8 @@
    "label": "Work Permit Status",
    "no_copy": 1,
    "options": "\nDraft\nPending by Supervisor\nPending by Operator\nCompleted\nClosed\nRejected",
-   "read_only": 1
+   "read_only": 1,
+   "translatable": 1
   },
   {
    "allow_on_submit": 1,
@@ -349,7 +352,7 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\"",
+   "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\" || doc.work_permit_status == \"Completed\"",
    "fieldname": "attach_invoice",
    "fieldtype": "Attach",
    "label": "Upload Payment Invoice"
@@ -390,7 +393,7 @@
    "options": "Preparation"
   },
   {
-   "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\"",
+   "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\" || doc.work_permit_status == \"Completed\"",
    "fieldname": "new_work_permit_expiry_date",
    "fieldtype": "Date",
    "label": "New Work Permit Expiry Date"
@@ -400,7 +403,7 @@
    "fieldname": "employee_id",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Employee ID - \u0631\u0642\u0645 \u0627\u0644\u0645\u0648\u0638\u0641",
+   "label": "Employee ID",
    "read_only": 1
   },
   {
@@ -414,7 +417,7 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\"",
+   "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\" || doc.work_permit_status == \"Completed\"",
    "fieldname": "upload_work_permit_on",
    "fieldtype": "Data",
    "label": "Upload Work Permit On",
@@ -762,7 +765,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-27 15:13:35.313818",
+ "modified": "2021-06-29 16:45:10.165733",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
@@ -791,6 +794,28 @@
    "role": "GRD Supervisor",
    "share": 1,
    "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
    "write": 1
   }
  ],

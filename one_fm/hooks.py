@@ -280,6 +280,8 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
+		'one_fm.grd.utils.sendmail_reminder1',
+		'one_fm.grd.utils.sendmail_reminder2',
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -298,6 +300,9 @@ scheduler_events = {
 	],
 
 	"cron": {
+		"0 8 1 * *": [# first day of the Month at 8 am 
+			"one_fm.one_fm.grd.doctype.preparation.create_preparation",
+		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			"one_fm.api.tasks.update_shift_type"
@@ -332,7 +337,7 @@ scheduler_events = {
 			'one_fm.utils.send_gp_letter_attachment_no_response',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
-			"one_fm.one_fm.grd.doctype.preparation.create_preparation"
+			
 		],
 		"30 8 * * *":[
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator',

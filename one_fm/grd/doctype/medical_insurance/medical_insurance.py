@@ -17,8 +17,6 @@ class MedicalInsurance(Document):
     
     def validate(self):
         self.set_value()
-        #self.valid_work_permit_exists()
-        #self.update_end_date()
         self.validate_no_of_application()
 
     def set_value(self):
@@ -48,14 +46,6 @@ class MedicalInsurance(Document):
     def validate_no_of_application(self):
         if self.category == "Group" and len(self.items) > 20:
             frappe.throw(_("More than 20 Application is not Possible"))
-
-    # def update_end_date(self): # Set the value of end date
-    #     if self.category == 'Individual' and self.no_of_years and int(self.no_of_years) > 0 and self.start_date:
-    #         self.end_date = add_years(self.start_date, self.no_of_years)
-    #     elif self.category == 'Group':
-    #         for item in self.items:
-    #             if item.no_of_years and item.no_of_years > 0 and item.start_date:
-    #                 item.end_date = add_years(item.start_date, item.no_of_years)
 
 
 #need to be inside the class
@@ -102,7 +92,7 @@ def get_employee_data_from_civil_id(civil_id):
         return frappe.get_doc('Employee', employee_id)
 
 def notify_grd_operator_draft_new_mi():
-    filter_mi = {'apply_medical_insurance_online': ['=', "No"],'docstatus':0 }
+    filter_mi = {'date_of_application': ['=', today()],'docstatus':0 }
     mi = frappe.get_doc('Medical Insurance',filter_mi)
     page_link = get_url("/desk#Form/Medical Insurance/"+mi.name)
     message = "<p>Please fill the medical insurance form for employee <a href='{0}'>{1}</a></p>".format(page_link, mi.name)
@@ -121,8 +111,8 @@ def notify_grd_operator_to_mark_completed_second():#for the second time 9:30am (
 
 
 def notify_grd_supervisor_submit_mi_on_system(reminder_indicator):
-    filter_mi = {'apply_medical_insurance_online': ['=', "Yes"],
-                 'submission_of_application':['=',"No"]
+    filter_mi = {'date_of_application': ['>=', today()],
+                 'upload_medical_insurance':['='," "]
                 }
     mi_list = frappe.get_list('Medical Insurance',filter_mi, ['name', 'grd_supervisor'])
     cc = [mi_list[0].grd_supervisor] if reminder_indicator == 'red' else []
@@ -130,9 +120,9 @@ def notify_grd_supervisor_submit_mi_on_system(reminder_indicator):
 
 # Notify grd operator to mark mi as completed on the system (first time)
 def notify_grd_operator_to_mark_mi_complete(reminder_indicator):
-    filter_mi = {'apply_medical_insurance_online': ['=', "Yes"],
-                 'submission_of_application':['=',"Yes"],
-                 'upload_medical_insurance':['!=', " "]
+    filter_mi = {
+                 'date_of_application':['>=',today()],
+                 'upload_medical_insurance':['=', " "]
                 }
     mi_list = frappe.get_list('Medical Insurance',filter_mi, ['name', 'grd_operator'])
     cc = [mi_list[0].grd_supervisor] if reminder_indicator == 'red' else []

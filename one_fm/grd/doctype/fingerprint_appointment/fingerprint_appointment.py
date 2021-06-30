@@ -17,7 +17,6 @@ class FingerprintAppointment(Document):
     def validate(self):
         self.set_grd_values()
         self.notify_grd_operator_fp_record()
-        print("==== >",self.date_and_time_confirmation)
 
     def on_update(self):
         self.check_appointment_date()
