@@ -574,7 +574,9 @@ def get_current_shift(employee):
 				start_time, end_time = frappe.get_value("Shift Type", shift.shift_type, ["start_time", "end_time"])
 				if start_time <= time <= end_time:
 					return shift.shift
-			return _("No shift assigned for the current datetime.")		
+			return _("No shift assigned for the current datetime.")
+		elif len(shifts)==0:
+			return shifts		
 		else:
 			return shifts[0].shift
 	except Exception as e:

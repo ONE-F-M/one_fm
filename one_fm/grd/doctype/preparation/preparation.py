@@ -81,7 +81,7 @@ class Preparation(Document):
         if self.grd_operator:
             page_link = get_url("/desk#Form/Preparation/" + self.name)
             message = "<p>Renewal Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-            subject = 'Renewal Records are created for WP, MI, MOI, PACI / '
+            subject = 'Renewal Records are created for WP, MI, MOI, PACI'
             send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
 
@@ -105,7 +105,6 @@ def get_employee_entries(doc,first_day,last_day):
                             },
                             )
 
-    doc.set("preparation_record", [])
     for employee in employee_entries:
         doc.append("preparation_record", {
             "employee": employee.name

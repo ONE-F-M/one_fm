@@ -138,7 +138,6 @@ var set_employee_details = function(frm){
         
                 // set the returned value in a field
                 frm.set_value('civil_id', r.message.civil_id);
-                frm.set_value('insurance_type', r.message.pam_file_number);
                 frm.set_value('employee_name', r.message.employee_name);
                 frm.set_value('gender', r.message.gender);
                 frm.set_value('nationality',r.message.nationality);

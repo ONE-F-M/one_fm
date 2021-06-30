@@ -103,26 +103,30 @@
   {
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "First Name Arabic"
+   "fieldtype": "Data",
+   "label": "First Name Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "Second Name Arabic"
+   "fieldtype": "Data",
+   "label": "Second Name Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "Third Name Arabic"
+   "fieldtype": "Data",
+   "label": "Third Name Arabic",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "Last Name Arabic"
+   "fieldtype": "Data",
+   "label": "Last Name Arabic",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_15",
@@ -131,26 +135,30 @@
   {
    "fetch_from": "employee.first_name",
    "fieldname": "first_name_english",
-   "fieldtype": "Read Only",
-   "label": "First Name English"
+   "fieldtype": "Data",
+   "label": "First Name English",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.middle_name",
    "fieldname": "second_name_english",
-   "fieldtype": "Read Only",
-   "label": "Second Name English"
+   "fieldtype": "Data",
+   "label": "Second Name English",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name",
    "fieldname": "third_name_english",
-   "fieldtype": "Read Only",
-   "label": "Third Name English"
+   "fieldtype": "Data",
+   "label": "Third Name English",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.last_name",
    "fieldname": "last_name_english",
-   "fieldtype": "Read Only",
-   "label": "Last Name English"
+   "fieldtype": "Data",
+   "label": "Last Name English",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_20",
@@ -159,34 +167,40 @@
   {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "one_fm_civil_id",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Civil ID",
-   "options": "Employee"
+   "options": "Employee",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.designation",
    "fieldname": "designation",
-   "fieldtype": "Read Only",
-   "label": "Designation"
+   "fieldtype": "Data",
+   "label": "Designation",
+   "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_place_of_birth",
    "fieldname": "place_of_birth",
-   "fieldtype": "Read Only",
-   "label": "Place Of Birth"
+   "fieldtype": "Data",
+   "label": "Place Of Birth",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.gender",
    "fieldname": "gender",
-   "fieldtype": "Read Only",
-   "label": "Gender"
+   "fieldtype": "Data",
+   "label": "Gender",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.date_of_birth",
    "fieldname": "birth_date",
-   "fieldtype": "Read Only",
-   "label": "Birth Date"
+   "fieldtype": "Data",
+   "label": "Birth Date",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_20",
@@ -195,39 +209,44 @@
   {
    "fetch_from": "employee.passport_number",
    "fieldname": "passport_number",
-   "fieldtype": "Read Only",
-   "label": "Passport Number"
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_passport_type",
    "fieldname": "passport_type",
-   "fieldtype": "Read Only",
-   "label": "Passport Type"
+   "fieldtype": "Data",
+   "label": "Passport Type",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.date_of_issue",
    "fieldname": "passport_issue_date",
-   "fieldtype": "Read Only",
-   "label": "Passport Issue Date"
+   "fieldtype": "Data",
+   "label": "Passport Issue Date",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.valid_upto",
    "fieldname": "passport_expiry_date",
-   "fieldtype": "Read Only",
-   "label": "Passport Expiry Date"
+   "fieldtype": "Data",
+   "label": "Passport Expiry Date",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "pam_designation",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "hidden": 1,
    "label": "PAM Designation"
   },
   {
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
-   "fieldtype": "Read Only",
-   "label": "Nationality"
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_23",
@@ -235,28 +254,33 @@
   },
   {
    "fieldname": "company_pam_file_number",
-   "fieldtype": "Read Only",
-   "label": "Company PAM File Number"
+   "fieldtype": "Data",
+   "label": "Company PAM File Number",
+   "read_only": 1
   },
   {
    "fieldname": "company_trade_name",
-   "fieldtype": "Read Only",
-   "label": "Company Trade Name"
+   "fieldtype": "Data",
+   "label": "Company Trade Name",
+   "read_only": 1
   },
   {
    "fieldname": "company_email_id",
-   "fieldtype": "Read Only",
-   "label": "Company Email ID"
+   "fieldtype": "Data",
+   "label": "Company Email ID",
+   "read_only": 1
   },
   {
    "fieldname": "paci_number",
-   "fieldtype": "Read Only",
-   "label": "PACI Number"
+   "fieldtype": "Data",
+   "label": "PACI Number",
+   "read_only": 1
   },
   {
    "fieldname": "governorate",
-   "fieldtype": "Read Only",
-   "label": "Governorate"
+   "fieldtype": "Data",
+   "label": "Governorate",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_36",
@@ -264,23 +288,27 @@
   },
   {
    "fieldname": "company_location",
-   "fieldtype": "Read Only",
-   "label": "Company Location"
+   "fieldtype": "Data",
+   "label": "Company Location",
+   "read_only": 1
   },
   {
    "fieldname": "company_block_number",
-   "fieldtype": "Read Only",
-   "label": "Company Block Number"
+   "fieldtype": "Data",
+   "label": "Company Block Number",
+   "read_only": 1
   },
   {
    "fieldname": "company_street_name",
-   "fieldtype": "Read Only",
-   "label": "Company Street Name"
+   "fieldtype": "Data",
+   "label": "Company Street Name",
+   "read_only": 1
   },
   {
    "fieldname": "company_building_name",
-   "fieldtype": "Read Only",
-   "label": "Company Building Name"
+   "fieldtype": "Data",
+   "label": "Company Building Name",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_42",
@@ -353,6 +381,7 @@
   {
    "fieldname": "section_break_40",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "print_hide": 1
   },
   {
@@ -391,10 +420,11 @@
   {
    "depends_on": "eval: doc.category == 'Renewal' || doc.category == 'Extend'\n",
    "fieldname": "renewal_or_extend",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Renewal Or Extend",
-   "print_hide": 1
+   "print_hide": 1,
+   "read_only": 1
   },
   {
    "fieldname": "column_break_5",
@@ -409,37 +439,42 @@
   },
   {
    "fieldname": "company_contact_number",
-   "fieldtype": "Read Only",
-   "label": "Company Contact Number"
+   "fieldtype": "Data",
+   "label": "Company Contact Number",
+   "read_only": 1
   },
   {
    "fieldname": "company_centralized_number",
-   "fieldtype": "Read Only",
-   "label": "Company Centralized Number"
+   "fieldtype": "Data",
+   "label": "Company Centralized Number",
+   "read_only": 1
   },
   {
    "fieldname": "centeralized_number",
-   "fieldtype": "Read Only",
-   "label": "Centeralized Number"
+   "fieldtype": "Data",
+   "label": "Centeralized Number",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.employee_id",
    "fieldname": "employee_id",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Employee ID",
-   "print_hide": 1
+   "print_hide": 1,
+   "read_only": 1
   },
   {
    "fieldname": "date_of_application",
-   "fieldtype": "Data",
+   "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Date Of Application",
-   "print_hide": 1
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-22 10:10:52.934614",
+ "modified": "2021-06-27 15:13:05.362770",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",

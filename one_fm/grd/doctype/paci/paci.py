@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from datetime import date
+from one_fm.api.notification import create_notification_log
 from frappe.utils import today, add_days, get_url
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 
@@ -101,13 +102,12 @@ def paci_notify_again_grd_operator():
 def paci_notify_grd_operator(reminder_indicator):
     # Get paci list
     today = date.today()
-    filters = {'docstatus': 0,'reminded_grd_operator': 0, 'reminded_grd_operator_again':0}
+    filters = {'docstatus': 0,'date_of_application':['>=',today()],'reminded_grd_operator': 0, 'reminded_grd_operator_again':0}
     if reminder_indicator == 'red':
         filters['reminded_grd_operator'] = 1
         filters['reminded_grd_operator_again'] = 0
                                                             
     paci_list = frappe.db.get_list('PACI', filters, ['name', 'grd_operator', 'grd_supervisor'])
-    # send grd supervisor if reminder for second time (red)
     cc = [paci_list[0].grd_supervisor] if reminder_indicator == 'red' else []
     email_notification_to_grd_user('grd_operator', paci_list, reminder_indicator, 'Submit', cc)
 
@@ -137,7 +137,6 @@ def email_notification_to_grd_user(grd_user, paci_list, reminder_indicator, acti
                 header=['PACI Reminder', reminder_indicator],
             )
             to_do_to_grd_users(_('{0} PACI'.format(action)), message, recipient)
-            create_notification_log(subject, message, [paci.grd_user], paci)#added
 
 def to_do_to_grd_users(subject, description, user):
     frappe.get_doc({
@@ -148,15 +147,6 @@ def to_do_to_grd_users(subject, description, user):
         "date": today()
     }).insert(ignore_permissions=True)
 
-def create_notification_log(subject, message, for_users, reference_doc):
-    for user in for_users:
-        doc = frappe.new_doc('Notification Log')
-        doc.subject = subject
-        doc.email_content = message
-        doc.for_user = user
-        doc.document_type = reference_doc.doctype
-        doc.document_name = reference_doc.name
-        doc.from_user = reference_doc.modified_by
         
 
 

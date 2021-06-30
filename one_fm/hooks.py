@@ -71,7 +71,8 @@ doctype_js = {
 	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",
 	"Purchase Order": "public/js/doctype_js/purchase_order.js",
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
-	"Payment Entry": "public/js/doctype_js/payment_entry.js"
+	"Payment Entry": "public/js/doctype_js/payment_entry.js",
+	"Item Price": "public/js/doctype_js/item_price.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -208,8 +209,7 @@ doc_events = {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	"Project": {
-		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
-		"on_update": "one_fm.one_fm.project_custom.on_project_save"
+		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
@@ -280,6 +280,8 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
+		'one_fm.grd.utils.sendmail_reminder1',
+		'one_fm.grd.utils.sendmail_reminder2',
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -298,9 +300,8 @@ scheduler_events = {
 	],
 
 	"cron": {
-		"0 8 1 * *":[# Monthy event at 8 am
-			"one_fm.one_fm.grd.doctype.preparation.create_preparation"
-
+		"0 8 1 * *": [# first day of the Month at 8 am 
+			"one_fm.one_fm.grd.doctype.preparation.create_preparation",
 		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
@@ -318,10 +319,12 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"0 16 * * *":[
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
-			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online',
-			'one_fm.one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online'
+			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
+			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online',
+			'one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_first_grd_operator',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator'
 		],
 		"0 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four'
@@ -331,7 +334,13 @@ scheduler_events = {
 		],
 		"0 8 * * *": [
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
-			'one_fm.utils.send_gp_letter_attachment_no_response'
+			'one_fm.utils.send_gp_letter_attachment_no_response',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
+			
+		],
+		"30 8 * * *":[
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator',
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',

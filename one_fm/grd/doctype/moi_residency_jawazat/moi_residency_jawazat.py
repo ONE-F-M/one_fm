@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from datetime import date
+from one_fm.api.notification import create_notification_log
 from frappe.utils import today, add_days, get_url
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.grd.doctype.paci import paci
@@ -162,7 +163,7 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.document_type = reference_doc.doctype
         doc.document_name = reference_doc.name
         doc.from_user = reference_doc.modified_by
-        #doc.insert(ignore_permissions=True)
+        doc.insert(ignore_permissions=True)
 
 
 

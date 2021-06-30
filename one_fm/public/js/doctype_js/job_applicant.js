@@ -76,6 +76,23 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			})
 		}
+		if(frm.doc.one_fm_authorized_signatory){
+			frappe.call({
+				method: "one_fm.one_fm.utils.get_signatory_name",
+				args:{
+					'parent': frm.doc.one_fm_authorized_signatory,
+					},
+				callback:function(r){
+					console.log(r.message);
+					frm.set_df_property('one_fm_signatory_name', "options", r.message);
+					frm.refresh_field("one_fm_signatory_name");
+					}
+				});
+		}
+		else{
+			frm.set_df_property('one_fm_signatory_name', "options", null);
+			frm.refresh_field("one_fm_signatory_name");
+		}
 	},
 	one_fm_first_name: function(frm) {
     set_applicant_name(frm);
@@ -212,7 +229,30 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			});
 		}
-	}
+	}, //set Authorized segnatory for TP in job applicant
+	one_fm_authorized_signatory: function(frm){
+		if(frm.doc.one_fm_authorized_signatory){
+			frappe.call({
+				method: "one_fm.one_fm.utils.get_signatory_name",
+				args:{
+					'parent': frm.doc.one_fm_authorized_signatory,
+					},
+				callback:function(r,s){
+					console.log(r.message);
+					frm.set_df_property('one_fm_signatory_name', "options", r.message);
+					frm.refresh_field("one_fm_signatory_name");
+					frm.set_df_property('electronic_signature', "default", s.message);
+					frm.refresh_field("electronic_signature");
+					frm.set_df_property('one_fm_electronic_signature2', "default", s.message);
+					frm.refresh_field("one_fm_electronic_signature2");
+					}
+				});
+		}
+		else{
+			frm.set_df_property('one_fm_signatory_name', "options", null);
+			frm.refresh_field("one_fm_signatory_name");
+		}
+	},
 });
 
 var change_applicant_erf = function(frm) {

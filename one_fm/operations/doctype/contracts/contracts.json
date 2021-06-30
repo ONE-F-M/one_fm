@@ -42,6 +42,7 @@
   "public_holiday_rate",
   "column_break_33",
   "holiday_list",
+  "price_list",
   "section_break_35",
   "items",
   "section_break_28",
@@ -67,23 +68,23 @@
   "section_break_4",
   "addendums",
   "section_break_55",
-  "password_management",
-  "column_break_54",
-  "price_list"
+  "password_management"
  ],
  "fields": [
   {
    "fieldname": "client",
    "fieldtype": "Link",
    "label": "Client",
-   "options": "Customer"
+   "options": "Customer",
+   "reqd": 1
   },
   {
    "fieldname": "project",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Project",
-   "options": "Project"
+   "options": "Project",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_4",
@@ -155,7 +156,8 @@
    "fieldname": "start_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Contract Start Date"
+   "label": "Contract Start Date",
+   "reqd": 1
   },
   {
    "fieldname": "end_date",
@@ -198,7 +200,6 @@
    "label": "Contract Assets"
   },
   {
-   "depends_on": "eval:doc.frequency == 'Monthly'",
    "fieldname": "assets",
    "fieldtype": "Table",
    "label": "Assets",
@@ -351,19 +352,16 @@
   {
    "fieldname": "frequency",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Frequency",
    "options": "\nDelivery Note Based\nMonthly"
-  },
-  {
-   "fieldname": "column_break_54",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "price_list",
    "fieldtype": "Link",
    "label": "Price List",
    "options": "Price List",
-   "read_only": 1
+   "reqd": 1
   },
   {
    "default": "0",
@@ -429,7 +427,7 @@
    "label": "Is Invoice For Airport"
   }
  ],
- "modified": "2021-05-03 06:22:16.293974",
+ "modified": "2021-06-15 12:05:16.875851",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
