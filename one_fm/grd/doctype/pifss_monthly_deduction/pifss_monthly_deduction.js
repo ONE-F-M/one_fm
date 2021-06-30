@@ -79,7 +79,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 				total[3] += frappe.model.get_value(v.doctype, v.name, "total_deductions");
 			})
 		}
-		console.log(total[0])
+		
 		frm.set_value("total_sub", total[0]);
 		frm.set_value("total_deduction", total[1]);
 		frm.set_value("total_additional_deduction",total[2]);

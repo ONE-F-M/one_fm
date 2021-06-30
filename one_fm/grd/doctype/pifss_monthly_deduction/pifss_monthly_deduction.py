@@ -11,6 +11,8 @@ import math
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from frappe.utils import today, add_days, get_url
+from frappe.utils.user import get_users_with_role
+from frappe.permissions import has_permission
 from one_fm.api.notification import create_notification_log
 from frappe import _
 
@@ -32,7 +34,6 @@ class PIFSSMonthlyDeduction(Document):
 
 
 	def on_submit(self):
-		print("===> ",self.attach_report)
 		if not self.attach_report and not self.additional_attach_report and not self.attach_manual_report and not self.attach_pdf_report:
 			frappe.throw("The following attaches are compulsory to submit.<br><ol><li>Attach Monthly Deduction Report</li><li>Attach Additional Monthly Deduction Report</li><li>Attach PDF Report</li><li>Attach Manual Report</li>")
 		self.notify_finance()
@@ -56,10 +57,17 @@ class PIFSSMonthlyDeduction(Document):
 		create_notification_log(subject,message,[email], self)
 	
 	def notify_finance(self):
-		email = finance@one-fm.com
+		finance_email = []
+		for role in frappe.get_roles(frappe.session.user):
+			if "Finance User" == role:
+				users = get_users_with_role("Finance User")
+		for user in users:
+			if has_permission(doctype=self.doctype, user=user):
+				finance_email.append(user)
+		email = finance_email
 		subject = _("PIFSS Monthly Deduction Payments")
-		message = _("Kindly, prepare total payment amount: {0} and transfer it to GRD account.<br>Please transfer it within 2 days.").format(round(self.total_payments,3))
-		create_notification_log(subject,message,[email],self)
+		message = _("Kindly, prepare total payment amount: {0}KWD and transfer it to GRD account. <br>Please transfer it within 2 days.").format(round(self.total_payments,3))
+		create_notification_log(subject,message,email,self)
 
 def create_additional_salary(employee, amount):
 	additional_salary = frappe.new_doc("Additional Salary")
@@ -123,3 +131,14 @@ def import_additional_deduction_data(file_url):
 			table_data.append({'pifss_id_no': employee.pifss_id_no, 'additional_deduction': additional_amount})
 	data.update({'table_data': table_data})
 	return data
+
+def create_notification_log(subject, message, for_users, reference_doc):
+	for user in for_users:
+		doc = frappe.new_doc('Notification Log')
+		doc.subject = subject
+		doc.email_content = message
+		doc.for_user = user
+		doc.document_type = reference_doc.doctype
+		doc.document_name = reference_doc.name
+		# doc.from_user = reference_doc.modified_by
+		doc.save(ignore_permissions=True)
