@@ -11,9 +11,6 @@ class Contracts(Document):
 	def validate(self):
 		self.calculate_contract_duration()
 
-	def on_update(self):
-		add_contracts_assets_item_price(self)
-
 	def calculate_contract_duration(self):
 		duration_in_days = date_diff(self.end_date, self.start_date)
 		self.duration_in_days = cstr(duration_in_days)
@@ -47,45 +44,6 @@ def get_contracts_items(contracts):
 		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc 
 	""", (contracts), as_dict=1)	
 	return contracts_item_list
-
-def add_contracts_assets_item_price(self):
-	if self.frequency == "Monthly":
-		for item in self.assets:
-			item_price_list = frappe.get_list("Item Price", {"price_list": self.price_list, "item_code": item.item_code, 
-					"uom": item.uom, "selling": 1}, "name", order_by="valid_from desc")
-			if item_price_list:
-				item_price = item_price_list[0].name
-				target_doc = frappe.get_doc('Item Price', item_price)
-				if target_doc.price_list_rate != item.unit_rate and target_doc.valid_from == getdate(today()):
-					target_doc.price_list_rate = item.unit_rate
-					target_doc.save()
-					frappe.db.commit()
-				if target_doc.price_list_rate != item.unit_rate and target_doc.valid_from != getdate(today()):
-					add_item_price_detail(item, self.price_list, self.name)
-			else:
-				add_item_price_detail(item, self.price_list, self.name)
-
-def add_item_price_detail(item, price_list, contracts):
-	item_price = frappe.new_doc('Item Price')
-	item_price.item_code = item.item_code
-	item_price.uom = item.uom
-	item_price.price_list = price_list
-	item_price.selling = 1
-	item_price.price_list_rate = item.unit_rate 
-	item_price.valid_from = today()
-	item_price.note = "This rate is auto generated from contracts"
-	item_price.reference = contracts
-	item_price.flags.ignore_permissions  = True
-	item_price.update({
-		'item_code': item_price.item_code,
-		'uom': item_price.uom,
-		'price_list': item_price.price_list,
-		'selling': item_price.selling,
-		'price_list_rate': item_price.price_list_rate,
-		'valid_from': item_price.valid_from,
-		'note': item_price.note,
-		'reference': item_price.reference
-	}).insert()
 
 @frappe.whitelist()
 def insert_login_credential(url, user_name, password, client):

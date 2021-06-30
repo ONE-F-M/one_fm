@@ -1,0 +1,88 @@
+{
+ "creation": "2021-06-05 09:45:16.045133",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_id",
+  "employee_name",
+  "subscription_amount",
+  "column_break_4",
+  "piffs_internal_ref",
+  "civil_id",
+  "employee_name_in_arabic",
+  "amount"
+ ],
+ "fields": [
+  {
+   "fetch_from": "employee.name",
+   "fieldname": "employee_id",
+   "fieldtype": "Read Only",
+   "label": "Employee Id"
+  },
+  {
+   "columns": 3,
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Employee Name"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 2,
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Read Only",
+   "label": "Civil Id"
+  },
+  {
+   "fetch_from": "employee.one_fm_first_name_in_arabic",
+   "fieldname": "employee_name_in_arabic",
+   "fieldtype": "Read Only",
+   "label": "Employee Name In Arabic"
+  },
+  {
+   "columns": 2,
+   "fieldname": "subscription_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Subscription Amount"
+  },
+  {
+   "columns": 2,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount"
+  },
+  {
+   "fetch_from": "employee.pifss_id_no",
+   "fieldname": "piffs_internal_ref",
+   "fieldtype": "Read Only",
+   "label": "Piffs Internal Ref"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-06-12 08:48:48.005700",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Social Security",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
