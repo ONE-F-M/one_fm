@@ -17,6 +17,7 @@ valueSetter('historyScore', '75');
 valueSetter('Promotions', '2');
 valueSetter('Experience', '1 Year');
 
+// Commenting for Errors, will resolve in future
 // let numberofCompany = document.getElementById('numberofCompany');
 // function show() {
 //     var FormValue = numberofCompany.options[numberofCompany.selectedIndex].value;
