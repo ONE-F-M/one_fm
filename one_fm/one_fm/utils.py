@@ -63,15 +63,12 @@ def send_grd_notification_to_check_applicant_document(doc, method):
 @frappe.whitelist()
 def send_recruiter_notification_with_type_of_issues(doc, method):
     if doc.one_fm_has_issue == "Yes":
-        users = []
+        users = [], set_user = False
         for role in frappe.get_roles(frappe.session.user):
             if role == "Senior Recruiter" or role == "Recruiter":
-                list1 = (get_users_with_role("Senior Recruiter"))
-                list2 = (get_users_with_role("Recruiter"))
-        for user in list1:
-            users.append(user)
-        for user in list2:
-            users.append(user)
+                set_user = True
+        if set_user:
+            users.append(frappe.session.user)
         dt = frappe.get_doc('Job Applicant',doc.name)
         if dt:
             email = users
