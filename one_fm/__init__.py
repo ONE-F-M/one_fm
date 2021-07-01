@@ -15,3 +15,4 @@ PayrollEntry.validate_employee_attendance = validate_employee_attendance
 PayrollEntry.get_count_holidays_of_employee = get_count_holidays_of_employee
 PayrollEntry.get_count_employee_attendance = get_count_employee_attendance
 SalarySlip.get_holidays_for_employee = get_holidays_for_employee
+SalarySlip.get_leave_details = get_leave_details
