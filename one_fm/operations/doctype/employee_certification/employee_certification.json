@@ -15,7 +15,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Certification",
-   "options": "Certification"
+   "options": "Training Program"
   },
   {
    "fieldname": "issue_date",
@@ -31,7 +31,7 @@
   }
  ],
  "istable": 1,
- "modified": "2021-06-14 09:09:24.445302",
+ "modified": "2021-06-30 11:32:35.632790",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Certification",
