@@ -224,6 +224,9 @@ doc_events = {
 	},
 	"Employee Skill Map":{
 		"validate":"one_fm.api.doc_events.validate_certifications_and_licenses"
+	},
+	"Training Result" :{
+		"on_submit": "one_fm.api.doc_events.update_certification_data"
 	}
 }
 
