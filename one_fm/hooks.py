@@ -160,7 +160,7 @@ doc_events = {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
 	},
 	"Job Applicant": {
-		"validate": "one_fm.one_fm.utils.validate_job_applicant",
+		"validate": "one_fm.utils.validate_job_applicant",
 		"on_update": "one_fm.one_fm.utils.send_recruiter_notification_with_type_of_issues",
 		"on_update": "one_fm.one_fm.utils.send_grd_notification_to_check_applicant_document",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
