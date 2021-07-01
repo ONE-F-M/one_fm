@@ -132,9 +132,6 @@ def check_pam_visa_approval_submission_six_half():
             content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
 
 
-
-
-
 def check_pam_visa_approval_submission_daily():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_approval_submitted=0 and pam_visa_approval_reminder2_start=0 and pam_visa_approval_reminder2_done=0 and pam_visa_approval_status!='No Response' and status='Apporved'")
 
@@ -283,9 +280,6 @@ def check_grp_operator_submission_daily():
         pam_visa_doc.pam_visa_reminder2_start = 1
         pam_visa_doc.save(ignore_permissions = True)
 
-
-
-
 def send_gp_letter_attachment_reminder2():
     gp_letters_request = frappe.db.sql_list("select DISTINCT gp_letter_request_reference from `tabGP Letter` where (gp_letter_attachment is NULL or gp_letter_attachment='' ) ")
 
@@ -357,8 +351,6 @@ def send_gp_letter_attachment_no_response():
             recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
             frappe.sendmail(sender=sender, recipients= recipient,
                 content=msg, subject="GP Letter Upload No Response", delayed=False)
-
-
 
 def send_travel_agent_email():
     gp_letters_request = frappe.db.sql_list("select name from `tabGP Letter Request` where (gp_status is NULL or gp_status='' or gp_status='Reject') and (supplier is not NULL or supplier!='') ")

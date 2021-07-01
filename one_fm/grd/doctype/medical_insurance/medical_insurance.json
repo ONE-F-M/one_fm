@@ -32,7 +32,6 @@
   "grd_operator",
   "upload_medical_insurance",
   "medical_insurance_submitted_by",
-  "completed",
   "column_break_23",
   "upload_medical_insurance_date",
   "upload_payment_invoice_on",
@@ -169,14 +168,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "completed",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Completed",
-   "options": "\nYes\nNo",
-   "read_only": 1
-  },
-  {
    "default": "0",
    "fieldname": "payment_done",
    "fieldtype": "Check",
@@ -198,7 +189,7 @@
   {
    "fieldname": "upload_medical_insurance_date",
    "fieldtype": "Datetime",
-   "label": "Upload Medical Insurance On"
+   "label": "Upload On"
   },
   {
    "fieldname": "medical_insurance_submitted_by",
@@ -257,7 +248,7 @@
    "fieldname": "date_of_application",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Date Of Application"
+   "label": "Date of Application"
   },
   {
    "fieldname": "employee",
@@ -282,7 +273,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-30 08:24:32.486180",
+ "modified": "2021-06-30 14:41:50.647285",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",

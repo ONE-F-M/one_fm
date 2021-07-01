@@ -11,7 +11,7 @@
   "column_break_4",
   "tp_status",
   "work_permit_status",
-  "pam_file",
+  "pas",
   "new_company_data_section",
   "company_trade_name_arabic",
   "authorized_signatory_name_arabic",
@@ -23,7 +23,6 @@
   "previous_company_details_section",
   "previous_company_trade_name_in_arabic",
   "previous_company_authorized_signatory_name_arabic",
-  "previous_company_trade_name_arabic",
   "work_permit_number",
   "residency_number",
   "previous_company_pam_designation",
@@ -69,7 +68,8 @@
   "signed",
   "column_break_51",
   "attach_tp",
-  "amended_from"
+  "amended_from",
+  "authorized_signature"
  ],
  "fields": [
   {
@@ -113,23 +113,17 @@
    "read_only": 1
   },
   {
-   "fieldname": "pam_file",
-   "fieldtype": "Link",
-   "label": "PAM File",
-   "options": "PAM File"
-  },
-  {
    "fieldname": "new_company_data_section",
    "fieldtype": "Section Break",
    "label": "New Company Data"
   },
   {
-   "fetch_from": "pam_file.license_trade_name_arabic",
    "fieldname": "company_trade_name_arabic",
    "fieldtype": "Data",
    "label": "Company Trade Name Arabic"
   },
   {
+   "fetch_from": "applicant.one_fm_signatory_name",
    "fieldname": "authorized_signatory_name_arabic",
    "fieldtype": "Data",
    "label": "Authorized Signatory Name Arabic"
@@ -140,7 +134,6 @@
    "label": "Issuer Number"
   },
   {
-   "fetch_from": "pam_file.contract_file_number",
    "fieldname": "contract_file_number",
    "fieldtype": "Data",
    "label": "Contract File Number"
@@ -167,12 +160,6 @@
    "fieldname": "previous_company_authorized_signatory_name_arabic",
    "fieldtype": "Data",
    "label": "Previous Company Authorized Signatory Name Arabic"
-  },
-  {
-   "fetch_from": "applicant.one_fm_previous_company_trade_name_in_arabic",
-   "fieldname": "previous_company_trade_name_arabic",
-   "fieldtype": "Data",
-   "label": "Previous Company Trade Name Arabic"
   },
   {
    "fieldname": "column_break_13",
@@ -328,6 +315,7 @@
   },
   {
    "description": "applicant.one_fm_cid_number",
+   "fetch_from": "applicant.one_fm_cid_number",
    "fieldname": "civil_id",
    "fieldtype": "Data",
    "label": "Civil ID"
@@ -451,10 +439,23 @@
    "fieldname": "previous_company_pam_designation",
    "fieldtype": "Data",
    "label": "Previous Company PAM Designation"
+  },
+  {
+   "fieldname": "authorized_signature",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Authorized Signature"
+  },
+  {
+   "fetch_from": "applicant.one_fm_authorized_signatory",
+   "fieldname": "pas",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "PAS"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-24 08:34:31.298377",
+ "modified": "2021-06-30 22:27:41.791757",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Transfer Paper",

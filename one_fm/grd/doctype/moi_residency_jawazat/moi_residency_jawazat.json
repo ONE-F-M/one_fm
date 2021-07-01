@@ -11,7 +11,6 @@
   "employee",
   "date_of_application",
   "preparation",
-  "completed",
   "column_break_5",
   "employee_id",
   "renewal_or_extend",
@@ -40,6 +39,7 @@
   "passport_expiry_date",
   "pam_designation",
   "nationality",
+  "residency_expiry_date",
   "section_break_23",
   "company_pam_file_number",
   "company_centralized_number",
@@ -104,28 +104,28 @@
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_arabic",
    "fieldtype": "Data",
-   "label": "First Name Arabic",
+   "label": "First Name in Arabic",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_arabic",
    "fieldtype": "Data",
-   "label": "Second Name Arabic",
+   "label": "Second Name in Arabic",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name_arabic",
    "fieldtype": "Data",
-   "label": "Third Name Arabic",
+   "label": "Third Name in Arabic",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_arabic",
    "fieldtype": "Data",
-   "label": "Last Name Arabic",
+   "label": "Last Name in Arabic",
    "read_only": 1
   },
   {
@@ -136,28 +136,28 @@
    "fetch_from": "employee.first_name",
    "fieldname": "first_name_english",
    "fieldtype": "Data",
-   "label": "First Name English",
+   "label": "First Name",
    "read_only": 1
   },
   {
    "fetch_from": "employee.middle_name",
    "fieldname": "second_name_english",
    "fieldtype": "Data",
-   "label": "Second Name English",
+   "label": "Second Name",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name",
    "fieldname": "third_name_english",
    "fieldtype": "Data",
-   "label": "Third Name English",
+   "label": "Third Name",
    "read_only": 1
   },
   {
    "fetch_from": "employee.last_name",
    "fieldname": "last_name_english",
    "fieldtype": "Data",
-   "label": "Last Name English",
+   "label": "Last Name",
    "read_only": 1
   },
   {
@@ -332,18 +332,8 @@
   {
    "fieldname": "new_residency_expiry_date",
    "fieldtype": "Date",
-   "label": "New Residency Expiry Date",
+   "label": "Updated Residency Expiry Date",
    "print_hide": 1
-  },
-  {
-   "default": "No",
-   "fieldname": "completed",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Completed",
-   "options": "\nYes\nNo",
-   "print_hide": 1,
-   "read_only": 1
   },
   {
    "fieldname": "column_break_34",
@@ -367,7 +357,7 @@
   {
    "fieldname": "new_residency_expiry_date_update_time",
    "fieldtype": "Data",
-   "label": "New Residency Expiry Date Update On",
+   "label": "Date Updated On",
    "print_hide": 1,
    "read_only": 1
   },
@@ -468,13 +458,20 @@
    "fieldname": "date_of_application",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Date Of Application",
+   "label": "Date of Application",
    "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.residency_expiry_date",
+   "fieldname": "residency_expiry_date",
+   "fieldtype": "Data",
+   "label": "Residency Expiry Date",
    "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-27 15:13:05.362770",
+ "modified": "2021-06-30 14:49:03.776646",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
@@ -524,6 +521,7 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "one_fm_civil_id",
  "track_changes": 1,
  "track_seen": 1,
  "track_views": 1

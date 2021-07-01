@@ -24,7 +24,6 @@ class MOIResidencyJawazat(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_residency_expiry_new_date_in_employee_doctype()
-        self.db_set('completed','Yes')
         self.db_set('completed_on', today())
         if self.category == "Transfer":
             self.recall_create_paci()
@@ -74,12 +73,15 @@ def creat_moi_for_transfer(work_permit_name):
 def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
     if Renewal_or_Extend == "Renewal":
         category = "Renewal"
+        start_date = add_days(employee.residency_expiry_date, -14)
     if Renewal_or_Extend == "Transfer":
         category = "Transfer"
     if Renewal_or_Extend != "Renewal" and Renewal_or_Extend != "Transfer":
         category = "Extend"
+        start_date = add_days(employee.residency_expiry_date, -7)
+        
 
-    start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
+    # start_day_for_renewal = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
     new_moi = frappe.new_doc('MOI Residency Jawazat')
     new_moi.employee = employee.name
     new_moi.preparation = preparation_name

@@ -286,7 +286,6 @@
    "default": "Draft",
    "fieldname": "work_permit_status",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Work Permit Status",
    "no_copy": 1,
@@ -396,7 +395,7 @@
    "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\" || doc.work_permit_status == \"Completed\"",
    "fieldname": "new_work_permit_expiry_date",
    "fieldtype": "Date",
-   "label": "New Work Permit Expiry Date"
+   "label": "Updated Work Permit Expiry Date"
   },
   {
    "fetch_from": "employee.employee_id",
@@ -420,7 +419,7 @@
    "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\" || doc.work_permit_status == \"Completed\"",
    "fieldname": "upload_work_permit_on",
    "fieldtype": "Data",
-   "label": "Upload Work Permit On",
+   "label": "Upload On",
    "read_only": 1
   },
   {
@@ -765,7 +764,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-29 16:45:10.165733",
+ "modified": "2021-06-30 14:30:28.038186",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

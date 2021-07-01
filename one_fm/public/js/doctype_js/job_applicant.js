@@ -237,14 +237,9 @@ frappe.ui.form.on('Job Applicant', {
 				args:{
 					'parent': frm.doc.one_fm_authorized_signatory,
 					},
-				callback:function(r,s){
-					console.log(r.message);
+				callback:function(r){
 					frm.set_df_property('one_fm_signatory_name', "options", r.message);
 					frm.refresh_field("one_fm_signatory_name");
-					frm.set_df_property('electronic_signature', "default", s.message);
-					frm.refresh_field("electronic_signature");
-					frm.set_df_property('one_fm_electronic_signature2', "default", s.message);
-					frm.refresh_field("one_fm_electronic_signature2");
 					}
 				});
 		}
@@ -252,7 +247,25 @@ frappe.ui.form.on('Job Applicant', {
 			frm.set_df_property('one_fm_signatory_name', "options", null);
 			frm.refresh_field("one_fm_signatory_name");
 		}
+
+
 	},
+	// one_fm_signatory_name: function(frm){
+	// 	if(frm.doc.one_fm_signatory_name){
+	// 		console.log(frm.doc.one_fm_signatory_name)
+	// 		frappe.call({
+	// 			method: "one_fm.one_fm.utils.get_signatory",
+	// 			args:{
+	// 				'parent': frm.doc.one_fm_signatory_name,
+	// 				},
+	// 			callback:function(r){
+	// 				console.log(r.message);
+	// 				// frm.set_df_property('one_fm_signatory_name', "options", r.message);
+	// 				// frm.refresh_field("one_fm_signatory_name");
+	// 				}
+	// 			});
+	// 	}
+	// }
 });
 
 var change_applicant_erf = function(frm) {
