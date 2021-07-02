@@ -25,14 +25,12 @@ frappe.ui.form.on('Delivery Note', {
             frappe.call({
                 method: 'frappe.client.get_value',
                 args:{
-                    'doctype':'Price List',
+                    'doctype':'Contracts',
                     'filters':{
-                        'project': frm.doc.project,
-                        'enabled':1,
-                        'selling':1
+                        'name': frm.doc.contracts
                     },
                     'fieldname':[
-                        'name'
+                        'price_list'
                     ]
                 },
                 callback:function(s){
@@ -54,34 +52,6 @@ frappe.ui.form.on('Delivery Note', {
             frappe.call({
                 method: 'frappe.client.get_value',
                 args:{
-                    'doctype':'Price List',
-                    'filters':{
-                        'project': frm.doc.project,
-                        'enabled':1,
-                        'selling':1
-                    },
-                    'fieldname':[
-                        'name'
-                    ]
-                },
-                callback:function(s){
-                    if (!s.exc) {
-                        //console.log(s.message);
-                        if(s.message){
-                            var selling_price_list = s.message.name;
-                            frm.set_value("selling_price_list",selling_price_list);
-                            frm.refresh_field("selling_price_list");
-                        }
-                        else{
-                            frm.set_value("selling_price_list",null);
-                            frm.refresh_field("selling_price_list");
-                        }
-                    }
-                }
-            });
-            frappe.call({
-                method: 'frappe.client.get_value',
-                args:{
                     'doctype':'Contracts',
                     'filters':{
                         'project': frm.doc.project,
@@ -97,6 +67,25 @@ frappe.ui.form.on('Delivery Note', {
                             frm.set_value("contracts",contracts);
                             frm.refresh_field("contracts");
                         }
+                    }
+                }
+            });
+            frappe.call({
+                method: 'frappe.client.get_value',
+                args:{
+                    'doctype':'Contracts',
+                    'filters':{
+                        'name': frm.doc.contracts
+                    },
+                    'fieldname':[
+                        'price_list'
+                    ]
+                },
+                callback:function(s){
+                    if (!s.exc) {
+                        var selling_price_list = s.message.name;
+                        frm.set_value("selling_price_list",selling_price_list);
+                        frm.refresh_field("selling_price_list");
                     }
                 }
             });
