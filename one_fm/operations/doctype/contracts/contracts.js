@@ -282,13 +282,13 @@ frappe.ui.form.on('Contract Item', {
 						'disabled': 0,
 					},
 					'fieldname':[
-						'item_name'
+						'description'
 					]
 				},
 				callback:function(s){
 					if (!s.exc) {
 						if(s.message){
-							frappe.model.set_value(d.doctype, d.name, "item_name", s.message.item_name);
+							frappe.model.set_value(d.doctype, d.name, "item_name", s.message.description);
 							frm.refresh_field("items");
 						}
 					}
