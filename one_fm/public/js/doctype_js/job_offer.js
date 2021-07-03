@@ -7,14 +7,6 @@ frappe.ui.form.on('Job Offer', {
     frm.remove_custom_button("Create Employee");
     if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')
 			&& (frm.doc.docstatus === 1) && (!frm.doc.__onload || !frm.doc.__onload.employee)) {
-			frm.add_custom_button(__('Create New Employee'),
-				function () {
-          frappe.model.open_mapped_doc({
-            method: "one_fm.hiring.utils.make_employee_from_job_offer",
-            frm: frm
-          });
-				}
-			);
       frm.add_custom_button(__('Create New Transfer Paper'),
 				function () {
           frappe.model.open_mapped_doc({
@@ -23,8 +15,7 @@ frappe.ui.form.on('Job Offer', {
           });
 				}
 			);
-		}
-    set_filters(frm);
+		}    set_filters(frm);
   },
   validate: function(frm) {
     // check_and_info_offer_terms(frm);
