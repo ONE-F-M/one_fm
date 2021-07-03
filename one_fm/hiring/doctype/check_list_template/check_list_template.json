@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "autoname": "field:check_list_name",
+ "creation": "2021-06-17 00:39:05.317158",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "check_list_name",
+  "check_list"
+ ],
+ "fields": [
+  {
+   "fieldname": "check_list_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Check List Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "check_list",
+   "fieldtype": "Table",
+   "label": "Check List",
+   "options": "Candidate Orientation Check List",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2021-06-17 00:39:27.288351",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Check List Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

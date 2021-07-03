@@ -499,6 +499,7 @@ var is_dob_include_in_cid = function(cid, dob) {
 	}
 	year = year.toString().slice(-2);
 	let date_string = year+month+day;
+	console.log('Valid CID Date Format:'+date_string);
 	return cid.includes(date_string);
 };
 

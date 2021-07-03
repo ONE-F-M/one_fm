@@ -6,10 +6,14 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "progress_section",
+  "progress_html",
+  "onboarding_section",
   "job_offer",
   "job_applicant",
-  "employee_name",
   "employee",
+  "employee_name",
+  "employee_name_in_arabic",
   "date_of_joining",
   "boarding_status",
   "erf",
@@ -65,18 +69,77 @@
   "column_break_26",
   "salary_details",
   "uniform_measurements_section",
-  "uniform_needed_for_this_job",
+  "is_uniform_needed_for_this_job",
   "shoulder_width",
   "column_break_58",
   "waist_size",
   "shoe_size",
-  "actions_section",
-  "actions",
   "documents_section",
   "applicant_documents",
-  "table_for_activity",
-  "activities",
-  "amended_from"
+  "amended_from",
+  "orientation_section",
+  "candidate_orientation_name",
+  "candidate_orientation",
+  "column_break_76",
+  "candidate_orientation_status",
+  "candidate_orientation_docstatus",
+  "candidate_orientation_progress",
+  "work_contract_section",
+  "work_contract_name",
+  "work_contract",
+  "column_break_73",
+  "work_contract_status",
+  "work_contract_docstatus",
+  "work_contract_progress",
+  "duty_commencement_section",
+  "duty_commencement_name",
+  "duty_commencement",
+  "column_break_90",
+  "duty_commencement_status",
+  "duty_commencement_docstatus",
+  "duty_commencement_progress",
+  "bank_account_section",
+  "account_name",
+  "bank",
+  "new_bank_account_needed",
+  "attach_bank_form",
+  "column_break_96",
+  "bank_account_name",
+  "bank_account",
+  "bank_account_status",
+  "bank_account_docstatus",
+  "bank_account_progress",
+  "erp_user_section",
+  "company_email",
+  "create_user_permission",
+  "column_break_107",
+  "role_profile",
+  "employee_id_section",
+  "employee_id_name",
+  "employee_id",
+  "column_break_112",
+  "employee_id_status",
+  "employee_id_docstatus",
+  "employee_id_progress",
+  "accommodation_section",
+  "accommodation_provided",
+  "checkin_reference",
+  "accommodation",
+  "floor",
+  "column_break_120",
+  "accommodation_unit",
+  "bed",
+  "transportation_section",
+  "added_to_bus_schedule",
+  "asset_and_tools_section",
+  "uniform_issued",
+  "employee_uniform_issue_reference",
+  "column_break_129",
+  "tools_issued",
+  "request_for_material",
+  "request_for_material_status",
+  "request_for_material_docstatus",
+  "request_for_material_progress"
  ],
  "fields": [
   {
@@ -174,18 +237,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "table_for_activity",
-   "fieldtype": "Section Break",
-   "hidden": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "activities",
-   "fieldtype": "Table",
-   "label": "Activities",
-   "options": "Employee Boarding Activity"
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -205,18 +256,6 @@
    "fieldtype": "Table",
    "label": "Applicant Documents",
    "options": "Job Applicant Required Document"
-  },
-  {
-   "depends_on": "onboard_employee_template",
-   "fieldname": "actions_section",
-   "fieldtype": "Section Break",
-   "label": "Actions"
-  },
-  {
-   "fieldname": "actions",
-   "fieldtype": "Table",
-   "options": "Onboard Employee Activity",
-   "read_only": 1
   },
   {
    "fieldname": "onboard_employee_template",
@@ -429,12 +468,6 @@
    "label": "Uniform Measurements"
   },
   {
-   "default": "0",
-   "fieldname": "uniform_needed_for_this_job",
-   "fieldtype": "Check",
-   "label": "Is Uniform Needed for This Job"
-  },
-  {
    "fieldname": "shoulder_width",
    "fieldtype": "Float",
    "label": "Shoulder Width in Centi Meter"
@@ -491,11 +524,482 @@
    "fieldname": "passport_expire",
    "fieldtype": "Date",
    "label": "Passport Expires on"
+  },
+  {
+   "fieldname": "employee_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Employee Name in Arabic"
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0",
+   "fieldname": "work_contract_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_73",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "work_contract_status",
+   "fieldtype": "Data",
+   "label": "Work Contract Status",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "onboarding_section",
+   "fieldtype": "Section Break",
+   "label": "Onboarding"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "progress_section",
+   "fieldtype": "Section Break",
+   "label": "Progress"
+  },
+  {
+   "fieldname": "progress_html",
+   "fieldtype": "HTML",
+   "label": "Progress HTML"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "work_contract_progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Work Contract Progress",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus < 2",
+   "fieldname": "work_contract",
+   "fieldtype": "Link",
+   "label": "Work Contract",
+   "options": "Work Contract",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "work_contract_docstatus",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Work Contract Docstatus"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus > 1",
+   "fieldname": "work_contract_name",
+   "fieldtype": "Data",
+   "label": "Work Contract",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0",
+   "fieldname": "orientation_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus > 1",
+   "fieldname": "candidate_orientation_name",
+   "fieldtype": "Data",
+   "label": "Candidate Orientation Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus < 2",
+   "fieldname": "candidate_orientation",
+   "fieldtype": "Link",
+   "label": "Candidate Orientation",
+   "options": "Candidate Orientation",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "candidate_orientation_status",
+   "fieldtype": "Data",
+   "label": "Candidate Orientation Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_76",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "candidate_orientation_docstatus",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Candidate Orientation Docstatus"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "candidate_orientation_progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Candidate Orientation Progress",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_uniform_needed_for_this_job",
+   "fieldtype": "Check",
+   "label": "Is Uniform Needed for This Job"
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0",
+   "fieldname": "duty_commencement_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus > 1",
+   "fieldname": "duty_commencement_name",
+   "fieldtype": "Data",
+   "label": "Duty Commencement",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus < 2",
+   "fieldname": "duty_commencement",
+   "fieldtype": "Link",
+   "label": "Duty Commencement",
+   "options": "Duty Commencement",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus < 2",
+   "fieldname": "duty_commencement_status",
+   "fieldtype": "Data",
+   "label": "Duty Commencement Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_90",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "duty_commencement_docstatus",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Duty Commencement Docstatus"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "duty_commencement_progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Duty Commencement Progress",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "fieldname": "bank_account_section",
+   "fieldtype": "Section Break",
+   "label": "Bank Account"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus < 2",
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "options": "Bank Account",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus > 1",
+   "fieldname": "bank_account_name",
+   "fieldtype": "Data",
+   "label": "Bank Account",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "bank_account_status",
+   "fieldtype": "Data",
+   "label": "Bank Account Status",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "bank_account_progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Bank Account Progress"
+  },
+  {
+   "fieldname": "column_break_96",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "new_bank_account_needed",
+   "fieldtype": "Check",
+   "label": "New Bank Account Needed"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "account_name",
+   "fieldtype": "Data",
+   "label": "Account Name"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "bank",
+   "fieldtype": "Link",
+   "label": "Bank",
+   "options": "Bank"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "new_bank_account_needed",
+   "fieldname": "attach_bank_form",
+   "fieldtype": "Attach",
+   "label": "Attach Bank Form"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "bank_account_docstatus",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Bank Account Docstatus"
+  },
+  {
+   "depends_on": "employee",
+   "fieldname": "erp_user_section",
+   "fieldtype": "Section Break",
+   "label": "ERP User"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "company_email",
+   "fieldtype": "Data",
+   "label": "Company Email",
+   "options": "Email"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "This will restrict user access to other employee records",
+   "fieldname": "create_user_permission",
+   "fieldtype": "Check",
+   "label": "Create User Permission"
+  },
+  {
+   "fieldname": "column_break_107",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "designation.role_profile",
+   "fetch_if_empty": 1,
+   "fieldname": "role_profile",
+   "fieldtype": "Link",
+   "label": "Role Profile",
+   "options": "Role Profile",
+   "read_only": 1
+  },
+  {
+   "depends_on": "employee",
+   "fieldname": "employee_id_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "employee_id_name",
+   "fieldtype": "Data",
+   "label": "Employee ID Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "employee_id",
+   "fieldtype": "Link",
+   "label": "Employee ID",
+   "options": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_112",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "employee_id_status",
+   "fieldtype": "Data",
+   "label": "Employee ID Status",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "employee_id_docstatus",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Employee ID Docstatus"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "employee_id_progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Employee ID Progress"
+  },
+  {
+   "depends_on": "provide_accommodation_by_company",
+   "fieldname": "accommodation_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "accommodation_provided",
+   "fetch_from": "checkin_reference.accommodation",
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "label": "Accommodation",
+   "options": "Accommodation",
+   "read_only": 1
+  },
+  {
+   "depends_on": "provide_transportation_by_company",
+   "fieldname": "transportation_section",
+   "fieldtype": "Section Break",
+   "label": "Transportation"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "added_to_bus_schedule",
+   "fieldtype": "Check",
+   "label": "Added to Bus Schedule",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0",
+   "fieldname": "asset_and_tools_section",
+   "fieldtype": "Section Break",
+   "label": "Uniform and Tools for Work"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "depends_on": "is_uniform_needed_for_this_job",
+   "fieldname": "uniform_issued",
+   "fieldtype": "Check",
+   "label": "Uniform Issued"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "request_for_material",
+   "fieldtype": "Link",
+   "label": "Request for Material",
+   "options": "Request for Material",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "request_for_material_status",
+   "fieldtype": "Data",
+   "label": "Request for Material Status",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "request_for_material_docstatus",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Request for Material Docstatus"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "request_for_material_progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Request for Material Progress"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "accommodation_provided",
+   "fieldname": "checkin_reference",
+   "fieldtype": "Link",
+   "label": "Checkin Reference",
+   "options": "Accommodation Checkin Checkout",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "accommodation_provided",
+   "fieldtype": "Check",
+   "label": "Accommodation Provided",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_120",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "accommodation_provided",
+   "fetch_from": "checkin_reference.floor",
+   "fieldname": "floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Floor",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "accommodation_provided",
+   "fetch_from": "checkin_reference.accommodation_unit",
+   "fieldname": "accommodation_unit",
+   "fieldtype": "Link",
+   "label": "Accommodation Unit",
+   "options": "Accommodation Unit",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "accommodation_provided",
+   "fetch_from": "checkin_reference.bed",
+   "fieldname": "bed",
+   "fieldtype": "Link",
+   "label": "Bed",
+   "options": "Bed",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "uniform_issued",
+   "fieldname": "employee_uniform_issue_reference",
+   "fieldtype": "Link",
+   "label": "Employee Uniform Issue Reference",
+   "options": "Employee Uniform"
+  },
+  {
+   "fieldname": "column_break_129",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "tools_issued",
+   "fieldtype": "Check",
+   "label": "Tools Issued"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-04-28 12:47:25.879128",
+ "modified": "2021-07-01 09:22:25.969958",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

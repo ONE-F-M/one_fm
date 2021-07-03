@@ -166,7 +166,8 @@ doc_events = {
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
 	"Job Offer": {
-		"validate": "one_fm.hiring.utils.validate_job_offer"
+		"validate": "one_fm.hiring.utils.validate_job_offer",
+		"on_update_after_submit": "one_fm.hiring.utils.job_offer_on_update_after_submit"
 	},
 	"Shift Type": {
 		"autoname": "one_fm.api.doc_events.naming_series"
@@ -192,6 +193,9 @@ doc_events = {
 	},
 	"Supplier Group": {
 		"on_update": "one_fm.utils.supplier_group_on_update",
+	},
+	"Bank Account": {
+		"on_update": "one_fm.utils.bank_account_on_update",
 	},
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",

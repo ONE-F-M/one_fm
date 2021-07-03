@@ -51,6 +51,7 @@ class AccommodationCheckinCheckout(Document):
 		if not exists_employee_checkin_checkout:
 			occupy = True if self.type == 'OUT' else False
 			self.update_bed_details(occupy, True)
+		self.onboard_employee_update(True)
 
 	def on_update(self):
 		occupy = True if self.type == 'IN' else False
@@ -59,6 +60,19 @@ class AccommodationCheckinCheckout(Document):
 
 	def after_insert(self):
 		self.update_checkin_reference()
+		self.onboard_employee_update()
+
+	def onboard_employee_update(self, on_trash=False):
+		if self.type == 'IN':
+			if on_trash:
+				oe_name = frappe.db.exists('Onboard Employee', {'employee': self.employee, 'accommodation_provided': True, 'checkin_reference': self.name})
+			else:
+				oe_name = frappe.db.exists('Onboard Employee', {'employee': self.employee, 'accommodation_provided': False})
+			if oe_name:
+				oe = frappe.get_doc('Onboard Employee', oe_name)
+				oe.accommodation_provided = False if on_trash else True
+				oe.checkin_reference = '' if on_trash else self.name
+				oe.save(ignore_permissions=True)
 
 	def update_checkin_reference(self):
 		if self.type == 'OUT' and self.checkin_reference:
