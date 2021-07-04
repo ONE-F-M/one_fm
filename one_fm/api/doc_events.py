@@ -365,14 +365,13 @@ def update_certification_data(doc, method):
 				passed_employees.append(employee.employee)
 		
 		for passed_employee in passed_employees:
-			doc_name = training_program_name+"/"+passed_employee
-			if frappe.db.exists("Training Program Certificate", {'name': doc_name}):
-				update_training_program_certificate(doc_name, issue_date, expiry_date)
+			if frappe.db.exists("Training Program Certificate", {'training_program_name': training_program_name, 'employee': passed_employee}):
+				update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date)
 			else:
 				create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date,company, trainer_name, trainer_email)
 
-def update_training_program_certificate(doc_name, issue_date, expiry_date=None):
-	doc = frappe.get_doc("Training Program Certificate", doc_name)
+def update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None):
+	doc = frappe.get_doc("Training Program Certificate", {'training_program_name': training_program_name, 'employee': passed_employee})
 	doc.issue_date = issue_date
 	doc.expiry_date = expiry_date
 	doc.save()
