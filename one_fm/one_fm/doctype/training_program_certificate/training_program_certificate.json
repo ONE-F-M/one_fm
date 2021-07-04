@@ -5,7 +5,13 @@
  "engine": "InnoDB",
  "field_order": [
   "training_program_name",
+  "company",
+  "trainer_name",
+  "trainer_email",
+  "col_br_2",
   "employee",
+  "employee_name",
+  "col_br_1",
   "issue_date",
   "expiry_date"
  ],
@@ -34,9 +40,41 @@
    "fieldname": "expiry_date",
    "fieldtype": "Date",
    "label": "Expiry Date"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Read Only",
+   "label": "Employee Name"
+  },
+  {
+   "fieldname": "col_br_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "training_program_name.trainer_name",
+   "fieldname": "trainer_name",
+   "fieldtype": "Read Only",
+   "label": "Trainer Name"
+  },
+  {
+   "fetch_from": "training_program_name.trainer_email",
+   "fieldname": "trainer_email",
+   "fieldtype": "Read Only",
+   "label": "Trainer Email"
+  },
+  {
+   "fetch_from": "training_program_name.company",
+   "fieldname": "company",
+   "fieldtype": "Read Only",
+   "label": "Company"
+  },
+  {
+   "fieldname": "col_br_2",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2021-07-01 13:05:18.390457",
+ "modified": "2021-07-04 10:14:20.504772",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Training Program Certificate",
