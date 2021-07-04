@@ -244,7 +244,7 @@ def automatic_checkout():
 	shifts_list = get_active_shifts(now_time)
 	for shift in shifts_list:
 		# shift_end is equal to now time - notification reminder in mins
-		print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
+		#print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			# print(shift.name, now_time, shift.end_time)

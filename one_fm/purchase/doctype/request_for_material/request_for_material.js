@@ -77,7 +77,8 @@ frappe.ui.form.on('Request for Material', {
 		frm.set_query("t_warehouse", function() {
 			return {
 				filters: [
-					['is_group', '=', 0]
+					['is_group', '=', 0],
+					['warehouse_type', '=', frm.doc.site]
 				]
 			};
 		});
