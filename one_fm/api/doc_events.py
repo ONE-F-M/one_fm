@@ -384,7 +384,7 @@ def update_certification_data(doc, method):
 	"""
 	passed_employees = []
 	
-	training_program_name, has_certificate, min_score, validity= frappe.db.get_value("Training Event", {'event_name': doc.training_event}, ["training_program", "has_certificate", "minimum_score", "validity"])	
+	training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email = frappe.db.get_value("Training Event", {'event_name': doc.training_event}, ["training_program", "has_certificate", "minimum_score", "validity", "company", "trainer_name", "trainer_email"])	
 	
 	if has_certificate:
 		issue_date = cstr(getdate())
@@ -400,10 +400,7 @@ def update_certification_data(doc, method):
 			if frappe.db.exists("Training Program Certificate", {'name': doc_name}):
 				update_training_program_certificate(doc_name, issue_date, expiry_date)
 			else:
-				create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date)
-
-		update_employee_skill_map(training_program_name, passed_employees, issue_date, expiry_date)
-
+				create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date,company, trainer_name, trainer_email)
 
 def update_training_program_certificate(doc_name, issue_date, expiry_date=None):
 	doc = frappe.get_doc("Training Program Certificate", doc_name)
@@ -411,38 +408,13 @@ def update_training_program_certificate(doc_name, issue_date, expiry_date=None):
 	doc.expiry_date = expiry_date
 	doc.save()
 	
-def create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None):
+def create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None, company=None, trainer_name=None, trainer_email=None):
 	doc = frappe.new_doc("Training Program Certificate")
 	doc.training_program_name = training_program_name
+	doc.company = company
+	doc.trainer_name = trainer_name
+	doc.trainer_email = trainer_email
 	doc.employee = passed_employee
 	doc.issue_date = issue_date
 	doc.expiry_date = expiry_date
 	doc.save()
-
-
-def update_employee_skill_map(training_program_name, passed_employees, issue_date, expiry_date):
-	for emp in passed_employees:
-		if frappe.db.exists("Employee Skill Map", emp):
-			doc = frappe.get_doc("Employee Skill Map", emp)
-			certifications = doc.employee_certifications
-			if len(certifications) > 0:
-				for certificate in certifications:
-					if certificate.certification == training_program_name:
-						certificate.issue_date = issue_date
-						certificate.expiry_date = expiry_date
-					else:
-						doc.append("employee_certifications",{
-							'certification': training_program_name,
-							'issue_date': issue_date,
-							'expiry_date': expiry_date
-						})
-			else:
-				doc.append("employee_certifications",{
-					'certification': training_program_name,
-					'issue_date': issue_date,
-					'expiry_date': expiry_date
-				})
-			doc.save()	
-
-		else:
-			frappe.throw(_("No Employee Skill Map found for employee: {emp}. Therefore, certificate cannot be added".format(emp=emp)))
