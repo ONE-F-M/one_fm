@@ -343,37 +343,6 @@ def employee_validate(self):
 			remove_user_permission(
 				"Employee", self.name, existing_user_id)
 
-
-#Employee Skill Map
-@frappe.whitelist()
-def validate_certifications_and_licenses(doc, method):
-	""" This function checks validates the dates of licenses and certifications """
-	messages = []
-	certifications = doc.employee_certifications
-	licenses = doc.employee_licenses
-
-	if len(certifications) > 0:
-		for certification in certifications:
-			if(certification.issue_date and certification.expiry_date):
-				if(getdate(certification.issue_date) >= getdate(certification.expiry_date)):
-					messages.append("Expiry date cannot be on or before Issue date for certification:{cert}".format(cert=certification.certification))
-
-			elif(not certification.issue_date and certification.expiry_date and getdate(certification.expiry_date) <= getdate()):
-				messages.append("Expiry date cannot be on or before today for certification: {cert}".format(cert=certification.certification))
-
-	if len(licenses) > 0:
-		for license in licenses:
-			if(license.issue_date and license.expiry_date):
-				if(getdate(license.issue_date) >= getdate(license.expiry_date)):
-					messages.append("Expiry date cannot be on or before Issue date for license:{license}".format(license=license.license))
-
-			elif(not license.issue_date and license.expiry_date and getdate(license.expiry_date) <= getdate()):
-				messages.append("Expiry date cannot be on or before today for license: {license}".format(license=license.license))
-
-	if len(messages) > 0:
-		frappe.throw(messages)			
-
-
 #Training Result
 @frappe.whitelist()
 def update_certification_data(doc, method):
@@ -418,3 +387,15 @@ def create_training_program_certificate(training_program_name, passed_employee, 
 	doc.issue_date = issue_date
 	doc.expiry_date = expiry_date
 	doc.save()
+
+
+#Training Event
+@frappe.whitelist()
+def update_training_event_data(doc, method):
+	for employee in doc.employees:
+		if frappe.db.exists("Employee Skill Map", employee.employee):
+			doc_esm = frappe.get_doc("Employee Skill Map", employee.employee)
+			doc_esm.append("trainings",{
+				'training': doc.event_name,
+			})
+			doc_esm.save()
