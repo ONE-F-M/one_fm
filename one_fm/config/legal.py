@@ -34,6 +34,11 @@ def get_data():
 					"name": "Penalty",
 					"label": _("Penalty")
 				},
+				{
+					"type": "doctype",
+					"name": "Employee ID",
+					"onboard": 1,
+				}
 			]
 		},
 		{
@@ -66,6 +71,6 @@ def get_data():
 					"label": _("Legal Settings")
 				},
 			]
-		}        
-        
+		}
+
 	]
