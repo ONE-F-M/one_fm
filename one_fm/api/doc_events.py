@@ -353,10 +353,11 @@ def update_certification_data(doc, method):
 	"""
 	passed_employees = []
 	
-	training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email = frappe.db.get_value("Training Event", {'event_name': doc.training_event}, ["training_program", "has_certificate", "minimum_score", "validity", "company", "trainer_name", "trainer_email"])	
+	training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email, end_datetime = frappe.db.get_value("Training Event", {'event_name': doc.training_event}, ["training_program", "has_certificate", "minimum_score", "validity", "company", "trainer_name", "trainer_email", "end_time"])	
 	
 	if has_certificate:
-		issue_date = cstr(getdate())
+
+		issue_date = cstr(end_datetime).split(" ")[0]
 		if validity:
 			expiry_date = add_to_date(issue_date, months=validity)
 
