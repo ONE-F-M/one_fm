@@ -58,16 +58,15 @@ class PIFSSMonthlyDeduction(Document):
 	
 	def notify_finance(self):
 		finance_email = []
-		for role in frappe.get_roles(frappe.session.user):
-			if "Finance User" == role:
-				users = get_users_with_role("Finance User")
-		for user in users:
-			if has_permission(doctype=self.doctype, user=user):
+		users = get_users_with_role("Finance User")
+		if len(users)>0:
+			for user in users:
 				finance_email.append(user)
-		email = finance_email
-		subject = _("PIFSS Monthly Deduction Payments")
-		message = _("Kindly, prepare total payment amount: {0}KWD and transfer it to GRD account. <br>Please transfer it within 2 days.").format(round(self.total_payments,3))
-		create_notification_log(subject,message,email,self)
+		if finance_email and len(finance_email) > 0: 		
+			email = finance_email
+			subject = _("PIFSS Monthly Deduction Payments")
+			message = _("Kindly, prepare total payment amount: {0}KWD and transfer it to GRD account. <br>Please transfer it within 2 days.").format(round(self.total_payments,3))
+			create_notification_log(subject,message,email,self)
 
 def create_additional_salary(employee, amount):
 	additional_salary = frappe.new_doc("Additional Salary")
