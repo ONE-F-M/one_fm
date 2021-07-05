@@ -2,6 +2,166 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2021-05-26 02:00:01.789310",
+  "name": "Open Request",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Open Request"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-05-26 02:10:36.079323",
+  "name": "Mark Completed",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Mark Completed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-15 16:19:44.689830",
+  "name": "Applicant Signed",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Applicant Signed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-15 16:20:16.097314",
+  "name": "Applicant not Signed",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Applicant not Signed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-16 11:42:34.484559",
+  "name": "Submit to Legal",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Submit to Legal"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-16 11:44:58.600794",
+  "name": "Send to Authorised Signatory",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Send to Authorised Signatory"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-16 22:15:09.301822",
+  "name": "Submit for Candidate Response",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Submit for Candidate Response"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-16 22:22:10.942735",
+  "name": "Offer Accepted",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Offer Accepted"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-16 22:22:38.231127",
+  "name": "Offer Rejected",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Offer Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-16 23:55:07.819295",
+  "name": "Submit to Onboarding Officer",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Submit to Onboarding Officer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-17 02:02:34.411870",
+  "name": "Inform Applicant",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Inform Applicant"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-17 02:03:00.147310",
+  "name": "Applicant Attended",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Applicant Attended"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-17 02:03:21.716592",
+  "name": "Applicant Not Attended",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Applicant Not Attended"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-20 14:39:14.585605",
+  "name": "Applicant Signed and Upload",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Applicant Signed and Upload"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-20 22:00:37.767462",
+  "name": "Process Bank Account Opening",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Process Bank Account Opening"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-06-20 22:07:57.614141",
+  "name": "Open Bank Account",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Open Bank Account"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2020-11-23 19:46:19.020045",
   "name": "Submit for Review",
   "parent": null,
@@ -38,26 +198,6 @@
   "parentfield": null,
   "parenttype": null,
   "workflow_action_name": "Approval Request"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
-  "modified": "2020-02-01 11:11:31.802414",
-  "name": "HR Rejected",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "workflow_action_name": "HR Rejected"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
-  "modified": "2020-02-01 11:11:55.261627",
-  "name": "HR Approved",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "workflow_action_name": "HR Approved"
  },
  {
   "docstatus": 0,
