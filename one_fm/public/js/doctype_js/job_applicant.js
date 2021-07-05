@@ -83,15 +83,12 @@ frappe.ui.form.on('Job Applicant', {
 					'parent': frm.doc.one_fm_authorized_signatory,
 					},
 				callback:function(r){
-					console.log(r.message);
+					// console.log(r.message);
 					frm.set_df_property('one_fm_signatory_name', "options", r.message);
-					frm.refresh_field("one_fm_signatory_name");
+					
 					}
 				});
-		}
-		else{
-			frm.set_df_property('one_fm_signatory_name', "options", null);
-			frm.refresh_field("one_fm_signatory_name");
+				frm.refresh_field("one_fm_signatory_name");
 		}
 	},
 	one_fm_first_name: function(frm) {
@@ -201,12 +198,32 @@ frappe.ui.form.on('Job Applicant', {
 	one_fm_is_transferable: function(frm) {
 		if(frm.doc.one_fm_is_transferable){
 			let msg = __('Do You Need to Set the Value to {0}', [frm.doc.one_fm_is_transferable])
+			frm.set_value('one_fm_notify_operator', 0);//testing purpuses
 			frappe.confirm(
 				msg,
 				function(){
 					// Yes
 					if(frm.doc.one_fm_is_transferable == 'No'){
 						frappe.msgprint(__('If Applicant is Not Transferable the Applicant Will be Rejected.'));
+					}
+					if(frm.doc.one_fm_is_transferable == 'Yes' && (frappe.user.has_role("Senior Recruiter") 
+					|| frappe.user.has_role("Recruiter"))){
+						//check mandatory fields in tp 
+						let fields=['one_fm_cid_number','one_fm_previous_designation','one_fm_work_permit_salary',
+						'one_fm_date_of_entry','one_fm_date_of_birth','one_fm_nationality','one_fm_marital_status','one_fm_educational_qualification','one_fm_passport_number','one_fm_last_working_date','one_fm_gender','one_fm_religion'];
+						let hide_fields=['previous_company_details','authorized_signatory','one_fm_has_issue','one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation','one_fm_previous_company_trade_name_in_arabic','one_fm__previous_company_authorized_signatory_name_arabic','one_fm_previous_company_contract_file_number','one_fm_previous_company_issuer_number','one_fm_previous_company_pam_file_number','one_fm_authorized_signatory','one_fm_signatory_name','authorized_signatory_section'];
+						set_mandatory_fields(frm, fields, true);
+						set_hidden_fields(frm, hide_fields, true);
+					}
+					if(frm.doc.one_fm_notify_operator == 1 && !frm.doc.one_fm_has_issue && frm.doc.one_fm_is_transferable == 'Yes' && frappe.user.has_role("GRD Operator")){
+						let read_fields=['one_fm_is_transferable','one_fm_applicant_is_overseas_or_local','one_fm_cid_number','one_fm_work_permit_number','one_fm_previous_designation','one_fm_work_permit_salary',
+						'one_fm_date_of_entry','one_fm_date_of_birth','one_fm_nationality','one_fm_marital_status','one_fm_educational_qualification','one_fm_passport_number','one_fm_last_working_date','one_fm_gender','one_fm_religion'];
+						let fields=['one_fm_has_issue'];
+						let hide_fields=['one_fm_basic_skill_section','one_fm_uniform_measurements','one_fm_work_details_section','section_break_6','section_break_88','one_fm_educational_qualification_section','one_fm_current_employment_section_','country_and_nationality_section','one_fm_language_section','one_fm_contact_details_section','previous_work_details','one_fm_erf_application_details_section','one_fm_interview_and_career_history_score','one_fm_interview_schedules_section'];
+						set_read_only_fields(frm, read_fields, true);
+						set_mandatory_fields(frm, fields, true);
+						set_hidden_fields(frm, hide_fields, true);
+						
 					}
 				},
 				function(){
@@ -229,7 +246,20 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			});
 		}
-	}, //set Authorized segnatory for TP in job applicant
+	},
+	one_fm_has_issue: function(frm){//
+		if(frm.doc.one_fm_has_issue == "No" && frappe.user.has_role("GRD Operator")){
+			fields=['one_fm_signatory_name','one_fm_authorized_signatory','one_fm_pam_file_number','one_fm_pam_designation'];
+			set_mandatory_fields(frm, fields, true);
+			frm.set_value('one_fm_notify_recruiter', 0);//on chnage of check status notify recruiter by setting flag with 0
+		}
+		if(frm.doc.one_fm_has_issue == "Yes" && frappe.user.has_role("GRD Operator")){
+			fields=['one_fm_type_of_issues'];
+			set_mandatory_fields(frm, fields, true);
+			frm.set_value('one_fm_notify_recruiter', 0);
+		}
+	},
+	//set Authorized segnatory for TP in job applicant
 	one_fm_authorized_signatory: function(frm){
 		if(frm.doc.one_fm_authorized_signatory){
 			frappe.call({
@@ -250,22 +280,27 @@ frappe.ui.form.on('Job Applicant', {
 
 
 	},
-	// one_fm_signatory_name: function(frm){
-	// 	if(frm.doc.one_fm_signatory_name){
-	// 		console.log(frm.doc.one_fm_signatory_name)
-	// 		frappe.call({
-	// 			method: "one_fm.one_fm.utils.get_signatory",
-	// 			args:{
-	// 				'parent': frm.doc.one_fm_signatory_name,
-	// 				},
-	// 			callback:function(r){
-	// 				console.log(r.message);
-	// 				// frm.set_df_property('one_fm_signatory_name', "options", r.message);
-	// 				// frm.refresh_field("one_fm_signatory_name");
-	// 				}
-	// 			});
-	// 	}
-	// }
+	refresh: function(frm){
+		//Hide GRD section if transferable not selected yet
+		let hide_fields=['authorized_signatory','previous_company_details','authorized_signatory_section','one_fm_has_issue','one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation','one_fm_previous_company_trade_name_in_arabic','one_fm__previous_company_authorized_signatory_name_arabic','one_fm_previous_company_contract_file_number','one_fm_previous_company_issuer_number','one_fm_previous_company_pam_file_number','one_fm_authorized_signatory','one_fm_signatory_name','authorized_signatory_section'];
+		if(frm.doc.one_fm_is_transferable == '' 
+		 || frm.doc.one_fm_is_transferable == 'Later'
+		 || frm.doc.one_fm_is_transferable == 'No'){ 
+			set_hidden_fields(frm, hide_fields, true);
+		 }
+		 if(frappe.user.has_role("GRD Operator")){
+			let hide_fields=['one_fm_basic_skill_section','one_fm_uniform_measurements','one_fm_work_details_section','section_break_6','section_break_88','one_fm_educational_qualification_section','one_fm_current_employment_section_','country_and_nationality_section','one_fm_language_section','one_fm_contact_details_section','previous_work_details','one_fm_erf_application_details_section','one_fm_interview_and_career_history_score','one_fm_interview_schedules_section'];
+			let read_fields=['one_fm_is_transferable','one_fm_applicant_is_overseas_or_local','one_fm_cid_number','one_fm_work_permit_number','one_fm_duration_of_work_permit','one_fm_previous_designation','one_fm_work_permit_salary',
+			'one_fm_date_of_entry','one_fm_date_of_birth','one_fm_nationality','one_fm_marital_status','one_fm_educational_qualification','one_fm_passport_number','one_fm_last_working_date','one_fm_gender','one_fm_religion'];
+			set_read_only_fields(frm, read_fields, true);
+			set_hidden_fields(frm, hide_fields, true);
+		}if(frappe.user.has_role("Senior Recruiter")||frappe.user.has_role("Recruiter")){
+			let read_fields=['previous_company_details','authorized_signatory','one_fm_has_issue','one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation','one_fm_previous_company_trade_name_in_arabic','one_fm__previous_company_authorized_signatory_name_arabic','one_fm_previous_company_contract_file_number','one_fm_previous_company_issuer_number','one_fm_previous_company_pam_file_number','one_fm_authorized_signatory','one_fm_signatory_name','authorized_signatory_section'];
+			set_read_only_fields(frm, read_fields, true);
+		}
+
+}
+	
 });
 
 var change_applicant_erf = function(frm) {
@@ -464,11 +499,12 @@ var validate_cid = function(frm) {
 			valid_cid = false;
 		}
 		else if (frm.doc.one_fm_date_of_birth){
-			if(!is_dob_include_in_cid(frm.doc.one_fm_cid_number, frm.doc.one_fm_date_of_birth)){
+			console.log(is_dob_include_in_cid(frm.doc.one_fm_cid_number, frm.doc.one_fm_date_of_birth));
+			if(is_dob_include_in_cid(frm.doc.one_fm_cid_number, frm.doc.one_fm_date_of_birth)== false){
 				valid_cid = false;
 			}
 		}
-		if(!valid_cid){
+		if(valid_cid == false){
 			frm.set_value('one_fm_cid_number', '');
 			frappe.throw(__("Please Enter a Valid Civil ID."));
 		}
@@ -498,7 +534,11 @@ var is_dob_include_in_cid = function(cid, dob) {
 		day = day.toString();
 	}
 	year = year.toString().slice(-2);
+	console.log('year:'+year);
+	console.log('m:'+month);
+	console.log('d:'+day);
 	let date_string = year+month+day;
+	console.log('Valid CID Date Format:'+date_string);
 	return cid.includes(date_string);
 };
 

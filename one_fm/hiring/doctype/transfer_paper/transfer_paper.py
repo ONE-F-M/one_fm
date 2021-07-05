@@ -16,18 +16,28 @@ from one_fm.api.notification import create_notification_log
 class TransferPaper(Document):
 
     def validate(self):
+        self.set_salary_from_job_offer()
+        self.set_grd_values()
         self.set_electronic_signatory()
+
+    def set_salary_from_job_offer(self):
+        salary = frappe.db.get_value('Job Offer',{'job_applicant':self.applicant},['one_fm_job_offer_total_salary'])
+        self.db_set('salary', salary) 
+
+    def set_grd_values(self):
+        if not self.grd_operator:
+            self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
 
     def set_electronic_signatory(self):
         doc = frappe.get_doc('Job Applicant',self.applicant)
         if doc.one_fm_signatory_name and doc.one_fm_authorized_signatory:
-            print(doc.one_fm_signatory_name)
+            # print(doc.one_fm_signatory_name)
             authorized_list = frappe.get_doc('PAM Authorized Signatory List',doc.one_fm_authorized_signatory)
             for authorized in authorized_list.authorized_signatory:
                 if doc.one_fm_signatory_name == authorized.authorized_signatory_name_arabic:
                     self.db_set('authorized_signature', authorized.signature)
 
-
+   
 
     def on_update(self):
         self.check_signed_workContract_employee_completed()

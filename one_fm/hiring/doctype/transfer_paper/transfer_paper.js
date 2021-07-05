@@ -37,13 +37,14 @@ frappe.ui.form.on('Transfer Paper', {
                 filters: {
                 name: frm.doc.pas
                 },
-                fieldname:["company_name_arabic","pam_issuer_number"]
+                fieldname:["company_name_arabic","pam_issuer_number","pam_file_number"]
             }, 
             callback: function(r) { 
         
                 // set the returned value in a field
                 frm.set_value('company_trade_name_arabic', r.message.company_name_arabic);
                 frm.set_value('issuer_number', r.message.pam_issuer_number);
+                frm.set_value('pam_file_number', r.message.pam_file_number);
 
             }
         })
@@ -67,8 +68,7 @@ frappe.ui.form.on('Transfer Paper', {
                 frm.set_value('previous_company_authorized_signatory_name_arabic', r.message.one_fm__previous_company_authorized_signatory_name_arabic);
                 frm.set_value('previous_company_pam_designation', r.message.one_fm_previous_designation);
                 frm.set_value('previous_company_contract_file_number', r.message.one_fm_previous_company_contract_file_number);   
-                frm.set_value('previous_company_issuer_number', r.message.one_fm_previous_company_issuer_number);
-                
+                frm.set_value('previous_company_issuer_number', r.message.one_fm_previous_company_issuer_number);               
                 frm.set_value('previous_company_pam_file_number', r.message.one_fm_previous_company_pam_file_number);
                 frm.set_value('end_work_date', r.message.one_fm_last_working_date);
                 frm.set_value('previous_company_work_permit_salary', r.message.one_fm_work_permit_salary);
@@ -95,14 +95,28 @@ frappe.ui.form.on('Transfer Paper', {
                 frm.set_value('civil_id', r.message.one_fm_cid_number);
                 frm.set_value('work_permit_salary', r.message.one_fm_work_permit_salary);
                 frm.set_value('date_of_entry_in_kuwait', r.message.one_fm_date_of_entry);
-               
-
-
             }
         })
     }
 
-    }
+    },
+    // new_page_preview: function(printit) {
+    //     var me = this;
+    //     //var doc = frappe.get_doc(me.frm.doc.doctype, me.frm.doc.name)
+    
+    //     if (me.frm.doc.print < 1){
+    //         frappe.call({
+    //                 "method": "frappe.client.set_value",
+    //                 "args": {
+    //                             "doctype": me.frm.doc.doctype,
+    //                             "name": me.frm.doc.name,
+    //                             "fieldname": "print",
+    //                             "value": me.frm.doc.print + 1
+    //                         }	
+    //             });
+    
+    //         }
+    //     },
     
 });
 var set_wp_status = function(frm){

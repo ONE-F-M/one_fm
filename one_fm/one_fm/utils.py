@@ -5,6 +5,7 @@ import frappe
 from frappe.utils import today, add_days, get_url
 from frappe.integrations.offsite_backup_utils import get_latest_backup_file, send_email, validate_file_size, get_chunk_site
 from one_fm.api.notification import create_notification_log
+from frappe.utils.user import get_users_with_role
 
 @frappe.whitelist()
 def employee_grade_validate(doc, method):
@@ -47,35 +48,51 @@ def get_salary_structure_list(doctype, txt, searchfield, start, page_len, filter
 
 @frappe.whitelist()
 def send_grd_notification_to_check_applicant_document(doc, method):
-    if doc.one_fm_is_transferable == "Yes":
-        
-        if not doc.one_fm_grd_operator:
-            doc.one_fm_grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
-        print(doc.name)
-        dt = frappe.get_doc('Job Applicant',doc.name)
-        if dt:
-            page_link = get_url("/desk#List/Job Applicant/" + dt.name)
-            message = "<p>Check If {0} Is Transferable.<br>Civil id:{1} - Passport Number:{2}<a href='{3}'></a>.</p>".format(dt.applicant_name,dt.one_fm_cid_number,dt.one_fm_passport_number,page_link)
-            subject = 'Check If {0} Is Transferable.<br>Civil id:{1} - Passport Number:{2}'.format(dt.applicant_name,dt.one_fm_cid_number,dt.one_fm_passport_number)
-            send_email(dt, [dt.one_fm_grd_operator], message, subject)
-            create_notification_log(subject, message, [dt.one_fm_grd_operator], dt)
+    filtered_users = []
+    if doc.one_fm_is_transferable == "Yes" and doc.one_fm_notify_operator == 0: 
+        users = get_users_with_role('GRD Operator') 
+        for user in users:
+            filtered_users.append(user)
+        if filtered_users and len(filtered_users) > 0:  
+            dt = frappe.get_doc('Job Applicant',doc.name)
+            if dt:
+                # print(dt.one_fm_notify_operator)
+                email = filtered_users
+                page_link = get_url("/desk#List/Job Applicant/" + dt.name)
+                message = "<p>Check If {0} Is Transferable.<br>Civil id:{1} - Passport Number:{2}<a href='{3}'></a>.</p>".format(dt.applicant_name,dt.one_fm_cid_number,dt.one_fm_passport_number,page_link)
+                subject = 'Check If {0} Is Transferable.<br>Civil id:{1} - Passport Number:{2}'.format(dt.applicant_name,dt.one_fm_cid_number,dt.one_fm_passport_number)
+                send_email(dt, email, message, subject)
+                create_notification_log(subject, message, email, dt)
+                dt.one_fm_notify_operator = 1
+                dt.save()
+                # print(dt.one_fm_notify_operator)
+    
 
 @frappe.whitelist()
 def send_recruiter_notification_with_type_of_issues(doc, method):
-    if doc.one_fm_has_issue == "Yes":
-        users = [], set_user = False
-        for role in frappe.get_roles(frappe.session.user):
-            if role == "Senior Recruiter" or role == "Recruiter":
-                set_user = True
-        if set_user:
-            users.append(frappe.session.user)
+    filtered_users = []
+    users = get_users_with_role('Recruiter')
+    for user in users:
+        filtered_users.append(user)
+    if filtered_users and len(filtered_users) > 0:  
         dt = frappe.get_doc('Job Applicant',doc.name)
-        if dt:
-            email = users
+    if dt:
+        if dt.one_fm_has_issue == "Yes" and dt.one_fm_notify_recruiter == 0:
+            email = filtered_users
             page_link = get_url("/desk#List/Job Applicant/" + dt.name)
-            subject = 'Tranfer for {0} has issues'.format(dt.applicant_name)
-            message = "<p>Tranfer for {0} has issues<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
+            message="<p>Tranfer for {0} has {1} issue<a href='{2}'></a>.</p>".format(dt.applicant_name,dt.one_fm_type_of_issues,page_link)
+            subject='Tranfer for {0} has issues'.format(dt.applicant_name)
             create_notification_log(subject,message,email,dt)
+        if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0: 
+            email = filtered_users
+            page_link = get_url("/desk#List/Job Applicant/" + dt.name)
+            message="<p>Tranfer for {0} has no issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
+            subject='Tranfer for {0} has no issues'.format(dt.applicant_name)
+            create_notification_log(subject,message,email,dt)
+        
+        dt.one_fm_notify_recruiter = 1
+        dt.status = "Checked By GRD"
+        dt.save()
 
 @frappe.whitelist()
 def get_signatory_name(parent):
