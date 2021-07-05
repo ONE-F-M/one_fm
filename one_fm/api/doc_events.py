@@ -104,7 +104,7 @@ def checkin_after_insert(doc, method):
 				hrs, mins, secs = cstr(time_diff).split(":")
 				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 				subject = _("{employee} has checked in late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
-				message = _("{employee_name} has checked in late by {delay}. {location} <br><br><div class='btn btn-primary btn-danger late-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name,shift=doc.shift, date=cstr(doc.time), employee=doc.employee, delay=delay, location=message_suffix))
+				message = _("{employee_name} has checked in late by {delay}. {location} <br><br><div class='btn btn-primary btn-danger late-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name,shift=doc.operations_shift, date=cstr(doc.time), employee=doc.employee, delay=delay, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
@@ -129,7 +129,7 @@ def checkin_after_insert(doc, method):
 				hrs, mins, secs = cstr(time_diff).split(":")
 				early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 				subject = _("{employee} has checked out early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
-				message = _("{employee_name} has checked out early by {early}. {location} <br><br><div class='btn btn-primary btn-danger early-punch-out' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name, shift=doc.shift, date=cstr(doc.time), employee=doc.employee_name, early=early, location=message_suffix))
+				message = _("{employee_name} has checked out early by {early}. {location} <br><br><div class='btn btn-primary btn-danger early-punch-out' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name, shift=doc.operations_shift, date=cstr(doc.time), employee=doc.employee_name, early=early, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
@@ -342,3 +342,33 @@ def employee_validate(self):
 		if existing_user_id:
 			remove_user_permission(
 				"Employee", self.name, existing_user_id)
+
+
+#Employee Skill Map
+@frappe.whitelist()
+def validate_certifications_and_licenses(doc, method):
+	""" This function checks validates the dates of licenses and certifications """
+	messages = []
+	certifications = doc.employee_certifications
+	licenses = doc.employee_licenses
+
+	if len(certifications) > 0:
+		for certification in certifications:
+			if(certification.issue_date and certification.expiry_date):
+				if(getdate(certification.issue_date) >= getdate(certification.expiry_date)):
+					messages.append("Expiry date cannot be on or before Issue date for certification:{cert}".format(cert=certification.certification))
+
+			elif(not certification.issue_date and certification.expiry_date and getdate(certification.expiry_date) <= getdate()):
+				messages.append("Expiry date cannot be on or before today for certification: {cert}".format(cert=certification.certification))
+
+	if len(licenses) > 0:
+		for license in licenses:
+			if(license.issue_date and license.expiry_date):
+				if(getdate(license.issue_date) >= getdate(license.expiry_date)):
+					messages.append("Expiry date cannot be on or before Issue date for license:{license}".format(license=license.license))
+
+			elif(not license.issue_date and license.expiry_date and getdate(license.expiry_date) <= getdate()):
+				messages.append("Expiry date cannot be on or before today for license: {license}".format(license=license.license))
+
+	if len(messages) > 0:
+		frappe.throw(messages)			

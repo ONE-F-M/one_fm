@@ -33,7 +33,23 @@ class EmployeeUniform(Document):
 				if item.issued_item_link:
 					returned = frappe.db.get_value('Employee Uniform Item', item.issued_item_link, 'returned')
 					frappe.db.set_value('Employee Uniform Item', item.issued_item_link, 'returned', returned+item.quantity)
+		self.onboard_employee_update()
 		make_stock_entry(self)
+
+	# def on_cancel(self):
+	# 	self.onboard_employee_update(True)
+
+	def onboard_employee_update(self, on_cancel=False):
+		if self.type == 'Issue':
+			if on_cancel:
+				oe_name = frappe.db.exists('Onboard Employee', {'employee': self.employee, 'uniform_issued': True, 'employee_uniform_issue_reference': self.name})
+			else:
+				oe_name = frappe.db.exists('Onboard Employee', {'employee': self.employee, 'uniform_issued': False})
+			if oe_name:
+				oe = frappe.get_doc('Onboard Employee', oe_name)
+				oe.uniform_issued = False if on_cancel else True
+				oe.employee_uniform_issue_reference = '' if on_cancel else self.name
+				oe.save(ignore_permissions=True)
 
 	def validate_handover_form(self):
 		if not self.handover_form:

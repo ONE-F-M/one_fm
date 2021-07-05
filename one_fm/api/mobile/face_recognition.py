@@ -70,7 +70,6 @@ def get_site_location(employee):
 		shift = get_current_shift(employee)
 		if shift is not None:
 			site = frappe.get_value("Operations Shift", shift, "site")
-
 			return frappe.db.sql("""
 			SELECT loc.latitude, loc.longitude, loc.geofence_radius
 			FROM `tabLocation` as loc

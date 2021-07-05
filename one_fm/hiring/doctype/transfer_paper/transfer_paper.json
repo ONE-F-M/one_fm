@@ -11,21 +11,28 @@
   "column_break_4",
   "tp_status",
   "work_permit_status",
-  "pam_file",
+  "pas",
   "new_company_data_section",
   "company_trade_name_arabic",
   "authorized_signatory_name_arabic",
   "issuer_number",
+  "column_break_12",
   "contract_file_number",
+  "duration_of_work_permit",
   "pam_file_number",
   "previous_company_details_section",
   "previous_company_trade_name_in_arabic",
   "previous_company_authorized_signatory_name_arabic",
-  "previous_company_trade_name_arabic",
+  "work_permit_number",
+  "residency_number",
+  "previous_company_pam_designation",
   "column_break_13",
   "previous_company_contract_file_number",
   "previous_company_issuer_number",
   "previous_company_pam_file_number",
+  "end_work_date",
+  "previous_company_work_permit_salary",
+  "previous_company_duration_of_work_permit",
   "personal_details_section",
   "first_name",
   "second_name",
@@ -61,7 +68,8 @@
   "signed",
   "column_break_51",
   "attach_tp",
-  "amended_from"
+  "amended_from",
+  "authorized_signature"
  ],
  "fields": [
   {
@@ -79,9 +87,10 @@
   },
   {
    "fieldname": "date_of_application",
-   "fieldtype": "Data",
+   "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Date of Application"
+   "label": "Date of Application",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_4",
@@ -98,16 +107,10 @@
   {
    "allow_on_submit": 1,
    "fieldname": "work_permit_status",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Work Permit Status"
-  },
-  {
-   "fieldname": "pam_file",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "PAM File",
-   "options": "PAM File"
+   "label": "Work Permit Status",
+   "read_only": 1
   },
   {
    "fieldname": "new_company_data_section",
@@ -115,12 +118,12 @@
    "label": "New Company Data"
   },
   {
-   "fetch_from": "pam_file.license_trade_name_arabic",
    "fieldname": "company_trade_name_arabic",
    "fieldtype": "Data",
    "label": "Company Trade Name Arabic"
   },
   {
+   "fetch_from": "applicant.one_fm_signatory_name",
    "fieldname": "authorized_signatory_name_arabic",
    "fieldtype": "Data",
    "label": "Authorized Signatory Name Arabic"
@@ -131,15 +134,14 @@
    "label": "Issuer Number"
   },
   {
-   "fetch_from": "pam_file.contract_file_number",
    "fieldname": "contract_file_number",
    "fieldtype": "Data",
    "label": "Contract File Number"
   },
   {
-   "fetch_from": "pam_file.pam_file_number",
+   "fetch_from": "applicant.one_fm_pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "PAM File Number"
   },
   {
@@ -148,35 +150,35 @@
    "label": "Previous Company Details"
   },
   {
+   "fetch_from": "applicant.one_fm_previous_company_trade_name_in_arabic",
    "fieldname": "previous_company_trade_name_in_arabic",
    "fieldtype": "Data",
    "label": "Previous Company Trade Name in Arabic"
   },
   {
+   "fetch_from": "applicant.one_fm__previous_company_authorized_signatory_name_arabic",
    "fieldname": "previous_company_authorized_signatory_name_arabic",
    "fieldtype": "Data",
    "label": "Previous Company Authorized Signatory Name Arabic"
-  },
-  {
-   "fieldname": "previous_company_trade_name_arabic",
-   "fieldtype": "Data",
-   "label": "Previous Company Trade Name Arabic"
   },
   {
    "fieldname": "column_break_13",
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "applicant.one_fm_previous_company_contract_file_number",
    "fieldname": "previous_company_contract_file_number",
    "fieldtype": "Data",
    "label": "Previous Company Contract File Number"
   },
   {
+   "fetch_from": "applicant.one_fm_previous_company_issuer_number",
    "fieldname": "previous_company_issuer_number",
    "fieldtype": "Data",
    "label": "Previous Company Issuer Number"
   },
   {
+   "fetch_from": "applicant.one_fm_previous_company_pam_file_number",
    "fieldname": "previous_company_pam_file_number",
    "fieldtype": "Data",
    "label": "Previous Company PAM File Number"
@@ -251,7 +253,7 @@
   {
    "fetch_from": "applicant.one_fm_gender",
    "fieldname": "gender",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Gender",
    "options": "Gender"
   },
@@ -285,18 +287,21 @@
    "label": "Passport Type"
   },
   {
+   "fetch_from": "applicant.one_fm_passport_number",
    "fieldname": "passport_number",
    "fieldtype": "Data",
    "label": "Passport Number"
   },
   {
+   "fetch_from": "applicant.one_fm_educational_qualification",
    "fieldname": "pratical_qualification",
    "fieldtype": "Data",
    "label": "Pratical Qualification"
   },
   {
+   "fetch_from": "applicant.one_fm_passport_expire",
    "fieldname": "passport_expiry_date",
-   "fieldtype": "Read Only",
+   "fieldtype": "Date",
    "label": "Passport Expiry Date"
   },
   {
@@ -309,27 +314,31 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "applicant.one_fm_cid_number",
    "fetch_from": "applicant.one_fm_cid_number",
    "fieldname": "civil_id",
    "fieldtype": "Data",
    "label": "Civil ID"
   },
   {
+   "fetch_from": "applicant.one_fm_pam_designation",
    "fieldname": "pam_designation",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "PAM Designation"
   },
   {
    "fieldname": "salary_type",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Salary Type"
   },
   {
+   "fetch_from": "applicant.one_fm_work_permit_salary",
    "fieldname": "work_permit_salary",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Work Permit Salary"
   },
   {
+   "fetch_from": "applicant.one_fm_date_of_entry",
    "fieldname": "date_of_entry_in_kuwait",
    "fieldtype": "Data",
    "label": "Date of Entry in Kuwait"
@@ -387,10 +396,66 @@
    "options": "Transfer Paper",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "work_permit_number",
+   "fieldtype": "Data",
+   "label": "Work permit Number"
+  },
+  {
+   "fieldname": "residency_number",
+   "fieldtype": "Data",
+   "label": "Residency Number"
+  },
+  {
+   "fetch_from": "applicant.one_fm_last_working_date",
+   "fieldname": "end_work_date",
+   "fieldtype": "Data",
+   "label": "End Work Date"
+  },
+  {
+   "fetch_from": "applicant.one_fm_work_permit_salary",
+   "fieldname": "previous_company_work_permit_salary",
+   "fieldtype": "Currency",
+   "label": "Previous Company Work Permit Salary"
+  },
+  {
+   "fetch_from": "applicant.one_fm_duration_of_work_permit",
+   "fieldname": "previous_company_duration_of_work_permit",
+   "fieldtype": "Data",
+   "label": "Previous Company Duration Of Work Permit"
+  },
+  {
+   "fieldname": "duration_of_work_permit",
+   "fieldtype": "Data",
+   "label": "Duration of Work Permit"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "applicant.one_fm_previous_designation",
+   "fieldname": "previous_company_pam_designation",
+   "fieldtype": "Data",
+   "label": "Previous Company PAM Designation"
+  },
+  {
+   "fieldname": "authorized_signature",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Authorized Signature"
+  },
+  {
+   "fetch_from": "applicant.one_fm_authorized_signatory",
+   "fieldname": "pas",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "PAS"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-05-29 16:29:53.093242",
+ "modified": "2021-06-30 22:27:41.791757",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Transfer Paper",

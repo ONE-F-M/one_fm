@@ -1,20 +1,26 @@
 {
+ "autoname": "format:{MM}-{YYYY}-{#####}",
  "creation": "2020-11-05 21:36:26.021218",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "attach_report",
+  "attach_manual_report",
   "column_break_2",
   "additional_attach_report",
+  "attach_pdf_report",
   "data_2",
   "deduction_month",
   "section_break_4",
   "deductions",
   "section_break_8",
   "total_sub",
+  "total_additional_deduction",
   "column_break_10",
+  "remaining_amount",
   "total_deduction",
+  "total_payments",
   "amended_from"
  ],
  "fields": [
@@ -23,6 +29,7 @@
    "description": "Data will be imported from attached report",
    "fieldname": "attach_report",
    "fieldtype": "Attach",
+   "in_list_view": 1,
    "label": "Attach Monthly Deduction Report"
   },
   {
@@ -32,7 +39,8 @@
   {
    "fieldname": "deduction_month",
    "fieldtype": "Date",
-   "label": "Due Date"
+   "label": "Deduction Month",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_4",
@@ -62,6 +70,7 @@
    "description": "Data will be imported from attached report",
    "fieldname": "additional_attach_report",
    "fieldtype": "Attach",
+   "in_list_view": 1,
    "label": "Attach Additional Monthly Deduction Report"
   },
   {
@@ -75,16 +84,55 @@
   {
    "fieldname": "total_sub",
    "fieldtype": "Currency",
-   "label": "Total Subscription"
+   "label": "Total Subscription",
+   "precision": "3",
+   "read_only": 1
   },
   {
    "fieldname": "total_deduction",
    "fieldtype": "Currency",
-   "label": "Total Employee Deduction"
+   "label": "Total Employee Deduction",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Manual report for pifss montly deduction",
+   "fieldname": "attach_manual_report",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Attach Manual Report"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "PDF report ",
+   "fieldname": "attach_pdf_report",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Attach PDF Report"
+  },
+  {
+   "fieldname": "total_additional_deduction",
+   "fieldtype": "Currency",
+   "label": "Total Additional Deduction",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remaining_amount",
+   "fieldtype": "Currency",
+   "label": "Remaining Amount"
+  },
+  {
+   "fieldname": "total_payments",
+   "fieldtype": "Currency",
+   "label": "Total Payments",
+   "precision": "3",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2021-05-30 12:10:01.164921",
+ "modified": "2021-06-30 10:00:36.028674",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
@@ -101,9 +149,46 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Finance User",
+   "share": 1
   }
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "deduction_month",
  "track_changes": 1
 }

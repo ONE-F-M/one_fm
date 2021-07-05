@@ -197,6 +197,7 @@ def send_notification(subject, message, recipients):
 		notification.email_content = message
 		notification.document_type = "Notification Log"
 		notification.for_user = user
+		notification.document_name = " "
 		notification.save()
 		notification.document_name = notification.name
 		notification.save()
@@ -312,7 +313,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 
 def automatic_shift_assignment():
 	date = cstr(getdate())
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working", "site": ("in", ["HO", "Mahboula Camp", "Farwaniyah Camp", "Plot 40", "Head Office"]) }, ["*"])
+	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" }, ["*"])
 	for schedule in roster:
 		create_shift_assignment(schedule, date)
 
