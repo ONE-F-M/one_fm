@@ -6,6 +6,8 @@
  "engine": "InnoDB",
  "field_order": [
   "license_name",
+  "issuing_auhority",
+  "application_date",
   "issue_date",
   "expiry_date",
   "sec_br_1",
@@ -50,10 +52,21 @@
    "options": "Employee License Issuance",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fetch_from": "license_name.issuing_authority",
+   "fieldname": "issuing_auhority",
+   "fieldtype": "Read Only",
+   "label": "Issuing Authority"
+  },
+  {
+   "fieldname": "application_date",
+   "fieldtype": "Date",
+   "label": "Application Date"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-07-06 09:14:01.431853",
+ "modified": "2021-07-06 13:27:47.206889",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Employee License Issuance",

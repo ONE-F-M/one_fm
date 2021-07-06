@@ -27,6 +27,7 @@ class EmployeeLicenseIssuance(Document):
 			else:
 				doc_el = frappe.new_doc("Employee License")
 				doc_el.license_name = self.license_name
+				doc_el.issuing_authority = frappe.db.get_value("License", {'license_name': self.license_name}, "issuing_authority")
 				doc_el.employee = employee.employee
 				doc_el.employee_name = get_employee_name(employee.employee)
 				doc_el.issue_date = self.issue_date

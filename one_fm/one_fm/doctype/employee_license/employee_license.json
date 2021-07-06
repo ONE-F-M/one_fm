@@ -5,6 +5,7 @@
  "engine": "InnoDB",
  "field_order": [
   "license_name",
+  "issuing_authority",
   "col_br_1",
   "employee",
   "employee_name",
@@ -52,9 +53,15 @@
    "fieldname": "expiry_date",
    "fieldtype": "Date",
    "label": "Expiry Date"
+  },
+  {
+   "fetch_from": "license_name.issuing_authority",
+   "fieldname": "issuing_authority",
+   "fieldtype": "Read Only",
+   "label": "Issuing Authority"
   }
  ],
- "modified": "2021-07-05 16:16:46.444378",
+ "modified": "2021-07-06 13:18:26.654518",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Employee License",
