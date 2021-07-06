@@ -6246,12 +6246,7 @@
    "insert_after": "one_fm_is_transferable",
    "label": "",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-16 14:31:43.112524",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 14:09:01.395934",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-column_break_72",
    "no_copy": 0,
@@ -6305,12 +6300,7 @@
    "insert_after": "one_fm_entry_date_of_current_educational_institution",
    "label": null,
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-16 14:44:57.471628",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 14:31:43.112524",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-section_break_66",
    "no_copy": 0,
@@ -6364,12 +6354,7 @@
    "insert_after": "one_fm_previous_company_issuer_number",
    "label": "Trade Name in Arabic",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-16 16:16:33.582919",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 14:44:57.471628",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_previous_company_trade_name_in_arabic",
    "no_copy": 0,
@@ -6423,12 +6408,7 @@
    "insert_after": "one_fm_previous_company_trade_name_in_arabic",
    "label": "Authorized Signatory Name Arabic",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-16 16:16:34.487996",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 16:16:33.582919",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm__previous_company_authorized_signatory_name_arabic",
    "no_copy": 0,
@@ -6482,12 +6462,7 @@
    "insert_after": "one_fm__previous_company_authorized_signatory_name_arabic",
    "label": "Contract File Number",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-16 16:16:35.584910",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 16:16:34.487996",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_previous_company_contract_file_number",
    "no_copy": 0,
@@ -6541,12 +6516,7 @@
    "insert_after": "previous_company_details",
    "label": "Issuer Number",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-16 16:16:36.664118",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 16:16:35.584910",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_previous_company_issuer_number",
    "no_copy": 0,
@@ -6600,12 +6570,7 @@
    "insert_after": "one_fm_previous_company_contract_file_number",
    "label": "PAM File Number",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-16 16:16:37.763851",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 16:16:36.664118",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_previous_company_pam_file_number",
    "no_copy": 0,
@@ -6659,12 +6624,7 @@
    "insert_after": "one_fm_is_easy_apply",
    "label": "Previous Work Permit Details",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-20 11:19:59.525913",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 16:16:37.763851",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-previous_work_details",
    "no_copy": 0,
@@ -6718,12 +6678,7 @@
    "insert_after": "one_fm_previous_designation",
    "label": null,
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-20 11:20:23.810254",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 16:22:21.268489",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-column_break_51",
    "no_copy": 0,
@@ -6777,12 +6732,7 @@
    "insert_after": "previous_work_details",
    "label": "Work Permit Number",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-20 11:23:09.859758",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-16 17:04:19.201834",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_work_permit_number",
    "no_copy": 0,
@@ -6836,12 +6786,7 @@
    "insert_after": "one_fm_work_permit_number",
    "label": "Duration of Work Permit",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-20 11:24:29.639178",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-20 11:19:59.525913",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_duration_of_work_permit",
    "no_copy": 0,
@@ -6895,12 +6840,7 @@
    "insert_after": "column_break_51",
    "label": "Work Permit Salary",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-20 11:26:23.660145",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-20 11:20:23.810254",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_work_permit_salary",
    "no_copy": 0,
@@ -6954,12 +6894,7 @@
    "insert_after": "one_fm_work_permit_salary",
    "label": "Last Working Date",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-20 11:27:57.307692",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-20 11:23:09.859758",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_last_working_date",
    "no_copy": 0,
@@ -7013,12 +6948,7 @@
    "insert_after": "one_fm_applicant_password",
    "label": "GRD Check",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-21 08:40:30.470074",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-20 11:24:29.639178",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-authorized_signatory",
    "no_copy": 0,
@@ -7072,12 +7002,7 @@
    "insert_after": "authorized_signatory_section",
    "label": "Authorized Signatory",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-21 08:40:30.847741",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-20 11:26:23.660145",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_authorized_signatory",
    "no_copy": 0,
@@ -7131,12 +7056,7 @@
    "insert_after": "one_fm_authorized_signatory",
    "label": "Signatory Name",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-21 08:40:31.753951",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-20 11:27:57.307692",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_signatory_name",
    "no_copy": 0,
@@ -7190,12 +7110,7 @@
    "insert_after": "one_fm_type_of_issues",
    "label": "PAM File Number",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-23 08:56:55.462633",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-21 08:40:30.470074",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_pam_file_number",
    "no_copy": 0,
@@ -7249,12 +7164,7 @@
    "insert_after": "one_fm_mobile_number",
    "label": "Date of Entry",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-23 16:16:53.165625",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-21 08:40:30.847741",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_date_of_entry",
    "no_copy": 0,
@@ -7308,12 +7218,7 @@
    "insert_after": "one_fm_duration_of_work_permit",
    "label": "Designation",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-06-24 08:33:56.610556",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-21 08:40:31.325154",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_previous_designation",
    "no_copy": 0,
@@ -7367,12 +7272,7 @@
    "insert_after": "one_fm_notify_recruiter",
    "label": "Previous Company Details",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-07-01 13:49:20.611345",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-21 08:40:31.753951",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-previous_company_details",
    "no_copy": 0,
@@ -7426,12 +7326,7 @@
    "insert_after": "one_fm_previous_company_pam_file_number",
    "label": "Authorized Signatory Section",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-07-01 13:49:21.066000",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-23 08:56:55.462633",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-authorized_signatory_section",
    "no_copy": 0,
@@ -7485,12 +7380,7 @@
    "insert_after": "one_fm_pam_designation",
    "label": "Notify Operator",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-07-02 21:14:52.422761",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-23 12:24:30.172127",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_notify_operator",
    "no_copy": 0,
@@ -7544,12 +7434,7 @@
    "insert_after": "one_fm_notify_operator",
    "label": "Notify Recruiter",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-07-02 21:17:31.217181",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-23 12:24:30.556065",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_notify_recruiter",
    "no_copy": 0,
@@ -7603,12 +7488,7 @@
    "insert_after": "one_fm_third_name",
    "label": "Forth Name",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-07-05 09:15:24.077225",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-23 14:14:02.732672",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_forth_name",
    "no_copy": 0,
@@ -7662,12 +7542,7 @@
    "insert_after": "one_fm_third_name_in_arabic",
    "label": "Forth Name in Arabic",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-07-05 09:16:30.981645",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-23 16:16:53.165625",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_forth_name_in_arabic",
    "no_copy": 0,
@@ -7721,12 +7596,7 @@
    "insert_after": "one_fm_has_issue",
    "label": "Type of Issues",
    "length": 0,
-<<<<<<< HEAD
    "modified": "2021-07-05 09:48:47.387037",
-=======
-   "mandatory_depends_on": null,
-   "modified": "2021-06-24 08:33:56.610556",
->>>>>>> 994ddeaee3c0f04e1deefca8017be8982d5dd2cb
    "modified_by": "Administrator",
    "name": "Job Applicant-one_fm_type_of_issues",
    "no_copy": 0,
