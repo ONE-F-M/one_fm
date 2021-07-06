@@ -42,6 +42,22 @@ def get_data():
 					"type": "doctype",
 					"name": "Public Institution for Social Security",
 					"onboard": 1,
+				},{
+					"type": "doctype",
+					"name": "PIFSS Form 103",
+					"onboard": 1,
+				},{
+					"type": "doctype",
+					"name": "PIFSS Form 55",
+					"onboard": 1,
+				},{
+					"type": "doctype",
+					"name": "PIFSS Monthly Deduction",
+					"onboard": 1,
+				},{
+					"type": "doctype",
+					"name": "MGRP",
+					"onboard": 1,
 				},
 			]
 		},
@@ -91,31 +107,16 @@ def get_data():
 			]
 		},
 		{
-			"label": _("PIFSS"),
-			"items": [
-				{
-					"type": "doctype",
-					"name": "PIFSS Form 103",
-					"onboard": 1,
-				},
-				{
-					"type": "doctype",
-					"name": "PIFSS Form 55",
-					"onboard": 1,
-				},
-				{
-					"type": "doctype",
-					"name": "PIFSS Monthly Deduction",
-					"onboard": 1,
-				},
-			]
-		},
-		{
-			"label": _("Ministry of Interior Residency Jawazat"),
+			"label": _("Ministry of Interior"),
 			"items": [
 				{
 					"type": "doctype",
 					"name": "MOI Residency Jawazat",
+					"onboard": 1,
+				},
+				{
+					"type": "doctype",
+					"name": "Fingerprint Appointment",
 					"onboard": 1,
 				},
 			]

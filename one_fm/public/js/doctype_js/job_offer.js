@@ -15,6 +15,14 @@ frappe.ui.form.on('Job Offer', {
           });
 				}
 			);
+      frm.add_custom_button(__('Create New Transfer Paper'),
+				function () {
+          frappe.model.open_mapped_doc({
+            method: "one_fm.hiring.utils.make_transfer_paper_from_job_offer",
+            frm: frm
+          });
+				}
+			);
 		}
     set_filters(frm);
   },

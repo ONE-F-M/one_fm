@@ -176,3 +176,14 @@ body[data-route="roster"] .closed {
 body[data-route="roster"] .closed:hover {
   background: #63799b;
 }
+body[data-route="roster"] .rosteringheadingtab {
+  width: 200px;
+  margin-left: 7%;
+}
+body[data-route="roster"] .switch-container {
+  width: 300px;
+  /* margin: 0 auto;
+  margin-left: 20px; */
+  width: 200px;
+    margin-left: 7%;
+}

@@ -1,4 +1,4 @@
-// fstatus// Copyright (c) 2020, omar jaber and contributors
+// Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
 // eslint-disable-next-line
@@ -44,10 +44,10 @@ frappe.ui.form.on('Request for Material', {
 		}
 		if(frm.doc.docstatus == 0){
 			if (frappe.user.has_role("Stock User")){
-				frm.set_df_property('type', 'options', "\nIndividual\nProject Mobilization\nStock\nProject\nOnboarding");
+				frm.set_df_property('type', 'options', "\nIndividual\nStock\nProject\nOnboarding");
 			}
 			else{
-				frm.set_df_property('type', 'options', "\nIndividual\nProject Mobilization\nProject\nOnboarding");
+				frm.set_df_property('type', 'options', "\nIndividual\nProject\nOnboarding");
 			}
 		}
 		if(frm.is_new()){
@@ -60,6 +60,27 @@ frappe.ui.form.on('Request for Material', {
 				}
 			});
 		}
+		frm.set_query("project", function() {
+			return {
+				filters: [
+					['customer', '=', frm.doc.customer]
+				]
+			};
+		});
+		frm.set_query("site", function() {
+			return {
+				filters: [
+					['project', '=', frm.doc.project]
+				]
+			};
+		});
+		frm.set_query("t_warehouse", function() {
+			return {
+				filters: [
+					['is_group', '=', 0]
+				]
+			};
+		});
 		// frm.set_query('warehouse', function () {
 		// 	if(frm.doc.type == 'Project'){
 		// 		return {
@@ -79,11 +100,12 @@ frappe.ui.form.on('Request for Material', {
 				var any_items_ordered = false;
 				var item_exist_in_stock = false;
 				var purchase_item_exist = false;
+
 				if(frm.doc.per_ordered>0){
 					any_items_ordered = true;
 				}
 				frm.doc.items.forEach((item, i) => {
-					if(item.item_code && item.actual_qty>=0){
+					if(item.item_code && item.actual_qty>0){
 						item_exist_in_stock = true;
 					}
 					if(item.pur_qty > 0){
@@ -96,13 +118,52 @@ frappe.ui.form.on('Request for Material', {
 				
 				if(item_exist_in_stock){
 					if(frm.doc.type=="Individual" || frm.doc.type=="Onboarding" || frm.doc.type=="Project"|| frm.doc.type=="Project Mobilization" || frm.doc.type=="Stock"){
-						frm.add_custom_button(__("Material Transfer"),
-							() => frm.events.make_stock_entry(frm), __('Create'));
+						frappe.db.get_value('Stock Entry', {'one_fm_request_for_material': frm.doc.name}, ['name', 'docstatus'],function(r) {
+							if(r && r.name && r.docstatus != 2){
+								frappe.show_alert({
+									message:__('A Material Transfer ')+r.name+__(' has been made against this RFM'),
+									indicator:'green'
+								}, 5);
+							}
+							else{
+								if(r && r.docstatus == 2){
+									frappe.show_alert({
+										message:__('A Material Transfer')+r.name+__(' was made against this RFM, which has now been cancelled'),
+										indicator:'red'
+									}, 5);
+								}
+								if (frm.doc.type=="Stock"){
+									frm.add_custom_button(__("Material Transfer"),
+									    () => frm.events.make_stock_entry(frm), __('Create'));
+								}else{
+									frm.add_custom_button(__("Material Issue"),
+									    () => frm.events.make_stock_entry_issue(frm), __('Create'));					
+								}
+								
+							}
+						});
 						frm.add_custom_button(__("Sales Invoice"),
 							() => frm.events.make_sales_invoice(frm), __('Create'));
 						if(purchase_item_exist){
-							frm.add_custom_button(__("Request for Purchase"),
-							    () => frm.events.make_request_for_purchase(frm), __('Create'));
+							frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, ['name','docstatus'],function(r) {
+								if(r && r.name && r.docstatus != 2){
+									frappe.show_alert({
+										message:__('A purchase request ')+r.name+__(' has been made against this RFM'),
+										indicator:'green'
+									}, 5);
+								}
+								else{
+									if(r && r.docstatus == 2){
+										frappe.show_alert({
+											message:__('Request for Purchase ')+r.name+__(' was made against this RFM, which has now been cancelled'),
+											indicator:'red'
+										}, 5);
+									}
+									frm.add_custom_button(__("Request for Purchase"),
+							            () => frm.events.make_request_for_purchase(frm), __('Create'));
+								}
+							});
+							
 						}
 						if(any_items_ordered){
 							frm.add_custom_button(__("Make Delivery Note"),
@@ -124,8 +185,24 @@ frappe.ui.form.on('Request for Material', {
 					//Needs further dicussion with Jamsheer
 					frm.add_custom_button(__("Sales Invoice"),
 					    () => frm.events.make_sales_invoice(frm), __('Create'));
-					frm.add_custom_button(__("Request for Purchase"),
-					    () => frm.events.make_request_for_purchase(frm), __('Create'));
+					frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, ['name','docstatus'],function(r) {
+						if(r && r.name && r.docstatus != 2){
+							frappe.show_alert({
+								message:__('A purchase request ')+r.name+__(' has been made against this RFM'),
+								indicator:'green'
+							}, 5);
+						}
+						else{
+							if(r && r.docstatus == 2){
+								frappe.show_alert({
+									message:__('Request for Purchase ')+r.name+__(' was made against this RFM, which has now been cancelled'),
+									indicator:'red'
+								}, 5);
+							}
+							frm.add_custom_button(__("Request for Purchase"),
+								() => frm.events.make_request_for_purchase(frm), __('Create'));
+						}
+					});
 					if(any_items_ordered){
 						frm.add_custom_button(__("Make Delivery Note"),
 							() => frm.events.make_delivery_note(frm), __('Create'));
@@ -155,12 +232,13 @@ frappe.ui.form.on('Request for Material', {
 			}
 		}
 	},
-	/*get_designation_items: function(frm) {
-		fetch_designation_items(frm);
-	},*/
-	designation: function(frm) {
-		fetch_designation_items(frm);
+	// designation: function(frm) {
+	// 	fetch_designation_items(frm);
+	// },
+	erf: function(frm) {
+		fetch_erf_items(frm);
 	},
+
 	reject_request_for_material: function(frm, status) {
 		var d = new frappe.ui.Dialog({
 			title : __("Reject Request for Material"),
@@ -242,14 +320,17 @@ frappe.ui.form.on('Request for Material', {
 			},
 			callback: function(r) {
 				const d = item;
-				console.log(d.s_warehouse);
-				console.log(r.message);
-				console.log(r.message.warehouse);
+				//console.log(r.message);
+				//console.log(r.message.warehouse);
 				if(!r.exc) {
 					$.each(r.message, function(k, v) {
 						if(!d[k]) d[k] = v;
 						if(d.qty>d.actual_qty){
 							d.pur_qty = d.qty-d.actual_qty
+							d.quantity_to_transfer = d.actual_qty	
+						} else if(d.qty<d.actual_qty){
+							d.pur_qty = 0
+							d.quantity_to_transfer = d.qty
 						}
 					});
 				}
@@ -377,6 +458,40 @@ var fetch_designation_items = function(frm) {
 	}
 };
 
+var fetch_erf_items = function(frm){
+	if(frm.doc.erf){
+		frappe.call({
+			method: 'one_fm.purchase.doctype.request_for_material.request_for_material.bring_erf_items',
+			args: {'erf': frm.doc.erf},
+			callback: function(r) {
+				if(r.message){
+					var erf = r.message;
+					//console.log(designation.item_list);
+					if(erf.item_list && erf.item_list.length > 0){
+						//console.log("Quantity", designation.item_list[0].item_name);
+						frm.get_field("items").grid.grid_rows[0].remove();
+						for ( var i=0; i< erf.item_list.length; i++ ){
+							//console.log("here");
+							let d = frm.add_child("items", {
+								requested_item_name: erf.item_list[i].item_name,
+								requested_description: erf.item_list[i].description,
+								qty: erf.item_list[i].quantity,
+								uom: erf.item_list[i].uom
+							});
+						}
+						frm.refresh_field("items");
+					}
+					else if (erf.item_list.length <= 0){
+						frappe.msgprint(__("No items found in this erf."))
+					}
+				}
+			},
+			freeze: true,
+			freeze_message: __('Fetching Data from ERF to Set Default Data')
+		});
+	}
+};
+
 var set_item_field_property = function(frm) {
 	// if((frm.doc.docstatus == 1 && frappe.session.user == frm.doc.request_for_material_accepter)
 	// 	|| frm.doc.type == 'Stock'){
@@ -404,8 +519,7 @@ var set_employee_or_project = function(frm) {
 	if(frm.doc.type){
 		if(frm.doc.type=='Individual'){
 			frm.set_df_property('employee', 'reqd', true);
-			frm.set_df_property('designation', 'reqd', false);
-			frm.set_value('designation', '');
+			frm.set_df_property('project', 'reqd', false);
 			frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
 				if(r && r.name){
 					frm.set_value('employee', r.name);
@@ -416,27 +530,24 @@ var set_employee_or_project = function(frm) {
 			});
 		}
 		else if(frm.doc.type=='Project'|| frm.doc.type=='Project Mobilization'){
-			frm.set_df_property('designation', 'reqd', false);
-			frm.set_value('designation', '');
 			frm.set_df_property('project', 'reqd', true);
+			frm.set_df_property('customer', 'reqd', (frm.doc.type=='Project')?true:false);
+			frm.set_df_property('site', 'reqd', (frm.doc.type=='Project')?true:false);
 		}
 		else if(frm.doc.type=='Onboarding'){
-			frm.set_df_property('project', 'reqd', true);
-			frm.set_df_property('designation', 'reqd', true);
+			frm.set_df_property('erf', 'reqd', true);
 		}
 		else if(frm.doc.type=='Stock'){
-			frm.set_df_property('designation', 'reqd', false);
-			frm.set_value('designation', '');
+			frm.set_df_property('project', 'reqd', false);
 		}
 	}
 	
 
 	// else if(frm.doc.type){
 	// 	frm.set_df_property('employee', 'reqd', (frm.doc.type=='Individual')?true:false);
-	// 	frm.set_df_property('project', 'reqd', (frm.doc.type=='Project Mobilization')?true:false);
+	//	frm.set_df_property('project', 'reqd', (frm.doc.type=='Project Mobilization')?true:false);
 	// 	frm.set_df_property('project', 'reqd', (frm.doc.type=='Project')?true:false);
 	// 	frm.set_df_property('project', 'reqd', (frm.doc.type=='Onboarding')?true:false);
-	// 	frm.set_df_property('designation', 'reqd', (frm.doc.type=='Onboarding')?true:false);
 	// 	if(frm.doc.type=='Individual'){
 	// 		frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'employee_name', function(r) {
 	// 			if(r && r.employee_name){
@@ -451,9 +562,7 @@ var set_employee_or_project = function(frm) {
 	else{
 		frm.set_df_property('employee', 'reqd', false);
 		frm.set_df_property('project', 'reqd', false);
-		frm.set_df_property('designation', 'reqd', false);
 		frm.set_value('employee', '');
-		frm.set_value('designation', '');
 		frm.set_value('department', '');
 		frm.set_value('employee_name', '');
 		frm.set_value('project', '');
@@ -464,12 +573,32 @@ var set_employee_or_project = function(frm) {
 frappe.ui.form.on("Request for Material Item", {
 	qty: function (frm, doctype, name) {
 		// var d = locals[doctype][name];
-		// if (flt(d.qty) < flt(d.min_order_qty)) {
-		// 	frappe.msgprint(__("Warning: Material Requested Qty is less than Minimum Order Qty"));
+		// if ((flt(d.quantity_to_transfer)+flt(d.pur_qty)) > (flt(d.qty))) {
+		// 	frappe.msgprint(__("Warning: Cannot exceed total Material Requested Qty"));
 		// }
 		//
 		// const item = locals[doctype][name];
 		// frm.events.get_item_data(frm, item);
+	},
+	pur_qty: function (frm, doctype, name){
+		var d = locals[doctype][name];
+		console.log("Hello"+d.quantity_to_transfer)
+		if (d.quantity_to_transfer > (d.qty+d.pur_qty) || d.quantity_to_transfer > (d.qty+d.pur_qty)){
+			d.quantity_to_transfer = d.qty-d.pur_qty
+			console.log(d.quantity_to_transfer)
+		}
+		if ((flt(d.quantity_to_transfer)+flt(d.pur_qty)) > (flt(d.qty))) {
+			frappe.msgprint(__("Warning: Cannot exceed total Material Requested Qty"));
+		}
+		
+
+	},
+	quantity_to_transfer: function (frm, doctype, name){
+		var d = locals[doctype][name];
+		if ((flt(d.quantity_to_transfer)+flt(d.pur_qty)) > (flt(d.qty))) {
+			frappe.msgprint(__("Warning: Cannot exceed total Material Requested Qty"));
+		}
+
 	},
 
 	rate: function(frm, doctype, name) {

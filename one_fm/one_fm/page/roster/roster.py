@@ -10,6 +10,7 @@ import multiprocessing
 import os
 from multiprocessing.pool import ThreadPool as Pool
 from itertools import product
+import collections
 
 @frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
@@ -79,10 +80,11 @@ def get_staff_filters_data():
 
 
 @frappe.whitelist()
-def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=None, project=None, site=None, shift=None, department=None, post_type=None, limit_start=0, limit_page_length=100):
+def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=None, project=None, site=None, shift=None, department=None, post_type=None, isOt=None, limit_start=0, limit_page_length=100):
 	start = time.time()
 	master_data, formatted_employee_data, post_count_data, employee_filters={}, {}, {}, {}
 	post_types_list = []
+	employees = []
 
 	filters = {
 		'date': ['between', (start_date, end_date)]
@@ -90,7 +92,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 
 	if post_type:
 		filters.update({'post_type': post_type})	
-	fields = ["employee", "employee_name", "date", "post_type", "post_abbrv", "employee_availability", "shift"]
+	fields = ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"]
 
 	if search_key:
 		employee_filters.update({'employee_name': ("like", "%" + search_key + "%")})
@@ -101,15 +103,19 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 	if shift:
 		employee_filters.update({'shift': shift})	
 	if department:
-		employee_filters.update({'department': department})
-	
+		employee_filters.update({'department': department})	
 
-	roster_total = len(frappe.db.get_list("Employee", employee_filters))  
-	master_data.update({'total': roster_total})
-
-	employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
-	employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
-	
+	if isOt:
+		employee_filters.update({'employee_availability' : 'Working'})
+		employees = frappe.db.get_list("Employee Schedule", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
+		master_data.update({'total' : len(collections.Counter(emp.employee for emp in employees))})
+		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
+		employee_filters.pop('employee_availability')
+	else:
+		roster_total = len(frappe.db.get_list("Employee", employee_filters))  
+		master_data.update({'total': roster_total})
+		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
+		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 
 	if search_key:
 		employee_filters.pop('employee_name')
@@ -126,7 +132,9 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
 		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
-		schedules = frappe.db.get_list("Employee Schedule", filters, fields, order_by="date asc, employee_name asc")
+		if isOt:
+			filters.update({'roster_type' : 'Over-Time'})
+		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc")
 		schedule_list = []
 		schedule = {}
 		for date in	pd.date_range(start=start_date, end=end_date):
@@ -221,12 +229,12 @@ def get_filtered_post_types(doctype, txt, searchfield, start, page_len, filters)
 	""".format(shift=shift))
 	
 @frappe.whitelist()
-def schedule_staff(employees, shift, post_type, start_date, end_date):
+def schedule_staff(employees, shift, post_type, otRoster, start_date, end_date):
 	import time
 	try:
 		start = time.time()
 		for employee in json.loads(employees):
-			frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, is_async=True, queue='long')
+			frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, is_async=True, queue='long')
 		frappe.enqueue(update_roster, key="roster_view", is_async=True, queue='long')
 		
 		end = time.time()
@@ -239,14 +247,22 @@ def schedule_staff(employees, shift, post_type, start_date, end_date):
 def update_roster(key):
 	frappe.publish_realtime(key, "Success")
 
-def schedule(employee, shift, post_type, start_date, end_date):
+def schedule(employee, shift, post_type, otRoster, start_date, end_date):
 	start = time.time()
+
+	if otRoster == 'false':
+		roster_type = 'Basic'
+	elif otRoster == 'true':
+		roster_type = 'Over-Time'
+			
 	for date in	pd.date_range(start=start_date, end=end_date):
-		if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
+		if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type}):
 			site, project, shift_type = frappe.get_value("Operations Shift", shift, ["site", "project", "shift_type"])
 			post_abbrv = frappe.get_value("Post Type", post_type, "post_abbrv")
-			roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date())})
-			update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type)
+			roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type })
+			update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type, roster_type)
+			#Update employee assignment upon change in schedule as the roster fetches values from the employee doctype
+			update_employee_assignment(employee, project, shift, site)
 		else:
 			roster = frappe.new_doc("Employee Schedule")
 			roster.employee = employee
@@ -254,9 +270,16 @@ def schedule(employee, shift, post_type, start_date, end_date):
 			roster.shift = shift
 			roster.employee_availability = "Working"
 			roster.post_type = post_type
+			roster.roster_type = roster_type
 			roster.save(ignore_permissions=True)
 	end = time.time()
-	print(employee, end-start)
+	print("Scheduled employee : ", employee, end-start)
+
+def update_employee_assignment(employee, project, shift, site):
+	""" This function updates the employee project, site and shift in the employee doctype """
+	frappe.db.set_value("Employee", employee, "project", val=project)
+	frappe.db.set_value("Employee", employee, "site", val=site)
+	frappe.db.set_value("Employee", employee, "shift", val=shift)	
 
 @frappe.whitelist()
 def schedule_leave(employees, leave_type, start_date, end_date):
@@ -311,25 +334,41 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 @frappe.whitelist()
 def edit_post(posts, values):
 	args = frappe._dict(json.loads(values))
-	if args.post_status == "Cancel Post":
-		cancel_post(posts, args)
+	if args.post_status == "Plan Post":
+		frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
+	elif args.post_status == "Cancel Post":
+		frappe.enqueue(cancel_post,posts=posts, args=args, is_async=True, queue='long')
 	elif args.post_status == "Suspend Post":
-		suspend_post(posts, args)
+		frappe.enqueue(suspend_post, posts=posts, args=args, is_async=True, queue='long')
 	elif args.post_status == "Post Off":
-		post_off(posts, args)
-	
+		frappe.enqueue(post_off, posts=posts, args=args, is_async=True, queue='long')
+
+	frappe.enqueue(update_roster, key="staff_view", is_async=True, queue='long')	
+		
+def plan_post(posts, args):
+	""" This fucntion sets the post status to planned provided a post, start date and an end date """
+	for post in json.loads(posts):
+		for date in pd.date_range(start=args.plan_from_date, end=args.plan_end_date):
+			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
+				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
+			else: 
+				doc = frappe.new_doc("Post Schedule")
+				doc.post = post["post"]
+				doc.date = cstr(date.date())
+			doc.post_status = "Planned"
+			doc.save()	
+	frappe.db.commit()
 
 def cancel_post(posts, args):
 	for post in json.loads(posts):
-		project = frappe.get_value("Operations Post", post, "project")
-		end_date = frappe.get_value("Contracts", {"project": project}, "end_date")
+		project = frappe.get_value("Post Schedule", post, "project")
 
-		for date in	pd.date_range(start=args.cancel_from_date, end=end_date):
-			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post}):
-				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post})
+		for date in	pd.date_range(start=args.cancel_from_date, end=args.cancel_end_date):
+			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
+				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
 			else: 
 				doc = frappe.new_doc("Post Schedule")
-				doc.post = post
+				doc.post = post["post"]
 				doc.date = cstr(date.date())	
 			doc.paid = args.suspend_paid
 			doc.unpaid = args.suspend_unpaid
@@ -390,13 +429,14 @@ def post_off(posts, args):
 						set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
 
 			elif args.repeat == "Yearly":
-				for date in	pd.date_range(start=post["date"], end=args.repeat_till, freq=pd.DateOffset(years=1)):
-					set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
+				for post in json.loads(posts):
+					for date in	pd.date_range(start=post["date"], end=args.repeat_till, freq=pd.DateOffset(years=1)):
+						set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
 	frappe.db.commit()
 
 def set_post_off(post, date, post_off_paid, post_off_unpaid):
-	if frappe.db.exists("Post Schedule", {"date": date, "post": post}):
-		doc = frappe.get_doc("Post Schedule", {"date": date, "post": post})
+	if frappe.db.exists("Post Schedule", {"date": date, "post": post["post"]}):
+		doc = frappe.get_doc("Post Schedule", {"date": date, "post": post["post"]})
 	else: 
 		doc = frappe.new_doc("Post Schedule")
 		doc.post = post
@@ -436,8 +476,9 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Yearly":
-				for date in	pd.date_range(start=employee["date"], end=repeat_till, freq=pd.DateOffset(years=1)):
-					frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
+				for employee in json.loads(employees):
+					for date in	pd.date_range(start=employee["date"], end=repeat_till, freq=pd.DateOffset(years=1)):
+						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 def set_dayoff(employee, date):
 	if frappe.db.exists("Employee Schedule", {"date": date, "employee": employee}):
@@ -455,6 +496,7 @@ def set_dayoff(employee, date):
 	doc.project = None
 	doc.employee_availability = "Day Off"
 	doc.post_abbrv = None
+	doc.roster_type = 'Basic'
 	doc.save()
 
 
@@ -499,7 +541,7 @@ def assign_job(employee, start_date, end_date, shift, post_type):
 	print("------------------[TIME TAKEN]===================", end-start)
 
 
-def update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, date, employee_availability, post_type):
+def update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, date, employee_availability, post_type, roster_type):
 	frappe.db.set_value("Employee Schedule", roster, "shift", val=shift)
 	frappe.db.set_value("Employee Schedule", roster, "site", val=site)
 	frappe.db.set_value("Employee Schedule", roster, "shift_type", val=shift_type)
@@ -508,6 +550,7 @@ def update_existing_schedule(roster, shift, site, shift_type, project, post_abbr
 	frappe.db.set_value("Employee Schedule", roster, "date", val=date)
 	frappe.db.set_value("Employee Schedule", roster, "employee_availability", val=employee_availability)
 	frappe.db.set_value("Employee Schedule", roster, "post_type", val=post_type)
+	frappe.db.set_value("Employee Schedule", roster, "roster_type", val=roster_type)
 
 
 @frappe.whitelist(allow_guest=True)

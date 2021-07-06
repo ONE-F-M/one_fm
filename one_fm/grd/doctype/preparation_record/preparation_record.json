@@ -13,7 +13,8 @@
   "residency_expiry_date",
   "renewal_or_extend",
   "ref_doctype",
-  "ref_name"
+  "ref_name",
+  "no_of_years"
  ],
  "fields": [
   {
@@ -54,7 +55,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Renewal Or Extend",
-   "options": "\nRenewal\nExtend 1 month\nExtend 2 months\nExtend 3 months"
+   "options": "\nRenewal\nExtend 1 month\nExtend 2 months\nExtend 3 months\nLocal Transfer\nCancellation"
   },
   {
    "allow_on_submit": 1,
@@ -77,10 +78,17 @@
    "fieldname": "nationality",
    "fieldtype": "Data",
    "label": "Nationality"
+  },
+  {
+   "depends_on": "eval: doc.renewal_or_extend == \"Renewal\"",
+   "fieldname": "no_of_years",
+   "fieldtype": "Select",
+   "label": "No. of Years",
+   "options": "\n1 Year\n2 Years\n3 Years"
   }
  ],
  "istable": 1,
- "modified": "2021-04-24 19:54:55.085533",
+ "modified": "2021-06-21 14:45:53.909130",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation Record",

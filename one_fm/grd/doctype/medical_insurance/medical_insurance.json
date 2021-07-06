@@ -6,10 +6,11 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
+  "date_of_application",
   "work_permit",
+  "employee",
+  "status",
   "preparation",
-  "category",
-  "civil_id",
   "moi_number",
   "column_break_3",
   "insurance_type",
@@ -17,41 +18,40 @@
   "details_section",
   "employee_name",
   "gender",
-  "nationality",
+  "civil_id",
+  "passport_expiry_date",
   "column_break_11",
+  "employee_id",
+  "nationality",
   "no_of_years",
-  "start_date",
-  "end_date",
-  "amount",
+  "pam_file_number",
   "amended_from",
   "items_section",
   "items",
   "grd_section",
   "grd_operator",
-  "apply_medical_insurance_online",
-  "submission_of_application",
   "upload_medical_insurance",
   "medical_insurance_submitted_by",
   "completed",
   "column_break_23",
-  "apply_medical_insurance_online_date",
-  "submission_of_application_date",
   "upload_medical_insurance_date",
+  "upload_payment_invoice_on",
   "medical_insurance_submitted_on",
   "grd_supervisor",
+  "finance_department_section",
   "payment_done",
-  "rpr_ref"
+  "rpr_ref",
+  "amount"
  ],
  "fields": [
   {
-   "depends_on": "eval:doc.category == 'Individual'",
-   "fetch_from": "work_permit.civil_id",
+   "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
-   "label": "CIVIL ID"
+   "label": "Civil ID",
+   "read_only": 1
   },
   {
-   "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "moi_number",
    "fieldtype": "Data",
    "hidden": 1,
@@ -62,55 +62,46 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval:doc.category == 'Individual'",
-   "fetch_from": "work_permit.pam_file_number",
    "fieldname": "insurance_type",
    "fieldtype": "Data",
-   "label": "Insurance Type"
+   "label": "Insurance Type",
+   "read_only": 1
   },
   {
-   "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "insurance_status",
    "fieldtype": "Data",
-   "label": "Insurance Status"
+   "label": "Insurance Status",
+   "read_only": 1
   },
   {
-   "depends_on": "eval:doc.category == 'Individual'",
    "fieldname": "details_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
   },
   {
-   "fetch_from": "work_permit.gender",
+   "fetch_from": "employee.gender",
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Gender",
-   "options": "Gender"
+   "options": "Gender",
+   "read_only": 1
   },
   {
-   "fetch_from": "work_permit.nationality",
+   "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
-   "label": "Nationality"
+   "label": "Nationality",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_11",
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "work_permit.duration_of_work_permit",
+   "fetch_from": "employee.one_fm_duration_of_work_permit",
    "fieldname": "no_of_years",
-   "fieldtype": "Int",
-   "label": "No Of Years"
-  },
-  {
-   "fieldname": "start_date",
-   "fieldtype": "Date",
-   "label": "Start Date"
-  },
-  {
-   "fieldname": "end_date",
-   "fieldtype": "Date",
-   "label": "End Date",
+   "fieldtype": "Data",
+   "label": "No Of Years",
    "read_only": 1
   },
   {
@@ -135,10 +126,12 @@
    "options": "MI-.YYYY.-"
   },
   {
-   "fetch_from": "work_permit.employee_name",
+   "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
-   "label": "Employee Name"
+   "in_list_view": 1,
+   "label": "Full Name",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.category == 'Group'",
@@ -151,15 +144,6 @@
    "options": "Medical Insurance Item"
   },
   {
-   "default": "Individual",
-   "fieldname": "category",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Category",
-   "options": "\nIndividual\nGroup",
-   "reqd": 1
-  },
-  {
    "fieldname": "grd_section",
    "fieldtype": "Section Break",
    "label": "GRD"
@@ -167,6 +151,7 @@
   {
    "fieldname": "grd_operator",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "GRD Operator",
    "options": "User",
    "read_only": 1
@@ -178,6 +163,7 @@
   {
    "fieldname": "grd_supervisor",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "GRD Supervisor",
    "options": "User",
    "read_only": 1
@@ -187,7 +173,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Completed",
-   "options": "\nYes\nNo"
+   "options": "\nYes\nNo",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -198,35 +185,12 @@
   {
    "fieldname": "work_permit",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Work Permit",
    "options": "Work Permit"
   },
   {
-   "default": "No",
-   "fieldname": "apply_medical_insurance_online",
-   "fieldtype": "Select",
-   "label": "Apply Medical Insurance Online",
-   "options": "\nYes\nNo"
-  },
-  {
-   "fieldname": "apply_medical_insurance_online_date",
-   "fieldtype": "Datetime",
-   "label": "Apply Medical Insurance Online Date"
-  },
-  {
-   "default": "No",
-   "fieldname": "submission_of_application",
-   "fieldtype": "Select",
-   "label": "Submission Of Application",
-   "options": "\nYes\nNo"
-  },
-  {
-   "fieldname": "submission_of_application_date",
-   "fieldtype": "Datetime",
-   "label": "Submission Of Application Date"
-  },
-  {
+   "allow_on_submit": 1,
    "fieldname": "upload_medical_insurance",
    "fieldtype": "Attach",
    "label": "Upload Medical Insurance"
@@ -234,18 +198,20 @@
   {
    "fieldname": "upload_medical_insurance_date",
    "fieldtype": "Datetime",
-   "label": "Upload Medical Insurance Date"
+   "label": "Upload Medical Insurance On"
   },
   {
    "fieldname": "medical_insurance_submitted_by",
    "fieldtype": "Link",
-   "label": "Medical Insurance Submitted By",
-   "options": "User"
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "medical_insurance_submitted_on",
    "fieldtype": "Datetime",
-   "label": "Medical Insurance Submitted on"
+   "label": "Submitted on",
+   "read_only": 1
   },
   {
    "fieldname": "rpr_ref",
@@ -258,10 +224,65 @@
    "hidden": 1,
    "label": "Preparation",
    "options": "Preparation"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "upload_payment_invoice_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Upload Payment Invoice On"
+  },
+  {
+   "fetch_from": "employee.valid_upto",
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Data",
+   "label": "Passport Expiry Date",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "finance_department_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Finance Department"
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date Of Application"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "bold": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nDraft\nSubmitted\nCanceled"
+  },
+  {
+   "fetch_from": "employee.pam_file_number",
+   "fieldname": "pam_file_number",
+   "fieldtype": "Data",
+   "label": "PAM File Number",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2021-04-25 12:56:05.863493",
+ "modified": "2021-06-30 08:24:32.486180",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
@@ -289,9 +310,11 @@
    "report": 1,
    "role": "GRD Operator",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -301,9 +324,12 @@
    "report": 1,
    "role": "GRD Supervisor",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
+ "search_fields": "civil_id,employee_id,date_of_application",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "civil_id"
 }

@@ -1,5 +1,5 @@
 {
- "autoname": "naming_series:",
+ "autoname": "format:PRE-{posting_date}-{######}",
  "creation": "2021-04-19 10:52:12.383997",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -7,9 +7,13 @@
  "field_order": [
   "naming_series",
   "posting_date",
+  "set_renewal_for_all",
   "preparation_record",
   "section_break_4",
   "hr_approval",
+  "hr_user",
+  "grd_operator",
+  "grd_supervisor",
   "submitted_by",
   "submitted_on",
   "amended_from"
@@ -60,25 +64,52 @@
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Series",
-   "options": "REF-.MM.-"
+   "options": "PRE-.MM.YY.-"
   },
   {
    "fieldname": "preparation_record",
    "fieldtype": "Table",
    "label": "Preparation Record",
-   "options": "Preparation Record",
-   "reqd": 1
+   "options": "Preparation Record"
+  },
+  {
+   "default": "0",
+   "fieldname": "set_renewal_for_all",
+   "fieldtype": "Check",
+   "label": "Set Renewal for All"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator",
+   "options": "User"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Supervisor",
+   "options": "User"
+  },
+  {
+   "fieldname": "hr_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "HR User",
+   "options": "User"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-04-24 12:40:18.257922",
- "modified_by": "Administrator",
+ "modified": "2021-06-22 12:39:56.091844",
+ "modified_by": "amnaalshawa96@gmail.com",
  "module": "GRD",
  "name": "Preparation",
  "owner": "Administrator",
  "permissions": [
   {
    "cancel": 1,
+   "create": 1,
    "delete": 1,
    "email": 1,
    "export": 1,
@@ -91,6 +122,7 @@
    "write": 1
   },
   {
+   "create": 1,
    "email": 1,
    "export": 1,
    "print": 1,

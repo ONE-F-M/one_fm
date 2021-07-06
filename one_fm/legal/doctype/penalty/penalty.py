@@ -21,7 +21,7 @@ class Penalty(Document):
 		message = _("""
 			You have been issued a penalty.<br>
 			Please take necessary action within 48 hours.<br>
-			<b>Note: Penalty will be automatically accepted after 48 hours.</b><br>
+			<b>Note: Penalty will be automatically rejected after 48 hours and commence a legal investigation into the matter.</b><br>
 			Link: {link}""".format(link=link))
 		frappe.sendmail([self.recipient_user], subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
 
@@ -185,16 +185,18 @@ def create_legal_inv(doctype, docname):
 	doc.create_legal_investigation()
 
 
-def automatic_accept():
+def automatic_reject():
 	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	print(now_datetime().strftime("%Y-%m-%d %H:%M"), time)
 	docs = frappe.get_all("Penalty", {"penalty_issuance_time": time, "workflow_state": "Penalty Issued"})
+	print(docs)
 
 	for doc in docs:
 		penalty = frappe.get_doc("Penalty", doc.name)
 		penalty.verified = 0
-		penalty.workflow_state = "Penalty Accepted"
+		penalty.reason_for_rejection = "Penalty was rejected after 48 hours automatically."
+		penalty.workflow_state = "Penalty Rejected"
 		penalty.save(ignore_permissions=True)
-		send_email_to_legal(penalty, _("Penalty was accepted after 48 hours automatically. Please review."))
+		send_email_to_legal(penalty, _("Penalty was rejected after 48 hours automatically. Please review."))
 	
 	frappe.db.commit()

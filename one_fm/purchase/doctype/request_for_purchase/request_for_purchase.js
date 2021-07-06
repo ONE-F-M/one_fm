@@ -36,7 +36,8 @@ frappe.ui.form.on('Request for Purchase', {
 		}
 		if (frm.doc.docstatus == 1){
 			if(frappe.session.user==frm.doc.owner && frm.doc.status == "Draft" && frm.doc.items_to_order && frm.doc.items_to_order.length > 0){
-				frm.add_custom_button(__('Send Request'), () => frm.events.send_request_for_purchase(frm, 'Draft Request')).addClass('btn-primary');
+				// Changed from "Send request" while removing authorizations and approvals.
+				frm.add_custom_button(__('Confirm Item Details'), () => frm.events.send_request_for_purchase(frm, 'Draft Request')).addClass('btn-primary');
 			}
 			if("accepter" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.accepter && frm.doc.status == "Draft Request"){
 				frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_approve_request_for_purchase(frm, 'Accepted')).addClass('btn-primary');
@@ -65,9 +66,10 @@ frappe.ui.form.on('Request for Purchase', {
 		});
 		d.show();
 	},
+	//Currently just being used as confirmation(i.e bypassing approvals)
 	send_request_for_purchase: function(frm, status) {
 		frappe.confirm(
-			__('Do You Want to Send this Request for Purchase'),
+			__('Do You Want to confirm this Request for Purchase'),
 			function(){
 				// Yes
 				frappe.call({
@@ -157,6 +159,8 @@ frappe.ui.form.on('Request for Purchase', {
 			items_to_order.description = item.description
 			items_to_order.uom = item.uom
 			items_to_order.qty = item.qty
+			items_to_order.delivery_date = item.schedule_date
+			items_to_order.request_for_material = item.request_for_material
 		});
 		frm.refresh_fields();
 	},
@@ -171,9 +175,10 @@ var set_intro_related_to_status = function(frm) {
 			frm.set_intro(__("Create Request for Quotation (Optional)."), 'yellow');
 			frm.set_intro(__("Compare Quotations if Quotaiton Available (Optional)."), 'yellow');
 			frm.set_intro(__("Fill Items to Order - Check Supplier and Item Code set Correctly."), 'yellow');
-			frm.set_intro(__("Requester Click Send Request Button to notify Accepter"), 'yellow');
-			frm.set_intro(__("On Accept notify Approver"), 'yellow');
-			frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
+			frm.set_intro(__("Requester can use Confirm button once items are filled and updated"), 'yellow');
+			frm.set_intro(__("Then you will be able to create a PO from the create dropdown button"), 'yellow');
+			// frm.set_intro(__("On Accept notify Approver"), 'yellow');
+			// frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
 		}
 		if(frm.doc.status == 'Approved'){
 			frappe.db.get_value("Purchase Order", {"one_fm_request_for_purchase": frm.doc.name}, "name", function(r) {
@@ -186,9 +191,11 @@ var set_intro_related_to_status = function(frm) {
 	if (frm.doc.docstatus == 1){
 		if(frm.doc.status == "Draft" && !frm.doc.items_to_order){
 			frm.set_intro(__("Fill Items to Order - Check Supplier and Item Code set Correctly."), 'yellow');
-			frm.set_intro(__("Requester Click Send Request Button to notify Accepter"), 'yellow');
-			frm.set_intro(__("On Accept notify Approver"), 'yellow');
-			frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
+			frm.set_intro(__("Requester Click Confirm Button to confirm"), 'yellow');
+			frm.set_intro(__("On Confirmation, Requester can create PO"), 'yellow');
+			// frm.set_intro(__("Requester Click Send Request Button to notify Accepter"), 'yellow');
+			// frm.set_intro(__("On Accept notify Approver"), 'yellow');
+			// frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
 		}
 		if(frm.doc.status == "Draft Request"){
 			frm.set_intro(__("On Accept notify Approver"), 'yellow');

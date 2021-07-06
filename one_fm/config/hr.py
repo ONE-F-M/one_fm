@@ -85,6 +85,12 @@ def get_data():
                 {
 					"type": "doctype",
 					"name": "Applicant Lead",
+				},
+				{
+					"type": "report",
+					"is_query_report": True,
+					"name": "Applicant Lead Report",
+					"doctype": "Applicant Lead"
 				}
 			]
 		},
@@ -136,6 +142,12 @@ def get_data():
                 {
 					"type": "doctype",
 					"name": "Indemnity Policy",
+				},
+				{
+					"type": "report",
+					"is_query_report": True,
+					"name": "Employee Indemnity Calculation",
+					"doctype": "Employee"
 				}
 			]
 		},

@@ -21,6 +21,7 @@
   "uom",
   "conversion_factor",
   "stock_uom",
+  "quantity_to_transfer",
   "col_break2",
   "t_warehouse",
   "schedule_date",
@@ -36,7 +37,7 @@
   "manufacturer_part_no",
   "more_info",
   "lead_time_date",
-  "min_order_qty",
+  "purchased_qty",
   "projected_qty",
   "ordered_qty",
   "received_qty"
@@ -258,18 +259,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "min_order_qty",
-   "fieldtype": "Float",
-   "label": "Min Order Qty",
-   "no_copy": 1,
-   "oldfieldname": "min_order_qty",
-   "oldfieldtype": "Currency",
-   "print_hide": 1,
-   "print_width": "70px",
-   "read_only": 1,
-   "width": "70px"
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "projected_qty",
    "fieldtype": "Float",
@@ -342,16 +331,34 @@
    "allow_on_submit": 1,
    "fieldname": "pur_qty",
    "fieldtype": "Float",
-   "label": "Quantity to purchase",
+   "label": "Quantity to Purchase",
    "no_copy": 1,
    "print_hide": 1,
+   "report_hide": 1
+  },
+  {
+   "fieldname": "purchased_qty",
+   "fieldtype": "Float",
+   "label": "Purchased Quantity",
+   "no_copy": 1,
+   "oldfieldname": "min_order_qty",
+   "oldfieldtype": "Currency",
+   "print_hide": 1,
+   "print_width": "70px",
    "read_only": 1,
+   "width": "70px"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "quantity_to_transfer",
+   "fieldtype": "Float",
+   "label": "Quantity to Transfer",
    "report_hide": 1
   }
  ],
  "istable": 1,
- "modified": "2021-04-21 01:41:17.286218",
- "modified_by": "Administrator",
+ "modified": "2021-06-03 10:39:04.786905",
+ "modified_by": "o.asim@armor-services.com",
  "module": "Purchase",
  "name": "Request for Material Item",
  "owner": "Administrator",

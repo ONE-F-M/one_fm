@@ -1,4 +1,5 @@
 {
+ "allow_rename": 1,
  "creation": "2020-04-28 18:51:50.039815",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -6,9 +7,9 @@
  "field_order": [
   "site",
   "column_break_2",
-  "project_name",
   "project",
   "shift_details_section",
+  "service_type",
   "shift_type",
   "column_break_8",
   "supervisor",
@@ -28,7 +29,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Site",
-   "options": "Operations Site"
+   "options": "Operations Site",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_2",
@@ -37,8 +39,9 @@
   {
    "fetch_from": "site.project",
    "fieldname": "project",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Project",
+   "options": "Project",
    "read_only": 1
   },
   {
@@ -50,16 +53,8 @@
    "fieldname": "shift_type",
    "fieldtype": "Link",
    "label": "Shift Type",
-   "options": "Shift Type"
-  },
-  {
-   "fetch_from": "site.project_name",
-   "fieldname": "project_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Project Name",
-   "read_only": 1
+   "options": "Shift Type",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_12",
@@ -120,9 +115,17 @@
   {
    "fieldname": "column_break_15",
    "fieldtype": "Column Break"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "service_type",
+   "fieldtype": "Link",
+   "label": "Service Type",
+   "options": "Service Type",
+   "reqd": 1
   }
  ],
- "modified": "2020-09-25 18:10:23.524842",
+ "modified": "2021-06-18 15:24:30.130943",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",

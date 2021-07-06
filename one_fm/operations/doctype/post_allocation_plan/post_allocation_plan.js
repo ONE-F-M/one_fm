@@ -54,8 +54,8 @@ function add_employees(frm){
 			
 			frm.set_value('assignments', '');
 
-			// Fill posts in decreasing priority level. e.g Level 5 first, Level 4 then......Level 1 at the end
-			for(let i=5; i>=1; i--){
+			// Fill posts in decreasing priority level. e.g Level 10 first, Level 9 then......Level 1 at the end
+			for(let i=10; i>=1; i--){
 				employees = (posts[i] && assign_post(frm, posts[i], employees)) || employees;
 			}
 
@@ -75,10 +75,10 @@ function add_employees(frm){
 function assign_post(frm, posts, employees){
 	posts.forEach(function(i,v){
 		let {designations} = posts[v];
-
+		
 		// Select matching designations employees only and pass to get_best_employee_match
-		let matching_employees = employees.filter(emp => designations.includes(emp.designation))
-			
+		let matching_employees = employees.filter(emp => designations.includes(emp.designation));
+
 		let match = get_best_employee_match(posts[v], matching_employees);
 
 		frm.add_child('assignments', {
@@ -96,20 +96,74 @@ function assign_post(frm, posts, employees){
 	return employees;
 }
 
+//Returns list of certifications that have not expired
+function get_valid_employee_certifications(employee){
+	let result = [];
+	employee.certifications.forEach(function(certification,i){
+		let date = new Date();
+		let today = date.toISOString().slice(0,10);
+		let modified_today = new Date(today);
+		if(certification.expiry_date){
+			let expiry_date = new Date(certification.expiry_date);
+			if(modified_today < expiry_date){
+				result.push(certification.certification);
+			}
+		}else{
+			result.push(certification.certification);
+		}	
+	})
+
+	return result;
+}
+
+//This function returns list of licenses that have not expired
+function get_valid_employee_licenses(employee){
+	let result = [];
+	employee.licenses.forEach(function(license,i){
+		let date = new Date();
+		let today = date.toISOString().slice(0,10);
+		let modified_today = new Date(today);
+		if(license.expiry_date){
+			let expiry_date = new Date(license.expiry_date);
+			if(modified_today < expiry_date){
+				result.push(license.license);
+			}
+		}else{
+			result.push(license.license);
+		}
+	})
+
+	return result;
+}
+
 function get_best_employee_match(post, employees){
 	// Create score based by summing up every (Employee Skill/Post Skill) and sorting based on the score.
 	let scores = [];
-	let {skills, designations, gender} = post;
+	let {skills, designations, gender, certifications, licenses} = post;
 
 	employees.forEach(function(employee,i){
 		let skill_score = 0;
+		let certification_match = 1;
+		let license_match = 1;
+
 		// Check if all the employee skills are matching the post skills.
 		let post_skill_list = skills.map(a => a.skill);
 		let employee_skill_list = employee.skills.map(a => a.skill);
 		let skill_match = post_skill_list.every(val => employee_skill_list.includes(val)) ? 1 : 0;
 
+		//If post has certifications, check if employee has the post certifications
+		if(certifications.length > 0){
+			let employee_certification_list = get_valid_employee_certifications(employee);
+			certification_match = employee_certification_list.some(val => certifications.includes(val)) ? 1 : 0;
+		}
+		//If post has licenses, check if employee has the post licenses
+		if(licenses.length > 0){
+			let employee_license_list = get_valid_employee_licenses(employee);
+			license_match = employee_license_list.some(val => licenses.includes(val)) ? 1 : 0;
+		}	
+
 		// If all skills match, calculate the skill score
-		if(skill_match){
+		if(skill_match && certification_match && license_match){
 			let score_detail = ``;
 			let skill_length = 0;
 			skills.forEach(function(skill, i){

@@ -108,7 +108,8 @@ def make_job_applicant(source_name, target_doc=None):
 			"email_id": "one_fm_email_id",
 			"mobile_no": "one_fm_contact_number",
 			"nationality": "one_fm_nationality",
-			"gender": "one_fm_gender"
+			"gender": "one_fm_gender",
+			"applicant_lead": "name"
 		}
 	}}, target_doc)
 

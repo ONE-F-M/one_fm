@@ -68,7 +68,11 @@ doctype_js = {
 	"Asset Movement": "public/js/doctype_js/asset_movement.js",
 	"Job Opening": "public/js/doctype_js/job_opening.js",
 	"Warehouse": "public/js/doctype_js/warehouse.js",
-	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js"
+	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",
+	"Purchase Order": "public/js/doctype_js/purchase_order.js",
+	"Journal Entry": "public/js/doctype_js/journal_entry.js",
+	"Payment Entry": "public/js/doctype_js/payment_entry.js",
+	"Item Price": "public/js/doctype_js/item_price.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -136,6 +140,10 @@ doc_events = {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty"
 	},
+	"Purchase Order": {
+		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
+		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty"
+	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
 		"validate": "one_fm.utils.validate_hajj_leave",
@@ -152,7 +160,10 @@ doc_events = {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
 	},
 	"Job Applicant": {
-		"validate": "one_fm.utils.validate_job_applicant",
+		"validate": "one_fm.one_fm.utils.validate_job_applicant",
+		"validate": "one_fm.one_fm.utils.read_civil_id_image",
+		"validate": "one_fm.one_fm.utils.send_recruiter_notification_with_type_of_issues",
+		"validate": "one_fm.one_fm.utils.send_grd_notification_to_check_applicant_document",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
 	"Job Offer": {
@@ -198,8 +209,7 @@ doc_events = {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	"Project": {
-		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
-		"on_update": "one_fm.one_fm.project_custom.on_project_save"
+		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
@@ -214,6 +224,9 @@ doc_events = {
 	},
 	"Salary Slip": {
 		"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit"
+	},
+	"Employee Skill Map":{
+		"validate":"one_fm.api.doc_events.validate_certifications_and_licenses"
 	}
 }
 
@@ -255,6 +268,8 @@ scheduler_events = {
 		'one_fm.utils.pam_authorized_signatory',
 		'one_fm.utils.hooked_leave_allocation_builder',
 		'one_fm.utils.increase_daily_leave_balance',
+		'one_fm.one_fm.hr_utils.daily_indemnity_allocation_builder',
+		'one_fm.one_fm.hr_utils.allocate_daily_indemnity',
 		'one_fm.utils.check_grp_operator_submission_daily',
 		'one_fm.utils.check_grp_supervisor_submission_daily',
 		'one_fm.utils.check_pam_visa_approval_submission_daily',
@@ -264,6 +279,9 @@ scheduler_events = {
 		'one_fm.uniform_management.doctype.employee_uniform.employee_uniform.notify_gsd_and_employee_before_uniform_expiry',
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
+		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
+		'one_fm.grd.utils.sendmail_reminder1',
+		'one_fm.grd.utils.sendmail_reminder2',
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -278,16 +296,15 @@ scheduler_events = {
 
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly"
-		
+
 	],
 
 	"cron": {
-		"0 8 1 * *":[# Monthy event at 8 am
-			"one_fm.one_fm.grd.doctype.preparation.create_preparation"
-
+		"0 8 1 * *": [# first day of the Month at 8 am 
+			"one_fm.one_fm.grd.doctype.preparation.create_preparation",
 		],
 		"0/1 * * * *": [
-			"one_fm.legal.doctype.penalty.penalty.automatic_accept",
+			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			"one_fm.api.tasks.update_shift_type"
 		],
 		"0/5 * * * *": [
@@ -302,30 +319,38 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"0 16 * * *":[
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_finance_dept_for_payment',
-			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online'
+			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
+			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online',
+			'one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_first_grd_operator',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator'
 		],
 		"0 4 * * *": [
-			'one_fm.utils.check_grp_operator_submission_four',
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.utils.check_grp_operator_submission_four'
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
 		],
 		"0 8 * * *": [
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
-			'one_fm.utils.send_gp_letter_attachment_no_response'
+			'one_fm.utils.send_gp_letter_attachment_no_response',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
+			
+		],
+		"30 8 * * *":[
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator',
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',
 			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator',
 			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_grd_operator_check_approval'
-		
+
 		],
 		"30 9 * * *": [
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator',
-			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first'
+			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first',
+			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.moi_notify_again_grd_operator'
 			
 		],
 		"0 11 * * *": [

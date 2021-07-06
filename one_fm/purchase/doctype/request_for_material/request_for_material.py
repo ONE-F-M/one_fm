@@ -90,6 +90,12 @@ class RequestforMaterial(BuyingController):
 						frappe.bold(d.warehouse), frappe.bold(d.item_code))
 						+ '<br><br>' + _("Available quantity is {0}, Requested quantity is {1}. Please make a purchase request for the remaining.").format(frappe.bold(d.actual_qty),
 							frappe.bold(d.qty)), title=_('Insufficient Stock'))
+				if (d.quantity_to_transfer+d.pur_qty)>d.qty:
+					updated_total = d.quantity_to_transfer+d.pur_qty
+					frappe.throw(_("Row {0}: Total quantity to transfer and purchase cannot exceed the original requested Quantiy: {1} for the Item: {2}").format(d.idx,
+						frappe.bold(d.qty), frappe.bold(d.item_code))
+						+ '<br><br>' + _("Current total quantity to purchase/transfer is {0}, Requested quantity is {1}. Please make a purchase request for the remaining.").format(frappe.bold(updated_total),
+							frappe.bold(d.qty)), title=_('Quantity Exceeding'))
 
 	def set_item_fields(self):
 		if self.items and self.type == 'Stock':
@@ -178,7 +184,7 @@ class RequestforMaterial(BuyingController):
 						format(_(self.doctype), self.name),
 					frappe.InvalidStatusError
 				)
-
+    #For quantities available in warehouse
 	def update_completed_qty(self, mr_items=None, update_modified=True):
 		if not mr_items:
 			mr_items = [d.name for d in self.get("items")]
@@ -195,6 +201,22 @@ class RequestforMaterial(BuyingController):
 						frappe.throw(_("The total Issue / Transfer quantity {0} in Material Request {1}  \
 							cannot be greater than requested quantity {2} for Item {3}").format(d.ordered_qty, d.parent, d.qty, d.item_code))
 
+				frappe.db.set_value(d.doctype, d.name, "ordered_qty", d.ordered_qty)
+	#for quantities that had to be purchased
+	def update_purchased_qty(self, mr_items=None, update_modified=True):
+		if not mr_items:
+			mr_items = [d.name for d in self.get("items")]
+
+		for d in self.get("items"):
+			if d.name in mr_items:
+				if self.type in ("Individual", "Project", "Project Mobilization","Stock","Onboarding"):
+					d.purchased_qty =  flt(frappe.db.sql("""select sum(qty)
+						from `tabPurchase Order Item` where material_request = %s
+						and material_request_item = %s and docstatus = 1""",
+						(self.name, d.name))[0][0])
+					d.ordered_qty = d.ordered_qty + d.purchased_qty
+				
+				frappe.db.set_value(d.doctype, d.name, "purchased_qty", d.purchased_qty)
 				frappe.db.set_value(d.doctype, d.name, "ordered_qty", d.ordered_qty)
 
 		self._update_percent_field({
@@ -224,13 +246,13 @@ def update_completed_and_requested_qty(stock_entry, method):
 
 					mr_obj.update_completed_qty(mr_item_rows)
 
-def update_completed_purchase_qty(purchase_doc, method):
-		if purchase_doc.doctype == "Request for Purchase":
+def update_completed_purchase_qty(purchase_order, method):
+		if purchase_order.doctype == "Purchase Order":
 			material_request_map = {}
 
-			for d in purchase_doc.get("items"):
-				if d.request_for_material:
-					material_request_map.setdefault(d.request_for_material, []).append(d.request_for_material_item)
+			for d in purchase_order.get("items"):
+				if d.material_request:
+					material_request_map.setdefault(d.request_for_material, []).append(d.material_request_item)
 
 			for mr, mr_item_rows in material_request_map.items():
 				if mr and mr_item_rows:
@@ -240,7 +262,7 @@ def update_completed_purchase_qty(purchase_doc, method):
 						frappe.throw(_("{0} {1} is cancelled or stopped").format(_("Request for Material"), mr),
 							frappe.InvalidStatusError)
 
-					mr_obj.update_completed_qty(mr_item_rows)
+					mr_obj.update_purchased_qty(mr_item_rows)
 def send_email(doc, recipients, message, subject):
 	frappe.sendmail(
 		recipients= recipients,
@@ -291,6 +313,22 @@ def bring_designation_items(designation):
 	return {'item_list': item_list}
 
 @frappe.whitelist()
+def bring_erf_items(erf):
+	erf_doc = frappe.get_doc('ERF', erf)
+	item_list = []
+	if erf_doc:
+		for item in erf_doc.get("tool_request_item"):
+			item_list.append({
+				# 'item':item.item,
+				'item_name':item.item,
+				'quantity':item.quantity,
+				# 'uom':item.uom
+			})
+	else:
+		frappe.throw(_("No ERF named {} exist").format(erf))
+	return {'item_list': item_list}
+
+@frappe.whitelist()
 def update_status(name, status):
 	request_for_material = frappe.get_doc('Request for Material', name)
 	request_for_material.check_permission('write')
@@ -299,8 +337,9 @@ def update_status(name, status):
 @frappe.whitelist()
 def make_stock_entry(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
-		qty = flt(obj.qty)/ target.conversion_factor \
-			if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.actual_qty)
+		# qty = flt(obj.qty)/ target.conversion_factor \
+		# 	if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.quantity_to_transfer)
+		qty = obj.quantity_to_transfer
 		target.qty = qty
 		target.transfer_qty = qty * obj.conversion_factor
 		target.conversion_factor = obj.conversion_factor
@@ -341,8 +380,9 @@ def make_stock_entry(source_name, target_doc=None):
 @frappe.whitelist()
 def make_stock_entry_issue(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
-		qty = flt(obj.qty)/ target.conversion_factor \
-			if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.actual_qty)
+		# qty = flt(obj.qty)/ target.conversion_factor \
+		# 	if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.quantity_to_transfer)
+		qty = obj.quantity_to_transfer
 		target.qty = qty
 		target.transfer_qty = qty * obj.conversion_factor
 		target.conversion_factor = obj.conversion_factor
@@ -470,7 +510,8 @@ def make_request_for_purchase(source_name, target_doc=None):
 		"Request for Material": {
 			"doctype": "Request for Purchase",
 			"field_map": [
-				["name", "request_for_material"]
+				["name", "request_for_material"],
+				["t_warehouse","warehouse"]
 			],
 			"validation": {
 				"docstatus": ["=", 1]

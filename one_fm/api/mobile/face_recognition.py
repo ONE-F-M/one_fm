@@ -1,9 +1,15 @@
 import frappe, ast, base64, time
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import setup_directories, create_dataset, verify_face, recognize_face, check_in
+from one_fm.api.mobile.roster import get_current_shift
+
 
 @frappe.whitelist()
 def enroll(video):
+	"""
+	Params:
+	video: base64 encoded data
+	"""
 	try:
 		setup_directories()
 		content = base64.b64decode(video)
@@ -20,7 +26,8 @@ def enroll(video):
 	except Exception as exc:
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
-		raise exc
+		return frappe.utils.response.report_error(exc)
+
 
 @frappe.whitelist()
 def verify(video, log_type, skip_attendance, latitude, longitude):
@@ -42,25 +49,35 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 			live_start = time.time()
 			blinks, image = verify_face(OUTPUT_IMAGE_PATH)     #calling verification function for face
 			if blinks > 0:
-				live_end = time.time()
-				print("Liveness Detection Time =", live_end-live_start)
-				print("Liveness Detection SUccess")
-				recog_start=time.time()
 				if recognize_face(image):   #calling recognition function 
-					recog_end = time.time()
-					print("Face Recognition Time = ", recog_end-recog_start)
-					print("Face Recognition Success")
 					return check_in(log_type, skip_attendance, latitude, longitude)
 				else:
-					recog_end = time.time()
-					print("Face Recognition Time = ", recog_end-recog_start)
-					print("Face Recognition Failed")
 					frappe.throw(_('Face Recognition Failed. Please try again.'))	
 			else:
-				live_end = time.time()
-				print("Liveness Detection Time = ", live_end - live_start)
-				print("Liveness Detection Failed")
 				frappe.throw(_('Liveness Detection Failed. Please try again.'))
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
-		raise exc
+		return frappe.utils.response.report_error(exc)
+
+
+
+
+@frappe.whitelist()
+def get_site_location(employee):
+	try:
+		shift = get_current_shift(employee)
+		if shift is not None:
+			site = frappe.get_value("Operations Shift", shift, "site")
+			return frappe.db.sql("""
+			SELECT loc.latitude, loc.longitude, loc.geofence_radius
+			FROM `tabLocation` as loc
+			WHERE
+				loc.name in(SELECT site_location FROM `tabOperations Site` where name="{site}")
+			""".format(site=site), as_dict=1)
+		else:
+			frappe.throw(_('You Are Not Assigned with a Shift.'))
+			
+	except Exception as e:
+		print(frappe.get_traceback())
+		frappe.log_error(frappe.get_traceback())
+		return frappe.utils.response.report_error(e)

@@ -10,15 +10,12 @@
   "status",
   "column_break_2",
   "naming_series",
-  "section_break_4",
-  "company_name_arabic",
+  "section_break_6",
+  "date_of_request",
   "column_break_8",
-  "company_pifss_registration_no",
-  "column_break_10",
-  "signatory_name",
-  "authorized_signatory",
-  "column_break_11",
-  "pifss_authorized_signatory",
+  "date_of_registeration",
+  "column_break_9",
+  "date_of_acceptance",
   "employee_details_section",
   "employee",
   "employee_name",
@@ -30,33 +27,49 @@
   "civil_id",
   "mobile",
   "address",
+  "date_of_birth",
   "nationality_details_section",
   "nationality_no",
   "nationality_subject",
-  "data_20",
-  "date_of_birth",
+  "column_break_41",
   "date_of_naturalization",
   "registration_details_section",
   "date_of_joining",
-  "column_break_29",
+  "column_break_25",
   "subscription_start_date",
-  "column_break_31",
+  "column_break_27",
   "position",
-  "column_break_33",
+  "column_break_29",
   "salary",
-  "end_of_service_section",
-  "attach_resignationtermination",
-  "end_date",
-  "column_break_37",
-  "reason_for_resignationtermination",
   "registration_section",
   "registration_application_number",
-  "column_break_41",
+  "attach_resignationtermination",
+  "reason_for_resignationtermination",
+  "column_break_37",
   "attach_signed_form",
+  "employment_contract",
   "civil_id_copy",
   "column_break_44",
   "date_of_birth_certificate",
-  "nationality_proof"
+  "nationality_proof",
+  "section_break_4",
+  "company_name_arabic",
+  "user",
+  "signature_date",
+  "employee_signature_date",
+  "column_break_33",
+  "company_pifss_registration_no",
+  "signatory_name",
+  "authorized_signatory",
+  "pifss_authorized_signatory",
+  "end_of_service_section",
+  "end_date",
+  "notify_for_signature",
+  "grd_operator",
+  "grd_supervisor",
+  "onboarding",
+  "amended_from",
+  "notify_grd_operator"
  ],
  "fields": [
   {
@@ -74,8 +87,10 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
-   "options": "Submitted\nUnder Process\nAccepted\nRejected"
+   "options": "\nDraft\nUnder Process\nApplied\nAccepted\nRejected",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_2",
@@ -117,10 +132,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "authorized_signatory",
    "fieldtype": "Link",
    "hidden": 1,
@@ -138,7 +149,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Employee",
-   "options": "Employee"
+   "options": "Employee",
+   "reqd": 1
   },
   {
    "fetch_from": "employee.employee_name",
@@ -150,28 +162,28 @@
   {
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "First Name in Arabic",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Second Name in Arabic",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Third Name in Arabic",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "fourth_name",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Fourth Name in Arabic",
    "read_only": 1
   },
@@ -182,21 +194,21 @@
   {
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Civil ID",
    "read_only": 1
   },
   {
    "fetch_from": "employee.cell_number",
    "fieldname": "mobile",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Mobile ",
    "read_only": 1
   },
   {
    "fetch_from": "employee.permanent_address",
    "fieldname": "address",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Address",
    "read_only": 1
   },
@@ -206,19 +218,19 @@
    "label": "Nationality Details"
   },
   {
+   "fetch_from": "employee.nationality_no",
    "fieldname": "nationality_no",
    "fieldtype": "Data",
-   "label": "Nationality No"
+   "label": "Nationality No",
+   "read_only": 1
   },
   {
+   "fetch_from": "employee.nationality_subject",
    "fieldname": "nationality_subject",
-   "fieldtype": "Select",
+   "fieldtype": "Data",
    "label": "Nationality Subject",
-   "options": "\n\u0627\u0644\u0623\u0648\u0644\u064a\n\u0627\u0644\u062b\u0627\u0646\u064a\u0629\n\u0627\u0644\u062b\u0627\u0644\u062b\u0629\n\u0627\u0644\u0631\u0627\u0628\u0639\u0629\n\u0627\u0644\u062e\u0627\u0645\u0633\u0629\n\u0627\u0644\u0633\u0627\u0628\u0639\u0629\n\u0627\u0644\u062b\u0627\u0645\u0646\u0629"
-  },
-  {
-   "fieldname": "data_20",
-   "fieldtype": "Column Break"
+   "options": "\n\u0627\u0644\u0623\u0648\u0644\u064a\n\u0627\u0644\u062b\u0627\u0646\u064a\u0629\n\u0627\u0644\u062b\u0627\u0644\u062b\u0629\n\u0627\u0644\u0631\u0627\u0628\u0639\u0629\n\u0627\u0644\u062e\u0627\u0645\u0633\u0629\n\u0627\u0644\u0633\u0627\u0628\u0639\u0629\n\u0627\u0644\u062b\u0627\u0645\u0646\u0629",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.date_of_birth",
@@ -228,9 +240,11 @@
    "read_only": 1
   },
   {
+   "fetch_from": "employee.date_of_naturalization",
    "fieldname": "date_of_naturalization",
    "fieldtype": "Date",
-   "label": "Date of naturalization"
+   "label": "Date of naturalization",
+   "read_only": 1
   },
   {
    "fieldname": "registration_details_section",
@@ -240,28 +254,21 @@
   {
    "fetch_from": "employee.date_of_joining",
    "fieldname": "date_of_joining",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Date of Joining",
    "read_only": 1
   },
   {
-   "fieldname": "column_break_29",
-   "fieldtype": "Column Break"
-  },
-  {
    "fetch_from": "employee.date_of_joining",
    "fieldname": "subscription_start_date",
-   "fieldtype": "Read Only",
-   "label": "Subscription Start Date"
-  },
-  {
-   "fieldname": "column_break_31",
-   "fieldtype": "Column Break"
+   "fieldtype": "Data",
+   "label": "Subscription Start Date",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "position",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Position",
    "read_only": 1
   },
@@ -272,7 +279,7 @@
   {
    "fetch_from": "employee.one_fm_basic_salary",
    "fieldname": "salary",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Salary",
    "read_only": 1
   },
@@ -283,6 +290,7 @@
    "label": "End of Service"
   },
   {
+   "depends_on": "eval:doc.request_type == \"End of Service\"",
    "fieldname": "attach_resignationtermination",
    "fieldtype": "Attach",
    "label": "Attach Resignation/Termination"
@@ -297,6 +305,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.request_type == \"End of Service\"",
    "fieldname": "reason_for_resignationtermination",
    "fieldtype": "Small Text",
    "label": "Reason for Resignation/Termination"
@@ -305,9 +314,10 @@
    "depends_on": "eval:doc.request_type==\"Registration\"",
    "fieldname": "registration_section",
    "fieldtype": "Section Break",
-   "label": "Registration"
+   "label": "Attachments"
   },
   {
+   "depends_on": "eval:doc.status != \"Draft\"",
    "fieldname": "registration_application_number",
    "fieldtype": "Data",
    "label": "Registration Application Number"
@@ -353,12 +363,119 @@
    "label": "Signatory Name"
   },
   {
-   "fieldname": "column_break_11",
+   "columns": 2,
+   "depends_on": "pifss_authorized_signatory",
+   "fieldname": "user",
+   "fieldtype": "Data",
+   "label": "User"
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_for_signature",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify for Signature"
+  },
+  {
+   "fieldname": "date_of_request",
+   "fieldtype": "Date",
+   "label": "Date Of Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date_of_registeration",
+   "fieldtype": "Date",
+   "label": "Date Of Registration",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date_of_acceptance",
+   "fieldtype": "Date",
+   "label": "Date Of Acceptance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employment_contract",
+   "fieldtype": "Attach",
+   "label": "Employment Contract"
+  },
+  {
+   "fieldname": "social_security_clearance",
+   "fieldtype": "Attach",
+   "label": "Social Security Clearance"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_9",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator",
+   "options": "User"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Supervisor",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_25",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_27",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_29",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "onboarding",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Onboarding",
+   "options": "User"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PIFSS Form 103",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_grd_operator",
+   "fieldtype": "Check",
+   "label": "Notify GRD Operator"
+  },
+  {
+   "fieldname": "signature_date",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "label": "Signature Date"
+  },
+  {
+   "fieldname": "employee_signature_date",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "label": "Employee Signature Date"
   }
  ],
- "modified": "2021-01-21 09:06:01.064393",
- "modified_by": "Administrator",
+ "is_submittable": 1,
+ "modified": "2021-06-16 11:51:31.757029",
+ "modified_by": "amnaalshawa96@gmail.com",
  "module": "GRD",
  "name": "PIFSS Form 103",
  "owner": "Administrator",
@@ -374,6 +491,29 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Onboarding",
+   "share": 1
   }
  ],
  "sort_field": "modified",
