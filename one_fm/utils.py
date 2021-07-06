@@ -1602,3 +1602,22 @@ def set_warehouse_contact_from_project(doc, method):
             links.link_doctype = doc.doctype
             links.link_name = doc.name
             address.save(ignore_permissions=True)
+
+def bank_account_on_update(doc, method):
+    update_onboarding_doc_for_bank_account(doc)
+
+def update_onboarding_doc_for_bank_account(doc):
+    if doc.onboard_employee:
+        progress_wf_list = {'Draft': 0, 'Open Request': 30, 'Processing Bank Account Opening': 70,
+            'Rejected by Accounts': 100, 'Active Account': 100}
+        bank_account_status = 1
+        if doc.workflow_state == 'Rejected by Accounts':
+            bank_account_status = 2
+        if doc.workflow_state in progress_wf_list:
+            progress = progress_wf_list[doc.workflow_state]
+        oe = frappe.get_doc('Onboard Employee', doc.onboard_employee)
+        oe.bank_account = doc.name
+        oe.bank_account_progress = progress
+        oe.bank_account_docstatus = bank_account_status
+        oe.bank_account_status = doc.workflow_state
+        oe.save(ignore_permissions=True)

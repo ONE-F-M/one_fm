@@ -84,7 +84,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nDraft\nSubmitted",
+   "options": "\nDraft\nSubmitted\nIssued\nReturned",
    "read_only": 1
   },
   {
@@ -180,7 +180,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2020-12-30 09:32:23.430891",
+ "modified": "2021-06-27 13:01:41.565384",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",

@@ -488,6 +488,7 @@ const submitForm = () => {
           one_fm_rotation_shift: $('#rotationalShift option:selected').text(),
           one_fm_night_shift: $('#nightShift option:selected').text(),
           one_fm_type_of_driving_license: $('#typeOfDrivingLicense option:selected').text(),
+          one_fm_type_of_travel: $('#canYouTravel option:selected').text(),
         },
         languages: listOfLanguages,
         skills: listOfSkills,

@@ -4,6 +4,33 @@ from frappe import _
 def get_data():
 	return [
 		{
+			"label": _("Onboard Employee"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Onboard Employee",
+					"onboard": 1,
+				},
+				{
+					"type": "doctype",
+					"name": "Candidate Orientation",
+				},
+				{
+					"type": "doctype",
+					"name": "Duty Commencement",
+					"onboard": 1,
+				},
+				{
+					"type": "doctype",
+					"name": "Work Contract",
+				},
+                {
+					"type": "doctype",
+					"name": "Candidate Orientation Checklist",
+				}
+			]
+		},
+		{
 			"label": _("Recruitment"),
 			"items": [
 				{
