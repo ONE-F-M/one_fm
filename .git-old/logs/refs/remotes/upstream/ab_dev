@@ -1,0 +1,5 @@
+0000000000000000000000000000000000000000 3aad9074785e1ade60e278730ad2d123d0c4f302 frappe <frappe@ubuntu.vm> 1617630395 +0000	fetch upstream: storing head
+3aad9074785e1ade60e278730ad2d123d0c4f302 321cba7d2d5c9ded81f531d69c9e72408f5d2ce7 frappe <frappe@ubuntu.vm> 1618234591 +0000	fetch: fast-forward
+321cba7d2d5c9ded81f531d69c9e72408f5d2ce7 fd5fbe3af0739b7602cc3bacb3639bcf1499831e frappe <frappe@ubuntu.vm> 1618293838 +0000	fetch: fast-forward
+fd5fbe3af0739b7602cc3bacb3639bcf1499831e 7305f0953a625fd3a91f5cd4ea2920470178d9f7 Hassan Marzooq <marzooq703@gmail.com> 1620701273 +0000	pull: fast-forward
+7305f0953a625fd3a91f5cd4ea2920470178d9f7 84257daee56176fda6c00f4a0647d5c49aae22cc Hassan Marzooq <marzooq703@gmail.com> 1624455311 +0000	pull: fast-forward

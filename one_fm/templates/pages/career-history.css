@@ -1,0 +1,26 @@
+/* career-history CSS here */
+header .top{
+    padding: 50px;
+    }
+    
+    .Score{
+        float: right;
+    }
+    
+    .jobContent{
+        height: 120px;
+    }
+
+.submit:hover{
+	border: #0062cc;
+		}
+    
+.submit:hover{
+color: white;	
+background-color: #0062cc;
+transform: 1s;
+}
+
+.custom-select{
+	width: 40%;
+}

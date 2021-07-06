@@ -1,0 +1,17 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "upstream"]
+	url = https://github.com/ONE-F-M/One-FM.git
+	fetch = +refs/heads/*:refs/remotes/upstream/*
+[branch "master"]
+	remote = upstream
+	merge = refs/heads/master
+[branch "kartik"]
+	remote = upstream
+	merge = refs/heads/kartik
+[remote "origin"]
+	url = https://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@github.com/ONE-F-M/One-FM.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
