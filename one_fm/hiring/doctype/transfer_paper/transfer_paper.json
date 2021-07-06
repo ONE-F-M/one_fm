@@ -346,9 +346,8 @@
    "label": "Work Permit Salary"
   },
   {
-   "fetch_from": "applicant.one_fm_date_of_entry",
    "fieldname": "date_of_entry_in_kuwait",
-   "fieldtype": "Data",
+   "fieldtype": "Date",
    "label": "Date of Entry in Kuwait"
   },
   {
@@ -476,7 +475,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2021-07-05 13:31:13.857382",
+ "modified": "2021-07-06 11:53:26.418588",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Transfer Paper",

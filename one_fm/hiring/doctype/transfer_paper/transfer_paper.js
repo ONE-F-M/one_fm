@@ -93,8 +93,8 @@ frappe.ui.form.on('Transfer Paper', {
                 frm.set_value('civil_id', r.message.one_fm_cid_number);
                 frm.set_value('pam_designation', r.message.one_fm_pam_designation);
                 frm.set_value('civil_id', r.message.one_fm_cid_number);
-                frm.set_value('work_permit_salary', r.message.one_fm_work_permit_salary);
-                frm.set_value('date_of_entry_in_kuwait', r.message.one_fm_date_of_entry);
+                // frm.set_value('work_permit_salary', r.message.one_fm_work_permit_salary);
+                // frm.set_value('date_of_entry_in_kuwait', r.message.one_fm_date_of_entry);
             }
         })
     }
