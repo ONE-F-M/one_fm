@@ -466,12 +466,9 @@ var fetch_erf_items = function(frm){
 			callback: function(r) {
 				if(r.message){
 					var erf = r.message;
-					//console.log(designation.item_list);
 					if(erf.item_list && erf.item_list.length > 0){
-						//console.log("Quantity", designation.item_list[0].item_name);
 						frm.get_field("items").grid.grid_rows[0].remove();
 						for ( var i=0; i< erf.item_list.length; i++ ){
-							//console.log("here");
 							let d = frm.add_child("items", {
 								requested_item_name: erf.item_list[i].item_name,
 								requested_description: erf.item_list[i].description,
