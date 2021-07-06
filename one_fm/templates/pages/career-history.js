@@ -28,6 +28,10 @@ window.localStorage.setItem('numberOfCompanies', JSON.stringify(0));
 // var df= document.getElementById("startDate").value;
 // var dt = .value;  
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 09e06488af147d91020ac43ee9b4bbbd139665ab
 // const totalValue = () => {
 //     var df = Number(document.getElementById("startDate"));
 //     var dt = Number(document.getElementById('endDate'));
