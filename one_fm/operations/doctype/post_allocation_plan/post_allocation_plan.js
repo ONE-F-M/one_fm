@@ -103,10 +103,14 @@ function get_valid_employee_certifications(employee){
 		let date = new Date();
 		let today = date.toISOString().slice(0,10);
 		let modified_today = new Date(today);
-		let expiry_date = new Date(certification.expiry_date);
-		if(modified_today < expiry_date){
+		if(certification.expiry_date){
+			let expiry_date = new Date(certification.expiry_date);
+			if(modified_today < expiry_date){
+				result.push(certification.certification);
+			}
+		}else{
 			result.push(certification.certification);
-		}
+		}	
 	})
 
 	return result;
@@ -119,8 +123,12 @@ function get_valid_employee_licenses(employee){
 		let date = new Date();
 		let today = date.toISOString().slice(0,10);
 		let modified_today = new Date(today);
-		let expiry_date = new Date(license.expiry_date);
-		if(modified_today < expiry_date){
+		if(license.expiry_date){
+			let expiry_date = new Date(license.expiry_date);
+			if(modified_today < expiry_date){
+				result.push(license.license);
+			}
+		}else{
 			result.push(license.license);
 		}
 	})

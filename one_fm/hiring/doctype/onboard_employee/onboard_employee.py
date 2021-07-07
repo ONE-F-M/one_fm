@@ -5,18 +5,11 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from erpnext.hr.utils import EmployeeBoardingController
+from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
+from one_fm.hiring.doctype.candidate_orientation.candidate_orientation import create_candidate_orientation
 
-class IncompleteTaskError(frappe.ValidationError): pass
-
-class OnboardEmployee(EmployeeBoardingController):
-	def validate(self):
-		# remove the task if linked before submitting the form
-		if self.amended_from:
-			for activity in self.activities:
-				activity.task = ''
-
+class OnboardEmployee(Document):
 	def validate_employee_creation(self):
 		if self.docstatus != 1:
 			frappe.throw(_("Submit this to create the Employee record"))
@@ -30,52 +23,75 @@ class OnboardEmployee(EmployeeBoardingController):
 						frappe.throw(_("All the mandatory Task for employee creation hasn't been done yet."), IncompleteTaskError)
 
 	def on_submit(self):
-		# create the project for the given employee onboarding
-		# project_name = _(self.doctype) + " : "
-		# if self.doctype == "Employee Onboarding":
-		# 	project_name += self.job_applicant
-		# else:
-		# 	project_name += self.employee
-		# project = frappe.get_doc({
-		# 		"doctype": "Project",
-		# 		"project_name": project_name,
-		# 		"expected_start_date": self.date_of_joining if self.doctype == "Employee Onboarding" else self.resignation_letter_date,
-		# 		"department": self.department,
-		# 		"company": self.company
-		# 	}).insert(ignore_permissions=True)
-		# self.db_set("project", project.name)
-		self.db_set("boarding_status", "Pending")
+		create_candidate_orientation(self)
 		self.reload()
-		# self.create_task_and_notify_user()
 
-	def create_task_and_notify_user(self):
-		# create the task for the given project and assign to the concerned person
-		for activity in self.activities:
-			if activity.task:
-				continue
+	def on_update_after_submit(self):
+		self.create_bank_account()
+		self.create_user_and_permissions()
+		self.create_employee_id()
+		self.create_rfm_from_eo()
+		frappe.publish_realtime(event='eval_js', message='alert("{0}")'.format('Test message'), user=frappe.session.user)
 
-			task = frappe.get_doc({
-					"doctype": "Task",
-					"project": self.project,
-					"subject": activity.activity_name + " : " + self.employee_name,
-					"description": activity.description,
-					"department": self.department,
-					"company": self.company,
-					"task_weight": activity.task_weight
-				}).insert(ignore_permissions=True)
-			activity.db_set("task", task.name)
-			users = [activity.user] if activity.user else []
-			if activity.role:
-				user_list = frappe.db.sql_list('''select distinct(parent) from `tabHas Role`
-					where parenttype='User' and role=%s''', activity.role)
-				users = users + user_list
+	def create_rfm_from_eo(self):
+		if self.erf:
+			erf = frappe.get_doc('ERF', self.erf)
+			# erf = frappe.get_doc('ERF', 'ERF-2020-00023')
+			if erf.tool_request_item:
+				rfm = frappe.new_doc('Request for Material')
+				rfm.requested_by = frappe.session.user
+				rfm.type = 'Onboarding'
+				rfm.erf = erf.name
+				rfm.t_warehouse = frappe.db.get_value('Stock Settings', None, 'default_warehouse')
+				rfm.schedule_date = self.date_of_joining
+				rfm_item = rfm.append('items')
+				for item in erf.tool_request_item:
+					rfm_item.requested_item_name = item.item
+					rfm_item.requested_description = item.item
+					rfm_item.qty = item.quantity
+					rfm_item.uom = 'Nos'
+					rfm_item.schedule_date = self.date_of_joining
+				rfm.save(ignore_permissions=True)
 
-				if "Administrator" in users:
-					users.remove("Administrator")
+	def create_employee_id(self):
+		if self.employee and not self.employee_id:
+			employee_id = frappe.new_doc('Employee ID')
+			employee_id.employee = self.employee
+			employee_id.reason_for_request = 'New ID'
+			employee_id.onboard_employee = self.name
+			employee_id.save(ignore_permissions=True)
 
-			# assign the task the users
-			if users:
-				self.assign_task_to_users(task, set(users))
+	def create_user_and_permissions(self):
+		if self.company_email and not frappe.db.exists('User', self.company_email):
+			user = frappe.new_doc('User')
+			user.first_name = self.employee_name
+			user.email = self.company_email
+			user.role_profile_name = self.role_profile
+			user.save(ignore_permissions = True)
+			employee = frappe.get_doc('Employee', self.employee)
+			employee.user_id = user.name
+			employee.create_user_permission = self.create_user_permission
+			employee.save(ignore_permissions=True)
+
+	def create_bank_account(self):
+		if self.employee and not self.bank_account:
+			create_account = True
+			if self.new_bank_account_needed and not self.attach_bank_form:
+				create_account = False
+				frappe.msgprint(_("Please attach Bank Form to create New Bank Account."))
+			if create_account:
+				if self.account_name and self.bank:
+					bank_account = frappe.new_doc('Bank Account')
+					bank_account.account_name = self.account_name
+					bank_account.bank = self.bank
+					bank_account.new_account = self.new_bank_account_needed
+					bank_account.party_type = 'Employee'
+					bank_account.party = self.employee
+					bank_account.attach_bank_form = self.attach_bank_form
+					bank_account.onboard_employee = self.name
+					bank_account.save(ignore_permissions=True)
+				else:
+					frappe.msgprint(_('To Create Set Account Name and Bank'))
 
 	def assign_task_to_users(self, task, users):
 		for user in users:
@@ -87,19 +103,6 @@ class OnboardEmployee(EmployeeBoardingController):
 				'notify':	self.notify_users_by_email
 			}
 			assign_to.add(args)
-
-	def on_cancel(self):
-		# delete task project
-		# for task in frappe.get_all("Task", filters={"project": self.project}):
-		# 	frappe.delete_doc("Task", task.name, force=1)
-		# frappe.delete_doc("Project", self.project, force=1)
-		# self.db_set('project', '')
-		# for activity in self.activities:
-		# 	activity.db_set("task", "")
-		pass
-
-	def on_update_after_submit(self):
-		self.create_task_and_notify_user()
 
 @frappe.whitelist()
 def make_employee(source_name, target_doc=None):

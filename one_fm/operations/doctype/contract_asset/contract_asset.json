@@ -6,14 +6,15 @@
  "field_order": [
   "item_code",
   "count",
+  "uom",
   "unit_rate",
   "column_break_4",
   "item_name",
-  "uom",
   "site"
  ],
  "fields": [
   {
+   "columns": 4,
    "fieldname": "item_code",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -21,6 +22,7 @@
    "options": "Item"
   },
   {
+   "columns": 2,
    "fieldname": "count",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -28,6 +30,8 @@
    "precision": "3"
   },
   {
+   "columns": 2,
+   "fetch_from": "item_code.sales_uom",
    "fieldname": "uom",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -35,13 +39,15 @@
    "options": "UOM"
   },
   {
+   "columns": 2,
    "fieldname": "unit_rate",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Unit Rate",
+   "label": "Rate",
    "options": "currency"
   },
   {
+   "fetch_from": "item_code.item_name",
    "fieldname": "item_name",
    "fieldtype": "Data",
    "label": "Item Name",
@@ -59,7 +65,7 @@
   }
  ],
  "istable": 1,
- "modified": "2021-02-01 09:38:06.296344",
+ "modified": "2021-06-11 10:47:36.812025",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Asset",

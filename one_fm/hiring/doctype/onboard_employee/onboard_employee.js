@@ -2,99 +2,12 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Onboard Employee', {
-	setup: function(frm) {
-		frm.add_fetch("employee_onboarding_template", "company", "company");
-		frm.add_fetch("employee_onboarding_template", "department", "department");
-		frm.add_fetch("employee_onboarding_template", "designation", "designation");
-		frm.add_fetch("employee_onboarding_template", "employee_grade", "employee_grade");
-
-		// frm.set_query('job_offer', function () {
-		// 	return {
-		// 		filters: {
-		// 			'job_applicant': frm.doc.job_applicant
-		// 		}
-		// 	};
-		// });
-	},
-
 	refresh: function(frm) {
+		set_progress_html(frm);
 		if (frm.doc.employee) {
 			frm.add_custom_button(__('Employee'), function() {
 				frappe.set_route("Form", "Employee", frm.doc.employee);
 			},__("View"));
-		}
-		if (frm.doc.project) {
-			frm.add_custom_button(__('Project'), function() {
-				frappe.set_route("Form", "Project", frm.doc.project);
-			},__("View"));
-			frm.add_custom_button(__('Task'), function() {
-				frappe.set_route('List', 'Task', {project: frm.doc.project});
-			},__("View"));
-		}
-		if ((!frm.doc.employee) && (frm.doc.docstatus === 1)) {
-			frm.add_custom_button(__('Employee'), function () {
-				frappe.model.open_mapped_doc({
-					method: "erpnext.hr.doctype.employee_onboarding.employee_onboarding.make_employee",
-					frm: frm
-				});
-			}, __('Create'));
-			frm.page.set_inner_btn_group_as_primary(__('Create'));
-		}
-		if (frm.doc.docstatus === 1 && frm.doc.project) {
-			frappe.call({
-				method: "erpnext.hr.utils.get_boarding_status",
-				args: {
-					"project": frm.doc.project
-				},
-				callback: function(r) {
-					if (r.message) {
-						frm.set_value('boarding_status', r.message);
-					}
-					refresh_field("boarding_status");
-				}
-			});
-		}
-
-	},
-
-	employee_onboarding_template: function(frm) {
-		frm.set_value("activities" ,"");
-		if (frm.doc.employee_onboarding_template) {
-			frappe.call({
-				method: "erpnext.hr.utils.get_onboarding_details",
-				args: {
-					"parent": frm.doc.employee_onboarding_template,
-					"parenttype": "Employee Onboarding Template"
-				},
-				callback: function(r) {
-					if (r.message) {
-						r.message.forEach((d) => {
-							frm.add_child("activities", d);
-						});
-						refresh_field("activities");
-					}
-				}
-			});
-		}
-	},
-	onboard_employee_template: function(frm) {
-		frm.set_value("actions" ,"");
-		if (frm.doc.onboard_employee_template) {
-			frappe.call({
-				method: "one_fm.hiring.utils.get_onboarding_details",
-				args: {
-					"parent": frm.doc.onboard_employee_template,
-					"parenttype": "Onboard Employee Template"
-				},
-				callback: function(r) {
-					if (r.message) {
-						r.message.forEach((d) => {
-							frm.add_child("actions", d);
-						});
-						refresh_field("actions");
-					}
-				}
-			});
 		}
 	},
 	job_applicant: function(frm) {
@@ -134,6 +47,7 @@ frappe.ui.form.on('Onboard Employee', {
 
 var set_offer_details = function(frm, job_offer) {
 	var fields = ['employee_grade', 'job_applicant'];
+	frm.set_value('date_of_joining', job_offer.estimated_date_of_joining)
 	fields.forEach((field, i) => {
 		frm.set_value(field, job_offer[field]);
 	});
@@ -163,7 +77,7 @@ var set_applicant_details = function(frm, applicant) {
 	var one_fm_fields = ['applicant_is_overseas_or_local', 'is_transferable', 'designation', 'agency', 'gender', 'religion',
 	 	'date_of_birth', 'erf', 'height', 'place_of_birth', 'marital_status', 'nationality', 'contact_number',
 		'secondary_contact_number', 'passport_number', 'passport_holder_of', 'passport_issued', 'passport_expire',
-		'passport_type', 'visa_type', 'civil_id', 'cid_expire', 'uniform_needed_for_this_job', 'shoulder_width',
+		'passport_type', 'visa_type', 'civil_id', 'cid_expire', 'is_uniform_needed_for_this_job', 'shoulder_width',
 		'waist_size', 'shoe_size'];
 	one_fm_fields.forEach((one_fm_field, i) => {
 		frm.set_value(one_fm_field, applicant['one_fm_'+one_fm_field]);
@@ -177,4 +91,69 @@ var set_applicant_details = function(frm, applicant) {
 		refresh_field("applicant_documents");
 	}
 	// frm.set_value('applicant_name', applicant.applicant_name);
+};
+
+var set_progress_html = function(frm) {
+	var $wrapper = frm.fields_dict['progress_html'].$wrapper;
+	var selected = 'btn-primary';
+
+	var work_contract = 'work_contract';
+	var field_html = `<div class="row"><div class="col-sm-12">`
+	field_html += get_progress_details(frm, 'Orientation', frm.doc.candidate_orientation_progress || 0, frm.doc.candidate_orientation_docstatus || 0);
+	field_html += get_progress_details(frm, 'Work Contract', frm.doc.work_contract_progress || 0, frm.doc.work_contract_docstatus || 0);
+	field_html += get_progress_details(frm, 'Duty Commencement', frm.doc.duty_commencement_progress || 0, frm.doc.duty_commencement_docstatus || 0);
+	field_html += get_progress_details(frm, 'Bank Account', frm.doc.bank_account_progress || 0, frm.doc.bank_account_docstatus || 0);
+	field_html += get_progress_details(frm, 'Accommodation', 0, 0);
+	field_html += get_progress_details(frm, 'Transportation', 0, 0);
+	field_html += get_progress_details(frm, 'Assets for Work', 0, 0);
+	field_html += get_progress_details(frm, 'Employee ID', frm.doc.employee_id_progress || 0, frm.doc.employee_id_docstatus || 0);
+	field_html += get_progress_details(frm, 'Transfer Paper', 0, 0);
+	field_html += `</div>`
+	var progress = 35
+	var progress_bgc = 'blue';
+	field_html += `<hr/><div class="row">
+		<div class="col-sm-12">
+			<div class="col-sm-2 small">Onboarding</div>
+			<div class="col-sm-10">
+				<div class="progress level" style="margin: 3px;">
+					<div class="progress-bar progress-bar-success" role="progressbar"
+						aria-valuenow=${progress}
+						aria-valuemin="0" aria-valuemax="100" style="width: ${progress}%; background-color: ${progress_bgc};">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>`;
+	$wrapper
+		.html(field_html);
+	// $wrapper.on('click', '.work_contract', function() {
+	// 	if(frm.doc.docstatus == 0){
+	// 		var $btn = $(this);
+	// 		$wrapper.find('.work_contract').removeClass('btn-primary');
+	// 		$btn.addClass('btn-primary');
+	// 		console.log($btn.attr('data'));
+	// 	}
+	// });
+};
+
+var get_progress_details = function(frm, doctype, progress, docstatus) {
+	var progress_bgc = '00FF00';
+	progress_bgc = 'blue';
+	if(docstatus == 1){
+		progress_bgc = '00FF00';
+	}
+	if (docstatus == 2){
+		progress_bgc = 'red';
+	}
+	return `<div class="col-sm-6"><div class="col-sm-5 small">
+		${doctype}
+	</div>
+	<div class="col-sm-7">
+		<div class="progress level" style="margin: 3px;">
+			<div class="progress-bar progress-bar-success" role="progressbar"
+				aria-valuenow=${progress}
+				aria-valuemin="0" aria-valuemax="100" style="width: ${progress}%; background-color: ${progress_bgc};">
+			</div>
+		</div>
+	</div></div>`
 };

@@ -15,6 +15,20 @@ from one_fm.api.notification import create_notification_log
 
 class TransferPaper(Document):
 
+    def validate(self):
+        self.set_electronic_signatory()
+
+    def set_electronic_signatory(self):
+        doc = frappe.get_doc('Job Applicant',self.applicant)
+        if doc.one_fm_signatory_name and doc.one_fm_authorized_signatory:
+            print(doc.one_fm_signatory_name)
+            authorized_list = frappe.get_doc('PAM Authorized Signatory List',doc.one_fm_authorized_signatory)
+            for authorized in authorized_list.authorized_signatory:
+                if doc.one_fm_signatory_name == authorized.authorized_signatory_name_arabic:
+                    self.db_set('authorized_signature', authorized.signature)
+
+
+
     def on_update(self):
         self.check_signed_workContract_employee_completed()
 
