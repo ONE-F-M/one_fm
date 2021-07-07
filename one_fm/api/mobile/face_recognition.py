@@ -52,16 +52,12 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 				if recognize_face(image):   #calling recognition function 
 					return check_in(log_type, skip_attendance, latitude, longitude)
 				else:
-					return {'message': _('Face Recognition Failed. Please try again.')}
-					frappe.throw(_('Face Recognition Failed. Please try again.'))	
+					return ('Face Recognition Failed. Please try again.')
 			else:
-				return {'message': _('Liveness Detection Failed. Please try again.')}
-				frappe.throw(_('Liveness Detection Failed. Please try again.'))
+				return ('Liveness Detection Failed. Please try again.')
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		return frappe.utils.response.report_error(exc)
-
-
 
 
 @frappe.whitelist()
@@ -76,14 +72,20 @@ def get_site_location(employee):
 			WHERE
 				loc.name in(SELECT site_location FROM `tabOperations Site` where name="{site}")
 			""".format(site=site), as_dict=1)
-			site_n_location=location[0]
-			site_n_location['site_name']=site
-			return site_n_location
+			if location:
+				site_n_location=location[0]
+				site_n_location['site_name']=site
+				return site_n_location
+			else:
+				return ('You Are Not currently Assigned with a Shift.')
 		else:
-			return {'message': _('You Are Not currently Assigned with a Shift.')}
-			frappe.throw(_('You Are Not Assigned with a Shift.'))
-			
+			return {'message': _('You Are Not currently Assigned with a Shift.')}			
 	except Exception as e:
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
 		return frappe.utils.response.report_error(e)
+
+def test():
+	employee="HR-EMP-00003"
+	value=get_site_location(employee)
+	print(value)
