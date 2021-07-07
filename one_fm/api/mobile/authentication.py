@@ -1,7 +1,8 @@
 import frappe
 import pyotp
-from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token
+from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token,get_email_subject_for_2fa,get_email_body_for_2fa
 from frappe.integrations.oauth2 import get_token
+from frappe.utils.background_jobs import enqueue
 from frappe.core.doctype.sms_settings.sms_settings import send_sms
 from frappe.frappeclient import FrappeClient
 from six import iteritems
@@ -63,7 +64,8 @@ def login(client_id, grant_type, employee_id, password):
 	
 
 @frappe.whitelist(allow_guest=True)
-def forgot_password(employee_id):
+def forgot_password():
+	employee_id="0001"
 	"""
 	Params: employee_id
 	
@@ -77,8 +79,8 @@ def forgot_password(employee_id):
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
-		cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
-		verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
+		#cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
+		verification_obj = process_2fa_for_email(employee_user_id, token, otp_secret)
 
 		# Save data in local
 		# frappe.local.response['verification'] = verification_obj
@@ -204,3 +206,56 @@ def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
  
     print(message.sid)
     return True
+
+def process_2fa_for_email(user, token, otp_secret, method='Email'):
+	otp_issuer = frappe.db.get_value('System Settings', 'System Settings', 'otp_issuer_name')
+	'''Process Email method for 2fa.'''
+	subject = None
+	message = None
+	status = True
+	prompt = ''
+	if method == 'OTP App' and not frappe.db.get_default(user + '_otplogin'):
+		'''Sending one-time email for OTP App'''
+		totp_uri = pyotp.TOTP(otp_secret).provisioning_uri(user, issuer_name=otp_issuer)
+		qrcode_link = get_link_for_qrcode(user, totp_uri)
+		message = get_email_body_for_qr_code({'qrcode_link': qrcode_link})
+		subject = get_email_subject_for_qr_code({'qrcode_link': qrcode_link})
+		prompt = _('Please check your registered email address for instructions on how to proceed. Do not close this window as you will have to return to it.')
+	else:
+		'''Sending email verification'''
+		prompt = _('Verification code has been sent to your registered email address.')
+	status = send_token_via_email(user, token, otp_secret, otp_issuer, subject=subject, message=message)
+	verification_obj = {
+		'token_delivery': status,
+		'prompt': status and prompt,
+		'method': 'Email',
+		'setup': status
+	}
+	return verification_obj
+
+def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, message=None):
+	'''Send token to user as email.'''
+	user_email = frappe.db.get_value('Employee', {"user_id":user}, 'personal_email')
+	if not user_email:
+		return False
+	hotp = pyotp.HOTP(otp_secret)
+	otp = hotp.at(int(token))
+	template_args = {'otp': otp, 'otp_issuer': otp_issuer}
+	if not subject:
+		subject = get_email_subject_for_2fa(template_args)
+	if not message:
+		message = get_email_body_for_2fa(template_args)
+
+	email_args = {
+		'recipients': user_email,
+		'sender': None,
+		'subject': subject,
+		'message': message,
+		'header': [_('Verfication Code'), 'blue'],
+		'delayed': False,
+		'retry':3
+	}
+
+	enqueue(method=frappe.sendmail, queue='short', timeout=300, event=None,
+		is_async=True, job_name=None, now=False, **email_args)
+	return True
