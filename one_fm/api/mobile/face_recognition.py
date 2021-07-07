@@ -52,16 +52,12 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 				if recognize_face(image):   #calling recognition function 
 					return check_in(log_type, skip_attendance, latitude, longitude)
 				else:
-					return {'message': _('Face Recognition Failed. Please try again.')}
-					frappe.throw(_('Face Recognition Failed. Please try again.'))	
+					return ('Face Recognition Failed. Please try again.')
 			else:
-				return {'message': _('Liveness Detection Failed. Please try again.')}
-				frappe.throw(_('Liveness Detection Failed. Please try again.'))
+				return ('Liveness Detection Failed. Please try again.')
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		return frappe.utils.response.report_error(exc)
-
-
 
 
 @frappe.whitelist()
