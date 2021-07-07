@@ -84,8 +84,3 @@ def get_site_location(employee):
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
 		return frappe.utils.response.report_error(e)
-
-def test():
-	employee="HR-EMP-00003"
-	value=get_site_location(employee)
-	print(value)
