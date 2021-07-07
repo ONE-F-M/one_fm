@@ -26,8 +26,7 @@ def get_columns(filters):
 
 def get_conditions(filters=None):
 	conditions = {}
-	if filters:
-		if filters.get("training_program_name"):
+	if filters and filters.get("training_program_name"):
 			conditions.update({'training_program_name': filters.get("training_program_name")})
 
 	return conditions
