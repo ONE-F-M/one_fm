@@ -43,8 +43,8 @@ class RequestforMaterial(BuyingController):
 			if status == 'Accepted' and frappe.session.user == self.request_for_material_accepter and self.request_for_material_approver:
 				message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
 				subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
-				#send_email(self, [self.request_for_material_approver], message, subject)
-				#create_notification_log(subject, message, [self.request_for_material_approver], self)
+				send_email(self, [self.request_for_material_approver], message, subject)
+				create_notification_log(subject, message, [self.request_for_material_approver], self)
 
 			# Notify Accepter and requester
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
