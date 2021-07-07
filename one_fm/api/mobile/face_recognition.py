@@ -72,9 +72,12 @@ def get_site_location(employee):
 			WHERE
 				loc.name in(SELECT site_location FROM `tabOperations Site` where name="{site}")
 			""".format(site=site), as_dict=1)
-			site_n_location=location[0]
-			site_n_location['site_name']=site
-			return site_n_location
+			if location:
+				site_n_location=location[0]
+				site_n_location['site_name']=site
+				return site_n_location
+			else:
+				return ('You Are Not currently Assigned with a Shift.')
 		else:
 			return {'message': _('You Are Not currently Assigned with a Shift.')}			
 	except Exception as e:
