@@ -70,28 +70,17 @@ def get_site_location(employee):
 		shift = get_current_shift(employee)
 		if shift is not None:
 			site = frappe.get_value("Operations Shift", shift, "site")
-			return frappe.db.sql("""
+			location= frappe.db.sql("""
 			SELECT loc.latitude, loc.longitude, loc.geofence_radius
 			FROM `tabLocation` as loc
 			WHERE
 				loc.name in(SELECT site_location FROM `tabOperations Site` where name="{site}")
 			""".format(site=site), as_dict=1)
+			site_n_location=location[0]
+			site_n_location['site_name']=site
+			return site_n_location
 		else:
-			return {'message': _('You Are Not currently Assigned with a Shift.')}
-			frappe.throw(_('You Are Not Assigned with a Shift.'))
-			
-	except Exception as e:
-		print(frappe.get_traceback())
-		frappe.log_error(frappe.get_traceback())
-		return frappe.utils.response.report_error(e)
-
-@frappe.whitelist()
-def get_site(employee):
-	try:
-		shift = get_current_shift(employee)
-		if shift is not None:
-			site = frappe.get_value("Operations Shift", shift, "site")
-			return site
+			return {'message': _('You Are Not currently Assigned with a Shift.')}			
 	except Exception as e:
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
