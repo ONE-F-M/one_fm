@@ -7,7 +7,8 @@ frappe.query_reports["Training Program Certificate"] = {
 		{
 			"fieldname": "training_program_name",
 			"label": _("Training Program Name"),
-			"fieldtype": "Data"
+			"fieldtype": "Link",
+			"Options": "Training Program"
 		}
 	]
 };
