@@ -428,10 +428,6 @@ frappe.ui.form.on('Request for Material', {
 	}
 });
 
-var notify_changes_to_requester = function (frm) {
-	i
-	
-}
 
 var fetch_designation_items = function(frm) {
 	if(frm.doc.designation){

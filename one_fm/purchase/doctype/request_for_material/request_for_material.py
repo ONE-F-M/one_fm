@@ -288,6 +288,7 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		doc.document_name = reference_doc.name
 		doc.from_user = reference_doc.modified_by
 		doc.insert(ignore_permissions=True)
+		
 @frappe.whitelist()
 def bring_designation_items(designation):
 	designation_doc = frappe.get_doc('Designation Profile', designation)

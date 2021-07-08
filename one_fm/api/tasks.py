@@ -479,3 +479,4 @@ def create_penalty_deduction(start_date, end_date, employee, total_penalty_amoun
 	penalty_deduction.balance_amount = balance_amount
 	penalty_deduction.insert()
 	penalty_deduction.submit()
+	#frappe.db.commit()
