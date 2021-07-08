@@ -1,7 +1,6 @@
-import frappe,calendar
+import frappe
 import itertools
-from datetime import date,timedelta,datetime
-from frappe.utils import cstr,flt,getdate,add_days
+from frappe.utils import cstr, flt, add_days, time_diff_in_hours
 from calendar import monthrange  
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
@@ -19,7 +18,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             billing_hours, billing_rate, billable, public_holiday_rate_multiplier = 0, 0, 0, 0
             date = cstr(attendance.attendance_date)
             holiday_list = frappe.db.get_value('Contracts', {'project': attendance.project}, 'holiday_list')
-            post = get_post(key, attendance.operations_shift, date)
+            post = get_post(key, attendance.operations_shift, date)          
             public_holiday = frappe.db.get_value('Holiday', {'parent': holiday_list, 'holiday_date': date}, ['description'])
             if public_holiday:
                 public_holiday_rate_multiplier = frappe.db.get_value('Contracts', {'project': attendance.project}, 'public_holiday_rate')
@@ -29,18 +28,22 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             end = frappe.get_list("Employee Checkin", {"employee": key, "time": ['between', (date, date)], "log_type": "OUT"}, "time", order_by="time desc")[0].time
             #Get the sale item of post type
             item = frappe.get_value("Post Type", attendance.post_type, 'sale_item')
-            contract_item_detail = get_contrat_item_detail(attendance.project, item)
+            gender = frappe.get_value("Operations_post", post, 'gender')
+            shift_hours = frappe.get_value("Operations_shift", attendance.operations_shift, 'duration')
+            #pass gender, shift hour, dayoffs, uom
+            contract_item_detail = get_contrat_item_detail(attendance.project, item, gender, shift_hours)
             if contract_item_detail:
                 billable = 1
-                billing_hours = contract_item_detail[0].shift_hours
-                if contract_item_detail[0].type == 'Monthly':
-                    billing_rate = calculate_hourly_rate(attendance.project, item, contract_item_detail[0].monthly_rate, contract_item_detail[0].shift_hours, start_date)
+                #biiling hours should be set based on billing type in contracts
+                billing_hours = set_billing_hours(attendance.project, start, end, shift_hours)
+                if contract_item_detail[0].uom == 'Month':
+                    billing_rate = calculate_hourly_rate(attendance.project, item, contract_item_detail[0].rate, shift_hours, start_date)
                     if public_holiday_rate_multiplier > 0:
                         billing_rate = public_holiday_rate_multiplier * billing_rate
-                if contract_item_detail[0].type == 'Hourly':
-                    billing_rate = contract_item_detail[0].unit_rate                   
+                if contract_item_detail[0].uom == 'Hours':
+                    billing_rate = contract_item_detail[0].rate                   
                     if public_holiday_rate_multiplier > 0:
-                        billing_rate = public_holiday_rate_multiplier * contract_item_detail[0].unit_rate
+                        billing_rate = public_holiday_rate_multiplier * contract_item_detail[0].rate
             timesheet = add_time_log(timesheet, attendance, start, end, post, billable, billing_hours, billing_rate)
         timesheet.save()
         timesheet.submit()
@@ -57,10 +60,14 @@ def days_of_month(start_date, end_date):
 def calculate_hourly_rate(project = None,item_code = None,monthly_rate = None,shift_hour = None,first_day =None):
     if first_day != None:
         last_day = first_day.replace(day = monthrange(first_day.year, first_day.month)[1])
-    days_off_week = frappe.db.sql("""select days_off 
-            from `tabContract Item` ci, `tabContracts` c 
-            where c.name = ci.parent and ci.parenttype = 'Contracts' 
-            and c.project = %s and ci.item_code = %s""", (project, item_code), as_dict=0)[0][0]
+    #pass shift hours, gender, uom, days_off
+    days_off_week = frappe.db.sql("""
+            SELECT 
+                days_off 
+            FROM `tabContract Item` ci, `tabContracts` c 
+            WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
+                and c.project = %s and ci.item_code = %s
+    """, (project, item_code), as_dict=0)[0][0]
     total_days = days_of_month(first_day, last_day)
     days_off_month = flt(days_off_week) * 4
     total_working_day = len(total_days) - days_off_month
@@ -70,20 +77,35 @@ def calculate_hourly_rate(project = None,item_code = None,monthly_rate = None,sh
 
 def get_post(employee, operations_shift, date):
     return frappe.db.sql("""
-            SELECT e.post
+            SELECT 
+                e.post
             FROM `tabPost Allocation Plan` p,`tabPost Allocation Employee Assignment` e 
             WHERE p.name = e.parent and e.parenttype = 'Post Allocation Plan' 
-            and e.employee = %s and p.operations_shift = %s 
-            and p.date = %s
+                and e.employee = %s and p.operations_shift = %s 
+                and p.date = %s
             """, (employee, operations_shift, date), as_dict=1)[0].post
 
-def get_contrat_item_detail(project, item):
+#pass shift_hours, gender, uom, day_offs if needed
+def get_contrat_item_detail(project, item, gender, shift_hours):
     return frappe.db.sql("""
-            SELECT ci.shift_hours, ci.type, ci.unit_rate, ci.monthly_rate
+            SELECT 
+                ci.name, ci.item_code, ci.head_count as qty,
+                ci.shift_hours, ci.uom, ci.rate,
+                ci.gender, ci.unit_rate, ci.type, 
+                ci.monthly_rate
             FROM `tabContract Item` ci, `tabContracts` c 
             WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
-            and c.project = %s and ci.item_code = %s
-            """, (project, item), as_dict = 1)
+                and c.project = %s and ci.item_code = %s
+                ci.gender = %s and ci.shift_hours = %s
+            """, (project, item, gender, shift_hours), as_dict = 1)
+
+def set_billing_hours(project, from_time, to_time, shift_hour):
+    billing_type = frappe.get_value('Contracts',{'project': project}, 'billing_type')
+    if billing_type == 'Actual Hours':
+        billing_hours = time_diff_in_hours(to_time, from_time)
+    else:
+        billing_hours = shift_hour
+    return billing_hours 
 
 def add_time_log(timesheet, attendance, start, end, post, billable, billing_hours, billing_rate):
     timesheet.append("time_logs", {
