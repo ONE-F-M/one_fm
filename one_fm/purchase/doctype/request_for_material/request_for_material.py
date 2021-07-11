@@ -49,7 +49,7 @@ class RequestforMaterial(BuyingController):
 			# Notify Accepter and requester
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
 				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
-				self.notify_material_requester(status, page_link,)
+				self.notify_material_requester(status, page_link)
 
 			self.status = status
 			if status == "Approved":
