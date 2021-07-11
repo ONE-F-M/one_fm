@@ -31,7 +31,6 @@ class OnboardEmployee(Document):
 		self.create_user_and_permissions()
 		self.create_employee_id()
 		self.create_rfm_from_eo()
-		frappe.publish_realtime(event='eval_js', message='alert("{0}")'.format('Test message'), user=frappe.session.user)
 
 	def create_rfm_from_eo(self):
 		if self.erf:

@@ -31,6 +31,7 @@
   "start_date",
   "end_date",
   "due_date",
+  "billing_type",
   "column_break_27",
   "invoice_output_format",
   "invoice_frequency",
@@ -425,9 +426,15 @@
    "fieldname": "is_invoice_for_airport",
    "fieldtype": "Check",
    "label": "Is Invoice For Airport"
+  },
+  {
+   "fieldname": "billing_type",
+   "fieldtype": "Select",
+   "label": "Billing Type",
+   "options": "\nActual Hours\nShift Hours"
   }
  ],
- "modified": "2021-06-15 12:05:16.875851",
+ "modified": "2021-06-30 06:39:32.525621",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

@@ -228,8 +228,11 @@ doc_events = {
 	"Salary Slip": {
 		"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit"
 	},
-	"Employee Skill Map":{
-		"validate":"one_fm.api.doc_events.validate_certifications_and_licenses"
+	"Training Event":{
+		"on_submit": "one_fm.api.doc_events.update_training_event_data"
+	},
+	"Training Result" :{
+		"on_submit": "one_fm.api.doc_events.update_certification_data"
 	}
 }
 
@@ -360,6 +363,7 @@ scheduler_events = {
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'
 		],
+		# "one_fm.one_fm.grd" doesnt find the module, only "one_fm.grd"
 		"0 10 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder2',
 			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'

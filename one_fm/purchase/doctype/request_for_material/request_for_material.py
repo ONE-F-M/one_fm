@@ -46,9 +46,10 @@ class RequestforMaterial(BuyingController):
 				send_email(self, [self.request_for_material_approver], message, subject)
 				create_notification_log(subject, message, [self.request_for_material_approver], self)
 
-			# Notify Accepter
+			# Notify Accepter and requester
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
 				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
+				self.notify_material_requester(status, page_link)
 
 			self.status = status
 			if status == "Approved":
@@ -66,6 +67,11 @@ class RequestforMaterial(BuyingController):
 			self.reason_for_rejection = reason_for_rejection
 			self.save()
 			self.reload()
+	def notify_material_requester(self, page_link, status):
+		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}. You will be notified of the expected delivery date as soon as the order is processed".format(page_link, self.name, status, frappe.session.user)
+		subject = '{0} Request for Material by {1}'.format(status, self.requested_by)
+		send_email(self, self.requested_by, message, subject)
+		create_notification_log(subject, message, self.requested_by, self)
 
 	def notify_requester_accepter(self, page_link, status, recipients, reason_for_rejection=None):
 		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
@@ -282,6 +288,7 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		doc.document_name = reference_doc.name
 		doc.from_user = reference_doc.modified_by
 		doc.insert(ignore_permissions=True)
+		
 @frappe.whitelist()
 def bring_designation_items(designation):
 	designation_doc = frappe.get_doc('Designation Profile', designation)
@@ -371,7 +378,7 @@ def make_stock_entry(source_name, target_doc=None):
 				"parent": "one_fm_request_for_material"
 			},
 			"postprocess": update_item,
-			"condition": lambda doc: doc.item_code
+			"condition": lambda doc: (doc.item_code and doc.reject_item==0)
 		}
 	}, target_doc, set_missing_values)
 
@@ -391,7 +398,7 @@ def make_stock_entry_issue(source_name, target_doc=None):
 		target.t_warehouse = obj.t_warehouse
 
 	def set_missing_values(source, target):
-		target.purpose = 'Material Issue'
+		target.purpose = 'Material Transfer'
 		target.run_method("calculate_rate_and_amount")
 		target.set_stock_entry_type()
 		target.set_job_card_data()
@@ -414,7 +421,7 @@ def make_stock_entry_issue(source_name, target_doc=None):
 				"parent": "one_fm_request_for_material"
 			},
 			"postprocess": update_item,
-			"condition": lambda doc: doc.item_code
+			"condition": lambda doc: (doc.item_code and doc.reject_item==0)
 		}
 	}, target_doc, set_missing_values)
 
@@ -449,7 +456,7 @@ def make_sales_invoice(source_name, target_doc=None):
 				"uom": "stock_uom"
 			},
 			"postprocess": update_item,
-			"condition": lambda doc: doc.item_code
+			"condition": lambda doc: (doc.item_code and doc.reject_item==0)
 		}
 	}, target_doc, set_missing_values)
 
@@ -526,7 +533,7 @@ def make_request_for_purchase(source_name, target_doc=None):
 				["parent", "request_for_material"]
 			],
 			"postprocess": update_item,
-			"condition": lambda doc: doc.item_code
+			"condition": lambda doc: (doc.item_code and doc.reject_item==0)
 		}
 	}, target_doc)
 

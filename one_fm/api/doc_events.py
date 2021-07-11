@@ -3,7 +3,7 @@ import itertools
 
 import frappe
 from frappe import _
-from frappe.utils import cstr, cint, get_datetime, getdate
+from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
 from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
@@ -343,32 +343,59 @@ def employee_validate(self):
 			remove_user_permission(
 				"Employee", self.name, existing_user_id)
 
-
-#Employee Skill Map
+#Training Result
 @frappe.whitelist()
-def validate_certifications_and_licenses(doc, method):
-	""" This function checks validates the dates of licenses and certifications """
-	messages = []
-	certifications = doc.employee_certifications
-	licenses = doc.employee_licenses
+def update_certification_data(doc, method):
+	""" 
+	This function adds/updates the Training Program Certificate doctype 
+	by checking the pass/fail criteria of the employees based on the Training Result. 
+	Also adds the certificate to the Employee Skill Map.
+	"""
+	passed_employees = []
+	
+	training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email, end_datetime = frappe.db.get_value("Training Event", {'event_name': doc.training_event}, ["training_program", "has_certificate", "minimum_score", "validity", "company", "trainer_name", "trainer_email", "end_time"])	
+	
+	if has_certificate:
 
-	if len(certifications) > 0:
-		for certification in certifications:
-			if(certification.issue_date and certification.expiry_date):
-				if(getdate(certification.issue_date) >= getdate(certification.expiry_date)):
-					messages.append("Expiry date cannot be on or before Issue date for certification:{cert}".format(cert=certification.certification))
+		issue_date = cstr(end_datetime).split(" ")[0]
+		if validity:
+			expiry_date = add_to_date(issue_date, months=validity)
 
-			elif(not certification.issue_date and certification.expiry_date and getdate(certification.expiry_date) <= getdate()):
-				messages.append("Expiry date cannot be on or before today for certification: {cert}".format(cert=certification.certification))
+		for employee in doc.employees:
+			if employee.grade and min_score and cint(employee.grade) >= min_score:
+				passed_employees.append(employee.employee)
+		
+		for passed_employee in passed_employees:
+			if frappe.db.exists("Training Program Certificate", {'training_program_name': training_program_name, 'employee': passed_employee}):
+				update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date)
+			else:
+				create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date,company, trainer_name, trainer_email)
 
-	if len(licenses) > 0:
-		for license in licenses:
-			if(license.issue_date and license.expiry_date):
-				if(getdate(license.issue_date) >= getdate(license.expiry_date)):
-					messages.append("Expiry date cannot be on or before Issue date for license:{license}".format(license=license.license))
+def update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None):
+	doc = frappe.get_doc("Training Program Certificate", {'training_program_name': training_program_name, 'employee': passed_employee})
+	doc.issue_date = issue_date
+	doc.expiry_date = expiry_date
+	doc.save()
+	
+def create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None, company=None, trainer_name=None, trainer_email=None):
+	doc = frappe.new_doc("Training Program Certificate")
+	doc.training_program_name = training_program_name
+	doc.company = company
+	doc.trainer_name = trainer_name
+	doc.trainer_email = trainer_email
+	doc.employee = passed_employee
+	doc.issue_date = issue_date
+	doc.expiry_date = expiry_date
+	doc.save()
 
-			elif(not license.issue_date and license.expiry_date and getdate(license.expiry_date) <= getdate()):
-				messages.append("Expiry date cannot be on or before today for license: {license}".format(license=license.license))
 
-	if len(messages) > 0:
-		frappe.throw(messages)			
+#Training Event
+@frappe.whitelist()
+def update_training_event_data(doc, method):
+	for employee in doc.employees:
+		if frappe.db.exists("Employee Skill Map", employee.employee):
+			doc_esm = frappe.get_doc("Employee Skill Map", employee.employee)
+			doc_esm.append("trainings",{
+				'training': doc.event_name,
+			})
+			doc_esm.save()
