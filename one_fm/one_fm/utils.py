@@ -61,16 +61,19 @@ def notify_grd_to_check_applicant_documents(doc):
      by checking notification log list.
     """
     filtered_grd_users = []
+    find = False
     users = get_users_with_role('GRD Operator') 
     for user in users:
         filtered_grd_users.append(user)
-    if filtered_grd_users and len(filtered_grd_users) > 0:  
+        find = True
+        break
+    if find and filtered_grd_users and len(filtered_grd_users) > 0:  
         dt = frappe.get_doc('Job Applicant',doc.name)
     if dt:
         email = filtered_grd_users
         page_link = get_url("/desk#List/Job Applicant/" + dt.name)
-        message = "<p>Check If {0} Is Transferable.<br>Civil id:{1} - Passport Number:{2}<a href='{3}'></a>.</p>".format(dt.applicant_name,dt.one_fm_cid_number,dt.one_fm_passport_number,page_link)
-        subject = 'Check If {0} Is Transferable.<br>Civil id:{1} - Passport Number:{2}'.format(dt.applicant_name,dt.one_fm_cid_number,dt.one_fm_passport_number)
+        message = "<p>Check If Transferable.<br>Civil id:{0} - Passport Number:{1}<a href='{2}'></a>.</p>".format(dt.one_fm_cid_number,dt.one_fm_passport_number,page_link)
+        subject = 'Check If Transferable.<br>Civil id:{0} - Passport Number:{1}'.format(dt.one_fm_cid_number,dt.one_fm_passport_number)
         send_email(dt, email, message, subject)
 
         if not frappe.db.exists("Notification Log",{'subject':subject,'document_type':"Job Applicant"}):
@@ -89,16 +92,19 @@ def notify_recruiter_after_checking(doc):
     and changing document status into Checked By GRD.
     """
     filtered_recruiter_users = []
+    find = False
     users = get_users_with_role('Recruiter')
     for user in users:
         filtered_recruiter_users.append(user)
-    if filtered_recruiter_users and len(filtered_recruiter_users) > 0:  
+        find = True
+        break 
+    if find and filtered_recruiter_users and len(filtered_recruiter_users) > 0:  
         dt = frappe.get_doc('Job Applicant',doc.name)
     if dt:
         if dt.one_fm_has_issue == "Yes" and dt.one_fm_notify_recruiter == 0:
             email = filtered_recruiter_users
             page_link = get_url("/desk#List/Job Applicant/" + dt.name)
-            message="<p>Tranfer for {0} has {1} type of issue<a href='{2}'></a>.</p>".format(dt.applicant_name,dt.one_fm_type_of_issues,page_link)
+            message="<p>Tranfer for {0} has issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
             subject='Tranfer for {0} has issue'.format(dt.applicant_name)
             create_notification_log(subject,message,email,dt)
             dt.db_set('one_fm_notify_recruiter', 1)

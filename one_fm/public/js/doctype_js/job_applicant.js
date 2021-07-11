@@ -491,8 +491,7 @@ var validate_cid = function(frm) {
 			valid_cid = false;
 		}
 		else if (frm.doc.one_fm_date_of_birth){
-			console.log(is_dob_include_in_cid(frm.doc.one_fm_cid_number, frm.doc.one_fm_date_of_birth));
-			if(is_dob_include_in_cid(frm.doc.one_fm_cid_number, frm.doc.one_fm_date_of_birth)== false){
+			if(!is_dob_include_in_cid(frm.doc.one_fm_cid_number, frm.doc.one_fm_date_of_birth)){
 				valid_cid = false;
 			}
 		}
@@ -526,11 +525,7 @@ var is_dob_include_in_cid = function(cid, dob) {
 		day = day.toString();
 	}
 	year = year.toString().slice(-2);
-	console.log('year:'+year);
-	console.log('m:'+month);
-	console.log('d:'+day);
 	let date_string = year+month+day;
-	console.log('Valid CID Date Format:'+date_string);
 	return cid.includes(date_string);
 };
 
