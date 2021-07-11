@@ -161,8 +161,8 @@ doc_events = {
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
-		"on_update": "one_fm.one_fm.utils.send_recruiter_notification_with_type_of_issues",
-		"on_update": "one_fm.one_fm.utils.send_grd_notification_to_check_applicant_document",
+		"validate": "one_fm.one_fm.utils.check_mendatory_fields_for_grd_and_recruiter",
+		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
 	"Job Offer": {

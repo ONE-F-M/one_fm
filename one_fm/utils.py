@@ -1280,6 +1280,7 @@ def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, 
 	)
 
 def validate_job_applicant(doc, method):
+   
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
     if not doc.one_fm_is_easy_apply:
