@@ -363,6 +363,7 @@ scheduler_events = {
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'
 		],
+		# "one_fm.one_fm.grd" doesnt find the module, only "one_fm.grd"
 		"0 10 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder2',
 			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
