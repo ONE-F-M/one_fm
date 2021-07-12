@@ -175,7 +175,8 @@ def create_work_permit_transfer(tp_name,employee):
     if tp:
         employee_in_tp = frappe.get_doc('Employee',employee)
         if employee_in_tp:
-            create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)
+            name = create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)
+            return name
 
 # Create Work Permit record once a month for renewals list  
 def create_work_permit_renewal(preparation_name):
@@ -240,7 +241,8 @@ def create_wp_transfer(employee,status,name):
         new_work_permit.ref_doctype = Doctype
         new_work_permit.ref_name = name
         new_work_permit.transfer_paper = name
-        new_work_permit.insert()            
+        new_work_permit.insert()  
+        return new_work_permit.name          
     else:
         # Create New Work Permit: 1. New Overseas, 2. New Kuwaiti, 3. Work Transfer
         work_permit = frappe.new_doc('Work Permit')
@@ -252,6 +254,8 @@ def create_wp_transfer(employee,status,name):
         work_permit.ref_name = name
         work_permit.transfer_paper = name
         work_permit.save()
+        return work_permit.name  
+    
 
 #For New Kuwaiti New Kuwaiti
 def create_wp_kuwaiti(employee,status,name):
