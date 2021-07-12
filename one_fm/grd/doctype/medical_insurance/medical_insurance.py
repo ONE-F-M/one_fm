@@ -12,12 +12,11 @@ from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
-
 class MedicalInsurance(Document):
     
     def validate(self):
         self.set_value()
-        self.validate_no_of_application()
+        
 
     def set_value(self):
         if not self.grd_supervisor: 
@@ -27,9 +26,8 @@ class MedicalInsurance(Document):
     
     def on_submit(self):
         self.set_depend_on_fields()
-        # self.db_set('completed','Yes')
         self.db_set('medical_insurance_submitted_by', frappe.session.user)
-        self.db_set('medical_insurance_submitted_on', today())
+        self.db_set('medical_insurance_submitted_on', now_datetime())
         if self.insurance_status == "Local Transfer":
             self.recall_create_moi_transfer()
 
@@ -38,15 +36,8 @@ class MedicalInsurance(Document):
 
     
     def set_depend_on_fields(self):
-        if self.apply_medical_insurance_online == "No":
-            frappe.throw(_('Apply Medical Insurance Online Required To Submit'))
-        elif self.upload_medical_insurance == None:
+        if self.upload_medical_insurance == None:
             frappe.throw(_('Upload Medical Insurance Is Required To Submit'))
-
-    def validate_no_of_application(self):
-        if self.category == "Group" and len(self.items) > 20:
-            frappe.throw(_("More than 20 Application is not Possible"))
-
 
 #need to be inside the class
 def valid_work_permit_exists(preparation_name):
