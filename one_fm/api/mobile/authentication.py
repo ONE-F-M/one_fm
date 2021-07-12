@@ -83,7 +83,7 @@ def forgot_password(employee_id,OTP_source):
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
-		#cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
+		cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
 		if OTP_source=="SMS":
 			verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
 			return {
