@@ -761,8 +761,12 @@
   }
  ],
  "is_submittable": 1,
+<<<<<<< HEAD
  "links": [],
  "modified": "2021-07-26 12:36:59.045756",
+=======
+ "modified": "2021-07-12 09:31:34.302452",
+>>>>>>> 3ed1fb6b (Fix: fixing date and time field value)
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
