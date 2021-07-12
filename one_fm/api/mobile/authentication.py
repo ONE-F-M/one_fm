@@ -63,12 +63,18 @@ def login(client_id, grant_type, employee_id, password):
 	
 
 @frappe.whitelist(allow_guest=True)
+<<<<<<< HEAD
 def forgot_password(employee_id):
+=======
+def forgot_password(employee_id,OTP_source):
+>>>>>>> dc6c42b (Added Option to select mode of OTP)
 	"""
-	Params: employee_id
+	Params: 
+	employee_id: employee ID
+	OTP_source: SMS or Email
 	
 	Returns: 
-		Temp Id: To be used in next api call for verifying the SMS OTP. 
+		Temp Id: To be used in next api call for verifying the SMS/Email OTP. 
 	Sends an OTP to mobile number assosciated with User	
 	"""
 	try:
@@ -77,17 +83,25 @@ def forgot_password(employee_id):
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
-		cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
-		verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+		#cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
+		if OTP_source=="SMS":
+			verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+			return {
+			'message': _('Password reset instruction sms has been sent to your registered mobile number.'),
+			'temp_id': tmp_id
+			}
+		elif OTP_source=="Email":
+			verification_obj = process_2fa_for_email(employee_user_id, token, otp_secret)
+			return {
+			'message': _('Password reset instruction email has been sent to your Email Address.'),
+			'temp_id': tmp_id
+			}
+		else:
+			return ('Please Select where you want your OTP to be sent.')
 
 		# Save data in local
 		# frappe.local.response['verification'] = verification_obj
 		# frappe.local.response['tmp_id'] = tmp_id
-
-		return {
-			'message': _('Password reset instruction sms has been sent to your registered mobile number.'),
-			'temp_id': tmp_id
-		}
 
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
