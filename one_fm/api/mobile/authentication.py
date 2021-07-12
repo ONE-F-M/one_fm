@@ -190,16 +190,8 @@ def process_2fa_for_email(user, token, otp_secret, method='Email'):
 	message = None
 	status = True
 	prompt = ''
-	if method == 'OTP App' and not frappe.db.get_default(user + '_otplogin'):
-		'''Sending one-time email for OTP App'''
-		totp_uri = pyotp.TOTP(otp_secret).provisioning_uri(user, issuer_name=otp_issuer)
-		qrcode_link = get_link_for_qrcode(user, totp_uri)
-		message = get_email_body_for_qr_code({'qrcode_link': qrcode_link})
-		subject = get_email_subject_for_qr_code({'qrcode_link': qrcode_link})
-		prompt = _('Please check your registered email address for instructions on how to proceed. Do not close this window as you will have to return to it.')
-	else:
-		'''Sending email verification'''
-		prompt = _('Verification code has been sent to your registered email address.')
+	'''Sending email verification'''
+	prompt = _('Verification code has been sent to your registered email address.')
 	status = send_token_via_email(user, token, otp_secret, otp_issuer, subject=subject, message=message)
 	verification_obj = {
 		'token_delivery': status,
