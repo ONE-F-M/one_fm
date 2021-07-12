@@ -33,6 +33,12 @@ class Penalty(Document):
 
 		if (doc_before_update and doc_before_update.workflow_state != "Penalty Rejected") and self.workflow_state == "Penalty Rejected":
 			self.create_legal_investigation()
+	def validate(self):
+		self.validate_self_issuance()
+	
+	def validate_self_issuance(self):
+		if self.recipient_employee==self.issuer_employee:
+			frappe.throw(_("Penalty recepient and issuer cannot be the same Employee.")) 
 	
 	def update_penalty_deductions(self):
 		pass
