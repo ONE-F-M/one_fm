@@ -1,4 +1,12 @@
 frappe.ui.form.on('Purchase Order', {
+	setup: function(frm) {
+		if(frappe.user.has_role("Purchase User")){
+			frm.set_df_property('quoted_delivery_date', 'hidden', 0);
+		} else {
+			frm.set_df_property('quoted_delivery_date', 'hidden', 1);
+		}
+		// frm.set_df_property('quoted_delivery_date', 'hidden', (frm.doc.docstatus==1 && frappe.user.has_role("Purchase User"))?false:true);
+	},
 	refresh: function(frm) {
 		hide_tax_fields(frm);
 		set_signed_letter_head(frm);
