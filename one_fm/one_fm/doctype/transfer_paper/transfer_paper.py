@@ -15,9 +15,19 @@ from one_fm.api.notification import create_notification_log
 
 class TransferPaper(Document):
 
+    def validate(self):
+        self.set_grd_values()
+
+    def set_grd_values(self):
+        if not self.grd_operator:
+            self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+
     def on_update(self):
+        # self.set_mendatory_fields()
         self.check_signed_workContract_employee_completed()
 
+    # def set_mendatory_fields(self):
+    #     if self.
     def check_signed_workContract_employee_completed(self):
         if self.signed == "Yes" and "Completed" in self.workflow_state and frappe.db.exists("Employee", {"one_fm_civil_id":self.civil_id}):#employee is created <NEED TO CHECK THE EMPLOYEE LIST ALL TIME>
             employee = frappe.db.get_value("Employee", {"one_fm_civil_id":self.civil_id})
@@ -36,28 +46,28 @@ class TransferPaper(Document):
             message = "<p>Please Apply for Transfer WP Online for <a href='{0}'></a>.</p>".format(page_link, wp_record.employee)
             create_notification_log(subject, message, [self.grd_operator], wp_record)
 
-    def resend_new_wp_record(self):
-        if self.tp_status == "Re-send":
-            self.set_previous_wp_record_rejected()
-            self.check_signed_workContract_employee_completed()
+    # def resend_new_wp_record(self):
+    #     if self.tp_status == "Re-send":
+    #         self.set_previous_wp_record_rejected()
+    #         self.check_signed_workContract_employee_completed()
 
-    def set_previous_wp_record_rejected(self):
-        wp = frappe.db.get_value("Work Permit",{'transfer_paper':self.name})
-        if wp:
-            wp_record = frappe.get_doc('Work Permit', wp)
-            wp_record.work_permit_status = "Rejected"
-            wp_record.save()
+    # def set_previous_wp_record_rejected(self):
+    #     wp = frappe.db.get_value("Work Permit",{'transfer_paper':self.name})
+    #     if wp:
+    #         wp_record = frappe.get_doc('Work Permit', wp)
+    #         wp_record.work_permit_status = "Rejected"
+    #         wp_record.save()
             
     def recall_create_transfer_work_permit(self,employee):
         work_permit.create_work_permit_transfer(self.name,employee)
 
     def get_wp_status(self):
         wp = frappe.db.get_value("Work Permit",{'transfer_paper':self.name})
-        print(wp)
+        # print(wp)
         if wp:
             wp_record = frappe.get_doc("Work Permit",wp)
-            self.work_permit_status = wp_record.work_permit_status
-        self.save()#to set the value of the wp status in th tp dt
+            self.db_set('work_permit_status',wp_record.work_permit_status)
+        # self.save()#to set the value of the wp status in th tp dt
 
 
 @frappe.whitelist()

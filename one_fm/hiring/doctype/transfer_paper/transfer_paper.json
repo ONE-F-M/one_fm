@@ -8,6 +8,7 @@
   "naming_series",
   "applicant",
   "date_of_application",
+  "work_permit_ref",
   "column_break_4",
   "transfer_type",
   "tp_status",
@@ -39,11 +40,13 @@
   "first_name",
   "second_name",
   "third_name",
+  "forth_name",
   "last_name",
   "column_break_22",
   "first_name_in_arabic",
   "second_name_in_arabic",
   "third_name_in_arabic",
+  "forth_name_in_arabic",
   "last_name_in_arabic",
   "section_break_27",
   "date_of_birth",
@@ -88,14 +91,6 @@
    "options": "Job Applicant"
   },
   {
-   "default": "Today\n",
-   "fieldname": "date_of_application",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Date of Application",
-   "read_only": 1
-  },
-  {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
   },
@@ -104,8 +99,9 @@
    "default": "Opened",
    "fieldname": "tp_status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "TP Status",
-   "options": "\nOpened\nUnder-Process\nCompleted"
+   "options": "\nOpened\nUnder-Process\nPending By GRD\nCompleted"
   },
   {
    "allow_on_submit": 1,
@@ -121,7 +117,6 @@
    "label": "New Company Data"
   },
   {
-   "fetch_from": "pas.company_name_arabic",
    "fieldname": "company_trade_name_arabic",
    "fieldtype": "Data",
    "label": "Company Trade Name Arabic"
@@ -133,7 +128,6 @@
    "label": "Authorized Signatory Name Arabic"
   },
   {
-   "fetch_from": "pas.pam_issuer_number",
    "fieldname": "issuer_number",
    "fieldtype": "Data",
    "label": "Issuer Number"
@@ -145,7 +139,6 @@
    "label": "Contract File Number"
   },
   {
-   "default": "292114300000",
    "fieldname": "pam_file_number",
    "fieldtype": "Data",
    "label": "File Number"
@@ -302,7 +295,7 @@
    "fetch_from": "applicant.one_fm_educational_qualification",
    "fieldname": "pratical_qualification",
    "fieldtype": "Data",
-   "label": "Pratical Qualification"
+   "label": "Educational Qualification"
   },
   {
    "fetch_from": "applicant.one_fm_passport_expire",
@@ -335,6 +328,7 @@
    "label": "PAM Designation"
   },
   {
+   "default": "Monthly",
    "fieldname": "salary_type",
    "fieldtype": "Data",
    "label": "Salary Type"
@@ -346,6 +340,7 @@
    "label": "Work Permit Salary"
   },
   {
+   "fetch_from": "applicant.one_fm_date_of_entry",
    "fieldname": "date_of_entry_in_kuwait",
    "fieldtype": "Date",
    "label": "Date of Entry in Kuwait"
@@ -419,8 +414,8 @@
   {
    "fetch_from": "applicant.one_fm_last_working_date",
    "fieldname": "end_work_date",
-   "fieldtype": "Data",
-   "label": "End Work Date"
+   "fieldtype": "Date",
+   "label": "Last Working Date"
   },
   {
    "fetch_from": "applicant.one_fm_work_permit_salary",
@@ -432,7 +427,7 @@
    "fetch_from": "applicant.one_fm_duration_of_work_permit",
    "fieldname": "previous_company_duration_of_work_permit",
    "fieldtype": "Data",
-   "label": "Duration Of Work Permit"
+   "label": "Duration of Work Permit"
   },
   {
    "fieldname": "duration_of_work_permit",
@@ -452,6 +447,7 @@
   {
    "fieldname": "authorized_signature",
    "fieldtype": "Attach Image",
+   "hidden": 1,
    "label": "Authorized Signature"
   },
   {
@@ -470,12 +466,36 @@
   },
   {
    "fieldname": "salary",
-   "fieldtype": "Currency",
+   "fieldtype": "Data",
    "label": "Salary"
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Date of Application"
+  },
+  {
+   "fetch_from": "applicant.one_fm_forth_name",
+   "fieldname": "forth_name",
+   "fieldtype": "Data",
+   "label": "Forth Name "
+  },
+  {
+   "fetch_from": "applicant.one_fm_forth_name_in_arabic",
+   "fieldname": "forth_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Forth Name in Arabic"
+  },
+  {
+   "fieldname": "work_permit_ref",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Work Permit Ref"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-07-06 11:53:26.418588",
+ "modified": "2021-07-11 15:18:01.692040",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Transfer Paper",
