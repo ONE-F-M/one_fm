@@ -41,11 +41,11 @@ class WorkContract(Document):
 			duty_commencement.save(ignore_permissions=True)
 		if self.workflow_state == 'Submitted to Legal':
 			self.validate_attachments()
-		if self.workflow_state == 'Send to Authorised Signatory' and not self.leal_receives_employee_file:
-			frappe.throw(_("Is Leal Receives Employee File ?, If yes please mark it!"))
+		if self.workflow_state == 'Send to Authorised Signatory' and not self.legal_receives_employee_file:
+			frappe.throw(_("Is Legal Receives Employee File ?, If yes please mark it!"))
 		if self.workflow_state == 'Completed':
-			if not self.leal_receives_original_work_contract:
-				frappe.throw(_("Is Leal Receives Original Work Contract?, If yes please mark it!"))
+			if not self.legal_receives_original_work_contract:
+				frappe.throw(_("Is Legal Receives Original Work Contract?, If yes please mark it!"))
 			if not self.attach_authorised_signatory_signed_work_contract:
 				frappe.throw(_("Attach Authorised Signatory Signed Work Contract!"))
 
