@@ -29,15 +29,12 @@ class WorkContract(Document):
 	def after_insert(self):
 		update_onboarding_doc(self)
 
-	def on_submit(self):
+	def on_update(self):
+		self.set_progress()
+		self.update_on_workflow_state()
 		update_onboarding_doc(self)
 
-	def before_cancel(self):
-		self.set_progress()
-
-	def on_update_after_submit(self):
-		self.set_progress()
-		update_onboarding_doc(self)
+	def update_on_workflow_state(self):
 		if self.workflow_state == "Applicant Signed":
 			duty_commencement = frappe.new_doc('Duty Commencement')
 			duty_commencement.onboard_employee = self.onboard_employee

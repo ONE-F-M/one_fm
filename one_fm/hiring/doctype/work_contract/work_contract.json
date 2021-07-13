@@ -40,8 +40,7 @@
   "section_break_9",
   "note",
   "column_break_32",
-  "rejection_reason",
-  "amended_from"
+  "rejection_reason"
  ],
  "fields": [
   {
@@ -84,15 +83,6 @@
    "hidden": 1,
    "label": "Series",
    "options": "WC-.YYYY.-.#####\nWCA-.YYYY.-.#####"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Work Contract",
-   "print_hide": 1,
-   "read_only": 1
   },
   {
    "fieldname": "column_break_7",
@@ -264,9 +254,8 @@
    "label": "Attach Authorised Signatory Signed Work Contract"
   }
  ],
- "is_submittable": 1,
  "links": [],
- "modified": "2021-06-20 21:06:40.589260",
+ "modified": "2021-07-13 10:03:16.016240",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
@@ -285,7 +274,6 @@
    "write": 1
   },
   {
-   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -295,7 +283,6 @@
    "report": 1,
    "role": "Onboarding Officer",
    "share": 1,
-   "submit": 1,
    "write": 1
   }
  ],
