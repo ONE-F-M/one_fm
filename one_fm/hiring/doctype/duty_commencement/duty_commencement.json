@@ -56,6 +56,7 @@
   },
   {
    "fetch_from": "onboard_employee.nationality",
+   "fetch_if_empty": 1,
    "fieldname": "nationality",
    "fieldtype": "Link",
    "label": "Nationality",
@@ -63,6 +64,7 @@
   },
   {
    "fetch_from": "onboard_employee.civil_id",
+   "fetch_if_empty": 1,
    "fieldname": "civil_id",
    "fieldtype": "Data",
    "label": "CIVIL ID"
@@ -137,7 +139,7 @@
   }
  ],
  "links": [],
- "modified": "2021-07-13 10:04:16.202515",
+ "modified": "2021-07-13 11:11:28.655132",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Duty Commencement",
