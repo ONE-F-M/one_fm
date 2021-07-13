@@ -15,9 +15,12 @@ frappe.ui.form.on('Request for Material', {
 				query: "erpnext.controllers.queries.item_query"
 			};
 		});
+		if(frm.doc.docstatus==1 && frappe.session.user==frm.doc.request_for_material_approver && frm.doc.status!='Approved'){
+			var df = frappe.meta.get_docfield("Request for Material Item","reject_item", cur_frm.doc.name);
+            df.hidden = 0;
+		}
 	},
 	onload: function(frm) {
-		// add item, if previous view was item
 		erpnext.utils.add_item(frm);
 		if(!frm.doc.requested_by){
 			frm.set_value('requested_by', frappe.session.user);
@@ -75,12 +78,12 @@ frappe.ui.form.on('Request for Material', {
 			};
 		});
 		frm.set_query("t_warehouse", function() {
-			return {
-				filters: [
-					['is_group', '=', 0]
-				]
-			};
-		});
+				return {
+					filters: [
+						['is_group', '=', 0]
+					]
+				};
+			});
 		// frm.set_query('warehouse', function () {
 		// 	if(frm.doc.type == 'Project'){
 		// 		return {
@@ -92,6 +95,14 @@ frappe.ui.form.on('Request for Material', {
 		// 	}
 		// });
 	},
+	// after_save: function(frm){
+	// 	let item_changes = 
+	// 	frm.doc.items.forEach((item, i) => {
+	// 		if(item.remarks){
+	// 			notify_changes_to_requester(item.remarks)
+	// 		}
+	// 	});
+	// },
 	make_custom_buttons: function(frm) {
 		if (frm.doc.docstatus == 1 && frm.doc.status == 'Approved' && frappe.user.has_role("Stock User")) {
 			// console.log(frm.doc.items[0].actual_qty);
@@ -136,7 +147,7 @@ frappe.ui.form.on('Request for Material', {
 									frm.add_custom_button(__("Material Transfer"),
 									    () => frm.events.make_stock_entry(frm), __('Create'));
 								}else{
-									frm.add_custom_button(__("Material Issue"),
+									frm.add_custom_button(__("Material Transfer"),//changed from Issue to transfer temporarily
 									    () => frm.events.make_stock_entry_issue(frm), __('Create'));					
 								}
 								
@@ -412,9 +423,11 @@ frappe.ui.form.on('Request for Material', {
 	},
 	type: function(frm) {
 		set_employee_or_project(frm);
-		set_item_field_property(frm)
+		set_item_field_property(frm);
+		set_warehouse_filters(frm)
 	}
 });
+
 
 var fetch_designation_items = function(frm) {
 	if(frm.doc.designation){
@@ -466,12 +479,9 @@ var fetch_erf_items = function(frm){
 			callback: function(r) {
 				if(r.message){
 					var erf = r.message;
-					//console.log(designation.item_list);
 					if(erf.item_list && erf.item_list.length > 0){
-						//console.log("Quantity", designation.item_list[0].item_name);
 						frm.get_field("items").grid.grid_rows[0].remove();
 						for ( var i=0; i< erf.item_list.length; i++ ){
-							//console.log("here");
 							let d = frm.add_child("items", {
 								requested_item_name: erf.item_list[i].item_name,
 								requested_description: erf.item_list[i].description,
@@ -514,6 +524,20 @@ var set_item_field_property = function(frm) {
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = true;
 	}
 };
+
+var set_warehouse_filters = function(frm) {
+	if(frm.doc.type=='Project'){
+		frm.set_query("t_warehouse", function() {
+			return {
+				filters: [
+					['is_group', '=', 0],
+					['warehouse_type', '=', frm.doc.site]
+
+				]
+			};
+		});
+	}
+}
 
 var set_employee_or_project = function(frm) {
 	if(frm.doc.type){

@@ -169,7 +169,7 @@
   "doctype": "Workflow",
   "document_type": "Work Contract",
   "is_active": 1,
-  "modified": "2021-06-20 15:17:01.412156",
+  "modified": "2021-07-13 10:18:27.932912",
   "name": "Work Contract",
   "override_status": 0,
   "parent": null,
@@ -192,7 +192,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -205,7 +205,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -218,7 +218,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "2",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -231,7 +231,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -244,7 +244,7 @@
    },
    {
     "allow_edit": "Legal User",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -257,7 +257,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -270,7 +270,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "2",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -754,7 +754,7 @@
   "doctype": "Workflow",
   "document_type": "Duty Commencement",
   "is_active": 1,
-  "modified": "2021-07-05 12:51:08.960463",
+  "modified": "2021-07-13 10:17:36.212745",
   "name": "Duty Commencement",
   "override_status": 0,
   "parent": null,
@@ -777,7 +777,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -790,7 +790,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -803,7 +803,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "2",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -816,7 +816,7 @@
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "2",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,

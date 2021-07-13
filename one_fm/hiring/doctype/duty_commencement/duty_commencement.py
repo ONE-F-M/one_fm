@@ -24,35 +24,36 @@ class DutyCommencement(Document):
 	def after_insert(self):
 		update_onboarding_doc(self)
 
-	def on_submit(self):
+	def on_update(self):
 		self.set_progress()
+		self.validate_attachments()
+		self.create_employee()
 		update_onboarding_doc(self)
 
-	def before_cancel(self):
-		self.set_progress()
-
-	def on_update_after_submit(self):
-		self.set_progress()
+	def validate_attachments(self):
 		if self.workflow_state == 'Applicant Signed and Uploaded':
 			if not self.attach_duty_commencement:
 				frappe.throw(_("Attach Signed Duty Commencement!"))
+
+	def create_employee(self):
+		if self.workflow_state == 'Applicant Signed and Uploaded':
 			if not self.reports_to:
 				frappe.throw(_("Select reports to user!"))
 			else:
 				job_offer = frappe.db.get_value('Onboard Employee', self.onboard_employee, 'job_offer')
 				if job_offer:
-					self.create_employee(job_offer)
-		update_onboarding_doc(self)
+					employee = make_employee_from_job_offer(job_offer)
+					employee.reports_to = self.reports_to
+					if not employee.one_fm_civil_id:
+						employee.one_fm_civil_id = self.civil_id
+					if not employee.one_fm_nationality:
+						employee.one_fm_nationality = self.nationality
+					employee.one_fm_first_name_in_arabic = employee.employee_name
+					employee.permanent_address = "Test"
+					employee.reports_to = self.reports_to
+					employee.save(ignore_permissions=True)
 
-	def create_employee(self, job_offer):
-		employee = make_employee_from_job_offer(job_offer)
-		employee.reports_to = self.reports_to
-		employee.one_fm_first_name_in_arabic = employee.employee_name
-		employee.permanent_address = "Test"
-		employee.reports_to = self.reports_to
-		employee.save(ignore_permissions=True)
-
-		frappe.db.set_value('Onboard Employee', self.onboard_employee, 'employee', employee.name)
+					frappe.db.set_value('Onboard Employee', self.onboard_employee, 'employee', employee.name)
 
 	def on_cancel(self):
 		if self.workflow_state == 'Cancelled':

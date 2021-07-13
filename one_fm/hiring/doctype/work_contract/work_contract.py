@@ -29,26 +29,23 @@ class WorkContract(Document):
 	def after_insert(self):
 		update_onboarding_doc(self)
 
-	def on_submit(self):
+	def on_update(self):
+		self.set_progress()
+		self.update_on_workflow_state()
 		update_onboarding_doc(self)
 
-	def before_cancel(self):
-		self.set_progress()
-
-	def on_update_after_submit(self):
-		self.set_progress()
-		update_onboarding_doc(self)
+	def update_on_workflow_state(self):
 		if self.workflow_state == "Applicant Signed":
 			duty_commencement = frappe.new_doc('Duty Commencement')
 			duty_commencement.onboard_employee = self.onboard_employee
 			duty_commencement.save(ignore_permissions=True)
 		if self.workflow_state == 'Submitted to Legal':
 			self.validate_attachments()
-		if self.workflow_state == 'Send to Authorised Signatory' and not self.leal_receives_employee_file:
-			frappe.throw(_("Is Leal Receives Employee File ?, If yes please mark it!"))
+		if self.workflow_state == 'Send to Authorised Signatory' and not self.legal_receives_employee_file:
+			frappe.throw(_("Is Legal Receives Employee File ?, If yes please mark it!"))
 		if self.workflow_state == 'Completed':
-			if not self.leal_receives_original_work_contract:
-				frappe.throw(_("Is Leal Receives Original Work Contract?, If yes please mark it!"))
+			if not self.legal_receives_original_work_contract:
+				frappe.throw(_("Is Legal Receives Original Work Contract?, If yes please mark it!"))
 			if not self.attach_authorised_signatory_signed_work_contract:
 				frappe.throw(_("Attach Authorised Signatory Signed Work Contract!"))
 

@@ -34,14 +34,13 @@
   "attach_passport",
   "column_break_27",
   "attach_non_kuwaiti_civil_id",
-  "leal_receives_employee_file",
-  "leal_receives_original_work_contract",
+  "legal_receives_employee_file",
+  "legal_receives_original_work_contract",
   "attach_authorised_signatory_signed_work_contract",
   "section_break_9",
   "note",
   "column_break_32",
-  "rejection_reason",
-  "amended_from"
+  "rejection_reason"
  ],
  "fields": [
   {
@@ -84,15 +83,6 @@
    "hidden": 1,
    "label": "Series",
    "options": "WC-.YYYY.-.#####\nWCA-.YYYY.-.#####"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Work Contract",
-   "print_hide": 1,
-   "read_only": 1
   },
   {
    "fieldname": "column_break_7",
@@ -233,14 +223,6 @@
    "label": "Attach Non Kuwaiti CIVIL ID"
   },
   {
-   "allow_on_submit": 1,
-   "default": "0",
-   "depends_on": "eval:doc.docstatus > 0",
-   "fieldname": "leal_receives_employee_file",
-   "fieldtype": "Check",
-   "label": "Leal Receives Employee File"
-  },
-  {
    "fieldname": "column_break_32",
    "fieldtype": "Column Break"
   },
@@ -252,21 +234,27 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "0",
-   "fieldname": "leal_receives_original_work_contract",
-   "fieldtype": "Check",
-   "label": "Leal Receives Original Work Contract"
-  },
-  {
-   "allow_on_submit": 1,
    "fieldname": "attach_authorised_signatory_signed_work_contract",
    "fieldtype": "Attach",
    "label": "Attach Authorised Signatory Signed Work Contract"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "legal_receives_employee_file",
+   "fieldtype": "Check",
+   "label": "Legal Receives Employee File"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "legal_receives_original_work_contract",
+   "fieldtype": "Check",
+   "label": "Legal Receives Original Work Contract"
   }
  ],
- "is_submittable": 1,
  "links": [],
- "modified": "2021-06-20 21:06:40.589260",
+ "modified": "2021-07-13 11:03:51.625178",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
@@ -285,7 +273,6 @@
    "write": 1
   },
   {
-   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -295,7 +282,6 @@
    "report": 1,
    "role": "Onboarding Officer",
    "share": 1,
-   "submit": 1,
    "write": 1
   }
  ],

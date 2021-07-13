@@ -65,6 +65,8 @@ class PenaltyIssuance(Document):
 			if frappe.db.exists("Penalty", {"recipient_employee": employee.employee_id, "penalty_issuance": self.name}):
 				frappe.throw(_("Penalty already issued to the employee linked to this Penalty Issuance record."))
 			user_id = frappe.get_value("Employee", employee.employee_id, "user_id")
+			if user_id==frappe.session.user:
+				frappe.throw(_("Cannot issue a penalty to yourself."))
 			
 			penalty = frappe.new_doc("Penalty")
 			penalty.penalty_issuance = self.name

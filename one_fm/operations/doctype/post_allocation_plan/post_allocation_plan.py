@@ -75,8 +75,8 @@ def get_employee_data_map(employee, shift, date):
 	if frappe.db.exists("Employee Skill Map", employee.employee):
 		employee_skill = frappe.get_doc("Employee Skill Map", employee.employee).as_dict()
 		employee_skills.skills = [{'skill': skill.skill, 'proficiency': skill.proficiency } for skill in employee_skill.employee_skills]
-		employee_skills.certifications = [{'certification' : employee_certification.certification, 'issue_date' : employee_certification.issue_date, 'expiry_date' : employee_certification.expiry_date} for employee_certification in employee_skill.employee_certifications]
-		employee_skills.licenses = [{'license' : employee_license.license, 'issue_date' : employee_license.issue_date, 'expiry_date' : employee_license.expiry_date} for employee_license in employee_skill.employee_licenses]
+		employee_skills.certifications = [{'certification' : training_program_certificate.training_program_name, 'issue_date' : cstr(training_program_certificate.issue_date), 'expiry_date' : cstr(training_program_certificate.expiry_date)} for training_program_certificate in get_training_program_certificate_documents(employee.employee)]
+		employee_skills.licenses = [{'license' : employee_license.license, 'issue_date' : cstr(employee_license.issue_date), 'expiry_date' : cstr(employee_license.expiry_date)} for employee_license in get_employee_license_documents(employee.employee)]
 		employee_skills.designation = frappe.db.get_value("Employee", employee.employee, "designation")
 	else:
 		frappe.throw(_("Employee Skill Map not found for {id}:{name}".format(id=employee.employee, name=employee.employee_name)))
@@ -95,6 +95,22 @@ def get_employee_data_map(employee, shift, date):
 	employee_skills.update({"gender": gender})
 	employee_skills.update(employee)
 	return employee_skills
+
+
+def get_training_program_certificate_documents(employee):
+	docs = []
+	doc_name_list = frappe.db.get_list("Training Program Certificate", {'employee': employee})
+	for doc_name in doc_name_list:
+		docs.append(frappe.get_doc("Training Program Certificate", doc_name))
+	return docs	
+
+def get_employee_license_documents(employee):
+	docs = []
+	doc_name_list = frappe.db.get_list("Employee License", {'employee': employee})
+	for doc_name in doc_name_list:
+		docs.append(frappe.get_doc("Employee License", doc_name))
+	return docs	
+	
 
 def get_post_data_map(post):
 	post_data = frappe._dict()

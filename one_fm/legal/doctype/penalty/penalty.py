@@ -33,6 +33,12 @@ class Penalty(Document):
 
 		if (doc_before_update and doc_before_update.workflow_state != "Penalty Rejected") and self.workflow_state == "Penalty Rejected":
 			self.create_legal_investigation()
+	def validate(self):
+		self.validate_self_issuance()
+	
+	def validate_self_issuance(self):
+		if self.recipient_employee==self.issuer_employee:
+			frappe.throw(_("Penalty recepient and issuer cannot be the same Employee.")) 
 	
 	def update_penalty_deductions(self):
 		pass
@@ -184,19 +190,28 @@ def create_legal_inv(doctype, docname):
 	doc = frappe.get_doc(doctype, docname)
 	doc.create_legal_investigation()
 
+def notify_employee_autoreject(doc):
+	link = get_link_to_form(doc.doctype, doc.name)
+	subject = _("Penalty Issued by {issuer_name}.".format(issuer_name=doc.issuer_name))
+	message = _("""
+		Automatic Rejection.<br>
+		Penalty has been rejected automatically after 48 hours of no action.<br>
+		<b>Note: A legal investigation will now commence looking into the matter.</b><br>
+		Link: {link}""".format(link=link))
+	frappe.sendmail([doc.recipient_user], subject=subject, message=message, reference_doctype=doc.doctype, reference_name=doc.name)
 
 def automatic_reject():
 	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
-	print(now_datetime().strftime("%Y-%m-%d %H:%M"), time)
-	docs = frappe.get_all("Penalty", {"penalty_issuance_time": time, "workflow_state": "Penalty Issued"})
-	print(docs)
-
+	time_range = add_to_date(now_datetime(), hours=-47, as_datetime=True).strftime("%Y-%m-%d %H:%M")
+	docs = frappe.get_all("Penalty", {"penalty_issuance_time": ["between", [time, time_range]], "workflow_state": "Penalty Issued"})
+    #"2021-05-11 11:07:09"
 	for doc in docs:
 		penalty = frappe.get_doc("Penalty", doc.name)
 		penalty.verified = 0
 		penalty.reason_for_rejection = "Penalty was rejected after 48 hours automatically."
 		penalty.workflow_state = "Penalty Rejected"
 		penalty.save(ignore_permissions=True)
+		notify_employee_autoreject(penalty)
 		send_email_to_legal(penalty, _("Penalty was rejected after 48 hours automatically. Please review."))
 	
 	frappe.db.commit()

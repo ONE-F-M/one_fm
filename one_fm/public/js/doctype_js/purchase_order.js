@@ -1,6 +1,15 @@
 frappe.ui.form.on('Purchase Order', {
+	setup: function(frm) {
+		if(frappe.user.has_role("Purchase User")){
+			frm.set_df_property('quoted_delivery_date', 'hidden', 0);
+		} else {
+			frm.set_df_property('quoted_delivery_date', 'hidden', 1);
+		}
+		// frm.set_df_property('quoted_delivery_date', 'hidden', (frm.doc.docstatus==1 && frappe.user.has_role("Purchase User"))?false:true);
+	},
 	refresh: function(frm) {
 		hide_tax_fields(frm);
+		set_signed_letter_head(frm);
 		hide_subscription_section(frm);
 		set_field_property_for_documents(frm);
 		set_field_property_for_other_documents(frm);
@@ -32,6 +41,12 @@ frappe.ui.form.on('Purchase Order', {
 		set_field_property_for_other_documents(frm);
 	}
 });
+
+var set_signed_letter_head = function(frm) {
+	if(frm.doc.workflow_state == "Approved"){
+		frm.set_value('letter_head', 'Authorization Signature');
+	}
+};
 
 var set_field_property_for_other_documents = function(frm) {
 	if(frm.doc.one_fm_other_documents_required && frm.doc.one_fm_other_documents_required == 'Yes'){

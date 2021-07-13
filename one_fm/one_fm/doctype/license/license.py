@@ -7,4 +7,5 @@ from __future__ import unicode_literals
 from frappe.model.document import Document
 
 class License(Document):
-	pass
+	def autoname(self):
+		self.name = self.license_name
