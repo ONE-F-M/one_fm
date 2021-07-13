@@ -44,6 +44,10 @@ class DutyCommencement(Document):
 				if job_offer:
 					employee = make_employee_from_job_offer(job_offer)
 					employee.reports_to = self.reports_to
+					if not employee.one_fm_civil_id:
+						employee.one_fm_civil_id = self.civil_id
+					if not employee.one_fm_nationality:
+						employee.one_fm_nationality = self.nationality
 					employee.one_fm_first_name_in_arabic = employee.employee_name
 					employee.permanent_address = "Test"
 					employee.reports_to = self.reports_to
