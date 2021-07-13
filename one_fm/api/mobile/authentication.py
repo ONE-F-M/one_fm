@@ -63,11 +63,8 @@ def login(client_id, grant_type, employee_id, password):
 	
 
 @frappe.whitelist(allow_guest=True)
-<<<<<<< HEAD
 def forgot_password(employee_id):
-=======
 def forgot_password(employee_id,OTP_source):
->>>>>>> dc6c42b (Added Option to select mode of OTP)
 	"""
 	Params: 
 	employee_id: employee ID
