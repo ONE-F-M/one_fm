@@ -63,7 +63,6 @@ def login(client_id, grant_type, employee_id, password):
 	
 
 @frappe.whitelist(allow_guest=True)
-def forgot_password(employee_id):
 def forgot_password(employee_id,OTP_source):
 	"""
 	Params: 
