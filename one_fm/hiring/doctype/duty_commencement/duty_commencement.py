@@ -35,7 +35,7 @@ class DutyCommencement(Document):
 			if not self.attach_duty_commencement:
 				frappe.throw(_("Attach Signed Duty Commencement!"))
 
-	def create_employee(self, job_offer):
+	def create_employee(self):
 		if self.workflow_state == 'Applicant Signed and Uploaded':
 			if not self.reports_to:
 				frappe.throw(_("Select reports to user!"))
