@@ -53,14 +53,12 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "training_program_name.trainer_name",
    "fieldname": "trainer_name",
    "fieldtype": "Data",
    "label": "Trainer Name",
    "read_only": 1
   },
   {
-   "fetch_from": "training_program_name.trainer_email",
    "fieldname": "trainer_email",
    "fieldtype": "Data",
    "label": "Trainer Email",
@@ -69,15 +67,16 @@
   {
    "fetch_from": "training_program_name.company",
    "fieldname": "company",
-   "fieldtype": "Read Only",
-   "label": "Company"
+   "fieldtype": "Data",
+   "label": "Company",
+   "read_only": 1
   },
   {
    "fieldname": "col_br_2",
    "fieldtype": "Column Break"
   }
  ],
- "modified": "2021-07-07 08:22:18.251952",
+ "modified": "2021-07-12 13:10:09.712599",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Training Program Certificate",
