@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Listing | One Fm</title>
+    <title>Career History | One Fm</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/one_fm/assets/css/job_opening.css">
@@ -42,62 +42,28 @@
     <section>
         <div class="container">
             <div class="row">
-                <div class="col-md-12  mb-5 ">
-                    <!-- Each parent div and input should have a Unique ID -->
-                    <!-- This is a parent Div -->
-                    <!-- Employee Details here!!! -->
-                    <div class="row">
-                        <div class="mb-3 col-lg-4">
-                            <label for="erfNumber" class="form-label">ERF Number</label>
-                            <input type="text" class="form-control" id="erfNumber"
-                                placeholder="Enter Your ERF Number here" disabled> <!-- This is a Input element -->
-                        </div>
-                        <div class="mb-3 col-lg-4">
-                            <label for="applicantId" class="form-label">Applicant ID</label>
-                            <input type="text" class="form-control" id="applicantId"
-                                placeholder="Enter Your Applicant ID here" disabled> <!-- This is a Input element -->
-                        </div>
-                        <div class="mb-3 col-lg-4">
-                            <label for="historyScore" class="form-label">Career History Score</label>
-                            <input type="text" class="form-control" id="historyScore" placeholder="Career Score"
-                                disabled>
-                            <!-- This is a Input element -->
-                        </div>
-                        <div class="mb-3 col-lg-6">
-                            <label for="Promotions" class="form-label">Number Promotions & Salary Changes </label>
-                            <input type="text" class="form-control" id="Promotions"
-                                placeholder="Number Promotions & Salary Changes" disabled>
-                            <!-- This is a Input element -->
-                        </div>
-                        <div class="mb-3 col-lg-6">
-                            <label for="Experience" class="form-label">Total Years Of Experience </label>
-                            <input type="text" class="form-control" id="Experience"
-                                placeholder="Total Years Of Experience" disabled> <!-- This is a Input element -->
-                        </div>
-                    </div>
-                    <!-- This is a parent Div As well -->
+                <div class="col-lg-12 col-md-12 mb-3">
+                    <h3>Hey <span class="userName">Hassan</span>! You’re Applying for Software Developer Position,
+                        <br /> Enter
+                        all the details
+                        about your career
+                        Below form and tell us How great you’re!
+                    </h3>
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <label for="erfNumber" class="form-label">ERF Number</label>
+                    <input type="text" class="form-control" id="erfNumber" placeholder="Enter Your ERF Number here"
+                        disabled>
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <label for="applicantId" class="form-label">Applicant ID</label>
+                    <input type="text" class="form-control" id="applicantId" placeholder="Enter Your Applicant ID here"
+                        disabled>
                 </div>
                 <div class="col-lg-12">
                     <hr class="my-5">
                 </div>
-                <div class="mb-3 row col-lg-8">
-                    <div class=" col-lg-12">
-                        <h4>Number of Companies</h4>
-
-                    </div>
-                    <div class=" col-lg-8">
-                        <input class="form-control" id="numberOfCompaniesNumber" type="number"
-                            placeholder="Enter the Number of Companies you worked for" />
-                    </div>
-                    <div class="col-lg-4">
-                        <button id="numberOfCompaniesSubmit" class="btn btn-primary">Submit to fill Company
-                            Details</button>
-                    </div>
-                </div>
-                <div class="col-lg-12">
-                    <hr class="my-5">
-                </div>
-                <div class="col-md-12 mt-4 mb-2" id="companyList">
+                <div class="row" id="companyList">
                 </div>
                 <div class="mb-3 col-lg-6">
                     <button class="btn btn-primary" id="addCompany">

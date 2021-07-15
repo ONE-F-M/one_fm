@@ -15,82 +15,46 @@ window.localStorage.setItem('numberOfCompanies', JSON.stringify(0));
 // valueSetter('applicantId', '12345');
 // valueSetter('historyScore', '75');
 // valueSetter('Promotions', '2');
+var special = ['zeroth', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth', 'thirteenth', 'fourteenth', 'fifteenth', 'sixteenth', 'seventeenth', 'eighteenth', 'nineteenth'];
+var deca = ['twent', 'thirt', 'fort', 'fift', 'sixt', 'sevent', 'eight', 'ninet'];
 
+function stringifyNumber(n) {
+    if (n < 20) return special[n];
+    if (n % 10 === 0) return deca[Math.floor(n / 10) - 2] + 'ieth';
+    return deca[Math.floor(n / 10) - 2] + 'y-' + special[n % 10];
+}
 
-// Commenting for Errors, will resolve in future
-// let numberofCompany = document.getElementById('numberofCompany');
-// function show() {
-//     var FormValue = numberofCompany.options[numberofCompany.selectedIndex].value;
-//     console.log(FormValue);
-// }
-// numberofCompany.onchange = show();
-
-// var df= document.getElementById("startDate").value;
-// var dt = .value;  
-
-// const totalValue = () => {
-//     var df = Number(document.getElementById("startDate"));
-//     var dt = Number(document.getElementById('endDate'));
-//     var allMonths = dt.getMonth() - df.getMonth() + (12 * (dt.getFullYear() - df.getFullYear()));
-//     var allYears = dt.getFullYear() - df.getFullYear();
-//     var partialMonths = dt.getMonth() - df.getMonth();
-//     if (partialMonths < 0) {
-//         allYears--;
-//         partialMonths = partialMonths + 12;
-//     }
-//     var total = allYears + " years " + partialMonths + " months";
-//     console.log(total);
-//     console.log({ jaren: allYears, maanden: partialMonths });
-// };
-// console.log(totalValue());
 const returnCompanyDom = (companyNumber) => {
-    return `<div class="row" id="${companyNumber}">
-    <div class="col-md-12">
-    <h4>Company <span>${companyNumber}</span> </h4>
+    return `<div class="col-lg-12 col-md-12 mb-3">
+    <h3>${companyNumber == 1 ? 'So' : 'And'}, Hassan Which is your <span id="companyNumberInString">${stringifyNumber(companyNumber)}</span> Company you worked on?</h3>
 </div>
-<div class="mb-3 col-lg-4">
-    <label for="companyName" class="form-label">Current Company Name </label>
+<div class="mb-3 col-lg-6 col-md-6">
+    <label for="companyName" class="form-label">First Company Name </label>
     <input type="text" class="form-control" id="companyName${companyNumber}"
-        placeholder="Enter the Company Name">
-    <!-- This is a Input element -->
-</div>
-<div class="mb-3 col-lg-4 ">
-    <label for="monthlySalary" class="form-label">Monthly Salary in $ </label>
-    <input type="number" class="form-control" id="monthlySalary${companyNumber}"
-        placeholder="Enter the Salary"> <!-- This is a Input element -->
-</div>
+        placeholder="Enter the First Company Name">
 
-<div class="mb-3 col-lg-4 ">
-    <label for="jobTitle" class="form-label">Current Job Title</label>
-    <input type="text" class="form-control" id="jobTitle${companyNumber}"
-        placeholder="Enter the Job Title">
-    <!-- This is a Input element -->
 </div>
-<div class="mb-3 col-lg-4 ">
-    <label for="startDate" class="form-label">Job Start Date</label>
-    <input type="date" class="form-control" id="startDate${companyNumber}">
-    <!-- This is a Input element -->
+<div class="mb-3 col-lg-6 col-md-6">
+    <label for="companyName" class="form-label">Where is it Located? </label> <br>
+    <select class="custom-select" id="location${companyNumber}">
+        <option selected>Choose</option>
+        <option value="1">India</option>
+        <option value="2">kuwait</option>
+    </select>
 </div>
-<div class="mb-3 col-lg-4">
-    <label for="endDate" class="form-label">End Date</label>
-    <input type="date" class="form-control" id="endDate${companyNumber}">
-    <!-- This is a Input element -->
+<div class="mb-3 col-lg-6 col-md-6">
+    <label for="companyName" class="form-label">When Do you Joined that company</label>
+    <input type="date" class="form-control" id="companyName${companyNumber}"
+        placeholder="Country Dropdown">
+
 </div>
-<div class="mb-3 col-lg-4 ">
-    <label for="totalExperiance" class="form-label">Years Of Experience</label>
-    <input type="text" class="form-control" id="totalExperiance${companyNumber}"
-        placeholder="Number" disabled>
-    <!-- This is a Input element -->
+<div class="mb-3 col-lg-6 col-md-6">
+    <label for="howMuchDidYouGotPaid${companyNumber}" class="form-label">How much did you got paid?</label>
+    <input type="text" class="form-control" id="howMuchDidYouGotPaid${companyNumber}"
+        placeholder="Enter the Salary">
+
 </div>
-<div class="mb-3 col-lg-6">
-    <label for="opportunityjobContent" class="form-label">Could you please tell us what is it
-        that makes
-        you interested in this opportunity?</label>
-    <textarea rows="4" cols="50" name="comment" form="usrform" class="form-control jobContent"
-        id="opportunityjobContent${companyNumber}"></textarea>
-    <!-- This is a Input element -->
-</div>
-<div class=" col-lg-6">
+<div class=" col-lg-12 col-md-12">
     <label for="Responisbilities" class="form-label">What are your top 3
         Responisbilities?</label>
     <input type="text" class="form-control mb-3" id="Responisbilities${companyNumber}"
@@ -98,116 +62,167 @@ const returnCompanyDom = (companyNumber) => {
     <!-- This is a Input element -->
     <input type="text" class="form-control mb-3" id="Responisbilities${companyNumber}"
         placeholder="2">
-    <input type="text" class="form-control" id="Responisbilities${companyNumber}"
-        placeholder="3">
+    <input type="text" class="form-control" id="Responisbilities${companyNumber}" placeholder="3">
 </div>
-
-<div class="col-lg-12">
+<div class="col-lg-12 col-md-12">
     <hr class="my-5">
 </div>
-<div class="col-lg-6">
-    <h4>Did you get any Promotion?</h4>
-    <select class="custom-select anyPromotionSelect" id="anyPromotion${companyNumber}">
-        <option selected>Choose</option>
-        <option value="1">Yes</option>
-        <option value="2">No</option>
-    </select>
+<div class="mb-3 col-lg-6 col-md-6">
+    <h4 for="companyName" class="form-label">What was your Starting Job Title?</h4>
+    <input type="text" class="form-control" id="companyName${companyNumber}"
+        placeholder="Enter the Job Title">
 </div>
+<div class="col-lg-12 col-md-12 mb-3">
+    <h4>Your Promotions/Salary Increase</h4>
+</div>
+<div style="width: 100%" id="promotionOrSalaryContainer${companyNumber}">
+    <div class=" col-lg-12 col-md-12">
+        <!-- <label for="companyName" class="form-label">Did You Only Got a Salary Increase?</label> <br> -->
+        <select class="custom-select anyPromotionOrSalaryClick" id="salaryIncrease${companyNumber}">
+            <option value="1" selected>Did You Got a Promotion with a Salary Increase?</option>
+            <option value="2">Did You Only Got a Promotion?</option>
+            <option value="3">Did You Only Got a Salary Increase?</option>
+        </select>
+    </div>
+    <div class="row" style="width: 100%; display: flex" id="promotionWithSalary${companyNumber}">
+        <div class="my-5 col-lg-6 col-md-6">
+            <label for="promotionInput${companyNumber}" class="form-label">Reason for Promotion</label>
+            <input type="text" class="form-control" id="promotionInput${companyNumber}"
+                placeholder="Enter the Reason for Your Promotion">
 
-<div class="mb-3 col-lg-6" id="totalPromotionsContainer${companyNumber}" style="opacity: 0">
-    <label for="totalPromotions" class="form-label">Total Promotions of Applicant</label> <br>
-    <div class="row">
-        <div class="col-6"><input type="number" class="form-control total" id="totalPromotions${companyNumber}" placeholder="Choose"></div>
-        <div class="col-6"> <button class="btn btn-primary" id="totalPromotionsSubmit${companyNumber}">submit</button></div>
+        </div>
+        <div class="my-5 col-lg-6 col-md-6">
+            <label for="increasedSalary${companyNumber}" class="form-label">What is Your Increased Salary in KWD?</label>
+            <input type="text" class="form-control" id="increasedSalary${companyNumber}"
+                placeholder="Enter your increased Salary in KWD">
+
+        </div>
+        <div class="mb-5 col-lg-6 col-md-6">
+            <label for="whenDoYouGotPromoted${companyNumber}" class="form-label">When Do you got Promoted?</label>
+            <input type="date" class="form-control" id="whenDoYouGotPromoted${companyNumber}">
+
+        </div>
+    </div>
+    <div class="row" style="width: 100%; display: none" id="promotion${companyNumber}">
+        <div class="my-5 col-lg-6 col-md-6">
+            <label for="promotionOnlyInput${companyNumber}" class="form-label">Reason for Promotion</label>
+            <input type="text" class="form-control" id="promotionOnlyInput${companyNumber}"
+                placeholder="Enter the Reason for Your Salary Increase">
+
+        </div>
+        <div class="my-5 col-lg-6 col-md-6">
+            <label for="whenDoYouGotPromotedOnly${companyNumber}" class="form-label">When Do you got Promoted?</label>
+            <input type="date" class="form-control" id="whenDoYouGotPromotedOnly${companyNumber}">
+
+        </div>
+    </div>
+    <div class="row" style="width: 100%; display: none" id="salary${companyNumber}">
+        <div class="my-5 col-lg-6 col-md-6">
+            <label for="reasonFOrSalaryIncrease${companyNumber}" class="form-label">Reason for Salary Increase</label>
+            <input type="text" class="form-control" id="reasonFOrSalaryIncrease${companyNumber}"
+                placeholder="Enter the Reason for Your Salary Increase">
+
+        </div>
+        <div class="my-5 col-lg-6 col-md-6">
+            <label for="increasedSalaryOnly${companyNumber}" class="form-label">What is Your Increased Salary in KWD?</label>
+            <input type="text" class="form-control" id="increasedSalaryOnly${companyNumber}"
+                placeholder="Enter your increased Salary in KWD">
+
+        </div>
+        <div class="mb-5 col-lg-6 col-md-6">
+            <label for="whenDoYouGotSalaryIncrease${companyNumber}" class="form-label">When Do you got your Salary Increase?</label>
+            <input type="date" class="form-control" id="whenDoYouGotSalaryIncrease${companyNumber}">
+
+        </div>
     </div>
 </div>
-<div class="col-lg-12" id="promotionsData${companyNumber}">
-    <!-- All the Promotions based fields will be rendered here -->
+
+<div class="col-lg-12 col-md-12 text-center">
+    <button class="btn btn-primary anyPromotionSelect" data-numberOfElements="1" id="addPromotionsAndSalary${companyNumber}">Add +</button>
 </div>
-<div class="col-lg-12">
+
+<div class="col-lg-12 col-md-12">
     <hr class="my-5">
 </div>
-<div class="col-lg-6">
-    <h4>Did you get any Salary Increase? (Change in
-        Salary)</h4> 
-    <select class="custom-select anySalaryIncrease" id="salaryIncrease${companyNumber}">
+<div class="col-lg-12 col-md-12 mb-3">
+    <h3>Are You still working for the Company?</h3>
+    <select class="custom-select anyDidYouLeaveTheJob" id="didYouLeaveTheJob${companyNumber}">
         <option selected>Choose</option>
         <option value="1">Yes</option>
         <option value="2">No</option>
     </select>
 </div>
-<div class="mb-3 col-lg-6" id="totalSalaryChangesContainer${companyNumber}" style="opacity: 0">
-    <label for="tatalSalarychanges" class="form-label">Total Salary Changes of Applicant</label> <br>
-    <div class="row">
-        <div class="col-6"><input type="number" class="form-control total" id="totalSalaryChanges${companyNumber}" placeholder="Choose"></div>
-        <div class="col-6"> <button class="btn btn-primary" id="totalSalaryChangesSubmit${companyNumber}">submit</button></div>
-    </div>
-</div>
-<div class="col-lg-12" id="salaryChangesData${companyNumber}">
-    <!-- All the Salary changes based fields will be rendered here -->
-</div>
-<div class="col-lg-12">
-    <hr class="my-5">
-</div>
-
-
-<div class="col-lg-6">
-
-    <h4>Did you leave the job?</h4>
-    <select class="custom-select anyDidYouLeaveTheJob" id="leaveJob${companyNumber}">
-        <option selected>Choose</option>
-        <option value="1">Yes</option>
-        <option value="2">No</option>
-    </select>
-</div>
-
-<div class="mb-3 mt-3 col-lg-12" id="didYouLeaveTheJobDescription${companyNumber}" style="display: none">
+<div class="col-lg-12 col-md-12" id="didYouLeaveTheJobDescription${companyNumber}" style="display: none">
     <label for="leaveJobContent" class="form-label">Why do you plan to leave the job?</label>
 
     <textarea rows="4" cols="50" name="comment" form="usrform" class="form-control jobContent"
         id="leaveJobContent${companyNumber}"></textarea>
     <!-- This is a Input element -->
 </div>
-<div class="col-lg-12 mt-3">
-    <div class="row">
-    <div class="mb-3  col-lg-6">
-        <label for="recruiterPromottionsFinalNotes" class="form-label">Shoves</label>
-        <input type="text" class="form-control" id="recruiterPromottionsFinalNotes${companyNumber}"
-            placeholder="Shoves" disabled>
-        <!-- This is a Input element -->
-    </div>
-    <div class="mb-3  col-lg-6">
-        <!-- This is a Input element -->
-        <label for="recruiterPromottionsFinalNotes" class="form-label">Tugs</label>
-        <input type="text" class="form-control" id="recruiterPromottionsFinalNotes${companyNumber}"
-            placeholder="Tugs" disabled>
-    </div>
-    </div>
-</div>
-<div class="col-lg-12">
+<div class="col-lg-12 col-md-12">
     <hr class="my-5">
-</div>
 </div>`;
 };
 const promotionsDomRenderer = (companyNumber) => {
-    return `<div class="mb-3 col-lg-6">
-        <label for="reasonPromottion" class="form-label">Reason for Promotion</label>
-        <input type="text" class="form-control" id="reasonPromottion${companyNumber}"
-            placeholder="Reason for Promotion"> <!-- This is a Input element -->
+    return `<div class=" col-lg-12 col-md-12">
+    <!-- <label for="companyName" class="form-label">Did You Only Got a Salary Increase?</label> <br> -->
+    <select class="custom-select anyPromotionOrSalaryClick" id="salaryIncrease${companyNumber}">
+        <option value="1" selected>Did You Got a Promotion with a Salary Increase?</option>
+        <option value="2">Did You Only Got a Promotion?</option>
+        <option value="3">Did You Only Got a Salary Increase?</option>
+    </select>
+</div>
+<div class="row" style="width: 100%; display: flex" id="promotionWithSalary${companyNumber}">
+    <div class="my-5 col-lg-6 col-md-6">
+        <label for="promotionInput${companyNumber}" class="form-label">Reason for Promotion</label>
+        <input type="text" class="form-control" id="promotionInput${companyNumber}"
+            placeholder="Enter the Reason for Your Promotion">
+
     </div>
-    <div class="mb-3 col-lg-3">
-        <label for="recruiterPromottions" class="form-label">Recruiter Notes Promitions</label>
-        <input type="text" class="form-control" id="recruiterPromottions${companyNumber}"
-            placeholder="Recruiter Notes Promitions" disabled>
-        <!-- This is a Input element -->
+    <div class="my-5 col-lg-6 col-md-6">
+        <label for="increasedSalary${companyNumber}" class="form-label">What is Your Increased Salary in KWD?</label>
+        <input type="text" class="form-control" id="increasedSalary${companyNumber}"
+            placeholder="Enter your increased Salary in KWD">
+
     </div>
-    <div class="mb-3 col-lg-3">
-        <label for="recruiterPromotionValidation" class="form-label">Recruiter Validation
-            Score</label>
-        <input type="text" class="form-control" id="recruiterPromotionValidation${companyNumber}"
-            placeholder="Recruiter Validation Score" disabled>
-        <!-- This is a Input element -->
+    <div class="mb-5 col-lg-6 col-md-6">
+        <label for="whenDoYouGotPromoted${companyNumber}" class="form-label">When Do you got Promoted?</label>
+        <input type="date" class="form-control" id="whenDoYouGotPromoted${companyNumber}">
+
     </div>
+</div>
+<div class="row" style="width: 100%; display: none" id="promotion${companyNumber}">
+    <div class="my-5 col-lg-6 col-md-6">
+        <label for="promotionOnlyInput${companyNumber}" class="form-label">Reason for Promotion</label>
+        <input type="text" class="form-control" id="promotionOnlyInput${companyNumber}"
+            placeholder="Enter the Reason for Your Salary Increase">
+
+    </div>
+    <div class="my-5 col-lg-6 col-md-6">
+        <label for="whenDoYouGotPromotedOnly${companyNumber}" class="form-label">When Do you got Promoted?</label>
+        <input type="date" class="form-control" id="whenDoYouGotPromotedOnly${companyNumber}">
+
+    </div>
+</div>
+<div class="row" style="width: 100%; display: none" id="salary${companyNumber}">
+    <div class="my-5 col-lg-6 col-md-6">
+        <label for="reasonFOrSalaryIncrease${companyNumber}" class="form-label">Reason for Salary Increase</label>
+        <input type="text" class="form-control" id="reasonFOrSalaryIncrease${companyNumber}"
+            placeholder="Enter the Reason for Your Salary Increase">
+
+    </div>
+    <div class="my-5 col-lg-6 col-md-6">
+        <label for="increasedSalaryOnly${companyNumber}" class="form-label">What is Your Increased Salary in KWD?</label>
+        <input type="text" class="form-control" id="increasedSalaryOnly${companyNumber}"
+            placeholder="Enter your increased Salary in KWD">
+
+    </div>
+    <div class="mb-5 col-lg-6 col-md-6">
+        <label for="whenDoYouGotSalaryIncrease${companyNumber}" class="form-label">When Do you got your Salary Increase?</label>
+        <input type="date" class="form-control" id="whenDoYouGotSalaryIncrease${companyNumber}">
+
+    </div>
+</div>
 `;
 };
 const salaryChangesDomRenderer = (companyNumber) => {
@@ -231,72 +246,79 @@ const salaryChangesDomRenderer = (companyNumber) => {
 </div>
 `;
 };
-const addCompany = (isNumberEntered) => {
+
+const addCompany = () => {
     console.log("add Company");
-    if (isNumberEntered === 'yes') {
-        if (domGetter('CompanyList1') != null) {
-            alert('Already Entered Data will be lost!');
-        }
-        domGetter('companyList').innerHTML = '';
-        window.localStorage.setItem('numberOfCompanies', JSON.stringify(0));
-        const numberEntered = JSON.parse(valueGetter('numberOfCompaniesNumber'));
-        domGetter('numberOfCompaniesNumber').disabled = true;
-        domGetter('numberOfCompaniesSubmit').disabled = true;
-        window.localStorage.setItem('numberOfCompanies', JSON.stringify(numberEntered));
-        for (let i = 1; i <= numberEntered; i += 1) {
-            domGetter('companyList').innerHTML += returnCompanyDom(i);
-        }
-    }
-    else {
-        const oldNumberOfCompanies = JSON.parse(window.localStorage.getItem('numberOfCompanies'));
-        const newNumberOfCompanies = oldNumberOfCompanies + 1;
-        window.localStorage.setItem('numberOfCompanies', JSON.stringify(newNumberOfCompanies));
-        let div = document.createElement("div");
-        div.id = `CompanyList${newNumberOfCompanies}`;
-        div.className = 'row';
-        div.innerHTML = returnCompanyDom(newNumberOfCompanies);
-        domGetter('companyList').append(div);
-        // domGetter('companyList').innerHTML += returnCompanyDom(newNumberOfCompanies);
-    }
+    const oldNumberOfCompanies = JSON.parse(window.localStorage.getItem('numberOfCompanies'));
+    const newNumberOfCompanies = oldNumberOfCompanies + 1;
+    window.localStorage.setItem('numberOfCompanies', JSON.stringify(newNumberOfCompanies));
+    let div = document.createElement("div");
+    div.id = `CompanyList${newNumberOfCompanies}`;
+
+    div.className = 'row';
+    div.innerHTML = returnCompanyDom(newNumberOfCompanies);
+    domGetter('companyList').append(div);
+    // domGetter('companyList').innerHTML += returnCompanyDom(newNumberOfCompanies);
+
     const anyPromotionSelect = document.getElementsByClassName('anyPromotionSelect');
-    const anySalaryIncrease = document.getElementsByClassName('anySalaryIncrease');
     const anyDidYouLeaveTheJob = document.getElementsByClassName('anyDidYouLeaveTheJob');
+    const anyPromotionOrSalaryClick = document.getElementsByClassName('anyPromotionOrSalaryClick');
     for (let i = 0; i < anyPromotionSelect.length; i += 1) {
         anyPromotionSelect[i].addEventListener("click", onPromotionClick);
-    }
-    for (let i = 0; i < anySalaryIncrease.length; i += 1) {
-        anySalaryIncrease[i].addEventListener("click", onSalaryIncreaseClick);
     }
     for (let i = 0; i < anyDidYouLeaveTheJob.length; i += 1) {
         anyDidYouLeaveTheJob[i].addEventListener("click", onDidYouLeaveJobClick);
     }
+    for (let i = 0; i < anyPromotionOrSalaryClick.length; i += 1) {
+        anyPromotionOrSalaryClick[i].addEventListener("click", onPromotionOrSalaryClick);
+    }
 };
 
 const onPromotionClick = (e) => {
+    console.log("came inside");
     const id = e.target.id.slice(-1);
-    const selectedValue = e.target[e.target.selectedIndex].value;
-    if (selectedValue == 1) {
-        domGetter(`totalPromotionsContainer${id}`).style.opacity = 1;
-        domGetter(`totalPromotionsSubmit${id}`).addEventListener("click", function () {
-            renderPromotionFields(id);
-        });
+    let count = Number(e.target.dataset.numberofelements) + 1;
+    alert(id);
+    let div = document.createElement("div");
+    div.id = `promotionField${id}`;
+    div.className = 'row';
+    div.innerHTML = promotionsDomRenderer(count);
+    domGetter(`promotionOrSalaryContainer${id}`).append(div);
+
+    const anyPromotionOrSalaryClick = document.getElementsByClassName('anyPromotionOrSalaryClick');
+    console.log(anyPromotionOrSalaryClick);
+    for (let i = 0; i < anyPromotionOrSalaryClick.length; i += 1) {
+        anyPromotionOrSalaryClick[i].addEventListener("click", onPromotionOrSalaryClick);
     }
-};
-const onSalaryIncreaseClick = (e) => {
-    const id = e.target.id.slice(-1);
-    const selectedValue = e.target[e.target.selectedIndex].value;
-    if (selectedValue == 1) {
-        domGetter(`totalSalaryChangesContainer${id}`).style.opacity = 1;
-        domGetter(`totalSalaryChangesSubmit${id}`).addEventListener("click", function () {
-            renderSalaryChangesFields(id);
-        });
-    }
+    e.target.dataset.numberofelements = count;
 };
 const onDidYouLeaveJobClick = (e) => {
     const id = e.target.id.slice(-1);
     const selectedValue = e.target[e.target.selectedIndex].value;
     if (selectedValue == 1) {
         domGetter(`didYouLeaveTheJobDescription${id}`).style.display = 'inline';
+    }
+    if (selectedValue == 2) {
+        domGetter(`didYouLeaveTheJobDescription${id}`).style.display = 'none';
+    }
+};
+const onPromotionOrSalaryClick = (e) => {
+    const id = e.target.id.slice(-1);
+    const selectedValue = e.target[e.target.selectedIndex].value;
+    if (selectedValue == 1) {
+        domGetter(`promotion${id}`).style.display = 'none';
+        domGetter(`salary${id}`).style.display = 'none';
+        domGetter(`promotionWithSalary${id}`).style.display = 'flex';
+    }
+    if (selectedValue == 2) {
+        domGetter(`promotionWithSalary${id}`).style.display = 'none';
+        domGetter(`salary${id}`).style.display = 'none';
+        domGetter(`promotion${id}`).style.display = 'flex';
+    }
+    if (selectedValue == 3) {
+        domGetter(`promotion${id}`).style.display = 'none';
+        domGetter(`promotionWithSalary${id}`).style.display = 'none';
+        domGetter(`salary${id}`).style.display = 'flex';
     }
 };
 
@@ -355,8 +377,5 @@ const submit = () => {
 
 domGetter('addCompany').addEventListener("click", function () {
     addCompany();
-});
-domGetter('numberOfCompaniesSubmit').addEventListener("click", function () {
-    addCompany('yes');
 });
 document.getElementById("submit").addEventListener("click", submit);

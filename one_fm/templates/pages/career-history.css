@@ -24,3 +24,11 @@ transform: 1s;
 .custom-select{
 	width: 40%;
 }
+
+hr{
+	border-top: 3px solid rgb(0 0 0 / 10%)
+}
+
+.custom-select{
+	width: 100%;
+}
