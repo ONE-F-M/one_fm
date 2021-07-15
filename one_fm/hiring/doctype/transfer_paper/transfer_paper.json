@@ -13,11 +13,10 @@
   "transfer_type",
   "tp_status",
   "work_permit_status",
-  "pas",
   "new_company_data_section",
   "company_trade_name_arabic",
   "authorized_signatory_name_arabic",
-  "issuer_number",
+  "license_number",
   "column_break_12",
   "contract_file_number",
   "duration_of_work_permit",
@@ -31,7 +30,7 @@
   "previous_company_pam_designation",
   "column_break_13",
   "previous_company_contract_file_number",
-  "previous_company_issuer_number",
+  "previous_company_license_number",
   "previous_company_pam_file_number",
   "end_work_date",
   "previous_company_work_permit_salary",
@@ -128,11 +127,6 @@
    "label": "Authorized Signatory Name Arabic"
   },
   {
-   "fieldname": "issuer_number",
-   "fieldtype": "Data",
-   "label": "Issuer Number"
-  },
-  {
    "fetch_from": "applicant.one_fm_pam_file_number",
    "fieldname": "contract_file_number",
    "fieldtype": "Data",
@@ -169,12 +163,6 @@
    "fieldname": "previous_company_contract_file_number",
    "fieldtype": "Data",
    "label": "Contract File Number"
-  },
-  {
-   "fetch_from": "applicant.one_fm_previous_company_issuer_number",
-   "fieldname": "previous_company_issuer_number",
-   "fieldtype": "Data",
-   "label": "Issuer Number"
   },
   {
    "fetch_from": "applicant.one_fm_previous_company_pam_file_number",
@@ -412,7 +400,6 @@
    "label": "Residency Number"
   },
   {
-   "fetch_from": "applicant.one_fm_last_working_date",
    "fieldname": "end_work_date",
    "fieldtype": "Date",
    "label": "Last Working Date"
@@ -451,13 +438,6 @@
    "label": "Authorized Signature"
   },
   {
-   "fetch_from": "applicant.one_fm_authorized_signatory",
-   "fieldname": "pas",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "PAS"
-  },
-  {
    "default": "Transfer",
    "fieldname": "transfer_type",
    "fieldtype": "Select",
@@ -492,10 +472,21 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Work Permit Ref"
+  },
+  {
+   "fieldname": "license_number",
+   "fieldtype": "Data",
+   "label": "License Number"
+  },
+  {
+   "fetch_from": "applicant.one_fm_previous_company_issuer_number",
+   "fieldname": "previous_company_license_number",
+   "fieldtype": "Data",
+   "label": "License Number"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-07-11 15:18:01.692040",
+ "modified": "2021-07-14 16:02:30.519930",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Transfer Paper",

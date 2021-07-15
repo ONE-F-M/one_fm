@@ -11,6 +11,7 @@
   "main_pam_file",
   "license_trade_name_english",
   "license_trade_name_arabic",
+  "license_number",
   "pam_file_governorate_arabic",
   "company_unified_number",
   "designation",
@@ -73,11 +74,17 @@
   {
    "fetch_from": "license_trade_name_english.license_trade_name_arabic",
    "fieldname": "license_trade_name_arabic",
-   "fieldtype": "Read Only",
-   "label": "License Trade Name (Arabic)"
+   "fieldtype": "Data",
+   "label": "License Trade Name (Arabic)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "license_number",
+   "fieldtype": "Data",
+   "label": "License Number"
   }
  ],
- "modified": "2020-06-02 13:05:29.944854",
+ "modified": "2021-07-14 16:47:47.772360",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM File",
