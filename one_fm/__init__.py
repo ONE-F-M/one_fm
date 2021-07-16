@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from erpnext.hr.doctype.shift_request.shift_request import ShiftRequest
-from erpnext.hr.doctype.payroll_entry.payroll_entry import PayrollEntry
+from erpnext.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
 from erpnext.hr.doctype.salary_slip.salary_slip import SalarySlip
 from erpnext.stock.doctype.item_price.item_price import ItemPrice
 from one_fm.api.doc_methods.shift_request import shift_request_submit
