@@ -8,7 +8,7 @@ def shift_request_submit(self):
 		assignment_doc.shift = self.operations_shift
 		assignment_doc.shift_type = self.shift_type
 		assignment_doc.employee = self.employee
-		assignment_doc.date = date
+		assignment_doc.start_date = date
 		assignment_doc.shift_request = self.name
 		assignment_doc.insert()
 		assignment_doc.submit()
