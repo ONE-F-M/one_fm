@@ -262,5 +262,5 @@ def get_filtered_employees(shift, penalty_occurence_time, as_dict=None):
 	return frappe.db.sql("""
 		SELECT sh.employee, sh.employee_name, emp.designation
 		FROM `tabShift Assignment` as sh, `tabEmployee` as emp
-		WHERE sh.shift="{shift}" AND sh.date=DATE("{date}") AND sh.employee=emp.name
+		WHERE sh.shift="{shift}" AND sh.start_date=DATE("{date}") AND sh.employee=emp.name
 	""".format(shift=shift, date=penalty_occurence_time), as_dict=as_dict)
