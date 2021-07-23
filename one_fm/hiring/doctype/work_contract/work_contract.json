@@ -7,15 +7,19 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
-  "company",
+  "type",
   "onboard_employee",
   "job_applicant",
   "job_offer",
+  "employee",
+  "effective_from",
   "column_break_7",
-  "applicant_name",
-  "applicant_name_in_arabic",
-  "date",
+  "employee_name",
+  "employee_name_in_arabic",
+  "company",
+  "posting_date",
   "status",
+  "progress",
   "work_contract_details_section",
   "nationality",
   "civil_id",
@@ -24,34 +28,39 @@
   "designation",
   "monthly_salary",
   "working_hours",
+  "section_break_23",
+  "original_passport_required",
+  "attach_signed_passport_receiving_copy",
+  "attach_passport",
+  "column_break_27",
+  "attach_non_kuwaiti_civil_id",
+  "legal_receives_employee_file",
+  "legal_receives_original_work_contract",
+  "attach_authorised_signatory_signed_work_contract",
   "section_break_9",
   "note",
-  "amended_from"
+  "column_break_32",
+  "rejection_reason"
  ],
  "fields": [
   {
+   "depends_on": "eval:doc.type == 'New Contract'",
    "fieldname": "onboard_employee",
    "fieldtype": "Link",
    "label": "Onboard Employee",
    "options": "Onboard Employee"
   },
   {
+   "depends_on": "eval:doc.type == 'New Contract'",
+   "fetch_from": "onboard_employee.job_applicant",
    "fieldname": "job_applicant",
    "fieldtype": "Link",
    "label": "Job Applicant",
    "options": "Job Applicant"
   },
   {
-   "fieldname": "applicant_name",
-   "fieldtype": "Data",
-   "label": "Applicant Name"
-  },
-  {
-   "fieldname": "applicant_name_in_arabic",
-   "fieldtype": "Data",
-   "label": "Applicant Name in Arabic"
-  },
-  {
+   "depends_on": "eval:doc.type == 'New Contract'",
+   "fetch_from": "onboard_employee.job_offer",
    "fieldname": "job_offer",
    "fieldtype": "Link",
    "label": "Job Offer",
@@ -68,24 +77,12 @@
    "fieldtype": "Section Break"
   },
   {
+   "default": "WC-.YYYY.-.#####",
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Series",
-   "options": "WC-.YYYY.-.#####"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Work Contract",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "date",
-   "fieldtype": "Date",
-   "label": "Date"
+   "options": "WC-.YYYY.-.#####\nWCA-.YYYY.-.#####"
   },
   {
    "fieldname": "column_break_7",
@@ -134,21 +131,130 @@
    "label": "Working Hours / Day"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Status",
-   "options": "\nOpen\nPending\nSubmitted\nCancelled"
+   "options": "\nOpen\nProcessing\nProcess Finished",
+   "read_only": 1
   },
   {
    "fieldname": "note",
    "fieldtype": "Small Text",
    "label": "Note"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "New Contract\nAmend Contract",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.type == 'Amend Contract'",
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name"
+  },
+  {
+   "fieldname": "employee_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Employee Name in Arabic"
+  },
+  {
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "label": "Effective From"
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "progress",
+   "fieldtype": "Percent",
+   "label": "Progress",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_23",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "original_passport_required",
+   "fieldtype": "Check",
+   "label": "Original Passport Required"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "original_passport_required",
+   "fieldname": "attach_signed_passport_receiving_copy",
+   "fieldtype": "Attach",
+   "label": "Attach Signed Passport Receiving Copy"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_passport",
+   "fieldtype": "Attach",
+   "label": "Attach Passport"
+  },
+  {
+   "fieldname": "column_break_27",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: !doc.original_passport_required",
+   "fieldname": "attach_non_kuwaiti_civil_id",
+   "fieldtype": "Attach",
+   "label": "Attach Non Kuwaiti CIVIL ID"
+  },
+  {
+   "fieldname": "column_break_32",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state == 'Submitted to Legal' || doc.workflow_state == 'Submitted for Applicant Review'",
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Rejection Reason"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_authorised_signatory_signed_work_contract",
+   "fieldtype": "Attach",
+   "label": "Attach Authorised Signatory Signed Work Contract"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "legal_receives_employee_file",
+   "fieldtype": "Check",
+   "label": "Legal Receives Employee File"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "legal_receives_original_work_contract",
+   "fieldtype": "Check",
+   "label": "Legal Receives Original Work Contract"
   }
  ],
- "is_submittable": 1,
  "links": [],
- "modified": "2021-05-25 22:08:56.562487",
+ "modified": "2021-07-13 11:03:51.625178",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
@@ -167,7 +273,6 @@
    "write": 1
   },
   {
-   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -177,7 +282,6 @@
    "report": 1,
    "role": "Onboarding Officer",
    "share": 1,
-   "submit": 1,
    "write": 1
   }
  ],

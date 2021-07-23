@@ -6,19 +6,24 @@ from __future__ import unicode_literals
 import frappe, json
 from frappe.model.document import Document
 from frappe import _
+from frappe.model.rename_doc import rename_doc
 from frappe.utils import cstr, get_datetime
 import schedule, time
 
 from datetime import timedelta
 
 class OperationsShift(Document):
+	
 	def autoname(self):
-		print(type(self.start_time), self.end_time)
-		self.name = self.site+"-"+self.shift_classification+"|"+cstr(self.start_time)+"-"+cstr(self.end_time)+"|"+cstr(self.duration)+" hours"
+		self.name = self.service_type+"-"+self.site+"-"+self.shift_type
 
-	def after_insert(self):
-		shift_type = frappe.get_doc("Shift Type", self.shift_type)
-		start_time = get_datetime(self.start_time) + timedelta(minutes=shift_type.notification_reminder_after_shift_start)
+	def on_update(self):
+		self.validate_name()
+
+	def validate_name(self):
+		new_name = self.service_type+"-"+self.site+"-"+self.shift_type
+		if new_name != self.name:
+			rename_doc(self.doctype, self.name, new_name, force=True)
 
 @frappe.whitelist()
 def create_posts(data, site_shift, site, project=None):

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020, omar jaber and contributors
 # For license information, please see license.txt
-
 from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.model.document import Document
 from datetime import date
+from one_fm.api.notification import create_notification_log
 from frappe.utils import today, add_days, get_url
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.grd.doctype.paci import paci
@@ -24,20 +24,14 @@ class MOIResidencyJawazat(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_residency_expiry_new_date_in_employee_doctype()
-        self.db_set('completed','Yes')
         self.db_set('completed_on', today())
         if self.category == "Transfer":
             self.recall_create_paci()
 
-
     def recall_create_paci(self):
         paci.create_PACI_for_transfer(self.employee)
 
-
-
     def validate_mandatory_fields_on_submit(self):
-        if self.apply_online == "No":
-            frappe.throw(_("Must Apply MOI To Submit"))
         if not self.invoice_attachment:
             frappe.throw(_("Attach The Invoice To Submit"))
         if not self.residency_attachment:
@@ -48,7 +42,6 @@ class MOIResidencyJawazat(Document):
     def set_residency_expiry_new_date_in_employee_doctype(self):
         today = date.today()
         employee = frappe.get_doc('Employee', self.employee)
-
         employee.residency_expiry_date = self.new_residency_expiry_date # update the date of expiry
         employee.append("one_fm_employee_documents", {
             "attach": self.residency_attachment,
@@ -77,27 +70,29 @@ def creat_moi_for_transfer(work_permit_name):
         if employee:
             create_moi_record(frappe.get_doc('Employee',employee.employee),"Transfer")
 
-#def create_mi_record(Insurance_status,work_permit_dic):
 def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
     if Renewal_or_Extend == "Renewal":
         category = "Renewal"
+        start_date = add_days(employee.residency_expiry_date, -14)
     if Renewal_or_Extend == "Transfer":
         category = "Transfer"
     if Renewal_or_Extend != "Renewal" and Renewal_or_Extend != "Transfer":
         category = "Extend"
+        start_date = add_days(employee.residency_expiry_date, -7)
+        
 
-    start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
+    # start_day_for_renewal = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
     new_moi = frappe.new_doc('MOI Residency Jawazat')
     new_moi.employee = employee.name
     new_moi.preparation = preparation_name
-    new_moi.renewal_or_extend = Renewal_or_Extend#employee_data.renewal_or_extend
+    new_moi.renewal_or_extend = Renewal_or_Extend
     new_moi.date_of_application = start_day
     new_moi.category = category
     new_moi.insert()
 
 # Run this method at 4 pm (cron)
 def system_checks_grd_operator_apply_online():
-    filters = {'docstatus': 0,'apply_online':['=','No']}
+    filters = {'docstatus': 0,'date_of_application':['<=',today()]}
     moi_list = frappe.db.get_list('MOI Residency Jawazat', filters, ['name', 'grd_operator'])
     if len(moi_list) > 0:
         moi_notify_first_grd_operator()
@@ -114,7 +109,7 @@ def moi_notify_grd_operator(reminder_indicator):
     # Get moi list
     today = date.today()
     filters = {'docstatus': 0,
-    'apply_online':['=','No'] ,'reminded_grd_operator': 0, 'reminded_grd_operator_again':0}
+    'date_of_application':['<=',today()] ,'reminded_grd_operator': 0, 'reminded_grd_operator_again':0}
     if reminder_indicator == 'red':
         filters['reminded_grd_operator'] = 1
         filters['reminded_grd_operator_again'] = 0
@@ -170,7 +165,7 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.document_type = reference_doc.doctype
         doc.document_name = reference_doc.name
         doc.from_user = reference_doc.modified_by
-        #doc.insert(ignore_permissions=True)
+        doc.insert(ignore_permissions=True)
 
 
 

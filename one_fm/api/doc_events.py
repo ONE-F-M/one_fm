@@ -3,7 +3,7 @@ import itertools
 
 import frappe
 from frappe import _
-from frappe.utils import cstr, cint, get_datetime, getdate
+from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
 from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
@@ -104,7 +104,7 @@ def checkin_after_insert(doc, method):
 				hrs, mins, secs = cstr(time_diff).split(":")
 				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 				subject = _("{employee} has checked in late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
-				message = _("{employee_name} has checked in late by {delay}. {location} <br><br><div class='btn btn-primary btn-danger late-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name,shift=doc.shift, date=cstr(doc.time), employee=doc.employee, delay=delay, location=message_suffix))
+				message = _("{employee_name} has checked in late by {delay}. {location} <br><br><div class='btn btn-primary btn-danger late-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name,shift=doc.operations_shift, date=cstr(doc.time), employee=doc.employee, delay=delay, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
@@ -129,7 +129,7 @@ def checkin_after_insert(doc, method):
 				hrs, mins, secs = cstr(time_diff).split(":")
 				early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 				subject = _("{employee} has checked out early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
-				message = _("{employee_name} has checked out early by {early}. {location} <br><br><div class='btn btn-primary btn-danger early-punch-out' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name, shift=doc.shift, date=cstr(doc.time), employee=doc.employee_name, early=early, location=message_suffix))
+				message = _("{employee_name} has checked out early by {early}. {location} <br><br><div class='btn btn-primary btn-danger early-punch-out' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name, shift=doc.operations_shift, date=cstr(doc.time), employee=doc.employee_name, early=early, location=message_suffix))
 				for_users = [supervisor_user]
 				create_notification_log(subject, message, for_users, doc)
 
@@ -342,3 +342,60 @@ def employee_validate(self):
 		if existing_user_id:
 			remove_user_permission(
 				"Employee", self.name, existing_user_id)
+
+#Training Result
+@frappe.whitelist()
+def update_certification_data(doc, method):
+	""" 
+	This function adds/updates the Training Program Certificate doctype 
+	by checking the pass/fail criteria of the employees based on the Training Result. 
+	Also adds the certificate to the Employee Skill Map.
+	"""
+	passed_employees = []
+	
+	training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email, end_datetime = frappe.db.get_value("Training Event", {'event_name': doc.training_event}, ["training_program", "has_certificate", "minimum_score", "validity", "company", "trainer_name", "trainer_email", "end_time"])	
+	
+	if has_certificate:
+
+		issue_date = cstr(end_datetime).split(" ")[0]
+		if validity:
+			expiry_date = add_to_date(issue_date, months=validity)
+
+		for employee in doc.employees:
+			if employee.grade and min_score and cint(employee.grade) >= min_score:
+				passed_employees.append(employee.employee)
+		
+		for passed_employee in passed_employees:
+			if frappe.db.exists("Training Program Certificate", {'training_program_name': training_program_name, 'employee': passed_employee}):
+				update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date)
+			else:
+				create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date,company, trainer_name, trainer_email)
+
+def update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None):
+	doc = frappe.get_doc("Training Program Certificate", {'training_program_name': training_program_name, 'employee': passed_employee})
+	doc.issue_date = issue_date
+	doc.expiry_date = expiry_date
+	doc.save()
+	
+def create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None, company=None, trainer_name=None, trainer_email=None):
+	doc = frappe.new_doc("Training Program Certificate")
+	doc.training_program_name = training_program_name
+	doc.company = company
+	doc.trainer_name = trainer_name
+	doc.trainer_email = trainer_email
+	doc.employee = passed_employee
+	doc.issue_date = issue_date
+	doc.expiry_date = expiry_date
+	doc.save()
+
+
+#Training Event
+@frappe.whitelist()
+def update_training_event_data(doc, method):
+	for employee in doc.employees:
+		if frappe.db.exists("Employee Skill Map", employee.employee):
+			doc_esm = frappe.get_doc("Employee Skill Map", employee.employee)
+			doc_esm.append("trainings",{
+				'training': doc.event_name,
+			})
+			doc_esm.save()

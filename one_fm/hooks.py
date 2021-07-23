@@ -71,7 +71,8 @@ doctype_js = {
 	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",
 	"Purchase Order": "public/js/doctype_js/purchase_order.js",
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
-	"Payment Entry": "public/js/doctype_js/payment_entry.js"
+	"Payment Entry": "public/js/doctype_js/payment_entry.js",
+	"Item Price": "public/js/doctype_js/item_price.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -160,10 +161,13 @@ doc_events = {
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
+		"validate": "one_fm.one_fm.utils.check_mendatory_fields_for_grd_and_recruiter",
+		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
 	"Job Offer": {
-		"validate": "one_fm.hiring.utils.validate_job_offer"
+		"validate": "one_fm.hiring.utils.validate_job_offer",
+		"on_update_after_submit": "one_fm.hiring.utils.job_offer_on_update_after_submit"
 	},
 	"Shift Type": {
 		"autoname": "one_fm.api.doc_events.naming_series"
@@ -190,6 +194,9 @@ doc_events = {
 	"Supplier Group": {
 		"on_update": "one_fm.utils.supplier_group_on_update",
 	},
+	"Bank Account": {
+		"on_update": "one_fm.utils.bank_account_on_update",
+	},
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
@@ -205,8 +212,7 @@ doc_events = {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	"Project": {
-		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
-		"on_update": "one_fm.one_fm.project_custom.on_project_save"
+		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
@@ -221,6 +227,12 @@ doc_events = {
 	},
 	"Salary Slip": {
 		"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit"
+	},
+	"Training Event":{
+		"on_submit": "one_fm.api.doc_events.update_training_event_data"
+	},
+	"Training Result" :{
+		"on_submit": "one_fm.api.doc_events.update_certification_data"
 	}
 }
 
@@ -274,6 +286,8 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
+		'one_fm.grd.utils.sendmail_reminder1',
+		'one_fm.grd.utils.sendmail_reminder2',
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -292,9 +306,9 @@ scheduler_events = {
 	],
 
 	"cron": {
-		"0 8 1 * *":[# Monthy event at 8 am
-			"one_fm.one_fm.grd.doctype.preparation.create_preparation"
-
+		"0 8 1 * *": [# first day of the Month at 8 am 
+			"one_fm.grd.doctype.preparation.create_preparation",
+			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record'
 		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
@@ -312,9 +326,12 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"0 16 * * *":[
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
-			'one_fm.one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
-			'one_fm.one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online'
+			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
+			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
+			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online',
+			'one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_first_grd_operator',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator'
 		],
 		"0 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four'
@@ -324,25 +341,32 @@ scheduler_events = {
 		],
 		"0 8 * * *": [
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
-			'one_fm.utils.send_gp_letter_attachment_no_response'
+			'one_fm.utils.send_gp_letter_attachment_no_response',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
+			
+		],
+		"30 8 * * *":[
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator',
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator',
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_grd_operator_check_approval'
+			'one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator',
+			'one_fm.grd.doctype.work_permit.work_permit_notify_grd_operator_check_approval'
 
 		],
 		"30 9 * * *": [
-			'one_fm.one_fm.grd.doctype.work_permit.work_permit_notify_again_grd_operator',
-			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first'
-
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first',
+			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.moi_notify_again_grd_operator'
+			
 		],
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'
 		],
+		# "one_fm.one_fm.grd" doesnt find the module, only "one_fm.grd"
 		"0 10 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder2',
-			'one_fm.one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
 		],
 		"30 6 * * *": [
 			'one_fm.utils.check_pam_visa_approval_submission_six_half'

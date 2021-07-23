@@ -197,6 +197,7 @@ def send_notification(subject, message, recipients):
 		notification.email_content = message
 		notification.document_type = "Notification Log"
 		notification.for_user = user
+		notification.document_name = " "
 		notification.save()
 		notification.document_name = notification.name
 		notification.save()
@@ -244,7 +245,7 @@ def automatic_checkout():
 	shifts_list = get_active_shifts(now_time)
 	for shift in shifts_list:
 		# shift_end is equal to now time - notification reminder in mins
-		print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
+		#print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			# print(shift.name, now_time, shift.end_time)
@@ -312,7 +313,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 
 def automatic_shift_assignment():
 	date = cstr(getdate())
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working", "site": ("in", ["HO", "Mahboula Camp", "Farwaniyah Camp", "Plot 40", "Head Office"]) }, ["*"])
+	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" }, ["*"])
 	for schedule in roster:
 		create_shift_assignment(schedule, date)
 
@@ -478,3 +479,4 @@ def create_penalty_deduction(start_date, end_date, employee, total_penalty_amoun
 	penalty_deduction.balance_amount = balance_amount
 	penalty_deduction.insert()
 	penalty_deduction.submit()
+	#frappe.db.commit()

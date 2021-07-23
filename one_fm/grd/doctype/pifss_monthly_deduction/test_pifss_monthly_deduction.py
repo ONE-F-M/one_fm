@@ -2,9 +2,14 @@
 # Copyright (c) 2020, omar jaber and Contributors
 # See license.txt
 from __future__ import unicode_literals
-
-# import frappe
+import frappe
 import unittest
-
+from frappe.utils import flt, getdate
+import pandas as pd
+import frappe, erpnext
+from frappe.utils.user import get_users_with_role
+from frappe.permissions import has_permission
+from frappe.model.document import Document
+from frappe import _
 class TestPIFSSMonthlyDeduction(unittest.TestCase):
 	pass

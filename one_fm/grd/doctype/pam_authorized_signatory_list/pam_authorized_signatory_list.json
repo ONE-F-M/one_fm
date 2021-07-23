@@ -29,7 +29,7 @@
   {
    "fieldname": "pam_file_name",
    "fieldtype": "Link",
-   "label": "PAM File Name Dennis",
+   "label": "PAM File Name",
    "options": "PAM File",
    "unique": 1
   },
@@ -88,7 +88,7 @@
    "label": "PAM Issuer Number"
   }
  ],
- "modified": "2020-11-10 10:00:58.454723",
+ "modified": "2021-06-30 21:24:01.666686",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Authorized Signatory List",

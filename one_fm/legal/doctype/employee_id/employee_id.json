@@ -9,6 +9,8 @@
   "naming_series",
   "employee",
   "reason_for_request",
+  "onboard_employee",
+  "progress",
   "status",
   "column_break_4",
   "apply_penalty",
@@ -150,6 +152,7 @@
   },
   {
    "fetch_from": "employee.image",
+   "fetch_if_empty": 1,
    "fieldname": "employee_image_link",
    "fieldtype": "Attach",
    "label": "Employee Image"
@@ -219,11 +222,25 @@
    "fieldname": "signed_handover_form",
    "fieldtype": "Attach",
    "label": "Signed Handover Form"
+  },
+  {
+   "fieldname": "onboard_employee",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Onboard Employee",
+   "options": "Onboard Employee"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "progress",
+   "fieldtype": "Percent",
+   "hidden": 1,
+   "label": "Progress"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-26 00:59:41.793450",
+ "modified": "2021-07-01 10:54:09.204628",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Employee ID",

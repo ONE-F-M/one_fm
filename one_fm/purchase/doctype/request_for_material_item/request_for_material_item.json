@@ -40,7 +40,8 @@
   "purchased_qty",
   "projected_qty",
   "ordered_qty",
-  "received_qty"
+  "received_qty",
+  "reject_item"
  ],
  "fields": [
   {
@@ -181,13 +182,12 @@
    "print_hide": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "stock_uom",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Stock UOM",
    "options": "UOM",
-   "print_hide": 1,
-   "read_only": 1
+   "print_hide": 1
   },
   {
    "allow_on_submit": 1,
@@ -354,10 +354,19 @@
    "fieldtype": "Float",
    "label": "Quantity to Transfer",
    "report_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "reject_item",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "Reject"
   }
  ],
  "istable": 1,
- "modified": "2021-06-03 10:39:04.786905",
+ "modified": "2021-07-06 10:51:18.227667",
  "modified_by": "o.asim@armor-services.com",
  "module": "Purchase",
  "name": "Request for Material Item",

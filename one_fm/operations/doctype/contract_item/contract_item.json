@@ -6,20 +6,26 @@
  "field_order": [
   "item_code",
   "head_count",
+  "uom",
+  "price_list_rate",
   "type",
   "unit_rate",
   "monthly_rate_without_fee",
   "management_fee_percentage",
   "management_fee",
   "monthly_rate",
+  "rate",
   "column_break_4",
+  "item_price",
   "item_name",
   "shift_hours",
-  "days",
-  "days_off"
+  "gender",
+  "days_off",
+  "days"
  ],
  "fields": [
   {
+   "columns": 4,
    "fieldname": "item_code",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -27,6 +33,7 @@
    "options": "Item"
   },
   {
+   "columns": 2,
    "fieldname": "head_count",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -37,11 +44,13 @@
    "depends_on": "eval:doc.type == 'Hourly'",
    "fieldname": "unit_rate",
    "fieldtype": "Currency",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "Hourly Unit Rate",
    "options": "currency"
   },
   {
+   "fetch_from": "item_code.description",
    "fieldname": "item_name",
    "fieldtype": "Data",
    "label": "Item Name",
@@ -52,16 +61,19 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "item_price.shift_hours",
    "fieldname": "shift_hours",
    "fieldtype": "Float",
    "label": "Shift Hours",
-   "precision": "3"
+   "precision": "3",
+   "read_only": 1
   },
   {
    "default": "0",
    "depends_on": "eval:doc.type == 'Monthly'",
    "fieldname": "monthly_rate",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Monthly Rate",
    "options": "currency"
   },
@@ -69,14 +81,17 @@
    "default": "Monthly",
    "fieldname": "type",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Type",
    "options": "Hourly\nMonthly"
   },
   {
+   "fetch_from": "item_price.days_off",
    "fieldname": "days_off",
    "fieldtype": "Select",
    "label": "Weekly Days Off",
-   "options": "0\n1\n2\n3\n4\n5\n6"
+   "options": "0\n1\n2\n3\n4\n5\n6",
+   "read_only": 1
   },
   {
    "fieldname": "days",
@@ -87,6 +102,7 @@
    "default": "0",
    "fieldname": "monthly_rate_without_fee",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Monthly Rate Without Fee",
    "options": "currency"
   },
@@ -102,10 +118,52 @@
    "label": "Management Fee",
    "options": "currency",
    "read_only": 1
+  },
+  {
+   "fieldname": "item_price",
+   "fieldtype": "Link",
+   "label": "Item Price",
+   "options": "Item Price"
+  },
+  {
+   "fetch_from": "item_price.gender",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fetch_from": "item_price.uom",
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "UOM",
+   "options": "UOM",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_price.price_list_rate",
+   "fieldname": "price_list_rate",
+   "fieldtype": "Currency",
+   "label": "Price List Rate",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fetch_from": "item_price.price_list_rate",
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Rate",
+   "options": "currency",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2021-05-18 10:42:14.844445",
+ "modified": "2021-06-22 23:40:21.818457",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",

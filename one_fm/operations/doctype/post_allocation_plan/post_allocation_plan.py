@@ -75,8 +75,9 @@ def get_employee_data_map(employee, shift, date):
 	if frappe.db.exists("Employee Skill Map", employee.employee):
 		employee_skill = frappe.get_doc("Employee Skill Map", employee.employee).as_dict()
 		employee_skills.skills = [{'skill': skill.skill, 'proficiency': skill.proficiency } for skill in employee_skill.employee_skills]
+		employee_skills.certifications = [{'certification' : training_program_certificate.training_program_name, 'issue_date' : cstr(training_program_certificate.issue_date), 'expiry_date' : cstr(training_program_certificate.expiry_date)} for training_program_certificate in get_training_program_certificate_documents(employee.employee)]
+		employee_skills.licenses = [{'license' : employee_license.license, 'issue_date' : cstr(employee_license.issue_date), 'expiry_date' : cstr(employee_license.expiry_date)} for employee_license in get_employee_license_documents(employee.employee)]
 		employee_skills.designation = frappe.db.get_value("Employee", employee.employee, "designation")
-		print(employee_skills.designation)
 	else:
 		frappe.throw(_("Employee Skill Map not found for {id}:{name}".format(id=employee.employee, name=employee.employee_name)))
 
@@ -95,6 +96,22 @@ def get_employee_data_map(employee, shift, date):
 	employee_skills.update(employee)
 	return employee_skills
 
+
+def get_training_program_certificate_documents(employee):
+	docs = []
+	doc_name_list = frappe.db.get_list("Training Program Certificate", {'employee': employee})
+	for doc_name in doc_name_list:
+		docs.append(frappe.get_doc("Training Program Certificate", doc_name))
+	return docs	
+
+def get_employee_license_documents(employee):
+	docs = []
+	doc_name_list = frappe.db.get_list("Employee License", {'employee': employee})
+	for doc_name in doc_name_list:
+		docs.append(frappe.get_doc("Employee License", doc_name))
+	return docs	
+	
+
 def get_post_data_map(post):
 	post_data = frappe._dict()
 	post_doc = frappe.get_doc("Operations Post", post.post).as_dict()
@@ -102,6 +119,8 @@ def get_post_data_map(post):
 	post_data.priority_level = post_doc.priority_level
 	post_data.skills =  [{'skill': skill.skill, 'proficiency': skill.minimum_proficiency_required } for skill in post_doc.skills]
 	post_data.designations = [designation.designation for designation in post_doc.designations]
+	post_data.certifications = [post_certification.certification for post_certification in post_doc.post_certifications]
+	post_data.licenses = [post_license.license for post_license in post_doc.post_licenses]
 	post_data.post = post.post
 	post_data.allow_staff_rotation = post_doc.allow_staff_rotation
 	post_data.day_off_priority = post_doc.day_off_priority

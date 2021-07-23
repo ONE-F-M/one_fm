@@ -88,7 +88,7 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 	
 @frappe.whitelist()
 def get_penalties(employee):
-	return frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time"], order_by="modified desc")
+	return frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
 
 
 @frappe.whitelist()
@@ -104,7 +104,7 @@ def accept_penalty(file, retries, docname):
 	Docname: Name of the penalty doctype
 
 	Returns: 
-		'succes' message upon verification || updated retries and 'error' message || Exception. 
+		'success' message upon verification || updated retries and 'error' message || Exception. 
 	"""
 	try:
 		print(retries)
@@ -155,17 +155,22 @@ def reject_penalty(rejection_reason, docname):
 	Docname: Name of the penalty doctype
 
 	Returns: 
-		'succes' message upon succesful refection of the penalty || Exception. 
+		'success' message upon successful rejection of the penalty || 'No penalty found' if the penalty doesnt exist || Exception. 
 	"""
 	try:
 		penalty = frappe.get_doc("Penalty", docname)
-		penalty.reason_for_rejection = rejection_reason
-		penalty.workflow_state = "Penalty Rejected"
-		penalty.save(ignore_permissions=True)
-		frappe.db.commit()
-		return {
-				'message': 'success'
-			}
+		if penalty.workflow_state == 'Penalty Issued':
+			penalty.reason_for_rejection = rejection_reason
+			penalty.workflow_state = "Penalty Rejected"
+			penalty.save(ignore_permissions=True)
+			frappe.db.commit()
+			return {
+					'message': 'success'
+				}
+		else:
+			return {
+					'message': f'No penalty {docname} found'
+				}
 	except Exception as exc:
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())

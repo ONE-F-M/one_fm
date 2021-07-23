@@ -4,22 +4,64 @@
 frappe.ui.form.on('Fingerprint Appointment', {
 	onload: function(frm) {
 		if (!frm.is_new()){
-            set_employee_details(frm);
-            
+            set_employee_details(frm);  
         }      
+    },
+    refresh: function(frm){
+        frm.add_custom_button(('Operation Department'),function(){
+            let Operations = frm.selected_doc.operations_manager;
+            frappe.call({
+                method: "one_fm.grd.utils.notify", 
+                args: {
+                    'name':frm.selected_doc.name,
+                    'email':Operations,
+                    'civilid':frm.selected_doc.civil_id,
+                    'date_time':frm.selected_doc.date_and_time_confirmation,
+                },
+                callback: function(r) {
+                    frm.set_value("notify_operations",1);
+                    frappe.msgprint({
+                        title: __('Notification'),
+                        indicator: 'green',
+                        message: __('Notification sent Sucessfully to Operation Department')
+                        });
+                }
+            })
+
+        },("Notify"));
+
+        frm.add_custom_button(('Transport Department'),function(){
+            let transportation = frm.selected_doc.transport_user;
+            frappe.call({
+                
+                method: "one_fm.grd.utils.notify", 
+                args: {
+                    'name':frm.selected_doc.name,
+                    'email':transportation,
+                    'civilid':frm.selected_doc.civil_id,
+                    'date_time':frm.selected_doc.date_and_time_confirmation,
+                },
+                callback: function(r) {
+                    frm.set_value("notify_transport",1);
+                    frm.set_value("required_transportation","Yes");
+                    frappe.msgprint({
+                        title: __('Notification'),
+                        indicator: 'green',
+                        message: __('Notification sent Sucessfully to Transport Department')
+                        });
+                }
+            })
+        
+        },("Notify"));
+        
     },
     employee: function(frm){
         set_employee_details(frm);  
     },
-	date_and_time_confirmation: function(frm){
-		set_preparing_documents_notification(frm);
-	},
-	schedule_appointment: function(frm){
-		set_schedule_appointment_time(frm);
-	},
-	preparing_documents: function(frm){
-		set_preparing_documents_time(frm);
-	}
+	
+    preparing_documents: function(frm){
+        set_preparing_documents_time(frm);
+    }
 });
 var set_employee_details = function(frm){
     if(frm.doc.employee){
@@ -50,24 +92,8 @@ var set_employee_details = function(frm){
         })
     }
 };
-var set_preparing_documents_time = function(frm){
-	if(frm.doc.preparing_documents == "Yes" && !frm.doc.preparing_documents_on)
-    {
-		frm.set_value('preparing_documents_on',frappe.datetime.now_datetime());
+var set_preparing_documents_time= function(frm){
+    if(frm.doc.preparing_documents == "Yes" && !frm.doc.preparing_documents_on){
+        frm.set_value('preparing_documents_on',frappe.datetime.now_datetime());
     }
-
-};
-var set_schedule_appointment_time = function(frm){
-	if(frm.doc.schedule_appointment == "Yes" && !frm.doc.schedule_appointment_on)
-    {
-		frm.set_value('schedule_appointment_on',frappe.datetime.now_datetime());
-    }
-};
-var set_preparing_documents_notification = function(frm){
-	if(frm.doc.date_and_time_confirmation)
-    {
-		
-        frm.set_value('preparing_documents_notification',frappe.datetime.add_days(frm.doc.date_and_time_confirmation,-1))
-        
-    }
-};
+}

@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import frappe, json
 from frappe.utils import get_url, fmt_money, month_diff
 from frappe.model.mapper import get_mapped_doc
+from frappe.modules import scrub
 from frappe import _
 
 @frappe.whitelist()
@@ -122,7 +123,8 @@ def make_employee_from_job_offer(source_name, target_doc=None):
             "field_map": {
                 "applicant_name": "employee_name",
                 "name": "job_offer",
-                "one_fm_salary_structure": "job_offer_salary_structure"
+                "one_fm_salary_structure": "job_offer_salary_structure",
+                "estimated_date_of_joining": "date_of_joining"
             }
         }
     }, target_doc, set_missing_values)
@@ -253,3 +255,110 @@ def get_onboarding_details(parent, parenttype):
 		fields=["action", "role", "user", "required_for_employee_creation", "description"],
 		filters={"parent": parent, "parenttype": parenttype},
 		order_by= "idx")
+
+@frappe.whitelist()
+def make_transfer_paper_from_job_offer(source_name, target_doc=None):
+    offer_record = frappe.get_doc('Job Offer',source_name)
+    print(offer_record.job_applicant)
+    doc = get_mapped_doc("Job Applicant", offer_record.job_applicant, {
+        "Job Applicant": {
+            "doctype": "Transfer Paper",
+            "field_map": {
+                "one_fm_previous_company_trade_name_in_arabic": "previous_company_trade_name_arabic",
+                "one_fm__previous_company_authorized_signatory_name_arabic":"previous_company_authorized_signatory_name_arabic",
+                "one_fm_previous_company_contract_file_number":"previous_company_contract_file_number",
+                "one_fm_previous_company_issuer_number":"previous_company_issuer_number",
+                "one_fm_previous_company_pam_file_number":"previous_company_pam_file_number",
+                "one_fm_work_permit_salary":"previous_company_work_permit_salary",
+                "one_fm_work_permit_number":"work_permit_number",
+                "one_fm_last_working_date":"end_work_date",
+                "one_fm_duration_of_work_permit":"previous_company_duration_of_work_permit",
+                "name":"applicant"
+            }
+        }
+    }, target_doc)
+    return doc
+
+def update_onboarding_doc(doc, is_trash=False, cancel_oe=False):
+    if frappe.get_meta(doc.doctype).has_field("onboard_employee") and doc.onboard_employee:
+        onboard_employee = frappe.get_doc('Onboard Employee', doc.onboard_employee)
+        doc_field_prefix = scrub(doc.doctype)
+        if frappe.get_meta('Onboard Employee').has_field(doc_field_prefix+"_status"):
+            if is_trash:
+                onboard_employee.set(doc_field_prefix+"_status", '')
+            else:
+                onboard_employee.set(doc_field_prefix+"_status", doc.workflow_state)
+        if frappe.get_meta('Onboard Employee').has_field(doc_field_prefix):
+            if is_trash or cancel_oe:
+                onboard_employee.set(doc_field_prefix, '')
+                if frappe.get_meta('Onboard Employee').has_field(doc_field_prefix+"_name"):
+                    onboard_employee.set(doc_field_prefix+"_name", doc.name)
+            else:
+                onboard_employee.set(doc_field_prefix, doc.name)
+        if frappe.get_meta('Onboard Employee').has_field(doc_field_prefix+"_docstatus"):
+            if is_trash:
+                onboard_employee.set(doc_field_prefix+"_docstatus", '')
+            else:
+                onboard_employee.set(doc_field_prefix+"_docstatus", doc.docstatus)
+        if frappe.get_meta('Onboard Employee').has_field(doc_field_prefix+"_progress"):
+            if is_trash:
+                onboard_employee.set(doc_field_prefix+"_progress", 0)
+            else:
+                onboard_employee.set(doc_field_prefix+"_progress", doc.progress)
+        onboard_employee.save(ignore_permissions=True);
+        if cancel_oe:
+            onboard_employee.reload()
+            onboard_employee.cancel()
+
+def job_offer_on_update_after_submit(doc, method):
+    if doc.workflow_state == 'Submit to Onboarding Officer':
+        if not doc.estimated_date_of_joining:
+            frappe.throw(_('Please Select Estimated Date of Joining to Accept Offer'))
+        if not doc.onboarding_officer:
+            frappe.throw(_("Please Select Onboarding Officer to Process Onboard"))
+        # TODO: Send Notification to Assined Office to accept the Onboarding Task
+    if doc.workflow_state == 'Onboarding Officer Rejected':
+        pass
+        # TODO: Notify Recruiter
+    if doc.workflow_state == 'Accepted':
+        create_on_boarding_from_job_offer(doc)
+
+def create_on_boarding_from_job_offer(job_offer):
+    if job_offer.status == 'Accepted':
+        if not job_offer.onboarding_officer:
+            frappe.msgprint(_("Please Select Onboarding Officer to Create Onboard Employee"))
+        elif not frappe.db.exists('Onboard Employee', {'job_offer': job_offer.name}):
+            fields = ['employee_grade', 'job_applicant']
+            one_fm_fields = ['salary_structure', 'job_offer_total_salary', 'provide_salary_advance', 'salary_advance_amount',
+                'provide_accommodation_by_company', 'provide_transportation_by_company']
+            o_employee = frappe.new_doc('Onboard Employee')
+            o_employee.job_offer = job_offer.name
+            o_employee.date_of_joining = job_offer.estimated_date_of_joining
+            for d in fields:
+                o_employee.set(d, job_offer.get(d))
+            for od in one_fm_fields:
+                o_employee.set(od, job_offer.get('one_fm_'+od))
+            if job_offer.one_fm_salary_details:
+                o_employee_salary_details = o_employee.append('salary_details')
+                for salary_detail in job_offer.one_fm_salary_details:
+                    o_employee_salary_details.salary_component = salary_detail.salary_component
+                    o_employee_salary_details.amount = salary_detail.amount
+            if job_offer.job_applicant:
+                fields = ['email_id', 'department', 'project', 'source', 'nationality_no', 'nationality_subject',
+                    'date_of_naturalization']
+                one_fm_fields = ['applicant_is_overseas_or_local', 'is_transferable', 'designation', 'agency', 'gender', 'religion',
+                    'date_of_birth', 'erf', 'height', 'place_of_birth', 'marital_status', 'nationality', 'contact_number',
+                    'secondary_contact_number', 'passport_number', 'passport_holder_of', 'passport_issued', 'passport_expire',
+                    'passport_type', 'visa_type', 'civil_id', 'cid_expire', 'is_uniform_needed_for_this_job', 'shoulder_width',
+                    'waist_size', 'shoe_size']
+                job_applicant = frappe.get_doc('Job Applicant', job_offer.job_applicant)
+                for d in fields:
+                    o_employee.set(d, job_applicant.get(d))
+                for od in one_fm_fields:
+                    o_employee.set(od, job_applicant.get('one_fm_'+od))
+                for applicant_document in job_applicant.one_fm_documents_required:
+                    doc_required = o_employee.append('applicant_documents')
+                    fields = ['document_required', 'required_when', 'or_required_when', 'type_of_copy', 'or_type_of_copy', 'not_mandatory']
+                    for field in fields:
+                        doc_required.set(field, applicant_document.get(field))
+            o_employee.save(ignore_permissions=True)
