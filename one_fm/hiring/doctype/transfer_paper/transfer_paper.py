@@ -65,7 +65,7 @@ class TransferPaper(Document):
         This method create wp record after tp is submitted and notify operator 
         """
         if self.signed == "Yes" and self.tp_status == "Pending By GRD":
-            if frappe.db.exists("Employee", {"one_fm_civil_id":self.civil_id}):#employee is created <NEED TO CHECK THE EMPLOYEE LIST ALL TIME>
+            if frappe.db.exists("Employee", {"one_fm_civil_id":self.civil_id}):#employee is created 
                 employee = frappe.db.get_value("Employee", {"one_fm_civil_id":self.civil_id})
                 if employee:
                     self.recall_create_transfer_work_permit(employee)#create wp
