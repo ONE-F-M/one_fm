@@ -55,7 +55,6 @@
    "fieldname": "employee_name",
    "fieldtype": "Data",
    "hidden": 1,
-   "options": "employee.employee_name",
    "read_only": 1
   },
   {
