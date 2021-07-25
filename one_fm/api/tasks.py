@@ -365,8 +365,8 @@ def generate_payroll():
 	end_date = get_end_date(start_date, 'monthly')['end_date']
 	
 	# Hardcoded dates for testing, remove below 2 lines for live
-	start_date = "2021-02-24"
-	end_date = "2021-03-23"
+	#start_date = "2021-02-24"
+	#end_date = "2021-03-23"
 
 	try:
 			create_payroll_entry(start_date, end_date)
