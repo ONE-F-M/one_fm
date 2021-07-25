@@ -5,7 +5,6 @@
 frappe.ui.form.on('Transfer Paper', {
     refresh: function(frm) {
         let doc_name = frm.doc.name;
-        // console.log(doc_name)
         if(frm.doc.docstatus==1) {
                 frm.add_custom_button(__('Re-Send New Work Permit'), function() { 
                     frappe.xcall('one_fm.hiring.doctype.transfer_paper.transfer_paper.resend_new_wp_record',{doc_name})
