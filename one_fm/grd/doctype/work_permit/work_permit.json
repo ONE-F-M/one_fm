@@ -182,17 +182,15 @@
    "fetch_from": "employee.gender",
    "fetch_if_empty": 1,
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Gender",
-   "options": "Gender",
    "read_only": 1
   },
   {
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Nationality",
-   "options": "Nationality",
    "read_only": 1
   },
   {
@@ -433,9 +431,8 @@
   {
    "fetch_from": "employee.valid_upto",
    "fieldname": "passport_expiry_date",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Passport Expiry Date",
-   "options": "Employee",
    "read_only": 1
   },
   {
@@ -765,7 +762,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-25 14:16:07.625977",
+ "modified": "2021-07-26 12:36:59.045756",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
