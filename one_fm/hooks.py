@@ -445,7 +445,10 @@ fixtures = [
 		"dt": "Workflow Action Master"
 	},
 	{
-		"dt": "Workflow"
+		"dt": "Workflow",
+		'filters': [['dt', 'in', ['Work Permit', 'Medical Insurance', 
+		'Fingerprint Appointment','MOI Residency Jawazat','Transfer Paper','PACI']]]
+
 	},
 	{
 		"dt": "Client Script",
