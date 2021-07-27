@@ -34,7 +34,7 @@ class MOMFollowup(Document):
 		# 	pass
 	def on_update_after_submit(self):
 		if self.penalty_type:
-				issue_penalty(self.site_supervisor, nowdate(),self.penalty_code,frappe.get_value('Shift Assignment',{'employee':self.site_supervisor,'date':nowdate()},'shift'), self.project_manager,"Head Office")
+				issue_penalty(self.site_supervisor, nowdate(),self.penalty_code,frappe.get_value('Shift Assignment',{'employee':self.site_supervisor,'start_date':nowdate()},'shift'), self.project_manager,"Head Office")
 
 
 	# def on_update(self):
@@ -136,7 +136,7 @@ def mom_followup_penalty():
 		mom = frappe.get_doc('MOM Followup', each.name) 
 		mom.workflow_state = 'Issue Penalty'
 		mom.save(ignore_permissions=True)
-		issue_penalty(mom.site_supervisor, nowdate(),mom.penalty_code,frappe.get_value('Shift Assignment',{'employee':mom.site_supervisor,'date':nowdate()},'shift'), mom.project_manager,"Head Office")
+		issue_penalty(mom.site_supervisor, nowdate(),mom.penalty_code,frappe.get_value('Shift Assignment',{'employee':mom.site_supervisor,'start_date':nowdate()},'shift'), mom.project_manager,"Head Office")
 
 
 
