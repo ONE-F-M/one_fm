@@ -56,21 +56,16 @@ def send_notification_to_grd_or_recruiter(doc, method):
 
 def notify_grd_to_check_applicant_documents(doc):
     """
-    This method is notifying all operators with applicant's cid and passport to check on PAM,
-    This method runs on update, so if the notification had sent before it won't annoy the operators again
-     by checking notification log list.
-    """
-    filtered_grd_users = []
-    find = False
-    users = get_users_with_role('GRD Operator') 
-    for user in users:
-        filtered_grd_users.append(user)
-        find = True
-        break
-    if find and filtered_grd_users and len(filtered_grd_users) > 0:  
-        dt = frappe.get_doc('Job Applicant',doc.name)
+    This method is notifying operator with applicant's cid and passport to check on PAM,
+    This method runs on update, so if the notification had sent before it won't annoy the operator again
+    as it checkes notification log list.
+    """ 
+    if not doc.one_fm_grd_operator:
+        doc.one_fm_grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+
+    dt = frappe.get_doc('Job Applicant',doc.name)
     if dt:
-        email = filtered_grd_users
+        email = [doc.one_fm_grd_operator]
         page_link = get_url("/desk#List/Job Applicant/" + dt.name)
         message = "<p>Check If Transferable.<br>Civil id:{0} - Passport Number:{1}<a href='{2}'></a>.</p>".format(dt.one_fm_cid_number,dt.one_fm_passport_number,page_link)
         subject = 'Check If Transferable.<br>Civil id:{0} - Passport Number:{1}'.format(dt.one_fm_cid_number,dt.one_fm_passport_number)
@@ -129,7 +124,8 @@ def check_mendatory_fields_for_grd_and_recruiter(doc,method):
     roles = frappe.get_roles(frappe.session.user)
     if "GRD Operator" in roles:
         if doc.one_fm_has_issue == "No":
-            validate_mendatory_fields_for_grd(doc)       
+            validate_mendatory_fields_for_grd(doc)  
+              
         if doc.one_fm_has_issue == "Yes":
             if not doc.one_fm_type_of_issues:
                 frappe.throw("Set The Type of Transfer issue Applicant has before saving")
@@ -157,6 +153,7 @@ def validate_mendatory_fields_for_grd(doc):
             message += '<li>' + mandatory_field +'</li>'
         message += '</ul>'
         frappe.throw(message)
+
 
 def validate_mendatory_fields_for_recruiter(doc):
     """

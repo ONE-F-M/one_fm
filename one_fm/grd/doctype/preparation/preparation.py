@@ -15,6 +15,7 @@ from frappe.utils import today, add_days, get_url#extra
 from datetime import date, timedelta
 import calendar
 from datetime import date
+from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from dateutil.relativedelta import relativedelta
 from frappe.utils import get_datetime, add_to_date, getdate
 from one_fm.grd.doctype.work_permit import work_permit
@@ -40,7 +41,7 @@ class Preparation(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.db_set('submitted_by', frappe.session.user)
-        self.db_set('submitted_on', today())
+        self.db_set('submitted_on', now_datetime())
         self.recall_create_work_permit_renewal() ## create work permit record for renewals
         self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
         self.recall_create_moi_renewal_and_extend() # create moi record for all employee
