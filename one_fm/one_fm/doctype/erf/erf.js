@@ -173,10 +173,12 @@ frappe.ui.form.on('ERF', {
 	},
 	onload: function(frm) {
 		// set_other_benefits(frm);
+		set_grd_section_as_read_only();
+
 	},
 	number_of_candidates_required: function(frm) {
     calculate_total_cost_in_salary(frm);
-    set_required_quantity_grd(frm);
+    // set_required_quantity_grd(frm);
 	},
   salary_per_person: function(frm) {
     calculate_total_cost_in_salary(frm);
@@ -260,7 +262,17 @@ frappe.ui.form.on('ERF', {
 		manage_provide_salary_advance(frm);
 	}
 });
-
+var set_grd_section_as_read_only = function(frm){
+	if(frappe.user.has_role("Senior Recruiter") || frappe.user.has_role("Hiring Manager") || frappe.user.has_role("HR Manager")){
+		let read_fields=['grd_section','one_fm_pam_designation'];
+		set_read_only_fields(frm, read_fields, true);
+	}
+};
+var set_read_only_fields = function(frm, fields, read_only) {
+	fields.forEach((field) => {
+		frm.set_df_property(field, 'read_only', read_only);
+	});
+};
 var set_performance_profile_resource_btn = function(frm) {
 	if(!frm.is_new() && frm.doc.docstatus<1){
 		frm.add_custom_button(__('Get Hand book'), function(){

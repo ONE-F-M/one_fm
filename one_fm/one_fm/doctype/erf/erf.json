@@ -113,12 +113,9 @@
   "benefit_cost_to_company",
   "total_cost_to_company",
   "grd_section",
-  "pam_file_name",
-  "pam_designation",
-  "pam_available_quantity",
+  "one_fm_pam_designation",
   "column_break_54",
   "required_quantity",
-  "final_quantity",
   "amended_from",
   "close_with_section",
   "erf_employee"
@@ -489,33 +486,10 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "draft_erf_to_hrm",
    "fieldname": "grd_section",
    "fieldtype": "Section Break",
    "label": "GRD",
-   "permlevel": 1
-  },
-  {
-   "fieldname": "pam_file_name",
-   "fieldtype": "Data",
-   "label": "PAM File Name",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "pam_designation",
-   "fieldtype": "Link",
-   "label": "PAM Designation",
-   "options": "Designation",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "pam_available_quantity",
-   "fieldtype": "Int",
-   "label": "Available Quantity",
-   "permlevel": 1,
-   "read_only": 1
+   "permlevel": 2
   },
   {
    "fieldname": "column_break_54",
@@ -524,14 +498,8 @@
   {
    "fieldname": "required_quantity",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Required Quantity",
-   "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "final_quantity",
-   "fieldtype": "Int",
-   "label": "Final Quantity",
    "permlevel": 1,
    "read_only": 1
   },
@@ -869,11 +837,18 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Email Access Needed"
+  },
+  {
+   "fieldname": "one_fm_pam_designation",
+   "fieldtype": "Link",
+   "label": "PAM Designation",
+   "options": "PAM Designation List",
+   "permlevel": 2
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-04-02 21:45:29.086441",
+ "modified": "2021-07-25 15:11:06.333425",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
@@ -921,6 +896,16 @@
    "write": 1
   },
   {
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1
+  },
+  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -931,6 +916,16 @@
    "role": "Hiring Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
+   "share": 1
   },
   {
    "cancel": 1,
@@ -955,6 +950,46 @@
    "read": 1,
    "report": 1,
    "role": "Senior Recruiter",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Senior Recruiter",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
    "share": 1,
    "write": 1
   }

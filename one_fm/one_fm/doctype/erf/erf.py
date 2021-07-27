@@ -23,6 +23,7 @@ class ERF(Document):
 			unplanned_erf_approver = frappe.db.get_value('Hiring Settings', None, 'unplanned_erf_approver')
 			erf_approver = unplanned_erf_approver if unplanned_erf_approver else erf_approver
 		self.set_onload('erf_approver', erf_approver)
+		self.mendatory_field_by_grd()
 
 	def validate(self):
 		if not self.erf_requested_by:
@@ -41,6 +42,7 @@ class ERF(Document):
 		# self.calculate_benefit_cost_to_company()
 		# self.calculate_total_cost_to_company()
 		self.validate_type_of_travel()
+		self.notify_grd_to_set_pam_designation()
 
 	def draft_erf_to_hrm_for_submit(self):
 		self.draft_erf_to_hrm = True
@@ -54,6 +56,45 @@ class ERF(Document):
 			send_email(self, [hrm_to_submit])
 			frappe.msgprint(_('{0}, Will Notified By Email.').format(frappe.db.get_value('User', hrm_to_submit, 'full_name')))
 
+	def notify_grd_to_set_pam_designation(self):
+		if self.status == "Accepted" and not self.one_fm_pam_designation:
+			grd_supervisor = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
+			if grd_supervisor:
+				message = """
+							<p>
+								A new ERF for the {0} position has been raised and Accepted, Please select the Suitable PAM Designation.
+							</p>
+						""".format(self.designation)
+				frappe.sendmail(
+					recipients= [grd_supervisor],
+					subject='{0} ERF for {1}, Setting PAM Designation is Required.'.format(self.status, self.designation),
+					message=message,
+					reference_doctype=self.doctype,
+					reference_name=self.name
+				)
+				frappe.msgprint(_('GRD Supervisor Will be Notified By Email to Set the Suitable PAM Desigantion.'))
+
+	def mendatory_field_by_grd(self):
+		if self.status == "Accepted" and not self.one_fm_pam_designation:
+			roles = frappe.get_roles(frappe.session.user)
+			if "GRD Operator" in roles:
+				self.validate_mendatory_fields_for_grd()
+
+	def validate_mendatory_fields_for_grd(self):
+		field_list = [{'PAM Designation':'one_fm_pam_designation'}]
+		mandatory_fields = []
+		for fields in field_list:
+			for field in fields:
+				if not self.get(fields[field]):
+					mandatory_fields.append(field)
+
+		if len(mandatory_fields) > 0:
+			message = 'Mandatory fields required in Job Applicant<br><br><ul>'
+			for mandatory_field in mandatory_fields:
+				message += '<li>' + mandatory_field +'</li>'
+			message += '</ul>'
+			frappe.throw(message)
+			
 	def after_insert(self):
 		frappe.db.set_value(self.doctype, self.name, 'erf_code', self.name)
 		self.reload()

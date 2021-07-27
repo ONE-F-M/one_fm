@@ -11,22 +11,25 @@ from frappe.model.document import Document
 from frappe.utils import today, add_days, get_url, date_diff, getdate
 from frappe.model.document import Document
 from one_fm.grd.doctype.medical_insurance import medical_insurance
+from frappe.utils import getdate, now_datetime
+from datetime import datetime
 
 class FingerprintAppointment(Document):
 
     def validate(self):
         self.set_grd_values()
+        self.set_today_date()
         self.notify_grd_operator_fp_record()
-
+        self.check_type_and_date()
+        
     def on_update(self):
         self.check_appointment_date()
         
-
     def on_submit(self):
         self.validate_mendatory_fields()
         self.db_set('status', 'Completed')
-        self.db_set('completed_on', today())
-        if self.work_permit_type == "Local Transfer":
+        self.db_set('completed_on', now_datetime())
+        if self.fingerprint_appointment_type == "Local Transfer":
             self.recall_create_medical_insurance_transfer()
 
     def recall_create_medical_insurance_transfer(self):
@@ -37,7 +40,11 @@ class FingerprintAppointment(Document):
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
-        
+
+    def set_today_date(self):
+        if self.date_of_application == None:
+            self.db_set('date_of_application', today())
+
     def validate_mendatory_fields(self):
          if not self.date_and_time_confirmation or self.preparing_documents == "No":
              frappe.throw(_("Note: You need to prepare Passport and Appointment letter / You Can proceed before one day of the appointment."))
@@ -50,10 +57,14 @@ class FingerprintAppointment(Document):
             send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
 
+    def check_type_and_date(self):
+        if not self.fingerprint_appointment_type:
+            frappe.throw(_("Fingerprint Appointment Type Is Required"))
+
     def check_appointment_date(self):
         today = date.today()
         if self.date_and_time_confirmation and getdate(self.date_and_time_confirmation) <= getdate(today):
-            frappe.throw(_("You can't set previous dates"))
+            frappe.throw(_("You Can't Book Appointment for Today or Previous Days"))
 
 #Auto generated everyday at 8am
 def get_employee_list():
