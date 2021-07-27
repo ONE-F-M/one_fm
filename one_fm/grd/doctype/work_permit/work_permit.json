@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "WP-.YYYY.-",
  "color": "green",
  "creation": "2020-08-13 08:46:25.338850",
@@ -125,8 +126,7 @@
    "label": "Work Permit Type",
    "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nLocal Transfer\nNew Kuwaiti",
    "permlevel": 1,
-   "reqd": 1,
-   "translatable": 1
+   "reqd": 1
   },
   {
    "fieldname": "amended_from",
@@ -184,7 +184,6 @@
    "fieldname": "gender",
    "fieldtype": "Data",
    "label": "Gender",
-   "options": "Gender",
    "read_only": 1
   },
   {
@@ -192,7 +191,6 @@
    "fieldname": "nationality",
    "fieldtype": "Data",
    "label": "Nationality",
-   "options": "Nationality",
    "read_only": 1
   },
   {
@@ -435,7 +433,6 @@
    "fieldname": "passport_expiry_date",
    "fieldtype": "Data",
    "label": "Passport Expiry Date",
-   "options": "Employee",
    "read_only": 1
   },
   {
@@ -764,7 +761,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-30 14:30:28.038186",
+ "links": [],
+ "modified": "2021-07-26 12:36:59.045756",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
