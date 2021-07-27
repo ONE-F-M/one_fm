@@ -24,7 +24,7 @@ class MOIResidencyJawazat(Document):
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_residency_expiry_new_date_in_employee_doctype()
-        self.db_set('completed_on', today())
+        self.db_set('completed_on', now_datetime())
         if self.category == "Transfer":
             self.recall_create_paci()
 

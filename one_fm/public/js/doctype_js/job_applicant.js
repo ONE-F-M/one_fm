@@ -284,14 +284,22 @@ frappe.ui.form.on('Job Applicant', {
 		//Set GRD section as read only for recruiter role 
 		if(frm.doc.one_fm_has_issue && frappe.user.has_role("Senior Recruiter")||frappe.user.has_role("Recruiter")){
 			let read_fields=['previous_company_details','authorized_signatory','one_fm_has_issue',
-			'one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation',
+			'one_fm_government_project','one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation',
 			'one_fm_previous_company_trade_name_in_arabic','one_fm__previous_company_authorized_signatory_name_arabic',
 			'one_fm_previous_company_contract_file_number','one_fm_previous_company_issuer_number',
 			'one_fm_previous_company_pam_file_number','one_fm_authorized_signatory','one_fm_signatory_name','authorized_signatory_section'];
 			set_read_only_fields(frm, read_fields, true);
 		}
 		
-}
+		
+},
+	one_fm_applicant_status: function(frm){
+	if(frm.doc.one_fm_applicant_status != "Selected"){
+		let hide_fields=['section_break_66'];
+		set_hidden_fields(frm, hide_fields, true);
+
+		}
+	}	
 	
 });
 
