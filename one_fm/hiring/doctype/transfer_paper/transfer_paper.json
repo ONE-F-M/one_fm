@@ -68,7 +68,6 @@
   "date_of_entry_in_kuwait",
   "visa_reference_number",
   "section_break_46",
-  "hr_user",
   "grd_operator",
   "signed",
   "column_break_51",
@@ -357,13 +356,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "hr_user",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "HR user",
-   "options": "User"
-  },
-  {
    "fieldname": "grd_operator",
    "fieldtype": "Link",
    "hidden": 1,
@@ -495,7 +487,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2021-07-11 15:18:01.692040",
+ "modified": "2021-07-25 10:39:24.772044",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Transfer Paper",
