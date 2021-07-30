@@ -63,6 +63,7 @@ def notify_grd_to_check_applicant_documents(doc):
     if not doc.one_fm_grd_operator:
         doc.one_fm_grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
 
+    print('==> operator',doc.one_fm_grd_operator)
     dt = frappe.get_doc('Job Applicant',doc.name)
     if dt:
         email = [doc.one_fm_grd_operator]
@@ -72,7 +73,7 @@ def notify_grd_to_check_applicant_documents(doc):
         send_email(dt, email, message, subject)
 
         if not frappe.db.exists("Notification Log",{'subject':subject,'document_type':"Job Applicant"}):
-        # check if the notification have been sent before.
+        #check if the notification have been sent before.
             create_notification_log(subject, message, email, dt)
 
 # def deleteNotification():
@@ -103,7 +104,7 @@ def notify_recruiter_after_checking(doc):
             subject='Tranfer for {0} has issue'.format(dt.applicant_name)
             create_notification_log(subject,message,email,dt)
             dt.db_set('one_fm_notify_recruiter', 1)
-            dt.db_set('status', "Checked By GRD")
+            dt.db_set('one_fm_applicant_status', "Checked By GRD")
 
         if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0: 
             email = filtered_recruiter_users
@@ -112,9 +113,9 @@ def notify_recruiter_after_checking(doc):
             subject='Tranfer for {0} has no issues'.format(dt.applicant_name)
             create_notification_log(subject,message,email,dt)
             dt.db_set('one_fm_notify_recruiter', 1)
-            dt.db_set('status', "Checked By GRD")
+            dt.db_set('one_fm_applicant_status', "Checked By GRD")
 
-@frappe.whitelist()
+@frappe.whitelist()     
 def check_mendatory_fields_for_grd_and_recruiter(doc,method):
     """
     This Method is checking the roles accessing Job Applicant document 
@@ -132,14 +133,14 @@ def check_mendatory_fields_for_grd_and_recruiter(doc,method):
     if "Recruiter" or "Senior Recruiter" in roles:
         if doc.one_fm_is_transferable == "Yes":
             validate_mendatory_fields_for_recruiter(doc)
-            
+
+
                 
 def validate_mendatory_fields_for_grd(doc):
     """
         Check all the mendatory fields are set set by grd
     """
-    field_list = [{'PAM File Number':'one_fm_pam_file_number'}, {'PAM Designation':'one_fm_pam_designation'}, 
-            {'Authorized Signatory':'one_fm_authorized_signatory'}, {'Signatory Name':'one_fm_signatory_name'}]
+    field_list = [{'PAM File Number':'one_fm_pam_file_number'}, {'PAM Designation':'one_fm_pam_designation'},{'Signatory Name':'one_fm_signatory_name'}]
 
     mandatory_fields = []
     for fields in field_list:
@@ -161,10 +162,9 @@ def validate_mendatory_fields_for_recruiter(doc):
     """
     field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'}, 
             {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
-            {'Nationality':'one_fm_nationality'}, {'Designation':'one_fm_previous_designation'}, 
+            {'Nationality':'one_fm_nationality'}, {'Previous Designation':'one_fm_previous_designation'}, 
             {'Passport Number':'one_fm_passport_number'}, {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
-            {'Marital Status':'one_fm_marital_status'}, {'Work Permit Salary':'one_fm_work_permit_salary'},
-            {'Last Working Date':'one_fm_last_working_date'}, {'Date of Entry':'one_fm_date_of_entry'}]
+            {'Marital Status':'one_fm_marital_status'}, {'Previous Work Permit Salary':'one_fm_work_permit_salary'}]
 
     mandatory_fields = []
     for fields in field_list:
@@ -181,10 +181,20 @@ def validate_mendatory_fields_for_recruiter(doc):
  
 @frappe.whitelist()
 def get_signatory_name(parent):
-    name_list = frappe.get_doc('PAM Authorized Signatory List',parent)
+    """
+    This method fetching all Autorized Signatory based on the PAM file selection
+    """
     names=[]
-    for line in name_list.authorized_signatory:
-        if line.authorized_signatory_name_arabic:
-            names.append(line.authorized_signatory_name_arabic)
+    names.append(' ')
+    if parent:
+        pam_autorized_signatory = frappe.db.get_list('PAM Authorized Signatory List',{'pam_file_name':parent})
+        if pam_autorized_signatory:
+            print(pam_autorized_signatory)
+            for pas in pam_autorized_signatory:
+                doc = frappe.get_doc('PAM Authorized Signatory List',pas.name)
+                
+            for line in doc.authorized_signatory:
+                if line.authorized_signatory_name_arabic:
+                    names.append(line.authorized_signatory_name_arabic)
     return names
    

@@ -43,11 +43,11 @@ class TransferPaper(Document):
 
     def set_pas_values(self):
         doc = frappe.get_doc('Job Applicant',self.applicant)
-        if doc.one_fm_authorized_signatory:
-            authorized_list = frappe.get_doc('PAM Authorized Signatory List',doc.one_fm_authorized_signatory)
-            self.db_set('company_trade_name_arabic', authorized_list.company_name_arabic)
-            self.db_set('issuer_number', authorized_list.pam_issuer_number)
-            self.db_set('pam_file_number', authorized_list.pam_file_number)
+        if doc.one_fm_pam_file_number:
+            company_data = frappe.get_doc('PAM File',doc.one_fm_pam_file_number)
+            self.db_set('company_trade_name_arabic', company_data.license_trade_name_arabic)
+            self.db_set('license_number', company_data.license_number)
+            self.db_set('pam_file_number', company_data.pam_file_number)
 
     def get_wp_status(self):
         """
