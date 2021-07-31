@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 from __future__ import unicode_literals
+import itertools
 import frappe
 from frappe import _
 import frappe, os
@@ -22,7 +23,7 @@ from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_li
 import datetime
 from datetime import datetime, time
 from frappe import utils
-
+import pandas as pd
 
 
 
@@ -1621,3 +1622,89 @@ def update_onboarding_doc_for_bank_account(doc):
         oe.bank_account_docstatus = bank_account_status
         oe.bank_account_status = doc.workflow_state
         oe.save(ignore_permissions=True)
+
+
+def create_roster_daily_report():
+    """ 
+    A function that creates a Roster Daily Report document, 
+    obtaining the post schedule data and employee schedule data and
+    computing the result of Roster being either 'OK' or 'NOT OK',
+    for a date range starting from today until the next 14 days.
+    """
+
+    # start date for which the report data is created
+    start_date = add_to_date(cstr(getdate()), days=1)
+    # end date to be 14 days after start date
+    end_date = add_to_date(start_date, days=14)
+
+    roster_daily_report_doc = frappe.new_doc("Roster Daily Report")
+
+    # set document creation date
+    roster_daily_report_doc.date = cstr(getdate())
+
+    for date in pd.date_range(start=start_date, end=end_date):
+        
+        """ Post report data """
+        active_posts = len(frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["post_type"]))
+        posts_off = len(frappe.db.get_list("Post Schedule", {'post_status': 'Post Off', 'date': date}))
+
+        posts_filled_count = 0
+        posts_not_filled_count = 0
+
+        post_types = frappe.db.get_list("Post Schedule", ["distinct post_type", "post_abbrv"])
+        for post_type in post_types:
+            # For each post type, get all post schedules and employee schedules assigned to the post type
+            posts_count = len(frappe.db.get_list("Post Schedule", {'post_type': post_type.post_type, 'date': date, 'post_status': 'Planned'}))
+            posts_fill_count = len(frappe.db.get_list("Employee Schedule", {'post_type': post_type.post_type, 'date': date, 'employee_availability': 'Working'}))
+
+            # Compare count of post schedule vs employee schedule for the given post type, compute post filled/not filled count
+            if posts_count == posts_fill_count:
+                posts_filled_count = posts_filled_count + posts_fill_count
+            elif posts_count > posts_fill_count:
+                posts_filled_count = posts_filled_count + posts_fill_count
+                posts_not_filled_count = posts_not_filled_count + (posts_count - posts_fill_count)
+
+        post_result = "OK"
+        # If posts are not filled, result is set to 'NOT OK'
+        if posts_not_filled_count > 0:
+            post_result = "NOT OK"
+
+        # Add row to child table
+        roster_daily_report_doc.append("post_daily_report",{
+            'date': cstr(date).split(" ")[0],
+            'active_posts': active_posts,
+            'posts_off': posts_off,
+            'posts_filled': posts_filled_count,
+            'posts_not_filled': posts_not_filled_count,
+            'result': post_result
+        })
+
+        """ Employee report data """
+        rostered_employees_count = len(frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Working'}))
+        employee_leave_count = len(frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': ('not in', ('Working'))}))
+
+        employee_not_rostered_count = 0
+
+        # Get list of all employees
+        employee_list = frappe.db.get_list("Employee", ["employee"])
+        for employee in employee_list:
+            # For each employee, check if an employee schedule does not exist for the given date and compute employee not rostered count
+            if not frappe.db.exists({'doctype': 'Employee Schedule', 'date': date, 'employee': employee.employee}):
+                employee_not_rostered_count = employee_not_rostered_count + 1
+
+        employee_result = "OK"    
+        # If employees are available but are not rostered, set result to 'NOT OK'
+        if employee_not_rostered_count > 0:
+            employee_result = "NOT OK"    
+
+        # Add row to child table
+        roster_daily_report_doc.append("employee_daily_report",{
+            'date': cstr(date).split(" ")[0],
+            'employees_rostered':rostered_employees_count,
+            'employees_on_leave': employee_leave_count,
+            'employee_not_rostered': employee_not_rostered_count,
+            'result': employee_result
+        })
+
+    roster_daily_report_doc.save() 
+    frappe.db.commit()    
