@@ -3061,7 +3061,7 @@
    "modified_by": "Administrator",
    "name": "Employee-work_permit",
    "no_copy": 0,
-   "options": 'Work Permit',
+   "options": "Work Permit",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,
