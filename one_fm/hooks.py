@@ -449,7 +449,7 @@ fixtures = [
 	{
 		"dt": "Workflow",
 		'filters': [['dt', 'in', ['Work Permit', 'Medical Insurance', 
-		'Fingerprint Appointment','MOI Residency Jawazat','Transfer Paper','PACI']]]
+		'Fingerprint Appointment','MOI Residency Jawazat','Transfer Paper','PACI', 'PIFSS Form 103']]]
 
 	},
 	{
