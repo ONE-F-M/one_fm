@@ -1,12 +1,13 @@
-@import url("css/all.min.css");
-/* @import url("css/jquery-ui.min.css"); */
-@import url("css/jquery.dataTables.min.css");
-/* @import url("css/datepicker.min.css"); */
-@import url("css/select2.min.css");
-@import url("css/site.css");
-@import url("css/responsivedatatable.css");
-@import url("css/main.css");
-@import url("css/material_blue.css");
+@import url("/css/all.min.css");
+/* @import url("/css/jquery-ui.min.css"); */
+@import url("/css/jquery.dataTables.min.css");
+/* @import url("/css/datepicker.min.css"); */
+@import url("/css/select2.min.css");
+@import url("/css/site.css");
+@import url("/css/responsivedatatable.css");
+@import url("/css/main.css");
+@import url("/css/material_blue.css");
+
 
 body[data-route="roster"] .page-container {
   margin-top: 0px;
@@ -181,9 +182,10 @@ body[data-route="roster"] .rosteringheadingtab {
   margin-left: 7%;
 }
 body[data-route="roster"] .switch-container {
-  width: 300px;
+  width: 400px;
+  margin-top: 10px;
   /* margin: 0 auto;
   margin-left: 20px; */
-  width: 200px;
-    margin-left: 7%;
+    /* margin-left: 7%; */
 }
+
