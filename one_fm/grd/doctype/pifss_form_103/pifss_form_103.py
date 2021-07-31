@@ -86,22 +86,7 @@ class PIFSSForm103(Document):
 				message += '<li>' + mandatory_field +'</li>'
 			message += '</ul>'
 			frappe.throw(message)
-		# if self.workflow_state == "Awaiting Response":
 		
-		# today = date.today()
-		# if self.workflow_state == "Under Process":# and self.notify_grd_operator == 0:
-		# 	self.db_set('date_of_request', today)
-		# 	self.notify_grd()
-		# 	self.db_set('notify_grd_operator', 1)
-		# if self.workflow_state == "Apply Online by PRO" and frappe.session.user == self.grd_operator and not self.reference_number:
-		# 	frappe.throw("Registration Application Number is Required")
-		# if self.workflow_state == "Apply Online by PRO" and frappe.session.user == self.grd_operator and self.reference_number:
-		# 	self.db_set('date_of_registeration', today)
-		# if self.workflow_state == "Accepted":
-		# 	self.db_set('date_of_acceptance', today)
-			#if not frappe.db.exists('Work Permit',{'employee':self.employee, 'work_permit_type':'New Kuwaiti'}):#create record only one time but can sent notification everytime
-	
-
 	def notify_grd_to_check_status_on_pifss(self):
 		"""
 		This method for notifying operator to check the status of the employee on PIFSS website
