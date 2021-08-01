@@ -65,13 +65,9 @@ def login(client_id, grant_type, employee_id, password):
 @frappe.whitelist(allow_guest=True)
 def forgot_password(employee_id):
 	"""
-<<<<<<< HEAD
-	Params: employee_id
-=======
 	Params: 
 	employee_id: employee ID
 	OTP_source: SMS, Email or WhatsApp
->>>>>>> f39a4e3 (WhatsApp OTP Integration)
 	
 	Returns: 
 		Temp Id: To be used in next api call for verifying the SMS OTP. 
