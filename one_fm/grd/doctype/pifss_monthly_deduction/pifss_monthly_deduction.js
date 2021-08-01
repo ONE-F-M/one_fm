@@ -11,8 +11,8 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 				frm.set_value("deduction_month", deduction_month);
 				if(!res.exc && table_data.length > 0){
 					for(let i=0; i < table_data.length; i++){
-						let {pifss_id_no, civil_id, total_subscription, employee_deduction} = table_data[i];
-						frm.add_child('deductions', {pifss_id_no,civil_id,total_subscription,employee_deduction});
+						let {pifss_id_no, civil_id, total_subscription, compensation,unemployment_insurance_amount,fund_increase_amount,supplementary_insurance_amount,basic_insurance_amount,employee_deduction} = table_data[i];
+						frm.add_child('deductions', {pifss_id_no,civil_id,total_subscription,compensation,unemployment_insurance_amount,fund_increase_amount,supplementary_insurance_amount,basic_insurance_amount,employee_deduction});
 					}
 				}
 				frm.refresh_field('deduction_month');
@@ -53,7 +53,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 
 // set total value for additional deduction and employee deduction
 frappe.ui.form.on('PIFSS Monthly Deduction', {
-    refresh: function(frm){
+    after_save: function(frm){
 		if(frm.doc.deductions){
 			var total_sub = 0.0;
 			var total_deduction = 0.0;
@@ -69,21 +69,32 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 });
 //set the total values for the entire table
 frappe.ui.form.on('PIFSS Monthly Deduction', {
-    refresh: function(frm){
+    after_save: function(frm){
 		if(frm.doc.deductions){
-			var total = [0.000,0.000,0.000,0.000]
+			var total = [0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000]
 			$.each(frm.doc.deductions || [], function(i, v) {
 				total[0] += frappe.model.get_value(v.doctype, v.name, "total_subscription");
 				total[1] += frappe.model.get_value(v.doctype, v.name, "employee_deduction");
 				total[2] += frappe.model.get_value(v.doctype, v.name, "additional_deduction");
 				total[3] += frappe.model.get_value(v.doctype, v.name, "total_deductions");
+				total[4] += frappe.model.get_value(v.doctype, v.name, "basic_insurance_amount");
+				total[5] += frappe.model.get_value(v.doctype, v.name, "supplementary_insurance_amount");
+				total[6] += frappe.model.get_value(v.doctype, v.name, "fund_increase_amount");
+				total[7] += frappe.model.get_value(v.doctype, v.name, "unemployment_insurance_amount");
+				total[8] += frappe.model.get_value(v.doctype, v.name, "compensation");
+
 			})
 		}
-		
 		frm.set_value("total_sub", total[0]);
 		frm.set_value("total_deduction", total[1]);
 		frm.set_value("total_additional_deduction",total[2]);
 		frm.set_value("total_payments",total[2]+frm.doc.remaining_amount+total[0]);
+		frm.set_value("basic_insurance_in_csv", total[4]);
+		frm.set_value("supplementary_insurance_in_csv", total[5]);
+		frm.set_value("fund_increase_in_csv", total[6]);
+		frm.set_value("unemployment_insurance_in_csv", total[7]);
+		frm.set_value("compensation_in_csv", total[8]);
+
 	},
 
 });
