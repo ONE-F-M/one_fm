@@ -372,7 +372,8 @@ scheduler_events = {
 			'one_fm.utils.check_pam_visa_approval_submission_six_half'
 		],
 		"0 7 * * *": [
-			'one_fm.utils.check_pam_visa_approval_submission_seven'
+			'one_fm.utils.check_pam_visa_approval_submission_seven',
+			'one_fm.utils.create_roster_daily_report'
 		],
 		"30 12 * * *": [
 			'one_fm.utils.check_upload_original_visa_submission_reminder1'
