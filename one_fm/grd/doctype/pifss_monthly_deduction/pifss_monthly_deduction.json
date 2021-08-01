@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "format:{MM}-{YYYY}-{#####}",
  "creation": "2020-11-05 21:36:26.021218",
  "doctype": "DocType",
@@ -15,12 +16,35 @@
   "section_break_4",
   "deductions",
   "section_break_8",
+  "remaining_amount",
   "total_sub",
   "total_additional_deduction",
-  "column_break_10",
-  "remaining_amount",
   "total_deduction",
   "total_payments",
+  "detailed_basic_amounts_section",
+  "basic_insurance",
+  "supplementary_insurance",
+  "fund_increase",
+  "unemployment_insurance",
+  "compensation",
+  "column_break_23",
+  "basic_insurance_in_csv",
+  "supplementary_insurance_in_csv",
+  "fund_increase_in_csv",
+  "unemployment_insurance_in_csv",
+  "compensation_in_csv",
+  "detailed_additional_amounts_section",
+  "basic_extra_amounts",
+  "additional_supplementary_amounts",
+  "additional_amounts_increase",
+  "additional_unemployment_supplement",
+  "additional_amounts_of_end_of_service_gratuity",
+  "supplementary_insurance_before_1297",
+  "special_installments_and_exchange",
+  "additional_amounts_special_installments_and_replacement",
+  "total",
+  "optional_supplemental_insurance",
+  "optional_supplementary_additional_amounts",
   "amended_from"
  ],
  "fields": [
@@ -75,11 +99,8 @@
   },
   {
    "fieldname": "section_break_8",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
+   "fieldtype": "Section Break",
+   "label": "Total Values"
   },
   {
    "fieldname": "total_sub",
@@ -119,20 +140,161 @@
    "read_only": 1
   },
   {
+   "description": "The amounts remaining for the company ",
    "fieldname": "remaining_amount",
    "fieldtype": "Currency",
    "label": "Remaining Amount"
   },
   {
+   "description": "The sum of total subscription + remaining + total additional deduction amounts",
    "fieldname": "total_payments",
    "fieldtype": "Currency",
    "label": "Total Payments",
    "precision": "3",
    "read_only": 1
+  },
+  {
+   "fieldname": "detailed_basic_amounts_section",
+   "fieldtype": "Section Break",
+   "label": "Detailed Basic Amounts"
+  },
+  {
+   "fieldname": "basic_insurance",
+   "fieldtype": "Currency",
+   "label": "Basic Insurance"
+  },
+  {
+   "fieldname": "supplementary_insurance",
+   "fieldtype": "Currency",
+   "label": "Supplementary Insurance"
+  },
+  {
+   "fieldname": "fund_increase",
+   "fieldtype": "Currency",
+   "label": "Fund Increase"
+  },
+  {
+   "fieldname": "unemployment_insurance",
+   "fieldtype": "Currency",
+   "label": "Unemployment Insurance"
+  },
+  {
+   "fieldname": "compensation",
+   "fieldtype": "Currency",
+   "label": "Compensation"
+  },
+  {
+   "fieldname": "detailed_additional_amounts_section",
+   "fieldtype": "Section Break",
+   "label": "Detailed Additional Amounts"
+  },
+  {
+   "fieldname": "basic_extra_amounts",
+   "fieldtype": "Currency",
+   "label": "Basic Extra Amounts",
+   "precision": "3"
+  },
+  {
+   "fieldname": "additional_supplementary_amounts",
+   "fieldtype": "Currency",
+   "label": "Additional Supplementary Amounts",
+   "precision": "3"
+  },
+  {
+   "fieldname": "additional_amounts_increase",
+   "fieldtype": "Currency",
+   "label": "Additional Amounts Increase",
+   "precision": "3"
+  },
+  {
+   "fieldname": "additional_unemployment_supplement",
+   "fieldtype": "Currency",
+   "label": "Additional Unemployment Supplement"
+  },
+  {
+   "fieldname": "additional_amounts_of_end_of_service_gratuity",
+   "fieldtype": "Currency",
+   "label": "Additional amounts of end of service gratuity",
+   "precision": "3"
+  },
+  {
+   "fieldname": "special_installments_and_exchange",
+   "fieldtype": "Currency",
+   "label": "Special Installments and Exchange",
+   "precision": "3"
+  },
+  {
+   "fieldname": "additional_amounts_special_installments_and_replacement",
+   "fieldtype": "Currency",
+   "label": "Additional amounts Special Installments and Replacement",
+   "precision": "3"
+  },
+  {
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "label": "Total",
+   "precision": "3"
+  },
+  {
+   "fieldname": "optional_supplemental_insurance",
+   "fieldtype": "Currency",
+   "label": "Optional Supplemental Insurance",
+   "precision": "3"
+  },
+  {
+   "fieldname": "optional_supplementary_additional_amounts",
+   "fieldtype": "Currency",
+   "label": "Optional Supplementary Additional Amounts",
+   "precision": "3"
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "basic_insurance_in_csv",
+   "fieldtype": "Currency",
+   "label": "Basic Insurance In CSV",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supplementary_insurance_in_csv",
+   "fieldtype": "Currency",
+   "label": "Supplementary Insurance In CSV",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fund_increase_in_csv",
+   "fieldtype": "Currency",
+   "label": "Fund Increase In CSV",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "unemployment_insurance_in_csv",
+   "fieldtype": "Currency",
+   "label": "Unemployment Insurance In CSV",
+   "read_only": 1
+  },
+  {
+   "fieldname": "compensation_in_csv",
+   "fieldtype": "Currency",
+   "label": "Compensation In CSV",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supplementary_insurance_before_1297",
+   "fieldtype": "Currency",
+   "label": "Supplementary insurance before 12/97",
+   "precision": "3"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-30 10:00:36.028674",
+ "links": [],
+ "modified": "2021-08-01 21:41:28.058993",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
