@@ -21,14 +21,13 @@ frappe.ui.form.on('PIFSS Form 103', {
 		if(!frm.doc.__islocal){
 			frm.set_df_property("request_type","read_only", 1);
 		} 
-		if(frm.doc.pifss_authorized_signatory){
+		if(frm.doc.company_name){
 			frappe.call({
 				method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.get_signatory_name",
 				args:{
-					'parent': frm.doc.pifss_authorized_signatory,
+					'parent': frm.doc.company_name,
 					},
 				callback:function(r){
-					console.log(r.message);
 					frm.set_df_property('signatory_name', "options", r.message);
 					frm.refresh_field("signatory_name");
 					}
@@ -41,16 +40,24 @@ frappe.ui.form.on('PIFSS Form 103', {
 		if(frm.doc.status == "Awaiting Response"){
 			send_message(frm);
 		}
+		if (frm.doc.docstatus === 1) {
+      		frm.add_custom_button(__('PAM - Work Permit Cancellation'),
+				function() {
+					frappe.model.open_mapped_doc({
+					method: "one_fm.grd.utils.mappe_to_work_permit_cancellation",
+					frm: frm
+          			});
+				});
+		}    //set_filters(frm);
 	},
-	pifss_authorized_signatory: function(frm){
-		if(frm.doc.pifss_authorized_signatory){
+	company_name: function(frm){
+		if(frm.doc.company_name){
 			frappe.call({
 				method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.get_signatory_name",
 				args:{
-					'parent': frm.doc.pifss_authorized_signatory,
+					'parent': frm.doc.company_name,
 					},
 				callback:function(r){
-					console.log(r.message);
 					frm.set_df_property('signatory_name', "options", r.message);
 					frm.refresh_field("signatory_name");
 					}
@@ -103,7 +110,6 @@ frappe.ui.form.on('PIFSS Form 103', {
 				'user_name':frm.doc.signatory_name,
 				},
 			callback:function(r){
-				console.log(r.message)
 				frm.set_value('user',r.message)
 				frm.refresh_field("user");
 				}

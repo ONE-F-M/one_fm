@@ -53,7 +53,7 @@ class PIFSSForm103(Document):
 					
 	def check_workflow_states(self):
 		if self.workflow_state == "Draft":#check the previous workflow (DRAFT) required fields 
-			field_list = [{'Request Type':'request_type'},{'Employee':'employee'},{'PIFSS Authorized Signatory':'pifss_authorized_signatory'}
+			field_list = [{'Request Type':'request_type'},{'Employee':'employee'},{'Company Name':'company_name'}
 						,{'Signatory Name':'signatory_name'}]
 			self.set_mendatory_fields(field_list)
 

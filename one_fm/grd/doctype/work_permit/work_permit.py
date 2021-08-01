@@ -29,6 +29,7 @@ class WorkPermit(Document):
             if self.work_permit_approved == "Yes":
                 self.recall_create_fingerprint_appointment_transfer()
                 self.notify_grd_transfer_fp_record()
+
     def set_grd_values(self):
         if not self.grd_supervisor:
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
@@ -64,13 +65,36 @@ class WorkPermit(Document):
             self.save()
 
     def on_submit(self):
-        if "Completed" in self.workflow_state and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
-            self.db_set('work_permit_status', 'Completed')
-            self.clean_old_wp_record_in_employee_doctype()
-            self.set_work_permit_attachment_in_employee_doctype()
-        else:
-            frappe.throw(_("Upload The Required Documents To Submit"))
-        
+        if self.work_permit_type != "Cancellation":
+            if "Completed" in self.workflow_state and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
+                self.db_set('work_permit_status', 'Completed')
+                self.clean_old_wp_record_in_employee_doctype()
+                self.set_work_permit_attachment_in_employee_doctype()
+            else:
+                frappe.throw(_("Upload The Required Documents To Submit"))
+
+        if self.work_permit_type == "Cancellation":
+            self.check_if_remove_kuwaiti()
+    
+    def check_if_remove_kuwaiti(self):
+        if self.work_permit_type == "Cancellation" and self.nationality == "Kuwaiti":
+            field_list = [{'Reference Number On PAM':'reference_number_on_pam'}]
+            self.mendatory_fields(field_list)
+    
+    def mendatory_fields(self,field_list):
+        mandatory_fields = []
+        for fields in field_list:
+            for field in fields:
+                if not self.get(fields[field]):
+                        mandatory_fields.append(field)
+
+        if len(mandatory_fields) > 0:
+            message = 'Mandatory fields required in Work Permit Cancellation<br><br><ul>'
+            for mandatory_field in mandatory_fields:
+                message += '<li>' + mandatory_field +'</li>'
+            message += '</ul>'
+            frappe.throw(message)
+
     def recall_create_fingerprint_appointment_transfer(self):
         fingerprint_appointment.create_fp_record_for_transfer(frappe.get_doc('Employee',self.employee))
 

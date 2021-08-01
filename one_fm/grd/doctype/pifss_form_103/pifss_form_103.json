@@ -20,6 +20,7 @@
   "section_break_12",
   "pifss_is_under_process_on",
   "end_of_service_section",
+  "work_permit_type",
   "attach_accept_screenshot_from_pifss_website",
   "column_break_63",
   "end_date",
@@ -28,7 +29,7 @@
   "column_break_37",
   "registered_on",
   "pifss_authorized_signatory_section",
-  "pifss_authorized_signatory",
+  "company_name",
   "column_break_33",
   "signatory_name",
   "employee_details_section",
@@ -336,13 +337,7 @@
    "label": "Nationality Proof"
   },
   {
-   "fieldname": "pifss_authorized_signatory",
-   "fieldtype": "Link",
-   "label": "PIFSS Authorized Signatory",
-   "options": "PIFSS Authorized Signatory"
-  },
-  {
-   "depends_on": "pifss_authorized_signatory",
+   "depends_on": "company_name",
    "fieldname": "signatory_name",
    "fieldtype": "Select",
    "label": "Signatory Name"
@@ -490,7 +485,8 @@
   },
   {
    "fieldname": "section_break_46",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Reference Data"
   },
   {
    "fieldname": "registered_on",
@@ -517,11 +513,24 @@
    "fieldtype": "Datetime",
    "label": "PIFSS Is Under Process On",
    "read_only": 1
+  },
+  {
+   "default": "Cancellation",
+   "fieldname": "work_permit_type",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Work Permit Type"
+  },
+  {
+   "fieldname": "company_name",
+   "fieldtype": "Link",
+   "label": "Company Name",
+   "options": "PIFSS Authorized Signatory"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-31 13:43:05.183769",
+ "modified": "2021-08-01 21:11:38.334903",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",
