@@ -1702,7 +1702,7 @@ def create_roster_daily_report():
             'date': cstr(date).split(" ")[0],
             'employees_rostered':rostered_employees_count,
             'employees_on_leave': employee_leave_count,
-            'employee_not_rostered': employee_not_rostered_count,
+            'employees_not_rostered': employee_not_rostered_count,
             'result': employee_result
         })
 
