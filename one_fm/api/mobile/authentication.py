@@ -65,7 +65,13 @@ def login(client_id, grant_type, employee_id, password):
 @frappe.whitelist(allow_guest=True)
 def forgot_password(employee_id):
 	"""
+<<<<<<< HEAD
 	Params: employee_id
+=======
+	Params: 
+	employee_id: employee ID
+	OTP_source: SMS, Email or WhatsApp
+>>>>>>> f39a4e3 (WhatsApp OTP Integration)
 	
 	Returns: 
 		Temp Id: To be used in next api call for verifying the SMS OTP. 
@@ -78,7 +84,26 @@ def forgot_password(employee_id):
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
 		cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
-		verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+		if OTP_source=="SMS":
+			verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+			return {
+			'message': _('Password reset instruction sms has been sent to your registered mobile number.'),
+			'temp_id': tmp_id
+			}
+		elif OTP_source=="Email":
+			verification_obj = process_2fa_for_email(employee_user_id, token, otp_secret)
+			return {
+			'message': _('Password reset instruction email has been sent to your Email Address.'),
+			'temp_id': tmp_id
+			}
+		elif OTP_source=="WhatsApp":
+			verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
+			return {
+			'message': _('Password reset instruction message has been sent to your WhatsApp.'),
+			'temp_id': tmp_id
+			}
+		else:
+			return ('Please Select where you want your OTP to be sent.')
 
 		# Save data in local
 		# frappe.local.response['verification'] = verification_obj
@@ -116,7 +141,6 @@ def update_password(otp, id, employee_id, new_password):
 def cache_2fa_data(user, token, otp_secret, tmp_id):
 	'''Cache and set expiry for data.'''
 	pwd = frappe.form_dict.get('pwd')
-
 	# set increased expiry time for SMS and Email
 	expiry_time = 1800
 	frappe.cache().set(tmp_id + '_token', token)
@@ -169,3 +193,81 @@ def reset_password(user, password_expired=False):
 
 	send_sms([user.mobile_no], msg)
 
+
+def process_2fa_for_whatsapp(user, token, otp_secret):
+    '''Process sms method for 2fa.'''
+    phone = frappe.db.get_value('User', user, ['phone', 'mobile_no'], as_dict=1)
+    phone = phone.mobile_no or phone.phone
+    status = send_token_via_whatsapp(otp_secret, token=token, phone_no=phone)
+    verification_obj = {
+        'token_delivery': status,
+        'prompt': status and 'Enter verification code sent to {}'.format(phone[:4] + '******' + phone[-3:]),
+        'method': 'SMS',
+        'setup': status
+    }
+    return verification_obj
+
+
+def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
+    Twilio= frappe.db.get_value('Twilio Setting', filters=None, fieldname=['sid','token','t_number'])
+    account_sid = Twilio[0]
+    auth_token = Twilio[2]
+    client = Client(account_sid, auth_token)
+    From = 'whatsapp:' + Twilio[1]
+    to = 'whatsapp:+' + phone_no
+    hotp = pyotp.HOTP(otpsecret)
+    body= 'Your verification code {}.'.format(hotp.at(int(token)))
+    
+    message = client.messages.create( 
+                              from_=From,  
+                              body=body,      
+                              to=to 
+                          ) 
+ 
+    print(message.sid)
+    return True
+
+def process_2fa_for_email(user, token, otp_secret, method='Email'):
+	otp_issuer = frappe.db.get_value('System Settings', 'System Settings', 'otp_issuer_name')
+	'''Process Email method for 2fa.'''
+	subject = None
+	message = None
+	status = True
+	prompt = ''
+	'''Sending email verification'''
+	prompt = _('Verification code has been sent to your registered email address.')
+	status = send_token_via_email(user, token, otp_secret, otp_issuer, subject=subject, message=message)
+	verification_obj = {
+		'token_delivery': status,
+		'prompt': status and prompt,
+		'method': 'Email',
+		'setup': status
+	}
+	return verification_obj
+
+def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, message=None):
+	'''Send token to user as email.'''
+	user_email = frappe.db.get_value('Employee', {"user_id":user}, 'personal_email')
+	if not user_email:
+		return False
+	hotp = pyotp.HOTP(otp_secret)
+	otp = hotp.at(int(token))
+	template_args = {'otp': otp, 'otp_issuer': otp_issuer}
+	if not subject:
+		subject = get_email_subject_for_2fa(template_args)
+	if not message:
+		message = get_email_body_for_2fa(template_args)
+
+	email_args = {
+		'recipients': user_email,
+		'sender': None,
+		'subject': subject,
+		'message': message,
+		'header': [_('Verfication Code'), 'blue'],
+		'delayed': False,
+		'retry':3
+	}
+
+	enqueue(method=frappe.sendmail, queue='short', timeout=300, event=None,
+		is_async=True, job_name=None, now=False, **email_args)
+	return True
