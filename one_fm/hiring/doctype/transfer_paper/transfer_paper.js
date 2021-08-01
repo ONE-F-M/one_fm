@@ -5,7 +5,6 @@
 frappe.ui.form.on('Transfer Paper', {
     refresh: function(frm) {
         let doc_name = frm.doc.name;
-        // console.log(doc_name)
         if(frm.doc.docstatus==1) {
                 frm.add_custom_button(__('Re-Send New Work Permit'), function() { 
                     frappe.xcall('one_fm.hiring.doctype.transfer_paper.transfer_paper.resend_new_wp_record',{doc_name})
@@ -42,7 +41,7 @@ frappe.ui.form.on('Transfer Paper', {
                 frm.set_value('previous_company_authorized_signatory_name_arabic', r.message.one_fm__previous_company_authorized_signatory_name_arabic);
                 frm.set_value('previous_company_pam_designation', r.message.one_fm_previous_designation);
                 frm.set_value('previous_company_contract_file_number', r.message.one_fm_previous_company_contract_file_number);   
-                frm.set_value('previous_company_issuer_number', r.message.one_fm_previous_company_issuer_number);               
+                frm.set_value('previous_company_license_number', r.message.one_fm_previous_company_issuer_number);               
                 frm.set_value('previous_company_pam_file_number', r.message.one_fm_previous_company_pam_file_number);
                 frm.set_value('end_work_date', r.message.one_fm_last_working_date);
                 frm.set_value('previous_company_work_permit_salary', r.message.one_fm_work_permit_salary);
