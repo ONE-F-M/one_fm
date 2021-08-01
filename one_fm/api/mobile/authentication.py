@@ -1,7 +1,8 @@
 import frappe
 import pyotp
-from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token
+from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token,get_email_subject_for_2fa,get_email_body_for_2fa
 from frappe.integrations.oauth2 import get_token
+from frappe.utils.background_jobs import enqueue
 from frappe.core.doctype.sms_settings.sms_settings import send_sms
 from frappe.frappeclient import FrappeClient
 from six import iteritems
@@ -9,7 +10,7 @@ from frappe import _
 import requests, json
 from one_fm.api.mobile.roster import get_current_user_details
 from frappe.utils.password import update_password as _update_password
-
+from twilio.rest import Client 
 
 @frappe.whitelist(allow_guest=True)
 def login(client_id, grant_type, employee_id, password):
@@ -63,14 +64,14 @@ def login(client_id, grant_type, employee_id, password):
 	
 
 @frappe.whitelist(allow_guest=True)
-def forgot_password(employee_id):
+def forgot_password(employee_id,OTP_source):
 	"""
 	Params: 
 	employee_id: employee ID
 	OTP_source: SMS, Email or WhatsApp
 	
 	Returns: 
-		Temp Id: To be used in next api call for verifying the SMS OTP. 
+		Temp Id: To be used in next api call for verifying the SMS/Email OTP. 
 	Sends an OTP to mobile number assosciated with User	
 	"""
 	try:
@@ -104,11 +105,6 @@ def forgot_password(employee_id):
 		# Save data in local
 		# frappe.local.response['verification'] = verification_obj
 		# frappe.local.response['tmp_id'] = tmp_id
-
-		return {
-			'message': _('Password reset instruction sms has been sent to your registered mobile number.'),
-			'temp_id': tmp_id
-		}
 
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
