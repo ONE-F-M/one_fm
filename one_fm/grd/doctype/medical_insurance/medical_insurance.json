@@ -17,7 +17,7 @@
   "insurance_type",
   "insurance_status",
   "details_section",
-  "employee_name",
+  "full_name",
   "gender",
   "civil_id",
   "passport_expiry_date",
@@ -123,14 +123,6 @@
    "hidden": 1,
    "label": "Series",
    "options": "MI-.YYYY.-"
-  },
-  {
-   "fetch_from": "employee.employee_name",
-   "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Full Name",
-   "read_only": 1
   },
   {
    "depends_on": "eval:doc.category == 'Group'",
@@ -258,6 +250,7 @@
   },
   {
    "bold": 1,
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -270,11 +263,19 @@
    "fieldtype": "Data",
    "label": "PAM File Number",
    "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-26 11:40:05.252763",
+ "modified": "2021-08-01 22:51:33.260940",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",

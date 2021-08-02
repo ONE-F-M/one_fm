@@ -74,6 +74,7 @@ def create_mi_record(WorkPermit):
     new_medical_insurance.insurance_status = Insurance_status
     new_medical_insurance.passport_expiry_date = WorkPermit.passport_expiry_date
     new_medical_insurance.employee_id = WorkPermit.employee_id
+    new_medical_insurance.employee = WorkPermit.employee
     new_medical_insurance.insert()
 
 @frappe.whitelist()

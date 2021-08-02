@@ -29,11 +29,7 @@ class FingerprintAppointment(Document):
         self.validate_mendatory_fields()
         self.db_set('status', 'Completed')
         self.db_set('completed_on', now_datetime())
-<<<<<<< HEAD
         if self.fingerprint_appointment_type == "Local Transfer":
-=======
-        if self.work_permit_type == "Local Transfer":
->>>>>>> dab9aee2fc0c203df9a07fedb1db7dd7c08028ce
             self.recall_create_medical_insurance_transfer()
 
     def recall_create_medical_insurance_transfer(self):

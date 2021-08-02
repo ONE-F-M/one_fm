@@ -77,16 +77,16 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			})
 		}
-		if(frm.doc.one_fm_authorized_signatory){
+		if(frm.doc.one_fm_pam_file_number){
 			frappe.call({
 				method: "one_fm.one_fm.utils.get_signatory_name",
 				args:{
-					'parent': frm.doc.one_fm_authorized_signatory,
+					'parent': frm.doc.one_fm_pam_file_number,
 					},
 				callback:function(r){
-					
+					console.log(r);
 					frm.set_df_property('one_fm_signatory_name', "options", r.message);
-					
+					frm.refresh_field("one_fm_signatory_name");
 					}
 				});
 				frm.refresh_field("one_fm_signatory_name");
@@ -99,6 +99,9 @@ frappe.ui.form.on('Job Applicant', {
     set_applicant_name(frm);
   },
 	one_fm_third_name: function(frm) {
+    set_applicant_name(frm);
+  },
+  	one_fm_forth_name: function(frm) {
     set_applicant_name(frm);
   },
 	one_fm_last_name: function(frm) {
@@ -231,14 +234,15 @@ frappe.ui.form.on('Job Applicant', {
 		}
 	},
 	//set Authorized segnatory for TP in job applicant
-	one_fm_authorized_signatory: function(frm){
-		if(frm.doc.one_fm_authorized_signatory){
+	one_fm_pam_file_number: function(frm){
+		if(frm.doc.one_fm_pam_file_number){
 			frappe.call({
 				method: "one_fm.one_fm.utils.get_signatory_name",
 				args:{
-					'parent': frm.doc.one_fm_authorized_signatory,
+					'parent': frm.doc.one_fm_pam_file_number,
 					},
 				callback:function(r){
+					console.log(r);
 					frm.set_df_property('one_fm_signatory_name', "options", r.message);
 					frm.refresh_field("one_fm_signatory_name");
 					}
@@ -257,8 +261,7 @@ frappe.ui.form.on('Job Applicant', {
 		'one_fm_has_issue','one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation',
 		'one_fm_previous_company_trade_name_in_arabic','one_fm__previous_company_authorized_signatory_name_arabic',
 		'one_fm_previous_company_contract_file_number','one_fm_previous_company_issuer_number',
-		'one_fm_previous_company_pam_file_number','one_fm_authorized_signatory','one_fm_signatory_name',
-		'authorized_signatory_section'];
+		'one_fm_previous_company_pam_file_number','one_fm_signatory_name','authorized_signatory_section'];
 
 		if(!frm.doc.one_fm_is_transferable || frm.doc.one_fm_is_transferable == 'Later'
 		 || frm.doc.one_fm_is_transferable == 'No'){ 
@@ -274,9 +277,9 @@ frappe.ui.form.on('Job Applicant', {
 			'previous_work_details','one_fm_erf_application_details_section','one_fm_interview_and_career_history_score',
 			'one_fm_interview_schedules_section'];
 
-			let read_fields=['one_fm_in_kuwait_at_present','one_fm_cid_expire','one_fm_visa_type','one_fm_have_a_valid_visa_in_kuwait','one_fm_passport_type','one_fm_passport_expire','one_fm_passport_issued','one_fm_passport_holder_of','one_fm_place_of_birth','one_fm_height','one_fm_last_name_in_arabic','one_fm_forth_name_in_arabic','one_fm_third_name_in_arabic','one_fm_second_name_in_arabic','one_fm_first_name_in_arabic','one_fm_last_name','one_fm_forth_name','one_fm_third_name','one_fm_second_name','one_fm_first_name','source','job_title','one_fm_applicant_status','status','one_fm_application_id','email_id','applicant_name','one_fm_is_transferable','one_fm_applicant_is_overseas_or_local','one_fm_cid_number','one_fm_work_permit_number',
-			'one_fm_duration_of_work_permit','one_fm_previous_designation','one_fm_work_permit_salary','one_fm_date_of_entry','one_fm_date_of_birth',
-			'one_fm_nationality','one_fm_marital_status','one_fm_educational_qualification','one_fm_passport_number','one_fm_last_working_date',
+			let read_fields=['one_fm_in_kuwait_at_present','one_fm_cid_expire','one_fm_visa_type','one_fm_have_a_valid_visa_in_kuwait','one_fm_passport_type','one_fm_passport_expire','one_fm_passport_issued','one_fm_passport_holder_of','one_fm_place_of_birth','one_fm_height','one_fm_last_name_in_arabic','one_fm_forth_name_in_arabic','one_fm_third_name_in_arabic','one_fm_second_name_in_arabic','one_fm_first_name_in_arabic','one_fm_last_name','one_fm_forth_name','one_fm_third_name','one_fm_second_name','one_fm_first_name','source','job_title','one_fm_applicant_status','status','one_fm_application_id','email_id','applicant_name','one_fm_is_transferable','one_fm_applicant_is_overseas_or_local','one_fm_cid_number',
+			'one_fm_duration_of_work_permit','one_fm_previous_designation','one_fm_work_permit_salary','one_fm_date_of_birth',
+			'one_fm_nationality','one_fm_marital_status','one_fm_educational_qualification','one_fm_passport_number',
 			'one_fm_gender','one_fm_religion'];
 			set_read_only_fields(frm, read_fields, true);
 			set_hidden_fields(frm, hide_fields, true);
@@ -287,7 +290,7 @@ frappe.ui.form.on('Job Applicant', {
 			'one_fm_government_project','one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation',
 			'one_fm_previous_company_trade_name_in_arabic','one_fm__previous_company_authorized_signatory_name_arabic',
 			'one_fm_previous_company_contract_file_number','one_fm_previous_company_issuer_number',
-			'one_fm_previous_company_pam_file_number','one_fm_authorized_signatory','one_fm_signatory_name','authorized_signatory_section'];
+			'one_fm_previous_company_pam_file_number','one_fm_signatory_name','authorized_signatory_section'];
 			set_read_only_fields(frm, read_fields, true);
 		}
 		
@@ -883,7 +886,7 @@ var set_designation_skill = function(frm, skills) {
 };
 
 var set_applicant_name = function(frm) {
-  let name_fields = ['one_fm_second_name', 'one_fm_third_name', 'one_fm_last_name']
+  let name_fields = ['one_fm_second_name', 'one_fm_third_name','one_fm_forth_name', 'one_fm_last_name']
   let applicant_name = frm.doc.one_fm_first_name ?frm.doc.one_fm_first_name:'';
   name_fields.forEach((name_field) => {
     if(frm.doc[name_field]){
