@@ -288,6 +288,8 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.grd.utils.sendmail_reminder1',
 		'one_fm.grd.utils.sendmail_reminder2',
+		'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_status_on_pifss',
+		'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_under_process_status_on_pifss',
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -448,7 +450,7 @@ fixtures = [
 	{
 		"dt": "Workflow",
 		'filters': [['dt', 'in', ['Work Permit', 'Medical Insurance', 
-		'Fingerprint Appointment','MOI Residency Jawazat','Transfer Paper','PACI']]]
+		'Fingerprint Appointment','MOI Residency Jawazat','Transfer Paper','PACI', 'PIFSS Form 103']]]
 
 	},
 	{
