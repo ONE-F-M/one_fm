@@ -2,6 +2,66 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2021-07-29 12:37:38.728094",
+  "name": "Under Process",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Under Process"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-07-31 12:04:57.501580",
+  "name": "Apply",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Apply "
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2020-02-01 11:11:31.802414",
+  "name": "HR Rejected",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "HR Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2020-02-01 11:11:55.261627",
+  "name": "HR Approved",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "HR Approved"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-07-26 11:26:49.400481",
+  "name": "Done",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Done"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-07-26 11:30:28.426800",
+  "name": "Re-send",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Re-send"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2021-05-26 02:00:01.789310",
   "name": "Open Request",
   "parent": null,

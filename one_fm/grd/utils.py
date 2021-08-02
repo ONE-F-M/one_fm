@@ -78,12 +78,13 @@ def mappe_to_work_permit_cancellation(source_name, target_doc=None):
     }, target_doc)
     return doc
 
+@frappe.whitelist()
 def mappe_to_mgrp_cancellation(source_name, target_doc=None):
     work_permit_record = frappe.get_doc('Work Permit',source_name)
     print(work_permit_record.employee)
     doc = get_mapped_doc("Work Permit", source_name, {
         "Work Permit": {
-            "doctype": "mgrp",
+            "doctype": "MGRP",
             "field_map": {
                 "employee":"employee",
                 "first_name":"first_name",
