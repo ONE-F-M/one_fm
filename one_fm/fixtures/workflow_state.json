@@ -231,18 +231,6 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2021-05-26 01:35:08.243382",
-  "name": "Completed",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "style": "",
-  "workflow_state_name": "Completed"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2021-06-15 16:11:10.829829",
   "name": "Applicant Signed",
   "parent": null,
@@ -814,5 +802,17 @@
   "parenttype": null,
   "style": "Success",
   "workflow_state_name": "Transferred"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2021-05-26 01:35:08.243382",
+  "name": "Completed",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "",
+  "workflow_state_name": "Completed"
  }
 ]
