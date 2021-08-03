@@ -388,14 +388,17 @@ def generate_payroll():
 
 
 def generate_penalties():
-	start_date = add_to_date(getdate(), months=-1)
+	print("HEllo")
+	start_date = add_to_date(getdate(), days=-30)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
+	print (str(start_date) + str(end_date))
 
 	filters = {
 		'penalty_issuance_time': ['between', (start_date, end_date)],
 		'workflow_state': 'Penalty Accepted'
 	}
 	logs = frappe.db.get_list('Penalty', filters=filters, fields="*", order_by="recipient_employee,penalty_issuance_time")
+	print(logs)
 	for key, group in itertools.groupby(logs, key=lambda x: (x['recipient_employee'])):
 		employee_penalties = list(group)
 		calculate_penalty_amount(key, start_date, end_date, employee_penalties)
@@ -414,6 +417,7 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		AND parent=%s 
 		AND salary_component="Basic"
 	""",(salary_structure), as_dict=1)
+	print(basic_salary)
 	
 	#Single day salary of employee = Basic Salary(WP salary) divided by 26 days
 	single_day_salary = basic_salary[0].amount / 26 
@@ -443,6 +447,7 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 	""".format(refs=references), as_dict=1)
 
 	# Days deduction
+	print("Deduction:" + str(days_deduction))
 	days_deduction_amount = days_deduction[0].days_deduction * single_day_salary
 
 	# Damages amount
@@ -478,4 +483,4 @@ def create_penalty_deduction(start_date, end_date, employee, total_penalty_amoun
 	penalty_deduction.balance_amount = balance_amount
 	penalty_deduction.insert()
 	penalty_deduction.submit()
-	#frappe.db.commit()
+	frappe.db.commit()
