@@ -9,4 +9,4 @@ from frappe.utils import getdate, add_to_date, cstr
 
 class RosterDailyReport(Document):
 	def autoname(self):
-		self.name = self.date + "|" + add_to_date(self.date, days=14)
+		self.name = add_to_date(cstr(self.date), days=1) + "|" + add_to_date(cstr(self.date), days=14)

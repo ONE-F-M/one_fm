@@ -28,16 +28,22 @@ class PIFSSMonthlyDeduction(Document):
 		file_doc = frappe.get_value("File", {"file_url": self.attach_report})
 		frappe.set_value("File", file_doc, "attached_to_name", self.name)
 
-	def update_additional_file_link(self):#Additional deduction file
+	def update_additional_file_link(self):
 		file_doc = frappe.get_value("File", {"file_url": self.additional_attach_report})
 		frappe.set_value("File", file_doc, "attached_to_name", self.name)
 
+	def on_update(self):
+		self.check_attachment_status()
+
+	def check_attachment_status(self):
+		if not self.attach_report or self.attach_report == "":
+			self.set("deductions", [])
+			fields = ['basic_insurance_in_csv','supplementary_insurance_in_csv','fund_increase_in_csv','unemployment_insurance_in_csv','compensation_in_csv']
+			for field in fields:
+				self.set(field,"")
 
 	def on_submit(self):
 		self.mendatory_fields()
-		if not self.attach_report and not self.additional_attach_report and not self.attach_manual_report and not self.attach_pdf_report:
-			frappe.throw("The following attaches are compulsory to submit.<br><ol><li>Attach Monthly Deduction Report</li><li>Attach Additional Monthly Deduction Report</li><li>Attach PDF Report</li><li>Attach Manual Report</li>")
-		
 		self.notify_finance()
 		self.create_legal_investigation()
 		missing_list = []
@@ -60,9 +66,19 @@ class PIFSSMonthlyDeduction(Document):
 		create_notification_log(subject,message,[email], self)
 
 	def mendatory_fields(self):
-		field_list = [{'Attach Monthly Deduction Report':'attach_report'},{'Attach Manual Report':'attach_manual_report'},{'Attach Additional Monthly Deduction Report':'additional_attach_report'},
-		{'Attach PDF Report':'attach_pdf_report'},{'Basic Extra Amounts':'basic_extra_amounts'},{'Additional Supplementary Amounts':'additional_supplementary_amounts'},{'Additional Amounts Increase':'additional_amounts_increase'},{'Additional Unemployment Supplement':'additional_unemployment_supplement'},{'Additional amounts of end of service gratuity':'additional_amounts_of_end_of_service_gratuity'},{'Supplementary insurance before 12/97':'supplementary_insurance_before_1297'},{'Special Installments and Exchange':'special_installments_and_exchange'},{'Additional amounts Special Installments and Replacement':'additional_amounts_special_installments_and_replacement'},
-		{'Total':'total'},{'Optional Supplemental Insurance':'optional_supplemental_insurance'},{'Optional Supplementary Additional Amounts':'optional_supplementary_additional_amounts'}]
+		field_list = [{'Attach Monthly Deduction Report':'attach_report'},{'Attach Manual Report':'attach_manual_report'},
+		{'Attach Employee Additional Monthly Report':'additional_attach_report'},
+		{'Attach PDF Report':'attach_pdf_report'},{'Basic':'basic_extra_amounts'},
+		{'Additional Supplementary':'additional_supplementary_amounts'},
+		{'Additional Amounts Increase':'additional_amounts_increase'},
+		{'Additional Unemployment Supplement':'additional_unemployment_supplement'},
+		{'Additional end of service gratuity ':'additional_amounts_of_end_of_service_gratuity'},
+		{'Supplementary insurance before 12/97':'supplementary_insurance_before_1297'},
+		{'Special Installments and Exchange':'special_installments_and_exchange'},
+		{'Additional Special Installments and Exchange':'additional_amounts_special_installments_and_replacement'},
+		{'Total Amount':'total'},{'Optional Supplemental Insurance':'optional_supplemental_insurance'},
+		{'Optional Supplementary Additional Amounts':'optional_supplementary_additional_amounts'}]
+
 		mandatory_fields = []
 		for fields in field_list:
 			for field in fields:
@@ -93,11 +109,12 @@ class PIFSSMonthlyDeduction(Document):
 		This method will be sending the sum of additional amounts as penality amount.
 		Define to whom the peality will be asgined to.
 		create legal investigation.
+		<not Done>
 		"""
 		if self.basic_extra_amounts and self.additional_supplementary_amounts and self.additional_amounts_increase and self.additional_unemployment_supplement \
 		 and self.additional_amounts_of_end_of_service_gratuity and self.supplementary_insurance_before_1297 and self.special_installments_and_exchange and self.additional_amounts_special_installments_and_replacement:
-		 penality_amount = self.basic_extra_amounts+self.additional_supplementary_amounts+self.additional_amounts_increase+self.additional_unemployment_supplement+self.additional_amounts_of_end_of_service_gratuity+self.special_installments_and_exchange+self.additional_amounts_special_installments_and_replacement+self.supplementary_insurance_before_1297
-		 print(penality_amount)
+		 penalty_amount = self.basic_extra_amounts+self.additional_supplementary_amounts+self.additional_amounts_increase+self.additional_unemployment_supplement+self.additional_amounts_of_end_of_service_gratuity+self.special_installments_and_exchange+self.additional_amounts_special_installments_and_replacement+self.supplementary_insurance_before_1297
+		 print(penalty_amount)
 
 def create_additional_salary(employee, amount):
 	additional_salary = frappe.new_doc("Additional Salary")
@@ -144,7 +161,7 @@ def import_deduction_data(file_url):
 			civil_id = employee.one_fm_civil_id
 			print(row[7],row[8],row[9],row[10],row[11],row[12],row[13])
 		employee_amount = flt(row[1] * (47.72/ 100))
-		table_data.append({'pifss_id_no': row[12],'civil_id':civil_id,'total_subscription': flt(row[1]), 'compensation':row[2], 'unemployment_insurance_amount':row[3],'fund_increase_amount':row[4],'supplementary_insurance_amount':row[5],'basic_insurance_amount':row[6],'employee_deduction':employee_amount})
+		table_data.append({'pifss_id_no': row[12],'civil_id':civil_id,'total_subscription': flt(row[1]), 'compensation_amount':row[2], 'unemployment_insurance':row[3],'fund_increase':row[4],'supplementary_insurance':row[5],'basic_insurance':row[6],'employee_deduction':employee_amount})
 	data.update({'table_data': table_data})
 	return data
 
