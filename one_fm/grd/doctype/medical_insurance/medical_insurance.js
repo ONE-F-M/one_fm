@@ -26,7 +26,7 @@ frappe.ui.form.on('Medical Insurance', {
                 callback: function(r) {
                     if(r && r.message){
                         var data = r.message;
-                        frm.set_value('employee_name', data.employee_name);
+                        // frm.set_value('employee_name', data.employee_name);
                         frm.set_value('gender', data.gender);
                         frm.set_value('nationality', data.one_fm_nationality);
                         //frm.set_value('passport_expiry_date', data.valid_upto);
@@ -116,13 +116,12 @@ var set_employee_details = function(frm){
                 filters: {
                 name: frm.doc.work_permit
                 },
-                fieldname:["civil_id","pam_file_number","employee_name","gender","nationality","duration_of_work_permit","passport_expiry_date"]
+                fieldname:["civil_id","pam_file_number","gender","nationality","duration_of_work_permit","passport_expiry_date"]
             }, 
             callback: function(r) { 
         
                 // set the returned value in a field
                 frm.set_value('civil_id', r.message.civil_id);
-                frm.set_value('employee_name', r.message.employee_name);
                 frm.set_value('gender', r.message.gender);
                 frm.set_value('nationality',r.message.nationality);
                 frm.set_value('no_of_years', r.message.duration_of_work_permit);

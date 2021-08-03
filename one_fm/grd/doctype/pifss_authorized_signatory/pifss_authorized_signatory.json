@@ -1,6 +1,8 @@
 {
- "autoname": "PFAS-.YYYY.-.MM.-.######",
+ "actions": [],
+ "autoname": "field:company_name_arabic",
  "creation": "2021-01-19 15:39:51.227251",
+ "description": "PFAS-.YYYY.-.MM.-.######",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -56,7 +58,8 @@
    "label": "Is Active"
   }
  ],
- "modified": "2021-05-31 12:29:26.331510",
+ "links": [],
+ "modified": "2021-07-29 04:34:16.329091",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Authorized Signatory",

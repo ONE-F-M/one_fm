@@ -75,6 +75,12 @@
   "documents_required_section",
   "documents_required",
   "amended_from",
+  "pam_work_permit_cancellation_section",
+  "end_of_service_screenshot",
+  "reference_number_on_pam",
+  "column_break_72",
+  "end_of_service_date",
+  "reference_number_set_on",
   "grd_section",
   "grd_operator",
   "grd_supervisor",
@@ -124,7 +130,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Work Permit Type",
-   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nLocal Transfer\nNew Kuwaiti",
+   "options": "\nRenewal Non Kuwaiti\nRenewal Kuwaiti\nOverseas\nLocal Transfer\nNew Kuwaiti\nCancellation",
    "permlevel": 1,
    "reqd": 1
   },
@@ -531,7 +537,6 @@
   },
   {
    "fetch_from": "employee.first_name",
-   "fetch_if_empty": 1,
    "fieldname": "first_name",
    "fieldtype": "Data",
    "label": "First Name",
@@ -539,7 +544,6 @@
   },
   {
    "fetch_from": "employee.middle_name",
-   "fetch_if_empty": 1,
    "fieldname": "second_name",
    "fieldtype": "Data",
    "label": "Second Name",
@@ -564,7 +568,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "first_name",
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_in_arabic",
    "fieldtype": "Data",
@@ -707,6 +710,7 @@
    "label": "Details of Rejection"
   },
   {
+   "depends_on": "eval:doc.work_permit_type != \"Cancellation\"",
    "fieldname": "section_break_72",
    "fieldtype": "Section Break"
   },
@@ -758,11 +762,44 @@
    "fieldname": "iqrar",
    "fieldtype": "Attach",
    "label": "Iqrar"
+  },
+  {
+   "depends_on": "eval:doc.work_permit_type == \"Cancellation\"",
+   "fieldname": "pam_work_permit_cancellation_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Work Permit Cancellation"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "end_of_service_screenshot",
+   "fieldtype": "Attach",
+   "label": "End Of Service Screenshot"
+  },
+  {
+   "fieldname": "column_break_72",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "end_of_service_date",
+   "fieldtype": "Data",
+   "label": "End Of Service Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_number_on_pam",
+   "fieldtype": "Data",
+   "label": "Reference Number On PAM"
+  },
+  {
+   "fieldname": "reference_number_set_on",
+   "fieldtype": "Datetime",
+   "label": "Reference Number Set On",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-26 12:36:59.045756",
+ "modified": "2021-08-01 19:39:29.052316",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

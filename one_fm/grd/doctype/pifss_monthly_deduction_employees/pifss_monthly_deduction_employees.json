@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2020-11-05 21:35:58.151774",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -8,12 +9,22 @@
   "column_break_2",
   "civil_id",
   "column_break_1",
+  "basic_insurance_amount",
+  "column_break_6",
+  "supplementary_insurance_amount",
+  "column_break_8",
+  "fund_increase_amount",
+  "column_break_10",
+  "unemployment_insurance_amount",
+  "column_break_12",
+  "compensation",
+  "column_break_14",
   "total_subscription",
   "column_break_4",
   "employee_deduction",
-  "column_break_6",
+  "column_break_18",
   "additional_deduction",
-  "column_break_8",
+  "column_break_20",
   "total_deductions"
  ],
  "fields": [
@@ -78,10 +89,60 @@
   {
    "fieldname": "column_break_1",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "basic_insurance_amount",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Basic Insurance amount"
+  },
+  {
+   "fieldname": "supplementary_insurance_amount",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Supplementary Insurance amount"
+  },
+  {
+   "fieldname": "fund_increase_amount",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Fund Increase amount"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "unemployment_insurance_amount",
+   "fieldtype": "Data",
+   "label": "Unemployment Insurance amount"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "compensation",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Compensation"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
- "modified": "2021-06-28 11:40:11.029626",
+ "links": [],
+ "modified": "2021-08-02 08:41:02.957412",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction Employees",

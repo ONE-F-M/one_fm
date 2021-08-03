@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "naming_series:",
  "creation": "2020-10-21 20:18:25.036895",
  "doctype": "DocType",
@@ -16,6 +17,21 @@
   "date_of_registeration",
   "column_break_9",
   "date_of_acceptance",
+  "section_break_12",
+  "pifss_is_under_process_on",
+  "end_of_service_section",
+  "work_permit_type",
+  "attach_accept_screenshot_from_pifss_website",
+  "column_break_63",
+  "end_date",
+  "section_break_46",
+  "reference_number",
+  "column_break_37",
+  "registered_on",
+  "pifss_authorized_signatory_section",
+  "company_name",
+  "column_break_33",
+  "signatory_name",
   "employee_details_section",
   "employee",
   "employee_name",
@@ -23,11 +39,13 @@
   "second_name",
   "third_name",
   "fourth_name",
+  "relieving_date",
   "column_break_13",
   "civil_id",
   "mobile",
   "address",
   "date_of_birth",
+  "nationality",
   "nationality_details_section",
   "nationality_no",
   "nationality_subject",
@@ -42,28 +60,19 @@
   "column_break_29",
   "salary",
   "registration_section",
-  "registration_application_number",
-  "attach_resignationtermination",
-  "reason_for_resignationtermination",
-  "column_break_37",
   "attach_signed_form",
   "employment_contract",
   "civil_id_copy",
+  "attach_resignationtermination",
+  "reason_for_resignationtermination",
   "column_break_44",
   "date_of_birth_certificate",
   "nationality_proof",
+  "social_security_clearance",
   "section_break_4",
-  "company_name_arabic",
   "user",
   "signature_date",
   "employee_signature_date",
-  "column_break_33",
-  "company_pifss_registration_no",
-  "signatory_name",
-  "authorized_signatory",
-  "pifss_authorized_signatory",
-  "end_of_service_section",
-  "end_date",
   "notify_for_signature",
   "grd_operator",
   "grd_supervisor",
@@ -78,18 +87,19 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Request Type",
-   "options": "Registration\nEnd of Service"
+   "options": "\nRegistration\nEnd of Service"
   },
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
   },
   {
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "\nDraft\nUnder Process\nApplied\nAccepted\nRejected",
+   "options": "\nDraft\nPending by GRD\nAwaiting Response\nRejected\nUnder Process\nAccepted\nCompleted",
    "read_only": 1
   },
   {
@@ -114,29 +124,8 @@
    "fieldtype": "Section Break"
   },
   {
-   "fetch_from": "pifss_authorized_signatory.company_name_arabic",
-   "fieldname": "company_name_arabic",
-   "fieldtype": "Data",
-   "label": "Company name in Arabic",
-   "read_only": 1
-  },
-  {
    "fieldname": "column_break_8",
    "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "pifss_authorized_signatory.pifss_registration_no",
-   "fieldname": "company_pifss_registration_no",
-   "fieldtype": "Data",
-   "label": "Company PIFSS Registration no",
-   "read_only": 1
-  },
-  {
-   "fieldname": "authorized_signatory",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Authorized Signatory",
-   "options": "PAM Authorized Signatory List"
   },
   {
    "fieldname": "employee_details_section",
@@ -229,7 +218,6 @@
    "fieldname": "nationality_subject",
    "fieldtype": "Data",
    "label": "Nationality Subject",
-   "options": "\n\u0627\u0644\u0623\u0648\u0644\u064a\n\u0627\u0644\u062b\u0627\u0646\u064a\u0629\n\u0627\u0644\u062b\u0627\u0644\u062b\u0629\n\u0627\u0644\u0631\u0627\u0628\u0639\u0629\n\u0627\u0644\u062e\u0627\u0645\u0633\u0629\n\u0627\u0644\u0633\u0627\u0628\u0639\u0629\n\u0627\u0644\u062b\u0627\u0645\u0646\u0629",
    "read_only": 1
   },
   {
@@ -284,18 +272,20 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.request_type==\"End of Service\"",
+   "depends_on": "eval:doc.request_type==\"End of Service\" && doc.workflow_state == \"Completed\" || doc.workflow_state ==\"Accepted\"",
    "fieldname": "end_of_service_section",
    "fieldtype": "Section Break",
    "label": "End of Service"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval:doc.request_type == \"End of Service\"",
    "fieldname": "attach_resignationtermination",
    "fieldtype": "Attach",
    "label": "Attach Resignation/Termination"
   },
   {
+   "description": "The End Date Mentioned in the screenshot",
    "fieldname": "end_date",
    "fieldtype": "Date",
    "label": "End Date"
@@ -308,30 +298,26 @@
    "depends_on": "eval:doc.request_type == \"End of Service\"",
    "fieldname": "reason_for_resignationtermination",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Reason for Resignation/Termination"
   },
   {
-   "depends_on": "eval:doc.request_type==\"Registration\"",
    "fieldname": "registration_section",
    "fieldtype": "Section Break",
    "label": "Attachments"
-  },
-  {
-   "depends_on": "eval:doc.status != \"Draft\"",
-   "fieldname": "registration_application_number",
-   "fieldtype": "Data",
-   "label": "Registration Application Number"
   },
   {
    "fieldname": "column_break_41",
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "attach_signed_form",
    "fieldtype": "Attach",
-   "label": "Attach Signed Form"
+   "label": "Attach 103 Signed Form"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "civil_id_copy",
    "fieldtype": "Attach",
    "label": "Civil ID Copy"
@@ -351,13 +337,7 @@
    "label": "Nationality Proof"
   },
   {
-   "fieldname": "pifss_authorized_signatory",
-   "fieldtype": "Link",
-   "label": "PIFSS Authorized Signatory",
-   "options": "PIFSS Authorized Signatory"
-  },
-  {
-   "depends_on": "pifss_authorized_signatory",
+   "depends_on": "company_name",
    "fieldname": "signatory_name",
    "fieldtype": "Select",
    "label": "Signatory Name"
@@ -367,6 +347,7 @@
    "depends_on": "pifss_authorized_signatory",
    "fieldname": "user",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "User"
   },
   {
@@ -395,11 +376,14 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.request_type == \"Registration\"",
    "fieldname": "employment_contract",
    "fieldtype": "Attach",
    "label": "Employment Contract"
   },
   {
+   "depends_on": "eval:doc.request_type == \"Registration\"",
    "fieldname": "social_security_clearance",
    "fieldtype": "Attach",
    "label": "Social Security Clearance"
@@ -458,24 +442,96 @@
    "default": "0",
    "fieldname": "notify_grd_operator",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Notify GRD Operator"
   },
   {
    "fieldname": "signature_date",
-   "fieldtype": "Date",
+   "fieldtype": "Data",
    "hidden": 1,
    "label": "Signature Date"
   },
   {
    "fieldname": "employee_signature_date",
-   "fieldtype": "Date",
+   "fieldtype": "Data",
    "hidden": 1,
    "label": "Employee Signature Date"
+  },
+  {
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1,
+   "translatable": 1
+  },
+  {
+   "fetch_from": "employee.relieving_date",
+   "fieldname": "relieving_date",
+   "fieldtype": "Data",
+   "label": "Relieving Date",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.workflow_state != \"Draft\"",
+   "fieldname": "reference_number",
+   "fieldtype": "Data",
+   "label": "Reference Number"
+  },
+  {
+   "fieldname": "pifss_authorized_signatory_section",
+   "fieldtype": "Section Break",
+   "label": "PIFSS Authorized Signatory"
+  },
+  {
+   "fieldname": "section_break_46",
+   "fieldtype": "Section Break",
+   "label": "Reference Data"
+  },
+  {
+   "fieldname": "registered_on",
+   "fieldtype": "Date",
+   "label": "Registered On",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_accept_screenshot_from_pifss_website",
+   "fieldtype": "Attach",
+   "label": "Attach Accept Status Screenshot from PIFSS Website "
+  },
+  {
+   "fieldname": "column_break_63",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pifss_is_under_process_on",
+   "fieldtype": "Datetime",
+   "label": "PIFSS Is Under Process On",
+   "read_only": 1
+  },
+  {
+   "default": "Cancellation",
+   "fieldname": "work_permit_type",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Work Permit Type"
+  },
+  {
+   "fieldname": "company_name",
+   "fieldtype": "Link",
+   "label": "Company Name",
+   "options": "PIFSS Authorized Signatory"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-16 11:51:31.757029",
- "modified_by": "amnaalshawa96@gmail.com",
+ "links": [],
+ "modified": "2021-08-01 21:11:38.334903",
+ "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",
  "owner": "Administrator",

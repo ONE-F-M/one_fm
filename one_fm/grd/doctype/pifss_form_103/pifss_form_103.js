@@ -14,31 +14,20 @@ frappe.ui.form.on('PIFSS Form 103', {
 					"is_active": 1,
 				}
 			};
-		})
-		// if(frm.doc.__islocal){
-		// 	frappe.db.get_value("Company", {"name": frappe.user_defaults.company} ,["company_name_arabic", "pifss_registration_no"], 
-		// 	function(res){
-		// 		console.log(res)
-		// 		let {company_name_arabic, pifss_registration_no} = res;
-		// 		frm.set_value("company_name_arabic", company_name_arabic);
-		// 		frm.set_value("company_pifss_registration_no", pifss_registration_no);
-		// 	})
-
-		// }	
+		})	
 	},
 	
 	refresh: function(frm){
 		if(!frm.doc.__islocal){
 			frm.set_df_property("request_type","read_only", 1);
 		} 
-		if(frm.doc.pifss_authorized_signatory){
+		if(frm.doc.company_name){
 			frappe.call({
 				method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.get_signatory_name",
 				args:{
-					'parent': frm.doc.pifss_authorized_signatory,
+					'parent': frm.doc.company_name,
 					},
 				callback:function(r){
-					console.log(r.message);
 					frm.set_df_property('signatory_name', "options", r.message);
 					frm.refresh_field("signatory_name");
 					}
@@ -48,16 +37,27 @@ frappe.ui.form.on('PIFSS Form 103', {
 			frm.set_df_property('signatory_name', "options", null);
 			frm.refresh_field("signatory_name");
 		}
+		if(frm.doc.status == "Awaiting Response"){
+			send_message(frm);
+		}
+		if (frm.doc.docstatus === 1) {
+      		frm.add_custom_button(__('PAM - Work Permit Cancellation'),
+				function() {
+					frappe.model.open_mapped_doc({
+					method: "one_fm.grd.utils.mappe_to_work_permit_cancellation",
+					frm: frm
+          			});
+				});
+		}    //set_filters(frm);
 	},
-	pifss_authorized_signatory: function(frm){
-		if(frm.doc.pifss_authorized_signatory){
+	company_name: function(frm){
+		if(frm.doc.company_name){
 			frappe.call({
 				method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.get_signatory_name",
 				args:{
-					'parent': frm.doc.pifss_authorized_signatory,
+					'parent': frm.doc.company_name,
 					},
 				callback:function(r){
-					console.log(r.message);
 					frm.set_df_property('signatory_name', "options", r.message);
 					frm.refresh_field("signatory_name");
 					}
@@ -85,6 +85,8 @@ frappe.ui.form.on('PIFSS Form 103', {
 						frm.set_value("employment_contract", i.attach);
 					}else if(i.document_name == "Social Security Clearance"){
 						frm.set_value("social_security_clearance", i.attach);
+					}else if(i.document_name == "Resignation Form"){
+						frm.set_value("attach_resignationtermination", i.attach);
 					}
 				})
 			})
@@ -108,7 +110,6 @@ frappe.ui.form.on('PIFSS Form 103', {
 				'user_name':frm.doc.signatory_name,
 				},
 			callback:function(r){
-				console.log(r.message)
 				frm.set_value('user',r.message)
 				frm.refresh_field("user");
 				}
@@ -126,7 +127,9 @@ user: function(frm){
 	frm.set_value('employee_signature_date',frappe.datetime.now_date())
 	
 },
-
+reference_number: function(frm){
+	set_registered_date_on_pifss(frm);
+},
 });
 var set_employee_details = function(frm){
     
@@ -164,40 +167,18 @@ var set_employee_details = function(frm){
         })
     }
 };
-var set_draft_values = function(frm){
-	if(frm.doc.status == "Draft"){
-		frm.set_value('date_of_request',null)
-		frm.set_value('date_of_registeration',null)
-		frm.set_value('date_of_acceptance',null)
-	}
-};
-var all_documents_are_attached = function(frm){
-	if(!frm.doc.employment_contract && !frm.doc.civil_id_copy && !frm.doc.social_security_clearance && !frm.doc.date_of_birth_certificate && !frm.doc.nationality_proof){
+var send_message = function(frm){
+	if(frm.doc.workflow_state == "Awaiting Response"){
 		frappe.msgprint({
-			title: __('Notification'),
+			title: __('Message'),
 			indicator: 'green',
-			message: __('All attachments need to be set')
+			message: __('You Will Recieve Notification to Check Status of Employee Through PIFSS Website')
 		});
 	}
+	
 };
-var  check_upload_signed_form = function(frm){
-	if (frm.doc.status == "Draft" && !frm.doc.attach_signed_form){
-		upload_signed_form(frm);
-	}if (frm.doc.status == "Draft" && frm.doc.attach_signed_form){
-		frm.set_value('date_of_request',frappe.datetime.now_date())
-	}
-};
-var upload_signed_form = function(frm){
-	frappe.msgprint({
-		title: __('Notification'),
-		indicator: 'green',
-		message: __('You Need to Attach 103 form to notify GRD team to proceed')
-	});
-};
-var set_register_number = function(frm){
-	frappe.msgprint({
-		title: __('Notification'),
-		indicator: 'green',
-		message: __('Registration Application Number is Required')
-	});
-};
+var set_registered_date_on_pifss = function(frm){
+	frm.set_value('registered_on',frappe.datetime.now_date())
+}
+
+
