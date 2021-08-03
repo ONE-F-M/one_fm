@@ -132,6 +132,8 @@ def update_password(otp, id, employee_id, new_password):
 		
 def cache_2fa_data(user, token, otp_secret, tmp_id):
 	'''Cache and set expiry for data.'''
+	# pwd = frappe.form_dict.get('pwd')
+
 	#hardcode the pwd for time being.
 	pwd = '12345'
 	# set increased expiry time for SMS and Email
