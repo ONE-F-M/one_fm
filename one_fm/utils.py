@@ -1281,7 +1281,9 @@ def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, 
 	)
 
 def validate_job_applicant(doc, method):
-   
+    from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
+    check_mendatory_fields_for_grd_and_recruiter(doc, method)
+
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
     if not doc.one_fm_is_easy_apply:
@@ -1625,8 +1627,8 @@ def update_onboarding_doc_for_bank_account(doc):
 
 
 def create_roster_daily_report():
-    """ 
-    A function that creates a Roster Daily Report document, 
+    """
+    A function that creates a Roster Daily Report document,
     obtaining the post schedule data and employee schedule data and
     computing the result of Roster being either 'OK' or 'NOT OK',
     for a date range starting from today until the next 14 days.
@@ -1643,7 +1645,7 @@ def create_roster_daily_report():
     roster_daily_report_doc.date = cstr(getdate())
 
     for date in pd.date_range(start=start_date, end=end_date):
-        
+
         """ Post report data """
         active_posts = len(frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["post_type"]))
         posts_off = len(frappe.db.get_list("Post Schedule", {'post_status': 'Post Off', 'date': date}))
@@ -1692,10 +1694,10 @@ def create_roster_daily_report():
             if not frappe.db.exists({'doctype': 'Employee Schedule', 'date': date, 'employee': employee.employee}):
                 employee_not_rostered_count = employee_not_rostered_count + 1
 
-        employee_result = "OK"    
+        employee_result = "OK"
         # If employees are available but are not rostered, set result to 'NOT OK'
         if employee_not_rostered_count > 0:
-            employee_result = "NOT OK"    
+            employee_result = "NOT OK"
 
         # Add row to child table
         roster_daily_report_doc.append("employee_daily_report",{
@@ -1706,5 +1708,5 @@ def create_roster_daily_report():
             'result': employee_result
         })
 
-    roster_daily_report_doc.save() 
-    frappe.db.commit()    
+    roster_daily_report_doc.save()
+    frappe.db.commit()

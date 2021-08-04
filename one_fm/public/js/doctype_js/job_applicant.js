@@ -7,7 +7,7 @@ frappe.ui.form.on('Job Applicant', {
 		set_mandatory_fields_of_job_applicant(frm);
 		set_field_properties_on_agency_applying(frm);
 		set_mandatory_fields_for_current_employment(frm);
-		
+
 		// if(frm.doc.one_fm_document_verification == 'Verified' || frm.doc.one_fm_document_verification == 'Verified - With Exception'){
 		// 	frm.set_df_property('one_fm_interview_schedules', 'hidden', false);
 		// }
@@ -101,7 +101,7 @@ frappe.ui.form.on('Job Applicant', {
 	one_fm_third_name: function(frm) {
     set_applicant_name(frm);
   },
-  	one_fm_forth_name: function(frm) {
+  one_fm_forth_name: function(frm) {
     set_applicant_name(frm);
   },
 	one_fm_last_name: function(frm) {
@@ -202,7 +202,7 @@ frappe.ui.form.on('Job Applicant', {
 	one_fm_is_transferable: function(frm) {
 		if(frm.doc.one_fm_is_transferable){
 			let msg = __('Do You Need to Set the Value to {0}', [frm.doc.one_fm_is_transferable])
-			
+
 			frappe.confirm(
 				msg,
 				function(){
@@ -210,7 +210,7 @@ frappe.ui.form.on('Job Applicant', {
 					if(frm.doc.one_fm_is_transferable == 'No'){
 						frappe.msgprint(__('If Applicant is Not Transferable the Applicant Will be Rejected.'));
 					}
-					
+
 				},
 				function(){
 					// No
@@ -264,7 +264,7 @@ frappe.ui.form.on('Job Applicant', {
 		'one_fm_previous_company_pam_file_number','one_fm_signatory_name','authorized_signatory_section'];
 
 		if(!frm.doc.one_fm_is_transferable || frm.doc.one_fm_is_transferable == 'Later'
-		 || frm.doc.one_fm_is_transferable == 'No'){ 
+		 || frm.doc.one_fm_is_transferable == 'No'){
 			set_hidden_fields(frm, hide_fields, true);
 		 }
 
@@ -284,7 +284,7 @@ frappe.ui.form.on('Job Applicant', {
 			set_read_only_fields(frm, read_fields, true);
 			set_hidden_fields(frm, hide_fields, true);
 		}
-		//Set GRD section as read only for recruiter role 
+		//Set GRD section as read only for recruiter role
 		if(frm.doc.one_fm_has_issue && frappe.user.has_role("Senior Recruiter")||frappe.user.has_role("Recruiter")){
 			let read_fields=['previous_company_details','authorized_signatory','one_fm_has_issue',
 			'one_fm_government_project','one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation',
@@ -293,8 +293,8 @@ frappe.ui.form.on('Job Applicant', {
 			'one_fm_previous_company_pam_file_number','one_fm_signatory_name','authorized_signatory_section'];
 			set_read_only_fields(frm, read_fields, true);
 		}
-		
-		
+
+
 },
 	one_fm_applicant_status: function(frm){
 	if(frm.doc.one_fm_applicant_status != "Selected"){
@@ -302,8 +302,8 @@ frappe.ui.form.on('Job Applicant', {
 		set_hidden_fields(frm, hide_fields, true);
 
 		}
-	}	
-	
+	}
+
 });
 
 var change_applicant_erf = function(frm) {
@@ -508,7 +508,7 @@ var validate_cid = function(frm) {
 		}
 		if(valid_cid == false){
 			frm.set_value('one_fm_cid_number', '');
-			frappe.throw(__("Please Enter a Valid Civil ID."));
+			frappe.throw(__("Please Enter a Valid Civil ID.!"));
 		}
 	}
 	function isNumeric(num){
@@ -537,6 +537,7 @@ var is_dob_include_in_cid = function(cid, dob) {
 	}
 	year = year.toString().slice(-2);
 	let date_string = year+month+day;
+	console.log('Expected DOB in CIVIL ID: '+date_string);
 	return cid.includes(date_string);
 };
 

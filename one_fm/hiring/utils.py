@@ -321,9 +321,18 @@ def job_offer_on_update_after_submit(doc, method):
         pass
         # TODO: Notify Recruiter
     if doc.workflow_state == 'Accepted':
-        create_on_boarding_from_job_offer(doc)
+        pass
+        # TODO: Notify Recruiter
+        # create_onboarding_from_job_offer(doc)
 
-def create_on_boarding_from_job_offer(job_offer):
+@frappe.whitelist()
+def btn_create_onboarding_from_job_offer(job_offer):
+    if frappe.db.exists('Job Offer', {'name': job_offer}):
+        create_onboarding_from_job_offer(frappe.get_doc('Job Offer', job_offer))
+    else:
+        frappe.throw(_('There is no job offer {0} exists').format(job_offer))
+
+def create_onboarding_from_job_offer(job_offer):
     if job_offer.status == 'Accepted':
         if not job_offer.onboarding_officer:
             frappe.msgprint(_("Please Select Onboarding Officer to Create Onboard Employee"))
@@ -333,6 +342,7 @@ def create_on_boarding_from_job_offer(job_offer):
                 'provide_accommodation_by_company', 'provide_transportation_by_company']
             o_employee = frappe.new_doc('Onboard Employee')
             o_employee.job_offer = job_offer.name
+            o_employee.reports_to = job_offer.reports_to
             o_employee.date_of_joining = job_offer.estimated_date_of_joining
             for d in fields:
                 o_employee.set(d, job_offer.get(d))
@@ -355,10 +365,22 @@ def create_on_boarding_from_job_offer(job_offer):
                 for d in fields:
                     o_employee.set(d, job_applicant.get(d))
                 for od in one_fm_fields:
-                    o_employee.set(od, job_applicant.get('one_fm_'+od))
+                    if od == 'civil_id':
+                        o_employee.set(od, job_applicant.get('one_fm_cid_number'))
+                    else:
+                        o_employee.set(od, job_applicant.get('one_fm_'+od))
+
                 for applicant_document in job_applicant.one_fm_documents_required:
                     doc_required = o_employee.append('applicant_documents')
                     fields = ['document_required', 'required_when', 'or_required_when', 'type_of_copy', 'or_type_of_copy', 'not_mandatory']
                     for field in fields:
                         doc_required.set(field, applicant_document.get(field))
+            if job_offer.one_fm_erf:
+                erf = frappe.get_doc('ERF', job_offer.one_fm_erf)
+                if erf and erf.tool_request_item:
+                    o_employee.tools_needed_for_work = True
             o_employee.save(ignore_permissions=True)
+
+def job_offer_onload(doc, method):
+    o_employee = frappe.db.get_value("Onboard Employee", {"job_offer": doc.name}, "name") or ""
+    doc.set_onload("onboard_employee", o_employee)
