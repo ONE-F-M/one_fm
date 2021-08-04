@@ -8,6 +8,9 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 from one_fm.hiring.doctype.candidate_orientation.candidate_orientation import create_candidate_orientation
+from one_fm.hiring.doctype.work_contract.work_contract import employee_details_for_wc
+from one_fm.hiring.utils import make_employee_from_job_offer
+from frappe.utils import now
 
 class OnboardEmployee(Document):
 	def validate_employee_creation(self):
@@ -22,16 +25,70 @@ class OnboardEmployee(Document):
 					if task_status not in ["Completed", "Cancelled"]:
 						frappe.throw(_("All the mandatory Task for employee creation hasn't been done yet."), IncompleteTaskError)
 
-	def on_submit(self):
-		create_candidate_orientation(self)
-		self.reload()
+	@frappe.whitelist()
+	def inform_applicant(self):
+		if not self.orientation_location and not self.orientation_on:
+			frappe.throw(_('To inform applicant, You need to set Location and Orientation On!'))
+		else:
+			subject = "<p>Dear {0} You Orientation Program is scheduled at {1} on {2}</p>".format(self.employee_name, self.orientation_on, self.orientation_location)
+			message = subject + "<p>Please be there in time and documents requested</p>"
+			if self.email_id:
+				frappe.sendmail(recipients= [self.email_id], subject=subject, message=message,
+					reference_doctype=self.doctype, reference_name=self.name)
+			self.informed_applicant = True
+			self.save(ignore_permissions=True)
 
-	def on_update_after_submit(self):
-		self.create_bank_account()
-		self.create_user_and_permissions()
-		self.create_employee_id()
-		self.create_rfm_from_eo()
+	@frappe.whitelist()
+	def mark_applicant_attended(self):
+		self.applicant_attended_orientation = now()
+		self.applicant_attended = True
+		self.save(ignore_permissions=True)
 
+	@frappe.whitelist()
+	def create_work_contract(self):
+		self.validate_orientation()
+		if not frappe.db.exists('Work Contract', {'onboard_employee': self.name}):
+			filters = employee_details_for_wc(self)
+			filters['doctype'] = 'Work Contract'
+			filters['onboard_employee'] = self.name
+			wc = frappe.new_doc('Work Contract')
+			for filter in filters:
+				wc.set(filter, filters[filter])
+			wc.save(ignore_permissions=True)
+
+	@frappe.whitelist()
+	def create_duty_commencement(self):
+		if self.work_contract_status == "Applicant Signed":
+			duty_commencement = frappe.new_doc('Duty Commencement')
+			duty_commencement.onboard_employee = self.name
+			duty_commencement.save(ignore_permissions=True)
+
+	@frappe.whitelist()
+	def create_employee(self):
+		if self.duty_commencement_status == 'Applicant Signed and Uploaded':
+			if not self.reports_to:
+				frappe.throw(_("Select reports to user!"))
+			elif self.job_offer:
+				employee = make_employee_from_job_offer(self.job_offer)
+				employee.reports_to = self.reports_to
+				if not employee.one_fm_civil_id:
+					employee.one_fm_civil_id = 'dsdsf' #self.civil_id
+				if not employee.one_fm_nationality:
+					employee.one_fm_nationality = self.nationality
+				employee.one_fm_first_name_in_arabic = employee.employee_name
+				employee.permanent_address = "Test"
+				employee.reports_to = self.reports_to
+				employee.save(ignore_permissions=True)
+				self.employee = employee.name
+				self.save(ignore_permissions=True)
+
+	def validate_orientation(self):
+		if not self.informed_applicant:
+			frappe.throw(_('Applicant not Informed !'))
+		if not self.applicant_attended:
+			frappe.throw(_('Applicant is not Attended !'))
+
+	@frappe.whitelist()
 	def create_rfm_from_eo(self):
 		if self.erf:
 			erf = frappe.get_doc('ERF', self.erf)
@@ -51,7 +108,10 @@ class OnboardEmployee(Document):
 					rfm_item.uom = 'Nos'
 					rfm_item.schedule_date = self.date_of_joining
 				rfm.save(ignore_permissions=True)
+				self.request_for_material = rfm.name
+				self.save(ignore_permissions=True)
 
+	@frappe.whitelist()
 	def create_employee_id(self):
 		if self.employee and not self.employee_id:
 			employee_id = frappe.new_doc('Employee ID')
@@ -60,8 +120,10 @@ class OnboardEmployee(Document):
 			employee_id.onboard_employee = self.name
 			employee_id.save(ignore_permissions=True)
 
+	@frappe.whitelist()
 	def create_user_and_permissions(self):
-		if self.company_email and not frappe.db.exists('User', self.company_email):
+		if self.company_email:
+			# if not frappe.db.exists('User', self.company_email):
 			user = frappe.new_doc('User')
 			user.first_name = self.employee_name
 			user.email = self.company_email
@@ -71,7 +133,12 @@ class OnboardEmployee(Document):
 			employee.user_id = user.name
 			employee.create_user_permission = self.create_user_permission
 			employee.save(ignore_permissions=True)
+			self.user_created = True
+			self.save(ignore_permissions=True)
+		else:
+			frappe.throw(_('Enter company email to create ERPNext User.!'))
 
+	@frappe.whitelist()
 	def create_bank_account(self):
 		if self.employee and not self.bank_account:
 			create_account = True
@@ -90,7 +157,7 @@ class OnboardEmployee(Document):
 					bank_account.onboard_employee = self.name
 					bank_account.save(ignore_permissions=True)
 				else:
-					frappe.msgprint(_('To Create Set Account Name and Bank'))
+					frappe.msgprint(_('To Create Bank Account, Set Account Name and Bank !'))
 
 	def assign_task_to_users(self, task, users):
 		for user in users:

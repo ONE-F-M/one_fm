@@ -32,7 +32,8 @@ class RequestforMaterial(BuyingController):
 			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
 			send_email(self, [self.request_for_material_approver], message, subject)
 			create_notification_log(subject, message, [self.request_for_material_approver], self)
-
+			
+	@frappe.whitelist()
 	def accept_approve_reject_request_for_material(self, status, reason_for_rejection=None):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
 			page_link = get_url("/desk#Form/Request for Material/" + self.name)

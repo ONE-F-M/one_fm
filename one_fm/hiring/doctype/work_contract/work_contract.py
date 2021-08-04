@@ -35,10 +35,6 @@ class WorkContract(Document):
 		update_onboarding_doc(self)
 
 	def update_on_workflow_state(self):
-		if self.workflow_state == "Applicant Signed":
-			duty_commencement = frappe.new_doc('Duty Commencement')
-			duty_commencement.onboard_employee = self.onboard_employee
-			duty_commencement.save(ignore_permissions=True)
 		if self.workflow_state == 'Submitted to Legal':
 			self.validate_attachments()
 		if self.workflow_state == 'Send to Authorised Signatory' and not self.legal_receives_employee_file:
