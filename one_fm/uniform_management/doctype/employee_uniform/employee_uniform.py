@@ -129,6 +129,7 @@ class EmployeeUniform(Document):
 				pay_back += item.quantity * item.rate
 		self.pay_back_to_company = pay_back
 
+	@frappe.whitelist()
 	def set_uniform_details(self):
 		uniforms = False
 		if self.employee:
