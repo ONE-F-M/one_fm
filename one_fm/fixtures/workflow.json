@@ -530,7 +530,7 @@
   "doctype": "Workflow",
   "document_type": "PIFSS Form 103",
   "is_active": 1,
-  "modified": "2021-07-31 14:49:27.544111",
+  "modified": "2021-08-04 10:01:23.942655",
   "name": "PIFSS Form 103",
   "override_status": 0,
   "parent": null,
@@ -632,7 +632,7 @@
   ],
   "transitions": [
    {
-    "action": "Done",
+    "action": "Submit to GRD",
     "allow_self_approval": 1,
     "allowed": "HR User",
     "condition": null,
@@ -3225,6 +3225,110 @@
    }
   ],
   "workflow_name": "Asset Movement",
+  "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "PIFSS Monthly Deduction",
+  "is_active": 1,
+  "modified": "2021-08-04 12:01:17.406687",
+  "name": "PIFSS Monthly Deduction",
+  "override_status": 0,
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Draft",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "GRD Supervisor",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending By Supervisor",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Finance User",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending By Finance",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Completed",
+    "update_field": null,
+    "update_value": null
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Submit to GRD Supervisor",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Pending By Supervisor",
+    "parent": "PIFSS Monthly Deduction",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit to Finance",
+    "allow_self_approval": 1,
+    "allowed": "GRD Supervisor",
+    "condition": null,
+    "next_state": "Pending By Finance",
+    "parent": "PIFSS Monthly Deduction",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending By Supervisor"
+   },
+   {
+    "action": "Done",
+    "allow_self_approval": 1,
+    "allowed": "Finance User",
+    "condition": null,
+    "next_state": "Completed",
+    "parent": "PIFSS Monthly Deduction",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending By Finance"
+   }
+  ],
+  "workflow_name": "PIFSS Monthly Deduction",
   "workflow_state_field": "workflow_state"
  }
 ]

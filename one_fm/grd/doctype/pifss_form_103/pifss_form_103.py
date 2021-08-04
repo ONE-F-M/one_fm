@@ -50,6 +50,7 @@ class PIFSSForm103(Document):
 
 	def on_update(self):
 		self.check_workflow_states()
+		self.notify_authorized_signatory()
 					
 	def check_workflow_states(self):
 		if self.workflow_state == "Draft":#check the previous workflow (DRAFT) required fields 
@@ -59,12 +60,15 @@ class PIFSSForm103(Document):
 
 		if self.workflow_state == "Pending by GRD":
 			field_list = [{'Attach 103 Signed Form':'attach_signed_form'}]
-			self.set_mendatory_fields(field_list)
+			message_detail = '<b>First, You Need to Print The Form and Take Employee Signature</b>'
+			self.set_mendatory_fields(field_list,message_detail)
 			
 		if self.workflow_state == "Awaiting Response":
+			self.notify_grd()#notify through erpnext to apply on pifss
 			if not self.reference_number:
-				field_list = [{'Reference Number':'reference_number'}]
-				self.set_mendatory_fields(field_list)
+				field_list = [{'PIFSS Reference Number':'reference_number'}]
+				message_detail = '<b>First, You Need to Apply on PIFSS Website</b>'
+				self.set_mendatory_fields(field_list,message_detail)
 
 		if self.workflow_state == "Rejected":
 			if self.reference_number:
@@ -73,7 +77,7 @@ class PIFSSForm103(Document):
 		if self.workflow_state == "Under Process":
 			self.db_set('pifss_is_under_process_on', now_datetime())
 
-	def set_mendatory_fields(self,field_list):
+	def set_mendatory_fields(self,field_list,message_detail=None):
 		mandatory_fields = []
 		for fields in field_list:
 			for field in fields:
@@ -81,7 +85,11 @@ class PIFSSForm103(Document):
 						mandatory_fields.append(field)
 
 		if len(mandatory_fields) > 0:
-			message = 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
+			if message_detail:
+				message = message_detail
+				message += '<br>Mandatory fields required in PIFSS 103 form<br><br><ul>'
+			else:
+				message= 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
 			for mandatory_field in mandatory_fields:
 				message += '<li>' + mandatory_field +'</li>'
 			message += '</ul>'
@@ -107,7 +115,7 @@ class PIFSSForm103(Document):
 		This method for notifying operator to check the status of the employee on PIFSS website
 		after 5 days of Applying,
 		(Accepted, Rejected, Under Process)
-		For removing and Enrolling Kuwaiti in PIFSS
+		For removing and Enrolling Kuwaiti On PIFSS
 		"""
 		today = date.today()
 		if self.workflow_state == "Awaiting Response" and self.registered_on:
@@ -136,8 +144,8 @@ class PIFSSForm103(Document):
 
 	def notify_grd(self):
 		page_link = get_url("/desk#Form/PIFSS Form 103/" + self.name)
-		subject = ("Requested to Apply for Form 103 By Onboarding to {0}").format(self.employee_name)
-		message = "<p>Apply for Form 103 for <a href='{0}'></a>.</p>".format(self.employee_name)
+		subject = ("PIFSS Form 103 has been created for {0}<a href='{1}'></a>").format(self.employee_name,page_link)
+		message = "<p>Please proceed with processing {0} for {1} <a href='{2}'></a>.</p>".format(self.request_type,self.employee_name,page_link)
 		create_notification_log(subject, message, [self.grd_operator], self)
 
 	def check_penality(self):
@@ -148,12 +156,16 @@ class PIFSSForm103(Document):
 				frappe.msgprint(_("Issue Penality for Employee"))
 	
 	def notify_authorized_signatory(self):
-		subject = _("Note: Will use Your Signator on PIFSS 103 Form")
-		message = "You are requested to sgin on PIFSS 103 form {0} for {1}. <br>".format(self.name,self.employee)
-		for_users = frappe.db.sql_list("""select user from `tabPAM Authorized Signatory Table`""")
-		for user in for_users:
-			if self.user == user:
-				create_notification_log(subject, message, [self.user], self)
+		if self.notify_for_signature == 0:
+			subject = _("Attention: Your signature will be used on PIFSS Form 103")
+			message = "<h3>Dear {0},</h3><br><p>You are requested to sgin on PIFSS 103 form ({0}) for {1}</p><br><p>Please note that your E-Signature will be used on PIFSS Form 103</p>. <br>".format(self.signatory_name,self.name,self.employee)
+			create_notification_log(subject, message, [self.user], self)
+			self.db_set('notify_for_signature',1)
+
+			# for_users = frappe.db.sql_list("""select user from `tabPAM Authorized Signatory Table`""")
+			# for user in for_users:
+			# 	if self.user == user:
+					
 	
 	def recall_create_work_permit_new_kuwaiti(self):
 		if self.request_type == "Registration":
@@ -183,11 +195,17 @@ def notify_open_pifss(doc, method):
 
 @frappe.whitelist()
 def get_signatory_name(parent):
-	name_list = frappe.db.sql("""select  authorized_signatory_name_arabic from `tabPAM Authorized Signatory Table`
-				where parent = %s  """,(parent),as_list=1)
-	return ' ',name_list
-
+	names=[]
+	names.append(' ')
+	if parent:
+		doc = frappe.get_doc('PIFSS Authorized Signatory',parent)
+		for autorized_signatory in doc.authorized_signatory:
+			if autorized_signatory.authorized_signatory_name_arabic:
+				names.append(autorized_signatory.authorized_signatory_name_arabic)
+	return names
+	
 @frappe.whitelist()
 def get_signatory_user(user_name):
-	user = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':user_name},['user'])
-	return user
+	user,signature = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':user_name},['user','signature'])
+	return user,signature
+

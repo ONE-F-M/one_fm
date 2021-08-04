@@ -73,6 +73,7 @@
   "user",
   "signature_date",
   "employee_signature_date",
+  "authorized_signature",
   "notify_for_signature",
   "grd_operator",
   "grd_supervisor",
@@ -279,7 +280,7 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:doc.request_type == \"End of Service\"",
+   "depends_on": "eval:doc.request_type == \"End of Service\" && doc.workflow_state != \"Draft\"",
    "fieldname": "attach_resignationtermination",
    "fieldtype": "Attach",
    "label": "Attach Resignation/Termination"
@@ -318,6 +319,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval: doc.workflow_state != \"Draft\"",
    "fieldname": "civil_id_copy",
    "fieldtype": "Attach",
    "label": "Civil ID Copy"
@@ -327,11 +329,13 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval: doc.workflow_state != \"Draft\"",
    "fieldname": "date_of_birth_certificate",
    "fieldtype": "Attach",
    "label": "Date of Birth Certificate"
   },
   {
+   "depends_on": "eval: doc.workflow_state != \"Draft\"",
    "fieldname": "nationality_proof",
    "fieldtype": "Attach",
    "label": "Nationality Proof"
@@ -377,13 +381,13 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:doc.request_type == \"Registration\"",
+   "depends_on": "eval:doc.request_type == \"Registration\" && doc.workflow_state != \"Draft\"",
    "fieldname": "employment_contract",
    "fieldtype": "Attach",
    "label": "Employment Contract"
   },
   {
-   "depends_on": "eval:doc.request_type == \"Registration\"",
+   "depends_on": "eval:doc.request_type == \"Registration\" && doc.workflow_state != \"Draft\"",
    "fieldname": "social_security_clearance",
    "fieldtype": "Attach",
    "label": "Social Security Clearance"
@@ -476,7 +480,7 @@
    "depends_on": "eval:doc.workflow_state != \"Draft\"",
    "fieldname": "reference_number",
    "fieldtype": "Data",
-   "label": "Reference Number"
+   "label": "PIFSS Reference Number"
   },
   {
    "fieldname": "pifss_authorized_signatory_section",
@@ -526,11 +530,17 @@
    "fieldtype": "Link",
    "label": "Company Name",
    "options": "PIFSS Authorized Signatory"
+  },
+  {
+   "fieldname": "authorized_signature",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "Authorized Signature"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-01 21:11:38.334903",
+ "modified": "2021-08-04 10:18:14.542692",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",
