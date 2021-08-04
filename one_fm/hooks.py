@@ -161,13 +161,13 @@ doc_events = {
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
-		"validate": "one_fm.one_fm.utils.check_mendatory_fields_for_grd_and_recruiter",
 		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
 	"Job Offer": {
 		"validate": "one_fm.hiring.utils.validate_job_offer",
-		"on_update_after_submit": "one_fm.hiring.utils.job_offer_on_update_after_submit"
+		"on_update_after_submit": "one_fm.hiring.utils.job_offer_on_update_after_submit",
+		"onload": "one_fm.hiring.utils.job_offer_onload"
 	},
 	"Shift Type": {
 		"autoname": "one_fm.api.doc_events.naming_series"
@@ -308,7 +308,7 @@ scheduler_events = {
 	],
 
 	"cron": {
-		"0 8 1 * *": [# first day of the Month at 8 am 
+		"0 8 1 * *": [# first day of the Month at 8 am
 			"one_fm.grd.doctype.preparation.create_preparation",
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record'
 		],
@@ -346,7 +346,7 @@ scheduler_events = {
 			'one_fm.utils.send_gp_letter_attachment_no_response',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
-			
+
 		],
 		"30 8 * * *":[
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator',
@@ -360,7 +360,7 @@ scheduler_events = {
 		"30 9 * * *": [
 			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first',
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.moi_notify_again_grd_operator'
-			
+
 		],
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'
@@ -449,7 +449,7 @@ fixtures = [
 	},
 	{
 		"dt": "Workflow",
-		'filters': [['dt', 'in', ['Work Permit', 'Medical Insurance', 
+		'filters': [['dt', 'in', ['Work Permit', 'Medical Insurance',
 		'Fingerprint Appointment','MOI Residency Jawazat','Transfer Paper','PACI', 'PIFSS Form 103']]]
 
 	},

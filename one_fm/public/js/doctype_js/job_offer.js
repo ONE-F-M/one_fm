@@ -15,7 +15,32 @@ frappe.ui.form.on('Job Offer', {
           });
 				}
 			);
-		}    set_filters(frm);
+		}
+    if (frm.doc.workflow_state == 'Accepted' && frm.doc.docstatus === 1){
+      if (!frm.doc.__onload || !frm.doc.__onload.onboard_employee){
+        frm.add_custom_button(__('Start Onboard Employee'),
+  				function () {
+            frappe.call({
+              method: 'one_fm.hiring.utils.btn_create_onboarding_from_job_offer',
+              args: {'job_offer': frm.doc.name},
+              callback: function functionName(r) {
+                frm.reload_doc();
+              },
+              freeze: true,
+              freeze_message: __("Creating Onboard Employee ...!")
+            });
+  				}
+  			);
+  		}
+      else if (frm.doc.__onload && frm.doc.__onload.onboard_employee) {
+        frm.add_custom_button(__('Go to Onboard Employee'),
+  				function () {
+            frappe.set_route("Form", "Onboard Employee", frm.doc.__onload.onboard_employee);
+  				}
+  			);
+      }
+    }
+    set_filters(frm);
   },
   validate: function(frm) {
     // check_and_info_offer_terms(frm);
