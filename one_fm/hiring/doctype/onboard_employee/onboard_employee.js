@@ -9,6 +9,7 @@ frappe.ui.form.on('Onboard Employee', {
 				frappe.set_route("Form", "Employee", frm.doc.employee);
 			},__("View"));
 		}
+		create_custom_buttons(frm);
 	},
 	job_applicant: function(frm) {
 		frm.set_value("applicant_documents" ,"");
@@ -42,8 +43,118 @@ frappe.ui.form.on('Onboard Employee', {
 				}
 			});
 		}
+	},
+	btn_create_bank_account: function(frm) {
+		frappe.call({
+			doc: frm.doc,
+			method: 'create_bank_account',
+			callback: function(r) {
+				if(!r.exc){
+					frm.reload_doc();
+				}
+			},
+			freeze: true,
+			freeze_message: (__('Creating Bank Account ....!'))
+		});
+	},
+	btn_create_erpnext_user: function(frm) {
+		frappe.call({
+			doc: frm.doc,
+			method: 'create_user_and_permissions',
+			callback: function(r) {
+				if(!r.exc){
+					frm.reload_doc();
+				}
+			},
+			freeze: true,
+			freeze_message: (__('Creating ERPNext User ....!'))
+		});
 	}
 });
+
+var create_custom_buttons = function(frm) {
+	if(!frm.doc.informed_applicant){
+		btn_inform_applicant(frm);
+	}
+	if(!frm.doc.applicant_attended && frm.doc.informed_applicant){
+		btn_mark_applicant_attended(frm);
+	}
+	if(frm.doc.applicant_attended && !frm.doc.work_contract){
+		cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
+	}
+	if(frm.doc.work_contract_status == "Applicant Signed" && !frm.doc.duty_commencement){
+		cutom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
+	}
+	if(frm.doc.duty_commencement_status == "Applicant Signed and Uploaded" && !frm.doc.employee){
+		cutom_btn_and_action(frm, 'create_employee', 'Employee');
+	}
+	if(frm.doc.employee && !frm.doc.employee_id){
+		cutom_btn_and_action(frm, 'create_employee_id', 'Employee ID Card');
+	}
+	if(frm.doc.employee && !frm.doc.user_created){
+		cutom_btn_and_action(frm, 'create_user_and_permissions', 'ERPNext User');
+	}
+	if(frm.doc.employee && !frm.doc.bank_account){
+		cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
+	}
+	if(frm.doc.employee && frm.doc.tools_needed_for_work && !frm.doc.request_for_material){
+		cutom_btn_and_action(frm, 'create_rfm_from_eo', 'Request for Material');
+	}
+}
+
+var btn_mark_applicant_attended = function(frm) {
+	frm.add_custom_button(__('Mark Applicant Attended'), function() {
+		frappe.call({
+			doc: frm.doc,
+			method: 'mark_applicant_attended',
+			callback: function(r) {
+				frm.reload_doc();
+			},
+			freeze: true,
+			freeze_message: __('Mark Applicant Attended ...!')
+		});
+	}).addClass('btn-primary');
+};
+
+var btn_inform_applicant = function(frm) {
+	frm.add_custom_button(__('Inform Applicant'), function() {
+		if(frm.doc.docstatus == 1){
+			if(frm.doc.orientation_location && frm.doc.orientation_on){
+				frappe.call({
+					doc: frm.doc,
+					method: 'inform_applicant',
+					callback: function(r) {
+						frm.reload_doc();
+					},
+					freeze: true,
+					freeze_message: __('Process Inform Applicant ...!')
+				});
+			}
+			else{
+				frappe.throw(__('Please set Orientation Location, Date and Time to proceed ..!'));
+			}
+		}
+		else{
+			frappe.throw(__('Please submit the document and proceed ..!'));
+		}
+	}).addClass('btn-primary');
+};
+
+var cutom_btn_and_action = function(frm, method, dt) {
+	frm.add_custom_button(__('Create '+dt), function() {
+		frappe.call({
+			doc: frm.doc,
+			method: method,
+			callback: function(r) {
+				if(!r.exc){
+					frm.reload_doc();
+				}
+			},
+			freeze: true,
+			freeze_message: (__('Creating {0} ....!', [dt]))
+		});
+	}).addClass('btn-primary');
+}
 
 var set_offer_details = function(frm, job_offer) {
 	var fields = ['employee_grade', 'job_applicant'];
