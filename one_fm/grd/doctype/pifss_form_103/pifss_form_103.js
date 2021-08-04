@@ -37,11 +37,14 @@ frappe.ui.form.on('PIFSS Form 103', {
 			frm.set_df_property('signatory_name', "options", null);
 			frm.refresh_field("signatory_name");
 		}
-		if(frm.doc.status == "Awaiting Response"){
+		if(frm.doc.status == "Awaiting Response" && frm.doc.notify_grd_operator == 0){
+			
 			send_message(frm);
 		}
 		if (frm.doc.docstatus === 1) {
+			document.querySelectorAll("[data-fieldname='PAM - Work Permit Cancellation']")[1].style.backgroundColor ="#44c95a";
       		frm.add_custom_button(__('PAM - Work Permit Cancellation'),
+			
 				function() {
 					frappe.model.open_mapped_doc({
 					method: "one_fm.grd.utils.mappe_to_work_permit_cancellation",
@@ -85,6 +88,20 @@ frappe.ui.form.on('PIFSS Form 103', {
 						frm.set_value("employment_contract", i.attach);
 					}else if(i.document_name == "Social Security Clearance"){
 						frm.set_value("social_security_clearance", i.attach);
+					}
+				})
+			})
+		}if(employee && request_type === "End of Service"){
+			frappe.db.get_doc("Employee", employee)
+			.then(res => {
+				let {one_fm_employee_documents} = res;
+				one_fm_employee_documents.forEach(function(i, v){
+					if(i.document_name == "Birth Certificate"){
+						frm.set_value("date_of_birth_certificate", i.attach);
+					}else if(i.document_name == "Nationality Proof"){
+						frm.set_value("nationality_proof", i.attach);	
+					}else if(i.document_name == "Civil ID"){
+						frm.set_value("civil_id_copy", i.attach);
 					}else if(i.document_name == "Resignation Form"){
 						frm.set_value("attach_resignationtermination", i.attach);
 					}
@@ -110,8 +127,10 @@ frappe.ui.form.on('PIFSS Form 103', {
 				'user_name':frm.doc.signatory_name,
 				},
 			callback:function(r){
-				frm.set_value('user',r.message)
+				frm.set_value('user',r.message[0]);
+				frm.set_value('authorized_signature',r.message[1]);
 				frm.refresh_field("user");
+				frm.refresh_field("authorized_signature");
 				}
 			});
 	}
@@ -172,8 +191,9 @@ var send_message = function(frm){
 		frappe.msgprint({
 			title: __('Message'),
 			indicator: 'green',
-			message: __('You Will Recieve Notification to Check Status of Employee Through PIFSS Website')
+			message: __('You Will be Recieving Notification to Check Employee Status via PIFSS Website')
 		});
+		frm.set_value("notify_grd_operator", 1);
 	}
 	
 };

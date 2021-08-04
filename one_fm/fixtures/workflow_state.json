@@ -99,18 +99,6 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2021-07-26 11:24:40.565526",
-  "name": "Pending By Supervisor",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "style": "",
-  "workflow_state_name": "Pending By Supervisor"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2021-07-26 11:25:13.967575",
   "name": "Pending By PAM",
   "parent": null,
@@ -723,18 +711,6 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2020-10-28 21:38:33.140798",
-  "name": "Draft",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "style": "Danger",
-  "workflow_state_name": "Draft"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2020-10-28 21:39:47.280066",
   "name": "Pending Approval",
   "parent": null,
@@ -807,6 +783,18 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
+  "modified": "2020-10-28 21:38:33.140798",
+  "name": "Draft",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Danger",
+  "workflow_state_name": "Draft"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
   "modified": "2021-05-26 01:35:08.243382",
   "name": "Completed",
   "parent": null,
@@ -814,5 +802,29 @@
   "parenttype": null,
   "style": "",
   "workflow_state_name": "Completed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2021-07-26 11:24:40.565526",
+  "name": "Pending By Supervisor",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "",
+  "workflow_state_name": "Pending By Supervisor"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2021-08-04 11:24:55.362035",
+  "name": "Pending By Finance",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "",
+  "workflow_state_name": "Pending By Finance"
  }
 ]
