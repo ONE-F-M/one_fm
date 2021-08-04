@@ -83,6 +83,7 @@
   "orientation_on",
   "column_break_75",
   "informed_applicant",
+  "applicant_attended_orientation",
   "applicant_attended",
   "work_contract_section",
   "work_contract_name",
@@ -1041,12 +1042,19 @@
    "fieldname": "btn_create_erpnext_user",
    "fieldtype": "Button",
    "label": "Create ERPNext User"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "applicant_attended_orientation",
+   "fieldtype": "Datetime",
+   "label": "Applicant Attended Orientation",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-03 15:05:15.567409",
+ "modified": "2021-08-04 11:43:55.284690",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
@@ -1077,6 +1085,20 @@
    "read": 1,
    "report": 1,
    "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Onboarding Officer",
    "share": 1,
    "submit": 1,
    "write": 1

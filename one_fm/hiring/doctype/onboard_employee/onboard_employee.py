@@ -10,6 +10,7 @@ from frappe.model.mapper import get_mapped_doc
 from one_fm.hiring.doctype.candidate_orientation.candidate_orientation import create_candidate_orientation
 from one_fm.hiring.doctype.work_contract.work_contract import employee_details_for_wc
 from one_fm.hiring.utils import make_employee_from_job_offer
+from frappe.utils import now
 
 class OnboardEmployee(Document):
 	def validate_employee_creation(self):
@@ -29,8 +30,19 @@ class OnboardEmployee(Document):
 		if not self.orientation_location and not self.orientation_on:
 			frappe.throw(_('To inform applicant, You need to set Location and Orientation On!'))
 		else:
+			subject = "<p>Dear {0} You Orientation Program is scheduled at {1} on {2}</p>".format(self.employee_name, self.orientation_on, self.orientation_location)
+			message = subject + "<p>Please be there in time and documents requested</p>"
+			if self.email_id:
+				frappe.sendmail(recipients= [self.email_id], subject=subject, message=message,
+					reference_doctype=self.doctype, reference_name=self.name)
 			self.informed_applicant = True
 			self.save(ignore_permissions=True)
+
+	@frappe.whitelist()
+	def mark_applicant_attended(self):
+		self.applicant_attended_orientation = now()
+		self.applicant_attended = True
+		self.save(ignore_permissions=True)
 
 	@frappe.whitelist()
 	def create_work_contract(self):

@@ -54,16 +54,10 @@ frappe.ui.form.on('Onboard Employee', {
 
 var create_custom_buttons = function(frm) {
 	if(!frm.doc.informed_applicant){
-		frm.add_custom_button(__('Inform Applicant'), function() {
-			frm.set_value('informed_applicant', true);
-			frm.save();
-		}).addClass('btn_primary');
+		btn_inform_applicant(frm);
 	}
 	if(!frm.doc.applicant_attended && frm.doc.informed_applicant){
-		frm.add_custom_button(__('Mark Applicant Attended'), function() {
-			frm.set_value('applicant_attended', true);
-			frm.save();
-		}).addClass('btn_primary');
+		btn_mark_applicant_attended(frm);
 	}
 	if(frm.doc.applicant_attended && !frm.doc.work_contract){
 		cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
@@ -88,8 +82,46 @@ var create_custom_buttons = function(frm) {
 	}
 }
 
+var btn_mark_applicant_attended = function(frm) {
+	frm.add_custom_button(__('Mark Applicant Attended'), function() {
+		frappe.call({
+			doc: frm.doc,
+			method: 'mark_applicant_attended',
+			callback: function(r) {
+				frm.reload_doc();
+			},
+			freeze: true,
+			freeze_message: __('Mark Applicant Attended ...!')
+		});
+	}).addClass('btn-primary');
+};
+
+var btn_inform_applicant = function(frm) {
+	frm.add_custom_button(__('Inform Applicant'), function() {
+		if(frm.doc.docstatus == 1){
+			if(frm.doc.orientation_location && frm.doc.orientation_on){
+				frappe.call({
+					doc: frm.doc,
+					method: 'inform_applicant',
+					callback: function(r) {
+						frm.reload_doc();
+					},
+					freeze: true,
+					freeze_message: __('Process Inform Applicant ...!')
+				});
+			}
+			else{
+				frappe.throw(__('Please set Orientation Location, Date and Time to proceed ..!'));
+			}
+		}
+		else{
+			frappe.throw(__('Please submit the document and proceed ..!'));
+		}
+	}).addClass('btn-primary');
+};
+
 var cutom_btn_and_action = function(frm, method, dt) {
-	frm.add_custom_button(__(dt), function() {
+	frm.add_custom_button(__('Create '+dt), function() {
 		frappe.call({
 			doc: frm.doc,
 			method: method,
@@ -101,7 +133,7 @@ var cutom_btn_and_action = function(frm, method, dt) {
 			freeze: true,
 			freeze_message: (__('Creating {0} ....!', [dt]))
 		});
-	},__("Create"));
+	}).addClass('btn-primary');
 }
 
 var set_offer_details = function(frm, job_offer) {
