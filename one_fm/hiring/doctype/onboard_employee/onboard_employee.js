@@ -45,10 +45,30 @@ frappe.ui.form.on('Onboard Employee', {
 		}
 	},
 	btn_create_bank_account: function(frm) {
-		cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
+		frappe.call({
+			doc: frm.doc,
+			method: 'create_bank_account',
+			callback: function(r) {
+				if(!r.exc){
+					frm.reload_doc();
+				}
+			},
+			freeze: true,
+			freeze_message: (__('Creating Bank Account ....!'))
+		});
 	},
 	btn_create_erpnext_user: function(frm) {
-		cutom_btn_and_action(frm, 'create_user_and_permissions', 'ERPNext User');
+		frappe.call({
+			doc: frm.doc,
+			method: 'create_user_and_permissions',
+			callback: function(r) {
+				if(!r.exc){
+					frm.reload_doc();
+				}
+			},
+			freeze: true,
+			freeze_message: (__('Creating ERPNext User ....!'))
+		});
 	}
 });
 

@@ -1623,6 +1623,8 @@ def update_onboarding_doc_for_bank_account(doc):
         oe.bank_account_progress = progress
         oe.bank_account_docstatus = bank_account_status
         oe.bank_account_status = doc.workflow_state
+        oe.account_name = doc.account_name
+        oe.bank = doc.bank
         oe.save(ignore_permissions=True)
 
 
