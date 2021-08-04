@@ -109,6 +109,7 @@
    "label": "Attach Employee Additional Monthly Report"
   },
   {
+   "depends_on": "attach_report",
    "fieldname": "section_break_8",
    "fieldtype": "Section Break",
    "label": "Total Values From Deductions Table"
@@ -169,6 +170,7 @@
    "read_only": 1
   },
   {
+   "depends_on": "attach_report",
    "fieldname": "detailed_basic_amounts_section",
    "fieldtype": "Section Break",
    "label": "Basic Amounts"
@@ -199,6 +201,7 @@
    "label": "Compensation"
   },
   {
+   "depends_on": "attach_report",
    "fieldname": "detailed_additional_amounts_section",
    "fieldtype": "Section Break",
    "label": "Additional Amounts"
@@ -372,7 +375,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-03 23:23:31.824574",
+ "modified": "2021-08-04 08:25:56.652019",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
