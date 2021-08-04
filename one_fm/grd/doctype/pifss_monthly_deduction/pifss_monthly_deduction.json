@@ -56,7 +56,9 @@
   "optional_supplemental_insurance",
   "optional_supplementary_additional_amounts",
   "total_options",
-  "amended_from"
+  "amended_from",
+  "finance_section_section",
+  "total_payment_required"
  ],
  "fields": [
   {
@@ -78,8 +80,11 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
    "fieldname": "section_break_4",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Deductions Table"
   },
   {
    "fieldname": "deductions",
@@ -109,6 +114,8 @@
    "label": "Attach Employee Additional Monthly Report"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
    "depends_on": "attach_report",
    "fieldname": "section_break_8",
    "fieldtype": "Section Break",
@@ -147,6 +154,7 @@
   },
   {
    "bold": 1,
+   "depends_on": "additional_attach_report",
    "description": "Employee Deduction  + Employee Additional Deduction",
    "fieldname": "total_additional_deduction",
    "fieldtype": "Currency",
@@ -163,6 +171,7 @@
   },
   {
    "bold": 1,
+   "depends_on": "additional_attach_report",
    "fieldname": "total_payments",
    "fieldtype": "Currency",
    "label": "=  Total Payments",
@@ -170,6 +179,8 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
    "depends_on": "attach_report",
    "fieldname": "detailed_basic_amounts_section",
    "fieldtype": "Section Break",
@@ -201,10 +212,12 @@
    "label": "Compensation"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
    "depends_on": "attach_report",
    "fieldname": "detailed_additional_amounts_section",
    "fieldtype": "Section Break",
-   "label": "Additional Amounts"
+   "label": "Additional Amounts From Manual Report"
   },
   {
    "fieldname": "basic_extra_amounts",
@@ -371,11 +384,25 @@
   {
    "fieldname": "column_break_18",
    "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state != \"Draft\"",
+   "fieldname": "finance_section_section",
+   "fieldtype": "Section Break",
+   "label": "Finance Section"
+  },
+  {
+   "fetch_from": "total_payments",
+   "fieldname": "total_payment_required",
+   "fieldtype": "Currency",
+   "label": "Total Payment Required",
+   "permlevel": 1,
+   "precision": "3"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-04 08:25:56.652019",
+ "modified": "2021-08-04 14:52:35.167482",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
@@ -423,6 +450,33 @@
   {
    "email": 1,
    "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Finance User",
+   "share": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "GRD Operator"
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
    "print": 1,
    "read": 1,
    "report": 1,
