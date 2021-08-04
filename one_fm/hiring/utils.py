@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import frappe, json
 from frappe.utils import get_url, fmt_money, month_diff
 from frappe.model.mapper import get_mapped_doc
+from one_fm.api.notification import create_notification_log
 from frappe.modules import scrub
 from frappe import _
 
@@ -316,14 +317,29 @@ def job_offer_on_update_after_submit(doc, method):
             frappe.throw(_('Please Select Estimated Date of Joining to Accept Offer'))
         if not doc.onboarding_officer:
             frappe.throw(_("Please Select Onboarding Officer to Process Onboard"))
-        # TODO: Send Notification to Assined Office to accept the Onboarding Task
+        # Send Notification to Assined Officer to accept the Onboarding Task
+        notify_onboarding_officer(doc)
     if doc.workflow_state == 'Onboarding Officer Rejected':
-        pass
-        # TODO: Notify Recruiter
+        # Notify Recruiter
+        notify_recruiter(doc)
     if doc.workflow_state == 'Accepted':
-        pass
-        # TODO: Notify Recruiter
-        # create_onboarding_from_job_offer(doc)
+        # Notify Recruiter
+        notify_recruiter(doc)
+
+def notify_onboarding_officer(job_offer):
+    page_link = get_url("/desk#Form/Job Offer/" + job_offer.name)
+    subject = ("Job Offer {0} is assigned to you for Onboard Employee").format(job_offer.name)
+    message = ("Job Offer <a href='{1}'>{0}</a> is assigned to you for Onboard Employee. Please respond immediatly!").format(job_offer.name, page_link)
+    create_notification_log(subject, message, [job_offer.onboarding_officer], job_offer)
+
+def notify_recruiter(job_offer):
+    recruiter = frappe.db.get_value('ERF', job_offer.one_fm_erf, ['recruiter_assigned'])
+    if recruiter:
+        user_name = frappe.get_value("User", job_offer.onboarding_officer, "full_name")
+        page_link = get_url("/desk#Form/Job Offer/" + job_offer.name)
+        subject = ("Job Offer {0} is {1} by Onboard Officer {2}").format(job_offer.name, job_offer.workflow_state, user_name)
+        message = ("Job Offer <a href='{1}'>{0}</a> is {2} by Onboard Officer {3}").format(job_offer.name, page_link, job_offer.workflow_state, user_name)
+        create_notification_log(subject, message, [recruiter], job_offer)
 
 @frappe.whitelist()
 def btn_create_onboarding_from_job_offer(job_offer):
