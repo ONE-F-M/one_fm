@@ -48,8 +48,86 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 		if(frm.doc.remaining_amount){
 			frm.set_value("total_payments",frm.doc.total_sub+frm.doc.remaining_amount+frm.doc.total_additional_deduction);
 		}
-	}
+	},
+	basic_insurance: function(frm){
+		if(frm.doc.basic_insurance){
+			frm.set_value("difference_in_basic_insurance", frm.doc.basic_insurance-frm.doc.basic_insurance_in_csv);
+		}if(frm.doc.difference_in_basic_insurance!=0 ){
+			document.querySelectorAll("[data-fieldname='difference_in_basic_insurance']")[1].style.backgroundColor ="red";
+		}
+	},
+	supplementary_insurance: function(frm){
+		if(frm.doc.supplementary_insurance){
+			frm.set_value("difference_supplementary_insurance",frm.doc.supplementary_insurance-frm.doc.supplementary_insurance_in_csv);
+		}if (frm.doc.difference_supplementary_insurance!=0){
+			document.querySelectorAll("[data-fieldname='difference_supplementary_insurance']")[1].style.backgroundColor ="red";
+			
+		}
+	},
+	fund_increase: function(frm){
+		if(frm.doc.fund_increase){
+			frm.set_value("difference_fund_increase",frm.doc.fund_increase-frm.doc.fund_increase_in_csv);
+		}if (frm.doc.difference_supplementary_insurance!=0){
+			document.querySelectorAll("[data-fieldname='difference_fund_increase']")[1].style.backgroundColor ="red";
+		}
+	},
+	unemployment_insurance: function(frm){
+		if(frm.doc.unemployment_insurance){
+			frm.set_value("difference_unemployment_insurance",frm.doc.unemployment_insurance-frm.doc.unemployment_insurance_in_csv);
+		}if (frm.doc.difference_unemployment_insurance!=0){
+			$('input[data-fieldname="difference_unemployment_insurance"]').css("color","red")
+			// $('input[data-fieldname="difference_unemployment_insurance"]').css("background-color","#FFE4C4")
+			document.querySelectorAll("[data-fieldname='difference_unemployment_insurance']")[1].style.backgroundColor ="red";
+		}
+	},
+	compensation: function(frm){
+		if(frm.doc.unemployment_insurance){
+			frm.set_value("difference_compensation",frm.doc.compensation-frm.doc.compensation_in_csv);
+		}if (frm.doc.difference_compensation!=0){
+			// $('input[data-fieldname="difference_compensation"]').css("background-color","#FFE4C4")
+			document.querySelectorAll("[data-fieldname='difference_compensation']")[1].style.backgroundColor ="red";
+		}
+	},
+	// open_collapse_sections: function(frm){
+	// 	check_collapse_sections(frm);
+	// }
+		
 });
+// var check_collapse_sections =function(frm){
+// 	if(frm.doc.workflow_state != "Pending By Finance" && frm.doc.open_collapse_sections == 0){
+// 		frm.fields_dict['finance_section_section'].collapse(0);
+// 	}if(frm.doc.workflow_state != "Pending By Finance" && frm.doc.open_collapse_sections != 0){
+// 		frm.fields_dict['finance_section_section'].collapse(1);
+// 	}if(frm.doc.workflow_state == "Pending By Finance" && frm.doc.open_collapse_sections == 0){
+// 		frm.fields_dict['section_break_4'].collapse(0);
+// 		frm.fields_dict['section_break_8'].collapse(0);
+// 		frm.fields_dict['detailed_basic_amounts_section'].collapse(0);
+// 		frm.fields_dict['detailed_additional_amounts_section'].collapse(0);
+// 	}if(frm.doc.workflow_state == "Pending By Finance" && frm.doc.open_collapse_sections != 0){
+// 		frm.fields_dict['section_break_4'].collapse(1);
+// 		frm.fields_dict['section_break_8'].collapse(1);
+// 		frm.fields_dict['detailed_basic_amounts_section'].collapse(1);
+// 		frm.fields_dict['detailed_additional_amounts_section'].collapse(1);
+// 	}
+// };
+var set_value_of_csv_file = function(frm){
+	if(frm.doc.deductions){
+		var total = [0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000]
+		$.each(frm.doc.deductions || [], function(i, v) {
+			total[0] += frappe.model.get_value(v.doctype, v.name, "total_subscription");
+			total[1] += frappe.model.get_value(v.doctype, v.name, "employee_deduction");
+			total[2] += frappe.model.get_value(v.doctype, v.name, "additional_deduction");
+			total[3] += frappe.model.get_value(v.doctype, v.name, "total_deductions");
+			total[4] += frappe.model.get_value(v.doctype, v.name, "basic_insurance");
+			total[5] += frappe.model.get_value(v.doctype, v.name, "supplementary_insurance");
+			total[6] += frappe.model.get_value(v.doctype, v.name, "fund_increase");
+			total[7] += frappe.model.get_value(v.doctype, v.name, "unemployment_insurance");
+			total[8] += frappe.model.get_value(v.doctype, v.name, "compensation_amount");
+
+		})
+		
+	}
+};
 
 // set total value for additional deduction and employee deduction
 frappe.ui.form.on('PIFSS Monthly Deduction', {
@@ -63,8 +141,12 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 				frappe.model.set_value(v.doctype, v.name, "total_deductions", total);
 			})
 			
-		}
+		};
+		
+		
+		
 	}
+	
 
 });
 //set the total values for the entire table

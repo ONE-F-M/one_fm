@@ -45,7 +45,10 @@
   "total",
   "optional_supplemental_insurance",
   "optional_supplementary_additional_amounts",
-  "amended_from"
+  "total_options",
+  "amended_from",
+  "finance_section_section",
+  "total_payment_required"
  ],
  "fields": [
   {
@@ -67,8 +70,11 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
    "fieldname": "section_break_4",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Deductions Table"
   },
   {
    "fieldname": "deductions",
@@ -98,6 +104,9 @@
    "label": "Attach Additional Monthly Deduction Report"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
+   "depends_on": "attach_report",
    "fieldname": "section_break_8",
    "fieldtype": "Section Break",
    "label": "Total Values"
@@ -133,6 +142,9 @@
    "label": "Attach PDF Report"
   },
   {
+   "bold": 1,
+   "depends_on": "additional_attach_report",
+   "description": "Employee Deduction  + Employee Additional Deduction",
    "fieldname": "total_additional_deduction",
    "fieldtype": "Currency",
    "label": "Total Additional Deduction",
@@ -146,7 +158,8 @@
    "label": "Remaining Amount"
   },
   {
-   "description": "The sum of total subscription + remaining + total additional deduction amounts",
+   "bold": 1,
+   "depends_on": "additional_attach_report",
    "fieldname": "total_payments",
    "fieldtype": "Currency",
    "label": "Total Payments",
@@ -154,6 +167,9 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
+   "depends_on": "attach_report",
    "fieldname": "detailed_basic_amounts_section",
    "fieldtype": "Section Break",
    "label": "Detailed Basic Amounts"
@@ -184,9 +200,12 @@
    "label": "Compensation"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
+   "depends_on": "attach_report",
    "fieldname": "detailed_additional_amounts_section",
    "fieldtype": "Section Break",
-   "label": "Detailed Additional Amounts"
+   "label": "Additional Amounts From Manual Report"
   },
   {
    "fieldname": "basic_extra_amounts",
@@ -290,11 +309,88 @@
    "fieldtype": "Currency",
    "label": "Supplementary insurance before 12/97",
    "precision": "3"
+  },
+  {
+   "bold": 1,
+   "fieldname": "column_break_28",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "difference_in_basic_insurance",
+   "fieldtype": "Currency",
+   "label": "Difference in Basic Insurance",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference_supplementary_insurance",
+   "fieldtype": "Currency",
+   "label": "Difference Supplementary Insurance",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference_fund_increase",
+   "fieldtype": "Currency",
+   "label": "Difference Fund Increase",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference_unemployment_insurance",
+   "fieldtype": "Currency",
+   "label": "Difference Unemployment Insurance",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference_compensation",
+   "fieldtype": "Currency",
+   "label": "Difference Compensation",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_options",
+   "fieldtype": "Currency",
+   "label": "Total Options",
+   "precision": "3"
+  },
+  {
+   "fieldname": "fetch_data",
+   "fieldtype": "Button",
+   "label": "Fetch Data"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state != \"Draft\"",
+   "fieldname": "finance_section_section",
+   "fieldtype": "Section Break",
+   "label": "Finance Section"
+  },
+  {
+   "fetch_from": "total_payments",
+   "fieldname": "total_payment_required",
+   "fieldtype": "Currency",
+   "label": "Total Payment Required",
+   "permlevel": 1,
+   "precision": "3"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-01 21:41:28.058993",
+ "modified": "2021-08-04 14:52:35.167482",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
@@ -342,6 +438,33 @@
   {
    "email": 1,
    "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Finance User",
+   "share": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "GRD Operator"
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
    "print": 1,
    "read": 1,
    "report": 1,

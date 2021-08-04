@@ -18,7 +18,6 @@ from frappe import _
 
 class PIFSSMonthlyDeduction(Document):
 		
-
 	def after_insert(self):
 		if self.attach_report or self.additional_attach_report:
 			self.update_file_link()
@@ -32,12 +31,60 @@ class PIFSSMonthlyDeduction(Document):
 		file_doc = frappe.get_value("File", {"file_url": self.additional_attach_report})
 		frappe.set_value("File", file_doc, "attached_to_name", self.name)
 
+	def on_update(self):
+		self.check_attachment_status()
+		self.check_workflow_states()
+		self.notify_grd_supervisor()
+		
+
+	def check_workflow_states(self):
+		if self.workflow_state == "Pending By Supervisor":#check the previous workflow (DRAFT) required fields 
+			field_list = [{'Attach Monthly Deduction Report':'attach_report'},{'Attach Manual Report':'attach_manual_report'},
+							{'Attach Employee Additional Monthly Report':'additional_attach_report'},
+							{'Attach PDF Report':'attach_pdf_report'},
+							{'Basic Insurance':'basic_insurance'},{'Supplementary Insurance':'supplementary_insurance'},
+							{'Fund Increase':'fund_increase'},{'Unemployment Insurance':'unemployment_insurance'},
+							{'Compensation':'compensation'},{'Total Amount':'total'}]
+			self.set_mendatory_fields(field_list)
+			self.set_total_payment_required_for_finance()
+
+		if self.workflow_state == "Pending By Finance":
+			field_list = [{'Total Payment Required':'total_payment_required'}]
+			self.set_mendatory_fields(field_list)
+	
+	def set_mendatory_fields(self,field_list):
+		mandatory_fields = []
+		for fields in field_list:
+			for field in fields:
+				if not self.get(fields[field]):
+						mandatory_fields.append(field)
+
+		if len(mandatory_fields) > 0:
+			message= 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
+			for mandatory_field in mandatory_fields:
+				message += '<li>' + mandatory_field +'</li>'
+			message += '</ul>'
+			frappe.throw(message)
+
+	def set_total_payment_required_for_finance(self):
+		if self.total:
+			self.db_set('total_payment_required',self.total)
+
+	def check_attachment_status(self):
+		if not self.attach_report or self.attach_report == "":
+			self.set("deductions", [])
+			fields = ['basic_insurance_in_csv','supplementary_insurance_in_csv','fund_increase_in_csv','unemployment_insurance_in_csv','compensation_in_csv']
+			for field in fields:
+				self.set(field,"")
+	
+	def notify_grd_supervisor(self):
+		if self.workflow_state == "Pending By Supervisor":
+			email = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
+			subject = _("Attention: PIFSS Monthly Deduction Is Ready to Be Reviewed")
+			message = "<p>You are requested to review PIFSS Monthly Deduction</p><br>"
+			create_notification_log(subject, message, [email], self)
 
 	def on_submit(self):
-		self.mendatory_fields()
-		if not self.attach_report and not self.additional_attach_report and not self.attach_manual_report and not self.attach_pdf_report:
-			frappe.throw("The following attaches are compulsory to submit.<br><ol><li>Attach Monthly Deduction Report</li><li>Attach Additional Monthly Deduction Report</li><li>Attach PDF Report</li><li>Attach Manual Report</li>")
-		
 		self.notify_finance()
 		self.create_legal_investigation()
 		missing_list = []
@@ -58,23 +105,6 @@ class PIFSSMonthlyDeduction(Document):
 		missing_list =  '<br> '.join(['{}'.format(value) for value in employee_list])
 		message = _("Employees linked to the list of PIFSS ID numbers below could not be found. <br> {0}".format(missing_list))
 		create_notification_log(subject,message,[email], self)
-
-	def mendatory_fields(self):
-		field_list = [{'Attach Monthly Deduction Report':'attach_report'},{'Attach Manual Report':'attach_manual_report'},{'Attach Additional Monthly Deduction Report':'additional_attach_report'},
-		{'Attach PDF Report':'attach_pdf_report'},{'Basic Extra Amounts':'basic_extra_amounts'},{'Additional Supplementary Amounts':'additional_supplementary_amounts'},{'Additional Amounts Increase':'additional_amounts_increase'},{'Additional Unemployment Supplement':'additional_unemployment_supplement'},{'Additional amounts of end of service gratuity':'additional_amounts_of_end_of_service_gratuity'},{'Supplementary insurance before 12/97':'supplementary_insurance_before_1297'},{'Special Installments and Exchange':'special_installments_and_exchange'},{'Additional amounts Special Installments and Replacement':'additional_amounts_special_installments_and_replacement'},
-		{'Total':'total'},{'Optional Supplemental Insurance':'optional_supplemental_insurance'},{'Optional Supplementary Additional Amounts':'optional_supplementary_additional_amounts'}]
-		mandatory_fields = []
-		for fields in field_list:
-			for field in fields:
-				if not self.get(fields[field]):
-						mandatory_fields.append(field)
-
-		if len(mandatory_fields) > 0:
-			message = 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
-			for mandatory_field in mandatory_fields:
-				message += '<li>' + mandatory_field +'</li>'
-			message += '</ul>'
-			frappe.throw(message)
 
 	def notify_finance(self):
 		finance_email = []
