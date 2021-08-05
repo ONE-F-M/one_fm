@@ -6,17 +6,23 @@
  "engine": "InnoDB",
  "field_order": [
   "employee",
+  "attachments_section",
+  "attach_mgrp_approval",
+  "column_break_4",
+  "attached_on",
   "employee_details_section",
   "first_name",
   "civil_id",
-  "column_break_4",
+  "column_break_9",
   "last_name",
   "employee_id",
   "end_of_service_details_section",
   "end_of_service_reason",
   "end_of_service_date",
   "end_of_service_attachment",
-  "amended_from"
+  "amended_from",
+  "mgrp_website",
+  "flag"
  ],
  "fields": [
   {
@@ -36,7 +42,7 @@
    "allow_on_submit": 1,
    "fieldname": "end_of_service_attachment",
    "fieldtype": "Attach",
-   "label": "End of Service Attachment"
+   "label": "Resignation Attachment"
   },
   {
    "fieldname": "amended_from",
@@ -96,12 +102,48 @@
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
+  },
+  {
+   "default": "https://www.manpower.gov.kw/LoginToPage.aspx?ReturnUrl=https%3a%2f%2fwww.manpower.gov.kw%2fPages%2fCompanies%2fComp_Details.aspx&PLT=1",
+   "fieldname": "mgrp_website",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "MGRP Website"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state == \"Awaiting Response\" || doc.workflow_state == \"Completed\"",
+   "fieldname": "attachments_section",
+   "fieldtype": "Section Break",
+   "label": "Attachments"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_mgrp_approval",
+   "fieldtype": "Attach",
+   "label": "Attach MGRP Approval"
+  },
+  {
+   "fieldname": "attached_on",
+   "fieldtype": "Datetime",
+   "label": "Attached On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "flag",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Flag"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-01 21:44:43.235072",
+ "modified": "2021-08-05 14:25:44.359397",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MGRP",
@@ -135,5 +177,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "employee_id",
  "track_changes": 1
 }

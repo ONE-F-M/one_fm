@@ -92,7 +92,7 @@ def mappe_to_mgrp_cancellation(source_name, target_doc=None):
                 "last_name":"last_name",
                 "employee_id":"employee_id",
                 "end_of_service_date":"end_of_service_date",
-                "end_of_service_screenshot":"end_of_service_attachment",
+                # "end_of_service_screenshot":"end_of_service_attachment",
             }
         }
     }, target_doc)

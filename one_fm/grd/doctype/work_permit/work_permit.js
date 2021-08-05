@@ -60,6 +60,9 @@ frappe.ui.form.on('Work Permit', {
     reference_number_on_pam: function(frm){
         set_work_permit_reference_time(frm);
     },
+    work_permit_cancellation: function(frm){
+        set_attach_cancellation_on(frm);
+    },
 
     // upload_work_permit:function(frm){    //testing reading file
 	// 	let file_url = frm.doc.upload_work_permit;
@@ -149,6 +152,11 @@ var set_employee_details = function(frm){
 
             }
         })
+    }
+};
+var set_attach_cancellation_on = function(frm){
+    if(frm.doc.work_permit_cancellation){
+        frm.set_value('attach_cancellation_on',frappe.datetime.now_datetime());    
     }
 };
 var set_approve_previous_company = function(frm){

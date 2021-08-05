@@ -33,6 +33,14 @@
   "previous_company_contract_file_number",
   "previous_company_issuer_number",
   "previous_company_pam_file_number",
+  "pam_work_permit_cancellation_section",
+  "end_of_service_screenshot",
+  "reference_number_on_pam",
+  "work_permit_cancellation",
+  "column_break_72",
+  "end_of_service_date",
+  "reference_number_set_on",
+  "attach_cancellation_on",
   "employee_details_section",
   "first_name",
   "second_name",
@@ -75,12 +83,6 @@
   "documents_required_section",
   "documents_required",
   "amended_from",
-  "pam_work_permit_cancellation_section",
-  "end_of_service_screenshot",
-  "reference_number_on_pam",
-  "column_break_72",
-  "end_of_service_date",
-  "reference_number_set_on",
   "grd_section",
   "grd_operator",
   "grd_supervisor",
@@ -107,7 +109,8 @@
   "rpr_ref",
   "column_break_65",
   "payment_transferred_from_finance_dept",
-  "notify_to_upload"
+  "notify_to_upload",
+  "pam_website"
  ],
  "fields": [
   {
@@ -723,6 +726,7 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.work_permit_type != \"Cancellation\" ",
    "fieldname": "section_break_46",
    "fieldtype": "Section Break"
   },
@@ -788,18 +792,37 @@
   {
    "fieldname": "reference_number_on_pam",
    "fieldtype": "Data",
-   "label": "Reference Number On PAM"
+   "label": "PAM Reference Number"
   },
   {
    "fieldname": "reference_number_set_on",
    "fieldtype": "Datetime",
    "label": "Reference Number Set On",
    "read_only": 1
+  },
+  {
+   "default": "https://e-portal.manpower.gov.kw/PamAshalPortalApp/login.jsp",
+   "fieldname": "pam_website",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "PAM Website"
+  },
+  {
+   "depends_on": "eval:doc.work_permit_type == \"Cancellation\" && doc.workflow_state == \"Pending By PAM\" || doc.workflow_state == \"Completed\" ",
+   "fieldname": "work_permit_cancellation",
+   "fieldtype": "Attach",
+   "label": "Work Permit Cancellation "
+  },
+  {
+   "fieldname": "attach_cancellation_on",
+   "fieldtype": "Datetime",
+   "label": "Attach Cancellation On",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-01 19:39:29.052316",
+ "modified": "2021-08-05 13:39:41.598928",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

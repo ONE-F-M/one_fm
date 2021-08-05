@@ -2,7 +2,11 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('MGRP', {
-	// refresh: function(frm) {
-
-	// }
+	attach_mgrp_approval: function(frm){
+		set_dates(frm);
+	}
 });
+
+var set_dates = function(frm){
+	frm.set_value('attached_on',frappe.datetime.now_datetime());
+}
