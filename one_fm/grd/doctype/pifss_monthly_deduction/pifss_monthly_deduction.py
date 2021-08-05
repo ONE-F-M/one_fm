@@ -35,6 +35,7 @@ class PIFSSMonthlyDeduction(Document):
 		self.check_attachment_status()
 		self.check_workflow_states()
 		self.notify_grd_supervisor()
+		self.notify_finance()
 		
 
 	def check_workflow_states(self):
@@ -45,14 +46,20 @@ class PIFSSMonthlyDeduction(Document):
 							{'Basic Insurance':'basic_insurance'},{'Supplementary Insurance':'supplementary_insurance'},
 							{'Fund Increase':'fund_increase'},{'Unemployment Insurance':'unemployment_insurance'},
 							{'Compensation':'compensation'},{'Total Amount':'total'}]
-			self.set_mendatory_fields(field_list)
+			message_detail = '<b>First, Download csv files from PIFSS Website and Scan the Manual Report</b>'#.format(get_url("https://online.pifss.gov.kw/employer/"))
+			self.set_mendatory_fields(field_list,message_detail)
 			self.set_total_payment_required_for_finance()
 
 		if self.workflow_state == "Pending By Finance":
 			field_list = [{'Total Payment Required':'total_payment_required'}]
 			self.set_mendatory_fields(field_list)
+
+		if self.workflow_state == "Completed":
+			field_list = [{'Attach Invoice':'attach_invoice'}]
+			message_detail = '<b>First, Scan the Receipt</b>'
+			self.set_mendatory_fields(field_list,message_detail)
 	
-	def set_mendatory_fields(self,field_list):
+	def set_mendatory_fields(self,field_list,message_detail=None):
 		mandatory_fields = []
 		for fields in field_list:
 			for field in fields:
@@ -60,7 +67,11 @@ class PIFSSMonthlyDeduction(Document):
 						mandatory_fields.append(field)
 
 		if len(mandatory_fields) > 0:
-			message= 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
+			if message_detail:
+				message = message_detail
+				message += '<br>Mandatory fields required in PIFSS 103 form<br><br><ul>'
+			else:
+				message= 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
 			for mandatory_field in mandatory_fields:
 				message += '<li>' + mandatory_field +'</li>'
 			message += '</ul>'
@@ -83,9 +94,21 @@ class PIFSSMonthlyDeduction(Document):
 			subject = _("Attention: PIFSS Monthly Deduction Is Ready to Be Reviewed")
 			message = "<p>You are requested to review PIFSS Monthly Deduction</p><br>"
 			create_notification_log(subject, message, [email], self)
+	
+	def notify_finance(self):
+		if self.workflow_state == "Pending By Finance":
+			finance_email = []
+			users = get_users_with_role("Finance User")
+			if len(users)>0:
+				for user in users:
+					finance_email.append(user)
+			if finance_email and len(finance_email) > 0: 		
+				email = finance_email
+				subject = _("PIFSS Monthly Deduction Payments")
+				message = _("Kindly, prepare Total Payment Required Amount and transfer it to GRD account.<br>Please transfer it within 2 days.")
+				create_notification_log(subject,message,email,self)
 
 	def on_submit(self):
-		self.notify_finance()
 		self.create_legal_investigation()
 		missing_list = []
 		for row in self.deductions:
@@ -105,18 +128,6 @@ class PIFSSMonthlyDeduction(Document):
 		missing_list =  '<br> '.join(['{}'.format(value) for value in employee_list])
 		message = _("Employees linked to the list of PIFSS ID numbers below could not be found. <br> {0}".format(missing_list))
 		create_notification_log(subject,message,[email], self)
-
-	def notify_finance(self):
-		finance_email = []
-		users = get_users_with_role("Finance User")
-		if len(users)>0:
-			for user in users:
-				finance_email.append(user)
-		if finance_email and len(finance_email) > 0: 		
-			email = finance_email
-			subject = _("PIFSS Monthly Deduction Payments")
-			message = _("Kindly, prepare total payment amount and transfer it to GRD account.<br>Please transfer it within 2 days.")
-			create_notification_log(subject,message,email,self)
 
 	def create_legal_investigation(self):
 		"""

@@ -397,7 +397,6 @@ def create_onboarding_from_job_offer(job_offer):
                     o_employee.tools_needed_for_work = True
             o_employee.save(ignore_permissions=True)
 
-<<<<<<< HEAD
 
 def set_mandatory_feilds_in_employee_for_Kuwaiti(doc):
     if doc.one_fm_nationality == "Kuwaiti":
@@ -415,8 +414,3 @@ def set_mandatory_feilds_in_employee_for_Kuwaiti(doc):
             message += '</ul>'
             frappe.throw(message)
     
-=======
-def job_offer_onload(doc, method):
-    o_employee = frappe.db.get_value("Onboard Employee", {"job_offer": doc.name}, "name") or ""
-    doc.set_onload("onboard_employee", o_employee)
->>>>>>> 00cf50a25c370bf0ef1d528620cdc798510a4162

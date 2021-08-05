@@ -12,6 +12,12 @@
   "column_break_2",
   "additional_attach_report",
   "attach_pdf_report",
+  "invoice_attachment_section",
+  "attach_invoice",
+  "column_break_11",
+  "attached_on",
+  "finance_section_section",
+  "total_payment_required",
   "data_2",
   "deduction_month",
   "section_break_4",
@@ -57,8 +63,7 @@
   "optional_supplementary_additional_amounts",
   "total_options",
   "amended_from",
-  "finance_section_section",
-  "total_payment_required"
+  "press_button"
  ],
  "fields": [
   {
@@ -398,11 +403,40 @@
    "label": "Total Payment Required",
    "permlevel": 1,
    "precision": "3"
+  },
+  {
+   "default": "0",
+   "fieldname": "press_button",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Press Button"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state == \"Pending By Operator\" || doc.workflow_state == \"Completed\"",
+   "fieldname": "invoice_attachment_section",
+   "fieldtype": "Section Break",
+   "label": "Invoice Attachment"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_invoice",
+   "fieldtype": "Attach",
+   "label": "Attach Invoice "
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attached_on",
+   "fieldtype": "Datetime",
+   "label": "Attached on ",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-04 14:52:35.167482",
+ "modified": "2021-08-05 09:45:35.978414",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",

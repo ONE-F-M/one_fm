@@ -20,6 +20,8 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 				frm.refresh_field('deduction_month');
 				frm.refresh_field('deductions');
 				set_value_of_csv_file(frm);
+				document.querySelectorAll("[data-fieldname='fetch_data']")[1].style.backgroundColor ="red";
+				frm.set_value("press_button",1);
 			});
 			
 		};	
@@ -50,7 +52,13 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 		}
 	},
 	refresh:function(frm){
-		document.querySelectorAll("[data-fieldname='fetch_data']")[1].style.backgroundColor ="#44c95a";
+		frm.set_value("total_payments",frm.doc.total_sub+frm.doc.remaining_amount+frm.doc.total_additional_deduction);
+
+		if (frm.doc.press_button == 0){
+			document.querySelectorAll("[data-fieldname='fetch_data']")[1].style.backgroundColor ="#44c95a";
+		}else{
+			document.querySelectorAll("[data-fieldname='fetch_data']")[1].style.backgroundColor ="red";
+		}
 		if(!frm.doc.basic_insurance){
 			frm.set_value("difference_in_basic_insurance", 0);
 		}if(!frm.doc.supplementary_insurance){
@@ -108,28 +116,14 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 			document.querySelectorAll("[data-fieldname='difference_compensation']")[1].style.backgroundColor ="red";
 		}
 	},
-	// open_collapse_sections: function(frm){
-	// 	check_collapse_sections(frm);
-	// }
+	attach_invoice: function(frm){
+		if(frm.doc.attach_invoice){
+			frm.set_value('attached_on',frappe.datetime.now_datetime());
+		}
+		
+	},
 		
 });
-// var check_collapse_sections =function(frm){
-// 	if(frm.doc.workflow_state != "Pending By Finance" && frm.doc.open_collapse_sections == 0){
-// 		frm.fields_dict['finance_section_section'].collapse(0);
-// 	}if(frm.doc.workflow_state != "Pending By Finance" && frm.doc.open_collapse_sections != 0){
-// 		frm.fields_dict['finance_section_section'].collapse(1);
-// 	}if(frm.doc.workflow_state == "Pending By Finance" && frm.doc.open_collapse_sections == 0){
-// 		frm.fields_dict['section_break_4'].collapse(0);
-// 		frm.fields_dict['section_break_8'].collapse(0);
-// 		frm.fields_dict['detailed_basic_amounts_section'].collapse(0);
-// 		frm.fields_dict['detailed_additional_amounts_section'].collapse(0);
-// 	}if(frm.doc.workflow_state == "Pending By Finance" && frm.doc.open_collapse_sections != 0){
-// 		frm.fields_dict['section_break_4'].collapse(1);
-// 		frm.fields_dict['section_break_8'].collapse(1);
-// 		frm.fields_dict['detailed_basic_amounts_section'].collapse(1);
-// 		frm.fields_dict['detailed_additional_amounts_section'].collapse(1);
-// 	}
-// };
 var set_value_of_csv_file = function(frm){
 	if(frm.doc.deductions){
 		var total = [0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000]
@@ -164,8 +158,6 @@ var set_value_of_csv_file = function(frm){
 frappe.ui.form.on('PIFSS Monthly Deduction', {
     onload: function(frm){
 		if(frm.doc.deductions){
-			// var total_sub = 0.0;
-			// var total_deduction = 0.0;
 			$.each(frm.doc.deductions || [], function(i, v) {
 				let total = frappe.model.get_value(v.doctype, v.name, "additional_deduction") + frappe.model.get_value(v.doctype, v.name, "employee_deduction")
 				total = Math.round(total* 1000) / 1000
