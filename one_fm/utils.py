@@ -1707,11 +1707,5 @@ def create_roster_daily_report():
             'result': employee_result
         })
 
-<<<<<<< HEAD
-    roster_daily_report_doc.save() 
-    frappe.db.commit()    
-
-=======
     roster_daily_report_doc.save()
     frappe.db.commit()
->>>>>>> 00cf50a25c370bf0ef1d528620cdc798510a4162
