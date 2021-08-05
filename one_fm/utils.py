@@ -1624,6 +1624,9 @@ def update_onboarding_doc_for_bank_account(doc):
         oe.save(ignore_permissions=True)
 
 
+def roster_daily_report_task():
+    frappe.enqueue(create_roster_daily_report, is_async=True, queue='long')
+
 def create_roster_daily_report():
     """ 
     A function that creates a Roster Daily Report document, 

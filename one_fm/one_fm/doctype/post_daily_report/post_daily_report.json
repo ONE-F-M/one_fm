@@ -20,6 +20,7 @@
    "label": "Date"
   },
   {
+   "columns": 1,
    "fieldname": "result",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -32,6 +33,7 @@
    "label": "Active Posts"
   },
   {
+   "columns": 1,
    "fieldname": "posts_off",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -40,9 +42,11 @@
   {
    "fieldname": "posts_filled",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "Posts Filled"
   },
   {
+   "columns": 2,
    "fieldname": "posts_not_filled",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -52,7 +56,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-07-31 06:14:26.384687",
+ "modified": "2021-08-05 16:52:50.209627",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Post Daily Report",

@@ -17,6 +17,7 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Date",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -28,7 +29,8 @@
    "fieldname": "post_daily_report",
    "fieldtype": "Table",
    "label": "Post Daily Report",
-   "options": "Post Daily Report"
+   "options": "Post Daily Report",
+   "read_only": 1
   },
   {
    "fieldname": "sec_br_2",
@@ -39,12 +41,13 @@
    "fieldname": "employee_daily_report",
    "fieldtype": "Table",
    "label": "Employee Daily Report",
-   "options": "Employee Daily Report"
+   "options": "Employee Daily Report",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-07-31 06:17:35.140683",
+ "modified": "2021-08-05 16:55:15.543891",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Daily Report",
