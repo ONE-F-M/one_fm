@@ -42,15 +42,17 @@ frappe.ui.form.on('PIFSS Form 103', {
 			send_message(frm);
 		}
 		if (frm.doc.docstatus === 1) {
-			document.querySelectorAll("[data-fieldname='PAM - Work Permit Cancellation']")[1].style.backgroundColor ="#44c95a";
-      		frm.add_custom_button(__('PAM - Work Permit Cancellation'),
+			
+			frm.add_custom_button(__('PAM - Work Permit Cancellation'),
 			
 				function() {
+					
 					frappe.model.open_mapped_doc({
 					method: "one_fm.grd.utils.mappe_to_work_permit_cancellation",
 					frm: frm
           			});
 				});
+				
 		}    //set_filters(frm);
 	},
 	company_name: function(frm){
@@ -147,7 +149,10 @@ user: function(frm){
 	
 },
 reference_number: function(frm){
-	set_registered_date_on_pifss(frm);
+	if(frm.doc.reference_number){
+		set_registered_date_on_pifss(frm);
+	}
+	
 },
 });
 var set_employee_details = function(frm){

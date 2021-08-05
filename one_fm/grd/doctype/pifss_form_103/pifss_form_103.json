@@ -79,7 +79,8 @@
   "grd_supervisor",
   "onboarding",
   "amended_from",
-  "notify_grd_operator"
+  "notify_grd_operator",
+  "pifss_website"
  ],
  "fields": [
   {
@@ -536,11 +537,19 @@
    "fieldtype": "Attach",
    "hidden": 1,
    "label": "Authorized Signature"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "https://online.pifss.gov.kw/employer/ ",
+   "fieldname": "pifss_website",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "PIFSS website"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-04 10:18:14.542692",
+ "modified": "2021-08-05 11:11:12.592379",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",

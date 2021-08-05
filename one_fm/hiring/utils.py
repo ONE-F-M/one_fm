@@ -401,7 +401,9 @@ def job_offer_onload(doc, method):
     o_employee = frappe.db.get_value("Onboard Employee", {"job_offer": doc.name}, "name") or ""
     doc.set_onload("onboard_employee", o_employee)
 
-def set_mandatory_feilds_in_employee_for_Kuwaiti(doc):
+
+@frappe.whitelist()
+def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
     if doc.one_fm_nationality == "Kuwaiti":
         field_list = [{'Nationality No':'nationality_no'},{'Nationality Subject':'nationality_subject'},{'Date of Naturalization':'date_of_naturalization'}]
         mandatory_fields = []

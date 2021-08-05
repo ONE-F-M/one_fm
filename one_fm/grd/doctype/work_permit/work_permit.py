@@ -21,9 +21,13 @@ from PyPDF2 import PdfFileReader
 
 # from pdfminer.pdfparser import PDFParser, PDFDocument  
 class WorkPermit(Document):
+
+    def on_update(self):
+        self.check_required_document_for_workflow()
+
     def validate(self):
         self.set_grd_values()
-        # self.check_workflow_status()
+        self.check_workflow_status()
         if self.work_permit_type == "Local Transfer":
             self.check_inform_previous_company()
             if self.work_permit_approved == "Yes":
@@ -37,26 +41,57 @@ class WorkPermit(Document):
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
 
     def check_workflow_status(self):
-        if self.work_permit_status == "Draft":
-            page_link = get_url("/desk#Form/Work Permit/" + self.name)
-            message = "<p>Apply Online for Work Permit<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-            subject = '{0} Apply Online for Work Permit'.format(self.grd_operator)
-            self.notify_grd(page_link,message,subject,"GRD Operator")
+        if self.work_permit_type != "Cancellation":
+            if self.work_permit_status == "Draft":
+                page_link = get_url("/desk#Form/Work Permit/" + self.name)
+                message = "<p>Apply Online for Work Permit<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
+                subject = '{0} Apply Online for Work Permit'.format(self.grd_operator)
+                self.notify_grd(page_link,message,subject,"GRD Operator")
 
-        if self.work_permit_status == "Pending by Supervisor":
-            page_link = get_url("/desk#Form/Work Permit/" + self.name)
-            message = "<p>Check Work Permit for Acceptance<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-            subject = 'Check Work Permit for Acceptance for {0}'.format(self.first_name)
-            self.notify_grd(page_link,message,subject,"GRD Supervisor")
+            if self.work_permit_status == "Pending by Supervisor":
+                page_link = get_url("/desk#Form/Work Permit/" + self.name)
+                message = "<p>Check Work Permit for Acceptance<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
+                subject = 'Check Work Permit for Acceptance for {0}'.format(self.first_name)
+                self.notify_grd(page_link,message,subject,"GRD Supervisor")
 
-        if self.work_permit_status == "Pending by Operator":
-            if not self.upload_work_permit and not self.attach_invoice and not self.new_work_permit_expiry_date:
-                if not self.notify_to_upload:
-                    page_link = get_url("/desk#Form/Work Permit/" + self.name)
-                    message = "<p>Upload Required Documents for Work Permit<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-                    subject = '{0} Upload Required Documents for Work Permit'.format(self.grd_operator)
-                    self.notify_grd(page_link,message,subject,"GRD Operator")
-                    self.notify_to_upload = 1
+            if self.work_permit_status == "Pending by Operator":
+                if not self.upload_work_permit and not self.attach_invoice and not self.new_work_permit_expiry_date:
+                    if not self.notify_to_upload:
+                        page_link = get_url("/desk#Form/Work Permit/" + self.name)
+                        message = "<p>Upload Required Documents for Work Permit<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
+                        subject = '{0} Upload Required Documents for Work Permit'.format(self.grd_operator)
+                        self.notify_grd(page_link,message,subject,"GRD Operator")
+                        self.notify_to_upload = 1
+
+    def check_required_document_for_workflow(self):
+        if self.workflow_state == "Pending By Supervisor" and self.work_permit_type == "Cancellation":
+            field_list = [{'PAM Reference Number':'reference_number_on_pam'}]
+            message_detail = "<b>First, You Need to Apply for Work Permit Cancellation on PAM Website for <a href='{0}'>{1}</a></b>".format(self.pam_website,self.first_name)
+            self.set_mendatory_fields(field_list,message_detail)
+
+        if self.workflow_state == "Completed" and self.work_permit_type == "Cancellation":
+            field_list = [{'Work Permit Cancellation ':'work_permit_cancellation'}]
+            message_detail = "<b>First, You Need to Attach the Work Permit Cancellation taken from PAM Website for <a href='{0}'>{1}</a></b>".format(self.pam_website,self.first_name)
+            self.set_mendatory_fields(field_list,message_detail)
+
+    
+    def set_mendatory_fields(self,field_list,message_detail=None):
+        mandatory_fields = []
+        for fields in field_list:
+            for field in fields:
+                if not self.get(fields[field]):
+                    mandatory_fields.append(field)
+        
+        if len(mandatory_fields) > 0:
+            if message_detail:
+                message = message_detail
+                message += '<br>Mandatory fields required in PIFSS 103 form<br><br><ul>'
+            else:
+                message= 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
+            for mandatory_field in mandatory_fields:
+                message += '<li>' + mandatory_field +'</li>'
+            message += '</ul>'
+            frappe.throw(message)
 
     def check_inform_previous_company(self):
          # 3 days with in the applied days so 2

@@ -40,7 +40,7 @@ class PACI(Document):
         employee.civil_id_expiry_date = self.new_civil_id_expiry_date # update the date of expiry
         employee.append("one_fm_employee_documents", {
         "attach": self.upload_civil_id,
-        "document_name": "Civil ID Expiry Attachment",
+        "document_name": "Civil ID",
         "issued_on":today,
         "valid_till":self.new_civil_id_expiry_date
         })
