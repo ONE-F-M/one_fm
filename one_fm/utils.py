@@ -85,9 +85,6 @@ def check_upload_original_visa_submission_daily():
         pam_visa_doc.save(ignore_permissions = True)
 
 
-
-
-
 def check_pam_visa_approval_submission_seven():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_approval_submitted=0 and pam_visa_approval_reminder2_done=1")
 

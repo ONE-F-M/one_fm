@@ -7,19 +7,29 @@
  "engine": "InnoDB",
  "field_order": [
   "attach_report",
+  "fetch_data",
   "attach_manual_report",
   "column_break_2",
   "additional_attach_report",
   "attach_pdf_report",
+  "invoice_attachment_section",
+  "attach_invoice",
+  "column_break_11",
+  "attached_on",
+  "finance_section_section",
+  "total_payment_required",
   "data_2",
   "deduction_month",
   "section_break_4",
   "deductions",
   "section_break_8",
   "remaining_amount",
-  "total_sub",
-  "total_additional_deduction",
   "total_deduction",
+  "column_break_14",
+  "total_sub",
+  "column_break_16",
+  "total_additional_deduction",
+  "column_break_18",
   "total_payments",
   "detailed_basic_amounts_section",
   "basic_insurance",
@@ -33,6 +43,12 @@
   "fund_increase_in_csv",
   "unemployment_insurance_in_csv",
   "compensation_in_csv",
+  "column_break_28",
+  "difference_in_basic_insurance",
+  "difference_supplementary_insurance",
+  "difference_fund_increase",
+  "difference_unemployment_insurance",
+  "difference_compensation",
   "detailed_additional_amounts_section",
   "basic_extra_amounts",
   "additional_supplementary_amounts",
@@ -45,7 +61,9 @@
   "total",
   "optional_supplemental_insurance",
   "optional_supplementary_additional_amounts",
-  "amended_from"
+  "total_options",
+  "amended_from",
+  "press_button"
  ],
  "fields": [
   {
@@ -67,8 +85,11 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
    "fieldname": "section_break_4",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Deductions Table"
   },
   {
    "fieldname": "deductions",
@@ -95,17 +116,21 @@
    "fieldname": "additional_attach_report",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "Attach Additional Monthly Deduction Report"
+   "label": "Attach Employee Additional Monthly Report"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
+   "depends_on": "attach_report",
    "fieldname": "section_break_8",
    "fieldtype": "Section Break",
-   "label": "Total Values"
+   "label": "Total Values From Deductions Table"
   },
   {
+   "bold": 1,
    "fieldname": "total_sub",
    "fieldtype": "Currency",
-   "label": "Total Subscription",
+   "label": "+     Total Subscription",
    "precision": "3",
    "read_only": 1
   },
@@ -133,30 +158,38 @@
    "label": "Attach PDF Report"
   },
   {
+   "bold": 1,
+   "depends_on": "additional_attach_report",
+   "description": "Employee Deduction  + Employee Additional Deduction",
    "fieldname": "total_additional_deduction",
    "fieldtype": "Currency",
-   "label": "Total Additional Deduction",
+   "label": "+  Total Additional Deduction",
    "precision": "3",
    "read_only": 1
   },
   {
-   "description": "The amounts remaining for the company ",
+   "bold": 1,
+   "description": "The amount will be taken from report, (828.982)KD ",
    "fieldname": "remaining_amount",
    "fieldtype": "Currency",
-   "label": "Remaining Amount"
+   "label": "Company Remaining Amount"
   },
   {
-   "description": "The sum of total subscription + remaining + total additional deduction amounts",
+   "bold": 1,
+   "depends_on": "additional_attach_report",
    "fieldname": "total_payments",
    "fieldtype": "Currency",
-   "label": "Total Payments",
+   "label": "=  Total Payments",
    "precision": "3",
    "read_only": 1
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
+   "depends_on": "attach_report",
    "fieldname": "detailed_basic_amounts_section",
    "fieldtype": "Section Break",
-   "label": "Detailed Basic Amounts"
+   "label": "Basic Amounts"
   },
   {
    "fieldname": "basic_insurance",
@@ -184,20 +217,23 @@
    "label": "Compensation"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
+   "depends_on": "attach_report",
    "fieldname": "detailed_additional_amounts_section",
    "fieldtype": "Section Break",
-   "label": "Detailed Additional Amounts"
+   "label": "Additional Amounts From Manual Report"
   },
   {
    "fieldname": "basic_extra_amounts",
    "fieldtype": "Currency",
-   "label": "Basic Extra Amounts",
+   "label": "Basic ",
    "precision": "3"
   },
   {
    "fieldname": "additional_supplementary_amounts",
    "fieldtype": "Currency",
-   "label": "Additional Supplementary Amounts",
+   "label": "Additional Supplementary",
    "precision": "3"
   },
   {
@@ -214,7 +250,7 @@
   {
    "fieldname": "additional_amounts_of_end_of_service_gratuity",
    "fieldtype": "Currency",
-   "label": "Additional amounts of end of service gratuity",
+   "label": "Additional end of service gratuity ",
    "precision": "3"
   },
   {
@@ -226,13 +262,13 @@
   {
    "fieldname": "additional_amounts_special_installments_and_replacement",
    "fieldtype": "Currency",
-   "label": "Additional amounts Special Installments and Replacement",
+   "label": "Additional Special Installments and Exchange",
    "precision": "3"
   },
   {
    "fieldname": "total",
    "fieldtype": "Currency",
-   "label": "Total",
+   "label": "Total Amount",
    "precision": "3"
   },
   {
@@ -290,11 +326,117 @@
    "fieldtype": "Currency",
    "label": "Supplementary insurance before 12/97",
    "precision": "3"
+  },
+  {
+   "bold": 1,
+   "fieldname": "column_break_28",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "difference_in_basic_insurance",
+   "fieldtype": "Currency",
+   "label": "Difference in Basic Insurance",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference_supplementary_insurance",
+   "fieldtype": "Currency",
+   "label": "Difference Supplementary Insurance",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference_fund_increase",
+   "fieldtype": "Currency",
+   "label": "Difference Fund Increase",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference_unemployment_insurance",
+   "fieldtype": "Currency",
+   "label": "Difference Unemployment Insurance",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference_compensation",
+   "fieldtype": "Currency",
+   "label": "Difference Compensation",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_options",
+   "fieldtype": "Currency",
+   "label": "Total Options",
+   "precision": "3"
+  },
+  {
+   "fieldname": "fetch_data",
+   "fieldtype": "Button",
+   "label": "Fetch Data"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state != \"Draft\"",
+   "fieldname": "finance_section_section",
+   "fieldtype": "Section Break",
+   "label": "Finance Section"
+  },
+  {
+   "fetch_from": "total_payments",
+   "fieldname": "total_payment_required",
+   "fieldtype": "Currency",
+   "label": "Total Payment Required",
+   "permlevel": 1,
+   "precision": "3"
+  },
+  {
+   "default": "0",
+   "fieldname": "press_button",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Press Button"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state == \"Pending By Operator\" || doc.workflow_state == \"Completed\"",
+   "fieldname": "invoice_attachment_section",
+   "fieldtype": "Section Break",
+   "label": "Invoice Attachment"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_invoice",
+   "fieldtype": "Attach",
+   "label": "Attach Invoice "
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attached_on",
+   "fieldtype": "Datetime",
+   "label": "Attached on ",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-01 21:41:28.058993",
+ "modified": "2021-08-05 09:45:35.978414",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
@@ -342,6 +484,33 @@
   {
    "email": 1,
    "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Finance User",
+   "share": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "GRD Operator"
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
    "print": 1,
    "read": 1,
    "report": 1,

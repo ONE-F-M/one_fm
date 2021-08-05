@@ -400,3 +400,20 @@ def create_onboarding_from_job_offer(job_offer):
 def job_offer_onload(doc, method):
     o_employee = frappe.db.get_value("Onboard Employee", {"job_offer": doc.name}, "name") or ""
     doc.set_onload("onboard_employee", o_employee)
+
+def set_mandatory_feilds_in_employee_for_Kuwaiti(doc):
+    if doc.one_fm_nationality == "Kuwaiti":
+        field_list = [{'Nationality No':'nationality_no'},{'Nationality Subject':'nationality_subject'},{'Date of Naturalization':'date_of_naturalization'}]
+        mandatory_fields = []
+        for fields in field_list:
+            for field in fields:
+                if not doc.get(fields[field]):
+                    mandatory_fields.append(field)
+
+        if len(mandatory_fields) > 0:
+            message = 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
+            for mandatory_field in mandatory_fields:
+                message += '<li>' + mandatory_field +'</li>'
+            message += '</ul>'
+            frappe.throw(message)
+    
