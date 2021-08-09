@@ -2,10 +2,10 @@
  {
   "docstatus": 0,
   "doctype": "Workflow",
-  "document_type": "Work Permit",
+  "document_type": "MGRP",
   "is_active": 1,
-  "modified": "2021-07-26 11:30:51.736429",
-  "name": "Work Permit",
+  "modified": "2021-08-09 17:43:35.898848",
+  "name": "MGRP",
   "override_status": 0,
   "parent": null,
   "parentfield": null,
@@ -18,11 +18,115 @@
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
-    "parent": "Work Permit",
+    "parent": "MGRP",
     "parentfield": "states",
     "parenttype": "Workflow",
     "state": "Apply Online by PRO",
     "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "MGRP",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Awaiting Response",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "MGRP",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Completed",
+    "update_field": null,
+    "update_value": null
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Apply",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Awaiting Response",
+    "parent": "MGRP",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Apply Online by PRO"
+   },
+   {
+    "action": "Accept",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": "",
+    "next_state": "Completed",
+    "parent": "MGRP",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Awaiting Response"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Apply Online by PRO",
+    "parent": "MGRP",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Awaiting Response"
+   }
+  ],
+  "workflow_name": "MGRP",
+  "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Work Permit",
+  "is_active": 1,
+  "modified": "2021-08-09 16:57:27.723498",
+  "name": "Work Permit",
+  "override_status": 0,
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Work Permit",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Draft",
+    "update_field": "work_permit_status",
+    "update_value": "Draft"
+   },
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Work Permit",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Apply Online by PRO",
+    "update_field": "work_permit_status",
     "update_value": "Draft"
    },
    {
@@ -53,19 +157,6 @@
    },
    {
     "allow_edit": "GRD Operator",
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Work Permit",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Completed",
-    "update_field": null,
-    "update_value": null
-   },
-   {
-    "allow_edit": "GRD Operator",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -76,11 +167,35 @@
     "state": "Rejected",
     "update_field": "work_permit_status",
     "update_value": "Rejected"
+   },
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Work Permit",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Completed",
+    "update_field": null,
+    "update_value": null
    }
   ],
   "transitions": [
    {
-    "action": "Done",
+    "action": "Save",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Apply Online by PRO",
+    "parent": "Work Permit",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Apply",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
     "condition": null,
@@ -91,7 +206,7 @@
     "state": "Apply Online by PRO"
    },
    {
-    "action": "Done",
+    "action": "Accept",
     "allow_self_approval": 1,
     "allowed": "GRD Supervisor",
     "condition": null,
@@ -113,7 +228,7 @@
     "state": "Pending By Supervisor"
    },
    {
-    "action": "Done",
+    "action": "Accept",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
     "condition": null,
@@ -135,7 +250,7 @@
     "state": "Pending By PAM"
    },
    {
-    "action": "Re-send",
+    "action": "Restart Application",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
     "condition": null,
@@ -530,7 +645,7 @@
   "doctype": "Workflow",
   "document_type": "PIFSS Form 103",
   "is_active": 1,
-  "modified": "2021-08-04 10:01:23.942655",
+  "modified": "2021-08-07 08:57:00.702138",
   "name": "PIFSS Form 103",
   "override_status": 0,
   "parent": null,
@@ -550,6 +665,19 @@
     "state": "Draft",
     "update_field": "status",
     "update_value": "Draft"
+   },
+   {
+    "allow_edit": "HR User",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Form 103",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Form Printed",
+    "update_field": "status",
+    "update_value": "Printed"
    },
    {
     "allow_edit": "GRD Operator",
@@ -632,6 +760,17 @@
   ],
   "transitions": [
    {
+    "action": "Print",
+    "allow_self_approval": 1,
+    "allowed": "HR User",
+    "condition": null,
+    "next_state": "Form Printed",
+    "parent": "PIFSS Form 103",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
     "action": "Submit to GRD",
     "allow_self_approval": 1,
     "allowed": "HR User",
@@ -640,10 +779,10 @@
     "parent": "PIFSS Form 103",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Draft"
+    "state": "Form Printed"
    },
    {
-    "action": "Done",
+    "action": "Apply",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
     "condition": "",
@@ -654,28 +793,6 @@
     "state": "Pending by GRD"
    },
    {
-    "action": "Reject",
-    "allow_self_approval": 1,
-    "allowed": "GRD Operator",
-    "condition": null,
-    "next_state": "Rejected",
-    "parent": "PIFSS Form 103",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "state": "Awaiting Response"
-   },
-   {
-    "action": "Apply",
-    "allow_self_approval": 1,
-    "allowed": "GRD Operator",
-    "condition": null,
-    "next_state": "Pending by GRD",
-    "parent": "PIFSS Form 103",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "state": "Rejected"
-   },
-   {
     "action": "Under Process",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
@@ -687,11 +804,33 @@
     "state": "Awaiting Response"
    },
    {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Rejected",
+    "parent": "PIFSS Form 103",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Awaiting Response"
+   },
+   {
     "action": "Accept",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
     "condition": null,
     "next_state": "Accepted",
+    "parent": "PIFSS Form 103",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Awaiting Response"
+   },
+   {
+    "action": "Under Process",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Awaiting Response",
     "parent": "PIFSS Form 103",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -709,17 +848,6 @@
     "state": "Under Process"
    },
    {
-    "action": "Under Process",
-    "allow_self_approval": 1,
-    "allowed": "GRD Operator",
-    "condition": null,
-    "next_state": "Under Process",
-    "parent": "PIFSS Form 103",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "state": "Under Process"
-   },
-   {
     "action": "Accept",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
@@ -728,7 +856,7 @@
     "parent": "PIFSS Form 103",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Awaiting Response"
+    "state": "Under Process"
    },
    {
     "action": "Done",
@@ -740,6 +868,17 @@
     "parentfield": "transitions",
     "parenttype": "Workflow",
     "state": "Accepted"
+   },
+   {
+    "action": "Restart Application",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Pending by GRD",
+    "parent": "PIFSS Form 103",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Rejected"
    }
   ],
   "workflow_name": "PIFSS Form 103",
