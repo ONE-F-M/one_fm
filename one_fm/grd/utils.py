@@ -68,8 +68,7 @@ def mappe_to_work_permit_cancellation(source_name, target_doc=None):
         "PIFSS Form 103": {
             "doctype": "Work Permit",
             "field_map": {
-                "end_date":"end_of_service_date",
-                "attach_accept_screenshot_from_pifss_website":"end_of_service_screenshot",
+                "attach_end_of_service_from_pifss_website":"end_of_service_screenshot",
                 "date_of_acceptance":"date_of_application",
                 "work_permit_type":"work_permit_type",
                 "employee":"employee"
@@ -79,20 +78,37 @@ def mappe_to_work_permit_cancellation(source_name, target_doc=None):
     return doc
 
 @frappe.whitelist()
-def mappe_to_mgrp_cancellation(source_name, target_doc=None):
+def mappe_to_work_permit_registration(source_name, target_doc=None):
+    pifss_103_record = frappe.get_doc('PIFSS Form 103',source_name)
+    print(pifss_103_record.employee)
+    doc = get_mapped_doc("PIFSS Form 103", source_name, {
+        "PIFSS Form 103": {
+            "doctype": "Work Permit",
+            "field_map": {
+                "attach_registration_from_pifss_website":"registration_from_pifss_website",
+                "date_of_acceptance":"date_of_application",
+                "work_permit_type":"work_permit_type",
+                "employee":"employee"
+            }
+        }
+    }, target_doc)
+    return doc
+
+@frappe.whitelist()
+def mappe_to_mgrp(source_name, target_doc=None):
     work_permit_record = frappe.get_doc('Work Permit',source_name)
     print(work_permit_record.employee)
     doc = get_mapped_doc("Work Permit", source_name, {
         "Work Permit": {
             "doctype": "MGRP",
             "field_map": {
+                "work_permit_type":"status",
                 "employee":"employee",
                 "first_name":"first_name",
                 "civil_id":"civil_id",
                 "last_name":"last_name",
                 "employee_id":"employee_id",
                 "end_of_service_date":"end_of_service_date",
-                # "end_of_service_screenshot":"end_of_service_attachment",
             }
         }
     }, target_doc)

@@ -19,11 +19,15 @@
   "date_of_acceptance",
   "section_break_12",
   "pifss_is_under_process_on",
+  "registration_section",
+  "attach_registration_from_pifss_website",
+  "column_break_16",
+  "attach_on_registration",
   "end_of_service_section",
   "work_permit_type",
-  "attach_accept_screenshot_from_pifss_website",
+  "attach_end_of_service_from_pifss_website",
   "column_break_63",
-  "end_date",
+  "attach_on_end_of_service",
   "section_break_46",
   "reference_number",
   "column_break_37",
@@ -46,6 +50,8 @@
   "address",
   "date_of_birth",
   "nationality",
+  "position",
+  "salary",
   "nationality_details_section",
   "nationality_no",
   "nationality_subject",
@@ -55,11 +61,8 @@
   "date_of_joining",
   "column_break_25",
   "subscription_start_date",
-  "column_break_27",
-  "position",
   "column_break_29",
-  "salary",
-  "registration_section",
+  "attachments_section",
   "attach_signed_form",
   "employment_contract",
   "civil_id_copy",
@@ -101,7 +104,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "\nDraft\nPending by GRD\nAwaiting Response\nRejected\nUnder Process\nAccepted\nCompleted",
+   "options": "\nDraft\nPrinted\nPending by GRD\nAwaiting Response\nRejected\nUnder Process\nAccepted\nCompleted",
    "read_only": 1
   },
   {
@@ -259,7 +262,7 @@
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "position",
    "fieldtype": "Data",
-   "label": "Position",
+   "label": "PAM Designation",
    "read_only": 1
   },
   {
@@ -274,23 +277,17 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.request_type==\"End of Service\" && doc.workflow_state == \"Completed\" || doc.workflow_state ==\"Accepted\"",
+   "depends_on": "eval:doc.request_type==\"End of Service\" && doc.workflow_state == \"Completed\" || doc.workflow_state ==\"Accepted\" && doc.request_type==\"End of Service\"",
    "fieldname": "end_of_service_section",
    "fieldtype": "Section Break",
-   "label": "End of Service"
+   "label": " End of Service"
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:doc.request_type == \"End of Service\" && doc.workflow_state != \"Draft\"",
+   "depends_on": "eval:doc.request_type == \"End of Service\" && doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "attach_resignationtermination",
    "fieldtype": "Attach",
    "label": "Attach Resignation/Termination"
-  },
-  {
-   "description": "The End Date Mentioned in the screenshot",
-   "fieldname": "end_date",
-   "fieldtype": "Date",
-   "label": "End Date"
   },
   {
    "fieldname": "column_break_37",
@@ -304,9 +301,10 @@
    "label": "Reason for Resignation/Termination"
   },
   {
+   "depends_on": "eval:doc.request_type==\"Registration\" && doc.workflow_state == \"Completed\" || doc.workflow_state ==\"Accepted\" && doc.request_type==\"Registration\"",
    "fieldname": "registration_section",
    "fieldtype": "Section Break",
-   "label": "Attachments"
+   "label": "Registration"
   },
   {
    "fieldname": "column_break_41",
@@ -320,7 +318,7 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval: doc.workflow_state != \"Draft\"",
+   "depends_on": "eval: doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "civil_id_copy",
    "fieldtype": "Attach",
    "label": "Civil ID Copy"
@@ -330,13 +328,13 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval: doc.workflow_state != \"Draft\"",
+   "depends_on": "eval: doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "date_of_birth_certificate",
    "fieldtype": "Attach",
    "label": "Date of Birth Certificate"
   },
   {
-   "depends_on": "eval: doc.workflow_state != \"Draft\"",
+   "depends_on": "eval: doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "nationality_proof",
    "fieldtype": "Attach",
    "label": "Nationality Proof"
@@ -382,13 +380,13 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:doc.request_type == \"Registration\" && doc.workflow_state != \"Draft\"",
+   "depends_on": "eval:doc.request_type == \"Registration\" && doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "employment_contract",
    "fieldtype": "Attach",
    "label": "Employment Contract"
   },
   {
-   "depends_on": "eval:doc.request_type == \"Registration\" && doc.workflow_state != \"Draft\"",
+   "depends_on": "eval:doc.request_type == \"Registration\" && doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "social_security_clearance",
    "fieldtype": "Attach",
    "label": "Social Security Clearance"
@@ -417,10 +415,6 @@
   },
   {
    "fieldname": "column_break_25",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_27",
    "fieldtype": "Column Break"
   },
   {
@@ -478,7 +472,6 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.workflow_state != \"Draft\"",
    "fieldname": "reference_number",
    "fieldtype": "Data",
    "label": "PIFSS Reference Number"
@@ -489,21 +482,16 @@
    "label": "PIFSS Authorized Signatory"
   },
   {
+   "depends_on": "eval:doc.workflow_state != \"Draft\" && doc.workflow_state != \"Rejected\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "section_break_46",
    "fieldtype": "Section Break",
    "label": "Reference Data"
   },
   {
    "fieldname": "registered_on",
-   "fieldtype": "Date",
-   "label": "Registered On",
+   "fieldtype": "Datetime",
+   "label": "Apply On",
    "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "attach_accept_screenshot_from_pifss_website",
-   "fieldtype": "Attach",
-   "label": "Attach Accept Status Screenshot from PIFSS Website "
   },
   {
    "fieldname": "column_break_63",
@@ -520,7 +508,6 @@
    "read_only": 1
   },
   {
-   "default": "Cancellation",
    "fieldname": "work_permit_type",
    "fieldtype": "Data",
    "hidden": 1,
@@ -545,11 +532,44 @@
    "fieldtype": "Attach",
    "hidden": 1,
    "label": "PIFSS website"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_end_of_service_from_pifss_website",
+   "fieldtype": "Attach",
+   "label": "Attach Status from PIFSS Website "
+  },
+  {
+   "fieldname": "attach_registration_from_pifss_website",
+   "fieldtype": "Attach",
+   "label": "Attach Status from PIFSS Website "
+  },
+  {
+   "depends_on": "eval:doc.workflow_state != \"Draft\"",
+   "fieldname": "attachments_section",
+   "fieldtype": "Section Break",
+   "label": "Attachments"
+  },
+  {
+   "fieldname": "attach_on_end_of_service",
+   "fieldtype": "Datetime",
+   "label": "Attach On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attach_on_registration",
+   "fieldtype": "Datetime",
+   "label": "Attach On",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-05 11:11:12.592379",
+ "modified": "2021-08-09 19:40:38.017832",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",
@@ -592,5 +612,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "civil_id"
 }

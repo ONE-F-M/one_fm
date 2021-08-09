@@ -15,9 +15,11 @@ frappe.ui.form.on('PIFSS Form 103', {
 				}
 			};
 		})	
+		 
 	},
 	
 	refresh: function(frm){
+		
 		if(!frm.doc.__islocal){
 			frm.set_df_property("request_type","read_only", 1);
 		} 
@@ -41,11 +43,14 @@ frappe.ui.form.on('PIFSS Form 103', {
 			
 			send_message(frm);
 		}
-		if (frm.doc.docstatus === 1) {
+		if (frm.doc.docstatus ==1 && frm.doc.request_type == "End of Service") {//btn btn-primary btn-sm
 			
-			frm.add_custom_button(__('PAM - Work Permit Cancellation'),
-			
-				function() {
+			frm.add_custom_button(__('PAM - Work Permit Cancellation'),//.addClass('btn btn-primary btn-sm'),
+			// frm.custom_buttons["PAM - Work Permit Cancellation"].css("background-color", "red"),
+			// frm.add_custom_button('PAM - Work Permit Cancellation',
+			// frm.add_custom_button(__('PAM - Work Permit Cancellation'),
+			//() => frm.events.reject_request_for_material(frm, 'Rejected')).addClass('btn-danger');
+				function(){
 					
 					frappe.model.open_mapped_doc({
 					method: "one_fm.grd.utils.mappe_to_work_permit_cancellation",
@@ -53,7 +58,17 @@ frappe.ui.form.on('PIFSS Form 103', {
           			});
 				});
 				
-		}    //set_filters(frm);
+		}if (frm.doc.docstatus == 1 && frm.doc.request_type == "Registration") {
+			
+			frm.add_custom_button(__('PAM - Work Permit Registration'),
+				function(){
+					
+					frappe.model.open_mapped_doc({
+					method: "one_fm.grd.utils.mappe_to_work_permit_registration",
+					frm: frm
+          			});
+				});				
+		} 
 	},
 	company_name: function(frm){
 		if(frm.doc.company_name){
@@ -154,6 +169,16 @@ reference_number: function(frm){
 	}
 	
 },
+attach_end_of_service_from_pifss_website: function(frm){
+	if(frm.doc.attach_end_of_service_from_pifss_website){
+		frm.set_value('attach_on_end_of_service',frappe.datetime.now_datetime())
+	}
+},
+attach_registration_from_pifss_website: function(frm){
+	if(frm.doc.attach_registration_from_pifss_website){
+		frm.set_value('attach_on_registration',frappe.datetime.now_datetime())
+	}
+}
 });
 var set_employee_details = function(frm){
     
@@ -203,7 +228,7 @@ var send_message = function(frm){
 	
 };
 var set_registered_date_on_pifss = function(frm){
-	frm.set_value('registered_on',frappe.datetime.now_date())
-}
-
-
+	if(frm.doc.reference_number){
+	frm.set_value('registered_on',frappe.datetime.now_datetime())
+	}
+};

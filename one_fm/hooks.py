@@ -348,6 +348,7 @@ scheduler_events = {
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_status_on_pifss',
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_under_process_status_on_pifss',
+			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp'
 
 			
 		],
