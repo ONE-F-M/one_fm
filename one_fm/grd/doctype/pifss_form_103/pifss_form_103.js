@@ -15,7 +15,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 				}
 			};
 		})	
-		 
+		set_employee_details(frm);
 	},
 	
 	refresh: function(frm){
