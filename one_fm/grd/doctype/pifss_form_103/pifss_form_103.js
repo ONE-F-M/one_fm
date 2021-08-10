@@ -56,7 +56,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 					method: "one_fm.grd.utils.mappe_to_work_permit_cancellation",
 					frm: frm
           			});
-				});
+				}).addClass('btn-primary');
 				
 		}if (frm.doc.docstatus == 1 && frm.doc.request_type == "Registration") {
 			
@@ -67,7 +67,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 					method: "one_fm.grd.utils.mappe_to_work_permit_registration",
 					frm: frm
           			});
-				});				
+				}).addClass('btn-primary');			
 		} 
 	},
 	company_name: function(frm){

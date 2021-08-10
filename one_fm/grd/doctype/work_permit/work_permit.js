@@ -94,7 +94,7 @@ if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "Cancellation" && frm.
           method: "one_fm.grd.utils.mappe_to_mgrp",
           frm: frm
             });
-      });
+      }).addClass('btn-primary');	
 } if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "New Kuwaiti" && frm.doc.nationality == "Kuwaiti") {
     frm.add_custom_button(__('MGRP Registration'),
       function() {
@@ -102,7 +102,7 @@ if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "Cancellation" && frm.
           method: "one_fm.grd.utils.mappe_to_mgrp",
           frm: frm
             });
-      });
+      }).addClass('btn-primary');	
 } 
 };
 var set_employee_details = function(frm){
