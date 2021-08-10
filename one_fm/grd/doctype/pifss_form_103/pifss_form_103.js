@@ -199,7 +199,7 @@ var set_employee_details = function(frm){
 				frm.set_value('first_name', r.one_fm_first_name_in_arabic);
 				frm.set_value('second_name', r.one_fm_second_name_in_arabic);
 				frm.set_value('third_name', r.one_fm_third_name_in_arabic);
-				frm.set_value('fourth_name', r.one_fm_last_name_in_arabic);
+				frm.set_value('last_name', r.one_fm_last_name_in_arabic);
 				frm.set_value('civil_id', r.message.one_fm_civil_id);
 				frm.set_value('mobile', r.cell_number);
 				frm.set_value('address', r.permanent_address);
