@@ -20,12 +20,20 @@ class PIFSSForm103(Document):
 		# self.check_penality_for_registration()#for setting the 3 dates to identify to whom is the penlty (date of request - Date of Register - Date of Acceptance - Date of Joining) 
 
 	def check_employee_fields(self):
-		field_list_in_employee = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
-			{'Third Name in Arabic':'third_name'},{'Fourth Name in Arabic':'fourth_name'},
-			{'Civil ID':'civil_id'},{'Mobile':'mobile'},
-			{'Address':'address'},{'Date of Birth':'date_of_birth'},
-			{'Nationality':'nationality'},{'PAM Designation':'position'},
-			{'Salary':'salary'},{'Relieving Date':'relieving_date'}]
+		if self.request_type == "End of Service":
+			field_list_in_employee = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
+				{'Third Name in Arabic':'third_name'},{'Last Name in Arabic':'last_name'},
+				{'Civil ID':'civil_id'},{'Mobile':'mobile'},
+				{'Address':'address'},{'Date of Birth':'date_of_birth'},
+				{'Nationality':'nationality'},{'PAM Designation':'position'},
+				{'Salary':'salary'},{'Relieving Date':'relieving_date'}]
+		if self.request_type == "Registration":
+			field_list_in_employee = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
+				{'Third Name in Arabic':'third_name'},{'Last Name in Arabic':'last_name'},
+				{'Civil ID':'civil_id'},{'Mobile':'mobile'},
+				{'Address':'address'},{'Date of Birth':'date_of_birth'},
+				{'Nationality':'nationality'},{'PAM Designation':'position'},
+				{'Salary':'salary'}]
 		message_detail = '<b style="color:red; text-align:center"> You Need to Set The Missing Data In Employee Doctype</b><br>'
 		self.set_mendatory_fields(field_list_in_employee,message_detail)
 

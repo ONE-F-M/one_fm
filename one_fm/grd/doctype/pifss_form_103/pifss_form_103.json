@@ -42,7 +42,7 @@
   "first_name",
   "second_name",
   "third_name",
-  "fourth_name",
+  "last_name",
   "relieving_date",
   "column_break_13",
   "civil_id",
@@ -172,13 +172,6 @@
    "fieldname": "third_name",
    "fieldtype": "Data",
    "label": "Third Name in Arabic",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.one_fm_last_name_in_arabic",
-   "fieldname": "fourth_name",
-   "fieldtype": "Data",
-   "label": "Fourth Name in Arabic",
    "read_only": 1
   },
   {
@@ -565,11 +558,18 @@
    "fieldtype": "Datetime",
    "label": "Attach On",
    "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_last_name_in_arabic",
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name in Arabic",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-09 19:40:38.017832",
+ "modified": "2021-08-10 13:54:17.115993",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",
