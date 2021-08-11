@@ -363,7 +363,7 @@ def update_shift_type():
 		last_sync_of_checkin = add_to_date(today_datetime, minutes=cint(shift_type.allow_check_out_after_shift_end_time)+15, as_datetime=True)
 		doc = frappe.get_doc("Shift Type", shift_type.name)
 		doc.last_sync_of_checkin = last_sync_of_checkin
-		doc.submit()
+		doc.save()
 
 
 def process_attendance():
