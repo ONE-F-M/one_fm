@@ -18,7 +18,6 @@ class PenaltyDeduction(Document):
 		additional_salary.amount = self.deducted_amount
 		additional_salary.payroll_date = getdate()
 		additional_salary.company = erpnext.get_default_company()
-		#additional_salary.company = "ONE Facilities Management"
 		additional_salary.overwrite_salary_structure_amount = 1
 		additional_salary.notes = "Penalty Deduction for Payroll Period: {start} to {end} including previous unsettled balance amount, if applicable.".format(start=self.from_date, end=self.to_date)
 		additional_salary.insert()

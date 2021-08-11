@@ -41,13 +41,12 @@ class Penalty(Document):
 			frappe.throw(_("Penalty recepient and issuer cannot be the same Employee.")) 
 	
 	def update_penalty_deductions(self):
-		pass
-		# penalty = frappe.get_doc("Penalty", self.name)
-		# penalty.append("penalty_details", {
-		# 	"deduction": 1
-		# })
-		# penalty.save(ignore_permissions=True)
-		# frappe.db.commit()
+		penalty = frappe.get_doc("Penalty", self.name)
+		penalty.append("penalty_details", {
+			"deduction": 1
+		})
+		penalty.save(ignore_permissions=True)
+		frappe.db.commit()
 
 	def create_legal_investigation(self):
 		if frappe.db.exists("Legal Investigation",{"reference_doctype": self.doctype, "reference_name": self.name}):

@@ -595,6 +595,11 @@ var set_employee_or_project = function(frm) {
 
 
 frappe.ui.form.on("Request for Material Item", {
+	// refresh: function (frm){
+	// 	if(frm.doc.docstatus == 1 && frm.doc.status == 'Approved'){
+	// 		frm.set_df_property('item_code', 'read_only', false);
+	//     }
+	// },
 	qty: function (frm, doctype, name) {
 		// var d = locals[doctype][name];
 		// if ((flt(d.quantity_to_transfer)+flt(d.pur_qty)) > (flt(d.qty))) {
