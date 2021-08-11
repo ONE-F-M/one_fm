@@ -131,6 +131,19 @@ def check_in(log_type, skip_attendance, latitude, longitude):
 	frappe.db.commit()
 	return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
 
+@frappe.whitelist()
+def forced_checkin(employee, log_type, time):
+	checkin = frappe.new_doc("Employee Checkin")
+	checkin.employee = employee
+	checkin.log_type = log_type
+	checkin.device_id = cstr('0')+","+cstr('0')
+	checkin.skip_auto_attendance = cint('0')
+	checkin.time = time
+	checkin.actual_time = time
+	checkin.save()
+	frappe.db.commit()
+	return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
+
 
 def create_dataset(video):
 	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"
