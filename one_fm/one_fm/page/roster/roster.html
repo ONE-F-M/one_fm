@@ -21,9 +21,18 @@
     </div>
     <div class="tab-content mt30 ml30 mr30 mb30 bg-white">
         <div class="container-fluid pl-0 pr-0  pt15">
-            <div class="d-flex justify-content-between align-items-center pl30 pr30 ">
+            <div class="d-flex justify-content-between align-items-center pl30 pr30">
                 <div class="">
                     <div class="font20 cardheadercolor fontw600 textchange d-inline-block mr10">Rostering</div>
+                    <br />
+                    <div>
+                        <label for="check" id="hamburger-menu">
+                            <input type="checkbox" id="check" />
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="d-none d-md-inline-block">
                     <ul
@@ -48,6 +57,43 @@
                     <a href="#" class="responsivebluebtnright"><i class="fas fa-print"></i></a>
                 </div>
             </div>
+            <div class="d-flex justify-content-between align-items-center pl30 pr30">
+                <div class="font18 pt30 pb10 cardheadercolor">Filter</div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center pl30 pr30">
+                <div class="listoffilter" style="width: 100%;">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringprojectselect"
+                                name="rosteringprojectselect">
+                                <option value="">Select Project</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringsiteselect" name="rosteringsiteselect">
+                                <option value="">Select Site</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringshiftselect"
+                                name="rosteringshiftselect">
+                                <option value="">Select Shift</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringdepartmentselect"
+                                name="rosteringdepartmentselect">
+                                <option value="">Select Department</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringpostselect" name="rosteringpostselect">
+                                <option value="">Select Post type</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- <div class="switch-container">
                 <div class="d-none d-md-inline-block">
                     <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab">
@@ -65,7 +111,6 @@
                         <li class="maintabclick"><a class="residenavli postviewclick" id="">Post View</a></li>
                     </ul>
                 </div>
-
             </div>
         </div>
         <div class="container-fluid pl30 pr30 d-none filterhideshow lightbluedtbg mt30">
@@ -88,44 +133,9 @@
         </div>
         <div class="container-fluid borderradius8 pt30 pl30 pr30 pb30 bg-white">
             <div class="row">
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-2 pr-md-0">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-2 pr-md-0" id="side-bar" style="display: none">
                     <div class="dateblock" class="input-group date">
                         <div id="datepicker" class="input-group date">
-                        </div>
-                    </div>
-                    <div class="font18 pt30 pb10 cardheadercolor">Filter</div>
-                    <div class="listoffilter">
-                        <div class="row">
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <select class="form-control select2plg" id="rosteringprojectselect"
-                                    name="rosteringprojectselect">
-                                    <option value="">Select Project</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <select class="form-control select2plg" id="rosteringsiteselect"
-                                    name="rosteringsiteselect">
-                                    <option value="">Select Site</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <select class="form-control select2plg" id="rosteringshiftselect"
-                                    name="rosteringshiftselect">
-                                    <option value="">Select Shift</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <select class="form-control select2plg" id="rosteringdepartmentselect"
-                                    name="rosteringdepartmentselect">
-                                    <option value="">Select Department</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <select class="form-control select2plg" id="rosteringpostselect"
-                                    name="rosteringpostselect">
-                                    <option value="">Select Post type</option>
-                                </select>
-                            </div>
                         </div>
                     </div>
                     <div class="font18 pb10 cardheadercolor">Options</div>
@@ -285,12 +295,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-8 col-md-8 col-lg-10 pl-md-5 pt-4 pt-md-0">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pt-4 pt-md-0" id="main-section">
                     <!--ROSTER AND POST VIEW HERE-->
                     <div id="partialcalenderview">
                         <div class="cardheadercolor rosterMonth border-0 shadow-0">
                             <div
-                                class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
+                                class="card-header pt30 pb30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
                                 <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
                                     <div class="font20 cardheadercolor fontw600 textchange calendertitlechange">
                                         Month of
