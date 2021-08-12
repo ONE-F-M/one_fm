@@ -44,6 +44,24 @@ def get_leave_balance(employee, leave_type):
         return frappe.utils.response.report_error(e)
 
 @frappe.whitelist()
+def leave_type_list(employee):
+    try:
+        Leave_policy = frappe.get_value("Leave Policy Assignment", {"employee":employee}, ['leave_policy'] )
+        if Leave_policy:
+            leave_policy_list = frappe.get_list("Leave Allocation", {"employee":employee,"leave_policy":Leave_policy}, 'leave_type')
+            #return leave_policy_list
+            leave_policy=[]
+            for types in leave_policy_list:
+                leave_policy.append(types.leave_type)
+            return leave_policy
+        else:
+            return {'message': _('You Are Not currently Assigned with a leave policy.')}
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)
+
+@frappe.whitelist()
 def create_new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,half_day_date=None):
     try:
         leave = frappe.new_doc("Leave Application")
