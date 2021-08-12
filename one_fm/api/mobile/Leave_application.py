@@ -63,6 +63,13 @@ def leave_type_list(employee):
 
 @frappe.whitelist()
 def create_new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,half_day_date=None):
+    """
+	Params:
+	employee: erp id
+    from_date,to_date,half_day_date= date in YYYY-MM-DD format
+    leave_type=from leave policy
+    half_day=1 or 0
+	"""
     try:
         leave = frappe.new_doc("Leave Application")
         leave.employee=employee
@@ -77,8 +84,8 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason,ha
             else:
                 return ('Half Day Date should be between From Date and To Date.')
         leave.submit()
+        return leave
     except Exception as e:
         print(frappe.get_traceback())
         frappe.log_error(frappe.get_traceback())
         return frappe.utils.response.report_error(e)
-    
