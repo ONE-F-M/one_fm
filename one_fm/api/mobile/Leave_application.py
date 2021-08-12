@@ -44,14 +44,14 @@ def get_leave_balance(employee, leave_type):
         return frappe.utils.response.report_error(e)
 
 @frappe.whitelist()
-def create_new_leave_application(employee,from_date,to_date,leave_type,Reason,half_day,half_day_date=None):
+def create_new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,half_day_date=None):
     try:
         leave = frappe.new_doc("Leave Application")
         leave.employee=employee
         leave.leave_type=leave_type
         leave.from_date=from_date
         leave.to_date=to_date
-        leave.description=Reason or "None"
+        leave.description=reason or "None"
         leave.half_day=half_day
         if half_day==1 and from_date!=to_date:
             if from_date<=half_day_date and to_date>=half_day_date:
