@@ -15,6 +15,7 @@ from frappe.utils import today, add_days, get_url#extra
 from datetime import date, timedelta
 import calendar
 from datetime import date
+from frappe import enqueue
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from dateutil.relativedelta import relativedelta
 from frappe.utils import get_datetime, add_to_date, getdate
@@ -86,6 +87,8 @@ class Preparation(Document):
             send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
 
+def preparation_monthly_task():
+    frappe.enqueue(create_preparation, is_async=True, queue='long')
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def create_preparation():
