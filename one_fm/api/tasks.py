@@ -353,9 +353,6 @@ def create_shift_assignment(schedule, date):
 	shift_assignment.post_type = schedule.post_type
 	shift_assignment.post_abbrv = schedule.post_abbrv
 	shift_assignment.submit()
-	shift_assignment.end_date = date
-	shift_assignment.submit()
-
 
 def update_shift_type():
 	today_datetime = now_datetime()	
