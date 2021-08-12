@@ -37,6 +37,7 @@
    "label": "Employees Not Rostered"
   },
   {
+   "columns": 1,
    "fieldname": "result",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -46,7 +47,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-07-31 06:15:38.367518",
+ "modified": "2021-08-05 17:00:04.731945",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Employee Daily Report",

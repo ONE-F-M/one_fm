@@ -1625,6 +1625,9 @@ def update_onboarding_doc_for_bank_account(doc):
         oe.save(ignore_permissions=True)
 
 
+def roster_daily_report_task():
+    frappe.enqueue(create_roster_daily_report, is_async=True, queue='long')
+
 def create_roster_daily_report():
     """
     A function that creates a Roster Daily Report document,
@@ -1687,7 +1690,7 @@ def create_roster_daily_report():
         employee_not_rostered_count = 0
 
         # Get list of all employees
-        employee_list = frappe.db.get_list("Employee", ["employee"])
+        employee_list = frappe.db.get_list("Employee", {'status': 'Active'}, ["employee"])
         for employee in employee_list:
             # For each employee, check if an employee schedule does not exist for the given date and compute employee not rostered count
             if not frappe.db.exists({'doctype': 'Employee Schedule', 'date': date, 'employee': employee.employee}):

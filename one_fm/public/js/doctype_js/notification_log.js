@@ -31,8 +31,26 @@ function checkin_events(frm){
         let penalty_code = "106";
         issue_penalty(e.target, penalty_code);
     });
+    $('.checkin').on('click', function(e){
+        console.log(e.target); 
+        let log_type="IN";
+        console.log(log_type)
+        check(e.target, log_type);
+    });
+    $('.checkout').on('click', function(e){
+        console.log(e.target); 
+        let log_type="OUT";
+        check(e.target, log_type);
+    });
 }
-
+function check(element, log_type){
+    let [employee,time] = $(element).attr('id').split("_")
+    console.log(employee)
+    frappe.xcall('one_fm.one_fm.page.face_recognition.face_recognition.forced_checkin',{
+        employee, log_type, time
+    })
+    frappe.msgprint(_("{0} has Checked-{1}".format(employee,log_type)));
+}
 function issue_penalty(element, penalty_code){
     let [employee,date,shift] = $(element).attr('id').split("_");
     let issuing_user = frappe.session.user;
@@ -45,6 +63,7 @@ function issue_penalty(element, penalty_code){
                 frappe.xcall('one_fm.api.tasks.issue_penalty',{
                     employee, date, penalty_code, shift, issuing_user, penalty_location
                 })
+                frappe.msgprint(_("{0} Has been penalised".format(employee)));
             },
             error => {
                 switch(error.code) {
