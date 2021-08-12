@@ -63,7 +63,8 @@
   "optional_supplementary_additional_amounts",
   "total_options",
   "amended_from",
-  "press_button"
+  "press_button",
+  "pifss_website"
  ],
  "fields": [
   {
@@ -432,11 +433,19 @@
    "fieldtype": "Datetime",
    "label": "Attached on ",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "https://online.pifss.gov.kw/employer/ ",
+   "fieldname": "pifss_website",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "PIFSS Website"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-05 09:45:35.978414",
+ "modified": "2021-08-12 09:48:15.690779",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",

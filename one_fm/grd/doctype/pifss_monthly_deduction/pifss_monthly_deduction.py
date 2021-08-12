@@ -46,13 +46,15 @@ class PIFSSMonthlyDeduction(Document):
 							{'Basic Insurance':'basic_insurance'},{'Supplementary Insurance':'supplementary_insurance'},
 							{'Fund Increase':'fund_increase'},{'Unemployment Insurance':'unemployment_insurance'},
 							{'Compensation':'compensation'},{'Total Amount':'total'}]
-			message_detail = '<b>First, Download csv files from PIFSS Website and Scan the Manual Report</b>'#.format(get_url("https://online.pifss.gov.kw/employer/"))
+			
+			message_detail = '<b style="color:red; text-align:center;">First, Scan the Manual Report and Download csv files from <a href="{0}">PIFSS Website</a></b>'.format(self.pifss_website)
 			self.set_mendatory_fields(field_list,message_detail)
 			self.set_total_payment_required_for_finance()
 
 		if self.workflow_state == "Pending By Finance":
 			field_list = [{'Total Payment Required':'total_payment_required'}]
 			self.set_mendatory_fields(field_list)
+			create_payment_request(self.total_payment_required,self.name)
 
 		if self.workflow_state == "Completed":
 			field_list = [{'Attach Invoice':'attach_invoice'}]
@@ -106,7 +108,8 @@ class PIFSSMonthlyDeduction(Document):
 				email = finance_email
 				subject = _("PIFSS Monthly Deduction Payments")
 				message = _("Kindly, prepare Total Payment Required Amount and transfer it to GRD account.<br>Please transfer it within 2 days.")
-				create_notification_log(subject,message,email,self)
+				payment_request = frappe.get_doc('Payment Request',{'reference_name':self.name},self.name)
+				create_notification_log(subject,message,email,payment_request)
 
 	def on_submit(self):
 		self.create_legal_investigation()
@@ -152,6 +155,24 @@ def create_additional_salary(employee, amount):
 	additional_salary.notes = "Social Security Deduction"
 	additional_salary.insert()
 	additional_salary.submit()
+
+def create_payment_request(total_payment_required, name):
+	
+	subject = _("PIFSS Monthly Deduction Payments")
+	message = _("Kindly, prepare the Amount and transfer it to GRD account.<br>Please transfer it within 2 days.")
+	payment_request = frappe.new_doc('Payment Request')
+	payment_request.payment_request_type = "Inward"
+	payment_request.reference_doctype = "PIFSS Monthly Deduction"
+	payment_request.reference_name = name
+	payment_request.grand_total = total_payment_required
+	payment_request.email_to = "finance@one-fm.com"
+	payment_request.message = message
+	payment_request.subject = subject
+	payment_request.payment_channel = "Email"
+	payment_request.status = "Requested"
+	payment_request.insert()
+	payment_request.submit()
+
 	
 def auto_create_pifss_monthly_deduction_record():# call this method at 8 am of first day of each month
 	create_pifss_mothly_dedution_record()	
