@@ -310,7 +310,7 @@ scheduler_events = {
 
 	"cron": {
 		"0 8 1 * *": [# first day of the Month at 8 am
-			"one_fm.grd.doctype.preparation.create_preparation",
+			"one_fm.grd.doctype.preparation.preparation_monthly_task",
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record'
 		],
 		"0/1 * * * *": [
