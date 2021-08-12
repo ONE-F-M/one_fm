@@ -3,7 +3,7 @@
 
 frappe.ui.form.on('Medical Insurance', {
     refresh: function(frm){
-        set_css(frm);
+        // set_css(frm);
     },
     onload: function(frm) {
 		if (!frm.is_new()){
@@ -26,7 +26,7 @@ frappe.ui.form.on('Medical Insurance', {
                 callback: function(r) {
                     if(r && r.message){
                         var data = r.message;
-                        frm.set_value('employee_name', data.employee_name);
+                        // frm.set_value('employee_name', data.employee_name);
                         frm.set_value('gender', data.gender);
                         frm.set_value('nationality', data.one_fm_nationality);
                         //frm.set_value('passport_expiry_date', data.valid_upto);
@@ -99,22 +99,6 @@ var set_upload_payment_invoice = function(frm){
         frm.set_value('upload_payment_invoice_on',frappe.datetime.now_datetime())
     }
 };
-// var set_submission_of_application = function(frm) //2
-// {
-// 	if(((frm.doc.submission_of_application == "Yes")&&(!frm.doc.submission_of_application_date)))
-//     {
-// 		frappe.call({
-// 			method: 'one_fm.grd.doctype.medical_insurance.medical_insurance.set_dates',
-// 			callback: function(r)
-//             {
-// 				if(r.message)
-//                 {
-//                     frm.set_value('submission_of_application_date',r.message);
-//                 }
-//             }
-//         });
-//     }
-// };
 var set_upload_medical_insurance = function(frm) //3
 {
 	if(((frm.doc.upload_medical_insurance)&&(!frm.doc.upload_medical_insurance_date)))
@@ -132,13 +116,12 @@ var set_employee_details = function(frm){
                 filters: {
                 name: frm.doc.work_permit
                 },
-                fieldname:["civil_id","pam_file_number","employee_name","gender","nationality","duration_of_work_permit","passport_expiry_date"]
+                fieldname:["civil_id","pam_file_number","gender","nationality","duration_of_work_permit","passport_expiry_date"]
             }, 
             callback: function(r) { 
         
                 // set the returned value in a field
                 frm.set_value('civil_id', r.message.civil_id);
-                frm.set_value('employee_name', r.message.employee_name);
                 frm.set_value('gender', r.message.gender);
                 frm.set_value('nationality',r.message.nationality);
                 frm.set_value('no_of_years', r.message.duration_of_work_permit);

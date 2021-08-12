@@ -43,11 +43,11 @@ class TransferPaper(Document):
 
     def set_pas_values(self):
         doc = frappe.get_doc('Job Applicant',self.applicant)
-        if doc.one_fm_authorized_signatory:
-            authorized_list = frappe.get_doc('PAM Authorized Signatory List',doc.one_fm_authorized_signatory)
-            self.db_set('company_trade_name_arabic', authorized_list.company_name_arabic)
-            self.db_set('issuer_number', authorized_list.pam_issuer_number)
-            self.db_set('pam_file_number', authorized_list.pam_file_number)
+        if doc.one_fm_pam_file_number:
+            company_data = frappe.get_doc('PAM File',doc.one_fm_pam_file_number)
+            self.db_set('company_trade_name_arabic', company_data.license_trade_name_arabic)
+            self.db_set('license_number', company_data.license_number)
+            self.db_set('pam_file_number', company_data.pam_file_number)
 
     def get_wp_status(self):
         """
@@ -65,7 +65,7 @@ class TransferPaper(Document):
         This method create wp record after tp is submitted and notify operator 
         """
         if self.signed == "Yes" and self.tp_status == "Pending By GRD":
-            if frappe.db.exists("Employee", {"one_fm_civil_id":self.civil_id}):#employee is created <NEED TO CHECK THE EMPLOYEE LIST ALL TIME>
+            if frappe.db.exists("Employee", {"one_fm_civil_id":self.civil_id}):#employee is created 
                 employee = frappe.db.get_value("Employee", {"one_fm_civil_id":self.civil_id})
                 if employee:
                     self.recall_create_transfer_work_permit(employee)#create wp

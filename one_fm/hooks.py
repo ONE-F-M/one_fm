@@ -153,21 +153,23 @@ doc_events = {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
 	"Employee": {
+		"validate":"one_fm.hiring.utils.set_employee_name",
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",
-		"after_insert": "one_fm.hiring.utils.employee_after_insert"
+		"after_insert": "one_fm.hiring.utils.employee_after_insert",
+		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti"
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
-		"validate": "one_fm.one_fm.utils.check_mendatory_fields_for_grd_and_recruiter",
 		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
 	"Job Offer": {
 		"validate": "one_fm.hiring.utils.validate_job_offer",
-		"on_update_after_submit": "one_fm.hiring.utils.job_offer_on_update_after_submit"
+		"on_update_after_submit": "one_fm.hiring.utils.job_offer_on_update_after_submit",
+		"onload": "one_fm.hiring.utils.job_offer_onload"
 	},
 	"Shift Type": {
 		"autoname": "one_fm.api.doc_events.naming_series"
@@ -288,6 +290,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.grd.utils.sendmail_reminder1',
 		'one_fm.grd.utils.sendmail_reminder2',
+		
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -306,7 +309,7 @@ scheduler_events = {
 	],
 
 	"cron": {
-		"0 8 1 * *": [# first day of the Month at 8 am 
+		"0 8 1 * *": [# first day of the Month at 8 am
 			"one_fm.grd.doctype.preparation.create_preparation",
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record'
 		],
@@ -344,6 +347,10 @@ scheduler_events = {
 			'one_fm.utils.send_gp_letter_attachment_no_response',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
+			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_status_on_pifss',
+			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_under_process_status_on_pifss',
+			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp'
+
 			
 		],
 		"30 8 * * *":[
@@ -358,7 +365,7 @@ scheduler_events = {
 		"30 9 * * *": [
 			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first',
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.moi_notify_again_grd_operator'
-			
+
 		],
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'
@@ -372,7 +379,8 @@ scheduler_events = {
 			'one_fm.utils.check_pam_visa_approval_submission_six_half'
 		],
 		"0 7 * * *": [
-			'one_fm.utils.check_pam_visa_approval_submission_seven'
+			'one_fm.utils.check_pam_visa_approval_submission_seven',
+			'one_fm.utils.roster_daily_report_task'
 		],
 		"30 12 * * *": [
 			'one_fm.utils.check_upload_original_visa_submission_reminder1'
@@ -446,6 +454,8 @@ fixtures = [
 	},
 	{
 		"dt": "Workflow"
+		
+
 	},
 	{
 		"dt": "Client Script",

@@ -11,6 +11,7 @@ from frappe.model.document import Document
 from frappe.utils import today, add_days, get_url, date_diff, getdate
 from frappe.model.document import Document
 from one_fm.grd.doctype.medical_insurance import medical_insurance
+from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 
 class FingerprintAppointment(Document):
 
@@ -25,7 +26,7 @@ class FingerprintAppointment(Document):
     def on_submit(self):
         self.validate_mendatory_fields()
         self.db_set('status', 'Completed')
-        self.db_set('completed_on', today())
+        self.db_set('completed_on', now_datetime())
         if self.work_permit_type == "Local Transfer":
             self.recall_create_medical_insurance_transfer()
 

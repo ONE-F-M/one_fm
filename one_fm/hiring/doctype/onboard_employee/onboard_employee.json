@@ -11,6 +11,7 @@
   "onboarding_section",
   "job_offer",
   "job_applicant",
+  "reports_to",
   "employee",
   "employee_name",
   "employee_name_in_arabic",
@@ -78,12 +79,12 @@
   "applicant_documents",
   "amended_from",
   "orientation_section",
-  "candidate_orientation_name",
-  "candidate_orientation",
-  "column_break_76",
-  "candidate_orientation_status",
-  "candidate_orientation_docstatus",
-  "candidate_orientation_progress",
+  "orientation_location",
+  "orientation_on",
+  "column_break_75",
+  "informed_applicant",
+  "applicant_attended_orientation",
+  "applicant_attended",
   "work_contract_section",
   "work_contract_name",
   "work_contract",
@@ -103,6 +104,7 @@
   "bank",
   "new_bank_account_needed",
   "attach_bank_form",
+  "btn_create_bank_account",
   "column_break_96",
   "bank_account_name",
   "bank_account",
@@ -112,7 +114,9 @@
   "erp_user_section",
   "company_email",
   "create_user_permission",
+  "btn_create_erpnext_user",
   "column_break_107",
+  "user_created",
   "role_profile",
   "employee_id_section",
   "employee_id_name",
@@ -131,11 +135,13 @@
   "bed",
   "transportation_section",
   "added_to_bus_schedule",
-  "asset_and_tools_section",
+  "uniform_for_work_section",
   "uniform_issued",
   "employee_uniform_issue_reference",
-  "column_break_129",
+  "tools_for_work_section",
+  "tools_needed_for_work",
   "tools_issued",
+  "column_break_133",
   "request_for_material",
   "request_for_material_status",
   "request_for_material_docstatus",
@@ -165,6 +171,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "employee",
    "fieldtype": "Link",
    "label": "Employee",
@@ -181,6 +188,7 @@
    "allow_on_submit": 1,
    "fieldname": "boarding_status",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Status",
    "options": "\nPending\nIn Process\nCompleted"
   },
@@ -533,7 +541,8 @@
   {
    "depends_on": "eval:doc.docstatus > 0",
    "fieldname": "work_contract_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Work Contract"
   },
   {
    "fieldname": "column_break_73",
@@ -598,50 +607,8 @@
   {
    "depends_on": "eval:doc.docstatus > 0",
    "fieldname": "orientation_section",
-   "fieldtype": "Section Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.docstatus > 1",
-   "fieldname": "candidate_orientation_name",
-   "fieldtype": "Data",
-   "label": "Candidate Orientation Name",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.docstatus < 2",
-   "fieldname": "candidate_orientation",
-   "fieldtype": "Link",
-   "label": "Candidate Orientation",
-   "options": "Candidate Orientation",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "candidate_orientation_status",
-   "fieldtype": "Data",
-   "label": "Candidate Orientation Status",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_76",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "candidate_orientation_docstatus",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Candidate Orientation Docstatus"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "candidate_orientation_progress",
-   "fieldtype": "Float",
-   "hidden": 1,
-   "label": "Candidate Orientation Progress",
-   "read_only": 1
+   "fieldtype": "Section Break",
+   "label": "Orientation Details"
   },
   {
    "default": "0",
@@ -652,7 +619,8 @@
   {
    "depends_on": "eval:doc.docstatus > 0",
    "fieldname": "duty_commencement_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Duty Commencement"
   },
   {
    "allow_on_submit": 1,
@@ -744,7 +712,8 @@
    "default": "0",
    "fieldname": "new_bank_account_needed",
    "fieldtype": "Check",
-   "label": "New Bank Account Needed"
+   "label": "New Bank Account Needed",
+   "read_only_depends_on": "bank_account"
   },
   {
    "allow_on_submit": 1,
@@ -792,7 +761,8 @@
    "description": "This will restrict user access to other employee records",
    "fieldname": "create_user_permission",
    "fieldtype": "Check",
-   "label": "Create User Permission"
+   "label": "Create User Permission",
+   "read_only_depends_on": "user_created"
   },
   {
    "fieldname": "column_break_107",
@@ -811,7 +781,8 @@
   {
    "depends_on": "employee",
    "fieldname": "employee_id_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Employee ID Card"
   },
   {
    "allow_on_submit": 1,
@@ -854,7 +825,8 @@
    "label": "Employee ID Progress"
   },
   {
-   "depends_on": "provide_accommodation_by_company",
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee && doc.provide_accommodation_by_company",
+   "description": "Section will be updated on Accommodation Checkin",
    "fieldname": "accommodation_section",
    "fieldtype": "Section Break",
    "label": "Accommodation"
@@ -884,18 +856,13 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.docstatus > 0",
-   "fieldname": "asset_and_tools_section",
-   "fieldtype": "Section Break",
-   "label": "Uniform and Tools for Work"
-  },
-  {
    "allow_on_submit": 1,
    "default": "0",
    "depends_on": "is_uniform_needed_for_this_job",
    "fieldname": "uniform_issued",
    "fieldtype": "Check",
-   "label": "Uniform Issued"
+   "label": "Uniform Issued",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -986,20 +953,108 @@
    "options": "Employee Uniform"
   },
   {
-   "fieldname": "column_break_129",
+   "allow_on_submit": 1,
+   "default": "0",
+   "depends_on": "tools_needed_for_work",
+   "fieldname": "tools_issued",
+   "fieldtype": "Check",
+   "label": "Tools Issued",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "orientation_location",
+   "fieldtype": "Link",
+   "label": "Orientation Location",
+   "options": "Location"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "orientation_on",
+   "fieldtype": "Datetime",
+   "label": "Orientation on"
+  },
+  {
+   "fieldname": "column_break_75",
    "fieldtype": "Column Break"
   },
   {
    "allow_on_submit": 1,
-   "default": "0",
-   "fieldname": "tools_issued",
+   "fieldname": "informed_applicant",
    "fieldtype": "Check",
-   "label": "Tools Issued"
+   "label": "Informed Applicant",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "informed_applicant",
+   "fieldname": "applicant_attended",
+   "fieldtype": "Check",
+   "label": "Applicant Attended",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "label": "Reports To",
+   "options": "Employee"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "user_created",
+   "fieldtype": "Check",
+   "label": "User Created",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "tools_needed_for_work",
+   "fieldtype": "Check",
+   "label": "Tools Needed for Work",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "description": "Section will be updated on Employee Uniform Issue",
+   "fieldname": "uniform_for_work_section",
+   "fieldtype": "Section Break",
+   "label": "Uniform for Work"
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "fieldname": "tools_for_work_section",
+   "fieldtype": "Section Break",
+   "label": "Tools for Work"
+  },
+  {
+   "fieldname": "column_break_133",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:!doc.bank_account",
+   "fieldname": "btn_create_bank_account",
+   "fieldtype": "Button",
+   "label": "Create Bank Account"
+  },
+  {
+   "depends_on": "eval:!doc.user_created",
+   "fieldname": "btn_create_erpnext_user",
+   "fieldtype": "Button",
+   "label": "Create ERPNext User"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "applicant_attended_orientation",
+   "fieldtype": "Datetime",
+   "label": "Applicant Attended Orientation",
+   "read_only": 1
   }
  ],
+ "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-01 09:22:25.969958",
+ "modified": "2021-08-04 12:48:49.713467",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
@@ -1030,6 +1085,20 @@
    "read": 1,
    "report": 1,
    "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Onboarding Officer",
    "share": 1,
    "submit": 1,
    "write": 1
