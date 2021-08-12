@@ -153,6 +153,7 @@ doc_events = {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
 	"Employee": {
+		"validate":"one_fm.hiring.utils.set_employee_name",
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti"
@@ -442,9 +443,9 @@ fixtures = [
 		"dt": "Custom Field",
 		# 'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
 	},
-	# {
-	# 	"dt": "Property Setter"
-	# },
+	{
+		"dt": "Property Setter"
+	},
 	{
 		"dt": "Workflow State"
 	},
@@ -452,26 +453,26 @@ fixtures = [
 		"dt": "Workflow Action Master"
 	},
 	{
-		"dt": "Workflow",
+		"dt": "Workflow"
 		
 
 	},
-	# {
-	# 	"dt": "Client Script",
-	# 	'filters': [['dt', 'in', ['Stock Entry', 'Warehouse',
-	# 	'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
-	# },
-	# {
-	# 	"dt": "Print Format"
-	# },
-	# {
-	# 	"dt": "Role",
-	# 	"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	# },
-	# {
-	# 	"dt": "Custom DocPerm",
-	# 	"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	# }
+	{
+		"dt": "Client Script",
+		'filters': [['dt', 'in', ['Stock Entry', 'Warehouse',
+		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
+	},
+	{
+		"dt": "Print Format"
+	},
+	{
+		"dt": "Role",
+		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Custom DocPerm",
+		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	}
 ]
 
 # before_tests = "one_fm.install.before_tests"

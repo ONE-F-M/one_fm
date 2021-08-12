@@ -418,4 +418,8 @@ def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
                 message += '<li>' + mandatory_field +'</li>'
             message += '</ul>'
             frappe.throw(message)
+
+@frappe.whitelist()
+def set_employee_name(doc,method):
+		doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic, doc.one_fm_last_name_in_arabic]))
     
