@@ -44,7 +44,6 @@ def get_leave_balance(employee, leave_type):
         return frappe.utils.response.report_error(e)
 
 @frappe.whitelist()
-
 def leave_type_list(employee):
     try:
         Leave_policy = frappe.get_value("Leave Policy Assignment", {"employee":employee}, ['leave_policy'] )
