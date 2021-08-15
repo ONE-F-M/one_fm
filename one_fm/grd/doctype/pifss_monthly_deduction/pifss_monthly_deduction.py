@@ -58,7 +58,7 @@ class PIFSSMonthlyDeduction(Document):
 
 		if self.workflow_state == "Completed":
 			field_list = [{'Attach Invoice':'attach_invoice'}]
-			message_detail = '<b>First, Scan the Receipt</b>'
+			message_detail = '<b style="color:red; text-align:center;">First, Scan the Receipt</b>'
 			self.set_mendatory_fields(field_list,message_detail)
 	
 	def set_mendatory_fields(self,field_list,message_detail=None):
