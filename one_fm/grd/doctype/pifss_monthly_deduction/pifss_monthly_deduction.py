@@ -54,7 +54,7 @@ class PIFSSMonthlyDeduction(Document):
 		if self.workflow_state == "Pending By Finance":
 			field_list = [{'Total Payment Required':'total_payment_required'}]
 			self.set_mendatory_fields(field_list)
-			create_payment_request(self.total_payment_required,self.name)
+			create_payment_request(self.total_payment_required,self.name, self.attach_manual_report)
 
 		if self.workflow_state == "Completed":
 			field_list = [{'Attach Invoice':'attach_invoice'}]
@@ -156,22 +156,23 @@ def create_additional_salary(employee, amount):
 	additional_salary.insert()
 	additional_salary.submit()
 
-def create_payment_request(total_payment_required, name):
+def create_payment_request(total_payment_required, name, report):
 	
 	subject = _("PIFSS Monthly Deduction Payments")
-	message = _("Kindly, prepare the Amount and transfer it to GRD account.<br>Please transfer it within 2 days.")
+	message = "Hello,\n Requesting payment against PIFSS Monthly Deduction {0}\n\n If you have any questions, please get back to GRD.\n\n Please transfer the Amount within 2 days.".format(name)
 	payment_request = frappe.new_doc('Payment Request')
-	payment_request.payment_request_type = "Inward"
+	payment_request.payment_request_type = "Outward"
 	payment_request.reference_doctype = "PIFSS Monthly Deduction"
 	payment_request.reference_name = name
 	payment_request.grand_total = total_payment_required
 	payment_request.email_to = "finance@one-fm.com"
 	payment_request.message = message
+	payment_request.one_fm_manual_report = report
 	payment_request.subject = subject
 	payment_request.payment_channel = "Email"
 	payment_request.status = "Requested"
 	payment_request.insert()
-	payment_request.submit()
+	
 
 	
 def auto_create_pifss_monthly_deduction_record():# call this method at 8 am of first day of each month
