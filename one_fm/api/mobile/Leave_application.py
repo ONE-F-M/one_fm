@@ -84,6 +84,7 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason,ha
             else:
                 return ('Half Day Date should be between From Date and To Date.')
         leave.submit()
+        frappe.db.commit()
         return leave
     except Exception as e:
         print(frappe.get_traceback())
