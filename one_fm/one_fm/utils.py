@@ -19,6 +19,7 @@ def employee_grade_validate(doc, method):
             salary_structures = doc.append('salary_structures')
             salary_structures.salary_structure = doc.default_salary_structure
 
+@frappe.whitelist()
 def get_salary_structure_list(doctype, txt, searchfield, start, page_len, filters):
     if filters.get('employee_grade'):
         query = """
@@ -48,7 +49,7 @@ def get_salary_structure_list(doctype, txt, searchfield, start, page_len, filter
 
 @frappe.whitelist()
 def send_notification_to_grd_or_recruiter(doc, method):
-    if doc.one_fm_is_transferable == 'Yes' and doc.one_fm_cid_number and doc.one_fm_passport_number: 
+    if doc.one_fm_is_transferable == 'Yes' and doc.one_fm_cid_number and doc.one_fm_passport_number:
         notify_grd_to_check_applicant_documents(doc)
 
     if doc.one_fm_has_issue and doc.one_fm_notify_recruiter == 0:
@@ -59,7 +60,7 @@ def notify_grd_to_check_applicant_documents(doc):
     This method is notifying operator with applicant's cid and passport to check on PAM,
     This method runs on update, so if the notification had sent before it won't annoy the operator again
     as it checkes notification log list.
-    """ 
+    """
     if not doc.one_fm_grd_operator:
         doc.one_fm_grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
 
@@ -84,7 +85,7 @@ def notify_grd_to_check_applicant_documents(doc):
 
 def notify_recruiter_after_checking(doc):
     """
-    This method is notifying all recruiters with applicant status once, 
+    This method is notifying all recruiters with applicant status once,
     and changing document status into Checked By GRD.
     """
     filtered_recruiter_users = []
@@ -93,8 +94,8 @@ def notify_recruiter_after_checking(doc):
     for user in users:
         filtered_recruiter_users.append(user)
         find = True
-        break 
-    if find and filtered_recruiter_users and len(filtered_recruiter_users) > 0:  
+        break
+    if find and filtered_recruiter_users and len(filtered_recruiter_users) > 0:
         dt = frappe.get_doc('Job Applicant',doc.name)
     if dt:
         if dt.one_fm_has_issue == "Yes" and dt.one_fm_notify_recruiter == 0:
@@ -106,7 +107,7 @@ def notify_recruiter_after_checking(doc):
             dt.db_set('one_fm_notify_recruiter', 1)
             dt.db_set('one_fm_applicant_status', "Checked By GRD")
 
-        if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0: 
+        if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0:
             email = filtered_recruiter_users
             page_link = get_url("/desk#List/Job Applicant/" + dt.name)
             message="<p>Tranfer for {0} has no issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
@@ -115,18 +116,18 @@ def notify_recruiter_after_checking(doc):
             dt.db_set('one_fm_notify_recruiter', 1)
             dt.db_set('one_fm_applicant_status', "Checked By GRD")
 
-@frappe.whitelist()     
+@frappe.whitelist()
 def check_mendatory_fields_for_grd_and_recruiter(doc,method):
     """
-    This Method is checking the roles accessing Job Applicant document 
+    This Method is checking the roles accessing Job Applicant document
     and setting the mendatory fields for each role based upon their selections.
 
     """
     roles = frappe.get_roles(frappe.session.user)
     if "GRD Operator" in roles:
         if doc.one_fm_has_issue == "No":
-            validate_mendatory_fields_for_grd(doc)  
-              
+            validate_mendatory_fields_for_grd(doc)
+
         if doc.one_fm_has_issue == "Yes":
             if not doc.one_fm_type_of_issues:
                 frappe.throw("Set The Type of Transfer issue Applicant has before saving")
@@ -135,7 +136,7 @@ def check_mendatory_fields_for_grd_and_recruiter(doc,method):
             validate_mendatory_fields_for_recruiter(doc)
 
 
-                
+
 def validate_mendatory_fields_for_grd(doc):
     """
         Check all the mendatory fields are set set by grd
@@ -160,9 +161,9 @@ def validate_mendatory_fields_for_recruiter(doc):
     """
         Check all the mendatory fields are set by Recruiter if Applicant wants to transfer
     """
-    field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'}, 
+    field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'},
             {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
-            {'Nationality':'one_fm_nationality'}, {'Previous Designation':'one_fm_previous_designation'}, 
+            {'Nationality':'one_fm_nationality'}, {'Previous Designation':'one_fm_previous_designation'},
             {'Passport Number':'one_fm_passport_number'}, {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
             {'Marital Status':'one_fm_marital_status'}, {'Previous Work Permit Salary':'one_fm_work_permit_salary'}]
 
@@ -178,7 +179,7 @@ def validate_mendatory_fields_for_recruiter(doc):
             message += '<li>' + mandatory_field +'</li>'
         message += '</ul>'
         frappe.throw(message)
- 
+
 @frappe.whitelist()
 def get_signatory_name(parent):
     """
@@ -192,9 +193,8 @@ def get_signatory_name(parent):
             print(pam_autorized_signatory)
             for pas in pam_autorized_signatory:
                 doc = frappe.get_doc('PAM Authorized Signatory List',pas.name)
-                
+
             for line in doc.authorized_signatory:
                 if line.authorized_signatory_name_arabic:
                     names.append(line.authorized_signatory_name_arabic)
     return names
-   
