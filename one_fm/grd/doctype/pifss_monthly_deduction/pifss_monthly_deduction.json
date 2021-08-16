@@ -413,7 +413,7 @@
    "label": "Press Button"
   },
   {
-   "depends_on": "eval:doc.workflow_state == \"Pending By Operator\" || doc.workflow_state == \"Completed\"",
+   "depends_on": "eval:doc.workflow_state == \"Pending By Finance\" || doc.workflow_state == \"Completed\"",
    "fieldname": "invoice_attachment_section",
    "fieldtype": "Section Break",
    "label": "Invoice Attachment"
@@ -445,7 +445,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-12 09:48:15.690779",
+ "modified": "2021-08-15 14:57:53.043907",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
