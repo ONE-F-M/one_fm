@@ -353,10 +353,12 @@ def create_shift_assignment(schedule, date):
 	shift_assignment.post_type = schedule.post_type
 	shift_assignment.post_abbrv = schedule.post_abbrv
 	shift_assignment.submit()
-
 def update_shift_type():
+	frappe.enqueue(process_shift_type, is_async=True)
+
+def process_shift_type():
 	today_datetime = now_datetime()	
-	now_time = today_datetime.strftime("%H:%M")
+	now_time = today_datetime.strftime("%H:%M:00")
 	shift_types = frappe.get_all("Shift Type", {"end_time": now_time},["name", "allow_check_out_after_shift_end_time"])
 	for shift_type in shift_types:
 		last_sync_of_checkin = add_to_date(today_datetime, minutes=cint(shift_type.allow_check_out_after_shift_end_time)+15, as_datetime=True)
