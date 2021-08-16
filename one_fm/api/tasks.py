@@ -363,6 +363,7 @@ def update_shift_type():
 		doc = frappe.get_doc("Shift Type", shift_type.name)
 		doc.last_sync_of_checkin = last_sync_of_checkin
 		doc.save()
+		frappe.db.commit()
 
 
 def process_attendance():
