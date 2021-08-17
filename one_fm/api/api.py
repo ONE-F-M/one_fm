@@ -3,7 +3,8 @@ from frappe import _
 import pandas as pd
 from frappe.utils import cstr
 from frappe.model.rename_doc import rename_doc
-
+import requests
+import json
 
 
 @frappe.whitelist()
@@ -42,21 +43,26 @@ def rename_post(posts):
             print(frappe.get_traceback())
 
 @frappe.whitelist()
-def final_reminder_notification():
-    # This registration token comes from the client FCM SDKs.
-    registration_token = 'YOUR_REGISTRATION_TOKEN'
+def final_reminder_notification(serverToken,deviceToken):
+    # This Device token comes from the client FCM SDKs.
 
     # See documentation on defining a message payload.
-    message = messaging.Message(
-        data={
-            'score': '850',
-            'time': '2:45',
-        },
-        token=registration_token,
-    )
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'key=' + serverToken,
+    }
+
+    body = {
+            'notification': {'title': 'Sending push form python script',
+                            'body': 'New Message'
+                            },
+            'to':deviceToken,
+            'priority': 'high',
+            #   'data': dataPayLoad,
+        }
 
     # Send a message to the device corresponding to the provided
     # registration token.
-    response = messaging.send(message)
-    # Response is a message ID string.
-    print('Successfully sent message:', response)
+    response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
+    print(response.status_code)
+    print(response.json())
