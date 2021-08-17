@@ -20,6 +20,7 @@ class PIFSSForm103(Document):
 		# self.check_penality_for_registration()#for setting the 3 dates to identify to whom is the penlty (date of request - Date of Register - Date of Acceptance - Date of Joining) 
 
 	def check_employee_fields(self):
+		field_list_in_employee=[]
 		if self.request_type == "End of Service":
 			field_list_in_employee = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
 				{'Third Name in Arabic':'third_name'},{'Last Name in Arabic':'last_name'},
@@ -80,7 +81,7 @@ class PIFSSForm103(Document):
 		self.notify_grd()#notify through erpnext to apply on pifss
 					
 	def check_workflow_states(self):
-		if self.workflow_state == "Draft":#check the previous workflow (DRAFT) required fields 
+		if self.workflow_state == "Form Printed":#check the previous workflow (DRAFT) required fields 
 			field_list = [{'Request Type':'request_type'},{'Employee':'employee'},{'Company Name':'company_name'}
 						,{'Signatory Name':'signatory_name'}]
 			self.set_mendatory_fields(field_list)
@@ -89,6 +90,7 @@ class PIFSSForm103(Document):
 			field_list = [{'Attach 103 Signed Form':'attach_signed_form'}]
 			message_detail = '<b style="color:red; text-align:center;">First, You Need to Print The Form and Take Employee Signature</b><br>'
 			self.set_mendatory_fields(field_list,message_detail)
+			self.db_set('date_of_request',date.today())
 			
 			
 		if self.workflow_state == "Awaiting Response":	
@@ -96,10 +98,12 @@ class PIFSSForm103(Document):
 				field_list = [{'PIFSS Reference Number':'reference_number'}]
 				message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for {0} through <a href="{1}">PIFSS Website</a></b><br>'.format(self.request_type,self.pifss_website)
 				self.set_mendatory_fields(field_list,message_detail)
+			self.db_set('date_of_registeration',date.today())
 
 		if self.workflow_state == "Rejected":
-			if self.reference_number:
-				self.db_set('reference_number',"")
+			if not self.reason_of_rejection:
+				field_list = [{'Reason Of Rejection':'reason_of_rejection'}]
+				self.set_mendatory_fields(field_list)
 
 		if self.workflow_state == "Under Process":
 			self.db_set('pifss_is_under_process_on', now_datetime())
@@ -179,7 +183,7 @@ class PIFSSForm103(Document):
 		if self.notify_for_signature == 0 and self.user:
 			name = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':self.signatory_name},['authorized_signatory_name_english'])
 			page_link = get_url("/desk#Form/PIFSS Form 103/" + self.name)
-			subject = _("<h3>Attention: Your signature will be used on PIFSS Form 103</h3>")
+			subject = _("<p>Attention: Your signature will be used on PIFSS Form 103</p>")
 			message = "<p>Dear {0},<br>You are requested to sgin on PIFSS Form 103 Record ({1}) for {2}<br>Please note that your E-Signature will be used on PIFSS Form 103 <a href='{3}'></a></p>.".format(name,self.name,self.employee_name,page_link)
 			create_notification_log(subject, message, [self.user], self)
 			self.db_set('notify_for_signature',1)
@@ -226,4 +230,37 @@ def get_signatory_name(parent):
 def get_signatory_user(user_name):
 	user,signature = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':user_name},['user','signature'])
 	return user,signature
+
+@frappe.whitelist()
+def create_103_form(param, dateofrequest,rt,cn,sn,sf):
+	"""This Method If PIFSS 103 got rejected """
+	pifss = frappe.new_doc('PIFSS Form 103')
+	pifss.request_type = rt
+	pifss.company_name = cn
+	pifss.signatory_name = sn
+	pifss.employee = param
+	pifss.date_of_request = dateofrequest
+	pifss.attach_signed_form = sf
+	pifss.insert()
+	# pifss.save()
+	pifss.workflow_state = 'Form Printed'
+	pifss.save()
+	# frappe.db.commit()
+	pifss.workflow_state = 'Pending by GRD'
+	pifss.save()
+	frappe.db.commit()
+	frappe.msgprint("New Record Created")
+	return pifss
+	
+@frappe.whitelist()#onboarding linking
+def create_103_form_for_onboarding(employee):
+	""" This Method for onboarding """
+	pifss = frappe.new_doc('PIFSS Form 103')
+	pifss.request_type = "Registration"
+	pifss.employee = employee
+	pifss.workflow_state = 'Draft'
+	pifss.insert()
+	pifss.save()
+	frappe.db.commit()
+	return pifss	
 
