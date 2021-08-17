@@ -1,4 +1,5 @@
 frappe.ui.form.on('PIFSS Form 103', {
+	
 	onload: function(frm){
 		frm.set_query("employee", function() {
 			return {
@@ -16,6 +17,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 			};
 		})	
 		set_employee_details(frm);
+		
 	},
 	
 	refresh: function(frm){
@@ -43,13 +45,9 @@ frappe.ui.form.on('PIFSS Form 103', {
 			
 			send_message(frm);
 		}
-		if (frm.doc.docstatus ==1 && frm.doc.request_type == "End of Service") {//btn btn-primary btn-sm
+		if (frm.doc.docstatus ==1 && frm.doc.request_type == "End of Service" && frm.doc.status != "Rejected") {//btn btn-primary btn-sm
 			
-			frm.add_custom_button(__('PAM - Work Permit Cancellation'),//.addClass('btn btn-primary btn-sm'),
-			// frm.custom_buttons["PAM - Work Permit Cancellation"].css("background-color", "red"),
-			// frm.add_custom_button('PAM - Work Permit Cancellation',
-			// frm.add_custom_button(__('PAM - Work Permit Cancellation'),
-			//() => frm.events.reject_request_for_material(frm, 'Rejected')).addClass('btn-danger');
+			frm.add_custom_button(__('PAM - Work Permit Cancellation'),
 				function(){
 					
 					frappe.model.open_mapped_doc({
@@ -58,7 +56,7 @@ frappe.ui.form.on('PIFSS Form 103', {
           			});
 				}).addClass('btn-primary');
 				
-		}if (frm.doc.docstatus == 1 && frm.doc.request_type == "Registration") {
+		}if (frm.doc.docstatus == 1 && frm.doc.request_type == "Registration" && frm.doc.status != "Rejected") {
 			
 			frm.add_custom_button(__('PAM - Work Permit Registration'),
 				function(){
@@ -66,6 +64,31 @@ frappe.ui.form.on('PIFSS Form 103', {
 					frappe.model.open_mapped_doc({
 					method: "one_fm.grd.utils.mappe_to_work_permit_registration",
 					frm: frm
+          			});
+				}).addClass('btn-primary');			
+		} 
+		if (frm.doc.docstatus == 1 && frm.doc.workflow_state == "Rejected") {
+			
+			frm.add_custom_button(__('Re-Apply PIFSS Form 103'),
+				function(){
+					frappe.call({
+					method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.create_103_form",
+					args: {
+						'param': frm.doc.employee,
+						'dateofrequest': frm.doc.date_of_request,
+						'rt': frm.doc.request_type,
+						'cn': frm.doc.company_name,
+						'sn': frm.doc.signatory_name,
+						'sf': frm.doc.attach_signed_form,
+
+					},
+					callback: function(r){
+						if(r.message){
+							var doclist = frappe.model.sync(r.message);
+							frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+						}
+
+					}
           			});
 				}).addClass('btn-primary');			
 		} 
@@ -178,7 +201,8 @@ attach_registration_from_pifss_website: function(frm){
 	if(frm.doc.attach_registration_from_pifss_website){
 		frm.set_value('attach_on_registration',frappe.datetime.now_datetime())
 	}
-}
+},
+
 });
 var set_employee_details = function(frm){
     
