@@ -78,11 +78,8 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason,ha
         leave.to_date=to_date
         leave.description=reason or "None"
         leave.half_day=half_day
-        if half_day==1 and from_date!=to_date:
-            if from_date<=half_day_date and to_date>=half_day_date:
-                leave.half_day_date=half_day_date
-            else:
-                return ('Half Day Date should be between From Date and To Date.')
+        if half_day==1:
+            leave.half_day_date=half_day_date
         leave.submit()
         frappe.db.commit()
         return leave
