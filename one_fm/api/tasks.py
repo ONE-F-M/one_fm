@@ -355,17 +355,17 @@ def create_shift_assignment(schedule, date):
 	shift_assignment.submit()
 
 def update_shift_type():
-	frappe.enqueue(process_shift_type, is_async=True)
-
-def process_shift_type():
 	today_datetime = now_datetime()	
 	minute = today_datetime.strftime("%M")
-	if int(minute)-15 < 10:
+	if 0 <= int(minute)-15 < 15:
 		now_time = today_datetime.strftime("%H:15:00")
-	elif int(minute)-30 < 10:
+	elif 0 <= int(minute)-30 < 15:
 		now_time = today_datetime.strftime("%H:30:00")
+	elif 0 <= int(minute)-45 < 15:
+		now_time = today_datetime.strftime("%H:45:00")
 	else:
 		now_time = today_datetime.strftime("%H:00:00")
+	print(now_time)
 	shift_types = frappe.get_all("Shift Type", {"end_time": now_time},["name", "allow_check_out_after_shift_end_time"])
 	for shift_type in shift_types:
 		last_sync_of_checkin = add_to_date(today_datetime, minutes=cint(shift_type.allow_check_out_after_shift_end_time)+15, as_datetime=True)
