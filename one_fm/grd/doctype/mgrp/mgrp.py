@@ -107,3 +107,16 @@ def notify_awaiting_response_mgrp(doc, method): #will run everyday at 8 am
 		notification.document_name = notification.name
 		notification.save()
 		frappe.db.commit()
+
+
+@frappe.whitelist()#onboarding linking
+def create_mgrp_form_for_onboarding(employee):
+	""" This Method for onboarding """
+	mgrp = frappe.new_doc('MGRP')
+	mgrp.status = "Registration"
+	mgrp.employee = employee
+	mgrp.workflow_state = 'Draft'
+	mgrp.insert()
+	mgrp.save()
+	frappe.db.commit()
+	return mgrp
