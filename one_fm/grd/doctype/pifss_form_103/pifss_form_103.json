@@ -28,6 +28,8 @@
   "attach_end_of_service_from_pifss_website",
   "column_break_63",
   "attach_on_end_of_service",
+  "rejection_details_section",
+  "reason_of_rejection",
   "section_break_46",
   "reference_number",
   "column_break_37",
@@ -104,7 +106,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "\nDraft\nPrinted\nPending by GRD\nAwaiting Response\nRejected\nUnder Process\nAccepted\nCompleted",
+   "options": "\nDraft\nPrinted\nPending by GRD\nAwaiting Response by PIFSS\nRejected\nUnder Process\nAccepted\nCompleted",
    "read_only": 1
   },
   {
@@ -147,6 +149,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
@@ -154,6 +157,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name",
    "fieldtype": "Data",
@@ -161,6 +165,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name",
    "fieldtype": "Data",
@@ -168,6 +173,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name",
    "fieldtype": "Data",
@@ -179,6 +185,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
@@ -186,6 +193,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.cell_number",
    "fieldname": "mobile",
    "fieldtype": "Data",
@@ -193,6 +201,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.permanent_address",
    "fieldname": "address",
    "fieldtype": "Data",
@@ -200,11 +209,13 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "nationality_details_section",
    "fieldtype": "Section Break",
    "label": "Nationality Details"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.nationality_no",
    "fieldname": "nationality_no",
    "fieldtype": "Data",
@@ -212,6 +223,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.nationality_subject",
    "fieldname": "nationality_subject",
    "fieldtype": "Data",
@@ -219,6 +231,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.date_of_birth",
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
@@ -226,6 +239,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.date_of_naturalization",
    "fieldname": "date_of_naturalization",
    "fieldtype": "Date",
@@ -238,6 +252,7 @@
    "label": "Registration Details"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.date_of_joining",
    "fieldname": "date_of_joining",
    "fieldtype": "Data",
@@ -245,6 +260,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.date_of_joining",
    "fieldname": "subscription_start_date",
    "fieldtype": "Data",
@@ -252,6 +268,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "position",
    "fieldtype": "Data",
@@ -263,6 +280,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_basic_salary",
    "fieldname": "salary",
    "fieldtype": "Data",
@@ -287,6 +305,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval:doc.request_type == \"End of Service\"",
    "fieldname": "reason_for_resignationtermination",
    "fieldtype": "Small Text",
@@ -321,12 +340,14 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "date_of_birth_certificate",
    "fieldtype": "Attach",
    "label": "Date of Birth Certificate"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "nationality_proof",
    "fieldtype": "Attach",
@@ -379,6 +400,7 @@
    "label": "Employment Contract"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval:doc.request_type == \"Registration\" && doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
    "fieldname": "social_security_clearance",
    "fieldtype": "Attach",
@@ -450,6 +472,7 @@
    "label": "Employee Signature Date"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
@@ -458,6 +481,7 @@
    "translatable": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.relieving_date",
    "fieldname": "relieving_date",
    "fieldtype": "Data",
@@ -560,16 +584,28 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name",
    "fieldtype": "Data",
    "label": "Last Name in Arabic",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.status == \"Rejected\" ",
+   "fieldname": "rejection_details_section",
+   "fieldtype": "Section Break",
+   "label": "Rejection Details"
+  },
+  {
+   "fieldname": "reason_of_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason Of Rejection"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-10 13:54:17.115993",
+ "modified": "2021-08-16 12:34:26.325804",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",
