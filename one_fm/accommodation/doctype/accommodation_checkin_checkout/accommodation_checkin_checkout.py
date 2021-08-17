@@ -94,6 +94,7 @@ class AccommodationCheckinCheckout(Document):
 			if on_trash:
 				self.update_checkin_reference()
 
+	@frappe.whitelist()
 	def get_checkin_details_from_booking(self):
 		if self.employee and not self.booking_reference:
 			employee = frappe.get_doc('Employee', self.employee)
