@@ -12,8 +12,9 @@ import pandas as pd
 
 class OperationsPost(Document):
 	def after_insert(self):
-		start_date = cstr(getdate())
-		end_date = add_to_date(start_date, years=1)
+		project = frappe.get_doc("Project", {"project_name": self.project})
+		start_date = project.expected_start_date
+		end_date = project.expected_end_date
 		frappe.enqueue(set_post_active, post=self, start_date=start_date, end_date=end_date, is_async=True, queue="long")
 
 	def on_update(self):
