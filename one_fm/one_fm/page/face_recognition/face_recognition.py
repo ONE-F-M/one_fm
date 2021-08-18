@@ -412,7 +412,7 @@ def check_existing():
 	shift_assignment=get_current_shift(employee)
 
 	#check if employee is been assigned with Shift. If not, take default date.
-	if len(shift_assignment) != 0:
+	if shift_assignment and len(shift_assignment) != 0:
 		shift_type = frappe.get_value("Shift Type", shift_assignment.shift_type, ["shift_type"])
 		#if shift type is a night shift, It should check previous days check-in log.
 		if shift_type == 'Night':
