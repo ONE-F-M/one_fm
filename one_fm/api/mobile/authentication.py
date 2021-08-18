@@ -61,7 +61,13 @@ def login(client_id, grant_type, employee_id, password):
 
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-	
+
+def change_enroll_status():
+	 employee="HR-EMP-00003"
+	 doc = frappe.get_doc("Employee", employee)
+	 doc.enrolled = 0
+	 doc.save(ignore_permissions=True)
+	 frappe.db.commit()
 
 @frappe.whitelist(allow_guest=True)
 def forgot_password(employee_id,OTP_source):
