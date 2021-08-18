@@ -3,6 +3,7 @@ from frappe import _
 from erpnext.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
 from datetime import date
 import datetime
+from one_fm.one_fm.doctype.leave_application.leave_application import get_leave_approver
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -70,6 +71,7 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason,ha
     leave_type=from leave policy
     half_day=1 or 0
 	"""
+    leave_approver = get_leave_approver(employee)
     try:
         leave = frappe.new_doc("Leave Application")
         leave.employee=employee
@@ -78,9 +80,11 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason,ha
         leave.to_date=to_date
         leave.description=reason or "None"
         leave.half_day=half_day
-        if half_day==1:
-            leave.half_day_date=half_day_date
-        leave.submit()
+        leave.half_day_date=half_day_date
+        leave.follow_via_email=1
+        leave.status="Open"
+        leave.leave_approver = leave_approver
+        leave.save()
         frappe.db.commit()
         return leave
     except Exception as e:
