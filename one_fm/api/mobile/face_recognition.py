@@ -77,7 +77,7 @@ def get_site_location(employee):
 				site_n_location['site_name']=site
 				return site_n_location
 			else:
-				return ('You Are Not currently Assigned with a Shift.')
+				return ('Site Location is not Set.')
 		else:
 			return {'message': _('You Are Not currently Assigned with a Shift.')}			
 	except Exception as e:
