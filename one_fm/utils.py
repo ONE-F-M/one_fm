@@ -1714,11 +1714,11 @@ def create_roster_daily_report():
     roster_daily_report_doc.save()
     frappe.db.commit()
 
-    #Notify concerned users 
-    user_list = frappe.db.get_list("User")
-    for user in user_list:
-        roles = frappe.get_roles(user.name)
-        if "Operations Manager" in roles or "Projects Manager" in roles or "Shift Supervisor" in roles or "Site Supervisor" in roles:
-            subject = "Roster Daily Report for {start_date} to {end_date}".format(start_date = start_date, end_date = end_date)
-            message = "Roster Daily Report for {start_date} to {end_date} has beeen created. Please review the report and take neccessary actions if required".format(start_date = start_date, end_date = end_date)
-            create_notification_log(subject, message, [user.name], roster_daily_report_doc)
+    # # Notify concerned users 
+    # user_list = frappe.db.get_list("User")
+    # for user in user_list:
+    #     roles = frappe.get_roles(user.name)
+    #     if "Operations Manager" in roles or "Projects Manager" in roles or "Shift Supervisor" in roles or "Site Supervisor" in roles:
+    #         subject = "Roster Daily Report for {start_date} to {end_date}".format(start_date = start_date, end_date = end_date)
+    #         message = "Roster Daily Report for {start_date} to {end_date} has beeen created. Please review the report and take neccessary actions if required.".format(start_date = start_date, end_date = end_date)
+    #         create_notification_log(subject, message, [user.name], roster_daily_report_doc)
