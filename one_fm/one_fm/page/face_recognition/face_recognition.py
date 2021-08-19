@@ -404,13 +404,13 @@ def match_encodings(encodings, face_data):
 
 @frappe.whitelist()
 def check_existing():
-	employee = "HR-EMP-00001"
+	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
 	todate = nowdate()
 	prev_date = (datetime.datetime.today() - datetime.timedelta(days=1)).strftime ('%Y-%m-%d')
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
 	shift_assignment=get_current_shift(employee)
-	print(shift_assignment)
+
 	#check if employee is been assigned with Shift. If not, take default date.
 	if shift_assignment and len(shift_assignment) != 0:
 		shift_type = frappe.get_value("Shift Type", shift_assignment.shift_type, ["shift_type"])
