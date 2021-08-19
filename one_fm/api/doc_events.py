@@ -349,7 +349,7 @@ def update_certification_data(doc, method):
 	""" 
 	This function adds/updates the Training Program Certificate doctype 
 	by checking the pass/fail criteria of the employees based on the Training Result. 
-	Also adds the cevent data to the Employee Skill Map.
+	Also adds the training event data to the Employee Skill Map.
 	"""
 	passed_employees = []
 	
