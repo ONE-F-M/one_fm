@@ -35,11 +35,6 @@ def get_data():
 			"items": [
 				{
 					"type": "doctype",
-					"name": "ERF Request",
-					"onboard": 1,
-				},
-				{
-					"type": "doctype",
 					"name": "ERF",
 					"onboard": 1,
 				},

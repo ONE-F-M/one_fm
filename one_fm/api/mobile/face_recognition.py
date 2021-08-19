@@ -64,8 +64,8 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 def get_site_location(employee):
 	try:
 		shift = get_current_shift(employee)
-		if shift is not None:
-			site = frappe.get_value("Operations Shift", shift, "site")
+		if shift and len(shift) != 0:
+			site = frappe.get_value("Operations Shift", shift.shift, "site")
 			location= frappe.db.sql("""
 			SELECT loc.latitude, loc.longitude, loc.geofence_radius
 			FROM `tabLocation` as loc
@@ -77,7 +77,7 @@ def get_site_location(employee):
 				site_n_location['site_name']=site
 				return site_n_location
 			else:
-				return ('You Are Not currently Assigned with a Shift.')
+				return ('Site Location is not Set')
 		else:
 			return {'message': _('You Are Not currently Assigned with a Shift.')}			
 	except Exception as e:

@@ -566,18 +566,21 @@ def get_current_shift(employee):
 	try:
 		current_datetime = now_datetime().strftime("%Y-%m-%d %H:%M:%S")
 		date, time = current_datetime.split(" ")
-		shifts = frappe.get_list("Shift Assignment", {"employee":employee, 'start_date': ['<=', date]}, ["shift", "shift_type"])
+		shifts = frappe.get_list("Shift Assignment", {"employee":employee, 'start_date': ['>=', date]}, ["shift", "shift_type"])
 		if len(shifts) > 0:
 			for shift in shifts:
 				time = time.split(":")
 				time = datetime.timedelta(hours=cint(time[0]), minutes=cint(time[1]), seconds=cint(time[2]))
-				start_time, end_time ,before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["start_time", "end_time","begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
+				shift_type, start_time, end_time ,before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["shift_type","start_time", "end_time","begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
 				#include early entry and late exit time
 				start_time = start_time - datetime.timedelta(minutes=before_time)
 				end_time = end_time + datetime.timedelta(minutes=after_time)
-				if start_time <= time <= end_time:
-					return shift.shift
-			return _("No shift assigned for the current datetime.")
+				if shift_type == "Night":
+					if start_time <= time >= end_time:
+						return shift
+				else:
+					if start_time <= time <= end_time:
+						return shift
 		elif len(shifts)==0:
 			return shifts		
 		else:

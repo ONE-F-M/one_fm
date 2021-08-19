@@ -3,6 +3,7 @@ from frappe import _
 from erpnext.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
 from datetime import date
 import datetime
+from one_fm.one_fm.doctype.leave_application.leave_application import get_leave_approver
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -44,23 +45,49 @@ def get_leave_balance(employee, leave_type):
         return frappe.utils.response.report_error(e)
 
 @frappe.whitelist()
-def create_new_leave_application(employee,from_date,to_date,levae_type,Reason,half_day,half_day_date):
+def leave_type_list(employee):
+    try:
+        Leave_policy = frappe.get_value("Leave Policy Assignment", {"employee":employee}, ['leave_policy'] )
+        if Leave_policy:
+            leave_policy_list = frappe.get_list("Leave Allocation", {"employee":employee,"leave_policy":Leave_policy}, 'leave_type')
+            #return leave_policy_list
+            leave_policy=[]
+            for types in leave_policy_list:
+                leave_policy.append(types.leave_type)
+            return leave_policy
+        else:
+            return {'message': _('You Are Not currently Assigned with a leave policy.')}
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)
+
+@frappe.whitelist()
+def create_new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,half_day_date=None):
+    """
+	Params:
+	employee: erp id
+    from_date,to_date,half_day_date= date in YYYY-MM-DD format
+    leave_type=from leave policy
+    half_day=1 or 0
+	"""
+    leave_approver = get_leave_approver(employee)
     try:
         leave = frappe.new_doc("Leave Application")
         leave.employee=employee
         leave.leave_type=leave_type
         leave.from_date=from_date
         leave.to_date=to_date
-        leave.description=Reason or "None"
+        leave.description=reason or "None"
         leave.half_day=half_day
-        if half_day==1 and from_date!=to_date:
-            if from_date<=half_day_date and to_date>=half_day_date:
-                leave.half_day_date=half_day_date
-            else:
-                return ('Half Day Date should be between From Date and To Date.')
-        leave.submit()
+        leave.half_day_date=half_day_date
+        leave.follow_via_email=1
+        leave.status="Open"
+        leave.leave_approver = leave_approver
+        leave.save()
+        frappe.db.commit()
+        return leave
     except Exception as e:
         print(frappe.get_traceback())
         frappe.log_error(frappe.get_traceback())
         return frappe.utils.response.report_error(e)
-    
