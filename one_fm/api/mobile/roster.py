@@ -576,7 +576,7 @@ def get_current_shift(employee):
 				start_time = start_time - datetime.timedelta(minutes=before_time)
 				end_time = end_time + datetime.timedelta(minutes=after_time)
 				if shift_type == "Night":
-					if start_time >= time <= end_time:
+					if start_time <= time >= end_time:
 						return shift
 				else:
 					if start_time <= time <= end_time:
