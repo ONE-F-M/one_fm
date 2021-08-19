@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "field:pam_file_name",
  "creation": "2019-12-15 17:26:49.167172",
  "doctype": "DocType",
@@ -6,9 +7,11 @@
  "engine": "InnoDB",
  "field_order": [
   "pam_file_name",
-  "pam_file_number",
+  "file_number",
   "government_project",
   "main_pam_file",
+  "contract_pam_file_number",
+  "pam_file_number",
   "license_trade_name_english",
   "license_trade_name_arabic",
   "license_number",
@@ -23,11 +26,6 @@
    "fieldtype": "Data",
    "label": "PAM File Name",
    "unique": 1
-  },
-  {
-   "fieldname": "pam_file_number",
-   "fieldtype": "Data",
-   "label": "PAM File Number"
   },
   {
    "fieldname": "pam_file_governorate_arabic",
@@ -79,12 +77,33 @@
    "read_only": 1
   },
   {
+   "fetch_from": "license_trade_name_english.license_number",
    "fieldname": "license_number",
    "fieldtype": "Data",
-   "label": "License Number"
+   "label": "License Number",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.government_project == 1",
+   "fieldname": "contract_pam_file_number",
+   "fieldtype": "Select",
+   "label": "Contract PAM File Number",
+   "options": "\n20201800005\n15201800010"
+  },
+  {
+   "fieldname": "file_number",
+   "fieldtype": "Data",
+   "label": "File Number"
+  },
+  {
+   "fieldname": "pam_file_number",
+   "fieldtype": "Data",
+   "label": "PAM File Number",
+   "read_only": 1
   }
  ],
- "modified": "2021-07-14 16:47:47.772360",
+ "links": [],
+ "modified": "2021-08-18 10:24:22.324891",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM File",
