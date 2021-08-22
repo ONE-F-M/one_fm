@@ -570,7 +570,7 @@ def get_current_shift(employee):
 		if len(shifts) > 0:
 			for shift in shifts:
 				time = time.split(":")
-				time = datetime.timedelta(hours=cint(22), minutes=cint(00), seconds=cint(00))
+				time = datetime.timedelta(hours=cint(time[0]), minutes=cint(time[1]), seconds=cint(time[2]))
 				shift_type, start_time, end_time ,before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["shift_type","start_time", "end_time","begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
 				#include early entry and late exit time
 				start_time = start_time - datetime.timedelta(minutes=before_time)
