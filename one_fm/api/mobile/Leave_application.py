@@ -37,6 +37,7 @@ def get_leave_balance(employee, leave_type):
         if Leave_balance:
             return Leave_balance
         else:
+            frappe.throw(_('You Are Not currently Allocated with a leave policy'))
             return ('No Leave Allocated.')
             
     except Exception as e:
@@ -47,16 +48,16 @@ def get_leave_balance(employee, leave_type):
 @frappe.whitelist()
 def leave_type_list(employee):
     try:
-        Leave_policy = frappe.get_value("Leave Policy Assignment", {"employee":employee}, ['leave_policy'] )
-        if Leave_policy:
-            leave_policy_list = frappe.get_list("Leave Allocation", {"employee":employee,"leave_policy":Leave_policy}, 'leave_type')
-            #return leave_policy_list
-            leave_policy=[]
+        leave_policy_list = frappe.get_list("Leave Allocation", {"employee":employee}, 'leave_type')
+        #return leave_policy_list
+        leave_policy=[]
+        if leave_policy_list:
             for types in leave_policy_list:
                 leave_policy.append(types.leave_type)
             return leave_policy
         else:
-            return {'message': _('You Are Not currently Assigned with a leave policy.')}
+            frappe.throw(_('You Are Not currently Allocated with a leave policy'))
+            return {'message': _('You Are Not currently Allocated with a leave policy.')}
     except Exception as e:
         print(frappe.get_traceback())
         frappe.log_error(frappe.get_traceback())
