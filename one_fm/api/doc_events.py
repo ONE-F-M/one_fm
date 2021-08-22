@@ -92,11 +92,11 @@ def checkin_after_insert(doc, method):
 				create_notification_log(subject, message, for_users, doc)
 
 			# ON TIME
-			elif get_datetime(doc.time) >= get_datetime(doc.shift_actual_start) and get_datetime(doc.time) <= (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
-				subject = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
-				message = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
-				for_users = [supervisor_user]
-				create_notification_log(subject, message, for_users, doc)
+			#elif get_datetime(doc.time) >= get_datetime(doc.shift_actual_start) and get_datetime(doc.time) <= (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
+			#	subject = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
+			#	message = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
+			#	for_users = [supervisor_user]
+			#	create_notification_log(subject, message, for_users, doc)
 
 			# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
 			elif get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
@@ -134,11 +134,11 @@ def checkin_after_insert(doc, method):
 				create_notification_log(subject, message, for_users, doc)
 
 			# ON TIME
-			elif doc.device_id and get_datetime(doc.time) <= get_datetime(doc.shift_actual_end) and get_datetime(doc.time) >= (get_datetime(doc.shift_end) - timedelta(minutes=shift_type.early_exit_grace_period)):
-				subject = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
-				message = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
-				for_users = [supervisor_user]
-				create_notification_log(subject, message, for_users, doc)
+			#elif doc.device_id and get_datetime(doc.time) <= get_datetime(doc.shift_actual_end) and get_datetime(doc.time) >= (get_datetime(doc.shift_end) - timedelta(minutes=shift_type.early_exit_grace_period)):
+			#	subject = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
+			#	message = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
+			#	for_users = [supervisor_user]
+			#	create_notification_log(subject, message, for_users, doc)
 
 			# LATE: Checkin time is after [Shift End + Variable checkout time]
 			elif doc.device_id and get_datetime(doc.time) > get_datetime(doc.shift_actual_end):
