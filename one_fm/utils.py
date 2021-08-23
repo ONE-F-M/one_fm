@@ -1400,7 +1400,7 @@ def validate_mandatory_fields(doc):
                 {'Passport Issued on':'one_fm_passport_issued'}, {'Passport Expires on ':'one_fm_passport_expire'},
                 {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
                 {'Date of Birth':'one_fm_date_of_birth'}, {'Educational Qualification':'one_fm_educational_qualification'},
-                {'University':'one_fm_university'}]
+                {'University / School':'one_fm_university'}]
 
     field_list.extend(get_mandatory_for_dependent_fields(doc))
     mandatory_fields = []
