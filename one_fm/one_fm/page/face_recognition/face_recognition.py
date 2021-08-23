@@ -416,9 +416,16 @@ def check_existing():
 		shift_type = frappe.get_value("Shift Type", shift_assignment.shift_type, ["shift_type"])
 		#if shift type is a night shift, It should check previous days check-in log.
 		if shift_type == 'Night':
-			logs = frappe.db.sql("""
+			prev_logs = frappe.db.sql("""
 			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
 			""".format(date=prev_date, employee=employee), as_dict=1)
+			v = [l.log_type for l in prev_logs]
+			if not v or (v and v[-1] == "IN"):
+				logs = frappe.db.sql("""
+				select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
+				""".format(date=todate, employee=employee), as_dict=1)
+			else:
+				logs = prev_logs
 		else:
 			logs = frappe.db.sql("""
 			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
