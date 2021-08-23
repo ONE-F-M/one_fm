@@ -60,7 +60,7 @@ class Preparation(Document):
         if len(mandatory_fields) > 0:
             message = 'Mandatory fields required in Preparation to Submit<br><br><ul>'
             for mandatory_field in mandatory_fields:
-                message += '<li>' +'<p> fill the renewal or extend field </p>'+ str(mandatory_field) +'</li>'
+                message += '<li>' +'<p> fill the renewal or extend field for row number {0}</p>''</li>'.format(mandatory_field)
             message += '</ul>'
             frappe.throw(message)
 
@@ -89,6 +89,7 @@ class Preparation(Document):
 
 def preparation_monthly_task():
     frappe.enqueue(create_preparation, is_async=True, queue='long')
+    
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def create_preparation():
@@ -114,6 +115,13 @@ def get_employee_entries(doc,first_day,last_day):
             "employee": employee.name
         })
     doc.save()
+    notify_hr(doc)
+
+def notify_hr(doc):
+    page_link = get_url("/desk#Form/Preparation/" + doc.name)
+    subject = ("Preparation Record has been created")
+    message = "<p>Kindly, Check and Fill The Renewal and Extend Field for Employees whose Residency Will Expire in the Following month <a href='{0}'></a></p>".format(page_link)
+    create_notification_log(subject, message, [doc.hr_user], doc)
 
 def notify_request_for_renewal_or_extend():# Notify finance
     filters = {'docstatus': 1, 'hr_approval': ['=', "Yes"]}
