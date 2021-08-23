@@ -26,8 +26,9 @@ class TransferPaper(Document):
         self.db_set('date_of_application',today())
 
     def set_new_salary_from_job_offer(self):
-        salary = frappe.db.get_value('Job Offer',{'job_applicant':self.applicant},['one_fm_job_offer_total_salary'])
-        self.db_set('salary', salary) 
+        salary = frappe.db.get_value('Job Offer',{'job_applicant':self.applicant},['one_fm_salary_details'])
+        print(salary)
+        # self.db_set('salary', salary) 
         
     def set_grd_values(self):
         if not self.grd_operator:

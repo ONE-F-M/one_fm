@@ -1280,7 +1280,7 @@ def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, 
 def validate_job_applicant(doc, method):
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)
-
+    validate_pam_file_number_and_pam_designation(doc, method)
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)
     if not doc.one_fm_is_easy_apply:
@@ -1294,6 +1294,14 @@ def validate_job_applicant(doc, method):
     if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
         create_job_offer_from_job_applicant(doc.name)
 
+def validate_pam_file_number_and_pam_designation(doc, method):
+    if(doc.one_fm_erf):
+        pam_file_number,pam_designation = frappe.db.get_value('ERF',{'name':doc.one_fm_erf},['pam_file_number','pam_designation'])
+        print(pam_file_number)
+        print(pam_designation)
+        doc.db_set('one_fm_erf_pam_file_number',pam_file_number) 
+        doc.db_set('one_fm_erf_pam_designation',pam_designation)
+    
 def validate_transferable_field(doc):
     if doc.one_fm_applicant_is_overseas_or_local != 'Local':
         doc.one_fm_is_transferable = ''
