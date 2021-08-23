@@ -53,8 +53,10 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 					return check_in(log_type, skip_attendance, latitude, longitude)
 				else:
 					return ('Face Recognition Failed. Please try again.')
+					frappe.throw(_('Face Recognition Failed. Please try again.'))
 			else:
 				return ('Liveness Detection Failed. Please try again.')
+				frappe.throw(_('Liveness Detection Failed. Please try again.'))
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		return frappe.utils.response.report_error(exc)
@@ -64,8 +66,8 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 def get_site_location(employee):
 	try:
 		shift = get_current_shift(employee)
-		if shift is not None:
-			site = frappe.get_value("Operations Shift", shift, "site")
+		if shift and len(shift) != 0:
+			site = frappe.get_value("Operations Shift", shift.shift, "site")
 			location= frappe.db.sql("""
 			SELECT loc.latitude, loc.longitude, loc.geofence_radius
 			FROM `tabLocation` as loc
@@ -77,8 +79,10 @@ def get_site_location(employee):
 				site_n_location['site_name']=site
 				return site_n_location
 			else:
-				return ('You Are Not currently Assigned with a Shift.')
+				frappe.throw(_('Site Location is not Set'))
+				return ('Site Location is not Set')
 		else:
+			frappe.throw(_('You Are Not currently Assigned with a Shift.'))
 			return {'message': _('You Are Not currently Assigned with a Shift.')}			
 	except Exception as e:
 		print(frappe.get_traceback())

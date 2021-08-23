@@ -42,7 +42,7 @@ class ERF(Document):
 		# self.calculate_benefit_cost_to_company()
 		# self.calculate_total_cost_to_company()
 		self.validate_type_of_travel()
-		
+
 	@frappe.whitelist()
 	def draft_erf_to_hrm_for_submit(self):
 		self.draft_erf_to_hrm = True
@@ -141,9 +141,14 @@ class ERF(Document):
 
 	def on_submit(self):
 		self.validate_total_required_candidates()
+		self.validate_submit_to_hr()
 		self.erf_finalized = today()
 		self.validate_recruiter_assigned()
 		self.notify_approver()
+
+	def validate_submit_to_hr(self):
+		if not self.draft_erf_to_hrm and self.docstatus == 1:
+			frappe.throw(_('Submit to HR Manager to fill Salary Compensation Budget and HR Details!'))
 
 	def notify_approver(self):
 		erf_approver = False
@@ -249,6 +254,7 @@ class ERF(Document):
 		if self.need_to_assign_more_recruiter and not self.secondary_recruiter_assigned:
 			frappe.throw(_('If You Need Assign One More Recruiter, Please fill the Secondary Recruiter Assigned.!'))
 
+	@frappe.whitelist()
 	def create_event_for_okr_workshop(self):
 		user= 'Onefm'
 		start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
