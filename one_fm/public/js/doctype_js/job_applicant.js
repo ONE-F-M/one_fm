@@ -3,12 +3,19 @@ frappe.ui.form.on('Job Applicant', {
 		frm.set_df_property('status', 'label', 'Final Status');
 		frm.remove_custom_button("Job Offer");
 		set_country_field_empty_on_load(frm);
+		set_grd_field_properties(frm);
+		document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#3789ff";
+		document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.padding ='1em';
+		document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1em';
+		document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#3789ff";
+		document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.padding ='1em';
+		document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='1em';
 		hide_job_applicant_existing_fields(frm);
 		set_read_only_fields_of_job_applicant(frm);
 		set_mandatory_fields_of_job_applicant(frm);
 		set_field_properties_on_agency_applying(frm);
 		set_mandatory_fields_for_current_employment(frm);
-		set_grd_field_properties(frm);
+		
 
 		// if(frm.doc.one_fm_document_verification == 'Verified' || frm.doc.one_fm_document_verification == 'Verified - With Exception'){
 		// 	frm.set_df_property('one_fm_interview_schedules', 'hidden', false);
@@ -79,20 +86,79 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			})
 		}
-		if(frm.doc.one_fm_pam_file_number){
+		if(frm.doc.pam_number_button == 1 && frm.doc.one_fm_pam_file_number){
+			//if PAM file Number has changes in job applicant, set the signatory names of the new file
 			frappe.call({
 				method: "one_fm.one_fm.utils.get_signatory_name",
 				args:{
 					'parent': frm.doc.one_fm_pam_file_number,
 					},
 				callback:function(r){
-					console.log(r);
 					frm.set_df_property('one_fm_signatory_name', "options", r.message);
 					frm.refresh_field("one_fm_signatory_name");
 					}
 				});
 				frm.refresh_field("one_fm_signatory_name");
+				
 		}
+		if(frm.doc.pam_number_button == 0 && frm.doc.one_fm_erf_pam_file_number){
+			//if PAM file Number has changes in job applicant, set the signatory names of the old file in erf
+			frappe.call({
+				method: "one_fm.one_fm.utils.get_signatory_name_erf_file",
+				args:{
+					'parent': frm.doc.one_fm_erf_pam_file_number,
+					},
+				callback:function(r){
+					frm.set_df_property('one_fm_signatory_name', "options", r.message);
+					frm.refresh_field("one_fm_signatory_name");
+					}
+				});
+				frm.refresh_field("one_fm_signatory_name");
+				
+		}
+	},
+	one_fm_change_pam_file_number: function(frm){
+		
+		let msg = __('Do You Want to Change PAM File Number and Notify GRD Supervisor? ')
+		frappe.confirm(
+			msg,
+			function(){//yes
+				document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#ec645e";
+				frm.set_value('pam_number_button',1);
+				console.log("call method1");
+				frappe.call({
+					method: "one_fm.one_fm.utils.notify_supervisor_change_file_number",
+					args: {
+						'name': frm.doc.name,
+					}
+				});
+			},
+			function(){//no
+
+			}
+		);
+	},
+	one_fm_change_pam_designation: function(frm){
+
+		let msg = __('Do You Want to Change PAM Desigantion and Notify GRD Supervisor? ')
+		frappe.confirm(
+			msg,
+			function(){//yes
+				document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#ec645e";
+				frm.set_value('pam_designation_button',1);
+				console.log("call method1");
+				frappe.call({
+					method: "one_fm.one_fm.utils.notify_supervisor_change_pam_designation",
+					args: {
+						'name': frm.doc.name,
+					}
+				});
+			},
+			function(){//no
+
+			}
+		);
+
 	},
 	one_fm_first_name: function(frm) {
     set_applicant_name(frm);
@@ -235,32 +301,64 @@ frappe.ui.form.on('Job Applicant', {
 			});
 		}
 	},
-	//set Authorized segnatory for TP in job applicant
-	one_fm_pam_file_number: function(frm){
-		if(frm.doc.one_fm_pam_file_number){
-			frappe.call({
-				method: "one_fm.one_fm.utils.get_signatory_name",
-				args:{
-					'parent': frm.doc.one_fm_pam_file_number,
-					},
-				callback:function(r){
-					console.log(r);
-					frm.set_df_property('one_fm_signatory_name', "options", r.message);
-					frm.refresh_field("one_fm_signatory_name");
-					}
-				});
-		}
-		else{
-			frm.set_df_property('one_fm_signatory_name', "options", null);
-			frm.refresh_field("one_fm_signatory_name");
-		}
-	},
 	one_fm_applicant_status: function(frm){
 		if(frm.doc.one_fm_applicant_status != "Selected"){
 			let hide_fields=['section_break_66'];
 			set_hidden_fields(frm, hide_fields, true);
 		}
+	},
+	save_me: function(frm){
+		frm.save();
+	},
+	accept_changes: function(frm){
+		if(frm.doc.accept_changes == 1){
+			let msg = __('Do You Want to Accept Changes Done By Operator?')
+
+			frappe.confirm(
+				msg,
+				function(){
+					// Yes
+					
+						frappe.msgprint(__('Notification Will Sent to Operator to Proceed, No internal issues.'));
+						frappe.call({
+							method: "one_fm.one_fm.utils.notify_operator_with_supervisor_response",
+							args: {
+								'name': frm.doc.name,
+							}
+						});
+				},
+				function(){
+					// No
+					
+				}
+			);
+		}
+	},
+	reject_changes: function(frm){
+		if(frm.doc.reject_changes == 1){
+			let msg = __('Do You Want to Reject Changes Done By Operator?')
+			frappe.confirm(
+				msg,
+				function(){
+					// Yes
+					
+						frappe.msgprint(__('Notification Will Sent to Operator to Review Your Suggested Changes.'));
+						frappe.call({
+							method: "one_fm.one_fm.utils.notify_operator_with_supervisor_response",
+							args: {
+								'name': frm.doc.name,
+							}
+						});
+				},
+				function(){
+					// No
+					
+				}
+			);
+		}
 	}
+
+
 });
 
 var set_grd_field_properties = function(frm){
@@ -289,6 +387,7 @@ var set_grd_field_properties = function(frm){
 		'one_fm_duration_of_work_permit','one_fm_previous_designation','one_fm_work_permit_salary','one_fm_date_of_birth',
 		'one_fm_nationality','one_fm_marital_status','one_fm_educational_qualification','one_fm_passport_number',
 		'one_fm_gender','one_fm_religion'];
+
 		set_read_only_fields(frm, read_fields, true);
 		set_hidden_fields(frm, hide_fields, true);
 	}
@@ -688,7 +787,7 @@ var set_country_field_empty_on_load = function(frm) {
 };
 
 var hide_job_applicant_existing_fields = function(frm) {
-	let fields = ['applicant_name', 'email_id', 'cover_letter', 'resume_attachment', 'section_break_6', 'one_fm_height'];
+	let fields = ['applicant_name', 'email_id', 'cover_letter', 'resume_attachment', 'section_break_6', 'one_fm_height','one_fm_applicant_civil_id','one_fm_passport_applicant_number','one_fm_previous_company_authorized_signatory','Resume Link'];
 	set_hidden_fields(frm, fields, true);
 };
 

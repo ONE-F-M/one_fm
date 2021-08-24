@@ -221,6 +221,7 @@ def get_signatory_name(parent):
 	names.append(' ')
 	if parent:
 		doc = frappe.get_doc('PIFSS Authorized Signatory',parent)
+
 		for autorized_signatory in doc.authorized_signatory:
 			if autorized_signatory.authorized_signatory_name_arabic:
 				names.append(autorized_signatory.authorized_signatory_name_arabic)
