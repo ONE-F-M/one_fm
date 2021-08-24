@@ -252,7 +252,18 @@ def get_current_user_details():
 
 	
 @frappe.whitelist()
-def schedule_staff(employees, shift, post_type, otRoster, start_date, end_date):
+def schedule_staff(employees, shift, post_type, otRoster, start_date, project_end_date, custom_end_date=None):
+	user, user_roles, user_employee = get_current_user_details()
+	
+	if project_end_date and not custom_end_date:
+		project = frappe.db.get_value("Operations Shift", shift, ["project"])
+		end_date = frappe.db.get_value("Project", project, ["expected_end_date"])
+	elif custom_end_date and not project_end_date:
+		end_date = custom_end_date
+	elif not project_end_date and not custom_end_date:
+		frappe.throw(_("Please specify an end date for scheduling the staff."))
+	elif project_end_date and custom_end_date:
+		frappe.throw(_("Please select either the project end date or set a custom date. You cannot set both!"))
 	import time
 	try:
 		start = time.time()

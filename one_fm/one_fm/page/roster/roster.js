@@ -2796,9 +2796,10 @@ function schedule_change_post(page) {
 					}
 				}
 			},
+			{'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
 			{
-				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'default': date, onchange: function () {
+				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', onchange: function () {
 					let end_date = d.get_value('end_date');
 					let start_date = d.get_value('start_date');
 					if (end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
@@ -2814,7 +2815,7 @@ function schedule_change_post(page) {
 		],
 		primary_action: function () {
 
-			let { shift, site, post_type, project, start_date, end_date } = d.get_values();
+			let { shift, site, post_type, project, start_date, end_date, project_end_date } = d.get_values();
 			$('#cover-spin').show(0);
 			let element = get_wrapper_element();
 			if (element == ".rosterOtMonth") {
@@ -2823,7 +2824,7 @@ function schedule_change_post(page) {
 				otRoster = false;
 			}
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-				{ employees, shift, post_type, otRoster, start_date, end_date })
+				{ employees, shift, post_type, otRoster, start_date, project_end_date, end_date })
 				.then(res => {
 					d.hide();
 					$('#cover-spin').hide();
