@@ -349,16 +349,17 @@ def update_certification_data(doc, method):
 	""" 
 	This function adds/updates the Training Program Certificate doctype 
 	by checking the pass/fail criteria of the employees based on the Training Result. 
-	Also adds the certificate to the Employee Skill Map.
+	Also adds the training event data to the Employee Skill Map.
 	"""
 	passed_employees = []
 	
 	training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email, end_datetime = frappe.db.get_value("Training Event", {'event_name': doc.training_event}, ["training_program", "has_certificate", "minimum_score", "validity", "company", "trainer_name", "trainer_email", "end_time"])	
 	
 	if has_certificate:
-
+		
+		expiry_date = None
 		issue_date = cstr(end_datetime).split(" ")[0]
-		if validity:
+		if validity > 0:
 			expiry_date = add_to_date(issue_date, months=validity)
 
 		for employee in doc.employees:
