@@ -16,8 +16,8 @@ class TransferPaper(Document):
     def validate(self):
         self.set_today_date()
         self.set_new_salary_from_job_offer()
-        self.set_electronic_signature()
-        self.set_pas_values()
+        # self.set_electronic_signature()
+        # self.set_pas_values()
         self.set_grd_values()
         self.check_signed_workContract_employee_completed()
         self.get_wp_status()
@@ -26,17 +26,22 @@ class TransferPaper(Document):
         self.db_set('date_of_application',today())
 
     def set_new_salary_from_job_offer(self):
-        salary = frappe.db.get_value('Job Offer',{'job_applicant':self.applicant},['one_fm_salary_details'])
-        print(salary)
-        # self.db_set('salary', salary) 
-        
+        """ This method is getting the basic amount of the salary structure in Job offer
+            and setting it into the basic salary in Transfer Paper"""
+        salary = frappe.db.get_value('Job Offer', {'job_applicant':self.applicant},['one_fm_salary_structure'])
+        components = frappe.get_doc('Salary Structure',salary)
+        print(components.earnings)
+        for component in components.earnings:
+            if component.salary_component == "Basic":
+                self.db_set('salary', component.salary_component) 
+
     def set_grd_values(self):
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
 
     def set_electronic_signature(self):
         doc = frappe.get_doc('Job Applicant',self.applicant)
-        if doc.one_fm_signatory_name and doc.one_fm_authorized_signatory:
+        if doc.one_fm_signatory_name and doc.one_fm_authorized_signatory:#one_fm_authorized_signatory is deleted
             authorized_list = frappe.get_doc('PAM Authorized Signatory List',doc.one_fm_authorized_signatory)
             for authorized in authorized_list.authorized_signatory:
                 if doc.one_fm_signatory_name == authorized.authorized_signatory_name_arabic:
@@ -47,7 +52,7 @@ class TransferPaper(Document):
         if doc.one_fm_pam_file_number:
             company_data = frappe.get_doc('PAM File',doc.one_fm_pam_file_number)
             self.db_set('company_trade_name_arabic', company_data.license_trade_name_arabic)
-            self.db_set('license_number', company_data.license_number)
+            self.db_set('license_number', company_data.license_number)#licence to issuer_number
             self.db_set('pam_file_number', company_data.pam_file_number)
 
     def get_wp_status(self):
