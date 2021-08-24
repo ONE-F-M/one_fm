@@ -410,22 +410,14 @@ def check_existing():
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
 	shift_assignment=get_current_shift(employee)
-
 	#check if employee is been assigned with Shift. If not, take default date.
 	if shift_assignment and len(shift_assignment) != 0:
 		shift_type = frappe.get_value("Shift Type", shift_assignment.shift_type, ["shift_type"])
 		#if shift type is a night shift, It should check previous days check-in log.
 		if shift_type == 'Night':
-			prev_logs = frappe.db.sql("""
-			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
-			""".format(date=prev_date, employee=employee), as_dict=1)
-			v = [l.log_type for l in prev_logs]
-			if not v or (v and v[-1] == "IN"):
-				logs = frappe.db.sql("""
-				select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
-				""".format(date=todate, employee=employee), as_dict=1)
-			else:
-				logs = prev_logs
+			logs = frappe.db.sql("""
+			select name, log_type from `tabEmployee Checkin` where date(time) >= '{date1}' and date(time) <= '{date2}' and skip_auto_attendance=0 and employee="{employee}" 
+			""".format(date1=prev_date, date2=todate, employee=employee), as_dict=1)
 		else:
 			logs = frappe.db.sql("""
 			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
