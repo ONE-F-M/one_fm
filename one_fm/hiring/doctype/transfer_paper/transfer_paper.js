@@ -3,7 +3,7 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Transfer Paper', {
-    refresh: function(frm) {
+    onload: function(frm) {
         let doc_name = frm.doc.name;
         if(frm.doc.docstatus==1) {
                 frm.add_custom_button(__('Re-Send New Work Permit'), function() { 
