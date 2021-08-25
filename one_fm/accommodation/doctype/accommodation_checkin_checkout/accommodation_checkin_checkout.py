@@ -6,12 +6,47 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe import _
+from frappe.model.mapper import get_mapped_doc
 
 class AccommodationCheckinCheckout(Document):
 	def validate(self):
 		if self.is_new():
 			self.validate_checkin_checkout()
 		self.set_accommodation_policy()
+
+	@frappe.whitelist()
+	def transfer_accommodation(self, bed):
+		bed_status = frappe.db.get_value('Bed', bed, 'status')
+		if bed_status == 'Vacant':
+			self.checkout_for_transfer()
+			self.checkin_in_transfer(bed)
+		else:
+			frappe.throw(_('Selected Bed is not Vacant !'))
+
+	def checkin_in_transfer(self, bed):
+		target_doc=None
+		def set_missing_values(source, target):
+			target.type = 'IN'
+			target.bed = bed
+			target.checked_out = False
+
+		checkin = get_mapped_doc("Accommodation Checkin Checkout", self.name,
+			{"Accommodation Checkin Checkout": {"doctype": "Accommodation Checkin Checkout"}},
+			target_doc, set_missing_values)
+
+		checkin.save(ignore_permissions=True)
+
+	def checkout_for_transfer(self):
+		target_doc=None
+		def set_missing_values(source, target):
+			target.type = 'OUT'
+			target.checkin_reference = self.name
+
+		checkout = get_mapped_doc("Accommodation Checkin Checkout", self.name,
+			{"Accommodation Checkin Checkout": {"doctype": "Accommodation Checkin Checkout"}},
+			target_doc, set_missing_values)
+
+		checkout.save(ignore_permissions=True)
 
 	def set_accommodation_policy(self):
 		if self.employee:
