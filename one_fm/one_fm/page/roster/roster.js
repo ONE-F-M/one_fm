@@ -2820,7 +2820,7 @@ function schedule_change_post(page) {
 		],
 		primary_action: function () {
 
-			let { shift, site, post_type, project, start_date, end_date, project_end_date } = d.get_values();
+			let { shift, site, post_type, project, start_date, project_end_date, end_date } = d.get_values();
 			$('#cover-spin').show(0);
 			let element = get_wrapper_element();
 			if (element == ".rosterOtMonth") {
@@ -2835,6 +2835,9 @@ function schedule_change_post(page) {
 					$('#cover-spin').hide();
 					let element = get_wrapper_element().slice(1);
 					update_roster_view(element, page);
+				}).catch(e=>{
+					console.log(e);
+					$('#cover-spin').hide();
 				});
 		}
 	});

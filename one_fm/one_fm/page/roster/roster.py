@@ -142,6 +142,8 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
 		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc")
+		if isOt:
+			filters.pop("roster_type", None)
 		schedule_list = []
 		schedule = {}
 		for date in	pd.date_range(start=start_date, end=end_date):
@@ -252,31 +254,41 @@ def get_current_user_details():
 
 	
 @frappe.whitelist()
-def schedule_staff(employees, shift, post_type, otRoster, start_date, project_end_date, custom_end_date=None):
-	user, user_roles, user_employee = get_current_user_details()
+def schedule_staff(employees, shift, post_type, otRoster, start_date, project_end_date, end_date=None):
+
+	validation_logs = []
 	
-	if project_end_date and not custom_end_date:
+	user, user_roles, user_employee = get_current_user_details()
+
+	if project_end_date == "1" and not end_date:
 		project = frappe.db.get_value("Operations Shift", shift, ["project"])
 		end_date = frappe.db.get_value("Project", project, ["expected_end_date"])
-	elif custom_end_date and not project_end_date:
-		end_date = custom_end_date
-	elif not project_end_date and not custom_end_date:
-		frappe.throw(_("Please specify an end date for scheduling the staff."))
-	elif project_end_date and custom_end_date:
-		frappe.throw(_("Please select either the project end date or set a custom date. You cannot set both!"))
-	import time
-	try:
-		start = time.time()
-		for employee in json.loads(employees):
-			frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, is_async=True, queue='long')
-		frappe.enqueue(update_roster, key="roster_view", is_async=True, queue='long')
-		
-		end = time.time()
-		print("[TOTAL]", end-start)
-		return True
-	except Exception as e:
-		frappe.log_error(e)
-		frappe.throw(_(e))
+		if not end_date:
+			validation_logs.append("No project end date found for {project}".format(project=project))
+	elif end_date and project_end_date == "0":
+		end_date = end_date
+	elif project_end_date == "0" and not end_date:
+		validation_logs.append("Please set an end date for scheduling the staff.")
+	elif project_end_date == "1" and end_date:
+		validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")
+	
+	if len(validation_logs) > 0:
+		frappe.throw(validation_logs)
+		frappe.log_error(validation_logs)
+	else:	
+		import time
+		try:
+			start = time.time()
+			for employee in json.loads(employees):
+				frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, is_async=True, queue='long')
+			frappe.enqueue(update_roster, key="roster_view", is_async=True, queue='long')
+			
+			end = time.time()
+			print("[TOTAL]", end-start)
+			return True
+		except Exception as e:
+			frappe.log_error(e)
+			frappe.throw(_(e))
 
 def update_roster(key):
 	frappe.publish_realtime(key, "Success")
