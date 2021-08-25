@@ -36,6 +36,8 @@ def get_data(filters):
 		total_no_of_bed_space = frappe.db.count('Bed', filters)
 		filters['status'] = 'Occupied'
 		occupied_bed = frappe.db.count('Bed', filters)
+		filters['status'] = 'Occupied Temporarily'
+		occupied_bed += frappe.db.count('Bed', filters)
 		filters['status'] = 'Booked'
 		booked_bed = frappe.db.count('Bed', filters)
 		filters['status'] = 'Vacant'
