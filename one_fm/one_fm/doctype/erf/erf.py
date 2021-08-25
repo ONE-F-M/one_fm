@@ -270,6 +270,7 @@ class ERF(Document):
 		if self.schedule_for_okr_workshop_with_recruiter and self.okr_workshop_with:
 			return set_event_for_okr_workshop(self)
 
+	@frappe.whitelist() #adding permission while Accepting
 	def accept_or_decline(self, status, reason_for_decline=None):
 		self.status = status
 		self.reason_for_decline = reason_for_decline
