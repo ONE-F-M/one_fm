@@ -92,6 +92,7 @@ frappe.ui.form.on('Job Applicant', {
 				method: "one_fm.one_fm.utils.get_signatory_name",
 				args:{
 					'parent': frm.doc.one_fm_pam_file_number,
+					'name': frm.doc.name,
 					},
 				callback:function(r){
 					frm.set_df_property('one_fm_signatory_name', "options", r.message);
@@ -107,6 +108,7 @@ frappe.ui.form.on('Job Applicant', {
 				method: "one_fm.one_fm.utils.get_signatory_name_erf_file",
 				args:{
 					'parent': frm.doc.one_fm_erf_pam_file_number,
+					'name': frm.doc.name,
 					},
 				callback:function(r){
 					frm.set_df_property('one_fm_signatory_name', "options", r.message);

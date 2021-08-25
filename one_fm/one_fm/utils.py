@@ -191,38 +191,43 @@ def validate_mendatory_fields_for_recruiter(doc):
         frappe.throw(message)
 
 @frappe.whitelist()
-def get_signatory_name(parent):
+def get_signatory_name(parent,name):
     """
     This method fetching all Autorized Signatory based on the New PAM file selection in job applicant
     """
     names=[]
     names.append(' ')
-    if parent:
+    if parent and name:
         doc = frappe.get_doc('PAM Authorized Signatory List',{'pam_file_name':parent})
+        job_doc = frappe.get_doc('Job Applicant',name)
         if doc:
+            job_doc.db_set('one_fm_pam_authorized_signatory',doc.name)
             for pas in doc.authorized_signatory:
                 if pas.authorized_signatory_name_arabic:
                     names.append(pas.authorized_signatory_name_arabic)
-            # print("==> names",names)
         elif not doc:
-            frappe.throw("PAM File Has No PAM Authorized Signatory List")
+            frappe.throw("PAM File Number Has No PAM Authorized Signatory List")
+        
     return names
 
 @frappe.whitelist()
-def get_signatory_name_erf_file(parent):
+def get_signatory_name_erf_file(parent,name):
     """
     This method fetching all Autorized Signatory based on the PAM file selection in erf
     """
+    
     names=[]
     names.append(' ')
-    if parent:
+    if parent and name:
         doc = frappe.get_doc('PAM Authorized Signatory List',{'pam_file_number':parent})
+        job_doc = frappe.get_doc('Job Applicant',name)
         if doc:
+            job_doc.db_set('one_fm_pam_authorized_signatory',doc.name)
             for pas in doc.authorized_signatory:
                 if pas.authorized_signatory_name_arabic:
                     names.append(pas.authorized_signatory_name_arabic)
         elif not doc:
-            frappe.throw("PAM File Has No PAM Authorized Signatory List")
+            frappe.throw("PAM File Number Has No PAM Authorized Signatory List")
     return names
 
 @frappe.whitelist()
