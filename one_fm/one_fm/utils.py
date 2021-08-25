@@ -2,6 +2,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 import frappe
+from frappe import _
 from frappe.utils import today, add_days, get_url
 from frappe.integrations.offsite_backup_utils import get_latest_backup_file, send_email, validate_file_size, get_chunk_site
 from one_fm.api.notification import create_notification_log
@@ -19,6 +20,7 @@ def employee_grade_validate(doc, method):
             salary_structures = doc.append('salary_structures')
             salary_structures.salary_structure = doc.default_salary_structure
 
+@frappe.whitelist()
 def get_salary_structure_list(doctype, txt, searchfield, start, page_len, filters):
     if filters.get('employee_grade'):
         query = """
@@ -48,22 +50,23 @@ def get_salary_structure_list(doctype, txt, searchfield, start, page_len, filter
 
 @frappe.whitelist()
 def send_notification_to_grd_or_recruiter(doc, method):
-    if doc.one_fm_is_transferable == 'Yes' and doc.one_fm_cid_number and doc.one_fm_passport_number: 
+    if doc.one_fm_is_transferable == 'Yes' and doc.one_fm_cid_number and doc.one_fm_passport_number:
         notify_grd_to_check_applicant_documents(doc)
 
     if doc.one_fm_has_issue and doc.one_fm_notify_recruiter == 0:
         notify_recruiter_after_checking(doc)
+        notify_pam_authorized_signature(doc)
 
 def notify_grd_to_check_applicant_documents(doc):
     """
     This method is notifying operator with applicant's cid and passport to check on PAM,
     This method runs on update, so if the notification had sent before it won't annoy the operator again
     as it checkes notification log list.
-    """ 
+    """
     if not doc.one_fm_grd_operator:
         doc.one_fm_grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
 
-    print('==> operator',doc.one_fm_grd_operator)
+    # print('==> operator',doc.one_fm_grd_operator)
     dt = frappe.get_doc('Job Applicant',doc.name)
     if dt:
         email = [doc.one_fm_grd_operator]
@@ -84,7 +87,7 @@ def notify_grd_to_check_applicant_documents(doc):
 
 def notify_recruiter_after_checking(doc):
     """
-    This method is notifying all recruiters with applicant status once, 
+    This method is notifying all recruiters with applicant status once,
     and changing document status into Checked By GRD.
     """
     filtered_recruiter_users = []
@@ -93,40 +96,48 @@ def notify_recruiter_after_checking(doc):
     for user in users:
         filtered_recruiter_users.append(user)
         find = True
-        break 
-    if find and filtered_recruiter_users and len(filtered_recruiter_users) > 0:  
+        break
+    if find and filtered_recruiter_users and len(filtered_recruiter_users) > 0:
         dt = frappe.get_doc('Job Applicant',doc.name)
-    if dt:
-        if dt.one_fm_has_issue == "Yes" and dt.one_fm_notify_recruiter == 0:
-            email = filtered_recruiter_users
-            page_link = get_url("/desk#List/Job Applicant/" + dt.name)
-            message="<p>Tranfer for {0} has issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
-            subject='Tranfer for {0} has issue'.format(dt.applicant_name)
-            create_notification_log(subject,message,email,dt)
-            dt.db_set('one_fm_notify_recruiter', 1)
-            dt.db_set('one_fm_applicant_status', "Checked By GRD")
+        if dt:
+            if dt.one_fm_has_issue == "Yes" and dt.one_fm_notify_recruiter == 0:
+                email = filtered_recruiter_users
+                page_link = get_url("/desk#List/Job Applicant/" + dt.name)
+                message="<p>Tranfer for {0} has issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
+                subject='Tranfer for {0} has issue'.format(dt.applicant_name)
+                create_notification_log(subject,message,email,dt)
+                dt.db_set('one_fm_notify_recruiter', 1)
+                dt.db_set('one_fm_applicant_status', "Checked By GRD")
 
-        if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0: 
-            email = filtered_recruiter_users
-            page_link = get_url("/desk#List/Job Applicant/" + dt.name)
-            message="<p>Tranfer for {0} has no issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
-            subject='Tranfer for {0} has no issues'.format(dt.applicant_name)
-            create_notification_log(subject,message,email,dt)
-            dt.db_set('one_fm_notify_recruiter', 1)
-            dt.db_set('one_fm_applicant_status', "Checked By GRD")
+            if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0: 
+                email = filtered_recruiter_users
+                page_link = get_url("/desk#List/Job Applicant/" + dt.name)
+                message="<p>Tranfer for {0} has no issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
+                subject='Tranfer for {0} has no issues'.format(dt.applicant_name)
+                create_notification_log(subject,message,email,dt)
+                dt.db_set('one_fm_notify_recruiter', 1)
+                dt.db_set('one_fm_applicant_status', "Checked By GRD")
+                
+def notify_pam_authorized_signature(doc):
+    user = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':doc.one_fm_signatory_name},['user'])
+    page_link = get_url("/desk#Form/Job Applicant/" + doc.name)
+    subject = _("Attention: Your E-Signature will be used for Transfer Paper")
+    message = "<p>Please note that your E-Signature will be used on Transfer Paper: <a href='{0}'></a></p>.".format(page_link)
+    create_notification_log(subject, message, [user], doc)
 
-@frappe.whitelist()     
+
+@frappe.whitelist()
 def check_mendatory_fields_for_grd_and_recruiter(doc,method):
     """
-    This Method is checking the roles accessing Job Applicant document 
+    This Method is checking the roles accessing Job Applicant document
     and setting the mendatory fields for each role based upon their selections.
 
     """
     roles = frappe.get_roles(frappe.session.user)
     if "GRD Operator" in roles:
         if doc.one_fm_has_issue == "No":
-            validate_mendatory_fields_for_grd(doc)  
-              
+            validate_mendatory_fields_for_grd(doc)
+
         if doc.one_fm_has_issue == "Yes":
             if not doc.one_fm_type_of_issues:
                 frappe.throw("Set The Type of Transfer issue Applicant has before saving")
@@ -135,12 +146,12 @@ def check_mendatory_fields_for_grd_and_recruiter(doc,method):
             validate_mendatory_fields_for_recruiter(doc)
 
 
-                
+
 def validate_mendatory_fields_for_grd(doc):
     """
-        Check all the mendatory fields are set set by grd
+        Check all the mendatory fields are set by grd
     """
-    field_list = [{'PAM File Number':'one_fm_pam_file_number'}, {'PAM Designation':'one_fm_pam_designation'},{'Signatory Name':'one_fm_signatory_name'}]
+    field_list = [{'PAM File Number':'one_fm_pam_file_number'}, {'PAM Designation':'one_fm_pam_designation'},{'Signatory Name':'one_fm_signatory_name'},{'Trade Name in Arabic':'one_fm_previous_company_trade_name_in_arabic'}]
 
     mandatory_fields = []
     for fields in field_list:
@@ -160,9 +171,9 @@ def validate_mendatory_fields_for_recruiter(doc):
     """
         Check all the mendatory fields are set by Recruiter if Applicant wants to transfer
     """
-    field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'}, 
+    field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'},
             {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
-            {'Nationality':'one_fm_nationality'}, {'Previous Designation':'one_fm_previous_designation'}, 
+            {'Nationality':'one_fm_nationality'}, {'Previous Designation':'one_fm_previous_designation'},
             {'Passport Number':'one_fm_passport_number'}, {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
             {'Marital Status':'one_fm_marital_status'}, {'Previous Work Permit Salary':'one_fm_work_permit_salary'}]
 
@@ -178,23 +189,73 @@ def validate_mendatory_fields_for_recruiter(doc):
             message += '<li>' + mandatory_field +'</li>'
         message += '</ul>'
         frappe.throw(message)
- 
+
 @frappe.whitelist()
 def get_signatory_name(parent):
     """
-    This method fetching all Autorized Signatory based on the PAM file selection
+    This method fetching all Autorized Signatory based on the New PAM file selection in job applicant
     """
     names=[]
     names.append(' ')
     if parent:
-        pam_autorized_signatory = frappe.db.get_list('PAM Authorized Signatory List',{'pam_file_name':parent})
-        if pam_autorized_signatory:
-            print(pam_autorized_signatory)
-            for pas in pam_autorized_signatory:
-                doc = frappe.get_doc('PAM Authorized Signatory List',pas.name)
-                
-            for line in doc.authorized_signatory:
-                if line.authorized_signatory_name_arabic:
-                    names.append(line.authorized_signatory_name_arabic)
+        doc = frappe.get_doc('PAM Authorized Signatory List',{'pam_file_name':parent})
+        if doc:
+            for pas in doc.authorized_signatory:
+                if pas.authorized_signatory_name_arabic:
+                    names.append(pas.authorized_signatory_name_arabic)
+            # print("==> names",names)
+        elif not doc:
+            frappe.throw("PAM File Has No PAM Authorized Signatory List")
     return names
-   
+
+@frappe.whitelist()
+def get_signatory_name_erf_file(parent):
+    """
+    This method fetching all Autorized Signatory based on the PAM file selection in erf
+    """
+    names=[]
+    names.append(' ')
+    if parent:
+        doc = frappe.get_doc('PAM Authorized Signatory List',{'pam_file_number':parent})
+        if doc:
+            for pas in doc.authorized_signatory:
+                if pas.authorized_signatory_name_arabic:
+                    names.append(pas.authorized_signatory_name_arabic)
+        elif not doc:
+            frappe.throw("PAM File Has No PAM Authorized Signatory List")
+    return names
+
+@frappe.whitelist()
+def notify_supervisor_change_file_number(name):
+    job_Applicant = frappe.get_doc('Job Applicant',name)
+    grd_supervisor = frappe.db.get_single_value('GRD Settings','default_grd_supervisor')
+    page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
+    subject = _("Attention: You Are Requested to Change/Approve New PAM File Number in Job Applicant")
+    message = "<p>Kindly, you are requested to Change the PAM File Number for Job Applicant: {0}  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
+    create_notification_log(subject, message, [grd_supervisor], job_Applicant)
+
+@frappe.whitelist()
+def notify_supervisor_change_pam_designation(name):
+    job_Applicant = frappe.get_doc('Job Applicant',name)
+    grd_supervisor = frappe.db.get_single_value('GRD Settings','default_grd_supervisor')
+    page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
+    subject = _("Attention: You Are Requested to Change/Approve New PAM Designation in Job Applicant")
+    message = "<p>Kindly, you are requested to Change the PAM Designation for Job Applicant: {0}  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
+    create_notification_log(subject, message, [grd_supervisor], job_Applicant)
+
+@frappe.whitelist()
+def notify_operator_with_supervisor_response(name):
+    """This method will notify GRD Operator with GRD supervisor response (Accept/Reject) on the PAM Number - PAM Desigantion changes for solving internal tp issues"""
+    job_Applicant = frappe.get_doc('Job Applicant',name)
+    grd_operator = frappe.db.get_single_value('GRD Settings','default_grd_operator_pifss')
+    if job_Applicant.accept_changes == 1 and job_Applicant.reject_changes == 0:
+        page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
+        subject = _("Supervisor Accepted Your Changes in Job Applicant")
+        message = "<p>Kindly, you are requested to mark (no internal issues) box for Job Applicant: {0} and check if candidate has external issues while transfering  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
+        create_notification_log(subject, message, [grd_operator], job_Applicant)
+    if job_Applicant.accept_changes == 0 and job_Applicant.reject_changes == 1:
+        page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
+        subject = _("Supervisor Rejected Your Changes in Job Applicant and Provide Suggestion Changes")
+        message = "<p>Kindly, you are requested to Check Suggestions box for Job Applicant: {0} and check if candidate has external issues while transfering  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
+        create_notification_log(subject, message, [grd_operator], job_Applicant)
+ 

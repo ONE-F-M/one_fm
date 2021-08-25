@@ -10,6 +10,7 @@ from frappe.utils import today, get_url
 from frappe.utils.user import get_user_fullname
 from frappe import _
 from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
+from one_fm.api.notification import create_notification_log
 
 class ERF(Document):
 	def onload(self):
@@ -42,6 +43,7 @@ class ERF(Document):
 		# self.calculate_total_cost_to_company()
 		self.validate_type_of_travel()
 
+	@frappe.whitelist()
 	def draft_erf_to_hrm_for_submit(self):
 		self.draft_erf_to_hrm = True
 		self.status = 'Draft'
@@ -135,12 +137,18 @@ class ERF(Document):
 
 	def on_update(self):
 		assign_recruiter_to_project_task(self)
+		
 
 	def on_submit(self):
 		self.validate_total_required_candidates()
+		self.validate_submit_to_hr()
 		self.erf_finalized = today()
 		self.validate_recruiter_assigned()
 		self.notify_approver()
+
+	def validate_submit_to_hr(self):
+		if not self.draft_erf_to_hrm and self.docstatus == 1:
+			frappe.throw(_('Submit to HR Manager to fill Salary Compensation Budget and HR Details!'))
 
 	def notify_approver(self):
 		erf_approver = False
@@ -194,6 +202,13 @@ class ERF(Document):
 				msg = _('{0} Will be Notified By Email.').format(self.recruiter_assigned)
 			frappe.msgprint(msg)
 
+	def notify_grd_supervisor(self):
+		grd_supervisor = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
+		page_link = get_url("/desk#Form/ERF/" + self.name)
+		subject = _("Attention: You Are Requested to Fill GRD Section in ERF")
+		message = "<p>Kindly, you are requested to fill the PAM File Number and PAM Designation for ERF: {0}  <a href='{1}'></a></p>".format(self.name,page_link)
+		create_notification_log(subject, message, [grd_supervisor], self)
+
 	def notify_gsd_department(self):
 		gsd_department = frappe.db.get_value('Hiring Settings', None, 'notify_gsd_on_erf_approval')
 		if gsd_department:
@@ -239,6 +254,7 @@ class ERF(Document):
 		if self.need_to_assign_more_recruiter and not self.secondary_recruiter_assigned:
 			frappe.throw(_('If You Need Assign One More Recruiter, Please fill the Secondary Recruiter Assigned.!'))
 
+	@frappe.whitelist()
 	def create_event_for_okr_workshop(self):
 		user= 'Onefm'
 		start_time= "{0}".format(self.schedule_for_okr_workshop_with_recruiter)
@@ -261,6 +277,7 @@ class ERF(Document):
 		assign_recruiter_to_project_task(self)
 		self.notify_recruiter_and_requester()
 		if self.status == 'Accepted':
+			self.notify_grd_supervisor()
 			self.notify_gsd_department()
 			if self.provide_salary_advance:
 				self.notify_finance_department()
@@ -381,6 +398,7 @@ def task_assign_to_recruiter(doc, recruiter_list, task_list):
 			except DuplicateToDoError:
 				frappe.message_log.pop()
 				pass
+
 
 @frappe.whitelist()
 def get_project_details(project):

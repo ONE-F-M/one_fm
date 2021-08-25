@@ -99,6 +99,18 @@
   "duty_commencement_status",
   "duty_commencement_docstatus",
   "duty_commencement_progress",
+  "pifss_form_103_section",
+  "pifss_form_103",
+  "pifss_form_103_docstatus",
+  "column_break_96",
+  "pifss_form_103_status",
+  "pifss_form_103_progress",
+  "mgrp_section",
+  "mgrp",
+  "column_break_102",
+  "mgrp_status",
+  "mgrp_docstatus",
+  "mgrp_progress",
   "bank_account_section",
   "account_name",
   "bank",
@@ -1049,12 +1061,91 @@
    "fieldtype": "Datetime",
    "label": "Applicant Attended Orientation",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "fieldname": "pifss_form_103_section",
+   "fieldtype": "Section Break",
+   "label": "PIFSS Form 103"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "pifss_form_103",
+   "fieldtype": "Link",
+   "label": "PIFSS Form 103",
+   "options": "PIFSS Form 103",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "pifss_form_103_status",
+   "fieldtype": "Data",
+   "label": "PIFSS Form 103 Status",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "pifss_form_103_docstatus",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "PIFSS Form 103 Docstatus",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "pifss_form_103_progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "PIFSS Form 103 Progress"
+  },
+  {
+   "fieldname": "column_break_96",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "fieldname": "mgrp_section",
+   "fieldtype": "Section Break",
+   "label": "MGRP"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "mgrp",
+   "fieldtype": "Link",
+   "label": "MGRP",
+   "options": "MGRP",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_102",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "mgrp_status",
+   "fieldtype": "Data",
+   "label": "MGRP Status",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "mgrp_docstatus",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "MGRP Docstatus"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "mgrp_progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "MGRP Progress"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-04 12:48:49.713467",
+ "modified": "2021-08-24 13:37:22.530232",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

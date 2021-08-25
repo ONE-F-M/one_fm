@@ -9,9 +9,9 @@ from frappe.utils import get_url
 from one_fm.api.notification import create_notification_log
 # from frappe.utils import today
 from datetime import date
+from one_fm.hiring.utils import update_onboarding_doc
 
 class MGRP(Document):
-
 	def validate(self):
 		self.set_grd_values()
 		self.set_status()
@@ -19,11 +19,28 @@ class MGRP(Document):
 			self.set_resignation_attachment()
 		if not self.date_of_application:
 			self.set_date_of_applicantion_value()
-		
-	
+
+	def after_insert(self):
+		update_onboarding_doc(self)
+
+	def set_progress(self):
+		progress_wf_list = {'Draft': 0, 'Form Printed': 10}
+		if self.workflow_state in progress_wf_list:
+			self.progress = progress_wf_list[self.workflow_state]
+
+	def on_trash(self):
+		if self.docstatus == 0:
+			update_onboarding_doc(self, True)
+
+	def on_cancel(self):
+		update_onboarding_doc(self, True)
+
+	def on_submit(self):
+		update_onboarding_doc(self)
 
 	def on_update(self):
 		self.check_workflow_states()
+		update_onboarding_doc(self)
 
 	def set_resignation_attachment(self):
 		""" If the resination form is not set from the employee attachments, will fetch the attachment and set its value"""
@@ -31,7 +48,7 @@ class MGRP(Document):
 		for row in Table.one_fm_employee_documents:
 			if row.document_name  == "Resignation Form":
 				self.db_set('end_of_service_attachment',row.attach)
-	
+
 	def set_date_of_applicantion_value(self):
 		self.db_set('date_of_application',date.today())
 
@@ -41,7 +58,7 @@ class MGRP(Document):
 			self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
 		if not self.grd_operator:
 			self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_pifss")
-	
+
 	def set_status(self):
 		if self.status == "New Kuwaiti":
 			self.db_set('status',"Registration")
@@ -50,8 +67,8 @@ class MGRP(Document):
 
 
 	def check_workflow_states(self):
-		
-		if self.workflow_state == "Awaiting Response" and self.flag == 0:#check the previous workflow (DRAFT) required fields 
+
+		if self.workflow_state == "Awaiting Response" and self.flag == 0:#check the previous workflow (DRAFT) required fields
 			message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply through <a href="{0}">MGRP Website</a></b><br><b>You Will Be Notified Daily at 8am To Check Applicantion Status</b>'.format(self.mgrp_website)
 			frappe.msgprint(message_detail)
 			self.db_set('flag',1)
@@ -78,8 +95,8 @@ class MGRP(Document):
 				message += '<li>' + mandatory_field +'</li>'
 			message += '</ul>'
 			frappe.throw(message)
-		
-	
+
+
 	# def check_mgrp_website_response(self):
 	# 	if self.workflow_state == "Awaiting Response":
 	# 		page_link = get_url("/desk#Form/MGRP/" + self.name)
@@ -94,7 +111,7 @@ def notify_awaiting_response_mgrp(doc, method): #will run everyday at 8 am
 
 	message = "Below is the list of Awaiting Response MGRP (Click on the name to open the form).<br><br>"
 	for doc in docs:
-		message += "<a href='/desk#Form/MGRP/{doc}'>{doc}</a> <br>".format(doc=doc.name) 
+		message += "<a href='/desk#Form/MGRP/{doc}'>{doc}</a> <br>".format(doc=doc.name)
 
 
 	for user in for_users:
@@ -107,3 +124,14 @@ def notify_awaiting_response_mgrp(doc, method): #will run everyday at 8 am
 		notification.document_name = notification.name
 		notification.save()
 		frappe.db.commit()
+
+
+@frappe.whitelist()#onboarding linking
+def create_mgrp_form_for_onboarding(employee, onboard_employee):
+	""" This Method for onboarding """
+	mgrp = frappe.new_doc('MGRP')
+	mgrp.status = "Registration"
+	mgrp.employee = employee
+	mgrp.onboard_employee = onboard_employee
+	mgrp.save(ignore_permissions=True)
+	return mgrp

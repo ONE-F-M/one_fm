@@ -57,6 +57,7 @@ frappe.ui.form.on('ERF', {
 		}
 		if (!frm.is_new() && frm.doc.docstatus == 0 && !frm.doc.draft_erf_to_hrm){
 			frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
+
 		}
 	},
 	decline_erf: function(frm, status) {
@@ -176,7 +177,7 @@ frappe.ui.form.on('ERF', {
 	},
 	number_of_candidates_required: function(frm) {
     calculate_total_cost_in_salary(frm);
-    set_required_quantity_grd(frm);
+    // set_required_quantity_grd(frm);
 	},
   salary_per_person: function(frm) {
     calculate_total_cost_in_salary(frm);
@@ -752,6 +753,7 @@ frappe.ui.form.on('ERF Gender Height Requirement', {
 	maximum_age: function(frm, cdt, cdn) {
 		validate_age_range(frm, cdt, cdn);
 	}
+	
 });
 
 var validate_age_range = function(frm, cdt, cdn) {
@@ -918,14 +920,14 @@ var set_off_days = function(frm) {
 	}
 };
 
-var set_required_quantity_grd = function(frm) {
-  if(frm.doc.number_of_candidates_required){
-    frm.set_value('required_quantity', frm.doc.number_of_candidates_required);
-  }
-  else{
-    frm.set_value('required_quantity', 0);
-  }
-}
+// var set_required_quantity_grd = function(frm) {
+//   if(frm.doc.number_of_candidates_required){
+//     frm.set_value('required_quantity', frm.doc.number_of_candidates_required);
+//   }
+//   else{
+//     frm.set_value('required_quantity', 0);
+//   }
+// }
 
 var validate_total_required_candidates = function (frm, cdt, cdn) {
   let total = 0;

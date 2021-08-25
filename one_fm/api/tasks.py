@@ -356,13 +356,23 @@ def create_shift_assignment(schedule, date):
 
 def update_shift_type():
 	today_datetime = now_datetime()	
-	now_time = today_datetime.strftime("%H:%M")
+	minute = today_datetime.strftime("%M")
+	if 0 <= int(minute)-15 < 15:
+		now_time = today_datetime.strftime("%H:15:00")
+	elif 0 <= int(minute)-30 < 15:
+		now_time = today_datetime.strftime("%H:30:00")
+	elif 0 <= int(minute)-45 < 15:
+		now_time = today_datetime.strftime("%H:45:00")
+	else:
+		now_time = today_datetime.strftime("%H:00:00")
+	print(now_time)
 	shift_types = frappe.get_all("Shift Type", {"end_time": now_time},["name", "allow_check_out_after_shift_end_time"])
 	for shift_type in shift_types:
 		last_sync_of_checkin = add_to_date(today_datetime, minutes=cint(shift_type.allow_check_out_after_shift_end_time)+15, as_datetime=True)
 		doc = frappe.get_doc("Shift Type", shift_type.name)
 		doc.last_sync_of_checkin = last_sync_of_checkin
 		doc.save()
+		frappe.db.commit()
 
 
 def process_attendance():
