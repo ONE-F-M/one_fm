@@ -71,9 +71,9 @@ class PIFSSMonthlyDeduction(Document):
 		if len(mandatory_fields) > 0:
 			if message_detail:
 				message = message_detail
-				message += '<br>Mandatory fields required in PIFSS 103 form<br><br><ul>'
+				message += '<br>Mandatory fields required in PIFSS Monthly Deduction <br><br><ul>'
 			else:
-				message= 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
+				message= 'Mandatory fields required in PIFSS PIFSS Monthly Deduction<br><br><ul>'
 			for mandatory_field in mandatory_fields:
 				message += '<li>' + mandatory_field +'</li>'
 			message += '</ul>'

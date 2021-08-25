@@ -139,6 +139,16 @@ class OnboardEmployee(Document):
 			frappe.throw(_('Enter company email to create ERPNext User.!'))
 
 	@frappe.whitelist()
+	def create_103_form(self):
+		from one_fm.grd.doctype.pifss_form_103.pifss_form_103 import create_103_form_for_onboarding
+		create_103_form_for_onboarding(self.employee, self.name)
+
+	@frappe.whitelist()
+	def create_mgrp(self):
+		from one_fm.grd.doctype.mgrp.mgrp import create_mgrp_form_for_onboarding
+		create_mgrp_form_for_onboarding(self.employee, self.name)
+
+	@frappe.whitelist()
 	def create_bank_account(self):
 		if self.employee and not self.bank_account:
 			create_account = True
