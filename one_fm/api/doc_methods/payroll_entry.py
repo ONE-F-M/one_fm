@@ -55,7 +55,7 @@ def create_payroll_entry(start_date, end_date):
 		#payroll_entry.department = department
 		payroll_entry.payroll_frequency = "Monthly"
 		payroll_entry.exchange_rate = 0
-		payroll_entry.payroll_payable_account = "Salary Payable One-Fm - ONEFM"
+		payroll_entry.payroll_payable_account = frappe.get_value("Company", erpnext.get_default_company(), "default_payroll_payable_account") or "Salary Payable One-Fm - ONEFM"
 		payroll_entry.company = erpnext.get_default_company()
 		payroll_entry.start_date = start_date
 		payroll_entry.end_date = end_date
