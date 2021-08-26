@@ -41,10 +41,13 @@
   "civil_id",
   "nationality",
   "religion",
+  "designation",
+  "project",
   "column_break_24",
   "contact_number",
   "email",
   "visa_number",
+  "employee_status",
   "comments"
  ],
  "fields": [
@@ -335,10 +338,34 @@
    "fieldtype": "Data",
    "label": "Employee ID",
    "read_only": 1
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.status",
+   "fieldname": "employee_status",
+   "fieldtype": "Data",
+   "label": "Employee Status",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
   }
  ],
+ "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2020-11-16 08:46:55.246017",
+ "modified": "2021-08-26 07:13:43.584160",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
