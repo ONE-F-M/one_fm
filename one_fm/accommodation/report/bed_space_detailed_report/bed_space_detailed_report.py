@@ -13,7 +13,7 @@ def get_columns():
     return [
         _("Code/Rerf") + ":Link/Accommodation:100",
         _("Accommodation Name") + ":Data:180",
-		_("Gender") + ":Data:70",
+		_("Gender") + ":Data:90",
 		_("Rooms") + ":Data:70",
 		_("Type A") + ":Data:70",
 		_("Type B") + ":Data:70",
@@ -43,6 +43,8 @@ def get_data(filters):
 			type_e = frappe.db.count('Bed', {'accommodation': acc.name, 'gender': gender, 'disabled': 0, 'bed_space_type': 'E'})
 			filters['status'] = 'Occupied'
 			occupied_bed = frappe.db.count('Bed', filters)
+			filters['status'] = 'Occupied Temporarily'
+			occupied_bed += frappe.db.count('Bed', filters)
 			filters['status'] = 'Vacant'
 			vaccant_bed = frappe.db.count('Bed', filters)
 			filters.pop('status')
