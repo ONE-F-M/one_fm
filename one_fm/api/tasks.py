@@ -448,17 +448,14 @@ def update_shift_details_in_attendance(doc, method):
 		frappe.db.sql("""update `tabAttendance`
 			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s 
 			where name = %s """, (project, site, shift, post_type, post_abbrv, doc.name))
-def get_payroll():
-	payroll= frappe.get_all("Payroll Entry", {'name':'HR-PRUN-2021-00001'},["*"])
-	print(payroll)
 
 def generate_payroll():
 	start_date = add_to_date(getdate(), months=-1)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
 	
 	# Hardcoded dates for testing, remove below 2 lines for live
-	start_date = "2021-08-01"
-	end_date = "2021-08-31"
+	#start_date = "2021-08-01"
+	#end_date = "2021-08-31"
 
 	try:
 			create_payroll_entry(start_date, end_date)
