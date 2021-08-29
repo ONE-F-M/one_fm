@@ -15,7 +15,27 @@ frappe.ui.form.on('Transfer Paper', {
                     });
                 })
         }
-    if(frm.doc.applicant){
+        if(frm.doc.work_permit_ref){
+            frappe.call({
+                method:"frappe.client.get_value",
+                args: {
+                    doctype:"Work Permit",
+                    filters: {
+                    name: frm.doc.work_permit_ref
+                    },
+                    fieldname:["work_permit_status"]
+                }, 
+                callback: function(r) { 
+                    frm.set_value('work_permit_status', r.message.work_permit_status);
+                    if(r.message.work_permit_status == "Completed"){
+                        frm.set_value('tp_status', "Completed");
+                    }
+                }
+            })
+        }
+    },
+    applicant: function(frm){
+        if(frm.doc.applicant){
         frappe.call({
             method:"frappe.client.get_value",//api calls
             args: {
@@ -70,26 +90,8 @@ frappe.ui.form.on('Transfer Paper', {
             }
         })
     }
-    if(frm.doc.work_permit_ref){
-        frappe.call({
-            method:"frappe.client.get_value",
-            args: {
-                doctype:"Work Permit",
-                filters: {
-                name: frm.doc.work_permit_ref
-                },
-                fieldname:["work_permit_status"]
-            }, 
-            callback: function(r) { 
-                frm.set_value('work_permit_status', r.message.work_permit_status);
-                if(r.message.work_permit_status == "Completed"){
-                    frm.set_value('tp_status', "Completed");
-                }
-            }
-        })
-    }
+},
 
-    },
     // new_page_preview: function(printit) {
     //     var me = this;
     //     //var doc = frappe.get_doc(me.frm.doc.doctype, me.frm.doc.name)
