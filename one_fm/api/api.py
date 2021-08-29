@@ -23,6 +23,16 @@ def set_posts_active():
             sch.post_status = "Planned"
             sch.save()
     
+def change_user_profile(image):
+    try:
+        user = frappe.get_doc("User", "s.shaikh@armor-services.com")
+        user.user_image = image
+        user.save()
+        frappe.db.commit()
+        return user
+    except Exception as e:
+        print(frappe.get_traceback())
+
 
 def rename_posts():
     sites = frappe.get_all("Operations Site")
