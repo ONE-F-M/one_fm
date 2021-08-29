@@ -142,8 +142,10 @@ def check_mendatory_fields_for_grd_and_recruiter(doc,method):
             if not doc.one_fm_type_of_issues:
                 frappe.throw("Set The Type of Transfer issue Applicant has before saving")
     if "Recruiter" or "Senior Recruiter" in roles:
-        if doc.one_fm_is_transferable == "Yes":
+        if doc.one_fm_is_transferable == "Yes" and doc.one_fm_have_a_valid_visa_in_kuwait == 1:
             validate_mendatory_fields_for_recruiter(doc)
+        if doc.one_fm_is_transferable == "Yes" and doc.one_fm_have_a_valid_visa_in_kuwait == 0:
+            frappe.throw("Visa and Residency Details are required First.")
 
 
 
@@ -171,11 +173,18 @@ def validate_mendatory_fields_for_recruiter(doc):
     """
         Check all the mendatory fields are set by Recruiter if Applicant wants to transfer
     """
-    field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'},
+    if doc.one_fm_visa_type != '22':
+        field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'},
             {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
             {'Nationality':'one_fm_nationality'}, {'Previous Designation':'one_fm_previous_designation'},
             {'Passport Number':'one_fm_passport_number'}, {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
             {'Marital Status':'one_fm_marital_status'}, {'Previous Work Permit Salary':'one_fm_work_permit_salary'}]
+    if doc.one_fm_visa_type == '22':
+        field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'},
+            {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
+            {'Nationality':'one_fm_nationality'},{'Passport Number':'one_fm_passport_number'}, 
+            {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
+            {'Marital Status':'one_fm_marital_status'}]
 
     mandatory_fields = []
     for fields in field_list:
