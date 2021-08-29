@@ -10,6 +10,8 @@ from frappe.utils import now_datetime, cstr, getdate, get_datetime, cint, add_to
 from one_fm.api.doc_events import get_employee_user_id
 from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import create_payroll_entry
+from erpnext.hr.doctype.attendance.attendance import mark_attendance
+from one_fm.api.mobile.roster import get_current_shift
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -77,7 +79,7 @@ def final_reminder():
 				subject = _("Final Reminder: Please checkin in the next five minutes.")
 				message = _("""
 					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
-					<a class="btn btn-primary" href="/desk#Form/Shift%20Permission/New%20Shift%20Permission%201">Planning to arrive late?</a>&nbsp;
+					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
 					""")
 				send_notification(subject, message, recipients)
 
@@ -220,7 +222,7 @@ def get_active_shifts(now_time):
 			name, start_time, end_time, 
 			notification_reminder_after_shift_start, late_entry_grace_period, 
 			notification_reminder_after_shift_end, allow_check_out_after_shift_end_time,
-			supervisor_reminder_shift_start, supervisor_reminder_start_ends
+			supervisor_reminder_shift_start, supervisor_reminder_start_ends, deadline
 		FROM `tabShift Type`
 		WHERE 
 			CAST("{current_time}" as date) 
@@ -251,6 +253,60 @@ def get_notification_user(operations_shift):
 				account_manager = get_employee_user_id(project.account_manager)
 				if account_manager != operations_shift.owner:
 					return account_manager
+def get_location(shift):
+	print(shift)
+	site = frappe.get_value("Operations Shift", {"shift_type":shift}, "site")
+	print(site)
+	location= frappe.db.sql("""
+			SELECT loc.latitude, loc.longitude, loc.geofence_radius
+			FROM `tabLocation` as loc
+			WHERE
+				loc.name in(SELECT site_location FROM `tabOperations Site` where name="{site}")
+			""".format(site=site), as_dict=1)
+	return location
+
+def checkin_deadline():
+	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
+	today = now_datetime().strftime("%Y-%m-%d")
+	shifts_list = get_active_shifts(now_time)
+	penalty_code = "106"
+	issuing_user = frappe.session.user
+	
+	for shift in shifts_list:
+		location = get_location(shift.name)
+		if location:
+			penalty_location = str(location[0].latitude)+","+str(location[0].longitude)
+		else:
+			penalty_location ="0,0"
+		# shift_start is equal to now time + deadline
+		#print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
+		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.deadline))).time()):
+			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
+
+			recipients = frappe.db.sql("""
+				SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp  
+				WHERE
+					tSA.employee = emp.name 
+				AND tSA.start_date="{date}" 
+				AND tSA.shift_type="{shift_type}" 
+				AND tSA.docstatus=1
+				AND tSA.employee 
+				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
+				WHERE
+					empChkin.log_type="IN"
+				AND empChkin.skip_auto_attendance=0
+				AND date(empChkin.time)="{date}"
+				AND empChkin.shift_type="{shift_type}")
+			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+			if len(recipients) > 0:	
+				recipients = [recipient[0] for recipient in recipients if recipient[0]]
+				
+				curr_shift = get_current_shift(recipients[0])
+				issue_penalty(recipients[0], today, penalty_code, curr_shift.shift, issuing_user, penalty_location)
+				
+				mark_attendance(recipients[0], today, 'Absent', shift.name)
+				
+			frappe.db.commit()
 
 def automatic_checkout():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
@@ -392,14 +448,17 @@ def update_shift_details_in_attendance(doc, method):
 		frappe.db.sql("""update `tabAttendance`
 			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s 
 			where name = %s """, (project, site, shift, post_type, post_abbrv, doc.name))
+def get_payroll():
+	payroll= frappe.get_all("Payroll Entry", {'name':'HR-PRUN-2021-00001'},["*"])
+	print(payroll)
 
 def generate_payroll():
 	start_date = add_to_date(getdate(), months=-1)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
 	
 	# Hardcoded dates for testing, remove below 2 lines for live
-	#start_date = "2021-02-24"
-	#end_date = "2021-03-23"
+	start_date = "2021-08-01"
+	end_date = "2021-08-31"
 
 	try:
 			create_payroll_entry(start_date, end_date)
