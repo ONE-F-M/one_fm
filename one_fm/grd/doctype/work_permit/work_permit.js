@@ -2,11 +2,6 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Work Permit', {
-    onload: function(frm) {
-		if (!frm.is_new()){
-            set_employee_details(frm);  
-        }      
-    },
     work_permit_status: function(frm){
         if (frm.doc.work_permit_status == "Rejected"){
             frm.set_value("work_permit_status","read_only",1);

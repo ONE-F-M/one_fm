@@ -2,11 +2,6 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Fingerprint Appointment', {
-	onload: function(frm) {
-		if (!frm.is_new()){
-            set_employee_details(frm);  
-        }      
-    },
     refresh: function(frm){
         frm.add_custom_button(('Operation Department'),function(){
             let Operations = frm.selected_doc.operations_manager;

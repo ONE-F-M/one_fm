@@ -12,6 +12,8 @@ from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
+from one_fm.grd.doctype.moi_residency_jawazat import moi_residency_jawazat
+
 class MedicalInsurance(Document):
     
     def validate(self):
@@ -74,6 +76,7 @@ def create_mi_record(WorkPermit):
     new_medical_insurance.insurance_status = Insurance_status
     new_medical_insurance.passport_expiry_date = WorkPermit.passport_expiry_date
     new_medical_insurance.employee_id = WorkPermit.employee_id
+    new_medical_insurance.employee = WorkPermit.employee
     new_medical_insurance.insert()
 
 @frappe.whitelist()

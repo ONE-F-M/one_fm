@@ -69,9 +69,6 @@ frappe.ui.form.on('MOI Residency Jawazat', {
 				}
 			})
 		}
-	if (!frm.is_new()){
-        set_employee_details(frm);
-        }
     },
     employee: function(frm){
         set_employee_details(frm);
