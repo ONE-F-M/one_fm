@@ -85,7 +85,10 @@
   "onboarding",
   "amended_from",
   "notify_grd_operator",
-  "pifss_website"
+  "pifss_website",
+  "more_information_section",
+  "onboard_employee",
+  "progress"
  ],
  "fields": [
   {
@@ -602,6 +605,25 @@
    "fieldname": "reason_of_rejection",
    "fieldtype": "Small Text",
    "label": "Reason Of Rejection"
+  },
+  {
+   "fieldname": "more_information_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "More Information"
+  },
+  {
+   "fieldname": "progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Progress"
+  },
+  {
+   "fieldname": "onboard_employee",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Onboard Employee",
+   "options": "Onboard Employee"
   }
  ],
  "is_submittable": 1,

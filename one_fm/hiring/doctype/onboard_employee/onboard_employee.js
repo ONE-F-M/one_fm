@@ -97,6 +97,12 @@ var create_custom_buttons = function(frm) {
 	if(frm.doc.employee && !frm.doc.bank_account){
 		cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
 	}
+	if(frm.doc.employee && !frm.doc.mgrp){
+		cutom_btn_and_action(frm, 'create_mgrp', 'MGRP');
+	}
+	if(frm.doc.employee && !frm.doc.pifss_form_103){
+		cutom_btn_and_action(frm, 'create_103_form', 'PIFSS Form 103');
+	}
 	if(frm.doc.employee && frm.doc.tools_needed_for_work && !frm.doc.request_for_material){
 		cutom_btn_and_action(frm, 'create_rfm_from_eo', 'Request for Material');
 	}

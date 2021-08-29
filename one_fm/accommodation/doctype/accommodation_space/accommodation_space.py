@@ -130,6 +130,7 @@ def get_latest_accommodation_space_code(doc):
 	new_accommodation_space_code = accommodation_space_code[0][0] if accommodation_space_code else 1
 	return str(int(new_accommodation_space_code))[-1]
 
+@frappe.whitelist()
 def filter_floor(doctype, txt, searchfield, start, page_len, filters):
 	query = """
 		select

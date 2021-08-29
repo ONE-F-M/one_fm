@@ -20,25 +20,6 @@ function load_js(page) {
 	setup_staff_filters(page);
 	setup_topbar_events(page);
 
-	// const cssPaths = ["css/all.min.css",
-	// 	"css/jquery.dataTables.min.css",
-	// 	"css/select2.min.css",
-	// 	"css/site.css",
-	// 	"css/responsivedatatable.css",
-	// 	"css/main.css",
-	// 	"css/material_blue.css",];
-	// cssPaths.map((path, i) => {
-	// if (!document.getElementById(path)) {
-	// 	var head = document.getElementsByTagName('head')[0];
-	// 	var link = document.createElement('link');
-	// 	link.id = `csshey`;
-	// 	link.rel = 'stylesheet';
-	// 	link.type = 'text/css';
-	// 	link.href = './external-dep.css';
-	// 	head.appendChild(link);
-	// }
-	// });
-
 	$(`a[href="#"]`).click(function (e) {
 		if (!$(this).hasClass('navbar-brand')) {
 			e.preventDefault();
@@ -678,6 +659,7 @@ function load_js(page) {
 		$(".clickablerow").not(this).parent().next().removeClass("show");
 	});
 	//table custom accordian click
+
 }
 
 // Show popups on clicking edit options in Roster view
@@ -1203,6 +1185,29 @@ function render_roster(res, page, isOt) {
 
 }
 
+const showSideBar = () => {
+	document.getElementById('main-section').className = "col-xs-12 col-sm-8 col-md-8 col-lg-10 pl-md-5 pt-4 pt-md-0";
+	document.getElementById('side-bar').style = "";
+};
+
+const hideSideBar = () => {
+	document.getElementById('main-section').className = "col-xs-12 col-sm-12 col-md-12 col-lg-12 pt-4 pt-md-0";
+	document.getElementById('side-bar').style = "display: none; width: 0";
+};
+
+
+setTimeout(() => {
+	document.getElementById("check").addEventListener("click", handleHamburgerClick);
+}, 2000);
+const handleHamburgerClick = () => {
+	if (document.getElementById("check").checked) showSideBar();
+	else hideSideBar();
+};
+
+
+// setTimeout(() => {
+// 	hideSideBar();
+// }, 10000);
 
 // Get data for Roster weekly view and render it
 function get_roster_week_data(page, isOt) {

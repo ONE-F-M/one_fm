@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
-from frappe.utils import today, get_url
+from frappe.utils import today, get_url, getdate
 from frappe.utils.user import get_user_fullname
 from frappe import _
 from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
@@ -124,10 +124,10 @@ class ERF(Document):
 					frappe.throw(_("Select Language for Speak, Read or Write.!"))
 
 	def validate_date(self):
-		if self.erf_initiation > self.expected_date_of_deployment:
-			frappe.throw(_("Expected Date of Deployment cannot be before ERF Initiation Date"))
-		if self.expected_date_of_deployment < today():
-			frappe.throw(_("Expected Date of Deployment cannot be before Today"))
+		if getdate(self.erf_initiation) > getdate(self.expected_date_of_deployment):
+			frappe.throw(_("Expected Date of Deployment of an ERF cannot be before ERF Initiation Date"))
+		if getdate(self.expected_date_of_deployment) < getdate(today()):
+			frappe.throw(_("Expected Date of Deployment of an ERF cannot be before Today"))
 
 	def manage_assigned_recruiter(self):
 		if not self.need_to_assign_more_recruiter:
@@ -137,7 +137,7 @@ class ERF(Document):
 
 	def on_update(self):
 		assign_recruiter_to_project_task(self)
-		
+
 
 	def on_submit(self):
 		self.validate_total_required_candidates()
