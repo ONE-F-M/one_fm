@@ -198,6 +198,7 @@ doc_events = {
 	},
 	"Bank Account": {
 		"on_update": "one_fm.utils.bank_account_on_update",
+		"on_trash": "one_fm.utils.bank_account_on_trash",
 	},
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
@@ -290,7 +291,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.grd.utils.sendmail_reminder1',
 		'one_fm.grd.utils.sendmail_reminder2',
-		
+
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -311,7 +312,7 @@ scheduler_events = {
 	"cron": {
 		"0 8 1 * *": [# first day of the Month at 8 am
 			'one_fm.grd.doctype.preparation.preparation.create_preparation',
-			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',	
+			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
 		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
@@ -338,7 +339,7 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_first_grd_operator',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator'
-		], 
+		],
 		"0 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four'
 		],
@@ -354,7 +355,7 @@ scheduler_events = {
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_under_process_status_on_pifss',
 			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp',
 
-			
+
 		],
 		"30 8 * * *":[
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator',
@@ -363,7 +364,7 @@ scheduler_events = {
 			'one_fm.utils.check_upload_tasriah_submission_nine',
 			'one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator',
 			'one_fm.grd.doctype.work_permit.work_permit_notify_grd_operator_check_approval',
-			
+
 
 		],
 		"30 9 * * *": [
@@ -458,7 +459,7 @@ fixtures = [
 	},
 	{
 		"dt": "Workflow"
-		
+
 
 	},
 	{
