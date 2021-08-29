@@ -1,15 +1,32 @@
 frappe.ui.form.on('Job Applicant', {
 	refresh(frm) {
+		console.log(frm.doc.pam_number_button)
+		if(frm.doc.pam_number_button == 0 || frm.is_new()){
+			document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#3789ff";
+			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.padding ='1em';
+			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1.6em';
+		}if(frm.doc.pam_designation_button == 0 || frm.is_new()){
+			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#3789ff";
+			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.padding ='1em';
+			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
+		}if(frm.doc.pam_number_button == 1 || !frm.is_new()){
+			document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#ec645e";
+			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.padding ='1em';
+			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1.6em';
+		}if(frm.doc.pam_designation_button == 1 || !frm.is_new()){
+			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#ec645e";
+			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.padding ='1em';
+			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
+		}
+		// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.padding ='1em';
+		document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1.6em';
+		// document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.padding ='1em';
+		document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
 		frm.set_df_property('status', 'label', 'Final Status');
 		frm.remove_custom_button("Job Offer");
 		set_country_field_empty_on_load(frm);
 		set_grd_field_properties(frm);
-		document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#3789ff";
-		document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.padding ='1em';
-		document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1em';
-		document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#3789ff";
-		document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.padding ='1em';
-		document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='1em';
+		
 		hide_job_applicant_existing_fields(frm);
 		set_read_only_fields_of_job_applicant(frm);
 		set_mandatory_fields_of_job_applicant(frm);
@@ -121,19 +138,12 @@ frappe.ui.form.on('Job Applicant', {
 	},
 	one_fm_change_pam_file_number: function(frm){
 		
-		let msg = __('Do You Want to Change PAM File Number and Notify GRD Supervisor? ')
+		let msg = __('Do You Want to Change PAM File Number?')
 		frappe.confirm(
 			msg,
 			function(){//yes
 				document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#ec645e";
 				frm.set_value('pam_number_button',1);
-				console.log("call method1");
-				frappe.call({
-					method: "one_fm.one_fm.utils.notify_supervisor_change_file_number",
-					args: {
-						'name': frm.doc.name,
-					}
-				});
 			},
 			function(){//no
 
@@ -142,19 +152,13 @@ frappe.ui.form.on('Job Applicant', {
 	},
 	one_fm_change_pam_designation: function(frm){
 
-		let msg = __('Do You Want to Change PAM Desigantion and Notify GRD Supervisor? ')
+		let msg = __('Do You Want to Change PAM Desigantion?')
 		frappe.confirm(
 			msg,
 			function(){//yes
 				document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#ec645e";
 				frm.set_value('pam_designation_button',1);
-				console.log("call method1");
-				frappe.call({
-					method: "one_fm.one_fm.utils.notify_supervisor_change_pam_designation",
-					args: {
-						'name': frm.doc.name,
-					}
-				});
+				
 			},
 			function(){//no
 
@@ -311,55 +315,128 @@ frappe.ui.form.on('Job Applicant', {
 	},
 	save_me: function(frm){
 		frm.save();
-	},
-	accept_changes: function(frm){
-		if(frm.doc.accept_changes == 1){
-			let msg = __('Do You Want to Accept Changes Done By Operator?')
-
-			frappe.confirm(
-				msg,
-				function(){
-					// Yes
-					
-						frappe.msgprint(__('Notification Will Sent to Operator to Proceed, No internal issues.'));
+		if(frm.doc.accept_changes == 1 && frm.doc.reject_changes ==0){
+			frappe.msgprint(__('Notification Will Sent to Operator to Proceed, No internal issues.'));
 						frappe.call({
 							method: "one_fm.one_fm.utils.notify_operator_with_supervisor_response",
 							args: {
 								'name': frm.doc.name,
 							}
 						});
+		}if(frm.doc.reject_changes == 1 && frm.doc.accept_changes ==0){
+			frappe.msgprint(__('Notification Will Sent to Operator to Review Your Suggested Changes.'));
+						frappe.call({
+							method: "one_fm.one_fm.utils.notify_operator_with_supervisor_response",
+							args: {
+								'name': frm.doc.name,
+							}
+						});
+		}
+	},
+	accept_changes: function(frm){
+		if(frm.doc.accept_changes == 1 && frm.doc.reject_changes == 0){
+			let msg = __('Do You Want to Accept Changes Done By Operator?')
+			frappe.confirm(
+				msg,
+				function(){
+					// Yes
+					
+						
 				},
 				function(){
 					// No
+					
+				}
+			);
+		}if(frm.doc.accept_changes == 1 && frm.doc.reject_changes == 1){
+			frm.set_value('reject_changes', 0);
+			let msg = __('Do You Want to Accept Changes Done By Operator?')
+			frappe.confirm(
+				msg,
+				function(){
+					// Yes
+					
+						
+				},
+				function(){
+					// No 
 					
 				}
 			);
 		}
 	},
 	reject_changes: function(frm){
-		if(frm.doc.reject_changes == 1){
+		if(frm.doc.reject_changes == 1 && frm.doc.accept_changes == 0){
 			let msg = __('Do You Want to Reject Changes Done By Operator?')
 			frappe.confirm(
 				msg,
 				function(){
 					// Yes
 					
-						frappe.msgprint(__('Notification Will Sent to Operator to Review Your Suggested Changes.'));
-						frappe.call({
-							method: "one_fm.one_fm.utils.notify_operator_with_supervisor_response",
-							args: {
-								'name': frm.doc.name,
-							}
-						});
+						
 				},
 				function(){
 					// No
 					
 				}
 			);
+		}if(frm.doc.reject_changes == 1 && frm.doc.accept_changes == 1){
+			frm.set_value('accept_changes', 0);
+			let msg = __('Do You Want to Reject Changes Done By Operator?')
+			frappe.confirm(
+				msg,
+				function(){
+					// Yes
+					
+						
+				},
+				function(){
+					// No 
+					
+				}
+			);
 		}
+	},
+	send_changes_to_supervisor: function(frm){
+		frm.save();
+		let msg = __('Do You Want to Notify GRD Supervisor With Your Changes?')
+		frappe.confirm(
+			msg,
+			function(){//yes
+				if(frm.doc.pam_designation_button ==1 && frm.doc.pam_number_button == 0){
+					frappe.call({
+						method: "one_fm.one_fm.utils.notify_supervisor_change_pam_designation",
+						args: {
+							'name': frm.doc.name,
+						}
+					});
+				}if(frm.doc.pam_number_button ==1 && frm.doc.pam_designation_button == 0){
+					frappe.call({
+						method: "one_fm.one_fm.utils.notify_supervisor_change_file_number",
+						args: {
+							'name': frm.doc.name,
+						}
+					});
+				}if(frm.doc.pam_number_button ==1 && frm.doc.pam_designation_button == 1){
+					frappe.call({
+						method: "one_fm.one_fm.utils.notify_supervisor_change_file_number",
+						args: {
+							'name': frm.doc.name,
+						}
+					});
+					frappe.call({
+						method: "one_fm.one_fm.utils.notify_supervisor_change_pam_designation",
+						args: {
+							'name': frm.doc.name,
+						}
+					});
+				}
+		},function(){
+			// No
+			
+			}
+		);
 	}
-
 
 });
 

@@ -142,10 +142,10 @@ var set_insurance_type = function(frm){
                 fieldname:["pam_file_number"]
             }, 
             callback: function(r) { 
-                if(r.message.pam_file_number == "T4 - 20201800005" || r.message.pam_file_number == "Opera - 15201800010"){
+                if(r.message.pam_file_number == "20201800005" || r.message.pam_file_number == "15201800010"){
                     frm.set_value('insurance_type', "18 - Govt Project Visa (Private)");
                 }
-                if(r.message.pam_file_number == "Private - 2921143"){
+                if(r.message.pam_file_number == "100068481"){
                     frm.set_value('insurance_type', "18 - Work Visa Private");
                 }
             }

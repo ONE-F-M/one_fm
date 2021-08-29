@@ -260,7 +260,7 @@ def notify_operator_with_supervisor_response(name):
         create_notification_log(subject, message, [grd_operator], job_Applicant)
     if job_Applicant.accept_changes == 0 and job_Applicant.reject_changes == 1:
         page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
-        subject = _("Supervisor Rejected Your Changes in Job Applicant and Provide Suggestion Changes")
+        subject = _("Supervisor Rejected Your Changes in Job Applicant and Provide Suggested Changes")
         message = "<p>Kindly, you are requested to Check Suggestions box for Job Applicant: {0} and check if candidate has external issues while transfering  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
         create_notification_log(subject, message, [grd_operator], job_Applicant)
  

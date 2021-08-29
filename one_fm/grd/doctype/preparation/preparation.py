@@ -106,7 +106,8 @@ def get_employee_entries(doc,first_day,last_day):
     employee_entries = frappe.db.get_list('Employee',
                             filters={
                                 'residency_expiry_date': ['between',(first_day,last_day)],
-                                'status': 'Active'
+                                'status': 'Active',
+                                'under_company_residency':['=',1]
                             },
                             )
 
