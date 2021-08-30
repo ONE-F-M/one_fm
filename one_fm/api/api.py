@@ -6,7 +6,6 @@ from frappe.model.rename_doc import rename_doc
 import requests
 import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
-from frappe.utils import nowdate
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
 
 @frappe.whitelist()
@@ -39,7 +38,7 @@ def change_user_profile(image):
 @frappe.whitelist()
 def get_user_details():
     try:
-        user_id = "s.shaikh@armor-services.com"
+        user_id = frappe.session.user
         user= frappe.get_value("User",user_id,"*")
         employee_ID = frappe.get_value("Employee", {"user_id": user_id}, ["name","designation"])
         
