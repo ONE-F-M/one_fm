@@ -79,11 +79,9 @@ def get_site_location(employee):
 				site_n_location['site_name']=site
 				return site_n_location
 			else:
-				frappe.throw(_('Site Location is not Set'))
-				return ('Site Location is not Set')
+				return {"message": "Site Location is not Set", "status_code" : 500}
 		else:
-			frappe.throw(_('You Are Not currently Assigned with a Shift.'))
-			return {'message': _('You Are Not currently Assigned with a Shift.')}			
+			return {"message": "You Are Not currently Assigned with a Shift", "status_code" : 500}		
 	except Exception as e:
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
