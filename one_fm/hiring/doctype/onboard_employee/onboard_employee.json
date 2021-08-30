@@ -481,7 +481,7 @@
    "fieldname": "is_transferable",
    "fieldtype": "Select",
    "label": "Is Transferable",
-   "options": "\nYes\nNo"
+   "options": "\nYes\nNo\nLater"
   },
   {
    "collapsible": 1,
@@ -1163,7 +1163,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-30 01:00:04.971153",
+ "modified": "2021-08-30 11:22:19.544091",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
