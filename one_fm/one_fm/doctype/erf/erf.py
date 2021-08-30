@@ -138,6 +138,8 @@ class ERF(Document):
 	def on_update(self):
 		assign_recruiter_to_project_task(self)
 
+	def before_cancel(self):
+		self.status = 'Cancelled'
 
 	def on_submit(self):
 		self.validate_total_required_candidates()

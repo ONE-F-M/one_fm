@@ -26,13 +26,13 @@ frappe.ui.form.on('Job Applicant', {
 		frm.remove_custom_button("Job Offer");
 		set_country_field_empty_on_load(frm);
 		set_grd_field_properties(frm);
-		
+
 		hide_job_applicant_existing_fields(frm);
 		set_read_only_fields_of_job_applicant(frm);
 		set_mandatory_fields_of_job_applicant(frm);
 		set_field_properties_on_agency_applying(frm);
 		set_mandatory_fields_for_current_employment(frm);
-		
+
 
 		// if(frm.doc.one_fm_document_verification == 'Verified' || frm.doc.one_fm_document_verification == 'Verified - With Exception'){
 		// 	frm.set_df_property('one_fm_interview_schedules', 'hidden', false);
@@ -90,18 +90,18 @@ frappe.ui.form.on('Job Applicant', {
 			}
     }
 		if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')) {
-			frappe.db.get_value("Employee", {"job_applicant": frm.doc.name}, "name", function(r) {
-				if(!r || !r.name){
-					frm.add_custom_button(__('Create Employee'),
-						function () {
-							frappe.model.open_mapped_doc({
-								method: "one_fm.hiring.utils.make_employee",
-								frm: frm
-							});
-						}
-					);
-				}
-			})
+			// frappe.db.get_value("Employee", {"job_applicant": frm.doc.name}, "name", function(r) {
+			// 	if(!r || !r.name){
+			// 		frm.add_custom_button(__('Create Employee'),
+			// 			function () {
+			// 				frappe.model.open_mapped_doc({
+			// 					method: "one_fm.hiring.utils.make_employee",
+			// 					frm: frm
+			// 				});
+			// 			}
+			// 		);
+			// 	}
+			// });
 		}
 		// if(frm.doc.pam_number_button == 1 && frm.doc.one_fm_pam_file_number){
 		// 	//if PAM file Number has changes in job applicant, set the signatory names of the new file
@@ -117,7 +117,7 @@ frappe.ui.form.on('Job Applicant', {
 		// 			}
 		// 		});
 		// 		frm.refresh_field("one_fm_signatory_name");
-				
+
 		// }
 		// if(frm.doc.pam_number_button == 0 && frm.doc.one_fm_erf_pam_file_number){
 		// 	//if PAM file Number has changes in job applicant, set the signatory names of the old file in erf
@@ -133,11 +133,11 @@ frappe.ui.form.on('Job Applicant', {
 		// 			}
 		// 		});
 		// 		frm.refresh_field("one_fm_signatory_name");
-				
+
 		// }
 	},
 	one_fm_change_pam_file_number: function(frm){
-		
+
 		let msg = __('Do You Want to Change PAM File Number?')
 		frappe.confirm(
 			msg,
@@ -158,7 +158,7 @@ frappe.ui.form.on('Job Applicant', {
 			function(){//yes
 				document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#ec645e";
 				frm.set_value('pam_designation_button',1);
-				
+
 			},
 			function(){//no
 
@@ -341,11 +341,10 @@ frappe.ui.form.on('Job Applicant', {
 				function(){
 					// Yes
 					
-						
 				},
 				function(){
 					// No
-					
+
 				}
 			);
 		}if(frm.doc.accept_changes == 1 && frm.doc.reject_changes == 1){
@@ -355,12 +354,12 @@ frappe.ui.form.on('Job Applicant', {
 				msg,
 				function(){
 					// Yes
-					
-						
+
+
 				},
 				function(){
-					// No 
-					
+					// No
+
 				}
 			);
 		}
@@ -372,12 +371,12 @@ frappe.ui.form.on('Job Applicant', {
 				msg,
 				function(){
 					// Yes
-					
-						
+
+
 				},
 				function(){
 					// No
-					
+
 				}
 			);
 		}if(frm.doc.reject_changes == 1 && frm.doc.accept_changes == 1){
@@ -387,12 +386,12 @@ frappe.ui.form.on('Job Applicant', {
 				msg,
 				function(){
 					// Yes
-					
-						
+
+
 				},
 				function(){
-					// No 
-					
+					// No
+
 				}
 			);
 		}
@@ -433,7 +432,7 @@ frappe.ui.form.on('Job Applicant', {
 				}
 		},function(){
 			// No
-			
+
 			}
 		);
 	}

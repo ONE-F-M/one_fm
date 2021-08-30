@@ -29,6 +29,8 @@
   "designation",
   "employee_grade",
   "project",
+  "operations_site",
+  "operations_shift",
   "applicant_details_section",
   "gender",
   "date_of_birth",
@@ -479,7 +481,7 @@
    "fieldname": "is_transferable",
    "fieldtype": "Select",
    "label": "Is Transferable",
-   "options": "\nYes\nNo"
+   "options": "\nYes\nNo\nLater"
   },
   {
    "collapsible": 1,
@@ -1140,12 +1142,28 @@
    "fieldtype": "Float",
    "hidden": 1,
    "label": "MGRP Progress"
+  },
+  {
+   "fetch_from": "job_offer.operations_shift",
+   "fetch_if_empty": 1,
+   "fieldname": "operations_shift",
+   "fieldtype": "Link",
+   "label": "Operations Shift",
+   "options": "Operations Shift"
+  },
+  {
+   "fetch_from": "job_offer.operations_site",
+   "fetch_if_empty": 1,
+   "fieldname": "operations_site",
+   "fieldtype": "Link",
+   "label": "Operations Site",
+   "options": "Operations Site"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-24 13:37:22.530232",
+ "modified": "2021-08-30 11:22:19.544091",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

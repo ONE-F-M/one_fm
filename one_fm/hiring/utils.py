@@ -7,6 +7,7 @@ from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
 from frappe.modules import scrub
 from frappe import _
+from frappe.desk.form import assign_to
 
 @frappe.whitelist()
 def get_performance_profile_resource():
@@ -397,6 +398,14 @@ def create_onboarding_from_job_offer(job_offer):
                     o_employee.tools_needed_for_work = True
             o_employee.save(ignore_permissions=True)
 
+            args = {
+                'assign_to': [job_offer.onboarding_officer],
+                'doctype': o_employee.doctype,
+                'name': o_employee.name,
+                'description': _('Employee Onboarding'),
+            }
+            assign_to.add(args)
+
 def job_offer_onload(doc, method):
     o_employee = frappe.db.get_value("Onboard Employee", {"job_offer": doc.name}, "name") or ""
     doc.set_onload("onboard_employee", o_employee)
@@ -422,4 +431,3 @@ def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
 @frappe.whitelist()
 def set_employee_name(doc,method):
 		doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic, doc.one_fm_last_name_in_arabic]))
-    
