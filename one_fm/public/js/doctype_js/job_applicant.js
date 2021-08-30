@@ -1,6 +1,6 @@
 frappe.ui.form.on('Job Applicant', {
 	refresh(frm) {
-		console.log(frm.doc.pam_number_button)
+		// console.log(frm.doc.pam_number_button)
 		if(frm.doc.pam_number_button == 0 || frm.is_new()){
 			document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#3789ff";
 			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.padding ='1em';
@@ -103,38 +103,38 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			})
 		}
-		if(frm.doc.pam_number_button == 1 && frm.doc.one_fm_pam_file_number){
-			//if PAM file Number has changes in job applicant, set the signatory names of the new file
-			frappe.call({
-				method: "one_fm.one_fm.utils.get_signatory_name",
-				args:{
-					'parent': frm.doc.one_fm_pam_file_number,
-					'name': frm.doc.name,
-					},
-				callback:function(r){
-					frm.set_df_property('one_fm_signatory_name', "options", r.message);
-					frm.refresh_field("one_fm_signatory_name");
-					}
-				});
-				frm.refresh_field("one_fm_signatory_name");
+		// if(frm.doc.pam_number_button == 1 && frm.doc.one_fm_pam_file_number){
+		// 	//if PAM file Number has changes in job applicant, set the signatory names of the new file
+		// 	frappe.call({
+		// 		method: "one_fm.one_fm.utils.get_signatory_name",
+		// 		args:{
+		// 			'parent': frm.doc.one_fm_pam_file_number,
+		// 			'name': frm.doc.name,
+		// 			},
+		// 		callback:function(r){
+		// 			frm.set_df_property('one_fm_signatory_name', "options", r.message);
+		// 			frm.refresh_field("one_fm_signatory_name");
+		// 			}
+		// 		});
+		// 		frm.refresh_field("one_fm_signatory_name");
 				
-		}
-		if(frm.doc.pam_number_button == 0 && frm.doc.one_fm_erf_pam_file_number){
-			//if PAM file Number has changes in job applicant, set the signatory names of the old file in erf
-			frappe.call({
-				method: "one_fm.one_fm.utils.get_signatory_name_erf_file",
-				args:{
-					'parent': frm.doc.one_fm_erf_pam_file_number,
-					'name': frm.doc.name,
-					},
-				callback:function(r){
-					frm.set_df_property('one_fm_signatory_name', "options", r.message);
-					frm.refresh_field("one_fm_signatory_name");
-					}
-				});
-				frm.refresh_field("one_fm_signatory_name");
+		// }
+		// if(frm.doc.pam_number_button == 0 && frm.doc.one_fm_erf_pam_file_number){
+		// 	//if PAM file Number has changes in job applicant, set the signatory names of the old file in erf
+		// 	frappe.call({
+		// 		method: "one_fm.one_fm.utils.get_signatory_name_erf_file",
+		// 		args:{
+		// 			'parent': frm.doc.one_fm_erf_pam_file_number,
+		// 			'name': frm.doc.name,
+		// 			},
+		// 		callback:function(r){
+		// 			frm.set_df_property('one_fm_signatory_name', "options", r.message);
+		// 			frm.refresh_field("one_fm_signatory_name");
+		// 			}
+		// 		});
+		// 		frm.refresh_field("one_fm_signatory_name");
 				
-		}
+		// }
 	},
 	one_fm_change_pam_file_number: function(frm){
 		

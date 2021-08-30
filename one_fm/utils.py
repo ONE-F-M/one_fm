@@ -1280,7 +1280,7 @@ def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, 
 
 def validate_job_applicant(doc, method):
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
-    check_mendatory_fields_for_grd_and_recruiter(doc, method)
+    check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     validate_pam_file_number_and_pam_designation(doc, method)
     validate_transferable_field(doc)
     set_job_applicant_fields(doc)

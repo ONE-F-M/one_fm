@@ -16,12 +16,10 @@ frappe.ui.form.on('PIFSS Form 103', {
 				}
 			};
 		})	
-		set_employee_details(frm);
 		
 	},
 	
 	refresh: function(frm){
-		
 		if(!frm.doc.__islocal){
 			frm.set_df_property("request_type","read_only", 1);
 		} 

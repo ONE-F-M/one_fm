@@ -97,7 +97,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Request Type",
-   "options": "\nRegistration\nEnd of Service"
+   "options": "\nRegistration\nEnd of Service",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_4",
@@ -627,7 +628,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-24 13:30:13.481584",
+ "modified": "2021-08-26 16:54:01.477324",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Form 103",
