@@ -1122,7 +1122,11 @@ function render_roster(res, page, isOt) {
 				'Annual Leave': 'AL',
 				'Emergency Leave': 'EL'
 			};
-			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type } = employees_data[employee_key][i];
+			let attendancemap = {
+				'P': 'greenboxcolor',
+				'A': 'redboxcolor'
+			}
+			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance } = employees_data[employee_key][i];
 			if (isOt) {
 				if (post_abbrv && roster_type == 'Over-Time') {
 					j++;
@@ -1160,6 +1164,13 @@ function render_roster(res, page, isOt) {
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
+					</td>`;
+				} else if(attendance && !employee_availability){
+					if (attendance == 'P'){j++;}
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance}</div>
 					</td>`;
 				} else {
 					sch = `
@@ -2801,9 +2812,10 @@ function schedule_change_post(page) {
 					}
 				}
 			},
+			{'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
 			{
-				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'default': date, onchange: function () {
+				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:this.get_value("project_end_date")==0', onchange: function () {
 					let end_date = d.get_value('end_date');
 					let start_date = d.get_value('start_date');
 					if (end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
@@ -2819,7 +2831,7 @@ function schedule_change_post(page) {
 		],
 		primary_action: function () {
 
-			let { shift, site, post_type, project, start_date, end_date } = d.get_values();
+			let { shift, site, post_type, project, start_date, project_end_date, end_date } = d.get_values();
 			$('#cover-spin').show(0);
 			let element = get_wrapper_element();
 			if (element == ".rosterOtMonth") {
@@ -2828,12 +2840,15 @@ function schedule_change_post(page) {
 				otRoster = false;
 			}
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-				{ employees, shift, post_type, otRoster, start_date, end_date })
+				{ employees, shift, post_type, otRoster, start_date, project_end_date, end_date })
 				.then(res => {
 					d.hide();
 					$('#cover-spin').hide();
 					let element = get_wrapper_element().slice(1);
 					update_roster_view(element, page);
+				}).catch(e=>{
+					console.log(e);
+					$('#cover-spin').hide();
 				});
 		}
 	});

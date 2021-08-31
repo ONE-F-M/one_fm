@@ -6,11 +6,11 @@ import pandas as pd
 
 def execute():
 	#set all posts under site Airport Terminal T4 to planned
-	set_posts_planned_for_t4()
+	frappe.enqueue(set_posts_planned_for_t4, is_async=True, queue='long')
 
 def set_posts_planned_for_t4():
 	start_date = cstr(getdate())
-	end_date = add_to_date(start_date, years=1)
+	end_date = add_to_date(start_date, months=18)
 	for post in frappe.db.get_list("Operations Post", {'project': 'Airport', 'site': 'Airport Terminal 4'}, "name"):
 		for date in pd.date_range(start=start_date, end=end_date):
 			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post.name}):
