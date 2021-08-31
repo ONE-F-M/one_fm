@@ -59,9 +59,9 @@ class PIFSSForm103(Document):
 				self.second_name = employee.one_fm_third_name_in_arabic
 				self.third_name = employee.one_fm_last_name_in_arabic
 				self.last_name = ''
-			elif not employee.one_fm_first_name_in_arabic:
-				message_detail = '<b style="color:red; text-align:center"> You Need to Set The Missing Data In Employee Doctype</b><br>'
-				self.set_mendatory_fields(employee_full_name,message_detail)
+			# elif not employee.one_fm_first_name_in_arabic:
+			# 	message_detail = '<b style="color:red; text-align:center"> You Need to Set The Missing Data In Employee Doctype</b><br>'
+			# 	self.set_mendatory_fields(employee_full_name,message_detail)
 				
 
 	def check_employee_fields(self):
@@ -286,10 +286,8 @@ def create_103_form(param, dateofrequest,rt,cn,sn,sf):
 	pifss.date_of_request = dateofrequest
 	pifss.attach_signed_form = sf
 	pifss.insert()
-	# pifss.save()
 	pifss.workflow_state = 'Form Printed'
 	pifss.save()
-	# frappe.db.commit()
 	pifss.workflow_state = 'Pending by GRD'
 	pifss.save()
 	frappe.db.commit()
