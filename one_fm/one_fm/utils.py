@@ -55,7 +55,6 @@ def send_notification_to_grd_or_recruiter(doc, method):
 
     if doc.one_fm_has_issue and doc.one_fm_notify_recruiter == 0:
         notify_recruiter_after_checking(doc)
-        notify_pam_authorized_signature(doc)
 
 def notify_grd_to_check_applicant_documents(doc):
     """
@@ -117,6 +116,7 @@ def notify_recruiter_after_checking(doc):
                 create_notification_log(subject,message,email,dt)
                 dt.db_set('one_fm_notify_recruiter', 1)
                 dt.db_set('one_fm_applicant_status', "Checked By GRD")
+                notify_pam_authorized_signature(doc)#Inform Authorized signature 
                 
 def notify_pam_authorized_signature(doc):
     user = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':doc.one_fm_signatory_name},['user'])
@@ -140,7 +140,7 @@ def check_mendatory_fields_for_grd_and_recruiter(doc,method):
 
         if doc.one_fm_has_issue == "Yes":
             if not doc.one_fm_type_of_issues:
-                frappe.throw("Set The Type of Transfer issue Applicant has before saving")
+                frappe.throw("Set The Type of Transfer issue before saving")
     if "Recruiter" or "Senior Recruiter" in roles:
         if doc.one_fm_is_transferable == "Yes" and doc.one_fm_have_a_valid_visa_in_kuwait == 1:
             validate_mendatory_fields_for_recruiter(doc)
@@ -153,7 +153,7 @@ def validate_mendatory_fields_for_grd(doc):
     """
         Check all the mendatory fields are set by grd
     """
-    field_list = [{'PAM File Number':'one_fm_pam_file_number'}, {'PAM Designation':'one_fm_pam_designation'},{'Signatory Name':'one_fm_signatory_name'},{'Trade Name in Arabic':'one_fm_previous_company_trade_name_in_arabic'}]
+    field_list = [{'Trade Name in Arabic':'one_fm_previous_company_trade_name_in_arabic'},{'Signatory Name':'one_fm_signatory_name'}]
 
     mandatory_fields = []
     for fields in field_list:
@@ -210,7 +210,7 @@ def get_signatory_name(parent,name):
         doc = frappe.get_doc('PAM Authorized Signatory List',{'pam_file_name':parent})
         job_doc = frappe.get_doc('Job Applicant',name)
         if doc:
-            job_doc.db_set('one_fm_pam_authorized_signatory',doc.name)
+            job_doc.one_fm_pam_authorized_signatory = doc.name
             for pas in doc.authorized_signatory:
                 if pas.authorized_signatory_name_arabic:
                     names.append(pas.authorized_signatory_name_arabic)
@@ -231,7 +231,7 @@ def get_signatory_name_erf_file(parent,name):
         doc = frappe.get_doc('PAM Authorized Signatory List',{'pam_file_number':parent})
         job_doc = frappe.get_doc('Job Applicant',name)
         if doc:
-            job_doc.db_set('one_fm_pam_authorized_signatory',doc.name)
+            job_doc.one_fm_pam_authorized_signatory = doc.name
             for pas in doc.authorized_signatory:
                 if pas.authorized_signatory_name_arabic:
                     names.append(pas.authorized_signatory_name_arabic)
@@ -244,7 +244,7 @@ def notify_supervisor_change_file_number(name):
     job_Applicant = frappe.get_doc('Job Applicant',name)
     grd_supervisor = frappe.db.get_single_value('GRD Settings','default_grd_supervisor')
     page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
-    subject = _("Attention: You Are Requested to Change/Approve New PAM File Number in Job Applicant")
+    subject = _("You Are Requested to Change/Approve New PAM File Number for Applicant with Civil ID:{0} ").format(job_Applicant.one_fm_cid_number)
     message = "<p>Kindly, you are requested to Change the PAM File Number for Job Applicant: {0}  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
     create_notification_log(subject, message, [grd_supervisor], job_Applicant)
 
@@ -253,7 +253,7 @@ def notify_supervisor_change_pam_designation(name):
     job_Applicant = frappe.get_doc('Job Applicant',name)
     grd_supervisor = frappe.db.get_single_value('GRD Settings','default_grd_supervisor')
     page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
-    subject = _("Attention: You Are Requested to Change/Approve New PAM Designation in Job Applicant")
+    subject = _("You Are Requested to Change/Approve New PAM Designation for Applicant with Civil ID:{0} ").format(job_Applicant.one_fm_cid_number)
     message = "<p>Kindly, you are requested to Change the PAM Designation for Job Applicant: {0}  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
     create_notification_log(subject, message, [grd_supervisor], job_Applicant)
 
@@ -261,7 +261,7 @@ def notify_supervisor_change_pam_designation(name):
 def notify_operator_with_supervisor_response(name):
     """This method will notify GRD Operator with GRD supervisor response (Accept/Reject) on the PAM Number - PAM Desigantion changes for solving internal tp issues"""
     job_Applicant = frappe.get_doc('Job Applicant',name)
-    grd_operator = frappe.db.get_single_value('GRD Settings','default_grd_operator_pifss')
+    grd_operator = frappe.db.get_single_value('GRD Settings','default_grd_operator_transfer')
     if job_Applicant.accept_changes == 1 and job_Applicant.reject_changes == 0:
         page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
         subject = _("Supervisor Accepted Your Changes in Job Applicant")
