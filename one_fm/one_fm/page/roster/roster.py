@@ -138,7 +138,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 	employee_filters.pop('post_status')
 
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
-		filters.update({'date': ['between', (cstr(getdate()), end_date)], 'employee': key[0]})
+		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
 		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc")
@@ -149,20 +149,15 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 		schedule_list = []
 		schedule = {}
 		for date in	pd.date_range(start=start_date, end=end_date):
-			if date < getdate():
+			if date < getdate() and frappe.db.exists("Employee Schedule", {'date': cstr(date).split(" ")[0], 'employee': key[0], 'employee_availability': 'Working'}):
+				attendance = 'A'
 				if frappe.db.exists("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}):
 					attendance = frappe.db.get_value("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}, ["status"])
-					schedule = {
-						'employee': key[0],
-						'employee_name': key[1],
-						'date': cstr(date).split(" ")[0],
-						'attendance': attendance[0]
-					}
-				else:
-					schedule = {
+				schedule = {
 					'employee': key[0],
 					'employee_name': key[1],
-					'date': cstr(date).split(" ")[0]
+					'date': cstr(date).split(" ")[0],
+					'attendance': attendance[0]
 				}
 			elif not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
 				schedule = {
