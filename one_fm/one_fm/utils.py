@@ -172,13 +172,15 @@ def validate_mendatory_fields_for_recruiter(doc):
     """
         Check all the mendatory fields are set by Recruiter if Applicant wants to transfer
     """
-    if doc.one_fm_visa_type != '22':
+    visa = frappe.get_doc('Visa Type',doc.one_fm_visa_type)
+    if visa.has_previous_job:
         field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'},
             {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
             {'Nationality':'one_fm_nationality'}, {'Previous Designation':'one_fm_previous_designation'},
             {'Passport Number':'one_fm_passport_number'}, {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
             {'Marital Status':'one_fm_marital_status'}, {'Previous Work Permit Salary':'one_fm_work_permit_salary'}]
-    if doc.one_fm_visa_type == '22':
+    
+    if not visa.has_previous_job:
         field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'},
             {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
             {'Nationality':'one_fm_nationality'},{'Passport Number':'one_fm_passport_number'}, 
