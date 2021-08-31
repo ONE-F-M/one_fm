@@ -19,6 +19,7 @@ class TransferPaper(Document):
         self.set_pam_designation()
         self.set_pam_file_number()
         self.set_electronic_signature()
+        self.arrange_arabic_name()
 
         # self.set_pas_values()
         # self.set_grd_values()
@@ -84,6 +85,38 @@ class TransferPaper(Document):
                         self.db_set('authorized_signature', authorized.signature)
                 # print("-->",self.authorized_signature)
 
+    def arrange_arabic_name(self):
+        """This method arranges the names in the print format based on what is filled in job applicant doctype"""
+        applicant_full_arabic_name=[]
+        if self.applicant:
+            # applicant_full_arabic_name = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
+            #     {'Third Name in Arabic':'third_name'},{'Last Name in Arabic':'last_name'}]
+            applicant = frappe.get_doc('Job Applicant',self.applicant)
+            if applicant.one_fm_first_name_in_arabic and not applicant.one_fm_second_name_in_arabic and not applicant.one_fm_third_name_in_arabic and not applicant.one_fm_forth_name_in_arabic and applicant.one_fm_last_name_in_arabic:
+                self.first_name_in_arabic = applicant.one_fm_first_name_in_arabic
+                self.second_name_in_arabic = applicant.one_fm_last_name_in_arabic
+                self.third_name_in_arabic = ''
+                self.forth_name_in_arabic = ''
+                self.last_name_in_arabic = ''
+            elif applicant.one_fm_first_name_in_arabic and applicant.one_fm_second_name_in_arabic and not applicant.one_fm_third_name_in_arabic and not applicant.one_fm_forth_name_in_arabic and applicant.one_fm_last_name_in_arabic:
+                self.first_name_in_arabic = applicant.one_fm_first_name_in_arabic
+                self.second_name_in_arabic = applicant.one_fm_second_name_in_arabic
+                self.third_name_in_arabic = applicant.one_fm_last_name_in_arabic
+                self.forth_name_in_arabic = ''
+                self.last_name_in_arabic = ''
+            elif applicant.one_fm_first_name_in_arabic and applicant.one_fm_second_name_in_arabic and applicant.one_fm_third_name_in_arabic and not applicant.one_fm_forth_name_in_arabic and applicant.one_fm_last_name_in_arabic:
+                self.first_name_in_arabic = applicant.one_fm_first_name_in_arabic
+                self.second_name_in_arabic = applicant.one_fm_second_name_in_arabic
+                self.third_name_in_arabic = applicant.one_fm_third_name_in_arabic
+                self.forth_name_in_arabic = applicant.one_fm_last_name_in_arabic
+                self.last_name_in_arabic = ''
+            elif applicant.one_fm_first_name_in_arabic and applicant.one_fm_second_name_in_arabic and not applicant.one_fm_third_name_in_arabic and applicant.one_fm_forth_name_in_arabic and applicant.one_fm_last_name_in_arabic:
+                self.first_name_in_arabic = applicant.one_fm_first_name_in_arabic
+                self.second_name_in_arabic = applicant.one_fm_second_name_in_arabic
+                self.third_name_in_arabic = applicant.one_fm_forth_name_in_arabic
+                self.forth_name_in_arabic = applicant.one_fm_last_name_in_arabic
+                self.last_name_in_arabic = ''
+            
     def set_pas_values(self):
         doc = frappe.get_doc('Job Applicant',self.applicant)
         if doc.one_fm_pam_file_number:

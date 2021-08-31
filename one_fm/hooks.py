@@ -163,6 +163,7 @@ doc_events = {
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
+		"onload": "one_fm.utils.validate_pam_file_number_and_pam_designation",
 		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
