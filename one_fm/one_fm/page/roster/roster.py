@@ -10,7 +10,7 @@ import multiprocessing
 import os
 from multiprocessing.pool import ThreadPool as Pool
 from itertools import product
-import collections
+from one_fm.api.notification import create_notification_log
 
 @frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
@@ -138,14 +138,33 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 	employee_filters.pop('post_status')
 
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
-		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
+		filters.update({'date': ['between', (cstr(getdate()), end_date)], 'employee': key[0]})
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
 		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc")
+		filters.update({'date': ['<', add_to_date(getdate(), days=-1)]})
+		
+		if isOt:
+			filters.pop("roster_type", None)
 		schedule_list = []
 		schedule = {}
 		for date in	pd.date_range(start=start_date, end=end_date):
-			if not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
+			if date < getdate():
+				if frappe.db.exists("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}):
+					attendance = frappe.db.get_value("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}, ["status"])
+					schedule = {
+						'employee': key[0],
+						'employee_name': key[1],
+						'date': cstr(date).split(" ")[0],
+						'attendance': attendance[0]
+					}
+				else:
+					schedule = {
+					'employee': key[0],
+					'employee_name': key[1],
+					'date': cstr(date).split(" ")[0]
+				}
+			elif not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
 				schedule = {
 					'employee': key[0],
 					'employee_name': key[1],
@@ -252,20 +271,49 @@ def get_current_user_details():
 
 	
 @frappe.whitelist()
-def schedule_staff(employees, shift, post_type, otRoster, start_date, end_date):
-	import time
-	try:
-		start = time.time()
-		for employee in json.loads(employees):
-			frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, is_async=True, queue='long')
-		frappe.enqueue(update_roster, key="roster_view", is_async=True, queue='long')
-		
-		end = time.time()
-		print("[TOTAL]", end-start)
-		return True
-	except Exception as e:
-		frappe.log_error(e)
-		frappe.throw(_(e))
+def schedule_staff(employees, shift, post_type, otRoster, start_date, project_end_date, end_date=None):
+
+	validation_logs = []
+	
+	user, user_roles, user_employee = get_current_user_details()
+
+	if project_end_date == "1" and not end_date:
+		project = frappe.db.get_value("Operations Shift", shift, ["project"])
+		end_date = frappe.db.get_value("Project", project, ["expected_end_date"])
+		if not end_date:
+			validation_logs.append("No project end date found for {project}".format(project=project))
+	elif end_date and project_end_date == "0":
+		end_date = end_date
+	elif project_end_date == "0" and not end_date:
+		validation_logs.append("Please set an end date for scheduling the staff.")
+	elif project_end_date == "1" and end_date:
+		validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")
+	
+	if len(validation_logs) > 0:
+		frappe.throw(validation_logs)
+		frappe.log_error(validation_logs)
+	else:	
+		import time
+		try:
+			start = time.time()
+			for employee in json.loads(employees):
+				frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, is_async=True, queue='long')
+			frappe.enqueue(update_roster, key="roster_view", is_async=True, queue='long')
+			# Notify concerned users
+			# user_list = frappe.db.get_list("User")
+			# for user in user_list:
+			# 	roles = frappe.get_roles(user.name)
+			# 	if "Operations Manager" in roles or "Projects Manager" in roles or "Shift Supervisor" in roles or "Site Supervisor" in roles:
+			# 		subject = ""
+			# 		message = ""
+			# 		create_notification_log(subject, message, [user.name])
+			
+			end = time.time()
+			print("[TOTAL]", end-start)
+			return True
+		except Exception as e:
+			frappe.log_error(e)
+			frappe.throw(_(e))
 
 def update_roster(key):
 	frappe.publish_realtime(key, "Success")
