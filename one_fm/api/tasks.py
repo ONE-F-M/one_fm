@@ -299,12 +299,14 @@ def checkin_deadline():
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:	
-				recipients = [recipient[0] for recipient in recipients if recipient[0]]
-				
-				curr_shift = get_current_shift(recipients[0])
-				issue_penalty(recipients[0], today, penalty_code, curr_shift.shift, issuing_user, penalty_location)
-				
-				mark_attendance(recipients[0], today, 'Absent', shift.name)
+				employees = [recipient[0] for recipient in recipients if recipient[0]]
+				for employee in employees: 
+					print(employee)
+					
+					curr_shift = get_current_shift(employee)
+					issue_penalty(employee, today, penalty_code, curr_shift.shift, issuing_user, penalty_location)
+					
+					mark_attendance(employee, today, 'Absent', shift.name)
 				
 			frappe.db.commit()
 
