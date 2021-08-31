@@ -142,7 +142,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
 		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc")
-		filters.update({'date': ['<', add_to_date(getdate(), days=-1)]})
 		
 		if isOt:
 			filters.pop("roster_type", None)
