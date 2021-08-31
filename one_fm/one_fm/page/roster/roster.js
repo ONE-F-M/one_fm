@@ -1122,7 +1122,11 @@ function render_roster(res, page, isOt) {
 				'Annual Leave': 'AL',
 				'Emergency Leave': 'EL'
 			};
-			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type } = employees_data[employee_key][i];
+			let attendancemap = {
+				'P': 'greenboxcolor',
+				'A': 'redboxcolor'
+			}
+			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance } = employees_data[employee_key][i];
 			if (isOt) {
 				if (post_abbrv && roster_type == 'Over-Time') {
 					j++;
@@ -1160,6 +1164,13 @@ function render_roster(res, page, isOt) {
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
+					</td>`;
+				} else if(attendance && !employee_availability){
+					if (attendance == 'P'){j++;}
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance}</div>
 					</td>`;
 				} else {
 					sch = `
