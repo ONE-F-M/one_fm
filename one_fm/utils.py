@@ -1298,16 +1298,12 @@ def validate_job_applicant(doc, method):
 def validate_pam_file_number_and_pam_designation(doc, method):
     if(doc.one_fm_erf):
         pam_file_number,pam_designation = frappe.db.get_value('ERF',{'name':doc.one_fm_erf},['pam_file_number','pam_designation'])
-        print(pam_file_number)
-        print(pam_designation)
         doc.db_set('one_fm_erf_pam_file_number',pam_file_number)
         doc.db_set('one_fm_erf_pam_designation',pam_designation)
 
 def validate_transferable_field(doc):
     if doc.one_fm_applicant_is_overseas_or_local != 'Local':
         doc.one_fm_is_transferable = ''
-    if doc.one_fm_is_transferable == 'No':
-        doc.status = 'Rejected'
 
 def validate_mandatory_childs(doc):
     if doc.one_fm_languages:
