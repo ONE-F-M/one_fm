@@ -59,8 +59,7 @@ def send_notification_to_grd_or_recruiter(doc, method):
 def notify_grd_to_check_applicant_documents(doc):
     """
     This method is notifying operator with applicant's cid and passport to check on PAM,
-    This method runs on update, so if the notification had sent before it won't annoy the operator again
-    as it checkes notification log list.
+    This method runs on update and it checkes notification log list.
     """
     if not doc.one_fm_grd_operator:
         doc.one_fm_grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
