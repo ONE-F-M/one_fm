@@ -14,6 +14,27 @@ class DutyCommencement(Document):
 		if not self.posting_date:
 			self.posting_date = today()
 		self.set_progress()
+		self.update_salary_details_from_job_offer()
+
+	def update_salary_details_from_job_offer(self):
+		if self.salary_details and self.job_offer:
+			job_offer = frappe.get_doc('Job Offer', self.job_offer)
+			if job_offer.one_fm_salary_details:
+				total_salary = 0
+				for salary in job_offer.one_fm_salary_details:
+					sd = self.append('salary_details')
+					sd.salary_component = salary.salary_component
+					sd.amount = salary.amount
+					if "Basic" in salary.salary_component:
+						self.basic_salary = salary.amount
+					elif "Transportation" in salary.salary_component:
+						self.transportation_salary = salary.amount
+					elif "Accommodation" in salary.salary_component:
+						self.accommodation_salary = salary.amount
+					else:
+						self.other_allowances_salary = salary.amount
+					total_salary += salary.amount
+				self.total_salary = total_salary
 
 	def set_progress(self):
 		progress_wf_list = {'Open': 0, 'Submitted for Applicant Review': 20, 'Applicant Signed and Uploaded': 100,

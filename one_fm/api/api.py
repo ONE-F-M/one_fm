@@ -23,6 +23,32 @@ def set_posts_active():
             sch.post_status = "Planned"
             sch.save()
     
+@frappe.whitelist()
+def change_user_profile(image):
+    try:
+        user = frappe.get_doc("User", frappe.session.user)
+        user.user_image = image
+        user.save()
+        frappe.db.commit()
+        return user
+    except Exception as e:
+        print(frappe.get_traceback())
+
+@frappe.whitelist()
+def get_user_details():
+    try:
+        user_id = frappe.session.user
+        user= frappe.get_value("User",user_id,"*")
+        employee_ID = frappe.get_value("Employee", {"user_id": user_id}, ["name","designation"])
+        user_details={}
+        user_details["name"]=user.full_name
+        user_details["email"]=user.email
+        user_details["mobile_no"]= user.mobile_no
+        user_details["Designation"]= employee_ID[1]
+        user_details["EMP_ID"]= employee_ID[0]
+        return user_details
+    except Exception as e:
+        print(frappe.get_traceback())
 
 def rename_posts():
     sites = frappe.get_all("Operations Site")

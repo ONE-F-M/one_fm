@@ -1298,9 +1298,9 @@ def validate_job_applicant(doc, method):
 def validate_pam_file_number_and_pam_designation(doc, method):
     if(doc.one_fm_erf):
         pam_file_number,pam_designation = frappe.db.get_value('ERF',{'name':doc.one_fm_erf},['pam_file_number','pam_designation'])
-        doc.db_set('one_fm_erf_pam_file_number',pam_file_number) 
+        doc.db_set('one_fm_erf_pam_file_number',pam_file_number)
         doc.db_set('one_fm_erf_pam_designation',pam_designation)
-    
+
 def validate_transferable_field(doc):
     if doc.one_fm_applicant_is_overseas_or_local != 'Local':
         doc.one_fm_is_transferable = ''
@@ -1611,6 +1611,17 @@ def set_warehouse_contact_from_project(doc, method):
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
 
+def bank_account_on_trash(doc, method):
+    if doc.onboard_employee:
+        oe = frappe.get_doc('Onboard Employee', doc.onboard_employee)
+        oe.bank_account = ''
+        oe.bank_account_progress = 0
+        oe.bank_account_docstatus = ''
+        oe.bank_account_status = ''
+        oe.account_name = doc.account_name
+        oe.bank = doc.bank
+        oe.save(ignore_permissions=True)
+
 def update_onboarding_doc_for_bank_account(doc):
     if doc.onboard_employee:
         progress_wf_list = {'Draft': 0, 'Open Request': 30, 'Processing Bank Account Opening': 70,
@@ -1718,7 +1729,7 @@ def create_roster_daily_report():
     roster_daily_report_doc.save()
     frappe.db.commit()
 
-    # # Notify concerned users 
+    # # Notify concerned users
     # user_list = frappe.db.get_list("User")
     # for user in user_list:
     #     roles = frappe.get_roles(user.name)
