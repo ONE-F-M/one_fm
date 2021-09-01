@@ -181,7 +181,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "\nDraft\nAccepted\nDeclined\nClosed\nCancelled",
+   "options": "\nDraft\nAccepted\nDeclined\nClosed",
    "read_only": 1
   },
   {
@@ -855,7 +855,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-30 02:00:04.332732",
+ "modified": "2021-09-01 16:36:20.363416",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
