@@ -379,7 +379,8 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.flags.ignore_permissions = True
 	penalty_issuance.insert()
 	penalty_issuance.submit()
-
+	frappe.msgprint(_("A penalty has been issued against {0}".format(employee_name)))
+	
 
 def automatic_shift_assignment():
 	date = cstr(getdate())
