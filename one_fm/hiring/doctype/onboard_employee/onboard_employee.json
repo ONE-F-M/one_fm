@@ -80,6 +80,11 @@
   "documents_section",
   "applicant_documents",
   "amended_from",
+  "g2g_and_residency_section",
+  "is_g2g_fees_needed",
+  "is_residency_fee_needed",
+  "g2g_fee_and_residency_fine_amount",
+  "applicant_willing_to_pay_g2g_and_residency_payment",
   "orientation_section",
   "orientation_location",
   "orientation_on",
@@ -1158,12 +1163,44 @@
    "fieldtype": "Link",
    "label": "Operations Site",
    "options": "Operations Site"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "g2g_and_residency_section",
+   "fieldtype": "Section Break",
+   "label": "G2G and Residency"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "is_g2g_fees_needed",
+   "fieldtype": "Check",
+   "label": "G2G Fees Needed"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "is_residency_fee_needed",
+   "fieldtype": "Check",
+   "label": "Residency Fee Needed"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.is_g2g_fees_needed || doc.is_residency_fee_needed",
+   "fieldname": "g2g_fee_and_residency_fine_amount",
+   "fieldtype": "Currency",
+   "label": "G2G Fee and Residency Fine Amount"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:(doc.is_g2g_fees_needed || doc.is_residency_fee_needed) && doc.g2g_fee_and_residency_fine_amount > 0.0",
+   "fieldname": "applicant_willing_to_pay_g2g_and_residency_payment",
+   "fieldtype": "Check",
+   "label": "Applicant Willing to Pay G2G and Residency Payment"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-30 11:22:19.544091",
+ "modified": "2021-09-01 12:01:27.501861",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
