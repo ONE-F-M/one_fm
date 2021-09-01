@@ -240,7 +240,7 @@ function load_js(page) {
 						label: 'Plan Till Date',
 						fieldname: 'plan_end_date',
 						fieldtype: 'Date',
-						default: date,
+						depends_upon: 'eval:this.get_value("project_end_date")==0',
 						onchange: function () {
 							let plan_end_date = d.get_value('plan_end_date');
 							if (plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))) {
@@ -269,7 +269,7 @@ function load_js(page) {
 						label: 'Cancel Till Date',
 						fieldname: 'cancel_end_date',
 						fieldtype: 'Date',
-						default: date,
+						depends_upon: 'eval:this.get_value("project_end_date")==0',
 						onchange: function () {
 							let plan_end_date = d.get_value('cancel_end_date');
 							if (plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))) {
@@ -325,7 +325,7 @@ function load_js(page) {
 					{ 'label': 'Tuesday', 'fieldname': 'tuesday', 'fieldtype': 'Check' },
 					{ 'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check' },
 					{ 'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:this.get_value("post_status")=="Post Off" && this.get_value("repeat")!= "Does not repeat"' },
-					{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'default': date, },
+					{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'depends_upon': 'eval:this.get_value("project_end_date")==0' },
 					{
 						fieldname: 'sb2',
 						fieldtype: 'Section Break',
@@ -378,13 +378,22 @@ function load_js(page) {
 						label: 'Suspend Till Date',
 						fieldname: 'suspend_to_date',
 						fieldtype: 'Date',
-						default: date,
+						depends_on: 'eval:this.get_value("project_end_date")==0',
 						onchange: function () {
 							let suspend_to_date = d.get_value('suspend_to_date');
 							if (suspend_to_date && moment(suspend_to_date).isBefore(moment(frappe.datetime.nowdate()))) {
 								frappe.throw(__("Suspend To Date cannot be before today."));
 							}
 						}
+					},
+					{
+						fieldname: 'sb_project_end_date',
+						fieldtype: 'Section Break'
+					},
+					{
+						label: 'Project end date',
+						fieldname: 'project_end_date',
+						fieldtype: 'Check',
 					},
 				],
 				primary_action_label: 'Submit',
