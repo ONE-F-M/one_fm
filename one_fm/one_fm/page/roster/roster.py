@@ -528,34 +528,51 @@ def set_post_off(post, date, post_off_paid, post_off_unpaid):
 
 
 @frappe.whitelist()
-def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[], repeat_till=None):
+def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[], repeat_till=None, project_end_date=None):
+	
+	if not repeat_till and not cint(project_end_date):
+		frappe.throw(_("Please select either a repeat till date or check the project end date option."))
+
 	from one_fm.api.mobile.roster import month_range
-	print(selected_dates, type(selected_dates))
 	if cint(selected_dates):
 		for employee in json.loads(employees):
 			set_dayoff(employee["employee"], employee["date"])
 	else:
 		if repeat and repeat_freq in ["Daily", "Weekly", "Monthly", "Yearly"]:
-			end_date = repeat_till
+			end_date = None
+			if repeat_till and not cint(project_end_date):
+				end_date = repeat_till
 
 			if repeat_freq == "Daily":
 				for employee in json.loads(employees):
+					if cint(project_end_date):
+						project = frappe.db.get_value("Employee", {'employee': employee["employee"]}, ["project"])
+						end_date = frappe.db.get_value("Project", project, ["expected_end_date"])
 					for date in	pd.date_range(start=employee["date"], end=end_date):
 						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Weekly":
 				for employee in json.loads(employees):
+					if cint(project_end_date):
+						project = frappe.db.get_value("Employee", {'employee': employee["employee"]}, ["project"])
+						end_date = frappe.db.get_value("Project", project, ["expected_end_date"])
 					for date in	pd.date_range(start=employee["date"], end=end_date):
 						if getdate(date).strftime('%A') in week_days:
 							frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Monthly":
 				for employee in json.loads(employees):
+					if cint(project_end_date):
+						project = frappe.db.get_value("Employee", {'employee': employee["employee"]}, ["project"])
+						end_date = frappe.db.get_value("Project", project, ["expected_end_date"])
 					for date in	month_range(employee["date"], repeat_till):
 						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Yearly":
 				for employee in json.loads(employees):
+					if cint(project_end_date):
+						project = frappe.db.get_value("Employee", {'employee': employee["employee"]}, ["project"])
+						end_date = frappe.db.get_value("Project", project, ["expected_end_date"])
 					for date in	pd.date_range(start=employee["date"], end=repeat_till, freq=pd.DateOffset(years=1)):
 						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 

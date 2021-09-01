@@ -3003,14 +3003,15 @@ function dayoff(page) {
 			{ 'label': 'Tuesday', 'fieldname': 'tuesday', 'fieldtype': 'Check' },
 			{ 'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check' },
 			{ 'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:this.get_value("selected_dates")==0' },
-			{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'default': date, 'depends_on': 'eval:this.get_value("repeat")!= "Does not repeat"' }
+			{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'depends_on': 'eval:this.get_value("repeat")!= "Does not repeat" && this.get_value("project_end_date")==0' },
+			{'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
 		],
 		primary_action: function () {
 			$('#cover-spin').show(0);
 			let week_days = [];
 			let args = {};
 			let repeat_freq = '';
-			let { selected_dates, repeat, sunday, monday, tuesday, wednesday, thursday, friday, saturday, repeat_till } = d.get_values();
+			let { selected_dates, repeat, sunday, monday, tuesday, wednesday, thursday, friday, saturday, repeat_till, project_end_date } = d.get_values();
 			args["selected_dates"] = selected_dates;
 			args["employees"] = employees;
 
@@ -3021,6 +3022,7 @@ function dayoff(page) {
 			if (!selected_dates && repeat !== "Does not repeat") {
 				args["repeat"] = 1;
 				args["repeat_till"] = repeat_till;
+				args["project_end_date"] = project_end_date
 
 				if (repeat == "Weekly") {
 					repeat_freq = "Weekly";
@@ -3054,6 +3056,9 @@ function dayoff(page) {
 					$('#cover-spin').hide();
 					let element = get_wrapper_element().slice(1);
 					page[element](page);
+				}).catch(e => {
+					console.log(e);
+					$('#cover-spin').hide();
 				});
 		}
 	});
