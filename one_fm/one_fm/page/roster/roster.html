@@ -1,4 +1,4 @@
-<!-- ============================================================== -->
+﻿<!-- ============================================================== -->
 <!-- Main section start -->
 <!-- ============================================================== -->
 <!-- <div id="cover-spin"></div> -->
@@ -24,15 +24,6 @@
             <div class="d-flex justify-content-between align-items-center pl30 pr30">
                 <div class="">
                     <div class="font20 cardheadercolor fontw600 textchange d-inline-block mr10">Rostering</div>
-                    <br />
-                    <div>
-                        <label for="check" id="hamburger-menu">
-                            <input type="checkbox" id="check" />
-                            <span id="hamburger-first"></span>
-                            <span id="hamburger-second"></span>
-                            <span id="hamburger-third"></span>
-                        </label>
-                    </div>
                 </div>
                 <div class="d-none d-md-inline-block">
                     <ul
@@ -55,6 +46,116 @@
                 </div>
                 <div class="text-md-right">
                     <a href="#" class="responsivebluebtnright"><i class="fas fa-print"></i></a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-2 col-sm-12">
+                    <div class="dateblock" class="input-group date">
+                        <div id="datepicker" class="input-group date">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-12">
+                    <div class="font18 pb10 cardheadercolor">Options</div>
+                    <div class="listoffilter dateblock rosterviewfilterbg">
+
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show all
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkAllStaff">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show scheduled
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkschedule">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unscheduled
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkunschedule">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show assigned
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkassgined">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unassigned
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkunassgined">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="font18 pb10 pt30 cardheadercolor">Legend</div>
+                    <div class="listoffilter rosterviewfilterbg">
+                        <div class="row">
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview lightgreenbox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Day done according to plan</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview yellowboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Present with deviations (early punch out
+                                        or
+                                        late punch in)</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview redboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Absent</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview greyboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Staff day off</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview blueboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Planned day</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview borderbox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Unplanned Day</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview purplebox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Leaves (SL-Sick Leave, AL-Annual Leave,
+                                        EL-Emergency Leave)</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="d-flex justify-content-between align-items-center pl30 pr30">
@@ -133,168 +234,6 @@
         </div>
         <div class="container-fluid borderradius8 pt30 pl30 pr30 pb30 bg-white">
             <div class="row">
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-2 pr-md-0" id="side-bar" style="display: none">
-                    <div class="dateblock" class="input-group date">
-                        <div id="datepicker" class="input-group date">
-                        </div>
-                    </div>
-                    <div class="font18 pb10 cardheadercolor">Options</div>
-                    <div class="listoffilter dateblock rosterviewfilterbg">
-
-                        <div class="row">
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show all
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkAllStaff">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show scheduled
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkschedule">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unscheduled
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkunschedule">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show assigned
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkassgined">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unassigned
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkunassgined">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div class="listoffilter dateblock postviewfilterbg d-none">
-
-                        <div class="row">
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show Active
-                                        Posts</span>
-                                    <input type="checkbox" class="selectallcheckbox" name="chkpostActivePost"
-                                        id="chkpostActivePost">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show Inactive
-                                        Posts</span>
-                                    <input type="checkbox" class="selectallcheckbox" name="chkpostCancelPost"
-                                        id="chkpostCancelPost">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="font18 pb10 pt30 cardheadercolor">Legend</div>
-                    <div class="listoffilter rosterviewfilterbg">
-                        <div class="row">
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview lightgreenbox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Day done according to plan</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview yellowboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Present with deviations (early punch out
-                                        or
-                                        late punch in)</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview redboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Absent</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview greyboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Staff day off</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview blueboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Planned day</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview borderbox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Unplanned Day</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview purplebox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Leaves (SL-Sick Leave, AL-Annual Leave,
-                                        EL-Emergency Leave)</div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div class="listoffilter postviewfilterbg d-none ">
-                        <div class="row">
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview darkblackox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Not Planned</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview blueboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Planned</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview greyboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Off</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview yellowboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Suspended</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview redboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Cancelled</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pt-4 pt-md-0" id="main-section">
                     <!--ROSTER AND POST VIEW HERE-->
                     <div id="partialcalenderview">
@@ -316,8 +255,6 @@
                                                 </li>
                                                 <li class="active calenderlink"><a href="#"
                                                         class="residenavli active monthviewclick">Month</a></li>
-                                                <li class="calenderlink"><a href="#"
-                                                        class="residenavli weekviewclick">Week</a></li>
                                             </ul>
                                         </div>
                                         <div class="ml20">
@@ -372,8 +309,6 @@
                                                 </li>
                                                 <li class="active calenderlink"><a href="#"
                                                         class="residenavli active monthviewclick">Month</a></li>
-                                                <li class="calenderlink"><a href="#"
-                                                        class="residenavli weekviewclick">Week</a></li>
                                             </ul>
                                         </div>
                                         <div class="ml20">
@@ -428,9 +363,6 @@
                                                 </li>
                                                 <li class="calenderlink">
                                                     <a href="#" class="residenavli active monthviewclick">Month</a>
-                                                </li>
-                                                <li class="active  calenderlink">
-                                                    <a href="#" class="residenavli weekviewclick">Week</a>
                                                 </li>
                                             </ul>
                                         </div>
@@ -492,9 +424,6 @@
                                                 <li class="calenderlink">
                                                     <a href="#" class="residenavli active monthviewclick">Month</a>
                                                 </li>
-                                                <li class="active  calenderlink">
-                                                    <a href="#" class="residenavli weekviewclick">Week</a>
-                                                </li>
                                             </ul>
                                         </div>
                                         <div class="ml20">
@@ -550,9 +479,6 @@
                                                 <li class="active calenderlink">
                                                     <a href="#" class="residenavli active postmonthviewclick">Month</a>
                                                 </li>
-                                                <li class="calenderlink">
-                                                    <a href="#" class="residenavli postweekviewclick">Week</a>
-                                                </li>
                                             </ul>
                                         </div>
                                         <div class="ml20">
@@ -600,9 +526,6 @@
                                                 class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
                                                 <li class="calenderlink">
                                                     <a href="#" class="residenavli active postmonthviewclick">Month</a>
-                                                </li>
-                                                <li class="active  calenderlink">
-                                                    <a href="#" class="residenavli postweekviewclick">Week</a>
                                                 </li>
                                             </ul>
                                         </div>

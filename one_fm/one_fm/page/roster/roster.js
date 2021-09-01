@@ -150,17 +150,6 @@ function load_js(page) {
 		$(".otRosterClick").click(otRosterClick);
 
 		//week view click jquery
-		$('.postweekviewclick').click(function () {
-			$rosterMonth.addClass("d-none");
-			$postMonth.addClass("d-none");
-			$rosterWeek.addClass("d-none");
-			$postWeek.removeClass("d-none");
-			displayWeekCalendar(weekCalendarSettings, page);
-
-			GetWeekHeaders(0, ".postWeek");
-			get_post_week_data(page);
-		});
-		//week view click jquery
 		$('.postmonthviewclick').click(function () {
 			$rosterMonth.addClass("d-none");
 			$postMonth.removeClass("d-none");
@@ -183,20 +172,7 @@ function load_js(page) {
 			}
 			get_roster_data(page);
 		});
-		//tab click for week view data function call
-		$(".weekviewclick").click(function () {
-			$rosterMonth.addClass("d-none");
-			$postMonth.addClass("d-none");
-			$rosterWeek.removeClass("d-none");
-			$postWeek.addClass("d-none");
-			displayWeekCalendar(weekCalendarSettings, page);
-			GetWeekHeaders(0, ".rosterWeek");
-			let wrapper_element = get_wrapper_element();
-			if (page.search_key) {
-				$(wrapper_element).find(".search-employee").val(page.search_key);
-			}
-			get_roster_week_data(page);
-		});
+
 		//tab click for week view data function call
 
 		$(".editpostclassclick").click(function () {
@@ -1012,7 +988,7 @@ function get_roster_data(page, isOt) {
 	if (page.search_key) {
 		search_key = page.search_key;
 	}
-	let { start_date, end_date } = page;
+	let { } = page;
 	let { project, site, shift, department, post_type } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
 	console.log(limit_start, limit_page_length);
@@ -1125,7 +1101,7 @@ function render_roster(res, page, isOt) {
 			let attendancemap = {
 				'P': 'greenboxcolor',
 				'A': 'redboxcolor'
-			}
+			};
 			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance } = employees_data[employee_key][i];
 			if (isOt) {
 				if (post_abbrv && roster_type == 'Over-Time') {
@@ -1165,8 +1141,8 @@ function render_roster(res, page, isOt) {
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
-				} else if(attendance && !employee_availability){
-					if (attendance == 'P'){j++;}
+				} else if (attendance && !employee_availability) {
+					if (attendance == 'P') { j++; }
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center so"
@@ -1195,25 +1171,6 @@ function render_roster(res, page, isOt) {
 	bind_events(page);
 
 }
-
-const showSideBar = () => {
-	document.getElementById('main-section').className = "col-xs-12 col-sm-8 col-md-8 col-lg-10 pl-md-5 pt-4 pt-md-0";
-	document.getElementById('side-bar').style = "";
-};
-
-const hideSideBar = () => {
-	document.getElementById('main-section').className = "col-xs-12 col-sm-12 col-md-12 col-lg-12 pt-4 pt-md-0";
-	document.getElementById('side-bar').style = "display: none; width: 0";
-};
-
-
-setTimeout(() => {
-	document.getElementById("check").addEventListener("click", handleHamburgerClick);
-}, 2000);
-const handleHamburgerClick = () => {
-	if (document.getElementById("check").checked) showSideBar();
-	else hideSideBar();
-};
 
 
 // setTimeout(() => {
@@ -1821,7 +1778,7 @@ const search_staff = () => {
 function GetHeaders(IsMonthSet, element) {
 
 	var thHTML = "";
-	var thStartHTML = `<th class="sticky vertical-sticky">Post Type / Days</th>`;
+	var thStartHTML = `<th class="sticky vertical-sticky" style="max-width: 140px !important; min-width: 140px !important;">Post Type / Days</th>`;
 	var thEndHTML = `<th class="vertical-sticky">Total</th>`;
 	element = get_wrapper_element(element);
 	var selectedMonth;
@@ -2812,7 +2769,7 @@ function schedule_change_post(page) {
 					}
 				}
 			},
-			{'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
+			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
 			{
 				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:this.get_value("project_end_date")==0', onchange: function () {
@@ -2846,7 +2803,7 @@ function schedule_change_post(page) {
 					$('#cover-spin').hide();
 					let element = get_wrapper_element().slice(1);
 					update_roster_view(element, page);
-				}).catch(e=>{
+				}).catch(e => {
 					console.log(e);
 					$('#cover-spin').hide();
 				});
