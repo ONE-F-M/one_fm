@@ -1,4 +1,4 @@
-import frappe
+import frappe, base64
 from frappe import _
 import pandas as pd
 from frappe.utils import cstr
@@ -26,9 +26,16 @@ def set_posts_active():
     
 @frappe.whitelist()
 def change_user_profile(image):
+    content = base64.b64decode(image)
+    filename = frappe.session.user+".png"
+    OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/public/files/"+filename
+    fh = open(OUTPUT_IMAGE_PATH, "wb")
+    fh.write(content)
+    fh.close()
+    image_file="/files/"+filename
     try:
         user = frappe.get_doc("User", frappe.session.user)
-        user.user_image = image
+        user.user_image = image_file
         user.save()
         frappe.db.commit()
         return user
