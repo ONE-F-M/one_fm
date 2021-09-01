@@ -115,12 +115,12 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 
 	if isOt:
 		employee_filters.update({'employee_availability' : 'Working'})
-		employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
+		employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 		master_data.update({'total' : len(employees)})
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 		employee_filters.pop('employee_availability')
 	else:  
-		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
+		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 		employees_asa = frappe.db.get_list("Additional Shift Assignment", additional_assignment_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length)
 		if len(employees_asa) > 0:
 			employees.extend(employees_asa)
@@ -135,7 +135,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 	if post_type:
 		employee_filters.update({'post_type': post_type})
 
-	post_types_list = frappe.db.get_list("Post Schedule", employee_filters, ["distinct post_type", "post_abbrv"])
+	post_types_list = frappe.db.get_list("Post Schedule", employee_filters, ["distinct post_type", "post_abbrv"], ignore_permissions=True)
 	if post_type:
 		employee_filters.pop('post_type', None)
 	employee_filters.pop('date')
@@ -145,7 +145,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 		filters.update({'date': ['between', (cstr(getdate()), end_date)], 'employee': key[0]})
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
-		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc")
+		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc", ignore_permissions=True)
 		
 		if isOt:
 			filters.pop("roster_type", None)
@@ -155,7 +155,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 			if date < getdate() and frappe.db.exists("Employee Schedule", {'date': cstr(date).split(" ")[0], 'employee': key[0], 'employee_availability': 'Working'}):
 				attendance = 'A'
 				if frappe.db.exists("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}):
-					attendance = frappe.db.get_value("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}, ["status"])
+					attendance = frappe.db.get_value("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}, ["status"], ignore_permissions=True)
 				schedule = {
 					'employee': key[0],
 					'employee_name': key[1],
@@ -179,9 +179,9 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 		post_list = []
 		post_filters = employee_filters
 		post_filters.update({'date':  ['between', (start_date, end_date)], 'post_type': key[1]})
-		post_filled_count = frappe.db.get_list("Employee Schedule",["name", "employee", "date"] ,{'date':  ['between', (start_date, end_date)],'post_type': key[1] }, order_by="date asc")
+		post_filled_count = frappe.db.get_list("Employee Schedule",["name", "employee", "date"] ,{'date':  ['between', (start_date, end_date)],'post_type': key[1] }, order_by="date asc", ignore_permissions=True)
 		post_filters.update({"post_status": "Planned"})
-		post_schedule_count = frappe.db.get_list("Post Schedule", ["name", "date"], post_filters)
+		post_schedule_count = frappe.db.get_list("Post Schedule", ["name", "date"], post_filters, ignore_permissions=True)
 		post_filters.pop("post_status", None)
 
 		for date in	pd.date_range(start=start_date, end=end_date):
@@ -616,7 +616,7 @@ def set_post_off(post, date, post_off_paid, post_off_unpaid):
 @frappe.whitelist()
 def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[], repeat_till=None, project_end_date=None):
 	
-	if not repeat_till and not cint(project_end_date):
+	if not repeat_till and not cint(project_end_date) and not selected_dates:
 		frappe.throw(_("Please select either a repeat till date or check the project end date option."))
 
 	from one_fm.api.mobile.roster import month_range
@@ -722,7 +722,7 @@ def assign_job(employee, start_date, end_date, shift, post_type):
 	end = time.time()
 	print("------------------[TIME TAKEN]===================", end-start)
 
-
+@frappe.whitelist(allow_guest=True)
 def update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, date, employee_availability, post_type, roster_type):
 	frappe.db.set_value("Employee Schedule", roster, "shift", val=shift)
 	frappe.db.set_value("Employee Schedule", roster, "site", val=site)
