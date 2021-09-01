@@ -1070,7 +1070,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee && doc.nationality == 'Kuwaiti'",
    "fieldname": "pifss_form_103_section",
    "fieldtype": "Section Break",
    "label": "PIFSS Form 103"
@@ -1110,7 +1110,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee && doc.nationality == 'Kuwaiti'",
    "fieldname": "mgrp_section",
    "fieldtype": "Section Break",
    "label": "MGRP"
@@ -1200,7 +1200,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-01 12:01:27.501861",
+ "modified": "2021-09-01 12:22:12.368358",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
