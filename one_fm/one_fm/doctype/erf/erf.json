@@ -181,7 +181,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "\nDraft\nAccepted\nDeclined\nClosed",
+   "options": "\nDraft\nAccepted\nDeclined\nClosed\nCancelled",
    "read_only": 1
   },
   {
@@ -844,6 +844,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "pam_file",
    "fetch_from": "pam_file.pam_file_number",
    "fieldname": "pam_file_number",
@@ -854,7 +855,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-01 16:36:20.363416",
+ "modified": "2021-09-01 17:57:07.162902",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
@@ -936,6 +937,27 @@
    "read": 1,
    "report": 1,
    "role": "Senior Recruiter",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
    "share": 1,
    "write": 1
   }
