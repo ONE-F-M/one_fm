@@ -320,8 +320,8 @@ scheduler_events = {
 		"0/5 * * * *": [
 			"one_fm.api.tasks.supervisor_reminder",
 			"one_fm.api.tasks.final_reminder",
-			"one_fm.api.tasks.checkin_deadline",
-			"one_fm.api.tasks.automatic_checkout"
+			"one_fm.api.tasks.checkin_deadline"
+			#"one_fm.api.tasks.automatic_checkout"
 		],
 		"0/15 * * * *": [
 			"one_fm.api.tasks.update_shift_type"
