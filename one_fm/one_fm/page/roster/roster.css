@@ -125,7 +125,10 @@ body[data-route="roster"] .table-parent {
   overflow-x: scroll;
   /* float: left; */
   /* height: calc(80vh - 40px); */
-  height: 1200px;
+  height: 700px;
+  transform: scale(0.75); 
+  transform-origin: 0% 0% 0px; 
+  width: 130%
 }
 /*--------------------------------------------------*/
 body[data-route="roster"] .pagination {
@@ -188,44 +191,6 @@ body[data-route="roster"] .switch-container {
   margin-left: 20px; */
     /* margin-left: 7%; */
 }
-
-
-/* Hamburger Menu */
-
-#main-section {
-  transition: 0.2s;
-}
-#hamburger-menu{
-  display:flex;
-   flex-direction:column;
-   width:70px;
-   cursor:pointer;
- }
- 
- #hamburger-menu span{
-   background: rgb(0, 0, 0);
-   border-radius:10px;
-   height:7px;
-   margin: 7px 0;
-   transition: .4s  cubic-bezier(0.68, -0.6, 0.32, 1.6);
- 
- }
- 
- 
- #hamburger-first{
-   width:50%;
-   
- }
- 
- #hamburger-second{
-   width:100%;
- }
- 
- 
- #hamburger-third{
-   width:75%;
-  
- }
  
  
  #check{
