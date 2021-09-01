@@ -1,30 +1,30 @@
 {
  "actions": [],
- "autoname": "field:religion_english",
+ "autoname": "field:religion",
  "creation": "2021-09-01 08:48:09.126040",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "religion_english",
+  "religion",
   "religion_arabic"
  ],
  "fields": [
   {
-   "fieldname": "religion_english",
-   "fieldtype": "Data",
-   "label": "Religion (ENGLISH)",
-   "unique": 1
-  },
-  {
    "fieldname": "religion_arabic",
    "fieldtype": "Data",
    "label": "Religion (ARABIC)"
+  },
+  {
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "label": "Religion",
+   "unique": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-09-01 08:48:53.708475",
+ "modified": "2021-09-01 11:08:53.228378",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Religion",
