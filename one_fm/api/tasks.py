@@ -359,7 +359,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance = frappe.new_doc("Penalty Issuance")
 	penalty_issuance.issuing_time = now_datetime()
 	penalty_issuance.location = penalty_location
-	penalty_issuance.penalty_location = penalty
+	penalty_issuance.penalty_location = "Head Office"
 	penalty_issuance.penalty_occurence_time = date
 	penalty_issuance.shift = shift
 	penalty_issuance.site = site
