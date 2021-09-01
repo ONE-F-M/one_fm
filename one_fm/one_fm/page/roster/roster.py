@@ -271,16 +271,19 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 	
 	user, user_roles, user_employee = get_current_user_details()
 
-	if project_end_date == "1" and not end_date:
+	if cint(project_end_date) and not end_date:
 		project = frappe.db.get_value("Operations Shift", shift, ["project"])
 		end_date = frappe.db.get_value("Project", project, ["expected_end_date"])
 		if not end_date:
 			validation_logs.append("No project end date found for {project}".format(project=project))
-	elif end_date and project_end_date == "0":
+	
+	elif end_date and not cint(project_end_date):
 		end_date = end_date
-	elif project_end_date == "0" and not end_date:
+	
+	elif not cint(project_end_date) and not end_date:
 		validation_logs.append("Please set an end date for scheduling the staff.")
-	elif project_end_date == "1" and end_date:
+	
+	elif cint(project_end_date) and end_date:
 		validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")
 	
 	if len(validation_logs) > 0:
