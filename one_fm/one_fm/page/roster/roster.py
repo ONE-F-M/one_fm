@@ -82,6 +82,10 @@ def get_staff_filters_data():
 @frappe.whitelist()
 def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=None, project=None, site=None, shift=None, department=None, post_type=None, isOt=None, limit_start=0, limit_page_length=100):
 	start = time.time()
+
+	if not project:
+		frappe.throw(_("Please select a project to view the roster."))
+		
 	master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
 	post_types_list = []
 	employees = []
