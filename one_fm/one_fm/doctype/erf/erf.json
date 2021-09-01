@@ -844,7 +844,6 @@
    "permlevel": 1
   },
   {
-   "allow_on_submit": 1,
    "depends_on": "pam_file",
    "fetch_from": "pam_file.pam_file_number",
    "fieldname": "pam_file_number",
@@ -855,7 +854,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-30 02:00:04.332732",
+ "modified": "2021-09-01 13:33:19.344134",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

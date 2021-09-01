@@ -97,10 +97,10 @@ var create_custom_buttons = function(frm) {
 	if(frm.doc.employee && !frm.doc.bank_account){
 		cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
 	}
-	if(frm.doc.employee && !frm.doc.mgrp){
+	if(frm.doc.employee && !frm.doc.mgrp && frm.doc.nationality == 'Kuwaiti'){
 		cutom_btn_and_action(frm, 'create_mgrp', 'MGRP');
 	}
-	if(frm.doc.employee && !frm.doc.pifss_form_103){
+	if(frm.doc.employee && !frm.doc.pifss_form_103 && frm.doc.nationality == 'Kuwaiti'){
 		cutom_btn_and_action(frm, 'create_103_form', 'PIFSS Form 103');
 	}
 	if(frm.doc.employee && frm.doc.tools_needed_for_work && !frm.doc.request_for_material){
@@ -147,7 +147,7 @@ var btn_inform_applicant = function(frm) {
 };
 
 var cutom_btn_and_action = function(frm, method, dt) {
-	frm.add_custom_button(__('Create '+dt), function() {
+	frm.add_custom_button(__(dt), function() {
 		frappe.call({
 			doc: frm.doc,
 			method: method,
@@ -159,7 +159,7 @@ var cutom_btn_and_action = function(frm, method, dt) {
 			freeze: true,
 			freeze_message: (__('Creating {0} ....!', [dt]))
 		});
-	}).addClass('btn-primary');
+	}, __('Create')).addClass('btn-primary');
 }
 
 var set_offer_details = function(frm, job_offer) {

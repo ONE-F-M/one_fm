@@ -17,7 +17,7 @@ class DutyCommencement(Document):
 		self.update_salary_details_from_job_offer()
 
 	def update_salary_details_from_job_offer(self):
-		if self.salary_details and self.job_offer:
+		if not self.salary_details and self.job_offer:
 			job_offer = frappe.get_doc('Job Offer', self.job_offer)
 			if job_offer.one_fm_salary_details:
 				total_salary = 0
