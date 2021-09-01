@@ -138,7 +138,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 	employee_filters.pop('post_status')
 
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
-		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
+		filters.update({'date': ['between', (cstr(getdate()), end_date)], 'employee': key[0]})
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
 		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc")
