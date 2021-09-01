@@ -85,6 +85,7 @@ class PenaltyIssuance(Document):
 			
 			penalty.penalty_occurence_time = self.penalty_occurence_time
 			penalty.penalty_location = self.penalty_location
+			print(self.penalty_location)
 			penalty.shift = self.shift
 			penalty.site = self.site
 			penalty.site_location = self.site_location
@@ -145,8 +146,7 @@ class PenaltyIssuance(Document):
 						'penalty_levied': penalty_levied,
 						'deduction': deduction
 					})
-					penalty.append("penalty_details", penalty_details)
-
+			penalty.append("penalty_details", penalty_details)
 			penalty.save()
 			# assign_to({
 			# 	"assign_to": user_id,

@@ -102,7 +102,7 @@ frappe.ui.form.on('Job Applicant', {
 // 				}
 // 			});
 		}
-	
+
 	},
 	one_fm_change_pam_file_number: function(frm){
 
@@ -112,7 +112,7 @@ frappe.ui.form.on('Job Applicant', {
 			function(){//yes
 				document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#ec645e";
 				frm.set_value('pam_number_button',1);
-				
+
 
 			},
 			function(){//no
@@ -311,14 +311,14 @@ frappe.ui.form.on('Job Applicant', {
 		}
 	},
 	accept_changes: function(frm){
-		
+
 		if(frm.doc.accept_changes == 1 && frm.doc.reject_changes == 0){
 			let msg = __('Do You Want to Accept Changes Done By Operator?')
 			frappe.confirm(
 				msg,
 				function(){
 					// Yes
-					
+
 				},
 				function(){
 					// No
@@ -343,7 +343,7 @@ frappe.ui.form.on('Job Applicant', {
 		}
 	},
 	reject_changes: function(frm){
-		
+
 		if(frm.doc.reject_changes == 1 && frm.doc.accept_changes == 0){
 			let msg = __('Do You Want to Reject Changes Done By Operator?')
 			frappe.confirm(
@@ -358,7 +358,7 @@ frappe.ui.form.on('Job Applicant', {
 					if(frm.doc.one_fm_pam_designation){
 						frm.set_value('one_fm_old_number', frm.doc.one_fm_file_number);
 					}
-					
+
 				},
 				function(){
 					// No
@@ -406,7 +406,7 @@ frappe.ui.form.on('Job Applicant', {
 						}
 					});
 					frm.refresh_field("one_fm_signatory_name");
-					
+
 			}
 			if((frm.doc.pam_number_button == 0) && (frm.doc.one_fm_erf_pam_file_number)){
 				//if PAM file Number has changes in job applicant, set the signatory names of the old file in erf
@@ -422,13 +422,13 @@ frappe.ui.form.on('Job Applicant', {
 						}
 					});
 					frm.refresh_field("one_fm_signatory_name");
-					
+
 			}
 		}
 	},
 	send_changes_to_supervisor: function(frm){
 		frm.save();
-		
+
 		let msg = __('Do You Want to Notify GRD Supervisor With Your Changes?')
 		frappe.confirm(
 			msg,
@@ -459,7 +459,7 @@ frappe.ui.form.on('Job Applicant', {
 					}
 
 				}if(frm.doc.pam_number_button ==1 && frm.doc.pam_designation_button == 1){
-					if((frm.doc.one_fm_old_number != frm.doc.one_fm_file_number) && 
+					if((frm.doc.one_fm_old_number != frm.doc.one_fm_file_number) &&
 					(frm.doc.one_fm_old_designation != frm.doc.one_fm_pam_designation)){
 						frappe.call({
 							method: "one_fm.one_fm.utils.notify_supervisor_change_file_number",
@@ -473,7 +473,7 @@ frappe.ui.form.on('Job Applicant', {
 								'name': frm.doc.name,
 							}
 						});
-					}else if((frm.doc.one_fm_old_number != frm.doc.one_fm_file_number) && 
+					}else if((frm.doc.one_fm_old_number != frm.doc.one_fm_file_number) &&
 					(frm.doc.one_fm_old_designation == frm.doc.one_fm_pam_designation)){
 						frappe.call({
 							method: "one_fm.one_fm.utils.notify_supervisor_change_file_number",
@@ -481,7 +481,7 @@ frappe.ui.form.on('Job Applicant', {
 								'name': frm.doc.name,
 							}
 						});
-					}else if((frm.doc.one_fm_old_number == frm.doc.one_fm_file_number) && 
+					}else if((frm.doc.one_fm_old_number == frm.doc.one_fm_file_number) &&
 					(frm.doc.one_fm_old_designation != frm.doc.one_fm_pam_designation)){
 						frappe.call({
 							method: "one_fm.one_fm.utils.notify_supervisor_change_pam_designation",
@@ -499,7 +499,7 @@ frappe.ui.form.on('Job Applicant', {
 
 			}
 		);
-		
+
 	}
 
 });
@@ -535,9 +535,9 @@ var set_grd_field_properties = function(frm){
 		set_read_only_fields(frm, read_fields, true);
 		set_hidden_fields(frm, hide_fields, true);
 
-		
+
 	}
-	
+
 	//field only for grd supervisor
 	if(frappe.user.has_role("GRD Operator")){
 		let hide_fields=['save_me']
@@ -573,7 +573,7 @@ var set_grd_field_properties = function(frm){
 		'accept_changes','reject_changes','one_fm_previous_company_pam_file_number','one_fm_signatory_name'];
 		set_read_only_fields(frm, read_fields, true);
 	}
-	
+
 };
 
 var change_applicant_erf = function(frm) {
@@ -768,17 +768,17 @@ var validate_date_of_birth = function(frm, minimum_age_required) {
 var validate_cid = function(frm) {
 	if(frm.doc.one_fm_cid_number){
 		var valid_cid = true;
-		if(frm.doc.one_fm_cid_number.length != 12 || !isNumeric(frm.doc.one_fm_cid_number)){
-			valid_cid = false;
+		if (frm.doc.one_fm_cid_number.length > 12){
+			frappe.throw(__("Civil ID should be 12 Digit.!"));
 		}
-		else if (frm.doc.one_fm_date_of_birth){
-			if(!is_dob_include_in_cid(frm.doc.one_fm_cid_number, frm.doc.one_fm_date_of_birth)){
-				valid_cid = false;
+		else if (frm.doc.one_fm_cid_number.length == 12 && !isNumeric(frm.doc.one_fm_cid_number)){
+			frappe.throw(__("Civil ID should be Numeric.!"));
+		}
+		else if (frm.doc.one_fm_cid_number.length == 12 && frm.doc.one_fm_date_of_birth){
+			var date_string = is_dob_include_in_cid(frm.doc.one_fm_cid_number, frm.doc.one_fm_date_of_birth)
+			if(!frm.doc.one_fm_cid_number.includes(date_string)){
+				frappe.throw(__("Civil ID should includes Date of Birth in the format " + date_string + " .!"));
 			}
-		}
-		if(valid_cid == false){
-			frm.set_value('one_fm_cid_number', '');
-			frappe.throw(__("Please Enter a Valid Civil ID.!"));
 		}
 	}
 	function isNumeric(num){
@@ -807,8 +807,7 @@ var is_dob_include_in_cid = function(cid, dob) {
 	}
 	year = year.toString().slice(-2);
 	let date_string = year+month+day;
-	console.log('Expected DOB in CIVIL ID: '+date_string);
-	return cid.includes(date_string);
+	return date_string;
 };
 
 var set_field_properties_on_agency_applying = function(frm) {

@@ -280,7 +280,7 @@ def checkin_deadline():
 			penalty_location ="0,0"
 		# shift_start is equal to now time + deadline
 		#print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
-		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.deadline))).time()):
+		if shift.deadline!=0 and strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.deadline))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 
 			recipients = frappe.db.sql("""
@@ -299,12 +299,14 @@ def checkin_deadline():
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:	
-				recipients = [recipient[0] for recipient in recipients if recipient[0]]
-				
-				curr_shift = get_current_shift(recipients[0])
-				issue_penalty(recipients[0], today, penalty_code, curr_shift.shift, issuing_user, penalty_location)
-				
-				mark_attendance(recipients[0], today, 'Absent', shift.name)
+				employees = [recipient[0] for recipient in recipients if recipient[0]]
+				for employee in employees: 
+					print(employee)
+					
+					curr_shift = get_current_shift(employee)
+					issue_penalty(employee, today, penalty_code, curr_shift.shift, issuing_user, penalty_location)
+					
+					mark_attendance(employee, today, 'Absent', shift.name)
 				
 			frappe.db.commit()
 
@@ -357,7 +359,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance = frappe.new_doc("Penalty Issuance")
 	penalty_issuance.issuing_time = now_datetime()
 	penalty_issuance.location = penalty_location
-	penalty_issuance.penalty_location = penalty
+	penalty_issuance.penalty_location = "Head Office"
 	penalty_issuance.penalty_occurence_time = date
 	penalty_issuance.shift = shift
 	penalty_issuance.site = site
@@ -377,7 +379,8 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.flags.ignore_permissions = True
 	penalty_issuance.insert()
 	penalty_issuance.submit()
-
+	frappe.msgprint(_("A penalty has been issued against {0}".format(employee_name)))
+	
 
 def automatic_shift_assignment():
 	date = cstr(getdate())
