@@ -54,16 +54,20 @@ def create_payroll_entry(start_date, end_date):
 		payroll_entry.posting_date = getdate()
 		#payroll_entry.department = department
 		payroll_entry.payroll_frequency = "Monthly"
+		payroll_entry.exchange_rate = 0
+		payroll_entry.payroll_payable_account = frappe.get_value("Company", erpnext.get_default_company(), "default_payroll_payable_account")
 		payroll_entry.company = erpnext.get_default_company()
 		payroll_entry.start_date = start_date
 		payroll_entry.end_date = end_date
-		payroll_entry.cost_center = frappe.get_value("Company", erpnext.get_default_company(), "cost_center") or "Payroll Test - ONEFM"
+		payroll_entry.cost_center = frappe.get_value("Company", erpnext.get_default_company(), "cost_center")
 		payroll_entry.save()
 		payroll_entry.fill_employee_details()
 		payroll_entry.save()
 		payroll_entry.submit()
+		frappe.commit()
+		return payroll_entry
 	except Exception:
-		frappe.log_error(frappe.get_traceback(), selected_dept+' | '+cstr(start_date)+' | '+cstr(end_date))
+		frappe.log_error(frappe.get_traceback(), cstr(start_date)+' | '+cstr(end_date))
 
 
 

@@ -5,7 +5,8 @@ from frappe.utils import cstr
 from frappe.model.rename_doc import rename_doc
 import requests
 import json
-
+from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
+from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
 
 @frappe.whitelist()
 def _one_fm():
@@ -23,6 +24,41 @@ def set_posts_active():
             sch.post_status = "Planned"
             sch.save()
     
+@frappe.whitelist()
+def change_user_profile(image):
+    try:
+        user = frappe.get_doc("User", frappe.session.user)
+        user.user_image = image
+        user.save()
+        frappe.db.commit()
+        return user
+    except Exception as e:
+        print(frappe.get_traceback())
+
+@frappe.whitelist()
+def get_user_details():
+    try:
+        user_id = frappe.session.user
+        user= frappe.get_value("User",user_id,"*")
+        employee_ID = frappe.get_value("Employee", {"user_id": user_id}, ["name","designation"])
+        
+        Rank = get_user_rank(user_id)
+        energy_Review_Point = get_user_energy_and_review_points(user_id)
+
+        user_details={}
+        user_details["Name"]=user.full_name
+        user_details["Email"]=user.email
+        user_details["Mobile_no"]= user.mobile_no
+        user_details["Designation"]= employee_ID[1]
+        user_details["EMP_ID"]= employee_ID[0]
+        user_details["User_Image"] = user.user_image
+        user_details["Monthly_Rank"] = str(Rank["monthly_rank"]).strip('[]') if len(Rank["monthly_rank"])!=0 else "0"
+        user_details["Rank"] = str(Rank["all_time_rank"]).strip('[]') if len(Rank["all_time_rank"])!=0 else "0"
+        user_details["Energy_Point"] = str(int(energy_Review_Point[user_id]["energy_points"])) if len(energy_Review_Point)!=0 else "0"
+        user_details["Review_Point"] = str(int(energy_Review_Point[user_id]["review_points"])) if len(energy_Review_Point)!=0 else "0"
+        return user_details
+    except Exception as e:
+        print(frappe.get_traceback())
 
 def rename_posts():
     sites = frappe.get_all("Operations Site")

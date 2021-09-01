@@ -98,12 +98,11 @@
   {
    "fieldname": "pam_file_number",
    "fieldtype": "Data",
-   "label": "PAM File Number",
-   "read_only": 1
+   "label": "PAM File Number"
   }
  ],
  "links": [],
- "modified": "2021-08-18 10:24:22.324891",
+ "modified": "2021-08-31 11:30:33.639571",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM File",

@@ -127,7 +127,6 @@
    "label": "Authorized Signatory Name Arabic"
   },
   {
-   "fetch_from": "applicant.one_fm_pam_file_number",
    "fieldname": "contract_file_number",
    "fieldtype": "Data",
    "label": "Contract File Number"
@@ -159,7 +158,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "applicant.one_fm_previous_company_contract_file_number",
    "fieldname": "previous_company_contract_file_number",
    "fieldtype": "Data",
    "label": "Contract File Number"
@@ -391,6 +389,7 @@
    "label": "Residency Number"
   },
   {
+   "fetch_from": "applicant.one_fm_last_working_date",
    "fieldname": "end_work_date",
    "fieldtype": "Date",
    "label": "Last Working Date"
@@ -465,20 +464,20 @@
    "label": "Work Permit Ref"
   },
   {
-   "fieldname": "license_number",
+   "fetch_from": "applicant.one_fm_previous_company_issuer_number",
+   "fieldname": "previous_company_license_number",
    "fieldtype": "Data",
    "label": "License Number"
   },
   {
-   "fetch_from": "applicant.one_fm_previous_company_issuer_number",
-   "fieldname": "previous_company_license_number",
+   "fieldname": "license_number",
    "fieldtype": "Data",
    "label": "License Number"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-26 12:06:06.264659",
+ "modified": "2021-08-24 15:57:25.256223",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Transfer Paper",

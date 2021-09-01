@@ -6,6 +6,11 @@ frappe.ui.form.on('Accommodation Checkin Checkout', {
 		set_filters(frm);
 		set_date(frm);
 		set_field_properties(frm);
+		if(!frm.is_new() && !frm.is_dirty() && frm.doc.type == 'IN' && !frm.doc.checked_out){
+			frm.add_custom_button(__('Transfer Accommodation'), function() {
+				transfer_accommodation(frm);
+			});
+		}
 	},
 	booking_reference: function(frm) {
 		set_checkin_details(frm);
@@ -31,6 +36,82 @@ frappe.ui.form.on('Accommodation Checkin Checkout', {
 		set_field_properties(frm);
 	}
 });
+
+var transfer_accommodation = function(frm) {
+	if(frm.is_dirty()){
+		frappe.throw(__('Please Save the Document and Continue .!'))
+	}
+	else{
+		transfer_accommodation_dialoge(frm);
+	}
+};
+
+var transfer_accommodation_action = function(frm, bed) {
+	frappe.call({
+		doc: frm.doc,
+		method: 'transfer_accommodation',
+		args: {bed: bed},
+		callback: function(r) {
+			if(!data.exc){
+				frm.reload_doc();
+			}
+		},
+		freeze: true,
+		freeze_message: __('Transfer In Progress ...!')
+	});
+}
+
+var transfer_accommodation_dialoge = function(frm) {
+	var dialog = new frappe.ui.Dialog({
+		title: 'Transfer Accommodation',
+		fields: [
+			{fieldtype: "Link", label: "Accommodation", fieldname: "accommodation", read_only: 1, options: "Accommodation"},
+			{fieldtype: "Link", label: "Floor", fieldname: "floor", reqd: 1, options: "Floor",
+				get_query: function(){
+					return {
+						query: "one_fm.accommodation.doctype.accommodation_space.accommodation_space.filter_floor",
+						filters: {'accommodation': dialog.get_value('accommodation')}
+					}
+				}
+			},
+			{fieldtype: "Link", label: "Unit", fieldname: "unit", reqd: 1, options: "Accommodation Unit",
+				get_query: function(){
+					return {
+						filters: {
+							'accommodation': dialog.get_value('accommodation'),
+							'floor_name': dialog.get_value('floor')
+						}
+					}
+				}
+			},
+			{fieldtype: "Column Break"},
+			{fieldtype: "Link", label: "Space", fieldname: "space", reqd: 1, options: "Accommodation Space",
+				get_query: function(){
+					return {
+						filters: {
+							'accommodation': dialog.get_value('accommodation'),
+							'accommodation_unit': dialog.get_value('unit'),
+							'status': 'Vacant'
+						}
+					}
+				}
+			},
+			{fieldtype: "Link", label: "Bed", fieldname: "bed", options:"Bed", reqd: 1}
+		],
+		primary_action_label: __("Transfer"),
+		primary_action : function(){
+			if(dialog.get_value('bed')){
+				transfer_accommodation_action(frm, dialog.get_value('bed'));
+				dialog.hide();
+			}
+			else{
+				frappe.throw(__('Please select a Bed to Transfer !!'));
+			}
+		}
+	});
+	dialog.set_value('accommodation', frm.doc.accommodation);
+	dialog.show();
+};
 
 var set_field_properties = function(frm) {
 	if(frm.doc.tenant_category == 'Granted Service'){

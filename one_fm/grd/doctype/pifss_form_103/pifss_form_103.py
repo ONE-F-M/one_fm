@@ -15,6 +15,7 @@ from one_fm.hiring.utils import update_onboarding_doc
 
 class PIFSSForm103(Document):
 	def validate(self):
+		self.employee_full_name()
 		self.check_employee_fields()
 		self.set_grd_values()
 		self.set_date()
@@ -35,22 +36,45 @@ class PIFSSForm103(Document):
 
 	def on_cancel(self):
 		update_onboarding_doc(self, True)
+		# self.check_penality_for_registration()#for setting the 3 dates to identify to whom is the penlty (date of request - Date of Register - Date of Acceptance - Date of Joining) 
+	def employee_full_name(self):
+		"""This method arranges the names in the print format based on what is filled in employee doctype"""
+		employee_full_name=[]
+		if self.employee:
+			employee_full_name = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
+				{'Third Name in Arabic':'third_name'},{'Last Name in Arabic':'last_name'}]
+			employee = frappe.get_doc('Employee',self.employee)
+			if employee.one_fm_first_name_in_arabic and not employee.one_fm_second_name_in_arabic and not employee.one_fm_third_name_in_arabic and employee.one_fm_last_name_in_arabic:
+				self.first_name = employee.one_fm_first_name_in_arabic
+				self.second_name = employee.one_fm_last_name_in_arabic
+				self.third_name = ''
+				self.last_name = ''
+			elif employee.one_fm_first_name_in_arabic and employee.one_fm_second_name_in_arabic and not employee.one_fm_third_name_in_arabic and employee.one_fm_last_name_in_arabic:
+				self.first_name = employee.one_fm_first_name_in_arabic
+				self.second_name = employee.one_fm_second_name_in_arabic
+				self.third_name = employee.one_fm_last_name_in_arabic
+				self.last_name = ''
+			elif employee.one_fm_first_name_in_arabic and not employee.one_fm_second_name_in_arabic and employee.one_fm_third_name_in_arabic and employee.one_fm_last_name_in_arabic:
+				self.first_name = employee.one_fm_first_name_in_arabic
+				self.second_name = employee.one_fm_third_name_in_arabic
+				self.third_name = employee.one_fm_last_name_in_arabic
+				self.last_name = ''
+			# elif not employee.one_fm_first_name_in_arabic:
+			# 	message_detail = '<b style="color:red; text-align:center"> You Need to Set The Missing Data In Employee Doctype</b><br>'
+			# 	self.set_mendatory_fields(employee_full_name,message_detail)
+				
 
 	def check_employee_fields(self):
 		field_list_in_employee=[]
 		if self.request_type == "End of Service":
-			# field_list_in_employee = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
-			# 	{'Third Name in Arabic':'third_name'},{'Last Name in Arabic':'last_name'},{'PAM Designation':'position'}
 			field_list_in_employee = [{'Civil ID':'civil_id'},{'Mobile':'mobile'},
 				{'Address':'address'},{'Date of Birth':'date_of_birth'},
-				{'Nationality':'nationality'},
+				{'Nationality':'nationality'},{'PAM Designation':'position'},
 				{'Salary':'salary'},{'Relieving Date':'relieving_date'}]
 		if self.request_type == "Registration":
-			# field_list_in_employee = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
-			# 	{'Third Name in Arabic':'third_name'},{'Last Name in Arabic':'last_name'}, {'PAM Designation':'position'},
 			field_list_in_employee = [{'Civil ID':'civil_id'},{'Mobile':'mobile'},
 				{'Address':'address'},{'Date of Birth':'date_of_birth'},
-				{'Nationality':'nationality'},
+				{'Nationality':'nationality'},{'PAM Designation':'position'},
 				{'Salary':'salary'}]
 		message_detail = '<b style="color:red; text-align:center"> You Need to Set The Missing Data In Employee Doctype</b><br>'
 		self.set_mendatory_fields(field_list_in_employee,message_detail)
@@ -262,10 +286,8 @@ def create_103_form(param, dateofrequest,rt,cn,sn,sf):
 	pifss.date_of_request = dateofrequest
 	pifss.attach_signed_form = sf
 	pifss.insert()
-	# pifss.save()
 	pifss.workflow_state = 'Form Printed'
 	pifss.save()
-	# frappe.db.commit()
 	pifss.workflow_state = 'Pending by GRD'
 	pifss.save()
 	frappe.db.commit()

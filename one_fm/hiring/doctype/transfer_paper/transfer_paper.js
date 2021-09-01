@@ -3,7 +3,7 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Transfer Paper', {
-    refresh: function(frm) {
+    onload: function(frm) {
         let doc_name = frm.doc.name;
         if(frm.doc.docstatus==1) {
                 frm.add_custom_button(__('Re-Send New Work Permit'), function() { 
@@ -15,7 +15,27 @@ frappe.ui.form.on('Transfer Paper', {
                     });
                 })
         }
-    if(frm.doc.applicant){
+        if(frm.doc.work_permit_ref){
+            frappe.call({
+                method:"frappe.client.get_value",
+                args: {
+                    doctype:"Work Permit",
+                    filters: {
+                    name: frm.doc.work_permit_ref
+                    },
+                    fieldname:["work_permit_status"]
+                }, 
+                callback: function(r) { 
+                    frm.set_value('work_permit_status', r.message.work_permit_status);
+                    if(r.message.work_permit_status == "Completed"){
+                        frm.set_value('tp_status', "Completed");
+                    }
+                }
+            })
+        }
+    },
+    applicant: function(frm){
+        if(frm.doc.applicant){
         frappe.call({
             method:"frappe.client.get_value",//api calls
             args: {
@@ -24,8 +44,7 @@ frappe.ui.form.on('Transfer Paper', {
                 name: frm.doc.applicant
                 },
                 fieldname:["one_fm_pam_file_number","one_fm_previous_company_trade_name_in_arabic",
-                "one_fm__previous_company_authorized_signatory_name_arabic","one_fm_previous_designation",
-                "one_fm_previous_company_contract_file_number","one_fm_previous_company_issuer_number",
+                "one_fm__previous_company_authorized_signatory_name_arabic","one_fm_previous_designation","one_fm_previous_company_issuer_number",
                 "one_fm_previous_company_pam_file_number","one_fm_last_working_date","one_fm_work_permit_salary",
                 "one_fm_duration_of_work_permit","one_fm_first_name","one_fm_second_name","one_fm_third_name",
                 "one_fm_last_name","one_fm_first_name_in_arabic","one_fm_second_name_in_arabic","one_fm_third_name_in_arabic",
@@ -40,8 +59,8 @@ frappe.ui.form.on('Transfer Paper', {
                 frm.set_value('previous_company_trade_name_in_arabic', r.message.one_fm_previous_company_trade_name_in_arabic);
                 frm.set_value('previous_company_authorized_signatory_name_arabic', r.message.one_fm__previous_company_authorized_signatory_name_arabic);
                 frm.set_value('previous_company_pam_designation', r.message.one_fm_previous_designation);
-                frm.set_value('previous_company_contract_file_number', r.message.one_fm_previous_company_contract_file_number);   
-                frm.set_value('previous_company_license_number', r.message.one_fm_previous_company_issuer_number);               
+                // frm.set_value('previous_company_contract_file_number', r.message.one_fm_previous_company_contract_file_number);   
+                // frm.set_value('previous_company_license_number', r.message.one_fm_previous_company_issuer_number);               
                 frm.set_value('previous_company_pam_file_number', r.message.one_fm_previous_company_pam_file_number);
                 frm.set_value('end_work_date', r.message.one_fm_last_working_date);
                 frm.set_value('previous_company_work_permit_salary', r.message.one_fm_work_permit_salary);
@@ -71,26 +90,8 @@ frappe.ui.form.on('Transfer Paper', {
             }
         })
     }
-    if(frm.doc.work_permit_ref){
-        frappe.call({
-            method:"frappe.client.get_value",
-            args: {
-                doctype:"Work Permit",
-                filters: {
-                name: frm.doc.work_permit_ref
-                },
-                fieldname:["work_permit_status"]
-            }, 
-            callback: function(r) { 
-                frm.set_value('work_permit_status', r.message.work_permit_status);
-                if(r.message.work_permit_status == "Completed"){
-                    frm.set_value('tp_status', "Completed");
-                }
-            }
-        })
-    }
+},
 
-    },
     // new_page_preview: function(printit) {
     //     var me = this;
     //     //var doc = frappe.get_doc(me.frm.doc.doctype, me.frm.doc.name)

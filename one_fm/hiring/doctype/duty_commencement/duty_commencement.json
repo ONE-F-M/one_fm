@@ -13,13 +13,24 @@
   "nationality",
   "civil_id",
   "passport_number",
+  "posting_date",
   "column_break_5",
   "job_applicant",
   "job_offer",
+  "date_of_joining",
   "designation",
-  "posting_date",
+  "project",
+  "operations_site",
+  "salary_details_section",
+  "salary_details",
+  "basic_salary",
+  "transportation_salary",
+  "accommodation_salary",
+  "other_allowances_salary",
+  "total_salary",
   "section_break_10",
   "attach_duty_commencement",
+  "notes",
   "progress",
   "status"
  ],
@@ -129,11 +140,78 @@
    "fieldname": "attach_duty_commencement",
    "fieldtype": "Attach",
    "label": "Attach Duty Commencement"
+  },
+  {
+   "fetch_from": "onboard_employee.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fetch_from": "onboard_employee.operations_site",
+   "fieldname": "operations_site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "fieldname": "salary_details_section",
+   "fieldtype": "Section Break",
+   "label": "Salary Details"
+  },
+  {
+   "fieldname": "salary_details",
+   "fieldtype": "Table",
+   "label": "Salary Details",
+   "options": "ERF Salary Detail"
+  },
+  {
+   "fieldname": "basic_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Basic Salary"
+  },
+  {
+   "fieldname": "transportation_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Transportation Salary"
+  },
+  {
+   "fieldname": "accommodation_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Accommodation Salary"
+  },
+  {
+   "fieldname": "other_allowances_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Other Allowances Salary"
+  },
+  {
+   "fieldname": "total_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Total Salary"
+  },
+  {
+   "fetch_from": "job_offer.estimated_date_of_joining",
+   "fetch_if_empty": 1,
+   "fieldname": "date_of_joining",
+   "fieldtype": "Date",
+   "label": "Date of Joining"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-08-03 09:34:55.086223",
+ "modified": "2021-08-30 12:40:16.558769",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Duty Commencement",

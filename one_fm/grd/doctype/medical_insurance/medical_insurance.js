@@ -2,18 +2,6 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Medical Insurance', {
-    refresh: function(frm){
-        // set_css(frm);
-    },
-    onload: function(frm) {
-		if (!frm.is_new()){
-            set_employee_details(frm);
-            set_insurance_type(frm);
-        }
-        if(frm.is_new()){
-            set_insurance_type(frm);
-        }
-    },
     work_permit: function(frm){
         set_employee_details(frm);
         set_insurance_type(frm);
@@ -38,21 +26,10 @@ frappe.ui.form.on('Medical Insurance', {
             });
         }
     },
-    apply_medical_insurance_online: function(frm){
-        set_apply_medical_insurance_online_date(frm);
-
-    },
-    // submission_of_application: function(frm){
-    //     set_submission_of_application(frm);
-
-    // },
     upload_medical_insurance: function(frm){
         set_upload_medical_insurance(frm);
 
     },
-    upload_payment_invoice: function(frm){
-        set_upload_payment_invoice(frm);
-    }
 });
 
 frappe.ui.form.on('Medical Insurance Item', {
@@ -142,10 +119,10 @@ var set_insurance_type = function(frm){
                 fieldname:["pam_file_number"]
             }, 
             callback: function(r) { 
-                if(r.message.pam_file_number == "T4 - 20201800005" || r.message.pam_file_number == "Opera - 15201800010"){
+                if(r.message.pam_file_number == "20201800005" || r.message.pam_file_number == "15201800010"){
                     frm.set_value('insurance_type', "18 - Govt Project Visa (Private)");
                 }
-                if(r.message.pam_file_number == "Private - 2921143"){
+                if(r.message.pam_file_number == "100068481"){
                     frm.set_value('insurance_type', "18 - Work Visa Private");
                 }
             }

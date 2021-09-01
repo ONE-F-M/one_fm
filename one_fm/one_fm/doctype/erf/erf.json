@@ -181,7 +181,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "\nDraft\nAccepted\nDeclined\nClosed",
+   "options": "\nDraft\nAccepted\nDeclined\nClosed\nCancelled",
    "read_only": 1
   },
   {
@@ -844,6 +844,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "pam_file",
    "fetch_from": "pam_file.pam_file_number",
    "fieldname": "pam_file_number",
@@ -854,7 +855,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-18 12:12:57.426851",
+ "modified": "2021-08-30 02:00:04.332732",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

@@ -8,9 +8,7 @@ from frappe.model.document import Document
 
 class PAMFile(Document):
 	def on_update(self):
-		if self.government_project == 0:
-			self.db_set('pam_file_number',self.file_number)
-		elif self.government_project == 1:
+		if self.government_project == 1:
 			self.db_set('pam_file_number',self.contract_pam_file_number)
 		
 

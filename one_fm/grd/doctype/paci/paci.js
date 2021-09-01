@@ -1,11 +1,11 @@
 // Copyright (c) 2021, omar jaber and contributors
 // For license information, please see license.txt
 frappe.ui.form.on('PACI', {
-	onload: function(frm) {
-		if (!frm.is_new()){
-            set_employee_details(frm);
-        }
-    },
+	// refresh: function(frm) { //was causing NOT SAVED document
+	// 	if (!frm.is_new()){
+    //         set_employee_details(frm);
+    //     }
+    // },
     employee: function(frm){
         set_employee_details(frm);
     },

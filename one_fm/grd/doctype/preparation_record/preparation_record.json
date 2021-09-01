@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "employee:",
  "creation": "2021-04-19 11:02:23.451743",
  "doctype": "DocType",
@@ -42,6 +43,7 @@
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Civil Id"
   },
   {
@@ -88,7 +90,8 @@
   }
  ],
  "istable": 1,
- "modified": "2021-06-21 14:45:53.909130",
+ "links": [],
+ "modified": "2021-08-26 09:59:41.100397",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation Record",

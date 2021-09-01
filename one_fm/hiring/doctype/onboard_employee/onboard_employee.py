@@ -152,9 +152,9 @@ class OnboardEmployee(Document):
 	def create_bank_account(self):
 		if self.employee and not self.bank_account:
 			create_account = True
-			if self.new_bank_account_needed and not self.attach_bank_form:
-				create_account = False
-				frappe.msgprint(_("Please attach Bank Form to create New Bank Account."))
+			# if self.new_bank_account_needed and not self.attach_bank_form:
+			# 	create_account = False
+			# 	frappe.msgprint(_("Please attach Bank Form to create New Bank Account."))
 			if create_account:
 				if self.account_name and self.bank:
 					bank_account = frappe.new_doc('Bank Account')
