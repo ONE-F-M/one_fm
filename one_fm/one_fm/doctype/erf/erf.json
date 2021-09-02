@@ -855,7 +855,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-30 02:00:04.332732",
+ "modified": "2021-09-01 17:57:07.162902",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
@@ -937,6 +937,27 @@
    "read": 1,
    "report": 1,
    "role": "Senior Recruiter",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
    "share": 1,
    "write": 1
   }

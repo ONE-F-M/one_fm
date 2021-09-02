@@ -24,15 +24,6 @@
             <div class="d-flex justify-content-between align-items-center pl30 pr30">
                 <div class="">
                     <div class="font20 cardheadercolor fontw600 textchange d-inline-block mr10">Rostering</div>
-                    <br />
-                    <div>
-                        <label for="check" id="hamburger-menu">
-                            <input type="checkbox" id="check" />
-                            <span id="hamburger-first"></span>
-                            <span id="hamburger-second"></span>
-                            <span id="hamburger-third"></span>
-                        </label>
-                    </div>
                 </div>
                 <div class="d-none d-md-inline-block">
                     <ul
@@ -133,11 +124,13 @@
         </div>
         <div class="container-fluid borderradius8 pt30 pl30 pr30 pb30 bg-white">
             <div class="row">
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-2 pr-md-0" id="side-bar" style="display: none">
+                <div class="col-md-2 col-sm-12">
                     <div class="dateblock" class="input-group date">
                         <div id="datepicker" class="input-group date">
                         </div>
                     </div>
+                </div>
+                <div class="col-md-2 col-sm-12">
                     <div class="font18 pb10 cardheadercolor">Options</div>
                     <div class="listoffilter dateblock rosterviewfilterbg">
 
@@ -185,40 +178,18 @@
                         </div>
 
                     </div>
-
-                    <div class="listoffilter dateblock postviewfilterbg d-none">
-
-                        <div class="row">
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show Active
-                                        Posts</span>
-                                    <input type="checkbox" class="selectallcheckbox" name="chkpostActivePost"
-                                        id="chkpostActivePost">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show Inactive
-                                        Posts</span>
-                                    <input type="checkbox" class="selectallcheckbox" name="chkpostCancelPost"
-                                        id="chkpostCancelPost">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
                     <div class="font18 pb10 pt30 cardheadercolor">Legend</div>
                     <div class="listoffilter rosterviewfilterbg">
                         <div class="row">
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
                                 <div class="d-flex">
                                     <div class="legendboxview lightgreenbox"></div>
                                     <div class="pl10 font16 cardtitlecolor">Day done according to plan</div>
                                 </div>
                             </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
                                 <div class="d-flex">
                                     <div class="legendboxview yellowboxcolor"></div>
                                     <div class="pl10 font16 cardtitlecolor">Present with deviations (early punch out
@@ -226,31 +197,31 @@
                                         late punch in)</div>
                                 </div>
                             </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
                                 <div class="d-flex">
                                     <div class="legendboxview redboxcolor"></div>
                                     <div class="pl10 font16 cardtitlecolor">Absent</div>
                                 </div>
                             </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
                                 <div class="d-flex">
                                     <div class="legendboxview greyboxcolor"></div>
                                     <div class="pl10 font16 cardtitlecolor">Staff day off</div>
                                 </div>
                             </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
                                 <div class="d-flex">
                                     <div class="legendboxview blueboxcolor"></div>
                                     <div class="pl10 font16 cardtitlecolor">Planned day</div>
                                 </div>
                             </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
                                 <div class="d-flex">
                                     <div class="legendboxview borderbox"></div>
                                     <div class="pl10 font16 cardtitlecolor">Unplanned Day</div>
                                 </div>
                             </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
                                 <div class="d-flex">
                                     <div class="legendboxview purplebox"></div>
                                     <div class="pl10 font16 cardtitlecolor">Leaves (SL-Sick Leave, AL-Annual Leave,
@@ -260,41 +231,84 @@
 
                         </div>
                     </div>
-                    <div class="listoffilter postviewfilterbg d-none ">
-                        <div class="row">
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview darkblackox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Not Planned</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview blueboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Planned</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview greyboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Off</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview yellowboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Suspended</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview redboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Post Cancelled</div>
-                                </div>
-                            </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center pl30 pr30">
+                <div class="font18 pt30 pb10 cardheadercolor">Filter</div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center pl30 pr30">
+                <div class="listoffilter" style="width: 100%;">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringprojectselect"
+                                name="rosteringprojectselect">
+                                <option value="">Select Project</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringsiteselect" name="rosteringsiteselect">
+                                <option value="">Select Site</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringshiftselect"
+                                name="rosteringshiftselect">
+                                <option value="">Select Shift</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringdepartmentselect"
+                                name="rosteringdepartmentselect">
+                                <option value="">Select Department</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
+                            <select class="form-control select2plg" id="rosteringpostselect" name="rosteringpostselect">
+                                <option value="">Select Post type</option>
+                            </select>
                         </div>
                     </div>
                 </div>
+            </div>
+            <!-- <div class="switch-container">
+                <div class="d-none d-md-inline-block">
+                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab">
+                        <li class="active rosterClick"><a class="residenavli basicRosterClick" id="">Basic Roster</a>
+                        </li>
+                        <li class="rosterClick"><a class="residenavli otRosterClick" id="">OT Roster</a></li>
+                    </ul>
+                </div>
+            </div> -->
+            <div class="d-md-none pt30 pb30 pl30 pr30 ">
+                <div class="">
+                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
+                        <li class="active maintabclick"><a class="residenavli rosterviewclick" id="">Roster
+                                View</a></li>
+                        <li class="maintabclick"><a class="residenavli postviewclick" id="">Post View</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid pl30 pr30 d-none filterhideshow lightbluedtbg mt30">
+            <div class="row py-4 py-md-4 py-lg-0">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0">
+                    <a href="#" class="responsivebluebtn ml-0 dayoff">Day Off</a>
+                    <a href="#" class="responsivebluebtn scheduleleave">Leaves</a>
+                    <a href="#" class="responsivebluebtn changepost">Schedule/Change Post</a>
+                    <a href="#" class="responsivebluebtn assignchangemodal">Unschedule/Post Staff</a>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid pl30 pr30 d-none Postfilterhideshow lightbluedtbg mt30">
+            <div class="row py-4 py-md-0">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0">
+                    <a href="#" class="responsivebluebtn ml-0 editpostclassclick" data-target="#addpostmodal"
+                        data-toggle="modal">Edit Post</a>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid borderradius8 pt30 pl30 pr30 pb30 bg-white">
+            <div class="row">
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pt-4 pt-md-0" id="main-section">
                     <!--ROSTER AND POST VIEW HERE-->
                     <div id="partialcalenderview">
@@ -316,8 +330,6 @@
                                                 </li>
                                                 <li class="active calenderlink"><a href="#"
                                                         class="residenavli active monthviewclick">Month</a></li>
-                                                <li class="calenderlink"><a href="#"
-                                                        class="residenavli weekviewclick">Week</a></li>
                                             </ul>
                                         </div>
                                         <div class="ml20">
@@ -372,8 +384,6 @@
                                                 </li>
                                                 <li class="active calenderlink"><a href="#"
                                                         class="residenavli active monthviewclick">Month</a></li>
-                                                <li class="calenderlink"><a href="#"
-                                                        class="residenavli weekviewclick">Week</a></li>
                                             </ul>
                                         </div>
                                         <div class="ml20">
@@ -428,9 +438,6 @@
                                                 </li>
                                                 <li class="calenderlink">
                                                     <a href="#" class="residenavli active monthviewclick">Month</a>
-                                                </li>
-                                                <li class="active  calenderlink">
-                                                    <a href="#" class="residenavli weekviewclick">Week</a>
                                                 </li>
                                             </ul>
                                         </div>
@@ -492,9 +499,6 @@
                                                 <li class="calenderlink">
                                                     <a href="#" class="residenavli active monthviewclick">Month</a>
                                                 </li>
-                                                <li class="active  calenderlink">
-                                                    <a href="#" class="residenavli weekviewclick">Week</a>
-                                                </li>
                                             </ul>
                                         </div>
                                         <div class="ml20">
@@ -550,9 +554,6 @@
                                                 <li class="active calenderlink">
                                                     <a href="#" class="residenavli active postmonthviewclick">Month</a>
                                                 </li>
-                                                <li class="calenderlink">
-                                                    <a href="#" class="residenavli postweekviewclick">Week</a>
-                                                </li>
                                             </ul>
                                         </div>
                                         <div class="ml20">
@@ -600,9 +601,6 @@
                                                 class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
                                                 <li class="calenderlink">
                                                     <a href="#" class="residenavli active postmonthviewclick">Month</a>
-                                                </li>
-                                                <li class="active  calenderlink">
-                                                    <a href="#" class="residenavli postweekviewclick">Week</a>
                                                 </li>
                                             </ul>
                                         </div>
