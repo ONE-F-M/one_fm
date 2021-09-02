@@ -88,18 +88,21 @@ def notify_recruiter_after_checking(doc):
     This method is notifying all recruiters with applicant status once,
     and changing document status into Checked By GRD.
     """
-    filtered_recruiter_users = []
-    find = False
-    users = get_users_with_role('Recruiter')
-    for user in users:
-        filtered_recruiter_users.append(user)
-        find = True
-        break
-    if find and filtered_recruiter_users and len(filtered_recruiter_users) > 0:
+    # filtered_recruiter_users = []
+    # find = False
+    # users = get_users_with_role('Recruiter')
+    # for user in users:
+    #     filtered_recruiter_users.append(user)
+    #     find = True
+    #     break
+    # if find and filtered_recruiter_users and len(filtered_recruiter_users) > 0:
+    recruiter = frappe.db.get_value('ERF',doc.one_fm_erf,'recruiter_assigned')
+    
+    if recruiter:
         dt = frappe.get_doc('Job Applicant',doc.name)
         if dt:
             if dt.one_fm_has_issue == "Yes" and dt.one_fm_notify_recruiter == 0:
-                email = filtered_recruiter_users
+                email = recruiter
                 page_link = get_url("/desk#List/Job Applicant/" + dt.name)
                 message="<p>Tranfer for {0} has issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
                 subject='Tranfer for {0} has issue'.format(dt.applicant_name)
@@ -108,7 +111,7 @@ def notify_recruiter_after_checking(doc):
                 dt.db_set('one_fm_applicant_status', "Checked By GRD")
 
             if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0: 
-                email = filtered_recruiter_users
+                email = recruiter
                 page_link = get_url("/desk#List/Job Applicant/" + dt.name)
                 message="<p>Tranfer for {0} has no issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
                 subject='Tranfer for {0} has no issues'.format(dt.applicant_name)
