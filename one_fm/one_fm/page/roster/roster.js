@@ -997,18 +997,27 @@ function get_roster_data(page, isOt) {
 	if (page.search_key) {
 		search_key = page.search_key;
 	}
-	let { } = page;
+	let {start_date, end_date} = page;
 	let { project, site, shift, department, post_type } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	console.log(limit_start, limit_page_length);
-	console.log(isOt, typeof (isOt));
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, search_key, project, site, shift, department, post_type, isOt, limit_start, limit_page_length })
-		.then(res => {
-			let a2 = performance.now();
-			console.log("REQ TIME", a2 - a1);
-			// $('#cover-spin').hide();
-			render_roster(res, page, isOt);
-		});
+	if (project || site || shift || department || post_type){
+		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, search_key, project, site, shift, department, post_type, isOt, limit_start, limit_page_length })
+			.then(res => {
+				let a2 = performance.now();
+				console.log("REQ TIME", a2 - a1);
+				// $('#cover-spin').hide();
+				render_roster(res, page, isOt);
+			});
+	}else{
+		let $rosterMonthbody = isOt ? $('.rosterOtMonth').find('#calenderviewtable tbody') : $('.rosterMonth').find('#calenderviewtable tbody');
+		let pt_row = `
+		<div class="lightgrey font30 paddingdiv borderleft bordertop">
+		Select a filter to view the Roster
+		</div>
+		`;
+		$rosterMonthbody.empty();
+		$rosterMonthbody.append(pt_row);
+	}	
 }
 // Function responsible for Rendering the Table
 // Renders on get_roster_data function
