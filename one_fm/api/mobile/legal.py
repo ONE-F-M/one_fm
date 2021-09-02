@@ -87,8 +87,12 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 
 	
 @frappe.whitelist()
-def get_penalties(employee):
-	return frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+def get_penalties(employee, Role):
+	if Role == "Issuer":
+		return frappe.get_list("Penalty", filters={"issuer_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+	else:
+		return frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+
 
 
 @frappe.whitelist()
