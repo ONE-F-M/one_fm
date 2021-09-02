@@ -38,7 +38,7 @@ def change_user_profile(image):
         user.user_image = image_file
         user.save()
         frappe.db.commit()
-        return user
+        return _('Profile Picture Updated!')
     except Exception as e:
         print(frappe.get_traceback())
 
