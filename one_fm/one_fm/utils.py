@@ -99,6 +99,7 @@ def notify_recruiter_after_checking(doc):
     recruiter = frappe.db.get_value('ERF',doc.one_fm_erf,'recruiter_assigned')
     
     if recruiter:
+        # print(recruiter)
         dt = frappe.get_doc('Job Applicant',doc.name)
         if dt:
             if dt.one_fm_has_issue == "Yes" and dt.one_fm_notify_recruiter == 0:
@@ -106,7 +107,7 @@ def notify_recruiter_after_checking(doc):
                 page_link = get_url("/desk#List/Job Applicant/" + dt.name)
                 message="<p>Tranfer for {0} has issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
                 subject='Tranfer for {0} has issue'.format(dt.applicant_name)
-                create_notification_log(subject,message,email,dt)
+                create_notification_log(subject,message,[email],dt)
                 dt.db_set('one_fm_notify_recruiter', 1)
                 dt.db_set('one_fm_applicant_status', "Checked By GRD")
 
