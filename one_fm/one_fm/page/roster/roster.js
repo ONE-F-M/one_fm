@@ -1349,84 +1349,97 @@ function get_post_data(page) {
 	classgrt = [];
 	classgrtw = [];
 	let { start_date, end_date } = page;
-	let { project, site, shift, post_type } = page.filters;
+	let { project, site, shift, department, post_type } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	// console.log(start_date, end_date, project, site, shift, post_type,limit_start, limit_page_length);
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, post_type, limit_start, limit_page_length })
-		.then(res => {
-			// console.log(res);
-			page.pagination.total = res.total;
-			let $postMonth = $('.postMonth');
-			let $postMonthbody = $('.postMonth').find('#calenderviewtable tbody');
-			$postMonthbody.empty();
-			for (post_name in res.post_data) {
-				let row = `
-			<tr class="colorclass" data-name="${post_name}">
-				<td class="sticky">
-					<label class="checkboxcontainer simplecheckbox mx-4">
-						<span
-							class="lightgrey font16 customfontweight fontw400 postname">
-							${post_name}
-						</span>
-						<span class="tooltiptext">${post_name}</span>
-						<input type="checkbox" name="selectallcheckbox"
-							class="selectallcheckbox">
-						<span class="checkmark"></span>
-					</label>
-				</td>
-			</tr>`;
-				$postMonthbody.append(row);
-				let { start_date, end_date } = page;
-				start_date = moment(start_date);
-				end_date = moment(end_date);
-				let i = 0;
-				let day = start_date;
-				while (day <= end_date) {
-					// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
-					let schedule = ``;
-					let classmap = {
-						'Planned': 'bluebox',
-						'Post Off': 'greyboxcolor',
-						'Suspended': 'yellowboxcolor',
-						'Cancelled': 'redboxcolor'
-					};
+	if (project || site || shift || department || post_type){
+		// console.log(start_date, end_date, project, site, shift, post_type,limit_start, limit_page_length);
+		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, post_type, limit_start, limit_page_length })
+			.then(res => {
+				// console.log(res);
+				page.pagination.total = res.total;
+				let $postMonth = $('.postMonth');
+				let $postMonthbody = $('.postMonth').find('#calenderviewtable tbody');
+				$postMonthbody.empty();
+				for (post_name in res.post_data) {
+					let row = `
+				<tr class="colorclass" data-name="${post_name}">
+					<td class="sticky">
+						<label class="checkboxcontainer simplecheckbox mx-4">
+							<span
+								class="lightgrey font16 customfontweight fontw400 postname">
+								${post_name}
+							</span>
+							<span class="tooltiptext">${post_name}</span>
+							<input type="checkbox" name="selectallcheckbox"
+								class="selectallcheckbox">
+							<span class="checkmark"></span>
+						</label>
+					</td>
+				</tr>`;
+					$postMonthbody.append(row);
+					let { start_date, end_date } = page;
+					start_date = moment(start_date);
+					end_date = moment(end_date);
+					let i = 0;
+					let day = start_date;
+					while (day <= end_date) {
+						// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+						let schedule = ``;
+						let classmap = {
+							'Planned': 'bluebox',
+							'Post Off': 'greyboxcolor',
+							'Suspended': 'yellowboxcolor',
+							'Cancelled': 'redboxcolor'
+						};
 
-					let { project, site, shift, date, post_status, post_type, post, name } = res["post_data"][post_name][i];
-					if (name) {
-						schedule = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
-							data-selectid="${post + '_' + date}"
-							data-date="${date}"
-							data-project="${project}"
-							data-site="${site}"
-							data-shift="${shift}"
-							data-name="${name}"
-							data-post="${post}"
-							data-post_status="${post_status}"
-							data-post-type="${post_type}">
-						</div>
-					</td>`;
+						let { project, site, shift, date, post_status, post_type, post, name } = res["post_data"][post_name][i];
+						if (name) {
+							schedule = `
+						<td>
+							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
+								data-selectid="${post + '_' + date}"
+								data-date="${date}"
+								data-project="${project}"
+								data-site="${site}"
+								data-shift="${shift}"
+								data-name="${name}"
+								data-post="${post}"
+								data-post_status="${post_status}"
+								data-post-type="${post_type}">
+							</div>
+						</td>`;
+						}
+						else {
+							schedule = `
+						<td>
+							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center so"
+								data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"	
+								data-date="${start_date.format('YYYY-MM-DD')}"
+								data-post="${post_name}"
+							</div>
+						</td>`;
+						}
+						i++;
+						start_date.add(1, 'days');
+						$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(schedule);
 					}
-					else {
-						schedule = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center so"
-							data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"	
-							data-date="${start_date.format('YYYY-MM-DD')}"
-							data-post="${post_name}"
-						</div>
-					</td>`;
-					}
-					i++;
-					start_date.add(1, 'days');
-					$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(schedule);
+					$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
 				}
-				$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
-			}
-			// frappe.show_alert({message:__("Postview updated"), indicator:'green'});
-			bind_events(page);
-		});
+				// frappe.show_alert({message:__("Postview updated"), indicator:'green'});
+				bind_events(page);
+			}).catch(e =>{
+				console.log(e);
+			});
+	}else{
+		let $postMonthbody = $('.postMonth').find('#calenderviewtable tbody');
+		let pt_row = `
+		<div class="lightgrey font30 paddingdiv borderleft bordertop">
+		Select a filter to view the Post data
+		</div>
+		`;
+		$postMonthbody.empty();
+		$postMonthbody.append(pt_row);
+	}	
 }
 
 // Get data for Post view weekly and render it
