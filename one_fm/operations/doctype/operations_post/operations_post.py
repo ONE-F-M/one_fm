@@ -11,17 +11,14 @@ from frappe.utils import cstr, getdate, add_to_date
 import pandas as pd
 
 class OperationsPost(Document):
-	def after_insert(self):
+	def before_insert(self):
 		start_date = None
 		end_date = None
-		project = frappe.get_doc("Project", self.project)
-		contract = frappe.get_doc("Contracts", project.contract)
-		if contract and contract.start_date and contract.end_date:
-			start_date = contract.start_date
-			end_date = contract.end_date
-		else:
-			start_date = project.expected_start_date
-			end_date = project.expected_end_date
+
+		if frappe.db.exists("Contracts", {'project': self.project}):
+			contract, start_date, end_date = frappe.db.get_value("Contracts", {'project': self.project}, ["name", "start_date", "end_date"])
+			if not start_date or not end_date:
+				frappe.throw(_("Please set contract dates for contract: {contract}".format(contract=contract)))
 		frappe.enqueue(set_post_active, post=self, start_date=start_date, end_date=end_date, is_async=True, queue="long")
 
 	def on_update(self):
