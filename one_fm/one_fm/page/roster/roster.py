@@ -279,11 +279,10 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 
 	if cint(project_end_date) and not end_date:
 		project = frappe.db.get_value("Operations Shift", shift, ["project"])
-		contract = frappe.db.get_value("Project", project, ["contract"])
-		if contract:
-			end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+		if frappe.db.exists("Contracts", {'project': project}):
+			contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 			if not end_date:
-				validation_logs.append("No contract end date found for {contract}".format(contract=contract))
+				validation_logs.append("Please set contract end date for contract: {contract}".format(contract=contract))
 		else:
 			validation_logs.append("No contract linked with project {project}".format(project=project))
 	
@@ -488,9 +487,8 @@ def plan_post(posts, args):
 	for post in json.loads(posts):
 		if cint(args.project_end_date) and not args.plan_end_date:
 			project = frappe.db.get_value("Operations Post", post["post"], ["project"])
-			contract = frappe.db.get_value("Project", project, ["contract"])
-			if contract:
-				end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+			if frappe.db.exists("Contracts", {'project': project}):
+				contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 				if not end_date:
 					frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 			else:
@@ -516,9 +514,8 @@ def cancel_post(posts, args):
 	for post in json.loads(posts):
 		if cint(args.project_end_date) and not args.cancel_end_date:
 			project = frappe.db.get_value("Operations Post", post["post"], ["project"])
-			contract = frappe.db.get_value("Project", project, ["contract"])
-			if contract:
-				end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+			if frappe.db.exists("Contracts", {'project': project}):
+				contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 				if not end_date:
 					frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 			else:
@@ -546,9 +543,8 @@ def suspend_post(posts, args):
 	for post in json.loads(posts):
 		if cint(args.project_end_date) and not args.suspend_to_date:
 			project = frappe.db.get_value("Operations Post", post["post"], ["project"])
-			contract = frappe.db.get_value("Project", project, ["contract"])
-			if contract:
-				end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+			if frappe.db.exists("Contracts", {'project': project}):
+				contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 				if not end_date:
 					frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 			else:
@@ -586,9 +582,8 @@ def post_off(posts, args):
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
 						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
-						contract = frappe.db.get_value("Project", project, ["contract"])
-						if contract:
-							end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+						if frappe.db.exists("Contracts", {'project': project}):
+							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
 								frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 						else:
@@ -609,9 +604,8 @@ def post_off(posts, args):
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
 						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
-						contract = frappe.db.get_value("Project", project, ["contract"])
-						if contract:
-							end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+						if frappe.db.exists("Contracts", {'project': project}):
+							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
 								frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 						else:
@@ -625,9 +619,8 @@ def post_off(posts, args):
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
 						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
-						contract = frappe.db.get_value("Project", project, ["contract"])
-						if contract:
-							end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+						if frappe.db.exists("Contracts", {'project': project}):
+							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
 								frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 						else:
@@ -640,9 +633,8 @@ def post_off(posts, args):
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
 						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
-						contract = frappe.db.get_value("Project", project, ["contract"])
-						if contract:
-							end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+						if frappe.db.exists("Contracts", {'project': project}):
+							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
 								frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 						else:
@@ -686,9 +678,8 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 				for employee in json.loads(employees):
 					if cint(project_end_date):
 						project = frappe.db.get_value("Employee", {'employee': employee["employee"]}, ["project"])
-						contract = frappe.db.get_value("Project", project, ["contract"])
-						if contract:
-							end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+						if frappe.db.exists("Contracts", {'project': project}):
+							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
 								frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 						else:
@@ -700,9 +691,8 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 				for employee in json.loads(employees):
 					if cint(project_end_date):
 						project = frappe.db.get_value("Employee", {'employee': employee["employee"]}, ["project"])
-						contract = frappe.db.get_value("Project", project, ["contract"])
-						if contract:
-							end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+						if frappe.db.exists("Contracts", {'project': project}):
+							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
 								frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 						else:
@@ -715,28 +705,26 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 				for employee in json.loads(employees):
 					if cint(project_end_date):
 						project = frappe.db.get_value("Employee", {'employee': employee["employee"]}, ["project"])
-						contract = frappe.db.get_value("Project", project, ["contract"])
-						if contract:
-							end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+						if frappe.db.exists("Contracts", {'project': project}):
+							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
 								frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 						else:
 							frappe.throw(_("No contract linked with project {project}".format(project=project)))	
-					for date in	month_range(employee["date"], repeat_till):
+					for date in	month_range(employee["date"], end_date):
 						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 			elif repeat_freq == "Yearly":
 				for employee in json.loads(employees):
 					if cint(project_end_date):
 						project = frappe.db.get_value("Employee", {'employee': employee["employee"]}, ["project"])
-						contract = frappe.db.get_value("Project", project, ["contract"])
-						if contract:
-							end_date = frappe.db.get_value("Contracts", contract, ["end_date"])
+						if frappe.db.exists("Contracts", {'project': project}):
+							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
 								frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
 						else:
 							frappe.throw(_("No contract linked with project {project}".format(project=project)))
-					for date in	pd.date_range(start=employee["date"], end=repeat_till, freq=pd.DateOffset(years=1)):
+					for date in	pd.date_range(start=employee["date"], end=end_date, freq=pd.DateOffset(years=1)):
 						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
 
 def set_dayoff(employee, date):
