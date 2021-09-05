@@ -68,6 +68,11 @@ def get_user_details():
     except Exception as e:
         print(frappe.get_traceback())
 
+def get_user_roles():
+    user_id = frappe.session.user
+    user_roles = frappe.get_roles(user_id)
+    return user_roles
+        
 def rename_posts():
     sites = frappe.get_all("Operations Site")
     for site in sites:
