@@ -1,0 +1,49 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("ONE FM Job Listing") }}{% endblock %}
+
+{% block script %}
+<script src="assets/js/moment-bundle.min.js"></script>
+<script src="/one_fm_job_openings/index.js"></script>
+{% endblock %}
+
+{% block page_content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="assets/one_fm/assets/css/job_opening.css">
+
+</head>
+<body>
+    <header class="masthead">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 offset-md-1">
+                    <div class="site-heading">
+                        <h1 class="heading">
+                            Open Positions
+                        </h1>
+                        <span class="subheading">
+                            Current Job listings for One Facilities Management.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 offset-md-1">
+                    <ul class="job-list" id="job_listing">
+                        Loading...
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+{% endblock %}
