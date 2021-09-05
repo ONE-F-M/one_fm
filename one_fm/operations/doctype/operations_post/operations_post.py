@@ -19,6 +19,8 @@ class OperationsPost(Document):
 			contract, start_date, end_date = frappe.db.get_value("Contracts", {'project': self.project}, ["name", "start_date", "end_date"])
 			if not start_date or not end_date:
 				frappe.throw(_("Please set contract dates for contract: {contract}".format(contract=contract)))
+		else:
+			frappe.throw(_("No contract linked with project: {project}".format(project=self.project)))
 		frappe.enqueue(set_post_active, post=self, start_date=start_date, end_date=end_date, is_async=True, queue="long")
 
 	def on_update(self):
