@@ -77,7 +77,7 @@ def get_site_location(employee):
 			if location:
 				site_n_location=location[0]
 				site_n_location['site_name']=site
-				return {"message": "Success","data_obj": {site_n_location},"status_code" : 200}
+				return {"message": "Success","data_obj": site_n_location,"status_code" : 200}
 			else:
 				return {"message": "Site Location is not Set.","data_obj": {},"status_code" : 500}
 		else:
