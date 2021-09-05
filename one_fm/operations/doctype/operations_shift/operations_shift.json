@@ -10,6 +10,7 @@
   "project",
   "service_type",
   "shift_details_section",
+  "shift_number",
   "shift_type",
   "column_break_8",
   "supervisor",
@@ -120,10 +121,16 @@
    "label": "Service Type",
    "options": "Service Type",
    "reqd": 1
+  },
+  {
+   "fieldname": "shift_number",
+   "fieldtype": "Int",
+   "label": "Shift Number",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2021-08-16 09:49:52.115768",
+ "modified": "2021-09-05 18:01:56.381947",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",
