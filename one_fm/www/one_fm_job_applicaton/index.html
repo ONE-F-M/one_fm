@@ -1,0 +1,532 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Job Application") }}{% endblock %}
+
+{% block script %}
+<script src="assets/js/moment-bundle.min.js"></script>
+<script src="/one_fm_job_applicaton/index.js"></script>
+{% endblock %}
+
+{% block page_content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v3.0.0/css/line.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <link rel="stylesheet" href="assets/one_fm/assets/css/job_application.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="assets/one_fm/assets/phone-input/css/intlTelInput.css">
+</head>
+
+<body data-spy="scroll" data-target="#sidebar-application-menu" data-offset="50">
+    <div class="container">
+        <div class="main">
+            <div class="sidebar-wrap">
+                <div class="sidebar list-group" id="sidebar-application-menu" role="tablist">
+                    <!-- Menu shows here -->
+                </div>
+            </div>
+            <div class="questions-block-list">
+                <form name="job-form">
+                    <div class="questions-block" id="applicant-personal-details">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-user"></i></div>
+                            <div class="question-block-info">
+                                Personal Details
+                                <span>Enter your personal details. Fields with * are mandatory.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="firstName">First Name</label>
+                                    <input type="text" class="form-control" id="firstName" placeholder="First Name">
+                                </div>
+                                <!-- <div class="form-group col-md-6">
+                                    <label for="secondName">Second Name</label>
+                                    <input type="text" class="form-control" id="secondName" placeholder="Second Name">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="thirdName">Third Name</label>
+                                    <input type="text" class="form-control" id="thirdName" placeholder="Third Name">
+                                </div> -->
+                                <div class="form-group col-md-6">
+                                    <label for="lastName">Last Name</label>
+                                    <input type="text" class="form-control" id="lastName" placeholder="Last Name">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="gender">Gender</label>
+                                    <select class="form-control" name="gender" id="gender">
+                                      <!-- Gender shows here -->
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="religion">Religion</label>
+                                    <select class="form-control" name="religion" id="religion">
+                                        <option></option>
+                                        <option>Christian</option>
+                                        <option>Hindu</option>
+                                        <option>Islam</option>
+                                        <option>Parsi</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="dob">Date of Birth</label>
+                                    <input type="date" class="form-control" id="dob" placeholder="Date of Birth">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="placeOfBirth">Place of Birth</label>
+                                    <input type="text" class="form-control" id="placeOfBirth"
+                                        placeholder="Place of Birth">
+                                    <span class="small text-muted">Place of birth on Passport</span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="height">Height</label>
+                                    <input type="text" class="form-control" id="height" placeholder="Height">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="MaritalStatus">Marital Status</label>
+                                    <select class="form-control" name="MaritalStatus" id="MaritalStatus">
+                                        <option></option>
+                                        <option>Single</option>
+                                        <option>Married</option>
+                                        <option>Divoced</option>
+                                        <option>Widowed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                              <div class="form-group col-md-6">
+                                <div class="form-check">
+                                  <input class="form-check-input do_you_have_perv_work_exp" type="checkbox" id="do_you_have_perv_work_exp" onclick="onclick_do_you_have_perv_work_exp()">
+                                  <label class="form-check-label" for="do_you_have_perv_work_exp">
+                                      Do You Have Previous Work Experience
+                                  </label>
+                                </div>
+                              </div>
+                              <div class="form-group col-md-6">
+                                  <label for="Nationality">Nationality</label>
+                                  <select class="form-control" name="Nationality" id="nationality" onchange="onchange_nationality()">
+                                      <!-- Nationality shows here -->
+                                  </select>
+                              </div>
+                            </div>
+                            <div class="form-group">
+                                <a href="#contact-details">
+                                    <div class="btn">Next</div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="questions-block" id="contact-details">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-envelope-alt"></i></div>
+                            <div class="question-block-info">
+                                Contact Details
+                                <span>Enter your contact details. Fields with * are mandatory.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="form-group">
+                                <label for="email">Email ID</label>
+                                <input type="email" class="form-control" id="email" placeholder="Email ID">
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="primaryContactNumber">Primary Contact Number</label> <br />
+                                    <input type="tel" placeholder="Enter Your Number" id="phone">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="secondaryContactNumber">Secondary Contact Number</label>
+                                    <input type="tel" placeholder="Enter Your Number" id="phone1">
+                                </div>
+                            </div>
+                            <a href="#language">
+                                <div class="btn">Next</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="questions-block" id="language">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-letter-english-a"></i></div>
+                            <div class="question-block-info">
+                                Language
+                                <span>Rate Language. Fields with * are mandatory.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="row">
+                                <div class="form-group col-md-12">
+                                    <label for="religion">Laguage</label>
+                                    <div id="language-input">
+                                        <div class="row" id="language-rating">
+                                          <!-- Languages will be here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="#nationality-details">
+                                <div class="btn">Next</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="questions-block nationality-details" id="nationality-details">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-diary-alt"></i></div>
+                            <div class="question-block-info">
+                                Nationality Details
+                                <span>Enter nationality details for Kuwaiti only.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="form-group">
+                                <label for="NationalityNo">Nationality No</label>
+                                <input type="text" class="form-control" id="NationalityNo"
+                                    placeholder="Nationality No">
+                            </div>
+                            <div class="form-group">
+                                <label for="NationalitySubject">Nationality Subject</label>
+                                <select class="form-control" name="NationalitySubject" id="NationalitySubject">
+                                    <option></option><option>الأولي</option><option>الثانية</option>
+                                    <option>الثالثة</option><option>الرابعة</option><option>الخامسة</option>
+                                    <option>السابعة</option><option>الثامنة</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="DateofNaturalization">Date of Naturalization</label>
+                                <input type="date" class="form-control" id="DateofNaturalization"
+                                    placeholder="Date of Naturalization">
+                            </div>
+                            <a href="#passport">
+                                <div class="btn">Next</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="questions-block" id="passport">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-diary-alt"></i></div>
+                            <div class="question-block-info">
+                                Passport
+                                <span>Enter your Passport details. Fields with * are mandatory.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="form-group">
+                                <label for="PassportNumber">Passport Number</label>
+                                <input type="text" class="form-control" id="PassportNumber"
+                                    placeholder="Passport Number">
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="passportHolderOf">Passport Holder of</label>
+                                    <select class="form-control" name="passportHolderOf" id="passportHolderOf">
+                                      <!-- Passport Holder of - List of countries -->
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="passportIssued">Passport Issued on</label>
+                                    <input type="date" class="form-control" id="passportIssued"
+                                        placeholder="Passport Issued on">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="passportExpiry">Passport Expire on</label>
+                                    <input type="date" class="form-control" id="passportExpiry"
+                                        placeholder="Passport Expire on">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="PassportType">Passport Type</label>
+                                    <select class="form-control" name="PassportType" id="PassportType">
+                                        <option>Normal</option>
+                                        <option>Diplomat</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <a href="#visa-and-residency">
+                                <div class="btn">Next</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="questions-block" id="visa-and-residency">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-user"></i></div>
+                            <div class="question-block-info">
+                                VISA AND RESIDENCY
+                                <span>Enter your VISA AND RESIDENCY. Fields with * are mandatory.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <input type="checkbox" id="ValidVisa" class="floatLabel" name="ValidVisa" onclick="onclick_valid_visa()">
+                                    <label for="ValidVisa">I Have a Valid Visa in Kuwait</label> <br />
+                                    <input type="checkbox" id="presentInKuwait" class="floatLabel visa_and_residency_details" name="presentInKuwait">
+                                    <label for="presentInKuwait" class="visa_and_residency_details">Are You in Kuwait at Present</label>
+                                </div>
+                                <div class="form-group col-md-6 visa_and_residency_details">
+                                    <label for="gender">Visa Type</label>
+                                    <select class="form-control" name="visaType" id="visaType" onchange="onchange_visa_type()">
+                                      <!-- List of Visa Type -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row visa_and_residency_details">
+                                <div class="form-group col-md-6">
+                                    <label for="civilId">Civil ID Number</label>
+                                    <input type="text" class="form-control" id="civilId" placeholder="Civil ID">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="civilValidTill">Civil ID Valid Till</label>
+                                    <input type="date" class="form-control" id="civilValidTill"
+                                        placeholder="Civil ID Valid Till">
+                                </div>
+                            </div>
+                            <a href="#educational-qualification">
+                                <div class="btn">Next</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="questions-block current-employment" id="current-employment">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-envelope-alt"></i></div>
+                            <div class="question-block-info">
+                                CURRENT EMPLOYMENT
+                                <span>Enter your employment details. Fields with * are mandatory.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="current_employer">Current Employer</label>
+                                    <input type="text" class="form-control" id="current_employer"
+                                        placeholder="Current Employer">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="current_employer_website">Current Employer Website Link</label>
+                                    <input type="text" class="form-control" id="current_employer_website"
+                                        placeholder="Current Employer Website Link">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="employment_start_date">Start Date</label>
+                                    <input type="date" class="form-control" id="employment_start_date"
+                                        placeholder="Start Date">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="employment_end_date">End Date</label>
+                                    <input type="date" class="form-control" id="employment_end_date"
+                                        placeholder="End Date">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="current_job_title">Current Job Title</label>
+                                    <input type="text" class="form-control" id="current_job_title"
+                                        placeholder="Current Job Title">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="current_salary">Current Monthly Salary in KWD</label>
+                                    <input type="text" class="form-control" id="current_salary"
+                                        placeholder="Salary in KWD">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="country_of_employment">Country of Employment</label>
+                                    <select class="form-control" name="country_of_employment" id="country_of_employment">
+                                      <!-- List of countries -->
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="notice_period">Notice Period in Days</label>
+                                    <input type="text" class="form-control" id="notice_period"
+                                        placeholder="Notice Period in Days">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="questions-block" id="educational-qualification">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-user"></i></div>
+                            <div class="question-block-info">
+                                EDUCATIONAL QUALIFICATION
+                                <span>Enter your qualification details. Fields with * are mandatory.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="row">
+                                <div class="form-group col-md-12">
+                                    <label for="educationalQualification">What is Your Highest Educational
+                                        Qualification:</label>
+                                    <select class="form-control" name="educationalQualification"
+                                        id="educationalQualification">
+                                        <option></option>
+                                        <option>Post Graduate</option>
+                                        <option>Master</option>
+                                        <option>Graduate</option>
+                                        <option>Undergraduate</option>
+                                        <option>High School</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label for="University">University</label>
+                                    <input type="text" class="form-control" id="University" placeholder="University">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="Specialization">Specialization</label>
+                                    <input type="text" class="form-control" id="Specialization"
+                                        placeholder="Specialization">
+                                </div>
+                            </div>
+                            <a href="#work-details">
+                                <div class="btn">Next</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="questions-block work-details" id="work-details">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-envelope-alt"></i></div>
+                            <div class="question-block-info">
+                                Work Details
+                                <span>Select Work Details. Fields with * are mandatory.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="row">
+                                <div class="form-group col-md-6 rotationalShift">
+                                    <label for="rotationalShift">Rotation Shift</label>
+                                    <select class="form-control" name="rotationalShift" id="rotationalShift">
+                                        <option></option>
+                                        <option>Yes, I Will Work in Rotation Shift</option>
+                                        <option>No, I Cant Work in Rotation Shift</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6 nightShift">
+                                    <label for="nightShift">Night Shift</label>
+                                    <select class="form-control" name="nightShift" id="nightShift">
+                                        <option></option>
+                                        <option>Yes, I Will Work in Night Shift</option>
+                                        <option>No, I Cant Work in Night Shift</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6 canYouTravel">
+                                    <label for="canYouTravel">Can you Travel?</label>
+                                    <select class="form-control" name="canYouTravel" id="canYouTravel">
+                                        <!-- Travel options will be set here -->
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6 canYouTravel">
+                                    <label for="typeOfDrivingLicense">Type of Driving License</label>
+                                    <select class="form-control" name="typeOfDrivingLicense" id="typeOfDrivingLicense">
+                                        <option></option>
+                                        <option>Light</option>
+                                        <option>Heavy</option>
+                                        <option>Motor Bike</option>
+                                        <option>Inshaya</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <a href="#basic-skill">
+                                <div class="btn">Next</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="questions-block" id="basic-skill">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-user"></i></div>
+                            <div class="question-block-info">
+                                Basic Skill
+                                <span>Rate your skills. Fields with * are mandatory.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form">
+                            <div class="p-4" id="skills-list">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6"><label for="skill-input">Skill</label></div>
+                                <div class="col-md-6"><label for="Proficiency">Proficiency</label></div>
+                            </div>
+                            <div class="row" id="basic-skills">
+                                <!-- Skills will be here -->
+                            </div>
+
+                            <a href="#documents-required">
+                                <div class="btn">Next</div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="questions-block" id="documents-required">
+                        <div class="question-block-head">
+                            <div class="question-block-icon"><i class="uil uil-envelope-alt"></i></div>
+                            <div class="question-block-info">
+                                Documents Required
+                                <span>Attach Your Documents.</span>
+                            </div>
+                        </div>
+                        <div class="question-block-form required_docs" id="required_docs">
+                          <!-- Required Docs Shows here -->
+                        </div>
+                    </div>
+                </form>
+                <div id="submitBtn" class="btn btn-primary submit-btn">Submit</div>
+            </div>
+        </div>
+    </div>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/rater-js@1.0.1/index.min.js"></script> -->
+    <!-- <script src="https://code.jquery.com/jquery-1.12.4.js"></script> -->
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+        integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="assets/one_fm/assets/phone-input/js/intlTelInput.js"></script>
+    <script>
+        var input = document.querySelector("#phone");
+        var input1 = document.querySelector("#phone1");
+        window.intlTelInput(input, {
+            initialCountry: "auto",
+            geoIpLookup: function (callback) {
+                $.get('https://ipinfo.io', function () { }, "jsonp").always(function (resp) {
+                    var countryCode = (resp && resp.country) ? resp.country : "";
+                    callback(countryCode);
+                });
+            },
+            // utilsScript: "assets/one_fm/assets/phone-input/js/utils.js?1590403638580" // just for formatting/placeholders etc
+        });
+        window.intlTelInput(input1, {
+            initialCountry: "auto",
+            geoIpLookup: function (callback) {
+                $.get('https://ipinfo.io', function () { }, "jsonp").always(function (resp) {
+                    var countryCode = (resp && resp.country) ? resp.country : "";
+                    callback(countryCode);
+                });
+            },
+            // utilsScript: "assets/one_fm/assets/phone-input/js/utils.js?1590403638580" // just for formatting/placeholders etc
+        });
+    </script>
+    <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
+    <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
+</body>
+{% endblock %}

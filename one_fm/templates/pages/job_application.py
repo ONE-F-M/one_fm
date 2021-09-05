@@ -17,7 +17,7 @@ def get_dummy():
 
 @frappe.whitelist(allow_guest=True)
 def easy_apply(first_name, second_name, third_name, last_name, nationality, civil_id, applicant_email, applicant_mobile,
-    cover_letter, job_opening, resume=None):
+    cover_letter, job_opening, first_name_arabic, last_name_arabic, resume=None):
     sender = frappe.get_value("Email Account", filters={"default_outgoing": 1}, fieldname="email_id") or None
     applicant_name = first_name
     applicant_name += (" "+second_name) if second_name else ""
@@ -37,7 +37,7 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
         <br><br><br><b>Reference:</b> ERF <a href='{4}'>{5}</a> and Job Opening <a href='{6}'>{7}</a>
     """.format(applicant_name, applicant_email, applicant_mobile, cover_letter, erf_link, job.one_fm_erf, job_link, job.name)
     create_job_applicant_for_easy_apply(applicant_name, first_name, second_name, third_name, last_name, nationality,
-        civil_id, applicant_email, applicant_mobile, cover_letter, job_opening)
+        civil_id, applicant_email, applicant_mobile, cover_letter, job_opening, first_name_arabic, last_name_arabic)
     try:
         # Notify the HR User
         hr_user_to_get_notified = frappe.db.get_single_value('Hiring Settings', 'easy_apply_to') or 'hr@one-fm.com'
@@ -52,7 +52,7 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
         return 0
 
 def create_job_applicant_for_easy_apply(applicant_name, first_name, second_name, third_name, last_name, nationality,
-        civil_id, applicant_email, applicant_mobile, cover_letter, job_opening, files=None):
+        civil_id, applicant_email, applicant_mobile, cover_letter, job_opening, first_name_arabic, last_name_arabic, files=None):
     job_applicant = frappe.db.exists(
         "Job Applicant", {"job_title": job_opening, "email_id": applicant_email})
     if job_applicant:
@@ -64,9 +64,11 @@ def create_job_applicant_for_easy_apply(applicant_name, first_name, second_name,
         job_applicant.applicant_name = applicant_name
         job_applicant.one_fm_email_id = applicant_email
         job_applicant.one_fm_first_name = first_name
+        job_applicant.one_fm_first_name_in_arabic = first_name_arabic
         job_applicant.one_fm_second_name = second_name
         job_applicant.one_fm_third_name = third_name
         job_applicant.one_fm_last_name = last_name
+        job_applicant.one_fm_last_name_in_arabic = last_name_arabic
         job_applicant.one_fm_nationality = nationality
         job_applicant.one_fm_cid_number = civil_id
         job_applicant.one_fm_contact_number = applicant_mobile
