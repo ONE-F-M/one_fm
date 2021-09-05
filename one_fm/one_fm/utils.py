@@ -116,7 +116,7 @@ def notify_recruiter_after_checking(doc):
                 page_link = get_url("/desk#List/Job Applicant/" + dt.name)
                 message="<p>Tranfer for {0} has no issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
                 subject='Tranfer for {0} has no issues'.format(dt.applicant_name)
-                create_notification_log(subject,message,email,dt)
+                create_notification_log(subject,message,[email],dt)
                 dt.db_set('one_fm_notify_recruiter', 1)
                 dt.db_set('one_fm_applicant_status', "Checked By GRD")
                 notify_pam_authorized_signature(doc)#Inform Authorized signature 
