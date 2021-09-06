@@ -68,6 +68,7 @@ def get_user_details():
     except Exception as e:
         print(frappe.get_traceback())
 
+@frappe.whitelist()
 def get_user_roles():
     user_id = frappe.session.user
     user_roles = frappe.get_roles(user_id)
