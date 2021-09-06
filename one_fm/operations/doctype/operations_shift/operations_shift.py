@@ -15,13 +15,13 @@ from datetime import timedelta
 class OperationsShift(Document):
 	
 	def autoname(self):
-		self.name = self.service_type+"-"+self.site+"-"+self.shift_type
+		self.name = self.service_type+"-"+self.site+"-"+self.shift_classification+"-"+cstr(self.shift_number)
 
 	def on_update(self):
 		self.validate_name()
 
 	def validate_name(self):
-		new_name = self.service_type+"-"+self.site+"-"+self.shift_type
+		new_name = self.service_type+"-"+self.site+"-"+self.shift_classification+"-"+cstr(self.shift_number)
 		if new_name != self.name:
 			rename_doc(self.doctype, self.name, new_name, force=True)
 

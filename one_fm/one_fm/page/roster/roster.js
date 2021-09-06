@@ -176,221 +176,226 @@ function load_js(page) {
 		//tab click for week view data function call
 
 		$(".editpostclassclick").click(function () {
-			let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
-			let posts = [];
-			let selected = [... new Set(classgrt)];
+			if (["Operations Manager", "Projects Manager"].some(i => frappe.user_roles.includes(i))) {
+				let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
+				let posts = [];
+				let selected = [... new Set(classgrt)];
 
-			selected.forEach(function (i) {
-				let [post, date] = i.split("_");
-				posts.push({ post, date });
-			});
-			posts = [... new Set(posts)];
-			let d = new frappe.ui.Dialog({
-				title: 'Edit Post',
-				fields: [
-					{
-						label: 'Post Status',
-						fieldname: 'post_status',
-						fieldtype: 'Select',
-						options: '\nPlan Post\nPost Off\nSuspend Post\nCancel Post',
-						reqd: 1
-					},
-					{
-						fieldname: 'sb4',
-						fieldtype: 'Section Break',
-						depends_on: "eval:this.get_value('post_status') == 'Plan Post'",
-					},
-					{
-						label: 'Plan From Date',
-						fieldname: 'plan_from_date',
-						fieldtype: 'Date',
-						default: date,
-						onchange: function () {
-							let plan_from_date = d.get_value('plan_from_date');
-							if (plan_from_date && moment(plan_from_date).isBefore(moment(frappe.datetime.nowdate()))) {
-								frappe.throw(__("Plan From Date cannot be before today."));
-							}
-						}
-					},
-					{
-						label: 'Plan Till Date',
-						fieldname: 'plan_end_date',
-						fieldtype: 'Date',
-						depends_upon: 'eval:this.get_value("project_end_date")==0',
-						onchange: function () {
-							let plan_end_date = d.get_value('plan_end_date');
-							if (plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))) {
-								frappe.throw(__("Plan Till Date cannot be before today."));
-							}
-						}
-					},
-					{
-						fieldname: 'sb1',
-						fieldtype: 'Section Break',
-						depends_on: "eval:this.get_value('post_status') == 'Cancel Post'",
-					},
-					{
-						label: 'Cancel From Date',
-						fieldname: 'cancel_from_date',
-						fieldtype: 'Date',
-						default: date,
-						onchange: function () {
-							let cancel_from_date = d.get_value('cancel_from_date');
-							if (cancel_from_date && moment(cancel_from_date).isBefore(moment(frappe.datetime.nowdate()))) {
-								frappe.throw(__("Cancel From date cannot be before today."));
-							}
-						}
-					},
-					{
-						label: 'Cancel Till Date',
-						fieldname: 'cancel_end_date',
-						fieldtype: 'Date',
-						depends_upon: 'eval:this.get_value("project_end_date")==0',
-						onchange: function () {
-							let plan_end_date = d.get_value('cancel_end_date');
-							if (plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))) {
-								frappe.throw(__("Cancel Till Date cannot be before today."));
-							}
-						}
-					},
-					{
-						fieldname: 'sb3',
-						fieldtype: 'Section Break',
-						depends_on: "eval:this.get_value('post_status') == 'Post Off'",
-					},
-					{
-						label: 'Paid',
-						fieldname: 'post_off_paid',
-						fieldtype: 'Check',
-						onchange: function () {
-							let val = d.get_value('post_off_paid');
-							if (val) {
-								d.set_value('post_off_unpaid', 0);
-							}
-						}
-					},
-					{
-						fieldname: 'cb7',
-						fieldtype: 'Column Break',
-					},
-					{
-						label: 'Unpaid',
-						fieldname: 'post_off_unpaid',
-						fieldtype: 'Check',
-						onchange: function () {
-							let val = d.get_value('post_off_unpaid');
-							if (val) {
-								d.set_value('post_off_paid', 0);
-							}
-						}
-					},
-					{
-						fieldname: 'sb5',
-						fieldtype: 'Section Break',
-						depends_on: "eval:this.get_value('post_status') == 'Post Off'",
-					},
-					{ label: 'Repeat', fieldname: 'repeat', fieldtype: 'Select', options: 'Does not repeat\nDaily\nWeekly\nMonthly\nYearly' },
-					{ 'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("post_status")=="Post Off" && this.get_value("repeat")=="Weekly"' },
-					{ 'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check' },
-					{ 'label': 'Wednesday', 'fieldname': 'wednesday', 'fieldtype': 'Check' },
-					{ 'label': 'Saturday', 'fieldname': 'saturday', 'fieldtype': 'Check' },
-					{ 'fieldtype': 'Column Break', 'fieldname': 'cb1' },
-					{ 'label': 'Monday', 'fieldname': 'monday', 'fieldtype': 'Check' },
-					{ 'label': 'Thursday', 'fieldname': 'thursday', 'fieldtype': 'Check' },
-					{ 'fieldtype': 'Column Break', 'fieldname': 'cb2' },
-					{ 'label': 'Tuesday', 'fieldname': 'tuesday', 'fieldtype': 'Check' },
-					{ 'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check' },
-					{ 'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:this.get_value("post_status")=="Post Off" && this.get_value("repeat")!= "Does not repeat"' },
-					{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'depends_upon': 'eval:this.get_value("project_end_date")==0' },
-					{
-						fieldname: 'sb2',
-						fieldtype: 'Section Break',
-						depends_on: "eval:this.get_value('post_status') == 'Suspend Post'",
-					},
-					{
-						label: 'Paid',
-						fieldname: 'suspend_paid',
-						fieldtype: 'Check',
-						onchange: function () {
-							let val = d.get_value('suspend_paid');
-							if (val) {
-								d.set_value('suspend_unpaid', 0);
-							}
-						}
-					},
-					{
-						label: 'Suspend From Date',
-						fieldname: 'suspend_from_date',
-						fieldtype: 'Date',
-						default: date,
-						onchange: function () {
-							let suspend_from_date = d.get_value('suspend_from_date');
-							if (suspend_from_date && moment(suspend_from_date).isBefore(moment(frappe.datetime.nowdate()))) {
-								frappe.throw(__("Suspend From Date cannot be before today."));
-							}
-						}
-					},
-					{
-						label: 'Never End',
-						fieldname: 'suspend_never_end',
-						fieldtype: 'Check',
-					},
-					{
-						fieldname: 'cb1',
-						fieldtype: 'Column Break',
-					},
-					{
-						label: 'Unpaid',
-						fieldname: 'suspend_unpaid',
-						fieldtype: 'Check',
-						onchange: function () {
-							let val = d.get_value('suspend_unpaid');
-							if (val) {
-								d.set_value('suspend_paid', 0);
-							}
-						}
-					},
-					{
-						label: 'Suspend Till Date',
-						fieldname: 'suspend_to_date',
-						fieldtype: 'Date',
-						depends_on: 'eval:this.get_value("project_end_date")==0',
-						onchange: function () {
-							let suspend_to_date = d.get_value('suspend_to_date');
-							if (suspend_to_date && moment(suspend_to_date).isBefore(moment(frappe.datetime.nowdate()))) {
-								frappe.throw(__("Suspend To Date cannot be before today."));
-							}
-						}
-					},
-					{
-						fieldname: 'sb_project_end_date',
-						fieldtype: 'Section Break'
-					},
-					{
-						label: 'Project end date',
-						fieldname: 'project_end_date',
-						fieldtype: 'Check',
-					},
-				],
-				primary_action_label: 'Submit',
-				primary_action(values) {
-					$('#cover-spin').show(0);
-					frappe.call({
-						method: 'one_fm.one_fm.page.roster.roster.edit_post',
-						args: { posts, values },
-						callback: function (r) {
-							d.hide();
-							$('#cover-spin').hide();
-							let element = get_wrapper_element().slice(1);
-							page[element](page);
+				selected.forEach(function (i) {
+					let [post, date] = i.split("_");
+					posts.push({ post, date });
+				});
+				posts = [... new Set(posts)];
+				let d = new frappe.ui.Dialog({
+					title: 'Edit Post',
+					fields: [
+						{
+							label: 'Post Status',
+							fieldname: 'post_status',
+							fieldtype: 'Select',
+							options: '\nPlan Post\nPost Off\nSuspend Post\nCancel Post',
+							reqd: 1
 						},
-						freeze: true,
-						freeze_message: __('Editing Post....')
-					});
-				}
-			});
+						{
+							fieldname: 'sb4',
+							fieldtype: 'Section Break',
+							depends_on: "eval:this.get_value('post_status') == 'Plan Post'",
+						},
+						{
+							label: 'Plan From Date',
+							fieldname: 'plan_from_date',
+							fieldtype: 'Date',
+							default: date,
+							onchange: function () {
+								let plan_from_date = d.get_value('plan_from_date');
+								if (plan_from_date && moment(plan_from_date).isBefore(moment(frappe.datetime.nowdate()))) {
+									frappe.throw(__("Plan From Date cannot be before today."));
+								}
+							}
+						},
+						{
+							label: 'Plan Till Date',
+							fieldname: 'plan_end_date',
+							fieldtype: 'Date',
+							depends_upon: 'eval:this.get_value("project_end_date")==0',
+							onchange: function () {
+								let plan_end_date = d.get_value('plan_end_date');
+								if (plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))) {
+									frappe.throw(__("Plan Till Date cannot be before today."));
+								}
+							}
+						},
+						{
+							fieldname: 'sb1',
+							fieldtype: 'Section Break',
+							depends_on: "eval:this.get_value('post_status') == 'Cancel Post'",
+						},
+						{
+							label: 'Cancel From Date',
+							fieldname: 'cancel_from_date',
+							fieldtype: 'Date',
+							default: date,
+							onchange: function () {
+								let cancel_from_date = d.get_value('cancel_from_date');
+								if (cancel_from_date && moment(cancel_from_date).isBefore(moment(frappe.datetime.nowdate()))) {
+									frappe.throw(__("Cancel From date cannot be before today."));
+								}
+							}
+						},
+						{
+							label: 'Cancel Till Date',
+							fieldname: 'cancel_end_date',
+							fieldtype: 'Date',
+							depends_upon: 'eval:this.get_value("project_end_date")==0',
+							onchange: function () {
+								let plan_end_date = d.get_value('cancel_end_date');
+								if (plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))) {
+									frappe.throw(__("Cancel Till Date cannot be before today."));
+								}
+							}
+						},
+						{
+							fieldname: 'sb3',
+							fieldtype: 'Section Break',
+							depends_on: "eval:this.get_value('post_status') == 'Post Off'",
+						},
+						{
+							label: 'Paid',
+							fieldname: 'post_off_paid',
+							fieldtype: 'Check',
+							onchange: function () {
+								let val = d.get_value('post_off_paid');
+								if (val) {
+									d.set_value('post_off_unpaid', 0);
+								}
+							}
+						},
+						{
+							fieldname: 'cb7',
+							fieldtype: 'Column Break',
+						},
+						{
+							label: 'Unpaid',
+							fieldname: 'post_off_unpaid',
+							fieldtype: 'Check',
+							onchange: function () {
+								let val = d.get_value('post_off_unpaid');
+								if (val) {
+									d.set_value('post_off_paid', 0);
+								}
+							}
+						},
+						{
+							fieldname: 'sb5',
+							fieldtype: 'Section Break',
+							depends_on: "eval:this.get_value('post_status') == 'Post Off'",
+						},
+						{ label: 'Repeat', fieldname: 'repeat', fieldtype: 'Select', options: 'Does not repeat\nDaily\nWeekly\nMonthly\nYearly' },
+						{ 'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("post_status")=="Post Off" && this.get_value("repeat")=="Weekly"' },
+						{ 'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check' },
+						{ 'label': 'Wednesday', 'fieldname': 'wednesday', 'fieldtype': 'Check' },
+						{ 'label': 'Saturday', 'fieldname': 'saturday', 'fieldtype': 'Check' },
+						{ 'fieldtype': 'Column Break', 'fieldname': 'cb1' },
+						{ 'label': 'Monday', 'fieldname': 'monday', 'fieldtype': 'Check' },
+						{ 'label': 'Thursday', 'fieldname': 'thursday', 'fieldtype': 'Check' },
+						{ 'fieldtype': 'Column Break', 'fieldname': 'cb2' },
+						{ 'label': 'Tuesday', 'fieldname': 'tuesday', 'fieldtype': 'Check' },
+						{ 'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check' },
+						{ 'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:this.get_value("post_status")=="Post Off" && this.get_value("repeat")!= "Does not repeat"' },
+						{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'depends_upon': 'eval:this.get_value("project_end_date")==0' },
+						{
+							fieldname: 'sb2',
+							fieldtype: 'Section Break',
+							depends_on: "eval:this.get_value('post_status') == 'Suspend Post'",
+						},
+						{
+							label: 'Paid',
+							fieldname: 'suspend_paid',
+							fieldtype: 'Check',
+							onchange: function () {
+								let val = d.get_value('suspend_paid');
+								if (val) {
+									d.set_value('suspend_unpaid', 0);
+								}
+							}
+						},
+						{
+							label: 'Suspend From Date',
+							fieldname: 'suspend_from_date',
+							fieldtype: 'Date',
+							default: date,
+							onchange: function () {
+								let suspend_from_date = d.get_value('suspend_from_date');
+								if (suspend_from_date && moment(suspend_from_date).isBefore(moment(frappe.datetime.nowdate()))) {
+									frappe.throw(__("Suspend From Date cannot be before today."));
+								}
+							}
+						},
+						{
+							label: 'Never End',
+							fieldname: 'suspend_never_end',
+							fieldtype: 'Check',
+						},
+						{
+							fieldname: 'cb1',
+							fieldtype: 'Column Break',
+						},
+						{
+							label: 'Unpaid',
+							fieldname: 'suspend_unpaid',
+							fieldtype: 'Check',
+							onchange: function () {
+								let val = d.get_value('suspend_unpaid');
+								if (val) {
+									d.set_value('suspend_paid', 0);
+								}
+							}
+						},
+						{
+							label: 'Suspend Till Date',
+							fieldname: 'suspend_to_date',
+							fieldtype: 'Date',
+							depends_on: 'eval:this.get_value("project_end_date")==0',
+							onchange: function () {
+								let suspend_to_date = d.get_value('suspend_to_date');
+								if (suspend_to_date && moment(suspend_to_date).isBefore(moment(frappe.datetime.nowdate()))) {
+									frappe.throw(__("Suspend To Date cannot be before today."));
+								}
+							}
+						},
+						{
+							fieldname: 'sb_project_end_date',
+							fieldtype: 'Section Break'
+						},
+						{
+							label: 'Project end date',
+							fieldname: 'project_end_date',
+							fieldtype: 'Check',
+						},
+					],
+					primary_action_label: 'Submit',
+					primary_action(values) {
+						$('#cover-spin').show(0);
+						frappe.call({
+							method: 'one_fm.one_fm.page.roster.roster.edit_post',
+							args: { posts, values },
+							callback: function (r) {
+								d.hide();
+								$('#cover-spin').hide();
+								let element = get_wrapper_element().slice(1);
+								page[element](page);
+							},
+							freeze: true,
+							freeze_message: __('Editing Post....')
+						});
+					}
+				});
 
-			d.show();
+				d.show();
+			}
+			else{
+				frappe.throw(_("Insufficient permissions to Edit Post."));
+			}
 		});
 
 
@@ -1349,84 +1354,97 @@ function get_post_data(page) {
 	classgrt = [];
 	classgrtw = [];
 	let { start_date, end_date } = page;
-	let { project, site, shift, post_type } = page.filters;
+	let { project, site, shift, department, post_type } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	// console.log(start_date, end_date, project, site, shift, post_type,limit_start, limit_page_length);
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, post_type, limit_start, limit_page_length })
-		.then(res => {
-			// console.log(res);
-			page.pagination.total = res.total;
-			let $postMonth = $('.postMonth');
-			let $postMonthbody = $('.postMonth').find('#calenderviewtable tbody');
-			$postMonthbody.empty();
-			for (post_name in res.post_data) {
-				let row = `
-			<tr class="colorclass" data-name="${post_name}">
-				<td class="sticky">
-					<label class="checkboxcontainer simplecheckbox mx-4">
-						<span
-							class="lightgrey font16 customfontweight fontw400 postname">
-							${post_name}
-						</span>
-						<span class="tooltiptext">${post_name}</span>
-						<input type="checkbox" name="selectallcheckbox"
-							class="selectallcheckbox">
-						<span class="checkmark"></span>
-					</label>
-				</td>
-			</tr>`;
-				$postMonthbody.append(row);
-				let { start_date, end_date } = page;
-				start_date = moment(start_date);
-				end_date = moment(end_date);
-				let i = 0;
-				let day = start_date;
-				while (day <= end_date) {
-					// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
-					let schedule = ``;
-					let classmap = {
-						'Planned': 'bluebox',
-						'Post Off': 'greyboxcolor',
-						'Suspended': 'yellowboxcolor',
-						'Cancelled': 'redboxcolor'
-					};
+	if (project || site || shift || department || post_type){
+		// console.log(start_date, end_date, project, site, shift, post_type,limit_start, limit_page_length);
+		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, post_type, limit_start, limit_page_length })
+			.then(res => {
+				// console.log(res);
+				page.pagination.total = res.total;
+				let $postMonth = $('.postMonth');
+				let $postMonthbody = $('.postMonth').find('#calenderviewtable tbody');
+				$postMonthbody.empty();
+				for (post_name in res.post_data) {
+					let row = `
+				<tr class="colorclass" data-name="${post_name}">
+					<td class="sticky">
+						<label class="checkboxcontainer simplecheckbox mx-4">
+							<span
+								class="lightgrey font16 customfontweight fontw400 postname">
+								${post_name}
+							</span>
+							<span class="tooltiptext">${post_name}</span>
+							<input type="checkbox" name="selectallcheckbox"
+								class="selectallcheckbox">
+							<span class="checkmark"></span>
+						</label>
+					</td>
+				</tr>`;
+					$postMonthbody.append(row);
+					let { start_date, end_date } = page;
+					start_date = moment(start_date);
+					end_date = moment(end_date);
+					let i = 0;
+					let day = start_date;
+					while (day <= end_date) {
+						// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+						let schedule = ``;
+						let classmap = {
+							'Planned': 'bluebox',
+							'Post Off': 'greyboxcolor',
+							'Suspended': 'yellowboxcolor',
+							'Cancelled': 'redboxcolor'
+						};
 
-					let { project, site, shift, date, post_status, post_type, post, name } = res["post_data"][post_name][i];
-					if (name) {
-						schedule = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
-							data-selectid="${post + '_' + date}"
-							data-date="${date}"
-							data-project="${project}"
-							data-site="${site}"
-							data-shift="${shift}"
-							data-name="${name}"
-							data-post="${post}"
-							data-post_status="${post_status}"
-							data-post-type="${post_type}">
-						</div>
-					</td>`;
+						let { project, site, shift, date, post_status, post_type, post, name } = res["post_data"][post_name][i];
+						if (name) {
+							schedule = `
+						<td>
+							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
+								data-selectid="${post + '_' + date}"
+								data-date="${date}"
+								data-project="${project}"
+								data-site="${site}"
+								data-shift="${shift}"
+								data-name="${name}"
+								data-post="${post}"
+								data-post_status="${post_status}"
+								data-post-type="${post_type}">
+							</div>
+						</td>`;
+						}
+						else {
+							schedule = `
+						<td>
+							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center so"
+								data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"	
+								data-date="${start_date.format('YYYY-MM-DD')}"
+								data-post="${post_name}"
+							</div>
+						</td>`;
+						}
+						i++;
+						start_date.add(1, 'days');
+						$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(schedule);
 					}
-					else {
-						schedule = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center so"
-							data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"	
-							data-date="${start_date.format('YYYY-MM-DD')}"
-							data-post="${post_name}"
-						</div>
-					</td>`;
-					}
-					i++;
-					start_date.add(1, 'days');
-					$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(schedule);
+					$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
 				}
-				$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
-			}
-			// frappe.show_alert({message:__("Postview updated"), indicator:'green'});
-			bind_events(page);
-		});
+				// frappe.show_alert({message:__("Postview updated"), indicator:'green'});
+				bind_events(page);
+			}).catch(e =>{
+				console.log(e);
+			});
+	}else{
+		let $postMonthbody = $('.postMonth').find('#calenderviewtable tbody');
+		let pt_row = `
+		<div class="lightgrey font30 paddingdiv borderleft bordertop">
+		Select a filter to view the Post data
+		</div>
+		`;
+		$postMonthbody.empty();
+		$postMonthbody.append(pt_row);
+	}	
 }
 
 // Get data for Post view weekly and render it
