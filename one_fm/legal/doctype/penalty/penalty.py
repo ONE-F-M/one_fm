@@ -209,7 +209,7 @@ def get_permission_query_conditions(user):
 
 def has_permission():
 	user_roles = frappe.get_roles(frappe.session.user)
-	if frappe.session.user == "Administrator" or "Legal Manager" in user_role or "Penalty Recipient" in user_roles or "Penalty Issuer" in user_roles:
+	if frappe.session.user == "Administrator" or "Legal Manager" in user_roles or "Penalty Recipient" in user_roles or "Penalty Issuer" in user_roles:
 		print("True")
 		# dont allow non Administrator user to view / edit Administrator user
 		return True
