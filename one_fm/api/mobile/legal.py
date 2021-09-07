@@ -93,7 +93,25 @@ def get_penalties(employee, Role):
 	else:
 		return frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
 
-
+@frappe.whitelist()
+def get_penalty():
+	user = frappe.session.user
+	user_roles = frappe.get_roles(user)
+	if user == "Administrator" or "Legal Manager" in user_roles:
+		List = frappe.get_list("Penalty")
+	else:
+		employee = frappe.get_value("Employee", {"user_id": user}, ["name"])
+		if "Penalty Recipient" in user_roles and "Penalty Issuer" in user_roles:
+			penalty_issuer = frappe.get_list("Penalty", {"issuer_employee": employee})
+			penalty_Recip = frappe.get_list("Penalty", {"recipient_employee": employee})
+			penalty_issuer.append(penalty_Recip)
+			List = penalty_issuer	
+		elif "Penalty Issuer" in user_roles:
+			List = frappe.get_list("Penalty", {"issuer_employee": employee})
+		else:
+			print(employee)
+			List = frappe.get_list("Penalty", {"recipient_employee": employee})
+	return List
 
 @frappe.whitelist()
 def get_penalty_details(penalty_name):

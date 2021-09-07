@@ -247,6 +247,24 @@ def get_current_penalty_location(location, penalty_occurence_time):
 	else:
 		return ''
 
+@frappe.whitelist()
+def get_permission_query_conditions(user):
+	user_roles = frappe.get_roles(user)
+	if user == "Administrator" or "Legal Manager" in user_roles:
+		return ""
+	elif "Penalty Issuer" in user_roles:
+		employee = frappe.get_value("Employee", {"user_id": user}, ["name"])
+		condition = '`tabPenalty Issuance`.`issuing_employee`="{employee}"'.format(employee = employee)
+		return condition
+
+def has_permission():
+	user_roles = frappe.get_roles(frappe.session.user)
+	if frappe.session.user == "Administrator" or "Legal Manager" in user_roles or "Penalty Issuer" in user_roles:
+		print("True")
+		# dont allow non Administrator user to view / edit Administrator user
+		return True
+	if "Penalty Recipient" in user_roles:
+		return False
 
 @frappe.whitelist()
 def filter_employees(doctype, txt, searchfield, start, page_len, filters):

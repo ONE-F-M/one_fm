@@ -191,6 +191,30 @@ def match_encodings(encodings, face_data):
 		print(frappe.get_traceback())
 
 @frappe.whitelist()
+def get_permission_query_conditions(user):
+	user_roles = frappe.get_roles(user)
+	if user == "Administrator" or "Legal Manager" in user_roles:
+		return ""
+	else:
+		employee = frappe.get_value("Employee", {"user_id": user}, ["name"])
+		if "Penalty Recipient" in user_roles and "Penalty Issuer" in user_roles:
+			condition = '`tabPenalty`.`issuer_employee`="{employee}" or `tabPenalty`.`recipient_employee`="{employee}"'.format(employee = employee)
+		elif "Penalty Issuer" in user_roles:
+			condition = '`tabPenalty`.`issuer_employee`="{employee}"'.format(employee = employee)
+		elif "Penalty Recipient" in user_roles:
+			condition = '`tabPenalty`.`recipient_employee`="{employee}"'.format(employee = employee)
+		else:
+			condition = ""
+		return condition
+
+def has_permission():
+	user_roles = frappe.get_roles(frappe.session.user)
+	if frappe.session.user == "Administrator" or "Legal Manager" in user_role or "Penalty Recipient" in user_roles or "Penalty Issuer" in user_roles:
+		print("True")
+		# dont allow non Administrator user to view / edit Administrator user
+		return True
+
+@frappe.whitelist()
 def create_legal_inv(doctype, docname):
 	doc = frappe.get_doc(doctype, docname)
 	doc.create_legal_investigation()
