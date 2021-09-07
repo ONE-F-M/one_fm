@@ -253,6 +253,7 @@ def get_notification_user(operations_shift):
 				account_manager = get_employee_user_id(project.account_manager)
 				if account_manager != operations_shift.owner:
 					return account_manager
+
 def get_location(shift):
 	print(shift)
 	site = frappe.get_value("Operations Shift", {"shift_type":shift}, "site")
@@ -270,10 +271,11 @@ def checkin_deadline():
 	today = now_datetime().strftime("%Y-%m-%d")
 	shifts_list = get_active_shifts(now_time)
 	penalty_code = "106"
-	issuing_user = frappe.session.user
+	
 	
 	for shift in shifts_list:
 		location = get_location(shift.name)
+		
 		if location:
 			penalty_location = str(location[0].latitude)+","+str(location[0].longitude)
 		else:
@@ -300,12 +302,14 @@ def checkin_deadline():
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:	
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
+
 				for employee in employees: 
-					print(employee)
-					
+					print(shift)
+					op_shift =  frappe.get_doc("Operations Shift", {"shift_type":shift.name})
+					issuing_user = get_notification_user(op_shift) if get_notification_user(op_shift) else get_employee_user_id(employee.reports_to)
+
 					curr_shift = get_current_shift(employee)
 					issue_penalty(employee, today, penalty_code, curr_shift.shift, issuing_user, penalty_location)
-					
 					mark_attendance(employee, today, 'Absent', shift.name)
 				
 			frappe.db.commit()
