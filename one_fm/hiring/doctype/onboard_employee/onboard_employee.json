@@ -82,8 +82,9 @@
   "amended_from",
   "g2g_and_residency_section",
   "is_g2g_fees_needed",
-  "is_residency_fee_needed",
-  "g2g_fee_and_residency_fine_amount",
+  "g2g_fee_amount",
+  "is_residency_fine_needed",
+  "residency_fine_amount",
   "applicant_willing_to_pay_g2g_and_residency_payment",
   "orientation_section",
   "orientation_location",
@@ -1182,19 +1183,6 @@
   },
   {
    "allow_on_submit": 1,
-   "fieldname": "is_residency_fee_needed",
-   "fieldtype": "Check",
-   "label": "Residency Fee Needed"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.is_g2g_fees_needed || doc.is_residency_fee_needed",
-   "fieldname": "g2g_fee_and_residency_fine_amount",
-   "fieldtype": "Currency",
-   "label": "G2G Fee and Residency Fine Amount"
-  },
-  {
-   "allow_on_submit": 1,
    "depends_on": "eval:(doc.is_g2g_fees_needed || doc.is_residency_fee_needed) && doc.g2g_fee_and_residency_fine_amount > 0.0",
    "fieldname": "applicant_willing_to_pay_g2g_and_residency_payment",
    "fieldtype": "Check",
@@ -1229,12 +1217,32 @@
    "fieldtype": "Datetime",
    "label": "Enrolled On",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "is_g2g_fees_needed",
+   "fieldname": "g2g_fee_amount",
+   "fieldtype": "Currency",
+   "label": "G2G Fee Amount"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "is_residency_fine_needed",
+   "fieldtype": "Check",
+   "label": "Residency Fine Needed"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "is_residency_fine_needed",
+   "fieldname": "residency_fine_amount",
+   "fieldtype": "Currency",
+   "label": "Residency Fine Amount"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-07 23:42:01.460062",
+ "modified": "2021-09-08 00:28:57.945110",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
