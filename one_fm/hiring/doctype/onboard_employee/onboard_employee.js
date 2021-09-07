@@ -94,6 +94,12 @@ var create_custom_buttons = function(frm) {
 	if(frm.doc.employee && !frm.doc.user_created){
 		cutom_btn_and_action(frm, 'create_user_and_permissions', 'ERPNext User');
 	}
+	if(frm.doc.employee && frm.doc.user_created && !frm.doc.inform_and_send_enrolment_details_to_employee){
+		frm.add_custom_button(__('Inform and Send Enrolment Details to Employee'), function() {
+			frm.set_value('inform_and_send_enrolment_details_to_employee', true);
+			frm.save("Update");
+		}).addClass('btn-primary');
+	}
 	if(frm.doc.employee && !frm.doc.bank_account){
 		cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
 	}

@@ -137,6 +137,10 @@
   "column_break_107",
   "user_created",
   "role_profile",
+  "enrol_face_recognition_section",
+  "inform_and_send_enrolment_details_to_employee",
+  "enrolled",
+  "enrolled_on",
   "employee_id_section",
   "employee_id_name",
   "employee_id",
@@ -814,7 +818,7 @@
    "allow_on_submit": 1,
    "fieldname": "employee_id",
    "fieldtype": "Link",
-   "label": "Employee ID",
+   "label": "Employee ID Card",
    "options": "Employee ID",
    "read_only": 1
   },
@@ -1195,12 +1199,42 @@
    "fieldname": "applicant_willing_to_pay_g2g_and_residency_payment",
    "fieldtype": "Check",
    "label": "Applicant Willing to Pay G2G and Residency Payment"
+  },
+  {
+   "depends_on": "eval: doc.employee && doc.user_created",
+   "fieldname": "enrol_face_recognition_section",
+   "fieldtype": "Section Break",
+   "label": "Enrol Face Recognition"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.employee && doc.user_created",
+   "fieldname": "inform_and_send_enrolment_details_to_employee",
+   "fieldtype": "Check",
+   "label": "Inform and Send Enrolment Details to Employee",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.employee && doc.user_created",
+   "fieldname": "enrolled",
+   "fieldtype": "Check",
+   "label": "Enrolled",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "enrolled",
+   "fieldname": "enrolled_on",
+   "fieldtype": "Datetime",
+   "label": "Enrolled On",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-01 12:22:12.368358",
+ "modified": "2021-09-07 23:42:01.460062",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
