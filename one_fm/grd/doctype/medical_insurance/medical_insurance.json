@@ -27,8 +27,6 @@
   "no_of_years",
   "pam_file_number",
   "amended_from",
-  "items_section",
-  "items",
   "grd_section",
   "grd_operator",
   "upload_medical_insurance",
@@ -69,9 +67,9 @@
   },
   {
    "fieldname": "insurance_status",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "Insurance Status",
-   "read_only": 1
+   "options": "\nRenewal\nNew\nLocal Transfer"
   },
   {
    "fieldname": "details_section",
@@ -133,16 +131,6 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.category == 'Group'",
-   "fieldname": "items_section",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "items",
-   "fieldtype": "Table",
-   "options": "Medical Insurance Item"
-  },
-  {
    "fieldname": "grd_section",
    "fieldtype": "Section Break",
    "label": "GRD"
@@ -189,7 +177,8 @@
   {
    "fieldname": "upload_medical_insurance_date",
    "fieldtype": "Datetime",
-   "label": "Upload On"
+   "label": "Upload On",
+   "read_only": 1
   },
   {
    "fieldname": "medical_insurance_submitted_by",
@@ -253,6 +242,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee"
   },
@@ -274,7 +264,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-26 11:40:05.252763",
+ "modified": "2021-09-08 08:59:43.917407",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",

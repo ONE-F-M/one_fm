@@ -20,6 +20,15 @@ class PACI(Document):
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
 
+    def on_update(self):
+        self.validate_mandatory_fields_on_update()
+
+    def validate_mandatory_fields_on_update(self):
+        if self.workflow_state == 'Under Process':
+            field_list = [{'Upload Payment Invoice':'upload_civil_id_payment'}]
+            self.set_mendatory_fields(field_list)
+
+
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_New_civil_id_Expiry_date_in_employee_doctype()
@@ -27,12 +36,23 @@ class PACI(Document):
         self.db_set('completed_on', today())
 	
     def validate_mandatory_fields_on_submit(self):
-        if not self.upload_civil_id_payment:
-            frappe.throw(_("GRD Operator Must Upload Paymnent Invoice to Submit"))
-        if not self.upload_civil_id:
-            frappe.throw(_("GRD Operator Must Upload Civil ID to Submit"))
-        if not self.new_civil_id_expiry_date:
-            frappe.throw(_("GRD Operator Must The New Civil ID to Submit"))
+        if self.workflow_state == 'Completed':
+            field_list = [{'Upload Civil ID':'upload_civil_id'},{'New Civil ID Expiry Date':'new_civil_id_expiry_date'}]
+            self.set_mendatory_fields(field_list)
+
+    def set_mendatory_fields(self,field_list):
+        mandatory_fields = []
+        for fields in field_list:
+            for field in fields:
+                if not self.get(fields[field]):
+                    mandatory_fields.append(field)
+        
+        if len(mandatory_fields) > 0:
+            message= 'Mandatory fields required in Work Permit form<br><br><ul>'
+            for mandatory_field in mandatory_fields:
+                message += '<li>' + mandatory_field +'</li>'
+            message += '</ul>'
+            frappe.throw(message)
 
     def set_New_civil_id_Expiry_date_in_employee_doctype(self):
         today = date.today()
@@ -61,7 +81,11 @@ def create_PACI_for_transfer(employee_name):
 
 def create_PACI(employee,Type,preparation_name = None):
         # Create New PACI: 1. New Overseas, 2. New Kuwaiti, 3. Transfer
-        start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE
+        if Type == "Renewal":
+            start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE
+        if Type == "Transfer":
+            start_day = today()
+        
         PACI_new = frappe.new_doc('PACI')
         PACI_new.employee = employee.name
         PACI_new.category = Type

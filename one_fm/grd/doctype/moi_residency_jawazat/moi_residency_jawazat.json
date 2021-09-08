@@ -79,7 +79,8 @@
   {
    "fieldname": "category",
    "fieldtype": "Select",
-   "label": "Category",
+   "in_list_view": 1,
+   "label": "Type",
    "options": "First Time\nTransfer\nRenewal\nExtend\nCancellation"
   },
   {
@@ -95,7 +96,8 @@
    "fieldname": "employee",
    "fieldtype": "Link",
    "label": "Employee",
-   "options": "Employee"
+   "options": "Employee",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_4",
@@ -408,11 +410,10 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval: doc.category == 'Renewal' || doc.category == 'Extend'\n",
+   "depends_on": "eval: doc.category == 'Renewal' || doc.category == 'Extend' || doc.category == 'Transfer'\n",
    "fieldname": "renewal_or_extend",
    "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Renewal Or Extend",
+   "label": "Type",
    "print_hide": 1,
    "read_only": 1
   },
@@ -472,7 +473,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-07-26 11:43:29.706933",
+ "modified": "2021-09-07 10:18:05.626796",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
@@ -519,7 +520,6 @@
    "write": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "one_fm_civil_id",
