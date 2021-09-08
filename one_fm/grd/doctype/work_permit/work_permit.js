@@ -33,9 +33,11 @@ frappe.ui.form.on('Work Permit', {
     employee: function(frm) {
         set_required_documents(frm);
     },
-    refresh: function(frm) {
+    refresh(frm) {
+        set_restart_application(frm);
         set_grd_supervisor(frm);
         set_mgrp(frm);
+        
     },
     pam_file: function(frm) {
         set_authorized_signatory_name_arabic(frm);
@@ -64,25 +66,48 @@ frappe.ui.form.on('Work Permit', {
     work_permit_registration: function(frm){
         set_attach_registration_on(frm);
     },
+    attach_payment_invoice: function(frm){
+        set_attach_payment_time(frm);
+    },
+    previous_company_status: function(frm){
+        set_inform_previous_company_time(frm);
+    },
+    attach_work_permit: function(frm){
+        set_time(frm);
+    },
+    // reason_of_rejection: function(frm){
+    //     inform_previous_company_for_rejection(frm);
+    // }
 
-    // upload_work_permit:function(frm){    //testing reading file
-	// 	let file_url = frm.doc.upload_work_permit;
-    //     if (file_url){
-    //         frappe.call("one_fm.grd.doctype.work_permit.work_permit.import_pdf_wp_file",{file_url})
-    //         .then(res => 
-    //                 console.log(res)
-    //         )}    
-	// }
+   
 
     
 });
-// var set_wp_status_read_only = function(frm){
-//     if (frm.doc.work_permit_status == "Rejected"){
-//         cur_frm.set_df_property("work_permit_status","read_only",1);
-//     }
-// };
+
+var set_restart_application = function(frm){
+    if(frm.doc.docstatus == 1 && frm.doc.work_permit_status == "Rejected"){
+        frm.add_custom_button(__('Restart Application'), function(){
+            frappe.call({
+                method: "one_fm.hiring.utils.create_new_work_permit", 
+                args: {
+                    'work_permit': frm.doc.name
+                },
+                callback: function(r){
+                    if(r.message){
+                        var doclist = frappe.model.sync(r.message);
+                        console.log(doclist)
+                        frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+                    }
+                },
+                freeze: true,
+                freeze_message: __("Creating New Work Permit ...!")
+                  });
+            }).addClass('btn-primary');	
+    }
+};
 var set_mgrp = function(frm){
 if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "Cancellation" && frm.doc.nationality == "Kuwaiti") {
+    
     frm.add_custom_button(__('MGRP Cancellation'),
       function() {
           frappe.model.open_mapped_doc({
@@ -90,6 +115,8 @@ if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "Cancellation" && frm.
           frm: frm
             });
       }).addClass('btn-primary');	
+    
+   
 } if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "New Kuwaiti" && frm.doc.nationality == "Kuwaiti") {
     frm.add_custom_button(__('MGRP Registration'),
       function() {
@@ -255,6 +282,21 @@ var set_work_permit_registration_reference_time = function(frm)
 	if(frm.doc.reference_number_on_pam_registration && !frm.doc.reference_number_registration_set_on)
     {
         frm.set_value('reference_number_registration_set_on',frappe.datetime.now_datetime());
+    }
+};
+var set_attach_payment_time = function(frm){
+    if(frm.doc.attach_payment_invoice && !frm.doc.datetime_17){
+        frm.set_value('datetime_17',frappe.datetime.now_datetime());
+    }
+};
+var set_inform_previous_company_time = function(frm){
+    if(frm.doc.previous_company_status && !frm.doc.inform_previous_company_on){
+        frm.set_value('inform_previous_company_on',frappe.datetime.now_datetime());
+    }
+};
+var set_time = function(frm){
+    if(frm.doc.attach_work_permit && !frm.doc.attach_on){
+        frm.set_value('attach_on',frappe.datetime.now_datetime());
     }
 };
 var set_required_documents = function(frm) {
