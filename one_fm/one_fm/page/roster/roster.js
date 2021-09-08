@@ -994,7 +994,6 @@ function bind_search_bar_event(page) {
 // Get data for Roster monthly view and render it
 // isOt Parms is passed for Roster OT
 function get_roster_data(page, isOt) {
-	// $('#cover-spin').show(0);
 	let a1 = performance.now();
 	classgrt = [];
 	classgrtw = [];
@@ -1006,18 +1005,19 @@ function get_roster_data(page, isOt) {
 	let { project, site, shift, department, post_type } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
 	if (project || site || shift || department || post_type){
+		$('#cover-spin').show(0);
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, search_key, project, site, shift, department, post_type, isOt, limit_start, limit_page_length })
 			.then(res => {
 				let a2 = performance.now();
 				console.log("REQ TIME", a2 - a1);
-				// $('#cover-spin').hide();
+				$('#cover-spin').hide();
 				render_roster(res, page, isOt);
 			});
 	}else{
 		let $rosterMonthbody = isOt ? $('.rosterOtMonth').find('#calenderviewtable tbody') : $('.rosterMonth').find('#calenderviewtable tbody');
 		let pt_row = `
 		<div class="lightgrey font30 paddingdiv borderleft bordertop">
-		Select a filter to view the Roster
+		Select atleast one filter to view roster data
 		</div>
 		`;
 		$rosterMonthbody.empty();
@@ -1368,10 +1368,12 @@ function get_post_data(page) {
 	let { project, site, shift, department, post_type } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
 	if (project || site || shift || department || post_type){
+		$('#cover-spin').show(0);
 		// console.log(start_date, end_date, project, site, shift, post_type,limit_start, limit_page_length);
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, post_type, limit_start, limit_page_length })
 			.then(res => {
 				// console.log(res);
+				$('#cover-spin').hide();
 				page.pagination.total = res.total;
 				let $postMonth = $('.postMonth');
 				let $postMonthbody = $('.postMonth').find('#calenderviewtable tbody');
