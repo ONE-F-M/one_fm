@@ -22,7 +22,7 @@ class TransferPaper(Document):
         self.arrange_arabic_name()
 
         # self.set_pas_values()
-        # self.set_grd_values()
+        self.set_grd_values()
         # self.check_signed_workContract_employee_completed()
         # self.get_wp_status()
         
@@ -144,10 +144,14 @@ class TransferPaper(Document):
             if frappe.db.exists("Employee", {"one_fm_civil_id":self.civil_id}):#employee is created 
                 employee = frappe.db.get_value("Employee", {"one_fm_civil_id":self.civil_id})
                 if employee:
-                    self.recall_create_transfer_work_permit(employee)#create wp
+                    self.recall_create_transfer_work_permit(employee)#create wp for local transfer
                     self.notify_grd_transfer_wp_record()
             else:
                 frappe.throw("No Employee record created yet...")
+
+    def recall_create_transfer_work_permit(self,employee):
+        name = work_permit.create_work_permit_transfer(self.name,employee)
+        self.work_permit_ref = name
 
     def notify_grd_transfer_wp_record(self):
         # Getting the wp record the one not rejected and linked to the TP
@@ -159,9 +163,7 @@ class TransferPaper(Document):
             message = "<p>Please Apply for Transfer WP Online for <a href='{0}'></a>.</p>".format(page_link, wp_record.employee)
             create_notification_log(subject, message, [self.grd_operator], wp_record)
             
-    def recall_create_transfer_work_permit(self,employee):
-        name = work_permit.create_work_permit_transfer(self.name,employee)
-        self.db_set('work_permit_ref', name)
+    
 
 @frappe.whitelist()
 def resend_new_wp_record(doc_name):
