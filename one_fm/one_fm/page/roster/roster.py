@@ -166,7 +166,10 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 					'date': cstr(date).split(" ")[0]
 				}
 			else:
-				schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {}) 
+				schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {})
+				default_shift = frappe.db.get_value("Employee", {'employee': key[0]}, ["shift"])
+				if schedule.shift and schedule.shift != default_shift:
+					schedule.update({'asa': default_shift})
 			schedule_list.append(schedule)
 		formatted_employee_data.update({key[1]: schedule_list})
 
@@ -207,7 +210,6 @@ def filter_redundant_employees(employees):
 		if employee not in result:
 			result.append(employee)
 	return result		
-
 
 @frappe.whitelist(allow_guest=True)
 def get_post_view(start_date, end_date,  project=None, site=None, shift=None, post_type=None, active_posts=1, limit_start=0, limit_page_length=100):
