@@ -28,6 +28,7 @@ class PIFSSMonthlyDeduction(Document):
 		frappe.set_value("File", file_doc, "attached_to_name", self.name)
 
 	def update_additional_file_link(self):
+		"""Naming the additional file"""
 		file_doc = frappe.get_value("File", {"file_url": self.additional_attach_report})
 		frappe.set_value("File", file_doc, "attached_to_name", self.name)
 
@@ -205,8 +206,11 @@ def import_deduction_data(file_url):
 	for index, row in df.iterrows():
 		if frappe.db.exists("Employee", {"pifss_id_no": row[12]}):
 			employee = frappe.get_doc('Employee', {'pifss_id_no':row[12]})
-			civil_id = employee.one_fm_civil_id
-			print(row[7],row[8],row[9],row[10],row[11],row[12],row[13])
+			if employee.one_fm_civil_id:
+				civil_id = employee.one_fm_civil_id
+		if not frappe.db.exists("Employee", {"pifss_id_no": row[12]}):
+			civil_id = ' '
+			# print(row[7],row[8],row[9],row[10],row[11],row[12],row[13])
 		employee_amount = flt(row[1] * (47.72/ 100))
 		table_data.append({'pifss_id_no': row[12],'civil_id':civil_id,'total_subscription': flt(row[1]), 'compensation_amount':row[2], 'unemployment_insurance':row[3],'fund_increase':row[4],'supplementary_insurance':row[5],'basic_insurance':row[6],'employee_deduction':employee_amount})
 	data.update({'table_data': table_data})
