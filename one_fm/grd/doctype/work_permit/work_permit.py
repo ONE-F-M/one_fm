@@ -17,7 +17,7 @@ from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, n
 from email import policy
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
-from PyPDF2 import PdfFileReader
+# from PyPDF2 import PdfFileReader
 
 # from pdfminer.pdfparser import PDFParser, PDFDocument  
 class WorkPermit(Document):
@@ -28,11 +28,11 @@ class WorkPermit(Document):
     def validate(self):
         self.set_grd_values()
         self.check_workflow_status()
-        if self.work_permit_type == "Local Transfer":
-            self.check_inform_previous_company()
-            if self.work_permit_approved == "Yes":
-                self.recall_create_fingerprint_appointment_transfer()
-                self.notify_grd_transfer_fp_record()
+        # if self.work_permit_type == "Local Transfer":  //inform previous company - auto reject - fp record - inform transfer operator
+        #     self.check_inform_previous_company()
+        #     if self.work_permit_approved == "Yes":
+        #         self.recall_create_fingerprint_appointment_transfer()
+        #         self.notify_grd_transfer_fp_record()
 
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -70,21 +70,40 @@ class WorkPermit(Document):
             message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for Work Permit Cancellation through <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
             self.set_mendatory_fields(field_list,message_detail)
 
-        if self.workflow_state == "Pending By Supervisor" and self.work_permit_type == "New Kuwaiti":
-            field_list = [{'PAM Reference Number':'reference_number_on_pam_registration'}]
-            message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for Work Permit Registration through <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
-            self.set_mendatory_fields(field_list,message_detail)
+        if self.workflow_state == "Pending By Supervisor":
+            if self.work_permit_type == "New Kuwaiti" or self.work_permit_type == "Local Transfer":
+                field_list = [{'PAM Reference Number':'reference_number_on_pam_registration'}]
+                message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for Work Permit Registration through <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
+                self.set_mendatory_fields(field_list,message_detail)
+
+        if self.workflow_state == "Pending By PAM":
+            if self.work_permit_type == "Local Transfer":
+                field_list = [{'Previous Company Status':'previous_company_status'}]
+                message_detail = '<b style="color:red; text-align:center;">First, You Need to Inform Previous Company.<br>Second, Check Previous Company Response on <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
+                self.set_mendatory_fields(field_list,message_detail)
+
+        if self.workflow_state == "Pending By Operator":
+            if self.work_permit_type == "Local Transfer":
+                field_list = [{'Attach Payment Invoice':'attach_payment_invoice'}]
+                message_detail = '<b style="color:red; text-align:center;">First, You Need to Pay through <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
+                self.set_mendatory_fields(field_list,message_detail)
 
 
-        if self.workflow_state == "Completed" and self.work_permit_type == "Cancellation":
-            field_list = [{'Work Permit Cancellation ':'work_permit_cancellation'}]
-            message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Cancellation taken from <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
-            self.set_mendatory_fields(field_list,message_detail)
+        if self.workflow_state == "Completed":
+            if self.work_permit_type == "Cancellation":
+                field_list = [{'Work Permit Cancellation ':'work_permit_cancellation'}]
+                message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Cancellation taken from <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
+                self.set_mendatory_fields(field_list,message_detail)
 
-        if self.workflow_state == "Completed" and self.work_permit_type == "New Kuwaiti":
-            field_list = [{'Work Permit Registration ':'work_permit_registration'}]
-            message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Registration taken from <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
-            self.set_mendatory_fields(field_list,message_detail)
+            if self.work_permit_type == "New Kuwaiti":
+                field_list = [{'Work Permit Registration ':'work_permit_registration'}]
+                message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Registration taken from <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
+                self.set_mendatory_fields(field_list,message_detail)
+            
+            if self.work_permit_type == "Local Transfer":
+                field_list = [{'Work Permit Expiry Date':'work_permit_expiry_date'},{'Attach Work Permit ':'attach_work_permit'}]
+                message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Registration taken from <a href="{0}">PAM Website</a></b>'.format(self.pam_website)
+                self.set_mendatory_fields(field_list,message_detail)
 
         if self.workflow_state == "Rejected" and self.work_permit_type == "Cancellation":
             if self.reference_number_on_pam:
@@ -105,9 +124,9 @@ class WorkPermit(Document):
         if len(mandatory_fields) > 0:
             if message_detail:
                 message = message_detail
-                message += '<br>Mandatory fields required in PIFSS 103 form<br><br><ul>'
+                message += '<br>Mandatory fields required in Work Permit form<br><br><ul>'
             else:
-                message= 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
+                message= 'Mandatory fields required in Work Permit form<br><br><ul>'
             for mandatory_field in mandatory_fields:
                 message += '<li>' + mandatory_field +'</li>'
             message += '</ul>'
@@ -115,12 +134,12 @@ class WorkPermit(Document):
 
     def check_inform_previous_company(self):
          # 3 days with in the applied days so 2
-        if date_diff(today(),self.date_of_application) == 2 and self.approve_previous_company == "No":
+        if date_diff(today(),self.date_of_application) == 2 and self.previous_company_status == "No":
             self.work_permit_status = "Rejected"
             self.save()
 
     def on_submit(self):
-        if self.work_permit_type != "Cancellation" and self.work_permit_type != "New Kuwaiti":
+        if self.work_permit_type != "Cancellation" and self.work_permit_type != "New Kuwaiti" and self.work_permit_type != "Local Transfer" and self.workflow_state != "Rejected":
             if "Completed" in self.workflow_state and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
                 self.db_set('work_permit_status', 'Completed')
                 self.clean_old_wp_record_in_employee_doctype()
@@ -128,41 +147,45 @@ class WorkPermit(Document):
             else:
                 frappe.throw(_("Upload The Required Documents To Submit"))
 
-        if self.work_permit_type == "Cancellation" or self.work_permit_type != "New Kuwaiti":
+        if self.work_permit_type == "Cancellation":# or self.work_permit_type != "New Kuwaiti":
             self.db_set('work_permit_status', 'Completed')
-            # self.check_if_remove_kuwaiti()
-    
-    # def check_if_remove_kuwaiti(self):
-    #     if self.work_permit_type == "Cancellation" and self.nationality == "Kuwaiti":
-    #         field_list = [{'Reference Number On PAM':'reference_number_on_pam'}]
-    #         self.mendatory_fields(field_list)
-    
-    # def mendatory_fields(self,field_list):
-    #     mandatory_fields = []
-    #     for fields in field_list:
-    #         for field in fields:
-    #             if not self.get(fields[field]):
-    #                     mandatory_fields.append(field)
 
-    #     if len(mandatory_fields) > 0:
-    #         message = 'Mandatory fields required in Work Permit Cancellation<br><br><ul>'
-    #         for mandatory_field in mandatory_fields:
-    #             message += '<li>' + mandatory_field +'</li>'
-    #         message += '</ul>'
-    #         frappe.throw(message)
+        if self.workflow_state == "Completed":
+            if self.work_permit_type == "Local Transfer":
+                self.db_set('work_permit_status', 'Completed')
+                self.recall_create_medical_insurance_transfer()#create medical insurance record & inform transfer operator
+                self.notify_grd_transfer_mi_record()
 
-    def recall_create_fingerprint_appointment_transfer(self):
-        fingerprint_appointment.create_fp_record_for_transfer(frappe.get_doc('Employee',self.employee))
 
-    def notify_grd_transfer_fp_record(self):
-        fp = frappe.db.get_value("Fingerprint Appointment",{'employee':self.employee,'fingerprint_appointment_type':'Local Transfer'})
-        print(fp)#printing wp name
-        if fp:
-            fp_record = frappe.get_doc('Fingerprint Appointment', fp)
-            page_link = get_url("/desk#Form/Fingerprint Appointment/" + fp_record.name)
-            subject = ("Apply for Transfer Fingerprint Appointment Online")
-            message = "<p>Please Apply for Transfer Fingerprint Appointment Online for <a href='{0}'></a>.</p>".format(fp_record.employee)
-            create_notification_log(subject, message, [self.grd_operator], fp_record)
+    def recall_create_medical_insurance_transfer(self):
+        medical_insurance.creat_medical_insurance_for_transfer(self.employee)
+        print("done")
+
+    def notify_grd_transfer_mi_record(self):
+        transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+        print(transfer_operator)
+        mi = frappe.db.get_value("Medical Insurance",{'employee':self.employee,'insurance_status':'Local Transfer'},['name'])#,
+        print(mi)#printing wp name
+        if mi:
+            mi_record = frappe.get_doc('Medical Insurance', mi)
+            page_link = get_url("/desk#Form/Medical Insurance/" + mi_record.name)
+            subject = ("Apply for Medical Insurance Online")
+            message = "<p>Please Apply for Medical Insurance for employee:  <a href='{0}'></a>.</p>".format(mi_record.civil_id,page_link)
+            create_notification_log(subject, message, [transfer_operator], mi_record)
+            print("recieve no")
+
+    # def recall_create_fingerprint_appointment_transfer(self):
+    #     fingerprint_appointment.create_fp_record_for_transfer(frappe.get_doc('Employee',self.employee))
+
+    # def notify_grd_transfer_fp_record(self):
+    #     fp = frappe.db.get_value("Fingerprint Appointment",{'employee':self.employee,'fingerprint_appointment_type':'Local Transfer'})
+    #     print(fp)#printing wp name
+    #     if fp:
+    #         fp_record = frappe.get_doc('Fingerprint Appointment', fp)
+    #         page_link = get_url("/desk#Form/Fingerprint Appointment/" + fp_record.name)
+    #         subject = ("Apply for Transfer Fingerprint Appointment Online")
+    #         message = "<p>Please Apply for Transfer Fingerprint Appointment Online for <a href='{0}'></a>.</p>".format(fp_record.employee)
+    #         create_notification_log(subject, message, [self.grd_operator], fp_record)
             
     def validate_mandatory_fields_for_grd_operator_again(self):
         users = frappe.utils.user.get_users_with_role('GRD Operator')
@@ -207,7 +230,8 @@ class WorkPermit(Document):
         employee.work_permit = self.name # add the latest work permit link
         employee.work_permit_expiry_date = self.new_work_permit_expiry_date # add the latest work permit link
         employee.save()
-        
+
+    @frappe.whitelist()
     def get_required_documents(self):
         set_required_documents(self)
 
@@ -233,14 +257,6 @@ def get_employee_data_for_work_permit(employee_name):
     work_permit_exist = frappe.db.exists('Work Permit', {'employee': employee_name, 'docstatus': 1})
     return work_permit_exist
 
-# @frappe.whitelist()#allow_guest=True)
-# def import_pdf_wp_file(file_url):
-#     url = frappe.get_site_path() + file_url
-#     pdfReader = PyPDF2.PdfFileReader(open(url,'rb'))
-#     pages = pdfReader.numPages
-#     pageObj = pdfReader.getPage(0)
-#     return pageObj.documentInfo
-
 # Create Work Permit Record for new Kuwaiti
 def create_work_permit_new_kuwaiti(pifss_name,employee):
     pifss103_form = frappe.get_doc('PIFSS Form 103',pifss_name)
@@ -250,12 +266,13 @@ def create_work_permit_new_kuwaiti(pifss_name,employee):
             create_wp_kuwaiti(frappe.get_doc('Employee',employee_in_pifss103_form.employee),"New Kuwaiti",pifss_name)
 
 # Create Work Permit Record for Transfer
+@frappe.whitelist()
 def create_work_permit_transfer(tp_name,employee):
     tp = frappe.get_doc('Transfer Paper',tp_name)
     if tp:
         employee_in_tp = frappe.get_doc('Employee',employee)
         if employee_in_tp:
-            name = create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)
+            name = create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)#check if you need to do it this way create_wp_transfer(employee_in_tp,"Local Transfer",tp_name)
             return name
 
 # Create Work Permit record once a month for renewals list  
@@ -366,7 +383,7 @@ def create_wp_kuwaiti(employee,status,name):
         work_permit.ref_name = name
         work_permit.transfer_paper = None
         work_permit.save()
-
+    
 #System check at 4pm if grd operator submit the application online (cron)
 def system_checks_grd_operator_submit_application_online():
     """ Notify GRD Operator to apply for wp renewal System checks at 4pm """
@@ -494,3 +511,11 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.document_type = reference_doc.doctype
         doc.document_name = reference_doc.name
         doc.from_user = reference_doc.modified_by
+
+# @frappe.whitelist()#allow_guest=True)
+# def import_pdf_wp_file(file_url):
+#     url = frappe.get_site_path() + file_url
+#     pdfReader = PyPDF2.PdfFileReader(open(url,'rb'))
+#     pages = pdfReader.numPages
+#     pageObj = pdfReader.getPage(0)
+#     return pageObj.documentInfo

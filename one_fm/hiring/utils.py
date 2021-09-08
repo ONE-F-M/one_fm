@@ -432,3 +432,22 @@ def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
 @frappe.whitelist()
 def set_employee_name(doc,method):
 		doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic, doc.one_fm_last_name_in_arabic]))
+
+@frappe.whitelist()#old wp was rejected
+def create_new_work_permit(work_permit):
+    """This Method If Work Permit got rejected """
+    doc = frappe.get_doc('Work Permit',work_permit)
+    wp = frappe.new_doc('Work Permit')
+    wp.employee = doc.employee
+    wp.work_permit_type = doc.work_permit_type
+    wp.date_of_application = doc.date_of_application
+    wp.insert()
+    wp.workflow_state = 'Draft'
+    wp.save(ignore_permissions=True)
+    wp.workflow_state = 'Apply Online by PRO'
+    if doc.work_permit_type == "Local Transfer":
+        wp.transfer_paper = doc.transfer_paper
+    if doc.work_permit_type == "Renewal Non Kuwaiti" or doc.work_permit_type == "Renewal Kuwaiti":
+        wp.preparation = doc.preparation
+    wp.save(ignore_permissions=True)
+    return wp

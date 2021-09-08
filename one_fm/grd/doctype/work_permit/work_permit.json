@@ -20,22 +20,22 @@
   "work_permit_status",
   "reason_of_rejection",
   "details_of_rejection",
-  "new_company_data_section",
-  "company_trade_name_arabic",
-  "authorized_signatory_name_arabic",
-  "issuer_number",
-  "contract_file_number",
-  "previous_company_details_section",
-  "previous_company_trade_name_in_arabic",
-  "previous_company_authorized_signatory_name_arabic",
-  "previous_company_trade_name_arabic",
-  "cb_previous_column",
-  "previous_company_contract_file_number",
-  "previous_company_issuer_number",
-  "previous_company_pam_file_number",
+  "work_permit_details_section",
+  "attach_work_permit",
+  "work_permit_expiry_date",
+  "column_break_17",
+  "attach_on",
+  "section_break_14",
+  "attach_payment_invoice",
+  "column_break_16",
+  "datetime_17",
+  "previous_company_status_section",
+  "previous_company_status",
+  "column_break_20",
+  "inform_previous_company_on",
   "pam_work_permit_registration_section",
-  "work_permit_registration",
   "reference_number_on_pam_registration",
+  "work_permit_registration",
   "registration_from_pifss_website",
   "column_break_30",
   "attach_registration_on",
@@ -96,7 +96,6 @@
   "check_record",
   "reminded_grd_operator",
   "reminded_grd_operator_approve_previous_company",
-  "approve_previous_company",
   "section_break_72",
   "work_permit_approved",
   "upload_work_permit",
@@ -105,7 +104,6 @@
   "column_break_32",
   "reminded_grd_operator_again",
   "reminded_grd_operator_approve_previous_company_again",
-  "approve_previous_company_on",
   "upload_work_permit_on",
   "upload_payment_invoice_on",
   "reason_for_rejection",
@@ -302,7 +300,7 @@
    "in_standard_filter": 1,
    "label": "Work Permit Status",
    "no_copy": 1,
-   "options": "\nDraft\nPending by Supervisor\nPending by Operator\nCompleted\nClosed\nRejected",
+   "options": "\nDraft\nPending by Supervisor\nPending by Operator\nPending by Previous Company\nPending by Supervisor for Payment\nCompleted\nClosed\nRejected",
    "read_only": 1,
    "translatable": 1
   },
@@ -400,7 +398,6 @@
   {
    "fieldname": "preparation",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Preparation",
    "options": "Preparation"
   },
@@ -471,78 +468,6 @@
    "no_copy": 1,
    "print_hide": 1,
    "read_only": 1
-  },
-  {
-   "default": "No",
-   "depends_on": "eval: doc.work_permit_type == \"Local Transfer\"",
-   "fieldname": "approve_previous_company",
-   "fieldtype": "Select",
-   "label": "Inform Previous Company",
-   "options": "\nYes\nNo"
-  },
-  {
-   "depends_on": "approve_previous_company",
-   "fieldname": "approve_previous_company_on",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Inform Previous Company On"
-  },
-  {
-   "fetch_from": "pam_file.license_trade_name_arabic",
-   "fieldname": "company_trade_name_arabic",
-   "fieldtype": "Data",
-   "label": "Company Trade Name Arabic"
-  },
-  {
-   "fetch_from": "pam_file.contract_file_number",
-   "fieldname": "contract_file_number",
-   "fieldtype": "Data",
-   "label": "Contract File Number"
-  },
-  {
-   "fieldname": "authorized_signatory_name_arabic",
-   "fieldtype": "Data",
-   "label": "Authorized Signatory Name Arabic"
-  },
-  {
-   "fieldname": "issuer_number",
-   "fieldtype": "Data",
-   "label": "Issuer Number"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Local Transfer'",
-   "fieldname": "previous_company_details_section",
-   "fieldtype": "Section Break",
-   "hidden": 1,
-   "label": "Previous Company Details"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Local Transfer'",
-   "fieldname": "previous_company_trade_name_in_arabic",
-   "fieldtype": "Data",
-   "label": "TPrevious Company Trade Name in Arabic"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Local Transfer'",
-   "fieldname": "previous_company_authorized_signatory_name_arabic",
-   "fieldtype": "Data",
-   "label": "SPrevious Company Authorized Signatory Name Arabic"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Local Transfer'",
-   "fieldname": "previous_company_contract_file_number",
-   "fieldtype": "Data",
-   "label": "CPrevious Company Contract File Number"
-  },
-  {
-   "fieldname": "cb_previous_column",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.work_permit_type == 'Local Transfer'",
-   "fieldname": "previous_company_issuer_number",
-   "fieldtype": "Data",
-   "label": "IPrevious Company Issuer Number"
   },
   {
    "fetch_from": "employee.first_name",
@@ -657,22 +582,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "previous_company_trade_name_arabic",
-   "fieldtype": "Data",
-   "label": "TPrevious Company Trade Name Arabic"
-  },
-  {
-   "fieldname": "new_company_data_section",
-   "fieldtype": "Section Break",
-   "hidden": 1,
-   "label": "New Company Data"
-  },
-  {
-   "fieldname": "previous_company_pam_file_number",
-   "fieldtype": "Data",
-   "label": "Previous Company PAM File Number"
-  },
-  {
    "allow_on_submit": 1,
    "collapsible": 1,
    "collapsible_depends_on": "eval: doc.work_permit_status=='Approved'",
@@ -687,7 +596,6 @@
    "depends_on": "eval: doc.ref_doctype == \"Transfer Paper\"",
    "fieldname": "transfer_paper",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Transfer Paper",
    "options": "Transfer Paper"
   },
@@ -713,13 +621,13 @@
    "options": "\nRejected by PAM\nRejected by previous company"
   },
   {
-   "depends_on": "eval:doc.work_permit_status == \"Rejected\"",
+   "depends_on": "eval:doc.work_permit_status == \"Rejected\" ",
    "fieldname": "details_of_rejection",
    "fieldtype": "Small Text",
    "label": "Details of Rejection"
   },
   {
-   "depends_on": "eval:doc.work_permit_type != \"Cancellation\" && doc.work_permit_type != \"New Kuwaiti\"",
+   "depends_on": "eval:doc.work_permit_type != \"Cancellation\" && doc.work_permit_type != \"New Kuwaiti\" && doc.work_permit_type != \"Local Transfer\"",
    "fieldname": "section_break_72",
    "fieldtype": "Section Break"
   },
@@ -820,14 +728,14 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.work_permit_type == \"New Kuwaiti\" && doc.workflow_state != \"Draft\"",
+   "depends_on": "eval:doc.work_permit_type == \"New Kuwaiti\" || doc.work_permit_type ==\"Local Transfer\" && doc.workflow_state != \"Draft\" ",
    "fieldname": "pam_work_permit_registration_section",
    "fieldtype": "Section Break",
    "label": "PAM Work Permit Registration"
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:doc.work_permit_type == \"New Kuwaiti\" && doc.workflow_state == \"Pending By PAM\" || doc.work_permit_type == \"New Kuwaiti\" && doc.workflow_state == \"Completed\" ",
+   "depends_on": "eval:doc.work_permit_type == \"New Kuwaiti\"",
    "fieldname": "work_permit_registration",
    "fieldtype": "Attach",
    "label": "Work Permit Registration "
@@ -855,14 +763,87 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.work_permit_type == \"New Kuwaiti\"",
    "fieldname": "registration_from_pifss_website",
    "fieldtype": "Attach",
    "label": "Registration From PIFSS Website"
+  },
+  {
+   "fieldname": "previous_company_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Previous Company Status",
+   "options": "\nAccept\nReject\nPending"
+  },
+  {
+   "depends_on": "eval: doc.work_permit_type == \"Local Transfer\" && (doc.workflow_state == \"Pending By Previous Company\" || doc.workflow_state == \"Pending By PAM\" || doc.workflow_state == \"Pending  For Payment\" || doc.workflow_state == \"Pending By Operator\" || doc.workflow_state == \"Completed\")",
+   "fieldname": "previous_company_status_section",
+   "fieldtype": "Section Break",
+   "label": "Previous Company Status"
+  },
+  {
+   "depends_on": "eval: doc.work_permit_type == \"Local Transfer\" && (doc.workflow_state == \"Pending  For Payment\" || doc.workflow_state == \"Pending By Operator\" || doc.workflow_state == \"Completed\")",
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break",
+   "label": "Payment Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_payment_invoice",
+   "fieldtype": "Attach",
+   "label": "Attach Payment Invoice"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "datetime_17",
+   "fieldtype": "Datetime",
+   "label": "Attach Payment Invoice On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "inform_previous_company_on",
+   "fieldtype": "Datetime",
+   "label": "Inform Previous Company On",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.work_permit_type == \"Local Transfer\" && (doc.workflow_state == \"Pending By Operator\" || doc.workflow_state == \"Completed\")",
+   "fieldname": "work_permit_details_section",
+   "fieldtype": "Section Break",
+   "label": "Work Permit Details"
+  },
+  {
+   "fieldname": "work_permit_expiry_date",
+   "fieldtype": "Date",
+   "label": "Work Permit Expiry Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_work_permit",
+   "fieldtype": "Attach",
+   "label": "Attach Work Permit "
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attach_on",
+   "fieldtype": "Datetime",
+   "label": "Attach On",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-09 22:18:56.596657",
+ "modified": "2021-09-08 10:54:12.949809",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
