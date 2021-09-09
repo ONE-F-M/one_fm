@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "format:PRE-{posting_date}-{######}",
  "creation": "2021-04-19 10:52:12.383997",
  "doctype": "DocType",
@@ -9,6 +10,7 @@
   "posting_date",
   "set_renewal_for_all",
   "preparation_record",
+  "total_payment",
   "section_break_4",
   "hr_approval",
   "hr_user",
@@ -98,11 +100,18 @@
    "hidden": 1,
    "label": "HR User",
    "options": "User"
+  },
+  {
+   "fieldname": "total_payment",
+   "fieldtype": "Currency",
+   "label": "Total Payment",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-22 12:39:56.091844",
- "modified_by": "amnaalshawa96@gmail.com",
+ "links": [],
+ "modified": "2021-09-09 14:09:13.594820",
+ "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation",
  "owner": "Administrator",

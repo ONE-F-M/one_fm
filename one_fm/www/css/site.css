@@ -1022,6 +1022,9 @@ body[data-route="roster"] .yellowboxcolor {
 body[data-route="roster"] .lightgreenboxcolor {
   background: #c1e8a2;
 }
+body[data-route="roster"] .pinkboxcolor {
+  background: #ff05d5;
+}
 body[data-route="roster"] .redboxcolor {
   background: #ff0000;
 }
