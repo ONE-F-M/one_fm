@@ -133,7 +133,14 @@ home_page = "landing_page"
 # Document Events
 # ---------------
 # Hook on document methods and events
-
+permission_query_conditions = {
+	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
+	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions"
+}
+has_permission = {
+ 	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
+ 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission"
+}
 
 doc_events = {
 	"Stock Entry": {
