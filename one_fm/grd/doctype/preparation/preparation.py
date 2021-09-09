@@ -120,13 +120,11 @@ def get_employee_entries(doc,first_day,last_day):
                                 'under_company_residency':['=',1]
                             }
                             )
-    print(employee_entries)
     employee_entries.sort(key=sort)
     for employee in employee_entries:
         doc.append("preparation_record", {
             "employee": employee.name
         })
-        print(employee)
     doc.save()
     notify_hr(doc)
 
