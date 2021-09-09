@@ -167,8 +167,8 @@ frappe.ui.form.on('Item', {
 		}
 		else if(frm.doc.subitem_group == 'Service'){
 			frm.set_value('is_service', true);
-			frm.set_df_property('start_date', 'reqd', true);
-			frm.set_df_property('end_date', 'reqd', true);
+			frm.set_df_property('start_date', 'reqd', false);
+			frm.set_df_property('end_date', 'reqd', false);
 			frm.set_df_property('brand', 'reqd', false);
 			frm.set_df_property('item_model', 'reqd', false);
 			frm.set_df_property('item_material', 'reqd', false);
