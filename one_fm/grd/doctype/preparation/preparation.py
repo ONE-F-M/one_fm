@@ -28,6 +28,7 @@ class Preparation(Document):
     def validate(self):
         self.set_grd_values()
         self.set_hr_values()
+        # self.set_total_amount()
     
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -41,6 +42,7 @@ class Preparation(Document):
 
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
+        
         self.db_set('submitted_by', frappe.session.user)
         self.db_set('submitted_on', now_datetime())
         self.recall_create_work_permit_renewal() ## create work permit record for renewals
@@ -66,6 +68,13 @@ class Preparation(Document):
 
         if self.hr_approval == "No":
             frappe.throw("Must Be Approved By HR ")
+
+    def set_total_amount(self):
+        sum = 0
+        for item in self.preparation_record:
+            if item.total_amount:
+                sum+=sum
+        self.total_payment = sum
 
     def recall_create_work_permit_renewal(self):
         work_permit.create_work_permit_renewal(self.name)
@@ -104,19 +113,26 @@ def create_preparation():
 #Create list of employee Residency Expiry Date next month
 def get_employee_entries(doc,first_day,last_day):
     employee_entries = frappe.db.get_list('Employee',
+                            fields=("residency_expiry_date","name"),
                             filters={
                                 'residency_expiry_date': ['between',(first_day,last_day)],
                                 'status': 'Active',
                                 'under_company_residency':['=',1]
-                            },
+                            }
                             )
-
+    print(employee_entries)
+    employee_entries.sort(key=sort)
     for employee in employee_entries:
         doc.append("preparation_record", {
             "employee": employee.name
         })
+        print(employee)
     doc.save()
     notify_hr(doc)
+
+#sort list based on residency expriy date
+def sort(r):
+    return r['residency_expiry_date']
 
 def notify_hr(doc):
     page_link = get_url("/desk#Form/Preparation/" + doc.name)
