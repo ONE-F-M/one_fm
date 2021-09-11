@@ -73,7 +73,23 @@ def get_user_roles():
     user_id = frappe.session.user
     user_roles = frappe.get_roles(user_id)
     return user_roles
-        
+
+def assign_roles():
+    users = frappe.get_all("User")
+    for user in users:
+        user_roles = frappe.get_roles(user.name)
+        U = frappe.get_doc("User", {"name":user.name})
+        U.append('roles',{
+					"doctype": "Has Role",
+					"role":"Penalty Recipient"
+					})
+        if "Site Supervisor" in user_roles or "Shift SUpervisor" in user_roles or "Project Manager" in user_roles:
+            U.append('roles',{
+					"doctype": "Has Role",
+					"role":"Penalty Issuer"
+					})
+        U.save(ignore_permissions=True)
+
 def rename_posts():
     sites = frappe.get_all("Operations Site")
     for site in sites:
