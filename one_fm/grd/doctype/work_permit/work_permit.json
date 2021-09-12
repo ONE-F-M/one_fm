@@ -398,6 +398,7 @@
   {
    "fieldname": "preparation",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Preparation",
    "options": "Preparation"
   },
@@ -596,6 +597,7 @@
    "depends_on": "eval: doc.ref_doctype == \"Transfer Paper\"",
    "fieldname": "transfer_paper",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Transfer Paper",
    "options": "Transfer Paper"
   },
@@ -843,7 +845,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-08 10:54:12.949809",
+ "modified": "2021-09-12 17:12:25.366679",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

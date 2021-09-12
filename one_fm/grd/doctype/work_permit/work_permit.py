@@ -75,18 +75,21 @@ class WorkPermit(Document):
                 field_list = [{'PAM Reference Number':'reference_number_on_pam_registration'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for Work Permit Registration through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
                 self.set_mendatory_fields(field_list,message_detail)
+            self.reload()
 
         if self.workflow_state == "Pending By PAM":
             if self.work_permit_type == "Local Transfer":
                 field_list = [{'Previous Company Status':'previous_company_status'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Inform Previous Company.<br>Second, Check Previous Company Response on <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
                 self.set_mendatory_fields(field_list,message_detail)
+            self.reload()
 
         if self.workflow_state == "Pending By Operator":
             if self.work_permit_type == "Local Transfer":
                 field_list = [{'Attach Payment Invoice':'attach_payment_invoice'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Pay through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
                 self.set_mendatory_fields(field_list,message_detail)
+            self.reload()
 
 
         if self.workflow_state == "Completed":
@@ -104,14 +107,14 @@ class WorkPermit(Document):
                 field_list = [{'Work Permit Expiry Date':'work_permit_expiry_date'},{'Attach Work Permit ':'attach_work_permit'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Registration taken from <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
                 self.set_mendatory_fields(field_list,message_detail)
+        self.reload()
 
-        if self.workflow_state == "Rejected" and self.work_permit_type == "Cancellation":
-            if self.reference_number_on_pam:
-                self.db_set('reference_number_on_pam',"")
-
-        if self.workflow_state == "Rejected" and self.work_permit_type == "New Kuwaiti":
-            if self.reference_number_on_pam_registration:
-                self.db_set('reference_number_on_pam_registration',"")
+        if self.workflow_state == "Rejected":
+            if self.work_permit_type == "Local Transfer":
+                field_list = [{'Reason Of Rejection':'reason_of_rejection'},{'Details of Rejection':'details_of_rejection'}]
+                message_detail = '<b style="color:red; text-align:center;">First, You Need to set the reason of Rejection Mentioned in <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
+                self.set_mendatory_fields(field_list,message_detail)
+                self.reload()
 
     
     def set_mendatory_fields(self,field_list,message_detail=None):
