@@ -139,7 +139,7 @@ class PIFSSForm103(Document):
 		if self.workflow_state == "Awaiting Response":
 			if not self.reference_number:
 				field_list = [{'PIFSS Reference Number':'reference_number'}]
-				message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for {0} through <a href="{1}">PIFSS Website</a></b><br>'.format(self.request_type,self.pifss_website)
+				message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for {0} through <a href="{1}" target="_blank">PIFSS Website</a></b><br>'.format(self.request_type,self.pifss_website)
 				self.set_mendatory_fields(field_list,message_detail)
 			self.db_set('date_of_registeration',date.today())
 
