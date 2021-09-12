@@ -353,7 +353,7 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date):
 	"""Update employee assignment"""
 	site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
 	emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", employee, ["project", "site", "shift"])
-	if emp_project != project or emp_site != site or emp_shift != shift:
+	if emp_project and emp_project != project or emp_site and emp_site != site or emp_shift and emp_shift != shift:
 		if frappe.db.exists("Additional Shift Assignment", {'employee': employee, 'project': project, 'site': site, 'shift': shift}):
 			additional_shift_assignment_doc = frappe.get_doc("Additional Shift Assignment", {'employee': employee, 'project': project, 'site': site, 'shift': shift})
 			additional_shift_assignment_doc.project = project
@@ -371,8 +371,18 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date):
 		if frappe.db.exists("Additional Shift Assignment", {'employee': employee}):
 			additional_shift_assignment_doc = frappe.get_doc("Additional Shift Assignment", {'employee': employee})
 			frappe.delete_doc("Additional Shift Assignment", additional_shift_assignment_doc)
+
+	elif emp_project and emp_site is None and emp_shift is None:
+		update_employee_assignment(employee, project, site, shift)
 	end = time.time()
 	print("Scheduled employee : ", employee, end-start)
+
+def update_employee_assignment(employee, project, site, shift):
+	""" This function updates the employee project, site and shift in the employee doctype """
+	frappe.db.set_value("Employee", employee, "project", val=project)
+	frappe.db.set_value("Employee", employee, "site", val=site)
+	frappe.db.set_value("Employee", employee, "shift", val=shift)
+	
 
 @frappe.whitelist()
 def schedule_leave(employees, leave_type, start_date, end_date):
