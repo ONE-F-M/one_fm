@@ -59,7 +59,7 @@ def enroll():
 		files = frappe.request.files
 		file = files['file']
 		content = file.stream.read()
-		filename = file.filename	
+		filename = file.filename
 		OUTPUT_VIDEO_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
 		with open(OUTPUT_VIDEO_PATH, "wb") as fh:
 				fh.write(content)
@@ -88,7 +88,7 @@ def verify():
 		files = frappe.request.files
 		file = files['file']
 		content = file.stream.read()
-		filename = file.filename	
+		filename = file.filename
 		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
 
 		with open(OUTPUT_IMAGE_PATH, "wb") as fh:
@@ -100,7 +100,7 @@ def verify():
 				print("Liveness Detection Time =", live_end-live_start)
 				print("Liveness Detection SUccess")
 				recog_start=time.time()
-				if recognize_face(image):   #calling recognition function 
+				if recognize_face(image):   #calling recognition function
 					recog_end = time.time()
 					print("Face Recognition Time = ", recog_end-recog_start)
 					print("Face Recognition Success")
@@ -109,7 +109,7 @@ def verify():
 					recog_end = time.time()
 					print("Face Recognition Time = ", recog_end-recog_start)
 					print("Face Recognition Failed")
-					frappe.throw(_('Face Recognition Failed. Please try again.'))	
+					frappe.throw(_('Face Recognition Failed. Please try again.'))
 			else:
 				live_end = time.time()
 				print("Liveness Detection Time = ", live_end - live_start)
@@ -149,8 +149,8 @@ def forced_checkin(employee, log_type, time):
 
 def create_dataset(video):
 	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"
-	count = 0 
-	
+	count = 0
+
 	cap = cv2.VideoCapture(video)
 	success, img = cap.read()
 	count = 0
@@ -168,11 +168,21 @@ def create_dataset(video):
 	print(doc.as_dict())
 	doc.enrolled = 1
 	doc.save(ignore_permissions=True)
+	update_onboarding_employee(doc)
 	frappe.db.commit()
+
+def update_onboarding_employee(employee):
+    onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
+    if onboard_employee_exist:
+        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
+        onboard_employee.enrolled = True
+        onboard_employee.enrolled_on = now_datetime()
+        onboard_employee.save(ignore_permissions=True)
+        frappe.db.commit()
 
 def create_encodings(directory, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
 	"""
-		directory : directory path containing dataset 
+		directory : directory path containing dataset
 	"""
 	print(directory)
 	OUTPUT_ENCODING_PATH_PREFIX = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"
@@ -210,7 +220,7 @@ def create_encodings(directory, detection_method="hog"):# detection_method can b
 			# encodings
 			knownEncodings.append(encoding)
 
-	# dump the facial encodings + names to disk	
+	# dump the facial encodings + names to disk
 	data = {"encodings": knownEncodings}
 	print(data)
 	if len(knownEncodings) == 0:
@@ -230,7 +240,7 @@ def verify_face(video_path=None):
 	# define two constants, one for the eye aspect ratio to indicate
 	# blink and then a second constant for the number of consecutive
 	# frames the eye must be below the threshold
-	
+
 	EYE_AR_frame = 0    #ear value of each frame
 	EYE_AR_THRESH = 0    #threshold ear value
 	EYE_AR_CONSEC_FRAMES = 1     #number of frames required for detecting a blink
@@ -248,7 +258,7 @@ def verify_face(video_path=None):
 	IMAGE_PATH = ""
 	sucess, frame = vs.read()
 	while sucess:
-		
+
 		#BGR to Grayscale conversion
 		try :
 			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -281,7 +291,7 @@ def verify_face(video_path=None):
 			print("Calculating EYE AR VALUE")
 		sucess, frame = vs.read()
 
-	
+
 	if EYE_AR == 0:
 		return TOTAL, IMAGE_PATH
 
@@ -289,11 +299,11 @@ def verify_face(video_path=None):
 	EYE_AR_THRESH = np.round(EYE_AR*0.9, 2)        # Threshold calculation
 	print("EYE THRESHOLD CALCULATED")
 	print("EYE THRESHOLD VALUE = ", EYE_AR_THRESH)
-	
+
 	# loop over frames from the video stream
 	vs = cv2.VideoCapture(video_path)    #Starting to Detect Blinks
 	fileStream = True
-	succes, img = vs.read() 
+	succes, img = vs.read()
 
 	while succes:
 
@@ -343,9 +353,9 @@ def verify_face(video_path=None):
 
 				# reset the eye frame counter
 				COUNTER = 0
-	
+
 			print( "Blinks: {}".format(TOTAL), "EAR: {:.2f}".format(ear))
-		succes, img = vs.read() 
+		succes, img = vs.read()
 
 	print("[TOTAL]", TOTAL)
 	print("[COUNT]", COUNTER)
@@ -416,20 +426,20 @@ def check_existing():
 		#if shift type is a night shift, It should check previous days check-in log.
 		if shift_type == 'Night':
 			logs = frappe.db.sql("""
-			select name, log_type from `tabEmployee Checkin` where date(time) >= '{date1}' and date(time) <= '{date2}' and skip_auto_attendance=0 and employee="{employee}" 
+			select name, log_type from `tabEmployee Checkin` where date(time) >= '{date1}' and date(time) <= '{date2}' and skip_auto_attendance=0 and employee="{employee}"
 			""".format(date1=prev_date, date2=todate, employee=employee), as_dict=1)
 		else:
 			logs = frappe.db.sql("""
-			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
+			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}"
 			""".format(date=todate, employee=employee), as_dict=1)
 	else:
 		logs = frappe.db.sql("""
-			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}" 
+			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}"
 			""".format(date=todate, employee=employee), as_dict=1)
 
 	val = [log.log_type for log in logs]
 	print(logs, val)
 	if not val or (val and val[-1] == "OUT"):
-		return False	
+		return False
 	else:
 		return True

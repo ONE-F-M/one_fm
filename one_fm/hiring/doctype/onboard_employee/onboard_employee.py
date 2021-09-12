@@ -10,7 +10,8 @@ from frappe.model.mapper import get_mapped_doc
 from one_fm.hiring.doctype.candidate_orientation.candidate_orientation import create_candidate_orientation
 from one_fm.hiring.doctype.work_contract.work_contract import employee_details_for_wc
 from one_fm.hiring.utils import make_employee_from_job_offer
-from frappe.utils import now
+from frappe.utils import now, today
+from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 
 class OnboardEmployee(Document):
 	def validate_employee_creation(self):
@@ -113,6 +114,28 @@ class OnboardEmployee(Document):
 				self.save(ignore_permissions=True)
 
 	@frappe.whitelist()
+	def create_loan(self):
+		if not self.loan_type:
+			frappe.throw(_('Please select Loan Type !'))
+		else:
+			loan = frappe.new_doc("Loan")
+			loan.applicant_type = 'Employee'
+			loan.applicant = self.employee
+			loan.loan_type = self.loan_type
+			is_term_loan = frappe.db.get_value('Loan Type', self.loan_type, 'is_term_loan')
+			loan.repay_from_salary = is_term_loan
+			loan.is_term_loan = is_term_loan
+			loan.loan_amount = self.net_loan_amount
+			loan.repayment_method = self.repayment_method
+			loan.repayment_periods = self.repayment_periods
+			loan.monthly_repayment_amount = self.monthly_repayment_amount
+			loan.repayment_start_date = self.repayment_start_date
+			loan.save(ignore_permissions=True)
+			loan.submit()
+			self.loan = loan.name
+			self.save(ignore_permissions=True)
+
+	@frappe.whitelist()
 	def create_employee_id(self):
 		if self.employee and not self.employee_id:
 			employee_id = frappe.new_doc('Employee ID')
@@ -169,6 +192,31 @@ class OnboardEmployee(Document):
 					bank_account.save(ignore_permissions=True)
 				else:
 					frappe.msgprint(_('To Create Bank Account, Set Account Name and Bank !'))
+
+	@frappe.whitelist()
+	def create_g2g_residency_payment_request(self):
+		if self.down_payment_amount and self.down_payment_amount > 0:
+			pr = frappe.new_doc("Payment Request")
+			pr.update({
+				"grand_total": self.down_payment_amount,
+				"payment_request_type": "Inward",
+				"mode_of_payment": self.g2g_residency_mop,
+				"subject": _("Payment Request for {0}").format(self.name),
+				"message": _("Payment Request for {0}").format(self.name),
+				"reference_doctype": self.doctype,
+				"reference_name": self.name,
+				"party_type": "Job Applicant",
+				"party": self.job_applicant,
+				"transaction_date": today()
+			})
+
+			pr.flags.mute_email = True
+
+			pr.insert(ignore_permissions=True)
+			pr.submit()
+			frappe.db.commit()
+			self.payment_request = pr.name
+			self.save(ignore_permissions=True)
 
 	def assign_task_to_users(self, task, users):
 		for user in users:
