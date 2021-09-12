@@ -85,7 +85,25 @@
   "g2g_fee_amount",
   "is_residency_fine_needed",
   "residency_fine_amount",
-  "applicant_willing_to_pay_g2g_and_residency_payment",
+  "total_g2g_residency_amount",
+  "applicant_agree_to_pay_the_amount",
+  "down_payment_amount",
+  "g2g_residency_mop",
+  "update_document_and_create_payment_request",
+  "payment_request",
+  "payment_entry_reference",
+  "payment_receipt_attach",
+  "column_break_81",
+  "net_loan_amount",
+  "loan_type",
+  "repayment_method",
+  "repayment_periods",
+  "monthly_repayment_amount",
+  "repayment_start_date",
+  "loan_application_form",
+  "btn_create_loan",
+  "loan_application",
+  "loan",
   "orientation_section",
   "orientation_location",
   "orientation_on",
@@ -1182,13 +1200,6 @@
    "label": "G2G Fees Needed"
   },
   {
-   "allow_on_submit": 1,
-   "depends_on": "eval:(doc.is_g2g_fees_needed || doc.is_residency_fee_needed) && doc.g2g_fee_and_residency_fine_amount > 0.0",
-   "fieldname": "applicant_willing_to_pay_g2g_and_residency_payment",
-   "fieldtype": "Check",
-   "label": "Applicant Willing to Pay G2G and Residency Payment"
-  },
-  {
    "depends_on": "eval: doc.employee && doc.user_created",
    "fieldname": "enrol_face_recognition_section",
    "fieldtype": "Section Break",
@@ -1237,12 +1248,149 @@
    "fieldname": "residency_fine_amount",
    "fieldtype": "Currency",
    "label": "Residency Fine Amount"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.g2g_fee_amount > 0 || doc.residency_fine_amount > 0",
+   "fieldname": "total_g2g_residency_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount"
+  },
+  {
+   "fieldname": "column_break_81",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.total_g2g_residency_amount > 0",
+   "fieldname": "applicant_agree_to_pay_the_amount",
+   "fieldtype": "Select",
+   "label": "Applicant Agree to Pay the Amount",
+   "options": "\nYes\nNo"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.applicant_agree_to_pay_the_amount == 'Yes'",
+   "fieldname": "down_payment_amount",
+   "fieldtype": "Currency",
+   "label": "Down Payment Amount"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.down_payment_amount > 0 && doc.applicant_agree_to_pay_the_amount == 'Yes' && doc.payment_request",
+   "fieldname": "payment_entry_reference",
+   "fieldtype": "Link",
+   "label": "Payment Entry Reference",
+   "options": "Payment Entry"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.net_loan_amount>0",
+   "fieldname": "net_loan_amount",
+   "fieldtype": "Currency",
+   "label": "Net Loan Amount",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.net_loan_amount>0",
+   "fieldname": "loan_application_form",
+   "fieldtype": "Attach",
+   "label": "Loan Application Form"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.net_loan_amount>0",
+   "fieldname": "loan_application",
+   "fieldtype": "Link",
+   "label": "Loan Application",
+   "options": "Loan Application",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.net_loan_amount>0",
+   "fieldname": "loan",
+   "fieldtype": "Link",
+   "label": "Loan",
+   "options": "Loan",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "payment_entry_reference",
+   "fieldname": "payment_receipt_attach",
+   "fieldtype": "Attach",
+   "label": "Payment Receipt Attach"
+  },
+  {
+   "depends_on": "eval: doc.down_payment_amount > 0 && !doc.payment_request",
+   "fieldname": "update_document_and_create_payment_request",
+   "fieldtype": "Button",
+   "label": "Update Document and Create Payment Request"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "payment_request",
+   "fieldtype": "Link",
+   "label": "Payment Request",
+   "options": "Payment Request"
+  },
+  {
+   "depends_on": "eval: doc.down_payment_amount > 0 && !doc.payment_request",
+   "fieldname": "g2g_residency_mop",
+   "fieldtype": "Link",
+   "label": "Mood of Payment",
+   "options": "Mode of Payment"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.net_loan_amount>0",
+   "fieldname": "loan_type",
+   "fieldtype": "Link",
+   "label": "Loan Type",
+   "options": "Loan Type"
+  },
+  {
+   "depends_on": "eval:doc.net_loan_amount>0 && !doc.loan",
+   "fieldname": "btn_create_loan",
+   "fieldtype": "Button",
+   "label": "Create Loan"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.net_loan_amount>0",
+   "fieldname": "repayment_method",
+   "fieldtype": "Select",
+   "label": "Repayment Method",
+   "options": "\nRepay Fixed Amount per Period\nRepay Over Number of Periods"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.net_loan_amount>0 && doc.repayment_method == \"Repay Over Number of Periods\"",
+   "fieldname": "repayment_periods",
+   "fieldtype": "Int",
+   "label": "Repayment Period in Months"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.net_loan_amount>0 && doc.repayment_method == \"Repay Fixed Amount per Period\"",
+   "fieldname": "monthly_repayment_amount",
+   "fieldtype": "Currency",
+   "label": "Monthly Repayment Amount"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.net_loan_amount>0",
+   "fieldname": "repayment_start_date",
+   "fieldtype": "Date",
+   "label": "Repayment Start Date"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-08 00:28:57.945110",
+ "modified": "2021-09-12 23:53:59.160079",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

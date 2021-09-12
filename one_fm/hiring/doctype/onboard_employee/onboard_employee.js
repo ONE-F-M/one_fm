@@ -9,7 +9,60 @@ frappe.ui.form.on('Onboard Employee', {
 				frappe.set_route("Form", "Employee", frm.doc.employee);
 			},__("View"));
 		}
+		set_filters(frm);
 		create_custom_buttons(frm);
+	},
+	is_g2g_fees_needed: function(frm) {
+		if(!frm.doc.is_g2g_fees_needed){
+			frm.set_value('g2g_fee_amount', 0);
+		}
+	},
+	is_residency_fine_needed: function(frm) {
+		if(!frm.doc.is_residency_fine_needed){
+			frm.set_value('residency_fine_amount', 0);
+		}
+	},
+	g2g_fee_amount: function(frm) {
+		calculate_g2g_and_residency_total(frm);
+	},
+	residency_fine_amount: function(frm) {
+		calculate_g2g_and_residency_total(frm);
+	},
+	applicant_agree_to_pay_the_amount: function(frm) {
+		if(frm.doc.applicant_agree_to_pay_the_amount == 'Yes'){
+			frm.set_value('down_payment_amount', frm.doc.total_g2g_residency_amount);
+		}
+		else{
+			frm.set_value('down_payment_amount', 0);
+		}
+	},
+	down_payment_amount: function(frm) {
+		if(frm.doc.down_payment_amount && frm.doc.down_payment_amount > 0){
+			frm.set_value('net_loan_amount', frm.doc.total_g2g_residency_amount - frm.doc.down_payment_amount);
+		}
+		else{
+			frm.set_value('net_loan_amount', frm.doc.down_payment_amount);
+		}
+	},
+	update_document_and_create_payment_request: function(frm) {
+		var freaze_msg = '';
+		if(frm.doc.is_g2g_fees_needed){
+			freaze_msg += " G2G"
+		}
+		if(frm.doc.is_residency_fine_needed){
+			freaze_msg += " Residency Fine"
+		}
+		frappe.call({
+			doc: frm.doc,
+			method: "create_g2g_residency_payment_request",
+			callback: function(r) {
+				if(!r.exc){
+					frm.reload_doc();
+				}
+			},
+			freeze: true,
+			freeze_message: __("Creating Payment Request -{0} !!", [freaze_msg])
+		});
 	},
 	job_applicant: function(frm) {
 		frm.set_value("applicant_documents" ,"");
@@ -69,8 +122,27 @@ frappe.ui.form.on('Onboard Employee', {
 			freeze: true,
 			freeze_message: (__('Creating ERPNext User ....!'))
 		});
+	},
+	btn_create_loan: function(frm) {
+		btn_create_loan_action(frm);
 	}
 });
+
+var calculate_g2g_and_residency_total = function(frm) {
+	var g2g_fee_amount = 0;
+	var residency_fine_amount = 0;
+	if(frm.doc.g2g_fee_amount && frm.doc.g2g_fee_amount > 0){
+		g2g_fee_amount = frm.doc.g2g_fee_amount;
+	}
+	if(frm.doc.residency_fine_amount && frm.doc.residency_fine_amount > 0){
+		residency_fine_amount = frm.doc.residency_fine_amount;
+	}
+	frm.set_value('total_g2g_residency_amount', g2g_fee_amount+residency_fine_amount);
+};
+
+var set_filters = function(frm) {
+
+};
 
 var create_custom_buttons = function(frm) {
 	if(!frm.doc.informed_applicant){
@@ -103,6 +175,11 @@ var create_custom_buttons = function(frm) {
 	if(frm.doc.employee && !frm.doc.bank_account){
 		cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
 	}
+	if(frm.doc.employee && !frm.doc.loan && frm.doc.net_loan_amount > 0){
+		frm.add_custom_button(__('Loan'), function() {
+			btn_create_loan_action(frm);
+		}, __('Create')).addClass('btn-primary');
+	}
 	if(frm.doc.employee && !frm.doc.mgrp && frm.doc.nationality == 'Kuwaiti'){
 		cutom_btn_and_action(frm, 'create_mgrp', 'MGRP');
 	}
@@ -113,6 +190,28 @@ var create_custom_buttons = function(frm) {
 		cutom_btn_and_action(frm, 'create_rfm_from_eo', 'Request for Material');
 	}
 }
+
+var btn_create_loan_action = function(frm) {
+	if(!frm.doc.loan_type){
+		frappe.throw(__('Please select Loan Type !'));
+	}
+	else if(!frm.doc.repayment_method){
+		frappe.throw(__('Please select Repayment Method !'))
+	}
+	else{
+		frappe.call({
+			doc: frm.doc,
+			method: 'create_loan',
+			callback: function(r) {
+				if(!r.exc){
+					frm.reload_doc();
+				}
+			},
+			freeze: true,
+			freeze_message: (__('Creating Loan ....!'))
+		});
+	}
+};
 
 var btn_mark_applicant_attended = function(frm) {
 	frm.add_custom_button(__('Mark Applicant Attended'), function() {
