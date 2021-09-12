@@ -16,9 +16,12 @@ def get_data():
             },
             {
                 'items': ['PACI']
-            }
+            },
+            {
+                'items': ['Fingerprint Appointment']
+            },
             # {
-            #     'items': ['Fingerprint']
+            #     'items': ['Payment Request']
             # }
         ],
     }

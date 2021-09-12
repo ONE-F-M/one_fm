@@ -290,8 +290,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
-		'one_fm.grd.utils.sendmail_reminder1',
-		'one_fm.grd.utils.sendmail_reminder2',
+		
 
 	],
 	"hourly": [
@@ -350,11 +349,14 @@ scheduler_events = {
 		"0 8 * * *": [
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
-			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date'
+			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_status_on_pifss',
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_under_process_status_on_pifss',
 			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp',
+			'one_fm.grd.utils.sendmail_reminder1',
+			'one_fm.grd.utils.sendmail_reminder2',
 
 
 		],
