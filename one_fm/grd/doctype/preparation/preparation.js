@@ -15,7 +15,7 @@ frappe.ui.form.on('Preparation',{
 frappe.ui.form.on('Preparation Record',{
 //set total amunt per employee on the selection of the process
 renewal_or_extend: function(frm, cdt, cdn){
-	if(frm.doc.renewal_or_extend != ""){
+	if(!frm.doc.renewal_or_extend){
 		var row = locals[cdt][cdn];
 		if(row.work_permit_amount && row.medical_insurance_amount && row.residency_stamp_amount && row.civil_id_amount){
 			let total = row.work_permit_amount+row.medical_insurance_amount+row.residency_stamp_amount+row.civil_id_amount;

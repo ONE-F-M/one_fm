@@ -29,7 +29,6 @@ class Preparation(Document):
     def validate(self):
         self.set_grd_values()
         self.set_hr_values()
-        # self.set_total_amount()
     
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -70,13 +69,6 @@ class Preparation(Document):
 
         if self.hr_approval == "No":
             frappe.throw("Must Be Approved By HR ")
-
-    def set_total_amount(self):
-        sum = 0
-        for item in self.preparation_record:
-            if item.total_amount:
-                sum+=sum
-        self.total_payment = sum
 
     def recall_create_work_permit_renewal(self):
         work_permit.create_work_permit_renewal(self.name)
