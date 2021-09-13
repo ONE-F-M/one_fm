@@ -512,7 +512,9 @@ const submitForm = () => {
             });
           }
         }
-      }
+      },
+			freeze: true,
+			freeze_message: __("Applying ...!!")
     });
 }
 document.getElementById("submitBtn").addEventListener("click", submitForm);
