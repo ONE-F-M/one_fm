@@ -515,7 +515,7 @@ def plan_post(posts, args):
 				doc.date = cstr(date.date())
 			doc.post_status = "Planned"
 			doc.save()	
-	frappe.db.commit()
+		frappe.db.commit()
 
 def cancel_post(posts, args):
 	end_date = None
