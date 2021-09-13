@@ -56,9 +56,10 @@ class FingerprintAppointment(Document):
             self.notify_site_supervisor()
             self.notify_shift_supervisor()
             #inform transportation if required
+    
     def before_one_day_of_appointment_date(self):
         today = date.today()
-        if date_diff(self.date_and_time_confirmation,today) == 1:
+        if date_diff(getdate(self.date_and_time_confirmation),today) == -1 and self.preparing_documents == "No":
             self.notify_operator_to_prepare_for_fp()
 
     def notify_operator_to_apply_for_fp(self):
@@ -75,6 +76,7 @@ class FingerprintAppointment(Document):
             send_email(self, [self.grd_operator_transfer,self.grd_supervisor], message, subject)
 
     def notify_operator_to_prepare_for_fp(self):
+        page_link = get_url("/desk#Form/Fingerprint Appointment/" + self.name)
         if self.fingerprint_appointment_type == "Renewal Non-Kuwaiti" and self.workflow_state == "Booked":
             message = "<p>Please Prepare Fingerprint Appointment Documents for employee with civil id: <a href='{0}'>{1}</a>.</p>".format(page_link, self.civil_id)
             subject = 'Please Prepare Fingerprint Appointment Documents for employee with civil id:{0} '.format(self.civil_id)
@@ -139,7 +141,7 @@ def creat_fp_record(preparation_name):
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
-            if employee.nationality in nationalities: #'Bangladeshi': #nationality na dprocess!
+            if employee.nationality in nationalities:
                 creat_fp(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
 
 #Auto generated everyday at 8am
@@ -163,42 +165,7 @@ def creat_fp(employee,type,preparation):
     fp.fingerprint_appointment_type = fingerprint_appointment_type
     fp.date_of_application = today
     fp.save(ignore_permissions=True)
-    
-#create a transfer fp record 
-def create_fp_record_for_transfer(employee):
-    fp = frappe.new_doc('Fingerprint Appointment')
-    fp.employee = employee.name
-    fp.fingerprint_appointment_type = "Local Transfer"
-    fp.date_of_application = today()
-    fp.insert()
-    fp.save()
-       
-# Notify GRD Operator at 8:00 am 
-def fp_notify_first_grd_operator():
-    notify_grd_operator('yellow')
-
-# Notify GRD Operator at 8:30 am 
-def fp_notify_again_grd_operator():
-    notify_grd_operator('red')
-
-def notify_grd_operator_documents(reminder_indicator):
-    """ Notify GRD Operator first and second time to remind preparing documents for fp """
-    filters = {'docstatus': 0,'workflow_state':'Booked','preparing_documents':'No','date_and_time_confirmation':['=',today()],'reminded_grd_operator_documents': 0, 'reminded_grd_operator_documents_again':0}
-    if reminder_indicator == 'red':
-        filters['reminded_grd_operator_documents'] = 1
-        filters['reminded_grd_operator_documents_again'] = 0                                                       
-    fp_list = frappe.db.get_list('Fingerprint Appointment', filters, ['name', 'grd_operator', 'grd_supervisor'])
-    
-    cc = [fp_list[0].grd_supervisor] if reminder_indicator == 'red' else []
-    email_notification_to_grd_user('grd_operator', fp_list, reminder_indicator, 'Prepare Documents', cc)
-    
-    if reminder_indicator == 'red':
-        field = 'reminded_grd_operator_documents_again'
-    elif reminder_indicator == 'yellow':
-        field = 'reminded_grd_operator_documents'
-    frappe.db.set_value("Fingerprint Appointment", filters, field, 1)
-
-
+           
 def to_do_to_grd_users(subject, description, user):
     frappe.get_doc({
         "doctype": "ToDo",
