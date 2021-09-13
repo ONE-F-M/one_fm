@@ -15,7 +15,13 @@
   "renewal_or_extend",
   "ref_doctype",
   "ref_name",
-  "no_of_years"
+  "no_of_years",
+  "column_break_11",
+  "work_permit_amount",
+  "medical_insurance_amount",
+  "residency_stamp_amount",
+  "civil_id_amount",
+  "total_amount"
  ],
  "fields": [
   {
@@ -87,11 +93,43 @@
    "fieldtype": "Select",
    "label": "No. of Years",
    "options": "\n1 Year\n2 Years\n3 Years"
+  },
+  {
+   "bold": 1,
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break",
+   "label": "Payment Request"
+  },
+  {
+   "fieldname": "work_permit_amount",
+   "fieldtype": "Currency",
+   "label": "Work Permit Amount"
+  },
+  {
+   "fieldname": "medical_insurance_amount",
+   "fieldtype": "Currency",
+   "label": "Medical Insurance Amount"
+  },
+  {
+   "fieldname": "residency_stamp_amount",
+   "fieldtype": "Currency",
+   "label": "Residency Stamp Amount"
+  },
+  {
+   "fieldname": "civil_id_amount",
+   "fieldtype": "Currency",
+   "label": "Civil ID Amount"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Amount"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2021-08-26 09:59:41.100397",
+ "modified": "2021-09-09 13:51:27.722034",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation Record",

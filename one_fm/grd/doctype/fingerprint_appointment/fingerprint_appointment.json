@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "naming_series:",
  "creation": "2021-04-26 09:10:38.654039",
  "doctype": "DocType",
@@ -9,9 +10,18 @@
   "company_name",
   "employee",
   "date_of_application",
+  "preparation",
   "column_break_4",
   "fingerprint_appointment_type",
   "status",
+  "section_break_9",
+  "date_and_time_confirmation",
+  "attach_barcode",
+  "required_transportation",
+  "section_break_13",
+  "preparing_documents",
+  "column_break_14",
+  "preparing_documents_on",
   "section_break_4",
   "category",
   "service_user",
@@ -35,7 +45,8 @@
   "last_name_english",
   "nationality",
   "section_break_24",
-  "grd_operator",
+  "grd_operator_renewal",
+  "grd_operator_transfer",
   "grd_supervisor",
   "transport_user",
   "operations_manager",
@@ -45,15 +56,9 @@
   "reminded_grd_operator_documents_again",
   "notify_operations",
   "notify_transport",
-  "date_and_time_confirmation",
-  "section_break_39",
-  "required_transportation",
-  "section_break_36",
-  "preparing_documents",
-  "column_break_39",
-  "preparing_documents_on",
   "completed_on",
-  "amended_from"
+  "amended_from",
+  "website"
  ],
  "fields": [
   {
@@ -225,13 +230,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "grd_operator",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "GRD Operator",
-   "options": "User"
-  },
-  {
    "fieldname": "grd_supervisor",
    "fieldtype": "Link",
    "hidden": 1,
@@ -273,19 +271,11 @@
    "label": "Date and Time Confirmation"
   },
   {
-   "fieldname": "section_break_36",
-   "fieldtype": "Section Break"
-  },
-  {
    "default": "No",
    "fieldname": "preparing_documents",
    "fieldtype": "Select",
    "label": "Preparing Documents",
    "options": "\nYes\nNo"
-  },
-  {
-   "fieldname": "column_break_39",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "completed_on",
@@ -296,7 +286,8 @@
   {
    "fieldname": "preparing_documents_on",
    "fieldtype": "Datetime",
-   "label": "Preparing Documents On"
+   "label": "Preparing Documents On",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -333,16 +324,10 @@
    "read_only": 1
   },
   {
-   "default": "No",
    "fieldname": "required_transportation",
    "fieldtype": "Select",
    "label": "Required Transportation",
-   "options": "\nYes\nNo",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_39",
-   "fieldtype": "Column Break"
+   "options": "\nYes\nNo"
   },
   {
    "bold": 1,
@@ -383,10 +368,58 @@
    "hidden": 1,
    "label": "Transport user",
    "options": "User"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Preparation",
+   "options": "Preparation"
+  },
+  {
+   "fieldname": "grd_operator_renewal",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator Renewal",
+   "options": "User"
+  },
+  {
+   "fieldname": "grd_operator_transfer",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "GRD Operator Transfer"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "https://www.moi.gov.kw/main/eservices/residence/",
+   "fieldname": "website",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "website"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break",
+   "label": "Registration Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_barcode",
+   "fieldtype": "Attach",
+   "label": "Attach Barcode"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-30 14:58:17.967647",
+ "links": [],
+ "modified": "2021-09-13 08:02:31.629468",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Fingerprint Appointment",
@@ -445,7 +478,6 @@
    "write": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

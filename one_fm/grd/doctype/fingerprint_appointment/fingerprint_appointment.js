@@ -2,54 +2,6 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Fingerprint Appointment', {
-    refresh: function(frm){
-        frm.add_custom_button(('Operation Department'),function(){
-            let Operations = frm.selected_doc.operations_manager;
-            frappe.call({
-                method: "one_fm.grd.utils.notify", 
-                args: {
-                    'name':frm.selected_doc.name,
-                    'email':Operations,
-                    'civilid':frm.selected_doc.civil_id,
-                    'date_time':frm.selected_doc.date_and_time_confirmation,
-                },
-                callback: function(r) {
-                    frm.set_value("notify_operations",1);
-                    frappe.msgprint({
-                        title: __('Notification'),
-                        indicator: 'green',
-                        message: __('Notification sent Sucessfully to Operation Department')
-                        });
-                }
-            })
-
-        },("Notify"));
-
-        frm.add_custom_button(('Transport Department'),function(){
-            let transportation = frm.selected_doc.transport_user;
-            frappe.call({
-                
-                method: "one_fm.grd.utils.notify", 
-                args: {
-                    'name':frm.selected_doc.name,
-                    'email':transportation,
-                    'civilid':frm.selected_doc.civil_id,
-                    'date_time':frm.selected_doc.date_and_time_confirmation,
-                },
-                callback: function(r) {
-                    frm.set_value("notify_transport",1);
-                    frm.set_value("required_transportation","Yes");
-                    frappe.msgprint({
-                        title: __('Notification'),
-                        indicator: 'green',
-                        message: __('Notification sent Sucessfully to Transport Department')
-                        });
-                }
-            })
-        
-        },("Notify"));
-        
-    },
     employee: function(frm){
         set_employee_details(frm);  
     },
