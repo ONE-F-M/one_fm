@@ -22,7 +22,6 @@ class FingerprintAppointment(Document):
         self.check_workflow()
         self.check_appointment_date()
         
-
     def on_submit(self):
         self.db_set('status', 'Completed')
         self.db_set('completed_on', now_datetime())
@@ -39,7 +38,7 @@ class FingerprintAppointment(Document):
             self.grd_operator_renewal = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_single_value("GRD Settings","default_grd_operator_transfer")
-        
+    
     # def validate_mendatory_fields(self):
     #      if not self.date_and_time_confirmation or self.preparing_documents == "No":
     #          frappe.throw(_("Note: You need to prepare Passport and Appointment letter / You Can proceed before one day of the appointment."))
@@ -56,18 +55,12 @@ class FingerprintAppointment(Document):
             self.set_mendatory_fields(field_list,message_detail)
             self.notify_site_supervisor()
             self.notify_shift_supervisor()
-            print("will notify site_supervisor")
-            print("will notify shift_supervisor")
-            if self.required_transportation == "Yes":
-                pass
-                # print("will notify t")
-                # self.notify_transportation()
-        
+            #inform transportation if required
     def before_one_day_of_appointment_date(self):
         today = date.today()
         if date_diff(self.date_and_time_confirmation,today) == 1:
             self.notify_operator_to_prepare_for_fp()
-            
+
     def notify_operator_to_apply_for_fp(self):
         page_link = get_url("/desk#Form/Fingerprint Appointment/" + self.name)
         if self.fingerprint_appointment_type == "Renewal Non-Kuwaiti" and self.workflow_state == "Awaiting for Appointment":
@@ -114,23 +107,19 @@ class FingerprintAppointment(Document):
     def notify_site_supervisor(self):
         """Notify site supervisor with the employee's appointment"""
         site = frappe.db.get_value("Employee",{'one_fm_civil_id':self.civil_id},['site'])
-        print("SITE ", site)
         if site:
             site_doc = frappe.get_doc("Operations Site",site)
             if site_doc:
                 employee = frappe.get_doc("Employee", site_doc.account_supervisor)# will return employee
-                print("user id:" ,employee.user_id)
                 send_email_notification(self, [employee.user_id])
             
     def notify_shift_supervisor(self):
         """Notify shift supervisor with the employee's appointment"""
         shift = frappe.db.get_value("Employee",{'one_fm_civil_id':self.civil_id},['shift'])
-        print("shift ", shift)
         if shift:
             shift_doc = frappe.get_doc("Operations Shift",shift)
             if shift_doc:
                 employee = frappe.get_doc("Employee", shift_doc.supervisor)# will return employee
-                print("user id:" ,employee.user_id)
                 send_email_notification(self, [employee.user_id])
 
     def check_appointment_date(self):
@@ -138,13 +127,19 @@ class FingerprintAppointment(Document):
         if self.date_and_time_confirmation and getdate(self.date_and_time_confirmation) <= getdate(today):
             frappe.throw(_("You can't set previous/Today's dates"))
 
+def nationality_requires_fp():
+    """Getting the nationality that requires Fingerprint"""
+    nationalities = frappe.db.get_single_value('Fingerprint Appointment Settings','nationality')
+    array = nationalities.split(",")
+    return array
+
 # Create fingerprint appointment record once a month for renewals list  
 def creat_fp_record(preparation_name):
+    nationalities = nationality_requires_fp()
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
-            # print("==> Nationality ",employee.nationality)
-            if employee.nationality == 'Bangladeshi': #nationality na dprocess!
+            if employee.nationality in nationalities: #'Bangladeshi': #nationality na dprocess!
                 creat_fp(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
 
 #Auto generated everyday at 8am
@@ -156,8 +151,6 @@ def get_employee_list():
             creat_fp(frappe.get_doc('Employee',employee.employee))
             
 def creat_fp(employee,type,preparation):
-    # if employee.one_fm_nationality == "Nepali" or employee.one_fm_nationality == "Bangladeshi" or employee.one_fm_nationality == "Pakistani" or employee.one_fm_nationality == "Afghanistan" or employee.one_fm_nationality == "African":
-    # print(employee.one_fm_nationality)
     if type == "Renewal":
         fingerprint_appointment_type = "Renewal Non-Kuwaiti"
     if type == "Local Transfer":
