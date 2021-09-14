@@ -261,24 +261,27 @@ def get_onboarding_details(parent, parenttype):
 @frappe.whitelist()
 def make_transfer_paper_from_job_offer(source_name, target_doc=None):
     offer_record = frappe.get_doc('Job Offer',source_name)
-    print(offer_record.job_applicant)
-    doc = get_mapped_doc("Job Applicant", offer_record.job_applicant, {
-        "Job Applicant": {
-            "doctype": "Transfer Paper",
-            "field_map": {
-                "one_fm_previous_company_trade_name_in_arabic": "previous_company_trade_name_arabic",
-                "one_fm__previous_company_authorized_signatory_name_arabic":"previous_company_authorized_signatory_name_arabic",
-                "one_fm_previous_company_contract_file_number":"previous_company_contract_file_number",
-                "one_fm_previous_company_issuer_number":"previous_company_issuer_number",
-                "one_fm_previous_company_pam_file_number":"previous_company_pam_file_number",
-                "one_fm_work_permit_salary":"previous_company_work_permit_salary",
-                "one_fm_work_permit_number":"work_permit_number",
-                "one_fm_last_working_date":"end_work_date",
-                "one_fm_duration_of_work_permit":"previous_company_duration_of_work_permit",
-                "name":"applicant"
+    if not frappe.db.exists("Transfer Paper", {'applicant': offer_record.job_applicant}):
+        print(offer_record.job_applicant)
+        doc = get_mapped_doc("Job Applicant", offer_record.job_applicant, {
+            "Job Applicant": {
+                "doctype": "Transfer Paper",
+                "field_map": {
+                    "one_fm_previous_company_trade_name_in_arabic": "previous_company_trade_name_arabic",
+                    "one_fm__previous_company_authorized_signatory_name_arabic":"previous_company_authorized_signatory_name_arabic",
+                    "one_fm_previous_company_contract_file_number":"previous_company_contract_file_number",
+                    "one_fm_previous_company_issuer_number":"previous_company_issuer_number",
+                    "one_fm_previous_company_pam_file_number":"previous_company_pam_file_number",
+                    "one_fm_work_permit_salary":"previous_company_work_permit_salary",
+                    "one_fm_work_permit_number":"work_permit_number",
+                    "one_fm_last_working_date":"end_work_date",
+                    "one_fm_duration_of_work_permit":"previous_company_duration_of_work_permit",
+                    "name":"applicant"
+                }
             }
-        }
-    }, target_doc)
+        }, target_doc)
+    else:
+        doc = frappe.msgprint(_("Transfer Paper is already exists for {0} Applicant").format(offer_record.applicant_name))
     return doc
 
 def update_onboarding_doc(doc, is_trash=False, cancel_oe=False):
@@ -450,4 +453,6 @@ def create_new_work_permit(work_permit):
     if doc.work_permit_type == "Renewal Non Kuwaiti" or doc.work_permit_type == "Renewal Kuwaiti":
         wp.preparation = doc.preparation
     wp.save(ignore_permissions=True)
+    from one_fm.grd.doctype.work_permit import work_permit
+    work_permit.update_work_permit_details_in_tp(wp)
     return wp

@@ -11,7 +11,9 @@ frappe.ui.form.on('Job Offer', {
 				function () {
           frappe.model.open_mapped_doc({
             method: "one_fm.hiring.utils.make_transfer_paper_from_job_offer",
-            frm: frm
+            frm: frm,
+            freeze: true,
+            freeze_message: __("Creating Transfer Paper ...")
           });
 				}
 			);

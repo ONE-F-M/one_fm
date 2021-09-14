@@ -50,12 +50,13 @@ class FingerprintAppointment(Document):
                 self.reminded_grd_operator = 1
 
         if self.workflow_state == "Booked":
-            field_list = [{'Date and Time Confirmation':'date_and_time_confirmation'},{'Attach Barcode':'attach_barcode'},{'Required Transportation':'required_transportation'}]
-            message_detail = '<b style="color:red; text-align:center;">First, You Need Apply on <a href="{0}" target="_blank"> Fingerprint Website</a></b>'.format(self.website)
+            field_list = [{'Date and Time Confirmation':'date_and_time_confirmation'},{'Upload Appointment Form':'upload_appointment_form'},{'Required Transportation':'required_transportation'}]
+            message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply on <a href="{0}" target="_blank"> Fingerprint Website</a></b>'.format(self.website)
             self.set_mendatory_fields(field_list,message_detail)
             self.notify_site_supervisor()
             self.notify_shift_supervisor()
-            #inform transportation if required
+            if self.required_transportation == "Yes":
+                self.notify_transportation()
     
     def before_one_day_of_appointment_date(self):
         today = date.today()
@@ -64,7 +65,7 @@ class FingerprintAppointment(Document):
 
     def notify_operator_to_apply_for_fp(self):
         page_link = get_url("/desk#Form/Fingerprint Appointment/" + self.name)
-        if self.fingerprint_appointment_type == "Renewal Non-Kuwaiti" and self.workflow_state == "Awaiting for Appointment":
+        if self.fingerprint_appointment_type == "Renewal" and self.workflow_state == "Awaiting for Appointment":
             message = "<p>Please Apply for Fingerprint Appointment for Renewal to civil id: <a href='{0}'>{1}</a>.</p>".format(page_link, self.civil_id)
             subject = 'Apply for Fingerprint Appointment for Renewal to civil id:{0} '.format(self.civil_id)
             create_notification_log(subject, message, [self.grd_operator_renewal], self)
@@ -77,7 +78,7 @@ class FingerprintAppointment(Document):
 
     def notify_operator_to_prepare_for_fp(self):
         page_link = get_url("/desk#Form/Fingerprint Appointment/" + self.name)
-        if self.fingerprint_appointment_type == "Renewal Non-Kuwaiti" and self.workflow_state == "Booked":
+        if self.fingerprint_appointment_type == "Renewal" and self.workflow_state == "Booked":
             message = "<p>Please Prepare Fingerprint Appointment Documents for employee with civil id: <a href='{0}'>{1}</a>.</p>".format(page_link, self.civil_id)
             subject = 'Please Prepare Fingerprint Appointment Documents for employee with civil id:{0} '.format(self.civil_id)
             create_notification_log(subject, message, [self.grd_operator_renewal], self)
@@ -112,7 +113,7 @@ class FingerprintAppointment(Document):
         if site:
             site_doc = frappe.get_doc("Operations Site",site)
             if site_doc:
-                employee = frappe.get_doc("Employee", site_doc.account_supervisor)# will return employee
+                employee = frappe.get_doc("Employee", site_doc.account_supervisor)
                 send_email_notification(self, [employee.user_id])
             
     def notify_shift_supervisor(self):
@@ -121,8 +122,16 @@ class FingerprintAppointment(Document):
         if shift:
             shift_doc = frappe.get_doc("Operations Shift",shift)
             if shift_doc:
-                employee = frappe.get_doc("Employee", shift_doc.supervisor)# will return employee
+                employee = frappe.get_doc("Employee", shift_doc.supervisor)
                 send_email_notification(self, [employee.user_id])
+
+    def notify_transportation(self):
+        """Notify transportation with the employee's appointment"""
+        user_email = "I.ANWARE@one-fm.com"
+        content="<h4>Dear "+ user_email +",</h4><p> This email to inform you that Fingerprint Appointment for employee Name: {0} - {1} Required Transportation at {2}.</p>".format(self.full_name,self.employee_id,self.date_and_time_confirmation)  
+        frappe.sendmail(recipients=[user_email],
+            sender=self.grd_supervisor,
+            subject="Transportation Required For Fingerprint Appointment", content=content)
 
     def check_appointment_date(self):
         today = date.today()
@@ -154,7 +163,7 @@ def get_employee_list():
             
 def creat_fp(employee,type,preparation):
     if type == "Renewal":
-        fingerprint_appointment_type = "Renewal Non-Kuwaiti"
+        fingerprint_appointment_type = "Renewal"
     if type == "Local Transfer":
         fingerprint_appointment_type = "Local Transfer"
 
@@ -182,7 +191,7 @@ def send_email_notification(doc, recipients):
 	message = "<p>Please Review the Fingerprint Appointment for employee: {0} at {1}<a href='{2}'>{3}</a>.</p>".format(doc.employee_id,doc.date_and_time_confirmation,page_link, doc.name)
 	frappe.sendmail(
 		recipients= recipients,
-		subject='{0} Fingerprint Appointment for {1}'.format(doc.workflow_state, doc.employee_id),
+		subject='{0} Fingerprint Appointment for employee Name:{1} - {2}'.format(doc.workflow_state, doc.full_name,doc.employee_id),
 		message=message,
 		reference_doctype=doc.doctype,
 		reference_name=doc.name
