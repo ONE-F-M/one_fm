@@ -16,7 +16,7 @@
   "status",
   "section_break_9",
   "date_and_time_confirmation",
-  "attach_barcode",
+  "upload_appointment_form",
   "required_transportation",
   "section_break_13",
   "preparing_documents",
@@ -32,6 +32,7 @@
   "service_type",
   "section_break_12",
   "civil_id",
+  "full_name",
   "first_name_arabic",
   "second_name_arabic",
   "third_name_arabic",
@@ -39,11 +40,11 @@
   "moi_reference_number",
   "column_break_18",
   "employee_id",
+  "nationality",
   "first_name_english",
   "second_name_english",
   "third_name_english",
   "last_name_english",
-  "nationality",
   "section_break_24",
   "grd_operator_renewal",
   "grd_operator_transfer",
@@ -347,7 +348,7 @@
    "fieldname": "fingerprint_appointment_type",
    "fieldtype": "Select",
    "label": "Fingerprint Appointment Type",
-   "options": "\nRenewal Non-Kuwaiti\nLocal Transfer"
+   "options": "\nRenewal\nLocal Transfer"
   },
   {
    "fieldname": "date_of_application",
@@ -403,23 +404,30 @@
    "label": "Registration Details"
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "attach_barcode",
-   "fieldtype": "Attach",
-   "label": "Attach Barcode"
-  },
-  {
    "fieldname": "column_break_14",
    "fieldtype": "Column Break"
   },
   {
    "fieldname": "section_break_13",
    "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_appointment_form",
+   "fieldtype": "Attach",
+   "label": "Upload Appointment Form"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-13 08:02:31.629468",
+ "modified": "2021-09-14 18:20:02.361126",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Fingerprint Appointment",

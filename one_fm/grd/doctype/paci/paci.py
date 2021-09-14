@@ -7,7 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 from datetime import date
 from one_fm.api.notification import create_notification_log
-from frappe.utils import today, add_days, get_url
+from frappe.utils import today, add_days, get_url, date_diff
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 
 class PACI(Document):
@@ -19,6 +19,8 @@ class PACI(Document):
             self.grd_supervisor = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
+        if not self.grd_operator_transfer:
+            self.grd_operator_transfer = frappe.db.get_value('GRD Settings', None, 'default_grd_operator_transfer')
 
     def on_update(self):
         self.validate_mandatory_fields_on_update()
@@ -65,6 +67,25 @@ class PACI(Document):
         "valid_till":self.new_civil_id_expiry_date
         })
         employee.save()
+    
+    def notify_to_upload_hawiyati(self):
+        today = date.today()
+        if date_diff(getdate(self.upload_civil_id_payment_datetime),today) >= -2 and self.upload_civil_id_payment:
+            self.notify_operator_to_take_hawiyati()
+
+    def notify_operator_to_take_hawiyati(self):
+        page_link = get_url("/desk#Form/PACI/" + self.name)
+        if self.category == "Renewal" and self.workflow_state == "Under Process":
+            message = "<p>Please Upload Hawiyati for employee with civil id: <a href='{0}'>{1}</a>.</p>".format(page_link, self.civil_id)
+            subject = 'Please Upload Hawiyati for employee with civil id:{0} '.format(self.civil_id)
+            create_notification_log(subject, message, [self.grd_operator], self)
+            send_email(self, [self.grd_operator,self.grd_supervisor], message, subject)
+
+        if self.category == "Transfer" and self.workflow_state == "Under Process":
+            message = "<p>Please Upload Hawiyati for employee with civil id: <a href='{0}'>{1}</a>.</p>".format(page_link, self.civil_id)
+            subject = 'Please Upload Hawiyati for employee with civil id:{0} '.format(self.civil_id)
+            create_notification_log(subject, message, [self.grd_operator_transfer], self)
+            send_email(self, [self.grd_operator_transfer,self.grd_supervisor], message, subject)
 
 # Create PACI record once a month for renewals list  
 def create_PACI_renewal(preparation_name):
@@ -171,6 +192,12 @@ def to_do_to_grd_users(subject, description, user):
         "date": today()
     }).insert(ignore_permissions=True)
 
-        
-
+def send_email(doc, recipients, message, subject):
+	frappe.sendmail(
+		recipients= recipients,
+		subject=subject,
+		message=message,
+		reference_doctype=doc.doctype,
+		reference_name=doc.name
+	)
 

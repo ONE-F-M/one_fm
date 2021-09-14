@@ -236,8 +236,11 @@ doc_events = {
 		"on_submit": "one_fm.api.doc_events.update_training_event_data"
 	},
 	"Training Result" :{
-		"on_submit": "one_fm.api.doc_events.update_certification_data"
+		"on_submit": "one_fm.api.doc_events.update_certification_data" 
 	},
+	# "Additional Salary" :{
+	# 	"on_submit": "one_fm.grd.utils.validate_date"
+	# }
 }
 
 standard_portal_menu_items = [
@@ -310,8 +313,10 @@ scheduler_events = {
 	],
 
 	"cron": {
-		"0 8 1 * *": [# first day of the Month at 8 am
+		"0 8 15 * *": [
 			'one_fm.grd.doctype.preparation.preparation.create_preparation',
+		],
+		"0 8 1 * *": [# first day of the Month at 8 am
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
 		],
 		"0/1 * * * *": [
@@ -350,6 +355,7 @@ scheduler_events = {
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
+			'one_fm.grd.doctype.paci.paci.notify_to_upload_hawiyati',
 			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_status_on_pifss',

@@ -68,6 +68,7 @@
   {
    "fieldname": "insurance_status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Insurance Status",
    "options": "\nRenewal\nNew\nLocal Transfer"
   },
@@ -126,7 +127,6 @@
    "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Full Name",
    "read_only": 1
   },
@@ -264,7 +264,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-08 08:59:43.917407",
+ "modified": "2021-09-14 16:54:43.472141",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
