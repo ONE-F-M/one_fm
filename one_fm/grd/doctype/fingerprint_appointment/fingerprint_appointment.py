@@ -50,8 +50,8 @@ class FingerprintAppointment(Document):
                 self.reminded_grd_operator = 1
 
         if self.workflow_state == "Booked":
-            field_list = [{'Date and Time Confirmation':'date_and_time_confirmation'},{'Attach Barcode':'upload_appointment_form'},{'Required Transportation':'required_transportation'}]
-            message_detail = '<b style="color:red; text-align:center;">First, You Need Apply on <a href="{0}" target="_blank"> Fingerprint Website</a></b>'.format(self.website)
+            field_list = [{'Date and Time Confirmation':'date_and_time_confirmation'},{'Upload Appointment Form':'upload_appointment_form'},{'Required Transportation':'required_transportation'}]
+            message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply on <a href="{0}" target="_blank"> Fingerprint Website</a></b>'.format(self.website)
             self.set_mendatory_fields(field_list,message_detail)
             self.notify_site_supervisor()
             self.notify_shift_supervisor()
@@ -127,7 +127,7 @@ class FingerprintAppointment(Document):
 
     def notify_transportation(self):
         """Notify transportation with the employee's appointment"""
-        user_email = "a.alshawa@armor-services.com"#"I.ANWARE@one-fm.com"
+        user_email = "I.ANWARE@one-fm.com"
         content="<h4>Dear "+ user_email +",</h4><p> This email to inform you that Fingerprint Appointment for employee Name: {0} - {1} Required Transportation at {2}.</p>".format(self.full_name,self.employee_id,self.date_and_time_confirmation)  
         frappe.sendmail(recipients=[user_email],
             sender=self.grd_supervisor,
