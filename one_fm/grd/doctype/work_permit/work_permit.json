@@ -180,6 +180,7 @@
    "no_copy": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
@@ -188,6 +189,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.date_of_birth",
    "fetch_if_empty": 1,
    "fieldname": "date_of_birth",
@@ -196,6 +198,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.gender",
    "fetch_if_empty": 1,
    "fieldname": "gender",
@@ -204,6 +207,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
@@ -211,6 +215,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_pam_designation",
    "fieldname": "pam_designation",
    "fieldtype": "Data",
@@ -222,6 +227,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_salary_type",
    "fieldname": "salary_type",
    "fieldtype": "Data",
@@ -411,6 +417,7 @@
    "label": "Updated Work Permit Expiry Date"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.employee_id",
    "fieldname": "employee_id",
    "fieldtype": "Data",
@@ -471,6 +478,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.first_name",
    "fieldname": "first_name",
    "fieldtype": "Data",
@@ -478,6 +486,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.middle_name",
    "fieldname": "second_name",
    "fieldtype": "Data",
@@ -485,6 +494,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_third_name",
    "fieldname": "third_name",
    "fieldtype": "Data",
@@ -492,6 +502,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.last_name",
    "fieldname": "last_name",
    "fieldtype": "Data",
@@ -503,6 +514,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_in_arabic",
    "fieldtype": "Data",
@@ -510,6 +522,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_in_arabic",
    "fieldtype": "Data",
@@ -524,6 +537,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_in_arabic",
    "fieldtype": "Data",
@@ -535,6 +549,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_religion",
    "fieldname": "religion",
    "fieldtype": "Data",
@@ -542,6 +557,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.marital_status",
    "fetch_if_empty": 1,
    "fieldname": "marital_status",
@@ -550,6 +566,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_passport_type",
    "fieldname": "passport_type",
    "fieldtype": "Data",
@@ -558,6 +575,7 @@
    "translatable": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.passport_number",
    "fieldname": "passport_number",
    "fieldtype": "Data",
@@ -865,7 +883,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-14 16:01:11.834578",
+ "modified": "2021-09-15 00:08:20.976658",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
