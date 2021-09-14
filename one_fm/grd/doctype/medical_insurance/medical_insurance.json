@@ -43,6 +43,7 @@
  ],
  "fields": [
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
@@ -78,6 +79,7 @@
    "label": "Employee Details"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.gender",
    "fieldname": "gender",
    "fieldtype": "Data",
@@ -85,6 +87,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
@@ -96,6 +99,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_duration_of_work_permit",
    "fieldname": "no_of_years",
    "fieldtype": "Data",
@@ -124,6 +128,7 @@
    "options": "MI-.YYYY.-"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
@@ -206,6 +211,7 @@
    "options": "Preparation"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.employee_id",
    "fieldname": "employee_id",
    "fieldtype": "Data",
@@ -220,6 +226,7 @@
    "label": "Upload Payment Invoice On"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.valid_upto",
    "fieldname": "passport_expiry_date",
    "fieldtype": "Data",
@@ -264,7 +271,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-14 16:54:43.472141",
+ "modified": "2021-09-15 00:09:29.176837",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
