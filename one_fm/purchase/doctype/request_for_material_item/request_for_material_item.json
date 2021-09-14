@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "hash",
  "creation": "2020-06-02 07:49:10.080116",
  "doctype": "DocType",
@@ -366,8 +367,9 @@
   }
  ],
  "istable": 1,
- "modified": "2021-07-06 10:51:18.227667",
- "modified_by": "o.asim@armor-services.com",
+ "links": [],
+ "modified": "2021-09-13 21:08:30.216970",
+ "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material Item",
  "owner": "Administrator",
