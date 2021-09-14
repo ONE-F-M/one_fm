@@ -67,18 +67,19 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 
 		penalty_issuance_details = json.loads(penalty_details)
 		for detail in penalty_issuance_details:
-			filename = detail["attachment_name"]
-			attach = detail["attachments"]
-			content = base64.b64decode(attach)
+			if detail["attachments"] and detail["attachment_name"]:
+				filename = detail["attachment_name"]
+				attach = detail["attachments"]
+				content = base64.b64decode(attach)
 
-			OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/public/files/Legal/"+filename
-			fh = open(OUTPUT_IMAGE_PATH, "wb")
-			fh.write(content)
-			fh.close()
-			Attachment_file="/files/Legal/"+filename
+				OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/public/files/Legal/"+filename
+				fh = open(OUTPUT_IMAGE_PATH, "wb")
+				fh.write(content)
+				fh.close()
+				Attachment_file="/files/Legal/"+filename
+				detail.update({'attachments': Attachment_file})
 
 			detail.pop("attachment_name")
-			detail.update({'attachments': Attachment_file})
 			penalty_issuance.append('penalty_issuance_details', detail)
 
 		if penalty_category == "Performace":
