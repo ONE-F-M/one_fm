@@ -93,10 +93,6 @@ class Preparation(Document):
             send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
 
-def preparation_monthly_task():
-    frappe.enqueue(create_preparation, is_async=True, queue='long')
-    
-
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def create_preparation():
     doc = frappe.new_doc('Preparation')
