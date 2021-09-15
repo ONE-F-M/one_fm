@@ -15,17 +15,18 @@ from one_fm.api.notification import create_notification_log
 class TransferPaper(Document):
     def validate(self):
         self.set_today_date()
-        self.set_new_salary_from_job_offer()
+        # self.set_new_salary_from_job_offer()# commit it for now (until I get request to activate it) 
         self.set_pam_designation()
         self.set_pam_file_number()
         self.set_electronic_signature()
         self.arrange_arabic_name()
-
         # self.set_pas_values()
         self.set_grd_values()
-        # self.check_signed_workContract_employee_completed()
-        # self.get_wp_status()
         
+    
+    def on_update(self):
+        self.check_workflow_states()
+
     def set_today_date(self):
         if not self.date_of_application:
             self.db_set('date_of_application',today())
@@ -35,11 +36,13 @@ class TransferPaper(Document):
             and setting it into the basic salary in Transfer Paper"""
         if not self.salary:
             salary = frappe.db.get_value('Job Offer', {'job_applicant':self.applicant},['one_fm_salary_structure'])
-            components = frappe.get_doc('Salary Structure',salary)
-            print(components.earnings)
-            for component in components.earnings:
-                if component.salary_component == "Basic":
-                    self.db_set('salary', component.amount) 
+            if salary:
+                components = frappe.get_doc('Salary Structure',salary)
+                for component in components.earnings:
+                    if component.salary_component == "Basic":
+                        self.db_set('salary', component.amount) 
+            elif not salary:
+                frappe.throw("Job Offer Does not Have Basic Salary...!")
 
     def set_pam_designation(self):
         if not self.pam_designation:
@@ -72,8 +75,8 @@ class TransferPaper(Document):
                     self.db_set('pam_file_number',main_file)
         
     def set_grd_values(self):
-        if not self.grd_operator:
-            self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+        if not self.grd_operator_transfer:
+            self.grd_operator_transfer = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
 
     def set_electronic_signature(self):
         if not self.authorized_signature:
@@ -83,14 +86,11 @@ class TransferPaper(Document):
                 for authorized in authorized_list.authorized_signatory:
                     if doc.one_fm_signatory_name == authorized.authorized_signatory_name_arabic:
                         self.db_set('authorized_signature', authorized.signature)
-                # print("-->",self.authorized_signature)
+                
 
     def arrange_arabic_name(self):
         """This method arranges the names in the print format based on what is filled in job applicant doctype"""
-        applicant_full_arabic_name=[]
         if self.applicant:
-            # applicant_full_arabic_name = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
-            #     {'Third Name in Arabic':'third_name'},{'Last Name in Arabic':'last_name'}]
             applicant = frappe.get_doc('Job Applicant',self.applicant)
             if applicant.one_fm_first_name_in_arabic and not applicant.one_fm_second_name_in_arabic and not applicant.one_fm_third_name_in_arabic and not applicant.one_fm_forth_name_in_arabic and applicant.one_fm_last_name_in_arabic:
                 self.first_name_in_arabic = applicant.one_fm_first_name_in_arabic
@@ -116,7 +116,31 @@ class TransferPaper(Document):
                 self.third_name_in_arabic = applicant.one_fm_forth_name_in_arabic
                 self.forth_name_in_arabic = applicant.one_fm_last_name_in_arabic
                 self.last_name_in_arabic = ''
-            
+    
+    def check_workflow_states(self):
+        if self.workflow_state == "Under Process":
+            field_list = [{'Attach Signed TP':'attach_tp'}]
+            self.set_mendatory_fields(field_list)
+
+
+    def set_mendatory_fields(self,field_list,message_detail=None):
+        mandatory_fields = []
+        for fields in field_list:
+            for field in fields:
+                if not self.get(fields[field]):
+                    mandatory_fields.append(field)
+
+        if len(mandatory_fields) > 0:
+            if message_detail:
+                message = message_detail
+                message += '<br>Mandatory fields required in Transfer Paper<br><br><ul>'
+            else:
+                message= 'Mandatory fields required in Transfer Paper<br><br><ul>'
+            for mandatory_field in mandatory_fields:
+                message += '<li>' + mandatory_field +'</li>'
+            message += '</ul>'
+            frappe.throw(message)
+
     def set_pas_values(self):
         doc = frappe.get_doc('Job Applicant',self.applicant)
         if doc.one_fm_pam_file_number:
@@ -124,17 +148,6 @@ class TransferPaper(Document):
             self.db_set('company_trade_name_arabic', company_data.license_trade_name_arabic)
             self.db_set('license_number', company_data.license_number)#licence to issuer_number
             self.db_set('pam_file_number', company_data.pam_file_number)
-
-    def get_wp_status(self):
-        """
-        This method is getting the last wp record create by this TP and checking its status.
-        TP status will be completed if the wp record is completed. 
-        """
-        if self.tp_status != "Completed" and self.work_permit_ref:
-            wp = frappe.get_doc('Work Permit',self.work_permit_ref)
-            self.db_set('work_permit_status', wp.work_permit_status)
-            if wp.work_permit_status == "Completed":
-                self.db_set('tp_status', "Completed")
 
     def check_signed_workContract_employee_completed(self):
         """"
@@ -146,12 +159,10 @@ class TransferPaper(Document):
                 if employee:
                     self.recall_create_transfer_work_permit(employee)#create wp for local transfer
                     self.notify_grd_transfer_wp_record()
-            else:
-                frappe.throw("No Employee record created yet...")
 
     def recall_create_transfer_work_permit(self,employee):
         name = work_permit.create_work_permit_transfer(self.name,employee)
-        self.work_permit_ref = name
+        
 
     def notify_grd_transfer_wp_record(self):
         # Getting the wp record the one not rejected and linked to the TP
@@ -161,21 +172,7 @@ class TransferPaper(Document):
             page_link = get_url("/desk#Form/Work Permit/" + wp_record.name)
             subject = ("Apply for Transfer Work Permit Online")
             message = "<p>Please Apply for Transfer WP Online for <a href='{0}'></a>.</p>".format(page_link, wp_record.employee)
-            create_notification_log(subject, message, [self.grd_operator], wp_record)
-            
-    
-
-@frappe.whitelist()
-def resend_new_wp_record(doc_name):
-    doc = frappe.get_doc('Transfer Paper',doc_name)
-    if doc.work_permit_ref:
-        wp = frappe.get_doc("Work Permit",doc.work_permit_ref)
-        print("==>new",wp.name)
-    if wp:
-        wp.db_set('work_permit_status', "Closed")
-        doc.check_signed_workContract_employee_completed()
-        doc.db_set('tp_status', "Pending By GRD")
-        
+            create_notification_log(subject, message, [self.grd_operator_transfer], wp_record)
     
 
     

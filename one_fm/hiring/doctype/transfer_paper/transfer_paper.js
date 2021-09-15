@@ -4,17 +4,17 @@
 
 frappe.ui.form.on('Transfer Paper', {
     onload: function(frm) {
-        let doc_name = frm.doc.name;
-        if(frm.doc.docstatus==1) {
-                frm.add_custom_button(__('Re-Send New Work Permit'), function() { 
-                    frappe.xcall('one_fm.hiring.doctype.transfer_paper.transfer_paper.resend_new_wp_record',{doc_name})
-                    frappe.msgprint({
-                        title: __('Notification'),
-                        indicator: 'green',
-                        message: __('Old Work Permit Record is Closed / created new record Sucessfully')
-                    });
-                })
-        }
+        // let doc_name = frm.doc.name;
+        // if(frm.doc.docstatus==1) {
+        //         frm.add_custom_button(__('Re-Send New Work Permit'), function() { 
+        //             frappe.xcall('one_fm.hiring.doctype.transfer_paper.transfer_paper.resend_new_wp_record',{doc_name})
+        //             frappe.msgprint({
+        //                 title: __('Notification'),
+        //                 indicator: 'green',
+        //                 message: __('Old Work Permit Record is Closed / created new record Sucessfully')
+        //             });
+        //         })
+        // }
         if(frm.doc.work_permit_ref){
             frappe.call({
                 method:"frappe.client.get_value",
@@ -58,9 +58,7 @@ frappe.ui.form.on('Transfer Paper', {
                 // set the returned value in a field
                 frm.set_value('previous_company_trade_name_in_arabic', r.message.one_fm_previous_company_trade_name_in_arabic);
                 frm.set_value('previous_company_authorized_signatory_name_arabic', r.message.one_fm__previous_company_authorized_signatory_name_arabic);
-                frm.set_value('previous_company_pam_designation', r.message.one_fm_previous_designation);
-                // frm.set_value('previous_company_contract_file_number', r.message.one_fm_previous_company_contract_file_number);   
-                // frm.set_value('previous_company_license_number', r.message.one_fm_previous_company_issuer_number);               
+                frm.set_value('previous_company_pam_designation', r.message.one_fm_previous_designation);           
                 frm.set_value('previous_company_pam_file_number', r.message.one_fm_previous_company_pam_file_number);
                 frm.set_value('end_work_date', r.message.one_fm_last_working_date);
                 frm.set_value('previous_company_work_permit_salary', r.message.one_fm_work_permit_salary);
@@ -85,29 +83,12 @@ frappe.ui.form.on('Transfer Paper', {
                 frm.set_value('civil_id', r.message.one_fm_cid_number);
                 frm.set_value('pam_designation', r.message.one_fm_pam_designation);
                 frm.set_value('civil_id', r.message.one_fm_cid_number);
-                // frm.set_value('work_permit_salary', r.message.one_fm_work_permit_salary);
-                // frm.set_value('date_of_entry_in_kuwait', r.message.one_fm_date_of_entry);
             }
         })
     }
-},
-
-    // new_page_preview: function(printit) {
-    //     var me = this;
-    //     //var doc = frappe.get_doc(me.frm.doc.doctype, me.frm.doc.name)
-    
-    //     if (me.frm.doc.print < 1){
-    //         frappe.call({
-    //                 "method": "frappe.client.set_value",
-    //                 "args": {
-    //                             "doctype": me.frm.doc.doctype,
-    //                             "name": me.frm.doc.name,
-    //                             "fieldname": "print",
-    //                             "value": me.frm.doc.print + 1
-    //                         }	
-    //             });
-    
-    //         }
-    //     },
-    
+},attach_tp: function(frm){
+    if(frm.doc.attach_tp && !frm.doc.attached_on){
+        frm.set_value('attached_on',frappe.datetime.now_datetime());
+    }
+}    
 });
