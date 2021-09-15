@@ -22,7 +22,7 @@ from one_fm.grd.doctype.medical_insurance import medical_insurance
 # from pdfminer.pdfparser import PDFParser, PDFDocument  
 class WorkPermit(Document):
     def on_update(self):
-        # self.update_work_permit_details_in_tp() # <In progress>
+        self.update_work_permit_details_in_tp() # <In progress>
         self.check_required_document_for_workflow()
 
     def validate(self):
@@ -100,6 +100,7 @@ class WorkPermit(Document):
                 field_list = [{'Reason Of Rejection':'reason_of_rejection'},{'Details of Rejection':'details_of_rejection'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to set the reason of Rejection Mentioned in <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
                 self.set_mendatory_fields(field_list,message_detail)
+                self.update_work_permit_details_in_tp()# update the rejected record in the transfer paper child table
             self.reload()
 
     
@@ -122,35 +123,29 @@ class WorkPermit(Document):
             frappe.throw(message)
 
     def update_work_permit_details_in_tp(self):
+        """This method add all work permit trails records under same transfer paper into child table in Transfer Paper, 
+        it checks if the work permit referance is already exist, it update the work permit status. 
+        if not exist and it reaches end of the records, it add new row in the table"""
+
         if self.work_permit_type == "Local Transfer" and self.transfer_paper:
             tp = frappe.get_doc('Transfer Paper',self.transfer_paper)
             if tp:
-                print("Child table", tp.work_permit_records)
-                print("wp name ", self.name)
                 if tp.work_permit_records != []:
-                    for wp in tp.work_permit_records:
-                        print("wp",wp)
-                        print("wp.work_permit_reference",wp.work_permit_reference)
+                    for wp_index, wp in enumerate(tp.work_permit_records):
                         if wp.work_permit_reference  == self.name and self.work_permit_status != "Completed":
-                            # tp.append("work_permit_records", {
-                            #     "work_permit_reference": self.name,
-                            #     "status": self.work_permit_status,
-                            #     "reason_of_rejection": self.reason_of_rejection
-                            #     })
-                            # wp.status = self.work_permit_status
-                            # wp.reason_of_rejection = self.reason_of_rejection
+                            wp.update({
+                                "status": self.work_permit_status,
+                                "reason_of_rejection": self.reason_of_rejection
+                                })
                             wp.save()
-                        if wp.work_permit_reference  == self.name and self.work_permit_status == "Completed":
-                            wp.status = self.work_permit_status
-                            wp.reason_of_rejection = self.reason_of_rejection
-                            wp.save()
-                            tp.workflow_state = "Completed"
-                        if wp.work_permit_reference  != self.name:
+                        if wp.work_permit_reference  != self.name and wp_index == len(tp.work_permit_records)-1:
                             tp.append("work_permit_records", {
                             "work_permit_reference": self.name,
                             "status": self.work_permit_status,
                             "reason_of_rejection": self.reason_of_rejection
                             })
+                        if wp.work_permit_reference  != self.name and wp_index != len(tp.work_permit_records)-1:
+                            continue
                 elif tp.work_permit_records == []:
                     tp.append("work_permit_records", {
                     "work_permit_reference": self.name,
@@ -158,24 +153,42 @@ class WorkPermit(Document):
                     "reason_of_rejection": self.reason_of_rejection
                     })
             tp.save()
-                    
+            tp.reload()
+
     def on_submit(self):
         if self.work_permit_type != "Cancellation" and self.work_permit_type != "New Kuwaiti" and self.work_permit_type != "Local Transfer" and self.workflow_state != "Rejected":
             if "Completed" in self.workflow_state and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
                 self.db_set('work_permit_status', 'Completed')
-                self.clean_old_wp_record_in_employee_doctype()
-                self.set_work_permit_attachment_in_employee_doctype()
+                # self.clean_old_wp_record_in_employee_doctype()
+                self.set_work_permit_attachment_in_employee_doctype(self.upload_work_permit,self.new_work_permit_expiry_date)
             else:
                 frappe.throw(_("Upload The Required Documents To Submit"))
 
-        if self.work_permit_type == "Cancellation":# or self.work_permit_type != "New Kuwaiti":
+        if self.work_permit_type == "Cancellation":
             self.db_set('work_permit_status', 'Completed')
 
         if self.workflow_state == "Completed":
             if self.work_permit_type == "Local Transfer":
                 self.db_set('work_permit_status', 'Completed')
-                self.recall_create_medical_insurance_transfer()#create medical insurance record & inform transfer operator
+                self.update_wp_child_table_in_transfer_paper()
+                self.recall_create_medical_insurance_transfer()
+                self.set_work_permit_attachment_in_employee_doctype(self.attach_work_permit,self.work_permit_expiry_date)
                 self.notify_grd_transfer_mi_record()
+
+    def update_wp_child_table_in_transfer_paper(self):
+        """This method to update work permit status if completed in transfer paper, close the transfer paper, and submit it """
+        tp = frappe.get_doc('Transfer Paper',self.transfer_paper)
+        if tp:
+            for wp in tp.work_permit_records:
+                if wp.work_permit_reference  == self.name and self.work_permit_status == "Completed":
+                    wp.update({
+                        "status": self.work_permit_status,
+                        "reason_of_rejection": self.reason_of_rejection
+                        })
+                    wp.save()
+            tp.workflow_state = "Completed"
+            tp.save()
+            tp.reload()
 
 
     def recall_create_medical_insurance_transfer(self):
@@ -183,7 +196,7 @@ class WorkPermit(Document):
 
     def notify_grd_transfer_mi_record(self):
         transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
-        mi = frappe.db.get_value("Medical Insurance",{'employee':self.employee,'insurance_status':'Local Transfer'},['name'])#,
+        mi = frappe.db.get_value("Medical Insurance",{'employee':self.employee,'insurance_status':'Local Transfer'},['name'])
         if mi:
             mi_record = frappe.get_doc('Medical Insurance', mi)
             page_link = get_url("/desk#Form/Medical Insurance/" + mi_record.name)
@@ -215,24 +228,44 @@ class WorkPermit(Document):
         employee = frappe.get_doc('Employee', self.employee)
         if employee.one_fm_employee_documents:
             for document in employee.one_fm_employee_documents:
-                print(document.document_name)
                 if document.document_name == "Work Permit":
                     to_remove.append(document)
             [document.delete(document) for document in to_remove]
 
-    def set_work_permit_attachment_in_employee_doctype(self):
+    def set_work_permit_attachment_in_employee_doctype(self,work_permit_attachment,new_expiry_date):
+        """This method to sort records of employee documents upon document name;
+           First, get the employee document child table. second, find index of the document. Third, set the new document.
+           After that, clear the child table and append the new order"""
+
         today = date.today()
+        Find = False
         employee = frappe.get_doc('Employee', self.employee)
-        employee.append("one_fm_employee_documents", {
-            "attach": self.upload_work_permit,
+        document_dic = frappe.get_list('Employee Document',fields={'attach','document_name','issued_on','valid_till'},filters={'parent':self.employee})
+        for index,document in enumerate(document_dic):
+            if document.document_name == "Work Permit":
+                Find = True
+                break
+        if Find:
+            document_dic.insert(index,{
+                "attach": work_permit_attachment,
+                "document_name": "Work Permit",
+                "issued_on":today,
+                "valid_till": new_expiry_date
+            })
+            employee.set('one_fm_employee_documents',[]) #clear the child table
+            for document in document_dic:                # append new arrangements
+                employee.append('one_fm_employee_documents',document)
+
+        if not Find:
+            employee.append("one_fm_employee_documents", {
+            "attach": work_permit_attachment,
             "document_name": "Work Permit",
             "issued_on":today,
-            "valid_till":self.new_work_permit_expiry_date
-        })
-        employee.work_permit = self.name # add the latest work permit link
-        employee.work_permit_expiry_date = self.new_work_permit_expiry_date # add the latest work permit link
-        employee.save()
-
+            "valid_till":new_expiry_date
+            })
+        employee.work_permit_expiry_date = new_expiry_date
+        employee.save()   
+        
     @frappe.whitelist()
     def get_required_documents(self):
         set_required_documents(self)
@@ -520,4 +553,4 @@ def create_notification_log(subject, message, for_users, reference_doc):
 #     pdfReader = PyPDF2.PdfFileReader(open(url,'rb'))
 #     pages = pdfReader.numPages
 #     pageObj = pdfReader.getPage(0)
-#     return pageObj.documentInfo
+#     return pageObj.documentInfo 

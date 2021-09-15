@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "WP-.YYYY.-",
+ "autoname": "naming_series:",
  "color": "green",
  "creation": "2020-08-13 08:46:25.338850",
  "doctype": "DocType",
@@ -614,6 +614,7 @@
   {
    "fieldname": "transfer_paper",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Transfer Paper",
    "options": "Transfer Paper"
   },
@@ -871,7 +872,7 @@
    "label": "Payment Details Section"
   },
   {
-   "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\" || doc.work_permit_status == \"Completed\"",
+   "depends_on": "eval: doc.work_permit_type != \"Local Transfer\" && (doc.work_permit_status == \"Pending by Operator\" || doc.work_permit_status == \"Completed\")",
    "fieldname": "work_permit_information_section",
    "fieldtype": "Section Break",
    "label": "Work Permit Information"
@@ -883,7 +884,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-15 00:08:20.976658",
+ "modified": "2021-09-15 18:17:00.921026",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
