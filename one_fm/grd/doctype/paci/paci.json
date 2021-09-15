@@ -288,12 +288,13 @@
   {
    "fieldname": "grd_operator_transfer",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "GRD Operator Transfer"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-14 18:45:46.565949",
+ "modified": "2021-09-14 23:56:55.996236",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",

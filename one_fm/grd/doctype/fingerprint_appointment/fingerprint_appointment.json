@@ -87,6 +87,7 @@
    "options": "FP-.YYYY.-"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
@@ -159,6 +160,7 @@
    "label": "Company Name "
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_first_name_in_arabic",
    "fieldname": "first_name_arabic",
    "fieldtype": "Data",
@@ -166,6 +168,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_second_name_in_arabic",
    "fieldname": "second_name_arabic",
    "fieldtype": "Data",
@@ -173,6 +176,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_third_name_in_arabic",
    "fieldname": "third_name_arabic",
    "fieldtype": "Data",
@@ -180,6 +184,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_last_name_in_arabic",
    "fieldname": "last_name_arabic",
    "fieldtype": "Data",
@@ -198,6 +203,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.middle_name",
    "fieldname": "second_name_english",
    "fieldtype": "Data",
@@ -205,6 +211,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_third_name",
    "fieldname": "third_name_english",
    "fieldtype": "Data",
@@ -212,6 +219,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.last_name",
    "fieldname": "last_name_english",
    "fieldtype": "Data",
@@ -223,6 +231,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.employee_id",
    "fieldname": "employee_id",
    "fieldtype": "Data",
@@ -318,6 +327,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
@@ -412,6 +422,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "employee.employee_name",
    "fieldname": "full_name",
    "fieldtype": "Data",
@@ -427,7 +438,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-14 18:20:02.361126",
+ "modified": "2021-09-15 00:04:53.148827",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Fingerprint Appointment",

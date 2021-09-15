@@ -88,7 +88,7 @@ frappe.ui.form.on('Work Permit', {
     
 });
 var set_button_for_medical_insurance_transfer = function(frm){
-    if(frm.doc.docstatus === 1 && frm.doc.work_permit_type == "Local Transfer"){
+    if(frm.doc.docstatus === 1 && frm.doc.work_permit_type == "Local Transfer" && frm.doc.workflow_state == "Completed"){
         frm.add_custom_button(__('Go to Medical Insurance'),
           	function () {
             frappe.db.get_value('Medical Insurance', {'work_permit':frm.doc.name}, 'name', (r) => {
