@@ -307,14 +307,6 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 			for employee in json.loads(employees):
 				frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, is_async=True, queue='long')
 			frappe.enqueue(update_roster, key="roster_view", is_async=True, queue='long')
-			# Notify concerned users
-			# user_list = frappe.db.get_list("User")
-			# for user in user_list:
-			# 	roles = frappe.get_roles(user.name)
-			# 	if "Operations Manager" in roles or "Projects Manager" in roles or "Shift Supervisor" in roles or "Site Supervisor" in roles:
-			# 		subject = ""
-			# 		message = ""
-			# 		create_notification_log(subject, message, [user.name])
 			
 			end = time.time()
 			print("[TOTAL]", end-start)
@@ -333,26 +325,57 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date):
 		roster_type = 'Basic'
 	elif otRoster == 'true':
 		roster_type = 'Over-Time'
+
+	roster_docs = []	
+
+	emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", employee, ["project", "site", "shift"])
 			
 	for date in	pd.date_range(start=start_date, end=end_date):
 		if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type}):
-			site, project, shift_type = frappe.get_value("Operations Shift", shift, ["site", "project", "shift_type"])
+			roster_doc = frappe.get_doc("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type})
+			roster_docs.append(roster_doc)
+			site, project, shift_type= frappe.get_value("Operations Shift", shift, ["site", "project", "shift_type"])
 			post_abbrv = frappe.get_value("Post Type", post_type, "post_abbrv")
 			roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type })
 			update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type, roster_type)
 		else:
-			roster = frappe.new_doc("Employee Schedule")
-			roster.employee = employee
-			roster.date = cstr(date.date())
-			roster.shift = shift
-			roster.employee_availability = "Working"
-			roster.post_type = post_type
-			roster.roster_type = roster_type
-			roster.save(ignore_permissions=True)
+			roster_doc = frappe.new_doc("Employee Schedule")
+			roster_doc.employee = employee
+			roster_doc.date = cstr(date.date())
+			roster_doc.shift = shift
+			roster_doc.employee_availability = "Working"
+			roster_doc.post_type = post_type
+			roster_doc.roster_type = roster_type
+			roster_doc.save(ignore_permissions=True)
+			roster_docs.append(roster_doc)
+
+	# Notify supervisors of assigned employee shift and site
+	if shift != emp_shift:
+		shift_supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
+		site_supervisor = frappe.db.get_value("Operations Site", emp_site, ["account_supervisor"])
+		if shift_supervisor and site_supervisor and shift_supervisor == site_supervisor:
+			user_id = frappe.db.get_value("Employee", shift_supervisor, ["user_id"])
+			if user_id:
+				subject = "Change in employee schedule"
+				message = "Employee Schedule has been updated for employee {employee} to shift {shift} starting from {start_date} to {end_date}".format(employee=employee, shift=shift, start_date=start_date, end_date=end_date)
+				create_notification_log(subject, message, [user_id], roster_docs[0])
+
+		elif shift_supervisor and site_supervisor:
+			shift_supervisor_user_id = frappe.db.get_value("Employee", shift_supervisor, ["user_id"])
+			site_supervisor_user_id = frappe.db.get_value("Employee", site_supervisor, ["user_id"])
+			if shift_supervisor_user_id:
+				subject = "Change in employee schedule"
+				message = "Employee Schedule has been updated for employee {employee} to shift {shift} starting from {start_date} to {end_date}".format(employee=employee, shift=shift, start_date=start_date, end_date=end_date)
+				create_notification_log(subject, message, [shift_supervisor_user_id], roster_docs[0])
+			
+			if site_supervisor_user_id:
+				subject = "Change in employee schedule"
+				message = "Employee Schedule has been updated for employee {employee} to shift {shift} starting from {start_date} to {end_date}".format(employee=employee, shift=shift, start_date=start_date, end_date=end_date)
+				create_notification_log(subject, message, [site_supervisor_user_id], roster_docs[0])
+
 
 	"""Update employee assignment"""
 	site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
-	emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", employee, ["project", "site", "shift"])
 	if emp_project and emp_project != project or emp_site and emp_site != site or emp_shift and emp_shift != shift:
 		if frappe.db.exists("Additional Shift Assignment", {'employee': employee, 'project': project, 'site': site, 'shift': shift}):
 			additional_shift_assignment_doc = frappe.get_doc("Additional Shift Assignment", {'employee': employee, 'project': project, 'site': site, 'shift': shift})
