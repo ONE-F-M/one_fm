@@ -453,6 +453,4 @@ def create_new_work_permit(work_permit):
     if doc.work_permit_type == "Renewal Non Kuwaiti" or doc.work_permit_type == "Renewal Kuwaiti":
         wp.preparation = doc.preparation
     wp.save(ignore_permissions=True)
-    from one_fm.grd.doctype.work_permit import work_permit
-    work_permit.update_work_permit_details_in_tp(wp)
     return wp
