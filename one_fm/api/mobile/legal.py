@@ -128,7 +128,7 @@ def get_penalty():
 
 @frappe.whitelist()
 def get_penalty_details(penalty_name):
-	return frappe.get_list("Penalty", {"name": penalty_name})
+	return frappe.get_doc("Penalty", {"name": penalty_name})
 
 @frappe.whitelist()
 def accept_penalty(file, retries, docname):
