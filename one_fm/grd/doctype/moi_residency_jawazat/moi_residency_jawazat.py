@@ -50,18 +50,40 @@ class MOIResidencyJawazat(Document):
             frappe.throw(message)
 
     def set_residency_expiry_new_date_in_employee_doctype(self):
+        """This method to sort records of employee documents upon document name;
+           First, get the employee document child table. second, find index of the document. Third, set the new document.
+           After that, clear the child table and append the new order"""
+
         today = date.today()
+        Find = False
         employee = frappe.get_doc('Employee', self.employee)
-        employee.residency_expiry_date = self.new_residency_expiry_date # update the date of expiry
-        employee.append("one_fm_employee_documents", {
+        document_dic = frappe.get_list('Employee Document',fields={'attach','document_name','issued_on','valid_till'},filters={'parent':self.employee})
+        for index,document in enumerate(document_dic):
+            if document.document_name == "Residency Expiry Attachment":
+                Find = True
+                break
+        if Find:
+            document_dic.insert(index,{
+                "attach": self.residency_attachment,
+                "document_name": "Residency Expiry Attachment",
+                "issued_on":today,
+                "valid_till": self.new_residency_expiry_date
+            })
+            employee.set('one_fm_employee_documents',[]) #clear the child table
+            for document in document_dic:                # append new arrangements
+                employee.append('one_fm_employee_documents',document)
+
+        if not Find:
+            employee.append("one_fm_employee_documents", {
             "attach": self.residency_attachment,
             "document_name": "Residency Expiry Attachment",
             "issued_on":today,
             "valid_till":self.new_residency_expiry_date
-        })
+            })
+        employee.work_permit_expiry_date = self.new_residency_expiry_date
         employee.save()
             
-#fetching the list of employee has Extend and renewal status from HR list.  =====> to create moi record
+#fetching the list of employee has Extend and renewal status from HR list. 
 def set_employee_list_for_moi(preparation_name):
     # filter work permit records only take the non kuwaiti 
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
