@@ -127,8 +127,8 @@ def get_penalty():
 	return List
 
 @frappe.whitelist()
-def get_penalty_details(penalty_name):
-	return frappe.get_list("Penalty", {"name": penalty_name}, ["*"])
+def get_penalty_details():
+	return frappe.get_doc("Penalty", {"name": "HR-EMP-00002-012"})
 
 @frappe.whitelist()
 def accept_penalty(file, retries, docname):
