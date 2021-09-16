@@ -783,14 +783,11 @@ def set_dayoff(employee, date):
 
 
 @frappe.whitelist()
-def assign_staff(employees, shift, post_type, assign_from, assign_date, assign_till_date):
+def assign_staff(employees, shift):
 	try:
-		if assign_from == 'Immediately':
-			assign_date = cstr(add_to_date(nowdate(), days=1))
-
 		start = time.time()
 		for employee in json.loads(employees):
-			frappe.enqueue(assign_job, employee=employee, start_date=assign_date, end_date=assign_till_date, shift=shift, post_type=post_type, is_async=True, queue="long")
+			frappe.enqueue(assign_job, employee=employee, shift=shift, is_async=True, queue="long")
 		frappe.enqueue(update_roster, key="staff_view", is_async=True, queue="long")
 		end = time.time()
 		print(end-start, "[TOTS]")
@@ -800,25 +797,24 @@ def assign_staff(employees, shift, post_type, assign_from, assign_date, assign_t
 		frappe.log_error(e)
 		frappe.throw(_(e))
 
-def assign_job(employee, start_date, end_date, shift, post_type):
+def assign_job(employee, shift):
 	start = time.time()
 	site, project, shift_type = frappe.get_value("Operations Shift", shift, ["site", "project", "shift_type"])
-	post_abbrv = frappe.get_value("Post Type", post_type, "post_abbrv")
 	frappe.set_value("Employee", employee, "shift", shift)
 	frappe.set_value("Employee", employee, "site", site)
 	frappe.set_value("Employee", employee, "project", project)
-	for date in	pd.date_range(start=start_date, end=end_date):
-		if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
-			roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date())})
-			update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type)
-		else:
-			roster = frappe.new_doc("Employee Schedule")
-			roster.employee = employee
-			roster.date = cstr(date.date())
-			roster.shift = shift
-			roster.employee_availability = "Working"
-			roster.post_type = post_type
-			roster.save(ignore_permissions=True)
+	# for date in	pd.date_range(start=start_date, end=end_date):
+	# 	if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date())}):
+	# 		roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date())})
+	# 		update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type)
+	# 	else:
+	# 		roster = frappe.new_doc("Employee Schedule")
+	# 		roster.employee = employee
+	# 		roster.date = cstr(date.date())
+	# 		roster.shift = shift
+	# 		roster.employee_availability = "Working"
+	# 		roster.post_type = post_type
+	# 		roster.save(ignore_permissions=True)
 	end = time.time()
 	print("------------------[TIME TAKEN]===================", end-start)
 

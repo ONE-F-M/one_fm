@@ -2388,46 +2388,14 @@ function staff_edit_dialog() {
 					}
 				}
 			},
-			{
-				'label': 'Post Type', 'fieldname': 'post_type', 'reqd': 1, 'fieldtype': 'Link', 'options': 'Post Type', get_query: function () {
-					let shift = d.get_value('shift');
-					if (shift) {
-						return {
-							query: "one_fm.one_fm.page.roster.roster.get_filtered_post_types",
-							filters: { shift }
-						};
-					}
-				}
-			},
-			{ 'fieldtype': 'Section Break' },
-			{ 'label': 'Assign from', 'fieldname': 'assign_from', 'fieldtype': 'Select', 'reqd': 1, 'options': '\nDate\nImmediately' },
-			{
-				'label': 'Assign from date', 'fieldname': 'assign_date', 'fieldtype': 'Date', 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'), 'depends_on': "eval:this.get_value('assign_from') == 'Date'",
-				onchange: function () {
-					let assign_date = d.get_value('assign_date');
-					if (assign_date && moment(assign_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
-						frappe.throw(__("Assign from Date cannot be same or before as today."));
-					}
-				}
-			},
-			{ 'fieldtype': 'Column Break' },
-			{
-				'label': 'Assign till date', 'fieldname': 'assign_till_date', 'fieldtype': 'Date', 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'),
-				onchange: function () {
-					let assign_date = d.get_value('assign_till_date');
-					if (assign_date && moment(assign_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
-						frappe.throw(__("Assign from Date cannot be same or before as today."));
-					}
-				}
-			},
 		],
 		primary_action: function () {
-			let { shift, post_type, assign_from, assign_date, assign_till_date } = d.get_values();
+			let { shift } = d.get_values();
 
 			$('#cover-spin').show(0);
 			frappe.call({
 				method: 'one_fm.one_fm.page.roster.roster.assign_staff',
-				args: { employees, shift, post_type, assign_from, assign_date, assign_till_date },
+				args: { employees, shift},
 				callback: function (r) {
 					d.hide();
 					$('#cover-spin').hide();
