@@ -117,7 +117,7 @@ class PIFSSMonthlyDeduction(Document):
 		missing_list = []
 		for row in self.deductions:
 			if frappe.db.exists("Employee", {"pifss_id_no": row.pifss_id_no}):
-				employee = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no})
+				employee = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no,"relieving_date":['=','']})# create payrol ipon employee status (active,left)
 				employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))
 				amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
 				create_additional_salary(employee, amount)
