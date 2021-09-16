@@ -12,4 +12,5 @@ def assign():
         User.add_roles("Penalty Recipient")
         if "Site Supervisor" in user_roles or "Shift Supervisor" in user_roles or "Project Manager" in user_roles:
             User.add_roles("Penalty Issuer")
-        User.save()
+        User.save(ignore_permissions=True)
+        frappe.db.commit()
