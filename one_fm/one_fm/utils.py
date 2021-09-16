@@ -50,11 +50,12 @@ def get_salary_structure_list(doctype, txt, searchfield, start, page_len, filter
 
 @frappe.whitelist()
 def send_notification_to_grd_or_recruiter(doc, method):
-    if doc.one_fm_is_transferable == 'Yes' and doc.one_fm_cid_number and doc.one_fm_passport_number:
-        notify_grd_to_check_applicant_documents(doc)
+    if doc.one_fm_nationality != "Kuwaiti":
+        if doc.one_fm_is_transferable == 'Yes' and doc.one_fm_cid_number and doc.one_fm_passport_number:
+            notify_grd_to_check_applicant_documents(doc)
 
-    if doc.one_fm_has_issue and doc.one_fm_notify_recruiter == 0:
-        notify_recruiter_after_checking(doc)
+        if doc.one_fm_has_issue and doc.one_fm_notify_recruiter == 0:
+            notify_recruiter_after_checking(doc)
 
 def notify_grd_to_check_applicant_documents(doc):
     """
@@ -64,14 +65,13 @@ def notify_grd_to_check_applicant_documents(doc):
     if not doc.one_fm_grd_operator:
         doc.one_fm_grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
 
-    # print('==> operator',doc.one_fm_grd_operator)
     dt = frappe.get_doc('Job Applicant',doc.name)
     if dt:
         email = [doc.one_fm_grd_operator]
         page_link = get_url("/desk#List/Job Applicant/" + dt.name)
         message = "<p>Check If Transferable.<br>Civil id:{0} - Passport Number:{1}<a href='{2}'></a>.</p>".format(dt.one_fm_cid_number,dt.one_fm_passport_number,page_link)
         subject = 'Check If Transferable.<br>Civil id:{0} - Passport Number:{1}'.format(dt.one_fm_cid_number,dt.one_fm_passport_number)
-        send_email(dt, email, message, subject)
+        # send_email(dt, email, message, subject)
 
         if not frappe.db.exists("Notification Log",{'subject':subject,'document_type':"Job Applicant"}):
         #check if the notification have been sent before.
@@ -99,7 +99,6 @@ def notify_recruiter_after_checking(doc):
     recruiter = frappe.db.get_value('ERF',doc.one_fm_erf,'recruiter_assigned')
     
     if recruiter:
-        # print(recruiter)
         dt = frappe.get_doc('Job Applicant',doc.name)
         if dt:
             if dt.one_fm_has_issue == "Yes" and dt.one_fm_notify_recruiter == 0:
