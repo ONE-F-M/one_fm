@@ -304,7 +304,7 @@ scheduler_events = {
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
-		'one_fm.utils.send_gp_letter_reminder',
+		'one_fm.utils.send_gp_letter_reminder'
 	],
 
 	"weekly": [
@@ -324,6 +324,7 @@ scheduler_events = {
 		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
+			'one_fm.api.tasks.process_attendance'
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.supervisor_reminder",

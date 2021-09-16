@@ -437,11 +437,12 @@ def update_shift_type():
 		doc.save()
 		frappe.db.commit()
 
-
+@frappe.whitelist()
 def process_attendance():
-	now_time = now_datetime().strftime("%H:%M")
+	now_time = now_datetime().strftime("%y-%m-%d %H:%M:00")
 	shift_types = frappe.get_all("Shift Type", {"last_sync_of_checkin": now_time})
 	for shift_type in shift_types:
+		print(shift_type)
 		frappe.enqueue(mark_auto_attendance, shift_type, worker='long')
 
 def mark_auto_attendance(shift_type):
