@@ -2,6 +2,22 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Medical Insurance', {
+    refresh(frm){
+        if(frm.doc.docstatus === 1 && frm.doc.insurance_status == "Local Transfer"){
+            		frm.add_custom_button(__('Go to MOI Residency Jawazat'),
+            			  function () {
+            			frappe.db.get_value('MOI Residency Jawazat', {'category':'Transfer','one_fm_civil_id':frm.doc.civil_id}, 'name', (r) => {
+            			if (r && r.name) {
+            				frappe.set_route("Form", "MOI Residency Jawazat", r.name);
+            			}
+            		});
+            	}
+            ).addClass('btn-primary');
+        }
+    },
+    onload: function(frm){
+        set_employee_details(frm);
+    },
     work_permit: function(frm){
         set_employee_details(frm);
         set_insurance_type(frm);
@@ -103,6 +119,7 @@ var set_employee_details = function(frm){
                 frm.set_value('nationality',r.message.nationality);
                 frm.set_value('no_of_years', r.message.duration_of_work_permit);
                 frm.set_value('passport_expiry_date',r.message.passport_expiry_date);
+                frm.set_value('pam_file_number',r.message.pam_file_number);
             }
         });
     }

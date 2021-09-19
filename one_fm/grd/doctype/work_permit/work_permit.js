@@ -2,6 +2,9 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Work Permit', {
+    onload: function(frm){
+        set_employee_details(frm); 
+    },
     work_permit_status: function(frm){
         if (frm.doc.work_permit_status == "Rejected"){
             frm.set_value("work_permit_status","read_only",1);
@@ -34,6 +37,7 @@ frappe.ui.form.on('Work Permit', {
         set_required_documents(frm);
     },
     refresh(frm) {
+        set_button_for_medical_insurance_transfer(frm);
         set_restart_application(frm);
         set_grd_supervisor(frm);
         set_mgrp(frm);
@@ -83,7 +87,19 @@ frappe.ui.form.on('Work Permit', {
 
     
 });
-
+var set_button_for_medical_insurance_transfer = function(frm){
+    if(frm.doc.docstatus === 1 && frm.doc.work_permit_type == "Local Transfer" && frm.doc.workflow_state == "Completed"){
+        frm.add_custom_button(__('Go to Medical Insurance'),
+          	function () {
+            frappe.db.get_value('Medical Insurance', {'work_permit':frm.doc.name}, 'name', (r) => {
+			if (r && r.name) {
+				frappe.set_route("Form", "Medical Insurance", r.name);
+			}
+		});
+    }
+).addClass('btn-primary');
+}
+};
 var set_restart_application = function(frm){
     if(frm.doc.docstatus == 1 && frm.doc.work_permit_status == "Rejected"){
         frm.add_custom_button(__('Restart Application'), function(){

@@ -42,7 +42,7 @@ def get_all_shifts():
 @frappe.whitelist()
 def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_location, penalty_occurence_time,company_damage, customer_property_damage, asset_damage, other_damages, shift=None, site=None, project=None, site_location=None, penalty_employees=[], penalty_details=[]):
 	try:
-		employee, employee_name, designation = frappe.get_value("Employee", {"user_id": "s.shaikh@armor-services.com"}, ["name","employee_name", "designation"])
+		employee, employee_name, designation = frappe.get_value("Employee", {"user_id": frappe.session.user}, ["name","employee_name", "designation"])
 		
 		penalty_issuance = frappe.new_doc("Penalty Issuance")
 		penalty_issuance.penalty_category = penalty_category
@@ -67,18 +67,19 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 
 		penalty_issuance_details = json.loads(penalty_details)
 		for detail in penalty_issuance_details:
-			filename = detail["attachment_name"]
-			attach = detail["attachments"]
-			content = base64.b64decode(attach)
+			if detail["attachments"] and detail["attachment_name"]:
+				filename = detail["attachment_name"]
+				attach = detail["attachments"]
+				content = base64.b64decode(attach)
 
-			OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/public/files/Legal/"+filename
-			fh = open(OUTPUT_IMAGE_PATH, "wb")
-			fh.write(content)
-			fh.close()
-			Attachment_file="/files/Legal/"+filename
+				OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/public/files/Legal/"+filename
+				fh = open(OUTPUT_IMAGE_PATH, "wb")
+				fh.write(content)
+				fh.close()
+				Attachment_file="/files/Legal/"+filename
+				detail.update({'attachments': Attachment_file})
 
 			detail.pop("attachment_name")
-			detail.update({'attachments': Attachment_file})
 			penalty_issuance.append('penalty_issuance_details', detail)
 
 		if penalty_category == "Performace":
@@ -127,7 +128,7 @@ def get_penalty():
 
 @frappe.whitelist()
 def get_penalty_details(penalty_name):
-	return frappe.get_list("Penalty", {"name": penalty_name}, ["*"])
+	return frappe.get_doc("Penalty", {"name": penalty_name})
 
 @frappe.whitelist()
 def accept_penalty(file, retries, docname):

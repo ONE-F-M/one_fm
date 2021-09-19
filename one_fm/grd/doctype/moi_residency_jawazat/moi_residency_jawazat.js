@@ -1,7 +1,22 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 frappe.ui.form.on('MOI Residency Jawazat', {
+	refresh(frm){
+			if(frm.doc.docstatus === 1 && frm.doc.category == "Transfer"){
+				frm.add_custom_button(__('Go to PACI'),
+					  function () {
+					frappe.db.get_value('PACI', {'category':frm.doc.category,'civil_id':frm.doc.one_fm_civil_id}, 'name', (r) => {
+					if (r && r.name) {
+						frappe.set_route("Form", "PACI", r.name);
+					}
+				});
+			}
+		).addClass('btn-primary');
+		}
+
+	},
 	onload: function(frm) {
+		set_employee_details(frm);
 		if(frm.doc.__islocal){
 			frappe.call({
 				method:"frappe.client.get_value",
@@ -14,7 +29,6 @@ frappe.ui.form.on('MOI Residency Jawazat', {
 				}, 
 				callback: function(r) { 
 			
-					// set the returned value in a field
 					frm.set_value('company_pam_file_number', r.message.pam_file_number);
 					frm.set_value('company_centralized_number', r.message.company_unified_number);
 					frm.set_value('governorate', r.message.pam_file_governorate_arabic);

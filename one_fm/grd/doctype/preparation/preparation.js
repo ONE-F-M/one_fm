@@ -13,18 +13,26 @@ frappe.ui.form.on('Preparation',{
 });
 
 frappe.ui.form.on('Preparation Record',{
+//set total amunt per employee on the selection of the process
 renewal_or_extend: function(frm, cdt, cdn){
-	var row = locals[cdt][cdn];
-	if(row.renewal_or_extend == "Renewal"){
-		frappe.model.set_value(cdt, cdn, "ref_doctype", 'Work Permit');
-		frappe.model.set_value(cdt, cdn, "ref_name", work_permit.name);
-		console.log(frm.set_renewal_for_all)
+	if(!frm.doc.renewal_or_extend){
+		var row = locals[cdt][cdn];
+		if(row.work_permit_amount && row.medical_insurance_amount && row.residency_stamp_amount && row.civil_id_amount){
+			let total = row.work_permit_amount+row.medical_insurance_amount+row.residency_stamp_amount+row.civil_id_amount;
+			row.total_amount = total;
+			frm.save();
+		}
+	}
+	// if(row.renewal_or_extend == "Renewal"){
+	// 	frappe.model.set_value(cdt, cdn, "ref_doctype", 'Work Permit');
+	// 	frappe.model.set_value(cdt, cdn, "ref_name", work_permit.name);
+	// 	console.log(frm.set_renewal_for_all)
 
-	}
-	else{
-		frappe.model.set_value(cdt, cdn, "ref_doctype", 'MOI Residency Jawazat');
-		frappe.model.set_value(cdt, cdn, "ref_name", moi_residency_jawazat.name);
-	}
+	// }
+	// else{
+	// 	frappe.model.set_value(cdt, cdn, "ref_doctype", 'MOI Residency Jawazat');
+	// 	frappe.model.set_value(cdt, cdn, "ref_name", moi_residency_jawazat.name);
+	// }
 },
 
 
@@ -43,8 +51,15 @@ frappe.ui.form.on("Preparation", {
 			})
 			
 		}
-
+	},//set total payment for the whole list on HR approval
+	"hr_approval": function(frm){
+		if(frm.doc.hr_approval == "Yes"){
+		let total = 0;
+		$.each(frm.doc.preparation_record || [], function(i, v) {
+				total+= v.total_amount;
+			})
+				frm.set_value('total_payment',total);
+		}
 	}
-
-    
+  
 });

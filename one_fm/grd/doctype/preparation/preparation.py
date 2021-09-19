@@ -24,6 +24,7 @@ from one_fm.grd.doctype.medical_insurance import medical_insurance
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
 from one_fm.grd.doctype.moi_residency_jawazat import moi_residency_jawazat
 from one_fm.grd.doctype.paci import paci
+from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 class Preparation(Document):
     def validate(self):
         self.set_grd_values()
@@ -41,12 +42,14 @@ class Preparation(Document):
 
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
+        
         self.db_set('submitted_by', frappe.session.user)
         self.db_set('submitted_on', now_datetime())
         self.recall_create_work_permit_renewal() ## create work permit record for renewals
         self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
         self.recall_create_moi_renewal_and_extend() # create moi record for all employee
         self.recall_create_paci() # create paci record for all
+        self.recall_create_fp()# create fp record for all
         self.send_notifications()
         
     def validate_mandatory_fields_on_submit(self):
@@ -78,18 +81,17 @@ class Preparation(Document):
     
     def recall_create_paci(self):
         paci.create_PACI_renewal(self.name)
+
+    def recall_create_fp(self):
+        fingerprint_appointment.creat_fp_record(self.name)
   
     def send_notifications(self):
         if self.grd_operator:
             page_link = get_url("/desk#Form/Preparation/" + self.name)
-            message = "<p>Renewal Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
-            subject = 'Renewal Records are created for WP, MI, MOI, PACI'
+            message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
+            subject = 'Records are created for WP, MI, MOI, PACI, and FP'
             send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
-
-def preparation_monthly_task():
-    frappe.enqueue(create_preparation, is_async=True, queue='long')
-    
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def create_preparation():
@@ -104,19 +106,24 @@ def create_preparation():
 #Create list of employee Residency Expiry Date next month
 def get_employee_entries(doc,first_day,last_day):
     employee_entries = frappe.db.get_list('Employee',
+                            fields=("residency_expiry_date","name"),
                             filters={
                                 'residency_expiry_date': ['between',(first_day,last_day)],
                                 'status': 'Active',
                                 'under_company_residency':['=',1]
-                            },
+                            }
                             )
-
+    employee_entries.sort(key=sort)
     for employee in employee_entries:
         doc.append("preparation_record", {
             "employee": employee.name
         })
     doc.save()
     notify_hr(doc)
+
+#sort list based on residency expriy date
+def sort(r):
+    return r['residency_expiry_date']
 
 def notify_hr(doc):
     page_link = get_url("/desk#Form/Preparation/" + doc.name)

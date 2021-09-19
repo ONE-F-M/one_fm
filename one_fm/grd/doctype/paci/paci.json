@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "naming_series:",
  "creation": "2021-04-21 11:04:12.147303",
  "doctype": "DocType",
@@ -32,6 +33,7 @@
   "residency_expiry_date",
   "section_break_19",
   "upload_civil_id_payment",
+  "upload_hawiyati",
   "upload_civil_id",
   "new_civil_id_expiry_date",
   "column_break_25",
@@ -40,7 +42,8 @@
   "completed_on",
   "amended_from",
   "grd_operator",
-  "grd_supervisor"
+  "grd_supervisor",
+  "grd_operator_transfer"
  ],
  "fields": [
   {
@@ -276,10 +279,22 @@
    "fieldtype": "Select",
    "label": "PACI Status",
    "options": "\nDraft\nUnder-Process\nCompleted"
+  },
+  {
+   "fieldname": "upload_hawiyati",
+   "fieldtype": "Attach",
+   "label": "Upload Hawiyati"
+  },
+  {
+   "fieldname": "grd_operator_transfer",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "GRD Operator Transfer"
   }
  ],
  "is_submittable": 1,
- "modified": "2021-06-30 14:42:15.624154",
+ "links": [],
+ "modified": "2021-09-14 23:56:55.996236",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
