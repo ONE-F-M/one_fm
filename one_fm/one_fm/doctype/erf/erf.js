@@ -242,21 +242,6 @@ frappe.ui.form.on('ERF', {
 	project: function(frm) {
 		set_project_details_to_erf(frm);
 	},
-	save_me: function(frm) {
-		frm.save();
-	},
-	save_me1: function(frm) {
-		frm.save();
-	},
-	save_me2: function(frm) {
-		frm.save();
-	},
-	save_me3: function(frm) {
-		frm.save();
-	},
-	save_me4: function(frm) {
-		frm.save();
-	},
 	provide_salary_advance: function(frm) {
 		manage_provide_salary_advance(frm);
 	}
@@ -753,7 +738,7 @@ frappe.ui.form.on('ERF Gender Height Requirement', {
 	maximum_age: function(frm, cdt, cdn) {
 		validate_age_range(frm, cdt, cdn);
 	}
-	
+
 });
 
 var validate_age_range = function(frm, cdt, cdn) {

@@ -28,7 +28,6 @@
   "vacation_days",
   "governorate",
   "location_of_work",
-  "save_me",
   "column_break_14",
   "travel_required_html",
   "travel_required",
@@ -42,13 +41,11 @@
   "candidates_required_section",
   "is_height_mandatory",
   "gender_height_requirement",
-  "save_me1",
   "education_and_other_requirements_section",
   "education_qualification",
   "specialization",
   "certification",
   "minimum_experience_required",
-  "save_me2",
   "column_break_30",
   "driving_license_required_html",
   "driving_license_required",
@@ -59,14 +56,12 @@
   "designation_skill",
   "open_to_different_html",
   "open_to_different",
-  "save_me3",
   "tools_section",
   "tool_request_item",
   "is_id_card_needed_for_employee_html",
   "is_id_card_needed_for_employee",
   "is_uniform_needed_for_this_job_html",
   "is_uniform_needed_for_this_job",
-  "save_me4",
   "performance_profile_section",
   "performance_profile_html",
   "help_hr_to_create_okr",
@@ -635,31 +630,6 @@
    "options": "Yes\nNo"
   },
   {
-   "fieldname": "save_me",
-   "fieldtype": "Button",
-   "label": "Save"
-  },
-  {
-   "fieldname": "save_me1",
-   "fieldtype": "Button",
-   "label": "Save"
-  },
-  {
-   "fieldname": "save_me2",
-   "fieldtype": "Button",
-   "label": "Save"
-  },
-  {
-   "fieldname": "save_me3",
-   "fieldtype": "Button",
-   "label": "Save"
-  },
-  {
-   "fieldname": "save_me4",
-   "fieldtype": "Button",
-   "label": "Save"
-  },
-  {
    "fieldname": "erf_requested_by_name",
    "fieldtype": "Data",
    "label": "Full Name",
@@ -855,7 +825,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-01 17:57:07.162902",
+ "modified": "2021-09-19 10:01:15.849559",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
