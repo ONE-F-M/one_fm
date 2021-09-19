@@ -1,4 +1,14 @@
 frappe.ui.form.on('Job Applicant', {
+	onload: function(frm){
+		//getting only accepted erf in the job applicant.
+		frm.set_query("one_fm_erf", function() {
+			return {
+				"filters": {
+					"status": "Accepted",
+				}
+			};
+		});
+	},
 	refresh(frm) {
 		if(frm.doc.pam_number_button == 0 || frm.is_new()){
 			document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#3789ff";
@@ -390,7 +400,7 @@ frappe.ui.form.on('Job Applicant', {
 		}
 	},
 	one_fm_has_issue: function(frm){
-		if(frm.doc.one_fm_has_issue == 'No' && frappe.user.has_role("GRD Operator")){
+		if(frm.doc.one_fm_has_issue && frappe.user.has_role("GRD Operator")){
 		//check the Authorized signatory based on file number
 			if((frm.doc.pam_number_button == 1) && (frm.doc.one_fm_pam_file_number)){
 				//if PAM file Number has changes in job applicant, set the signatory names of the new file
