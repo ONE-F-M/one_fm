@@ -144,8 +144,7 @@ body[data-route="roster"] .pagination > .active > a:hover,
 body[data-route="roster"] .pagination > .active > span:hover,
 body[data-route="roster"] .pagination > .active > a:focus,
 body[data-route="roster"] .pagination > .active > span:focus {
-  background: #2c77ff !important;
-  border-color: #2c77ff;
+  color: #2c77ff !important;
 }
 
 body[data-route="roster"] .bggreen {
