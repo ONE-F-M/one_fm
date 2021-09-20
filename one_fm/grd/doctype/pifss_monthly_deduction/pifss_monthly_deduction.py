@@ -116,13 +116,16 @@ class PIFSSMonthlyDeduction(Document):
 		self.create_legal_investigation()
 		missing_list = []
 		for row in self.deductions:
-			if frappe.db.exists("Employee", {"pifss_id_no": row.pifss_id_no}):
-				employee = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no,"relieving_date":['=','']})# create payrol ipon employee status (active,left)
-				employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))
-				amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
-				create_additional_salary(employee, amount)
-			else:
-				missing_list.append(row.pifss_id_no)
+			if frappe.db.exists("Employee", {"pifss_id_no": row.pifss_id_no}):#,"relieving_date":['=','']}
+				employee = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no})# create payrol upon employee status (active,left)
+				employee_record = frappe.get_doc('Employee',employee)
+				if not employee_record.relieving_date:
+					employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))
+					amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
+					create_additional_salary(employee, amount)
+				if employee_record.relieving_date:
+					continue
+				# missing_list.append(row.pifss_id_no)
 		
 		self.notify_payroll(missing_list)
 
@@ -165,6 +168,8 @@ def create_payment_request(total_payment_required, name, report):
 	payment_request.payment_request_type = "Outward"
 	payment_request.reference_doctype = "PIFSS Monthly Deduction"
 	payment_request.reference_name = name
+	payment_request.party_type = "Customer"
+	payment_request.party = "Public Institution for Social Security"
 	payment_request.grand_total = total_payment_required
 	payment_request.email_to = "finance@one-fm.com"
 	payment_request.message = message
