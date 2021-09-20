@@ -14,9 +14,9 @@ frappe.ui.form.on('Shift Permission', {
 });
 
 function get_shift_assignment(frm){
-	let {employee, emp_name, date, permission_type} = frm.doc;
+	let {employee, emp_name, start_date, permission_type} = frm.doc;
 	if(employee != undefined && date != undefined && permission_type != ''){
-		frappe.db.get_value("Shift Assignment", {date, employee}, "*")
+		frappe.db.get_value("Shift Assignment", {start_date, employee}, "*")
 		.then(res => {
 			if(Object.keys(res).length === 0 && res.constructor === Object){
 				frappe.msgprint(__(`No shift assigned to ${emp_name} on ${moment(date).format("DD-MM-YYYY")}. Please check again.`));				
