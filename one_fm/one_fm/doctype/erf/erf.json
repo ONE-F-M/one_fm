@@ -8,6 +8,7 @@
  "field_order": [
   "naming_series",
   "reason_for_request",
+  "for_remote_working",
   "number_of_candidates_required",
   "project",
   "department",
@@ -28,7 +29,6 @@
   "vacation_days",
   "governorate",
   "location_of_work",
-  "save_me",
   "column_break_14",
   "travel_required_html",
   "travel_required",
@@ -42,13 +42,11 @@
   "candidates_required_section",
   "is_height_mandatory",
   "gender_height_requirement",
-  "save_me1",
   "education_and_other_requirements_section",
   "education_qualification",
   "specialization",
   "certification",
   "minimum_experience_required",
-  "save_me2",
   "column_break_30",
   "driving_license_required_html",
   "driving_license_required",
@@ -59,14 +57,12 @@
   "designation_skill",
   "open_to_different_html",
   "open_to_different",
-  "save_me3",
   "tools_section",
   "tool_request_item",
   "is_id_card_needed_for_employee_html",
   "is_id_card_needed_for_employee",
   "is_uniform_needed_for_this_job_html",
   "is_uniform_needed_for_this_job",
-  "save_me4",
   "performance_profile_section",
   "performance_profile_html",
   "help_hr_to_create_okr",
@@ -379,6 +375,7 @@
   },
   {
    "collapsible": 1,
+   "depends_on": "eval:!doc.for_remote_working",
    "fieldname": "tools_section",
    "fieldtype": "Section Break",
    "label": "Tools Required for Employee to Work"
@@ -487,6 +484,7 @@
   {
    "allow_on_submit": 1,
    "collapsible": 1,
+   "depends_on": "eval:!doc.for_remote_working",
    "fieldname": "grd_section",
    "fieldtype": "Section Break",
    "label": "GRD",
@@ -604,9 +602,9 @@
   },
   {
    "fieldname": "governorate",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Governorate",
-   "options": "\nHawalli\nFarwaniya\nMubarak Al-Kabeer\nAhmadi\nJahra"
+   "options": "Governorate"
   },
   {
    "fieldname": "location_of_work",
@@ -633,31 +631,6 @@
    "hidden": 1,
    "label": "Would you be open to see applicants with a track record of doing these types of work even if the person had a different mix of skills, exp ?",
    "options": "Yes\nNo"
-  },
-  {
-   "fieldname": "save_me",
-   "fieldtype": "Button",
-   "label": "Save"
-  },
-  {
-   "fieldname": "save_me1",
-   "fieldtype": "Button",
-   "label": "Save"
-  },
-  {
-   "fieldname": "save_me2",
-   "fieldtype": "Button",
-   "label": "Save"
-  },
-  {
-   "fieldname": "save_me3",
-   "fieldtype": "Button",
-   "label": "Save"
-  },
-  {
-   "fieldname": "save_me4",
-   "fieldtype": "Button",
-   "label": "Save"
   },
   {
    "fieldname": "erf_requested_by_name",
@@ -851,11 +824,16 @@
    "fieldtype": "Data",
    "label": "PAM File Number",
    "read_only": 1
+  },
+  {
+   "fieldname": "for_remote_working",
+   "fieldtype": "Check",
+   "label": "For Remote Working"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-01 17:57:07.162902",
+ "modified": "2021-09-20 23:40:15.128860",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

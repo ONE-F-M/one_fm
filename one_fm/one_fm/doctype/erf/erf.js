@@ -140,7 +140,6 @@ frappe.ui.form.on('ERF', {
 					method: 'draft_erf_to_hrm_for_submit',
 					callback(r) {
 						if (!r.exc) {
-							frm.events.draft_erf_to_hrm(frm)
 							frm.reload_doc();
 						}
 					},
@@ -193,6 +192,7 @@ frappe.ui.form.on('ERF', {
 		manage_type_of_travel(frm);
 	},
 	driving_license_required: function(frm) {
+		set_driving_license_required_btn(frm);
 		manage_type_of_license(frm);
 	},
 	grade: function(frm) {
@@ -232,7 +232,9 @@ frappe.ui.form.on('ERF', {
 	},
 	okr_workshop_submit_to_hr: function(frm) {
 		create_event_for_okr_workshop(frm);
-		frm.events.draft_erf_to_hrm(frm)
+		if(!frm.doc.draft_erf_to_hrm){
+			frm.events.draft_erf_to_hrm(frm);
+		}
 	},
 	recruiter_assigned: function(frm) {
 		if(frm.doc.recruiter_assigned && !frm.doc.project_for_recruiter){
@@ -241,21 +243,6 @@ frappe.ui.form.on('ERF', {
 	},
 	project: function(frm) {
 		set_project_details_to_erf(frm);
-	},
-	save_me: function(frm) {
-		frm.save();
-	},
-	save_me1: function(frm) {
-		frm.save();
-	},
-	save_me2: function(frm) {
-		frm.save();
-	},
-	save_me3: function(frm) {
-		frm.save();
-	},
-	save_me4: function(frm) {
-		frm.save();
 	},
 	provide_salary_advance: function(frm) {
 		manage_provide_salary_advance(frm);
@@ -753,7 +740,7 @@ frappe.ui.form.on('ERF Gender Height Requirement', {
 	maximum_age: function(frm, cdt, cdn) {
 		validate_age_range(frm, cdt, cdn);
 	}
-	
+
 });
 
 var validate_age_range = function(frm, cdt, cdn) {
