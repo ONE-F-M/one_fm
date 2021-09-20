@@ -1123,7 +1123,10 @@ function render_roster(res, page, isOt) {
 			};
 			let attendancemap = {
 				'P': 'greenboxcolor',
-				'A': 'redboxcolor'
+				'A': 'redboxcolor',
+				'WFH': 'greenboxcolor',
+				'HD': 'greenboxcolor',
+				'OL': 'redboxcolor'
 			};
 			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance, asa } = employees_data[employee_key][i];
 			//OT schedule view
