@@ -93,7 +93,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 
 	if post_type:
 		filters.update({'post_type': post_type})	
-	fields = ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"]
 
 	if search_key:
 		employee_filters.update({'employee_name': ("like", "%" + search_key + "%")})
@@ -110,6 +109,9 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 	if department:
 		employee_filters.update({'department': department})	
 
+
+	#--------------------- Fetch Employee list ----------------------------#
+	print(employee_filters)
 	if isOt:
 		employee_filters.update({'employee_availability' : 'Working'})
 		employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
@@ -132,17 +134,22 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 	if post_type:
 		employee_filters.update({'post_type': post_type})
 
+	#------------------- Fetch post types ------------------------#
+	print(employee_filters)
 	post_types_list = frappe.db.get_list("Post Schedule", employee_filters, ["distinct post_type", "post_abbrv"], ignore_permissions=True)
 	if post_type:
 		employee_filters.pop('post_type', None)
 	employee_filters.pop('date')
 	employee_filters.pop('post_status')
 
+
+	#------------------- Fetch Employee Schedule --------------------#
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
 		filters.update({'date': ['between', (cstr(getdate()), end_date)], 'employee': key[0]})
+		print(filters)
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
-		schedules = frappe.db.get_list("Employee Schedule",filters, fields, order_by="date asc, employee_name asc", ignore_permissions=True)
+		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"], order_by="date asc, employee_name asc", ignore_permissions=True)
 		
 		if isOt:
 			filters.pop("roster_type", None)
@@ -150,14 +157,19 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 		schedule = {}
 		for date in	pd.date_range(start=start_date, end=end_date):
 			if date < getdate() and frappe.db.exists("Employee Schedule", {'date': cstr(date).split(" ")[0], 'employee': key[0], 'employee_availability': 'Working'}):
-				attendance = 'A'
+				attendance_abbr = 'A'
 				if frappe.db.exists("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}):
 					attendance = frappe.db.get_value("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}, ["status"])
+					attendance_split = attendance.split(" ")
+					if len(attendance_split) >= 1:
+						attendance_abbr = ''
+						for _as in attendance_split:
+							attendance_abbr += _as[0]			
 				schedule = {
 					'employee': key[0],
 					'employee_name': key[1],
 					'date': cstr(date).split(" ")[0],
-					'attendance': attendance[0]
+					'attendance': attendance_abbr 
 				}
 			elif not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
 				schedule = {
@@ -175,12 +187,15 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 
 	master_data.update({'employees_data': formatted_employee_data})
 
+
+	#----------------- Get post type count and check fill status -------------------#
 	for key, group in itertools.groupby(post_types_list, key=lambda x: (x['post_abbrv'], x['post_type'])):
 		post_list = []
 		post_filters = employee_filters
 		post_filters.update({'date':  ['between', (start_date, end_date)], 'post_type': key[1]})
 		post_filled_count = frappe.db.get_list("Employee Schedule",["name", "employee", "date"] ,{'date':  ['between', (start_date, end_date)],'post_type': key[1] }, order_by="date asc", ignore_permissions=True)
 		post_filters.update({"post_status": "Planned"})
+		print(post_filters)
 		post_schedule_count = frappe.db.get_list("Post Schedule", ["name", "date"], post_filters, ignore_permissions=True)
 		post_filters.pop("post_status", None)
 
@@ -199,7 +214,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 
 	master_data.update({'post_types_data': post_count_data})
 		
-
 	end = time.time()
 	print("[[[[[[]]]]]]]", end-start)
 	return master_data
