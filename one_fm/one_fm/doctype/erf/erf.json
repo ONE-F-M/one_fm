@@ -599,9 +599,9 @@
   },
   {
    "fieldname": "governorate",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Governorate",
-   "options": "\nHawalli\nFarwaniya\nMubarak Al-Kabeer\nAhmadi\nJahra"
+   "options": "Governorate"
   },
   {
    "fieldname": "location_of_work",
@@ -825,7 +825,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-19 10:01:15.849559",
+ "modified": "2021-09-19 10:19:31.491931",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
