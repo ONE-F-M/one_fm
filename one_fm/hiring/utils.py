@@ -170,7 +170,32 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
 def employee_after_insert(doc, method):
     create_salary_structure_assignment(doc, method)
     update_erf_close_with(doc)
+    create_wp_for_transferable_employee(doc)
 
+def create_wp_for_transferable_employee(doc):
+    """
+    This method create work permit record for transferable employee after employee got created in the onboarding process in transfer paper. then, notify operator
+    """
+    tp_list = frappe.db.get_list('Transfer Paper',{'workflow_state':'Under Process','civil_id':doc.one_fm_civil_id},['name','civil_id'])
+    if tp_list and len(tp_list)>0:
+        for tp in tp_list:
+            if not frappe.db.exists("Work Permit", {"transfer_paper":tp.name}):#employee is created work permit not yet created
+                employee = frappe.db.get_value("Employee", {"one_fm_civil_id":tp.civil_id})
+                if employee:
+                    from one_fm.grd.doctype.work_permit import work_permit
+                    work_permit.create_work_permit_transfer(tp.name,employee)#create wp for local transfer
+                    notify_grd_operator_for_transfer_wp_record(tp)
+        
+def notify_grd_operator_for_transfer_wp_record(tp):
+    operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+    wp = frappe.db.get_value("Work Permit",{'transfer_paper':tp.name,'work_permit_status':'Draft'})
+    if wp:
+        wp_record = frappe.get_doc('Work Permit', wp)
+        page_link = get_url("/desk#Form/Work Permit/" + wp_record.name)
+        subject = ("Apply for Transfer Work Permit Online")
+        message = "<p>Please Apply for Transfer Work Permit Online for employee civil ID: <a href='{0}'>{1}</a>.</p>".format(page_link, wp_record.civil_id)
+        create_notification_log(subject, message, [operator], wp_record)
+    
 def update_erf_close_with(doc):
     if doc.one_fm_erf:
         erf = frappe.get_doc('ERF', doc.one_fm_erf)

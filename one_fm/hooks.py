@@ -363,6 +363,7 @@ scheduler_events = {
 			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp',
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
+			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed'
 
 
 		],

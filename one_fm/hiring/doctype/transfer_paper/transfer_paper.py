@@ -15,7 +15,7 @@ from one_fm.api.notification import create_notification_log
 class TransferPaper(Document):
     def validate(self):
         self.set_today_date()
-        # self.set_new_salary_from_job_offer()# commit it for now (until I get request to activate it) 
+        # self.set_new_salary_from_job_offer()# comment it for now (until I get request to activate it) 
         self.set_pam_designation()
         self.set_pam_file_number()
         self.set_electronic_signature()
@@ -149,23 +149,24 @@ class TransferPaper(Document):
             self.db_set('license_number', company_data.license_number)#licence to issuer_number
             self.db_set('pam_file_number', company_data.pam_file_number)
 
+    
     def check_signed_workContract_employee_completed(self):
         """"
         This method create wp record after tp is submitted and notify operator 
         """
         if self.signed == "Yes" and self.tp_status == "Pending By GRD":
             if frappe.db.exists("Employee", {"one_fm_civil_id":self.civil_id}):#employee is created 
-                employee = frappe.db.get_value("Employee", {"one_fm_civil_id":self.civil_id})
-                if employee:
-                    self.recall_create_transfer_work_permit(employee)#create wp for local transfer
-                    self.notify_grd_transfer_wp_record()
+                if not frappe.db.exists("Work Permit", {"transfer_paper":self.name}):#work permit not yet created
+                    employee = frappe.db.get_value("Employee", {"one_fm_civil_id":self.civil_id})
+                    if employee:
+                        self.recall_create_transfer_work_permit(employee)#create wp for local transfer
+                        self.notify_grd_transfer_wp_record()
 
     def recall_create_transfer_work_permit(self,employee):
-        name = work_permit.create_work_permit_transfer(self.name,employee)
+        work_permit.create_work_permit_transfer(self.name,employee)
         
 
     def notify_grd_transfer_wp_record(self):
-        # Getting the wp record the one not rejected and linked to the TP
         wp = frappe.db.get_value("Work Permit",{'transfer_paper':self.name,'work_permit_status':'Draft'})
         if wp:
             wp_record = frappe.get_doc('Work Permit', wp)
