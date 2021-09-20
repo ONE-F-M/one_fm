@@ -170,7 +170,32 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
 def employee_after_insert(doc, method):
     create_salary_structure_assignment(doc, method)
     update_erf_close_with(doc)
+    create_wp_for_transferable_employee(doc)
 
+def create_wp_for_transferable_employee(doc):
+    """
+    This method create work permit record for transferable employee after employee got created in the onboarding process in transfer paper. then, notify operator
+    """
+    tp_list = frappe.db.get_list('Transfer Paper',{'workflow_state':'Under Process','civil_id':doc.one_fm_civil_id},['name','civil_id'])
+    if tp_list and len(tp_list)>0:
+        for tp in tp_list:
+            if not frappe.db.exists("Work Permit", {"transfer_paper":tp.name}):#employee is created work permit not yet created
+                employee = frappe.db.get_value("Employee", {"one_fm_civil_id":tp.civil_id})
+                if employee:
+                    from one_fm.grd.doctype.work_permit import work_permit
+                    work_permit.create_work_permit_transfer(tp.name,employee)#create wp for local transfer
+                    notify_grd_operator_for_transfer_wp_record(tp)
+        
+def notify_grd_operator_for_transfer_wp_record(tp):
+    operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+    wp = frappe.db.get_value("Work Permit",{'transfer_paper':tp.name,'work_permit_status':'Draft'})
+    if wp:
+        wp_record = frappe.get_doc('Work Permit', wp)
+        page_link = get_url("/desk#Form/Work Permit/" + wp_record.name)
+        subject = ("Apply for Transfer Work Permit Online")
+        message = "<p>Please Apply for Transfer Work Permit Online for employee civil ID: <a href='{0}'>{1}</a>.</p>".format(page_link, wp_record.civil_id)
+        create_notification_log(subject, message, [operator], wp_record)
+    
 def update_erf_close_with(doc):
     if doc.one_fm_erf:
         erf = frappe.get_doc('ERF', doc.one_fm_erf)
@@ -261,27 +286,28 @@ def get_onboarding_details(parent, parenttype):
 @frappe.whitelist()
 def make_transfer_paper_from_job_offer(source_name, target_doc=None):
     offer_record = frappe.get_doc('Job Offer',source_name)
+    applicant = frappe.get_doc('Job Applicant',offer_record.job_applicant)
     if not frappe.db.exists("Transfer Paper", {'applicant': offer_record.job_applicant}):
-        print(offer_record.job_applicant)
-        doc = get_mapped_doc("Job Applicant", offer_record.job_applicant, {
-            "Job Applicant": {
-                "doctype": "Transfer Paper",
-                "field_map": {
-                    "one_fm_previous_company_trade_name_in_arabic": "previous_company_trade_name_arabic",
-                    "one_fm__previous_company_authorized_signatory_name_arabic":"previous_company_authorized_signatory_name_arabic",
-                    "one_fm_previous_company_contract_file_number":"previous_company_contract_file_number",
-                    "one_fm_previous_company_issuer_number":"previous_company_issuer_number",
-                    "one_fm_previous_company_pam_file_number":"previous_company_pam_file_number",
-                    "one_fm_work_permit_salary":"previous_company_work_permit_salary",
-                    "one_fm_work_permit_number":"work_permit_number",
-                    "one_fm_last_working_date":"end_work_date",
-                    "one_fm_duration_of_work_permit":"previous_company_duration_of_work_permit",
-                    "name":"applicant"
+        if applicant.one_fm_notify_recruiter:
+            doc = get_mapped_doc("Job Applicant", offer_record.job_applicant, {
+                "Job Applicant": {
+                    "doctype": "Transfer Paper",
+                    "field_map": {
+                        "one_fm_previous_company_trade_name_in_arabic": "previous_company_trade_name_arabic",
+                        "one_fm__previous_company_authorized_signatory_name_arabic":"previous_company_authorized_signatory_name_arabic",
+                        "one_fm_previous_company_contract_file_number":"previous_company_contract_file_number",
+                        "one_fm_previous_company_issuer_number":"previous_company_issuer_number",
+                        "one_fm_previous_company_pam_file_number":"previous_company_pam_file_number",
+                        "one_fm_work_permit_salary":"previous_company_work_permit_salary",
+                        "one_fm_work_permit_number":"work_permit_number",
+                        "one_fm_last_working_date":"end_work_date",
+                        "one_fm_duration_of_work_permit":"previous_company_duration_of_work_permit",
+                        "name":"applicant"
+                    }
                 }
-            }
-        }, target_doc)
-    else:
-        doc = frappe.msgprint(_("Transfer Paper is already exists for {0} Applicant").format(offer_record.applicant_name))
+            }, target_doc)
+        elif not applicant.one_fm_notify_recruiter:
+            doc = frappe.msgprint(_("Please Wait for GRD Response Regarding Transfer Checking"))
     return doc
 
 def update_onboarding_doc(doc, is_trash=False, cancel_oe=False):
@@ -453,6 +479,5 @@ def create_new_work_permit(work_permit):
     if doc.work_permit_type == "Renewal Non Kuwaiti" or doc.work_permit_type == "Renewal Kuwaiti":
         wp.preparation = doc.preparation
     wp.save(ignore_permissions=True)
-    from one_fm.grd.doctype.work_permit import work_permit
-    work_permit.update_work_permit_details_in_tp(wp)
     return wp
+

@@ -57,15 +57,37 @@ class PACI(Document):
             frappe.throw(message)
 
     def set_New_civil_id_Expiry_date_in_employee_doctype(self):
+        """This method to sort records of employee documents upon document name;
+           First, get the employee document child table. second, find index of the document. Third, set the new document.
+           After that, clear the child table and append the new order"""
+
         today = date.today()
+        Find = False
         employee = frappe.get_doc('Employee', self.employee)
-        employee.civil_id_expiry_date = self.new_civil_id_expiry_date # update the date of expiry
-        employee.append("one_fm_employee_documents", {
-        "attach": self.upload_civil_id,
-        "document_name": "Civil ID",
-        "issued_on":today,
-        "valid_till":self.new_civil_id_expiry_date
-        })
+        document_dic = frappe.get_list('Employee Document',fields={'attach','document_name','issued_on','valid_till'},filters={'parent':self.employee})
+        for index,document in enumerate(document_dic):
+            if document.document_name == "Civil ID":
+                Find = True
+                break
+        if Find:
+            document_dic.insert(index,{
+                "attach": self.upload_civil_id,
+                "document_name": "Civil ID",
+                "issued_on":today,
+                "valid_till": self.new_civil_id_expiry_date
+            })
+            employee.set('one_fm_employee_documents',[]) #clear the child table
+            for document in document_dic:                # append new arrangements
+                employee.append('one_fm_employee_documents',document)
+
+        if not Find:
+            employee.append("one_fm_employee_documents", {
+            "attach": self.upload_civil_id,
+            "document_name": "Civil ID",
+            "issued_on":today,
+            "valid_till":self.new_civil_id_expiry_date
+            })
+        employee.work_permit_expiry_date = self.new_residency_expiry_date
         employee.save()
     
     def notify_to_upload_hawiyati(self):

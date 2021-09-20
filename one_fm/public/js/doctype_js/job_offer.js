@@ -5,19 +5,33 @@ frappe.ui.form.on('Job Offer', {
     }
     check_and_info_offer_terms(frm, false);
     frm.remove_custom_button("Create Employee");
-    if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')
-			&& (frm.doc.docstatus === 1) && (!frm.doc.__onload || !frm.doc.__onload.employee)) {
-      frm.add_custom_button(__('Create New Transfer Paper'),
-				function () {
-          frappe.model.open_mapped_doc({
-            method: "one_fm.hiring.utils.make_transfer_paper_from_job_offer",
-            frm: frm,
-            freeze: true,
-            freeze_message: __("Creating Transfer Paper ...")
-          });
-				}
-			);
-		}
+    if (frm.doc.status == 'Accepted' && frm.doc.docstatus === 1){
+      frappe.db.get_value('Job applicant',{'name':frm.doc.job_applicant},'one_fm_nationality',(nationality) => {
+        if(nationality && nationality.name != "Kuwaiti"){
+          //only for Non-Kuwaiti nationality Transfer Paper Button is shown in job offer
+          frappe.db.get_value('Transfer Paper', {'applicant':frm.doc.job_applicant}, 'name', (r) => {
+            if (r && r.name) {
+              frm.add_custom_button(__('Go to Transfer Paper'),
+              function(){
+                frappe.set_route("Form", "Transfer Paper", r.name)
+                }).addClass('btn-primary'); 
+            }
+            else{
+              frm.add_custom_button(__('Create New Transfer Paper'),
+              function () {
+                frappe.model.open_mapped_doc({
+                  method: "one_fm.hiring.utils.make_transfer_paper_from_job_offer",
+                  frm: frm,
+                  freeze: true,
+                  freeze_message: __("Creating Transfer Paper ...")
+                });
+              }
+            ).addClass('btn-primary');
+          }  
+      });
+    }
+  });
+}
     if (frm.doc.workflow_state == 'Accepted' && frm.doc.docstatus === 1){
       if (!frm.doc.__onload || !frm.doc.__onload.onboard_employee){
         frm.add_custom_button(__('Start Onboard Employee'),

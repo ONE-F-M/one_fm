@@ -14,6 +14,8 @@
   "transfer_type",
   "tp_status",
   "work_permit_status",
+  "work_permit_details_section",
+  "work_permit_records",
   "new_company_data_section",
   "company_trade_name_arabic",
   "authorized_signatory_name_arabic",
@@ -68,10 +70,10 @@
   "date_of_entry_in_kuwait",
   "visa_reference_number",
   "section_break_46",
-  "grd_operator",
-  "signed",
-  "column_break_51",
+  "grd_operator_transfer",
   "attach_tp",
+  "column_break_51",
+  "attached_on",
   "amended_from",
   "authorized_signature"
  ],
@@ -100,7 +102,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "TP Status",
-   "options": "\nOpened\nUnder-Process\nPending By GRD\nCompleted"
+   "options": "\nOpened\nPrinted\nPending by Onboarding\nUnder-Process\nPending By GRD\nCompleted"
   },
   {
    "allow_on_submit": 1,
@@ -341,33 +343,14 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "grd_operator",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "GRD Operator",
-   "options": "User",
-   "print_hide": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "No",
-   "fieldname": "signed",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Signed",
-   "options": "\nYes\nNo",
-   "print_hide": 1
-  },
-  {
    "fieldname": "column_break_51",
    "fieldtype": "Column Break"
   },
   {
    "allow_on_submit": 1,
-   "description": "Attach signed TP ",
    "fieldname": "attach_tp",
    "fieldtype": "Attach",
-   "label": "Attach TP"
+   "label": "Attach Signed TP"
   },
   {
    "fieldname": "amended_from",
@@ -442,7 +425,6 @@
   {
    "fieldname": "date_of_application",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Date of Application"
   },
   {
@@ -473,11 +455,38 @@
    "fieldname": "license_number",
    "fieldtype": "Data",
    "label": "License Number"
+  },
+  {
+   "fieldname": "attached_on",
+   "fieldtype": "Datetime",
+   "label": "Attached On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grd_operator_transfer",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator",
+   "options": "User",
+   "print_hide": 1
+  },
+  {
+   "depends_on": "eval:doc.workflow_state == \"Completed\" || doc.workflow_state == \"Under Process\"",
+   "fieldname": "work_permit_details_section",
+   "fieldtype": "Section Break",
+   "label": "Work Permit Details"
+  },
+  {
+   "fieldname": "work_permit_records",
+   "fieldtype": "Table",
+   "label": "Work Permit Records",
+   "options": "Transfer Work Permit",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-08-24 15:57:25.256223",
+ "modified": "2021-09-15 11:54:23.424767",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Transfer Paper",

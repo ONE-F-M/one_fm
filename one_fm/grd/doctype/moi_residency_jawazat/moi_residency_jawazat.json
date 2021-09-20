@@ -343,6 +343,7 @@
    "print_hide": 1
   },
   {
+   "fetch_from": "employee.work_permit_expiry_date",
    "fieldname": "new_residency_expiry_date",
    "fieldtype": "Date",
    "label": "Updated Residency Expiry Date",
@@ -486,7 +487,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-15 00:11:42.620428",
+ "modified": "2021-09-15 18:12:18.106480",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
