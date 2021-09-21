@@ -80,7 +80,7 @@ def get_staff_filters_data():
 
 
 @frappe.whitelist()
-def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=None, project=None, site=None, shift=None, department=None, post_type=None, isOt=None, limit_start=0, limit_page_length=100):
+def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, post_type=None, isOt=None, limit_start=0, limit_page_length=100):
 	start = time.time()
 		
 	master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
@@ -94,9 +94,12 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 	if post_type:
 		filters.update({'post_type': post_type})	
 
-	if search_key:
-		employee_filters.update({'employee_name': ("like", "%" + search_key + "%")})
-		additional_assignment_filters.update({'employee_name': ("like", "%" + search_key + "%")})
+	if employee_search_id:
+		employee_filters.update({'employee_id': employee_search_id})
+
+	if employee_search_name:
+		employee_filters.update({'employee_name': ("like", "%" + employee_search_name + "%")})
+		additional_assignment_filters.update({'employee_name': ("like", "%" + employee_search_name + "%")})
 	if project:
 		employee_filters.update({'project': project})
 		additional_assignment_filters.update({'project': project})
@@ -127,8 +130,10 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, search_key=No
 		master_data.update({'total': len(employees)})	
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 
-	if search_key:
+	if employee_search_name:
 		employee_filters.pop('employee_name')
+	if employee_search_id:
+		employee_filters.pop('employee_id')	
 	if department:
 		employee_filters.pop('department', None)
 	if post_type:
