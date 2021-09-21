@@ -161,7 +161,8 @@ def supervisor_reminder():
 			if len(recipients) > 0:
 				for recipient in recipients:
 					op_shift =  frappe.get_doc("Operations Shift", recipient.shift)
-					for_user = get_notification_user(op_shift) if get_notification_user(op_shift) else get_employee_user_id(recipient.reports_to)	
+					for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)	
+					print(for_user)
 					if for_user is not None:
 						subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
 						message = _("""
@@ -193,7 +194,7 @@ def supervisor_reminder():
 		 	if len(recipients) > 0:
 		 		for recipient in recipients:
 		 			op_shift =  frappe.get_doc("Operations Shift", recipient.shift)
-		 			for_user = get_notification_user(op_shift) if get_notification_user(op_shift) else get_employee_user_id(recipient.reports_to)	
+		 			for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)	
 		 			if for_user is not None:
 						 subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
 						 message = _("""
@@ -437,11 +438,12 @@ def update_shift_type():
 		doc.save()
 		frappe.db.commit()
 
-
+@frappe.whitelist()
 def process_attendance():
-	now_time = now_datetime().strftime("%H:%M")
+	now_time = now_datetime().strftime("%y-%m-%d %H:%M:00")
 	shift_types = frappe.get_all("Shift Type", {"last_sync_of_checkin": now_time})
 	for shift_type in shift_types:
+		print(shift_type)
 		frappe.enqueue(mark_auto_attendance, shift_type, worker='long')
 
 def mark_auto_attendance(shift_type):
