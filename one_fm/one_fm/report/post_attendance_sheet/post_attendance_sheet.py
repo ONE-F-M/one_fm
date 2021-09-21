@@ -91,7 +91,7 @@ def execute(filters=None):
 	else:
 		record, emp_att_map = add_data(emp_map, att_map, filters, holiday_map, conditions, default_holiday_list, leave_list=leave_list)
 		data += record
-	print(data)
+	#print(data)
 	chart_data = get_chart_data(emp_att_map, days)
 
 	return columns, data, None, chart_data
@@ -145,7 +145,7 @@ def add_data_post(parameter, employee_map, att_map, filters, holiday_map, condit
 	emp_att_map = {}
 	for emp in employee_map:
 		emp_det = employee_map.get(emp)
-		print(emp)
+		#print(emp)
 		if not emp_det or emp not in att_map:
 			continue
 
@@ -363,6 +363,7 @@ def get_attendance_list_post(conditions, filters):
 	attendance_list = frappe.db.sql("""select employee, day(attendance_date) as day_of_month,
 		status, post_type from tabAttendance where docstatus = 1 %s order by employee, attendance_date""" %
 		conditions, filters, as_dict=1)
+	#print(attendance_list)
 	if not attendance_list:
 		msgprint(_("No attendance record found"), alert=True, indicator="orange")
 
@@ -393,10 +394,10 @@ def get_employee_details_post(company):
 	group_by = "post_type"
 	emp_map = {}
 	query = """SELECT DISTINCT Emp.name, Emp.employee_name, Emp.designation, Emp.department, Emp.branch, Emp.company,
-		Emp.holiday_list, At.post_type from `tabEmployee` Emp, `tabAttendance` At WHERE Emp.name = At.employee AND Emp.company = %s order by At.post_type  ASC""" % frappe.db.escape(company)
+		Emp.holiday_list, At.post_type from `tabEmployee` Emp, `tabAttendance` At WHERE Emp.name = At.employee AND Emp.company = %s""" % frappe.db.escape(company)
 
 	employee_details = frappe.db.sql(query , as_dict=1)
-	#print(employee_details)
+	print(employee_details)
 	group_by_parameters = []
 	if group_by:
 		group_by_parameters = list(set(detail.get(group_by, "") for detail in employee_details if detail.get(group_by, "")))
