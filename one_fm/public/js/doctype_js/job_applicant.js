@@ -411,10 +411,13 @@ frappe.ui.form.on('Job Applicant', {
 						'name': frm.doc.name,
 						},
 					callback:function(r){
-						frm.set_df_property('one_fm_signatory_name', "options", r.message);
+						frm.set_df_property('one_fm_signatory_name', "options", r.message[0]);
+						frm.set_df_property('one_fm_pam_authorized_signatory', "label", r.message[1]);
+						frm.refresh_field("one_fm_pam_authorized_signatory");
 						frm.refresh_field("one_fm_signatory_name");
 						}
 					});
+					frm.refresh_field("one_fm_pam_authorized_signatory");
 					frm.refresh_field("one_fm_signatory_name");
 
 			}
@@ -427,10 +430,13 @@ frappe.ui.form.on('Job Applicant', {
 						'name': frm.doc.name,
 						},
 					callback:function(r){
-						frm.set_df_property('one_fm_signatory_name', "options", r.message);
+						frm.set_df_property('one_fm_signatory_name', "options", r.message[0]);
+						frm.set_df_property('one_fm_pam_authorized_signatory', "label", r.message[1]);
+						frm.refresh_field("one_fm_pam_authorized_signatory");
 						frm.refresh_field("one_fm_signatory_name");
 						}
 					});
+					frm.refresh_field("one_fm_pam_authorized_signatory");
 					frm.refresh_field("one_fm_signatory_name");
 
 			}
