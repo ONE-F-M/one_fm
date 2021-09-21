@@ -7,7 +7,7 @@ frappe.ui.form.on('Job Offer', {
     frm.remove_custom_button("Create Employee");
     if (frm.doc.status == 'Accepted' && frm.doc.docstatus === 1){
       frappe.db.get_value('Job Applicant',{'name':frm.doc.job_applicant},'one_fm_nationality',(nationality) => {
-        if(nationality && nationality.name != "Kuwaiti"){
+        if(nationality && nationality.one_fm_nationality != "Kuwaiti"){
           //only for Non-Kuwaiti nationality Transfer Paper Button is shown in job offer
           frappe.db.get_value('Transfer Paper', {'applicant':frm.doc.job_applicant}, 'name', (r) => {
             if (r && r.name) {
