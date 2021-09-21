@@ -207,16 +207,13 @@ def get_signatory_name(parent,name):
     names.append(' ')
     if parent and name:
         doc = frappe.get_doc('PAM Authorized Signatory List',{'pam_file_name':parent})
-        job_doc = frappe.get_doc('Job Applicant',name)
         if doc:
-            job_doc.one_fm_pam_authorized_signatory = doc.name
             for pas in doc.authorized_signatory:
                 if pas.authorized_signatory_name_arabic:
                     names.append(pas.authorized_signatory_name_arabic)
         elif not doc:
-            frappe.throw("PAM File Number Has No PAM Authorized Signatory List")
-        
-    return names
+            frappe.throw("PAM File Number Has No PAM Authorized Signatory List")       
+    return names,doc.name
 
 @frappe.whitelist()
 def get_signatory_name_erf_file(parent,name):
@@ -228,15 +225,13 @@ def get_signatory_name_erf_file(parent,name):
     names.append(' ')
     if parent and name:
         doc = frappe.get_doc('PAM Authorized Signatory List',{'pam_file_number':parent})
-        job_doc = frappe.get_doc('Job Applicant',name)
         if doc:
-            job_doc.one_fm_pam_authorized_signatory = doc.name
             for pas in doc.authorized_signatory:
                 if pas.authorized_signatory_name_arabic:
                     names.append(pas.authorized_signatory_name_arabic)
         elif not doc:
             frappe.throw("PAM File Number Has No PAM Authorized Signatory List")
-    return names
+    return names,doc.name
 
 @frappe.whitelist()
 def notify_supervisor_change_file_number(name):
