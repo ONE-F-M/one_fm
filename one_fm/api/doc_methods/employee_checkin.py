@@ -10,7 +10,6 @@ from frappe import _
 import datetime
 
 from erpnext.hr.doctype.shift_assignment.shift_assignment import get_actual_start_end_datetime_of_shift
-from erpnext.hr.utils import validate_active_employee
 
 def mark_attendance_and_link_log(logs, attendance_status, attendance_date, working_hours=None, late_entry=False, early_exit=False, shift=None, operations_shift=None):
 	"""Creates an attendance and links the attendance to the Employee Checkin.
