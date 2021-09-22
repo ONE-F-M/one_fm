@@ -452,7 +452,7 @@ def mark_auto_attendance(shift_type):
 
 
 def update_shift_details_in_attendance(doc, method):
-	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "date": doc.attendance_date}):
+	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
 		site, project, shift, post_type, post_abbrv = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv"])
 		frappe.db.sql("""update `tabAttendance`
 			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s 
