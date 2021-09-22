@@ -93,13 +93,13 @@ def rename_post(posts):
             print(frappe.get_traceback())
 
 @frappe.whitelist()
-def final_reminder_notification(serverToken,deviceToken):
+def final_reminder_notification(employee_id,deviceToken):
     # This Device token comes from the client FCM SDKs.
 
     # See documentation on defining a message payload.
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': 'key=' + serverToken,
+        'Authorization': 'key=' + employee_id,
     }
 
     body = {
