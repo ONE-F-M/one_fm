@@ -486,10 +486,10 @@ def generate_payroll():
 
 
 def generate_penalties():
-	print("HEllo")
 	start_date = add_to_date(getdate(), days=-30)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
-	print (str(start_date) + str(end_date))
+	print(start_date)
+	print(end_date)
 
 	filters = {
 		'penalty_issuance_time': ['between', (start_date, end_date)],
@@ -580,5 +580,5 @@ def create_penalty_deduction(start_date, end_date, employee, total_penalty_amoun
 	penalty_deduction.deducted_amount = deducted_amount
 	penalty_deduction.balance_amount = balance_amount
 	penalty_deduction.insert()
-	#penalty_deduction.submit()
+	penalty_deduction.submit()
 	frappe.db.commit()
