@@ -80,7 +80,7 @@
    "fieldname": "category",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Type",
+   "label": "Category",
    "options": "First Time\nTransfer\nRenewal\nExtend\nCancellation"
   },
   {
@@ -487,7 +487,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-15 18:12:18.106480",
+ "modified": "2021-09-22 11:31:33.201232",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",

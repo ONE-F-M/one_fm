@@ -91,7 +91,7 @@ def system_remind_renewal_operator_to_apply():# cron job at 4pm
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
-    notification_reminder(medical_insurance_list,supervisor,renewal_operator,"Renewal")
+    notification_reminder(medical_insurance_list,supervisor,renewal_operator,"Renewal or New")
     
 
 def system_remind_transfer_operator_to_apply():# cron job at 4pm
@@ -101,7 +101,7 @@ def system_remind_transfer_operator_to_apply():# cron job at 4pm
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'insurance_status':['=',('Local Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     notification_reminder(medical_insurance_list,supervisor,transfer_operator,"Local Transfer")
-    print(medical_insurance_list)
+    
 
 
 def notification_reminder(medical_insurance_list,supervisor,operator,type):
