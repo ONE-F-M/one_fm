@@ -338,8 +338,8 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"0 16 * * *":[
-			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_submit_application_online',
-			'one_fm.grd.doctype.work_permit.system_checks_grd_operator_complete_application',
+			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply'
+			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply'
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online',
 			'one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_first_grd_operator',
@@ -373,8 +373,6 @@ scheduler_events = {
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',
-			'one_fm.grd.doctype.work_permit.work_permit_notify_first_grd_operator',
-			'one_fm.grd.doctype.work_permit.work_permit_notify_grd_operator_check_approval',
 
 
 		],

@@ -17,6 +17,7 @@ from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, n
 from email import policy
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
+from frappe.core.doctype.communication.email import make
 # from PyPDF2 import PdfFileReader
 
 # from pdfminer.pdfparser import PDFParser, PDFDocument  
@@ -307,8 +308,8 @@ def create_work_permit_transfer(tp_name,employee):
     if tp:
         employee_in_tp = frappe.get_doc('Employee',employee)
         if employee_in_tp:
-            name = create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)#check if you need to do it this way create_wp_transfer(employee_in_tp,"Local Transfer",tp_name)
-            return name
+            create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)#check if you need to do it this way create_wp_transfer(employee_in_tp,"Local Transfer",tp_name)
+            
 
 # Create Work Permit record once a month for renewals list  
 def create_work_permit_renewal(preparation_name):
@@ -373,8 +374,7 @@ def create_wp_transfer(employee,status,name):
         new_work_permit.ref_doctype = Doctype
         new_work_permit.ref_name = name
         new_work_permit.transfer_paper = name
-        new_work_permit.insert()  
-        return new_work_permit.name          
+        new_work_permit.insert()        
     else:
         # Create New Work Permit: 1. New Overseas, 2. New Kuwaiti, 3. Work Transfer
         work_permit = frappe.new_doc('Work Permit')
@@ -386,7 +386,6 @@ def create_wp_transfer(employee,status,name):
         work_permit.ref_name = name
         work_permit.transfer_paper = name
         work_permit.save()
-        return work_permit.name  
     
 
 #For New Kuwaiti New Kuwaiti
@@ -418,80 +417,70 @@ def create_wp_kuwaiti(employee,status,name):
         work_permit.ref_name = name
         work_permit.transfer_paper = None
         work_permit.save()
-    
-#System check at 4pm if grd operator submit the application online (cron)
-def system_checks_grd_operator_submit_application_online():
-    """ Notify GRD Operator to apply for wp renewal System checks at 4pm """
-    work_permit_notify_first_grd_operator() # 9am
 
-# Notify GRD Operator at 9:00 am (cron)
-def work_permit_notify_first_grd_operator():
-    work_permit_notify_grd_operator('yellow')
+############################################################################# Reminder Notification 
+def system_remind_renewal_operator_to_apply():# cron job at 4pm
+    """This is a cron method runs every day at 4pm. It gets Draft renewal work permit list and reminds operator to apply on pam website"""
+    supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
+    renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
+    work_permit_list = frappe.db.get_list('Work Permit',
+    {'date_of_application':['<=',date.today()],'workflow_state':['in',('Draft','Apply Online by PRO')],'work_permit_type':['in',('Renewal Non Kuwaiti','Renewal Kuwaiti')]},['civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
+    notification_reminder(work_permit_list,supervisor,renewal_operator,"Renewal")
 
-# Notify GRD Operator at 9:30 am (cron)
-def work_permit_notify_again_grd_operator():
-    work_permit_notify_grd_operator('red')
+def system_remind_transfer_operator_to_apply():# cron job at 4pm
+    """This is a cron method runs every day at 4pm. It gets Draft transfer work permit list and reminds operator to apply on pam website"""
+    supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
+    transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+    work_permit_list = frappe.db.get_list('Work Permit',
+    {'date_of_application':['<=',date.today()],'workflow_state':['in',('Draft','Apply Online by PRO')],'work_permit_type':['=',('Local Transfer')]},['civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
+    notification_reminder(work_permit_list,supervisor,transfer_operator,"Local Transfer")
 
-# Notify GRD Supervisor at  4pm  to approve and check online submit (cron)
-def work_permit_notify_grd_supervisor_to_approve():
-    """ Notify GRD supervisor to complete wp System checks at 4pm """
-    work_permit_list = frappe.db.get_list('Work Permit',{'workflow_state':'Pending By Supervisor'},['name','grd_supervisor'])
-    if len(work_permit_list) > 0:
-        print(work_permit_list)
-        email_notification_to_grd_user('grd_supervisor', work_permit_list, 'yellow', 'Check')
-    
 
-#System check at 4pm if grd operator accept the application online (cron)
-def system_checks_grd_operator_complete_application():
-    """ Notify GRD Operator to complete wp System checks at 4pm """
-    today = date.today()
-    work_permit_list = frappe.db.get_list('Work Permit',{'workflow_state':'Pending By PAM','date_of_application':today},['name', 'grd_operator'])
-    if len(work_permit_list) > 0:
-        email_notification_to_grd_user('grd_operator', work_permit_list, 'red', 'Complete')
+def notification_reminder(work_permit_list,supervisor,operator,type):
+    """This method sends first, second, reminders and then send third one and cc supervisor in the email"""
+    first_reminder_list=[] 
+    second_reminder_list=[] 
+    penality_reminder_list=[] 
+    if work_permit_list and len(work_permit_list) > 0:
+        for wp in work_permit_list:
+            if wp.reminded_grd_operator_again:
+                penality_reminder_list.append(wp)
+            elif wp.reminded_grd_operator and not wp.reminded_grd_operator_again:
+                second_reminder_list.append(wp)
+            elif not wp.reminded_grd_operator:
+                first_reminder_list.append(wp)
 
-# Notify GRD Operator at 9 am (check approval of wp) (cron)
-def work_permit_notify_grd_operator_check_approval(): #work_permit_notify_grd_supervisor_check_approval
-    work_permit_notify_grd_operator_to_check_and_complete('yellow') 
+    if penality_reminder_list and len(penality_reminder_list)>0:
+        email_notification_reminder(operator,penality_reminder_list,"Third Reminder","Apply for",type,supervisor)
+    elif second_reminder_list and len(second_reminder_list)>0:
+        email_notification_reminder(operator,second_reminder_list,"Second Reminder","Apply for",type)
+        for wp in second_reminder_list:
+            frappe.db.set_value('Work Permit',wp.name,'reminded_grd_operator_again',1)
+    elif first_reminder_list and len(first_reminder_list)>0:
+        email_notification_reminder(operator,first_reminder_list,"First Reminder","Apply for",type)
+        for wp in first_reminder_list:
+            frappe.db.set_value('Work Permit',wp.name,'reminded_grd_operator',1)
+        
+def email_notification_reminder(grd_user,work_permit_list,reminder_number, action,type, cc=[]):
+    """This method send email to the required operator with the list of work permit for applying"""
+    message_list=[]
+    for work_permit in work_permit_list:
+        page_link = get_url("/desk#Form/Work Permit/"+work_permit.name)
+        message = "<a href='{0}'>{1}</a>".format(page_link, work_permit.civil_id)
+        message_list.append(message)
 
-def work_permit_notify_grd_operator_to_check_and_complete(reminder_indicator):
-    """ Notify GRD Operator to complete wp System checks at 4pm """
-    # Get work permit list
-    filters = {'work_permit_approved': 'No','work_permit_status': 'Pending By Supervisor'}
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator'])
-    email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Check Approval status of WP and Complete')
-
-def work_permit_notify_grd_operator(reminder_indicator):
-    """ Notify GRD Operator first and second time to remind applying online for WP """
-    # Get work permit list
-    today = date.today()
-    filters = {'docstatus': 0,                                                                
-    'reminded_grd_operator': 0, 'reminded_grd_operator_again':0,'date_of_application': ['=',today]}
-    if reminder_indicator == 'red':
-        filters['reminded_grd_operator'] = 1
-        filters['reminded_grd_operator_again'] = 0
-                                                            
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_operator', 'grd_supervisor'])
-    cc = [work_permit_list[0].grd_supervisor] if reminder_indicator == 'red' else []
-    email_notification_to_grd_user('grd_operator', work_permit_list, reminder_indicator, 'Apply On ASHAL', cc)
-
-    # Update reminded grd operator to 1
-    if reminder_indicator == 'red':
-        field = 'reminded_grd_operator_again'
-    elif reminder_indicator == 'yellow':
-        field = 'reminded_grd_operator'
-
-    frappe.db.set_value("Work Permit", filters, field, 1)
-
-def work_permit_notify_grd_supervisor(reminder_indicator): # at 9am checks grd supervisor approval on online application
-    """ Notify GRD Supervisor to remind accepting WP on ASHAL application """
-    # Get work permit list
-    if reminder_indicator == 'yellow':
-        filters = {'docstatus': 0, 
-        'date_of_application':['>=',today()],
-        'grd_supervisor_check_and_approval_wp_online':['=','No']}
-
-    work_permit_list = frappe.db.get_list('Work Permit', filters, ['name', 'grd_supervisor'])
-    email_notification_to_grd_user('grd_supervisor', work_permit_list, reminder_indicator, 'Check and Accept')
+    if message_list:
+        message = "<p>{0}: Please {1} {2} Work Permit listed below</p><ol>".format(reminder_number,action,type)
+        for msg in message_list:
+            message += "<li>"+msg+"</li>"
+        message += "<ol>"
+        make(
+            subject=_('{0}: {1} {2} Work Permit'.format(reminder_number,action,type)),
+            content=message,
+            recipients=[grd_user],
+            cc=cc,
+            send_email=True,
+        )
 
 def email_notification_to_grd_user(grd_user, work_permit_list, reminder_indicator, action, cc=[]):
     recipients = {}
