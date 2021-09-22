@@ -43,7 +43,9 @@
   "amended_from",
   "grd_operator",
   "grd_supervisor",
-  "grd_operator_transfer"
+  "grd_operator_transfer",
+  "reminder_grd_operator",
+  "reminder_grd_operator_again"
  ],
  "fields": [
   {
@@ -290,11 +292,25 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "GRD Operator Transfer"
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_grd_operator",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminder GRD Operator"
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_grd_operator_again",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminder GRD Operator Again"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-14 23:56:55.996236",
+ "modified": "2021-09-22 12:00:51.943940",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",

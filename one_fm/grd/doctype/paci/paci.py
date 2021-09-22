@@ -9,6 +9,7 @@ from datetime import date
 from one_fm.api.notification import create_notification_log
 from frappe.utils import today, add_days, get_url, date_diff
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
+from frappe.core.doctype.communication.email import make
 
 class PACI(Document):
     def validate(self):
@@ -136,74 +137,70 @@ def create_PACI(employee,Type,preparation_name = None):
         PACI_new.date_of_application = start_day
         PACI_new.save()
 
-#At 4pm Notify GRD Operator
-def system_checks_grd_operator_apply_online():
-	filter1 = {'date_of_application':['>=',today()]}
-	employee_list = frappe.db.get_list('PACI',filter1, ['name','grd_operator','grd_supervisor'])
-	if len(employee_list) > 0:
-		paci_notify_first_grd_operator()
+############################################################################# Reminder Notification 
+def system_remind_renewal_operator_to_apply():# cron job at 4pm
+    """This is a cron method runs every day at 4pm. It gets Draft renewal PACI list and reminds operator to apply on pam website"""
+    supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
+    renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
+    paci_list = frappe.db.get_list('PACI',
+    {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Renewal')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    notification_reminder(paci_list,supervisor,renewal_operator,"Renewal")
+    
 
-# Notify GRD Operator at 11:30 am 
-def paci_notify_first_grd_operator():
-    paci_notify_grd_operator('yellow')
+def system_remind_transfer_operator_to_apply():# cron job at 4pm
+    """This is a cron method runs every day at 4pm. It gets Draft transfer PACI list and reminds operator to apply on pam website"""
+    supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
+    transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+    paci_list = frappe.db.get_list('PACI',
+    {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    notification_reminder(paci_list,supervisor,transfer_operator,"Transfer")
+    print(paci_list)####D
 
-# Notify GRD Operator at 12:00 am 
-def paci_notify_again_grd_operator():
-    paci_notify_grd_operator('red')
+def notification_reminder(paci_list,supervisor,operator,type):
+    """This method sends first, second, reminders and then send third one and cc supervisor in the email"""
+    first_reminder_list=[] 
+    second_reminder_list=[] 
+    penality_reminder_list=[] 
+    if paci_list and len(paci_list) > 0:
+        for paci in paci_list:
+            if paci.reminder_grd_operator_again:
+                penality_reminder_list.append(paci)
+            elif paci.reminder_grd_operator and not paci.reminder_grd_operator_again:
+                second_reminder_list.append(paci)
+            elif not paci.reminder_grd_operator:
+                first_reminder_list.append(paci)
 
-#At 4pm Notify GRD Operator
-def system_checks_grd_operator_upload_and_update_civil_Id():
-	filter2 = {'upload_civil_id':['=',' '],'new_civil_id_expiry_date':['=',' ']}
-	employee_list = frappe.db.get_list('PACI',filter2, ['name','grd_operator','grd_supervisor'])
-	if len(employee_list) > 0:
-		paci_notify_first_grd_operator()
-
-# Notify GRD Operator at 9:00 am 
-def paci_notify_first_grd_operator():
-    paci_notify_grd_operator('yellow')
-
-# Notify GRD Operator at 9:30 am 
-def paci_notify_again_grd_operator():
-    paci_notify_grd_operator('red')
-
-def paci_notify_grd_operator(reminder_indicator):
-    # Get paci list
-    today = date.today()
-    filters = {'docstatus': 0,'date_of_application':['>=',today()],'reminded_grd_operator': 0, 'reminded_grd_operator_again':0}
-    if reminder_indicator == 'red':
-        filters['reminded_grd_operator'] = 1
-        filters['reminded_grd_operator_again'] = 0
-                                                            
-    paci_list = frappe.db.get_list('PACI', filters, ['name', 'grd_operator', 'grd_supervisor'])
-    cc = [paci_list[0].grd_supervisor] if reminder_indicator == 'red' else []
-    email_notification_to_grd_user('grd_operator', paci_list, reminder_indicator, 'Submit', cc)
-
-def email_notification_to_grd_user(grd_user, paci_list, reminder_indicator, action, cc=[]):
-    recipients = {}
-
+    if penality_reminder_list and len(penality_reminder_list)>0:
+        email_notification_reminder(operator,penality_reminder_list,"Third Reminder","Apply for",type,supervisor)
+    elif second_reminder_list and len(second_reminder_list)>0:
+        email_notification_reminder(operator,second_reminder_list,"Second Reminder","Apply for",type)
+        for paci in second_reminder_list:
+            frappe.db.set_value('PACI',paci.name,'reminder_grd_operator_again',1)
+    elif first_reminder_list and len(first_reminder_list)>0:
+        email_notification_reminder(operator,first_reminder_list,"First Reminder","Apply for",type)
+        for paci in first_reminder_list:
+            frappe.db.set_value('PACI',paci.name,'reminder_grd_operator',1)
+        
+def email_notification_reminder(grd_user,paci_list,reminder_number, action,type, cc=[]):
+    """This method send email to the required operator with the list of PACI for applying"""
+    message_list=[]
     for paci in paci_list:
         page_link = get_url("/desk#Form/PACI/"+paci.name)
-        message = "<a href='{0}'>{1}</a>".format(page_link, paci.name)
-        if paci[grd_user] in recipients:
-            recipients[paci[grd_user]].append(message)#add the message in the empty list
-        else:
-            recipients[paci[grd_user]]=[message]
+        message = "<a href='{0}'>{1}</a>".format(page_link, paci.civil_id)
+        message_list.append(message)
 
-    if recipients:
-        for recipient in recipients:
-            subject = 'PACI {0}'.format(paci.name)#added
-            message = "<p>Please {0} PACI listed below</p><ol>".format(action)
-            for msg in recipients[recipient]:
-                message += "<li>"+msg+"</li>"
-            message += "<ol>"
-            frappe.sendmail(
-                recipients=[recipient],
-                cc=cc,
-                subject=_('{0} PACI'.format(action)),
-                message=message,
-                header=['PACI Reminder', reminder_indicator],
-            )
-            to_do_to_grd_users(_('{0} PACI'.format(action)), message, recipient)
+    if message_list:
+        message = "<p>{0}: Please {1} {2} PACI listed below</p><ol>".format(reminder_number,action,type)
+        for msg in message_list:
+            message += "<li>"+msg+"</li>"
+        message += "<ol>"
+        make(
+            subject=_('{0}: {1} {2} PACI'.format(reminder_number,action,type)),
+            content=message,
+            recipients=[grd_user],
+            cc=cc,
+            send_email=True,
+        )
 
 def to_do_to_grd_users(subject, description, user):
     frappe.get_doc({

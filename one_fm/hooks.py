@@ -344,7 +344,8 @@ scheduler_events = {
 			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.py.system_remind_renewal_operator_to_apply',#moi
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.py.system_remind_transfer_operator_to_apply',
-			'one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online',
+			'one_fm.grd.doctype.paci.paci.system_remind_renewal_operator_to_apply',#paci
+			'one_fm.grd.doctype.paci.paci.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_first_grd_operator',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator'
 		],
