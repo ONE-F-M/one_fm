@@ -5,12 +5,11 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import add_years
-from frappe.utils import today, add_days, get_url
+from frappe.utils import today, get_url
 from frappe import _
-from frappe.utils.user import get_users_with_role
-from frappe.permissions import has_permission
-from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
+from datetime import date
+from frappe.core.doctype.communication.email import make
+from frappe.utils import now_datetime
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
 from one_fm.grd.doctype.moi_residency_jawazat import moi_residency_jawazat
 
@@ -84,43 +83,72 @@ def get_employee_data_from_civil_id(civil_id):
     employee_id = frappe.db.exists('Employee', {'one_fm_civil_id': civil_id})
     if employee_id:
         return frappe.get_doc('Employee', employee_id)
-
-def notify_grd_operator_draft_new_mi():
-    filter_mi = {'date_of_application': ['=', today()],'docstatus':0 }
-    mi = frappe.get_doc('Medical Insurance',filter_mi)
-    page_link = get_url("/desk#Form/Medical Insurance/"+mi.name)
-    message = "<p>Please fill the medical insurance form for employee <a href='{0}'>{1}</a></p>".format(page_link, mi.name)
-    subject = '{0} Medical Insurance form'.format("Apply")
-    send_email(mi, [mi.grd_operator], message, subject)
-    create_notification_log(subject, message, [mi.grd_operator], mi)
     
-def notify_grd_supervisor_to_submit_on_system():
-    notify_grd_supervisor_submit_mi_on_system('yellow')
+############################################################################# Reminder Notification 
+def system_remind_renewal_operator_to_apply():# cron job at 4pm
+    """This is a cron method runs every day at 4pm. It gets Draft renewal Medical Insurance list and reminds operator to apply on pam website"""
+    supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
+    renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
+    medical_insurance_list = frappe.db.get_list('Medical Insurance',
+    {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    notification_reminder(medical_insurance_list,supervisor,renewal_operator,"Renewal")
+    
 
-def notify_grd_operator_to_mark_completed_first():#for the first time 9:00 am (cron)
-    notify_grd_operator_to_mark_mi_complete('yellow')
+def system_remind_transfer_operator_to_apply():# cron job at 4pm
+    """This is a cron method runs every day at 4pm. It gets Draft transfer Medical Insurance list and reminds operator to apply on pam website"""
+    supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
+    transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+    medical_insurance_list = frappe.db.get_list('Medical Insurance',
+    {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'insurance_status':['=',('Local Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    notification_reminder(medical_insurance_list,supervisor,transfer_operator,"Local Transfer")
+    print(medical_insurance_list)
 
-def notify_grd_operator_to_mark_completed_second():#for the second time 9:30am (cron)
-    notify_grd_operator_to_mark_mi_complete('red')
 
+def notification_reminder(medical_insurance_list,supervisor,operator,type):
+    """This method sends first, second, reminders and then send third one and cc supervisor in the email"""
+    first_reminder_list=[] 
+    second_reminder_list=[] 
+    penality_reminder_list=[] 
+    if medical_insurance_list and len(medical_insurance_list) > 0:
+        for mi in medical_insurance_list:
+            if mi.reminder_grd_operator_again:
+                penality_reminder_list.append(mi)
+            elif mi.reminder_grd_operator and not mi.reminder_grd_operator_again:
+                second_reminder_list.append(mi)
+            elif not mi.reminder_grd_operator:
+                first_reminder_list.append(mi)
 
-def notify_grd_supervisor_submit_mi_on_system(reminder_indicator):
-    filter_mi = {'date_of_application': ['>=', today()],
-                 'upload_medical_insurance':['='," "]
-                }
-    mi_list = frappe.get_list('Medical Insurance',filter_mi, ['name', 'grd_supervisor'])
-    cc = [mi_list[0].grd_supervisor] if reminder_indicator == 'red' else []
-    email_notification_to_grd_user('grd_supervisor', mi_list, reminder_indicator, 'Submit',cc)
+    if penality_reminder_list and len(penality_reminder_list)>0:
+        email_notification_reminder(operator,penality_reminder_list,"Third Reminder","Apply for",type,supervisor)
+    elif second_reminder_list and len(second_reminder_list)>0:
+        email_notification_reminder(operator,second_reminder_list,"Second Reminder","Apply for",type)
+        for mi in second_reminder_list:
+            frappe.db.set_value('Medical Insurance',mi.name,'reminder_grd_operator_again',1)
+    elif first_reminder_list and len(first_reminder_list)>0:
+        email_notification_reminder(operator,first_reminder_list,"First Reminder","Apply for",type)
+        for mi in first_reminder_list:
+            frappe.db.set_value('Medical Insurance',mi.name,'reminder_grd_operator',1)
+        
+def email_notification_reminder(grd_user,medical_insurance_list,reminder_number, action,type, cc=[]):
+    """This method send email to the required operator with the list of Medical Insurance for applying"""
+    message_list=[]
+    for medical_insurance in medical_insurance_list:
+        page_link = get_url("/desk#Form/Medical Insurance/"+medical_insurance.name)
+        message = "<a href='{0}'>{1}</a>".format(page_link, medical_insurance.civil_id)
+        message_list.append(message)
 
-# Notify grd operator to mark mi as completed on the system (first time)
-def notify_grd_operator_to_mark_mi_complete(reminder_indicator):
-    filter_mi = {
-                 'date_of_application':['>=',today()],
-                 'upload_medical_insurance':['=', " "]
-                }
-    mi_list = frappe.get_list('Medical Insurance',filter_mi, ['name', 'grd_operator'])
-    cc = [mi_list[0].grd_supervisor] if reminder_indicator == 'red' else []
-    email_notification_to_grd_user('grd_operator', mi_list, reminder_indicator, 'Completed',cc)
+    if message_list:
+        message = "<p>{0}: Please {1} {2} Medical Insurance listed below</p><ol>".format(reminder_number,action,type)
+        for msg in message_list:
+            message += "<li>"+msg+"</li>"
+        message += "<ol>"
+        make(
+            subject=_('{0}: {1} {2} Medical Insurance'.format(reminder_number,action,type)),
+            content=message,
+            recipients=[grd_user],
+            cc=cc,
+            send_email=True,
+        )
 
 # Notify GRD Operator to mark mi lists as completed (second time) 
 def email_notification_to_grd_user(grd_user, mi_list, reminder_indicator, action, cc=[]):

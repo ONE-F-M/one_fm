@@ -340,6 +340,8 @@ scheduler_events = {
 		"0 16 * * *":[
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply'
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply'
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_renewal_operator_to_apply'
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_transfer_operator_to_apply'
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_checks_grd_operator_apply_online',
 			'one_fm.grd.doctype.paci.paci.system_checks_grd_operator_apply_online',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_first_grd_operator',
@@ -377,7 +379,6 @@ scheduler_events = {
 
 		],
 		"30 9 * * *": [
-			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_first',
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.moi_notify_again_grd_operator'
 
 		],

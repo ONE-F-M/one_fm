@@ -39,7 +39,9 @@
   "finance_department_section",
   "payment_done",
   "rpr_ref",
-  "amount"
+  "amount",
+  "reminder_grd_operator",
+  "reminder_grd_operator_again"
  ],
  "fields": [
   {
@@ -267,11 +269,25 @@
    "fieldtype": "Data",
    "label": "PAM File Number",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_grd_operator",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminder GRD Operator"
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_grd_operator_again",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminder GRD Operator Again"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-15 00:09:29.176837",
+ "modified": "2021-09-22 10:49:23.360597",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
