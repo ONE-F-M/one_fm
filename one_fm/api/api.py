@@ -94,12 +94,11 @@ def rename_post(posts):
 
 @frappe.whitelist()
 def store_fcm_token(employee_id ,fcm_token):
-    userID = frappe.get_value("Employee",{"name":employee_id},["user_id"])
+    Employee = frappe.get_doc("Employee",{"name":employee_id})
     try:
-        if userID:
-            user = frappe.get_doc("User",{"name":userID})
-            user.fcm_token= fcm_token
-            user.save()
+        if Employee:
+            Employee.fcm_token= fcm_token
+            Employee.save()
             frappe.db.commit()
     except Exception as e:
         print(frappe.get_traceback())
