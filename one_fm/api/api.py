@@ -4,6 +4,8 @@ import pandas as pd
 from frappe.utils import cstr
 from frappe.model.rename_doc import rename_doc
 import requests
+from firebase_admin import messaging
+
 import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
@@ -104,27 +106,21 @@ def store_fcm_token(employee_id ,fcm_token):
         print(frappe.get_traceback())
 
 @frappe.whitelist()
-def final_reminder_notification(employee_id,fcm_token):
+def final_reminder_notification(employee_id):
+    registration_tokens = []
+    for emp in employee_id:
+        token = frappe.get_all("Employee", {"name": emp}, "fcm_token")
+        registration_tokens.append(token[0].fcm_token)
     # This Device token comes from the client FCM SDKs.
-
+    
     # See documentation on defining a message payload.
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'key=' + employee_id,
-    }
-
-    body = {
-            'notification': {'title': 'Sending push form python script',
-                            'body': 'New Message'
-                            },
-            'to':fcm_token,
-            'priority': 'high',
-            #   'data': dataPayLoad,
-        }
-
-    # Send a message to the device corresponding to the provided
-    # registration token.
-    response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
-    print(response.status_code)
-    print(response.json())
-    return response
+    print(registration_tokens)
+    message = messaging.MulticastMessage(
+    data={'score': '850', 'time': '2:45'},
+    tokens=registration_tokens,
+    )
+    response = messaging.send_multicast(message)
+    # See the BatchResponse reference documentation
+    # for the contents of response.
+    print('{0} messages were sent successfully'.format(response.success_count))
+        return response
