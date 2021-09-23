@@ -93,7 +93,7 @@ def rename_post(posts):
             print(frappe.get_traceback())
 
 @frappe.whitelist()
-def final_reminder_notification(employee_id,deviceToken):
+def final_reminder_notification(employee_id,fcm_token):
     # This Device token comes from the client FCM SDKs.
 
     # See documentation on defining a message payload.
@@ -106,7 +106,7 @@ def final_reminder_notification(employee_id,deviceToken):
             'notification': {'title': 'Sending push form python script',
                             'body': 'New Message'
                             },
-            'to':deviceToken,
+            'to':fcm_token,
             'priority': 'high',
             #   'data': dataPayLoad,
         }
@@ -116,3 +116,4 @@ def final_reminder_notification(employee_id,deviceToken):
     response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
     print(response.status_code)
     print(response.json())
+    return response
