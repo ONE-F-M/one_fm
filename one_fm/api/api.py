@@ -93,6 +93,18 @@ def rename_post(posts):
             print(frappe.get_traceback())
 
 @frappe.whitelist()
+def store_fcm_token(employee_id ,fcm_token):
+    userID = frappe.get_value("Employee",{"name":employee_id},["user_id"])
+    try:
+        if userID:
+            user = frappe.get_doc("User",{"name":userID})
+            user.fcm_token= fcm_token
+            user.save()
+            frappe.db.commit()
+    except Exception as e:
+        print(frappe.get_traceback())
+
+@frappe.whitelist()
 def final_reminder_notification(employee_id,fcm_token):
     # This Device token comes from the client FCM SDKs.
 
