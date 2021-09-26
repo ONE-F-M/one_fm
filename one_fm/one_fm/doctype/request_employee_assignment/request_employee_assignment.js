@@ -8,7 +8,7 @@ frappe.ui.form.on('Request Employee Assignment', {
 			if (frm.doc.workflow_state == "Pending"){
 				frm.add_custom_button('Approve', () =>{
 					let {doctype, docname} = frm;
-					frappe.xcall('one_fm.one_fm.doctype.request_employee_assignment.request_employee_assignment.reject_assignment_request',{doctype, docname})
+					frappe.xcall('one_fm.one_fm.doctype.request_employee_assignment.request_employee_assignment.approve_assignment_request',{doctype, docname})
 					.then(res => {
 						frm.reload_doc();
 					});
