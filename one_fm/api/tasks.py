@@ -538,7 +538,7 @@ def generate_payroll():
 
 
 def generate_penalties():
-	start_date = add_to_date(getdate(), days=-30)
+	start_date = add_to_date(getdate(), months=-1)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
 	print(start_date)
 	print(end_date)
