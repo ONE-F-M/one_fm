@@ -313,6 +313,18 @@ scheduler_events = {
 	],
 
 	"cron": {
+		"0 8 * * 0,1,2,3,4":[#run durring working days only
+			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
+			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_renewal_operator_to_apply',#mi
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_transfer_operator_to_apply',
+			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.py.system_remind_renewal_operator_to_apply',#moi
+			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.py.system_remind_transfer_operator_to_apply',
+			'one_fm.grd.doctype.paci.paci.system_remind_renewal_operator_to_apply',#paci
+			'one_fm.grd.doctype.paci.paci.system_remind_transfer_operator_to_apply',
+			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_renewal',#paci hawiyati
+			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer'
+		],
 		"0 8 15 * *": [
 			'one_fm.grd.doctype.preparation.preparation.create_preparation',
 		],
@@ -337,18 +349,6 @@ scheduler_events = {
 		"45 10 * * *": [
 			'one_fm.utils.send_travel_agent_email'
 		],
-		"0 16 * * *":[
-			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
-			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
-			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_renewal_operator_to_apply',#mi
-			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_transfer_operator_to_apply',
-			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.py.system_remind_renewal_operator_to_apply',#moi
-			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.py.system_remind_transfer_operator_to_apply',
-			'one_fm.grd.doctype.paci.paci.system_remind_renewal_operator_to_apply',#paci
-			'one_fm.grd.doctype.paci.paci.system_remind_transfer_operator_to_apply',
-			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_first_grd_operator',
-			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator'
-		],
 		"0 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four'
 		],
@@ -370,10 +370,6 @@ scheduler_events = {
 			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed'
 
 
-		],
-		"30 8 * * *":[
-			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.fp_notify_again_grd_operator',
-			
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',
