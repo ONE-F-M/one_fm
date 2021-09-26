@@ -37,7 +37,7 @@ class RequestEmployeeSchedule(Document):
 	def after_insert(self):
 		approver_user = frappe.db.get_value("Employee", self.approver, ["user_id"])
 		link = get_link_to_form(self.doctype, self.name)
-		subject = _("Employee Schedule Change requested by {requestor}.".format(requestor=self.requestor))
+		subject = _("Employee Schedule Change requested by {requestor}.".format(requestor=self.requestor_name))
 		message = _("""
 			You have been requested an employee schedule change.<br>
 			Please take necessary action.<br>
