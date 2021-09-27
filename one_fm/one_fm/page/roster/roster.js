@@ -2418,6 +2418,7 @@ function staff_edit_dialog() {
 						};
 					}
 				},
+
 				onchange: function () {
 					let name = d.get_value('shift');
 					if (name) {
@@ -2430,14 +2431,15 @@ function staff_edit_dialog() {
 					}
 				}
 			},
+			{'label': 'Request Employee Assignment', 'fieldname': 'request_employee_assignment', 'fieldtype': 'Check'},
 		],
 		primary_action: function () {
-			let { shift } = d.get_values();
+			let { shift, request_employee_assignment } = d.get_values();
 
 			$('#cover-spin').show(0);
 			frappe.call({
 				method: 'one_fm.one_fm.page.roster.roster.assign_staff',
-				args: { employees, shift},
+				args: { employees, shift, request_employee_assignment},
 				callback: function (r) {
 					d.hide();
 					$('#cover-spin').hide();

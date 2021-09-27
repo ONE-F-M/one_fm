@@ -830,23 +830,49 @@ def set_dayoff(employee, date):
 
 
 @frappe.whitelist()
-def assign_staff(employees, shift):
-	try:
-		start = time.time()
-		for employee in json.loads(employees):
-			frappe.enqueue(assign_job, employee=employee, shift=shift, is_async=True, queue="long")
-		frappe.enqueue(update_roster, key="staff_view", is_async=True, queue="long")
-		end = time.time()
-		print(end-start, "[TOTS]")
-		return True
+def assign_staff(employees, shift, request_employee_assignment):
+	validation_logs = []
+	user, user_roles, user_employee = get_current_user_details()
+	if not cint(request_employee_assignment):
+		for emp in employees:
+			emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
+			supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
+			if user_employee.name != supervisor:
+				validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
+		
+	if len(validation_logs) > 0:
+		frappe.throw(validation_logs)
+		frappe.log_error(validation_logs)
+	else:
+		try:
+			start = time.time()
+			for employee in json.loads(employees):
+				if not cint(request_employee_assignment):
+					frappe.enqueue(assign_job, employee=employee, shift=shift, site=site, project=project, is_async=True, queue="long")
+				else:
+					emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", employee, ["project", "site", "shift"])
+					site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
+					if emp_project != project or emp_site != site or emp_shift != shift:
+						frappe.enqueue(create_request_employee_assignment, employee=employee, from_shift=emp_shift, to_shift=shift, is_async=True, queue="long")
+			frappe.enqueue(update_roster, key="staff_view", is_async=True, queue="long")
+			end = time.time()
+			print(end-start, "[TOTS]")
+			return True
 
-	except Exception as e:
-		frappe.log_error(e)
-		frappe.throw(_(e))
+		except Exception as e:
+			frappe.log_error(e)
+			frappe.throw(_(e))
 
-def assign_job(employee, shift):
+def create_request_employee_assignment(employee, from_shift, to_shift):
+	req_ea_doc = frappe.new_doc("Request Employee Assignment")
+	req_ea_doc.employee = employee
+	req_ea_doc.from_shift = from_shift
+	req_ea_doc.to_shift = to_shift
+	req_ea_doc.save(ignore_permissions=True)
+
+
+def assign_job(employee, shift, site, project):
 	start = time.time()
-	site, project, shift_type = frappe.get_value("Operations Shift", shift, ["site", "project", "shift_type"])
 	frappe.set_value("Employee", employee, "shift", shift)
 	frappe.set_value("Employee", employee, "site", site)
 	frappe.set_value("Employee", employee, "project", project)
