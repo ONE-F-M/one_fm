@@ -15,6 +15,9 @@ from one_fm.grd.doctype.paci import paci
 class MOIResidencyJawazat(Document):
     def validate(self):
         self.set_grd_values()
+        self.set_company_address()
+        self.set_company_unified_number()
+        self.set_paci_number()
 	
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -22,6 +25,34 @@ class MOIResidencyJawazat(Document):
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
     
+    def set_company_address(self):
+        """This method sets the company address from MOCI document"""
+        missing_field = False
+        fields = ['company_pam_file_number','company_location','company_block_number','company_street_name','company_building_name','company_contact_number']
+        for field in fields:
+            if not self.get(field):
+                missing_field = True
+        if missing_field:
+            moci = frappe.get_doc('MOCI','ONE Facilities Management Company W.L.L.')
+            self.company_location = moci.city
+            self.company_block_number = moci.blook
+            self.company_street_name = moci.street
+            self.company_building_name = moci.building
+            self.company_pam_file_number = moci.company_civil_id
+
+    def set_company_unified_number(self):
+        """This method to set the unified number from private pam file to moi document"""
+        if not self.company_centralized_number:
+            number = frappe.db.get_value('PAM File',{'pam_file_number':self.company_pam_file_number},['company_unified_number'])
+        if number:
+            self.company_centralized_number = number
+
+    def set_paci_number(self):
+        """This method sets the paci number in moi document from pam authorized signatury under same file"""
+        if not self.paci_number:
+            paci_number = frappe.db.get_value('PAM Authorized Signatory List',{'pam_file_number':self.company_pam_file_number},['company_paci_number'])
+            self.paci_number = paci_number
+
     def on_submit(self):
         self.validate_mandatory_fields_on_submit()
         self.set_residency_expiry_new_date_in_employee_doctype()

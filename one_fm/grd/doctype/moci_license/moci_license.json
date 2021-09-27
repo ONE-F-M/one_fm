@@ -1,14 +1,19 @@
 {
+ "actions": [],
  "autoname": "field:license_trade_name_english",
  "creation": "2019-12-15 16:43:11.658921",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "company_civil_id",
   "license_number",
   "license_expiry_date",
   "license_trade_name_arabic",
   "license_trade_name_english",
+  "address_section",
+  "city",
+  "blook",
   "street",
   "building"
  ],
@@ -53,9 +58,30 @@
    "fieldtype": "Data",
    "label": "Building",
    "reqd": 1
+  },
+  {
+   "fieldname": "address_section",
+   "fieldtype": "Section Break",
+   "label": "Address"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "blook",
+   "fieldtype": "Data",
+   "label": "Blook"
+  },
+  {
+   "fieldname": "company_civil_id",
+   "fieldtype": "Data",
+   "label": "Company Civil ID"
   }
  ],
- "modified": "2019-12-15 16:59:56.638878",
+ "links": [],
+ "modified": "2021-09-26 13:40:16.330163",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOCI License",
