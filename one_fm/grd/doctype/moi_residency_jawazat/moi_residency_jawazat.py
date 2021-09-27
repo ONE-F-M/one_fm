@@ -33,7 +33,7 @@ class MOIResidencyJawazat(Document):
             if not self.get(field):
                 missing_field = True
         if missing_field:
-            moci = frappe.get_doc('MOCI','ONE Facilities Management Company W.L.L.')
+            moci = frappe.get_doc('MOCI License','ONE Facilities Management Company W.L.L.')
             self.company_location = moci.city
             self.company_block_number = moci.blook
             self.company_street_name = moci.street

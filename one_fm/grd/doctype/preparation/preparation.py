@@ -53,7 +53,6 @@ class Preparation(Document):
         self.send_notifications()
         
     def validate_mandatory_fields_on_submit(self):
-        # field_list = [{'Renewal or extend':'renewal_or_extend'}, {'Preparation Record':'preparation_record'}]
         mandatory_fields = []
         mandatory_fields_reqd = False
         for item in self.preparation_record:#each item in the preparation_record row
