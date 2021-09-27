@@ -102,6 +102,9 @@ def store_fcm_token(employee_id ,fcm_token):
             Employee.fcm_token= fcm_token
             Employee.save()
             frappe.db.commit()
+            return True
+        else:
+            return False
     except Exception as e:
         print(frappe.get_traceback())
 
