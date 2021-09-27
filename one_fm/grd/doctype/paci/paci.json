@@ -264,6 +264,7 @@
    "fieldname": "date_of_application",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Date Of Application",
    "print_hide": 1,
    "read_only": 1
@@ -310,7 +311,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-22 12:00:51.943940",
+ "modified": "2021-09-26 19:23:12.960724",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
@@ -355,7 +356,7 @@
   }
  ],
  "search_fields": "civil_id,date_of_application,employee_id",
- "sort_field": "modified",
+ "sort_field": "date_of_application",
  "sort_order": "DESC",
  "title_field": "civil_id",
  "track_changes": 1

@@ -246,6 +246,7 @@
    "fieldname": "date_of_application",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Date of Application"
   },
   {
@@ -287,7 +288,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-22 10:49:23.360597",
+ "modified": "2021-09-26 19:13:10.137312",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
@@ -334,7 +335,7 @@
   }
  ],
  "search_fields": "civil_id,employee_id,date_of_application",
- "sort_field": "modified",
+ "sort_field": "date_of_application",
  "sort_order": "DESC",
  "title_field": "civil_id"
 }

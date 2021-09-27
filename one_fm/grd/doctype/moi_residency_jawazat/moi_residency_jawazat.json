@@ -472,6 +472,7 @@
    "fieldname": "date_of_application",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Date of Application",
    "print_hide": 1,
    "read_only": 1
@@ -487,7 +488,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-22 11:31:33.201232",
+ "modified": "2021-09-26 19:25:10.308774",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
@@ -534,7 +535,7 @@
    "write": 1
   }
  ],
- "sort_field": "modified",
+ "sort_field": "date_of_application",
  "sort_order": "DESC",
  "title_field": "one_fm_civil_id",
  "track_changes": 1,
