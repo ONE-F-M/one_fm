@@ -21,7 +21,10 @@ def get_columns():
 		_("Checkin Ref") + ":Link/Accommodation Checkin Checkout:120",
 		_("Checkout") + ":Date:100",
 		_("Checkout Ref") + ":Link/Accommodation Checkin Checkout:120",
-		_("Tenant Category") + ":Data:120"
+		_("Tenant Category") + ":Data:120",
+		_("Designation") + ":Data:120",
+		_("Project") + ":Data:120",
+		_("Employee Status") + ":Data:180"
     ]
 
 def get_conditions(filters):
@@ -41,8 +44,16 @@ def get_data(filters):
 		checkout = ''
 		accommodation_not_provided_by_company = True
 		accommodation_by_company = False
-		if acc.employee and filters.get('accommodation_not_provided_by_company'):
-			accommodation_by_company = frappe.db.get_value('Employee', acc.employee, 'one_fm_provide_accommodation_by_company')
+		designation = ''
+		project = ''
+		employee_status = ''
+		if acc.employee:
+			employee = frappe.get_doc('Employee', acc.employee)
+			designation = employee.designation
+			project = employee.project
+			employee_status = employee.status
+			if filters.get('accommodation_not_provided_by_company'):
+				accommodation_by_company = frappe.db.get_value('Employee', acc.employee, 'one_fm_provide_accommodation_by_company')
 		if acc.checked_out:
 			checkout = frappe.db.exists('Accommodation Checkin Checkout', {'checkin_reference': acc.name})
 			if checkout:
@@ -59,7 +70,10 @@ def get_data(filters):
 				acc.name,
 				checkout_date,
 				checkout,
-				acc.tenant_category
+				acc.tenant_category,
+				designation,
+				project,
+				employee_status
 			]
 			data.append(row)
 

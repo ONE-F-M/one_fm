@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe import _
+from frappe.utils import get_datetime
 from frappe.model.mapper import get_mapped_doc
 
 class AccommodationCheckinCheckout(Document):
@@ -15,32 +16,40 @@ class AccommodationCheckinCheckout(Document):
 		self.set_accommodation_policy()
 
 	@frappe.whitelist()
-	def transfer_accommodation(self, bed):
+	def transfer_accommodation(self, bed, transfer_datetime, reason_for_transfer):
 		bed_status = frappe.db.get_value('Bed', bed, 'status')
 		if bed_status == 'Vacant':
-			self.checkout_for_transfer()
-			self.checkin_in_transfer(bed)
+			transaction_date = get_datetime(transfer_datetime)
+			self.checkout_for_transfer(transaction_date)
+			return self.checkin_in_transfer(bed, transaction_date, reason_for_transfer)
 		else:
 			frappe.throw(_('Selected Bed is not Vacant !'))
 
-	def checkin_in_transfer(self, bed):
+	def checkin_in_transfer(self, bed, transaction_date, reason_for_transfer):
 		target_doc=None
 		def set_missing_values(source, target):
 			target.type = 'IN'
 			target.bed = bed
 			target.checked_out = False
+			target.transfer_from = self.bed
+			target.reason_for_transfer = reason_for_transfer
+			target.checkin_checkout_date_time = transaction_date
+			target.transferred_by = frappe.session.user
 
 		checkin = get_mapped_doc("Accommodation Checkin Checkout", self.name,
 			{"Accommodation Checkin Checkout": {"doctype": "Accommodation Checkin Checkout"}},
 			target_doc, set_missing_values)
 
 		checkin.save(ignore_permissions=True)
+		return checkin.name
 
-	def checkout_for_transfer(self):
+	def checkout_for_transfer(self, transaction_date):
 		target_doc=None
 		def set_missing_values(source, target):
 			target.type = 'OUT'
 			target.checkin_reference = self.name
+			target.checkin_checkout_date_time = transaction_date
+			target.reason_for_checkout = 'Accommodation Transfer'
 
 		checkout = get_mapped_doc("Accommodation Checkin Checkout", self.name,
 			{"Accommodation Checkin Checkout": {"doctype": "Accommodation Checkin Checkout"}},
