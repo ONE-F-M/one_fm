@@ -44,8 +44,8 @@ class MOIResidencyJawazat(Document):
         """This method to set the unified number from private pam file to moi document"""
         if not self.company_centralized_number:
             number = frappe.db.get_value('PAM File',{'pam_file_number':self.company_pam_file_number},['company_unified_number'])
-        if number:
-            self.company_centralized_number = number
+            if number:
+                self.company_centralized_number = number
 
     def set_paci_number(self):
         """This method sets the paci number in moi document from pam authorized signatury under same file"""
