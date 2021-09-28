@@ -1290,6 +1290,8 @@ def validate_job_applicant(doc, method):
     set_average_score(doc, method)
     if doc.is_new():
         set_childs_for_application_web_form(doc, method)
+    elif not doc.one_fm_documents_required:
+        set_required_documents(doc, method)
     if frappe.session.user != 'Guest' and not doc.one_fm_is_easy_apply:
         validate_mandatory_childs(doc)
     if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
@@ -1301,7 +1303,7 @@ def validate_pam_file_number_and_pam_designation(doc, method):
         if pam_file_number and pam_designation:
             doc.one_fm_erf_pam_file_number = pam_file_number
             doc.one_fm_erf_pam_designation = pam_designation
-            
+
 
 def validate_transferable_field(doc):
     if doc.one_fm_applicant_is_overseas_or_local != 'Local':
