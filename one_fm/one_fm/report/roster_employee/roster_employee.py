@@ -24,7 +24,7 @@ def get_columns(filters):
 		_("Active Employees") + ":Int:150",
 		_("Employees Rostered") + ":Int:250",
 		_("Employees Not Rostered") + ":Int:200",
-		_("Employees On Leave") + ":Int:200",
+		_("Employees Not Working") + ":Int:200",
 		_("Result") + ":Data:150"
 	]	
 
@@ -36,12 +36,12 @@ def get_data(filters=None):
 		{"name": "Active Employees\n\n\n", "values": []},
 		{"name": "Employees Rostered\n\n\n", "values": []},
 		{"name": "Employees Not Rostered\n\n\n", "values": []},
-		{"name": "Employees On Leave\n\n\n", "values": []},
+		{"name": "Employees Not Working\n\n\n", "values": []},
 	]
 	chart = {}
 	if filters:
 		for date in pd.date_range(start=filters["start_date"], end=filters["end_date"]):
-			employee_list = frappe.db.get_list("Employee", {'status': 'Active'}, ["employee"])			
+			employee_list = frappe.db.get_list("Employee", {'status': 'Active', 'date_of_joining': ('<=', date)}, ["employee"])			
 			rostered_employees_count = len(frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Working'}))
 			employee_leave_count = len(frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': ('not in', ('Working'))}))
 
