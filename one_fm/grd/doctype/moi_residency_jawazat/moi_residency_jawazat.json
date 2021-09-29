@@ -7,16 +7,21 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
-  "category",
   "amended_from",
+  "apply_for",
+  "column_break_6",
+  "reason_of_applying",
+  "section_break_8",
   "employee",
   "date_of_application",
+  "category",
   "preparation",
   "column_break_5",
   "employee_id",
+  "centeralized_number",
   "renewal_or_extend",
   "completed_on",
-  "section_break_4",
+  "section_break_16",
   "first_name_arabic",
   "second_name_arabic",
   "third_name_arabic",
@@ -28,7 +33,6 @@
   "last_name_english",
   "section_break_20",
   "one_fm_civil_id",
-  "centeralized_number",
   "designation",
   "place_of_birth",
   "gender",
@@ -98,10 +102,6 @@
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
-  },
-  {
-   "fieldname": "section_break_4",
-   "fieldtype": "Section Break"
   },
   {
    "allow_on_submit": 1,
@@ -456,8 +456,7 @@
    "allow_on_submit": 1,
    "fieldname": "centeralized_number",
    "fieldtype": "Data",
-   "label": "Centeralized Number",
-   "read_only": 1
+   "label": "Centeralized Number"
   },
   {
    "fetch_from": "employee.employee_id",
@@ -484,11 +483,35 @@
    "fieldtype": "Data",
    "label": "Residency Expiry Date",
    "read_only": 1
+  },
+  {
+   "fieldname": "apply_for",
+   "fieldtype": "Select",
+   "label": "Apply for",
+   "options": "\n1 \u0625\u0634\u0639\u0627\u0631\n14 \u0645\u0624\u0642\u062a\u0629\n18 \u0639\u0645\u0644 \u0623\u0647\u0644\u064a"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason_of_applying",
+   "fieldtype": "Select",
+   "label": "Reason Of Applying",
+   "options": "\n\u0639\u0645\u0644 \u0623\u0647\u0644\u064a\n\u0644\u0644\u0633\u064a\u0627\u062d\u0629"
+  },
+  {
+   "fieldname": "section_break_16",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-26 19:25:10.308774",
+ "modified": "2021-09-29 08:51:26.513604",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
