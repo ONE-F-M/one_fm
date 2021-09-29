@@ -31,17 +31,19 @@ def get_data(filters):
 	erf_list = frappe.db.get_list("ERF", filters=filters)
 	for erf_name in erf_list:
 		erf = frappe.get_doc('ERF', erf_name.name)
-		total_no_of_applicants = frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code })
-		total_no_of_joined = frappe.db.count('Employee', {'one_fm_erf': erf.erf_code })
-		total_no_of_rejected = frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code, 'status':'Rejected' })
-		total_no_of_selected =  frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code, 'one_fm_applicant_status':'Selected' })
-		total_no_of_no_action = frappe.db.count('Job Offer', {'one_fm_erf': erf.erf_code, 'status':'Awaiting Response' })
+		total_no_of_applicants = frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code})
+		total_no_of_joined = frappe.db.count('Employee', {'one_fm_erf': erf.erf_code})
+		total_no_of_rejected = frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code, 'status':'Rejected'})
+		total_no_of_selected =  frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code, 'one_fm_applicant_status':'Selected'})
+		total_no_of_no_action = frappe.db.count('Job Offer', {'one_fm_erf': erf.erf_code, 'status':'Awaiting Response'})
 		# percentage_count = (total_no_of_joined / erf.number_of_candidates_required)*100
 		source_of_hire = frappe.db.get_value('Job Opening', {'one_fm_erf': erf.erf_code}, 'one_fm_source_of_hire');
 
 		status = erf.status
 		if erf.status == 'Accepted':
 			status = 'Open'
+		if erf.docstatus = 2:
+			status = 'Cancelled'
 		row = [
 			erf.erf_code,
 			status,
