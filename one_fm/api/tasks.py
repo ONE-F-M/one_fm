@@ -52,12 +52,12 @@ def send_checkin_hourly_reminder():
 def final_reminder():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
+	date = getdate() 
 
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
 		# shift_start is equal to now time - notification reminder in mins
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
-			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
@@ -70,10 +70,9 @@ def final_reminder():
 				WHERE
 					empChkin.log_type="IN"
 				AND empChkin.skip_auto_attendance=0
-				AND date(empChkin.time)="{date}"
+				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
-
 			if len(recipients) > 0:
 				recipients = [recipient[0] for recipient in recipients if recipient[0]]
 				subject = _("Final Reminder: Please checkin in the next five minutes.")
@@ -85,8 +84,6 @@ def final_reminder():
 
 		# shift_end is equal to now time - notification reminder in mins
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
-			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-		
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp  
 				WHERE
@@ -99,13 +96,12 @@ def final_reminder():
 				WHERE
 					empChkin.log_type="OUT"
 				AND empChkin.skip_auto_attendance=0
-				AND date(empChkin.time)="{date}"
+				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 
 			if len(recipients) > 0:	
 				recipients = [recipient[0] for recipient in recipients if recipient[0]]
-	
 				subject = _("Final Reminder: Please checkout in the next five minutes.")
 				message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 				send_notification(subject, message, recipients)
@@ -225,7 +221,7 @@ def send_notification(subject, message, recipients):
 		notification.document_name = " "
 		notification.save()
 		notification.document_name = notification.name
-		notification.save()
+		notification.save(ignore_permissions=True)
 		frappe.db.commit()	
 
 def get_active_shifts(now_time):
