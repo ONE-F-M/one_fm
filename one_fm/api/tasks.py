@@ -221,7 +221,7 @@ def send_notification(subject, message, recipients):
 		notification.document_name = " "
 		notification.save()
 		notification.document_name = notification.name
-		notification.save()
+		notification.save(ignore_permissions=True)
 		frappe.db.commit()	
 
 def get_active_shifts(now_time):
