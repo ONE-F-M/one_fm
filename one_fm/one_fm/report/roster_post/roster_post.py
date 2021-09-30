@@ -25,8 +25,8 @@ def get_columns(filters):
 		_("Date") + ":Date:150",
 		_("Active Posts") + ":Int:150",
 		_("Posts Off") + ":Int:250",
-		_("Posts Filled") + ":Int:200",
-		_("Posts Not Filled") + ":Int:200",
+		_("Posts Filled") + ":Int:250",
+		_("Posts Not Filled") + ":Int:250",
 		_("Result") + ":Data:150"
 	]
 
