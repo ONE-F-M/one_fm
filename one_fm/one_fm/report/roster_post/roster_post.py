@@ -9,6 +9,8 @@ from frappe import msgprint
 import pandas as pd
 
 
+post_types_not_filled = set()
+
 def execute(filters=None):
 	if filters:
 		days_in_month = monthrange(cint(filters.year), cint(filters.month))[1]
@@ -59,6 +61,8 @@ def get_data(filters):
 				elif posts_count > posts_fill_count:
 					posts_filled_count = posts_filled_count + posts_fill_count
 					posts_not_filled_count = posts_not_filled_count + (posts_count - posts_fill_count)
+					global post_types_not_filled
+					post_types_not_filled.add(post_type.post_type)
 
 			result = "OK"
 			if posts_not_filled_count > 0:
@@ -106,3 +110,8 @@ def get_years():
 		year_list = [getdate().year]
 
 	return "\n".join(str(year) for year in year_list)
+
+
+@frappe.whitelist()
+def get_post_types_not_filled():
+	return post_types_not_filled	
