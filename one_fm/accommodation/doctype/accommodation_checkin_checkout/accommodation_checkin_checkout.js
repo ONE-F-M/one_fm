@@ -89,7 +89,8 @@ var transfer_accommodation_dialoge = function(frm) {
 					return {
 						filters: {
 							'accommodation': dialog.get_value('accommodation'),
-							'accommodation_unit': dialog.get_value('unit')
+							'accommodation_unit': dialog.get_value('unit'),
+							'bed_space_available': 1
 						}
 					}
 				}

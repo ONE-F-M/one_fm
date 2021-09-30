@@ -171,6 +171,7 @@ class AccommodationCheckinCheckout(Document):
 			self.floor = checkin.floor
 			self.full_name = checkin.full_name
 			self.passport_number = checkin.passport_number
+			self.tenant_category = checkin.tenant_category
 			self.civil_id = checkin.civil_id
 			self.new_or_current_resident = checkin.new_or_current_resident
 			self.attach_print_accommodation_policy = checkin.attach_print_accommodation_policy
