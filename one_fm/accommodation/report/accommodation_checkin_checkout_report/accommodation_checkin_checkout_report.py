@@ -24,6 +24,7 @@ def get_columns():
 		_("Tenant Category") + ":Data:120",
 		_("Designation") + ":Data:120",
 		_("Project") + ":Data:120",
+		_("Nationality") + ":Data:120",
 		_("Employee Status") + ":Data:180"
     ]
 
@@ -46,12 +47,14 @@ def get_data(filters):
 		accommodation_by_company = False
 		designation = ''
 		project = ''
+		nationality = ''
 		employee_status = ''
 		if acc.employee:
 			employee = frappe.get_doc('Employee', acc.employee)
 			designation = employee.designation
 			project = employee.project
 			employee_status = employee.status
+			nationality = employee.one_fm_nationality
 			if filters.get('accommodation_not_provided_by_company'):
 				accommodation_by_company = frappe.db.get_value('Employee', acc.employee, 'one_fm_provide_accommodation_by_company')
 		if acc.checked_out:
@@ -73,6 +76,7 @@ def get_data(filters):
 				acc.tenant_category,
 				designation,
 				project,
+				nationality,
 				employee_status
 			]
 			data.append(row)
