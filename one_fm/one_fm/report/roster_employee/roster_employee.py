@@ -24,10 +24,13 @@ def get_columns(filters):
 	return [
 		_("Date") + ":Date:150",
 		_("Active Employees") + ":Int:150",
-		_("Employees Rostered") + ":Int:250",
-		_("Employees Not Rostered") + ":Int:250",
-		_("Employees On Day Off/Leave") + ":Int:250",
-		_("Result") + ":Data:150"
+		_("Rostered") + ":Int:200",
+		_("Not Rostered") + ":Int:100",
+		_("Day Offs") + ":Int:100",
+		_("Sick Leaves") + ":Int:100",
+		_("Annual Leaves") + ":Int:150",
+		_("Emergency Leaves") + ":Int:150",
+		_("Result") + ":Data:100"
 	]	
 
 
@@ -36,16 +39,22 @@ def get_data(filters=None):
 	labels = []
 	datasets = [
 		{"name": "Active Employees\n\n\n", "values": []},
-		{"name": "Employees Rostered\n\n\n", "values": []},
-		{"name": "Employees Not Rostered\n\n\n", "values": []},
-		{"name": "Employees on Day Off/Leave\n\n\n", "values": []},
+		{"name": "Rostered\n\n", "values": []},
+		{"name": "Not Rostered\n\n", "values": []},
+		{"name": "Day Offs\n\n", "values": []},
+		{"name": "Sick Leaves\n\n", "values": []},
+		{"name": "Annual Leaves\n\n", "values": []},
+		{"name": "Emergency Leaves\n\n", "values": []},
 	]
 	chart = {}
 	if filters:
 		for date in pd.date_range(start=filters["start_date"], end=filters["end_date"]):
 			employee_list = get_active_employees(date)		
 			rostered_employees = get_working_employees(date)
-			employees_on_day_off_leave = get_not_working_employees(date)
+			employees_on_day_off = get_day_off_employees(date)
+			employees_on_sick_leave = get_sick_leave_employees(date)
+			employees_on_annual_leave = get_annual_leave_employees(date)
+			employees_on_emergency_leave = get_emergency_leave_employees(date)
 
 			employee_not_rostered_count = 0
 
@@ -64,7 +73,10 @@ def get_data(filters=None):
 				len(employee_list),
 				len(rostered_employees),
 				employee_not_rostered_count,
-				len(employees_on_day_off_leave),
+				len(employees_on_day_off),
+				len(employees_on_sick_leave),
+				len(employees_on_annual_leave),
+				len(employees_on_emergency_leave),
 				result			
 			]
 
@@ -74,7 +86,10 @@ def get_data(filters=None):
 			datasets[0]["values"].append(len(employee_list))
 			datasets[1]["values"].append(len(rostered_employees))
 			datasets[2]["values"].append(employee_not_rostered_count)
-			datasets[3]["values"].append(len(employees_on_day_off_leave))
+			datasets[3]["values"].append(len(employees_on_day_off))
+			datasets[4]["values"].append(len(employees_on_sick_leave))
+			datasets[5]["values"].append(len(employees_on_annual_leave))
+			datasets[6]["values"].append(len(employees_on_annual_leave))
 
 		chart = {
 			"data": {
@@ -95,9 +110,21 @@ def get_working_employees(date):
 	""" returns list of employees who's employee availability status is 'working' for a given date """
 	return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Working'})
 
-def get_not_working_employees(date):
-	""" returns list of employees who's employee availability status is not working for a given date """
-	return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': ('not in', ('Working'))})
+def get_day_off_employees(date):
+	""" returns list of employees who's employee availability status is day off for a given date """
+	return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Day Off'})
+
+def get_sick_leave_employees(date):
+	""" returns list of employees who's employee availability status is sick leave for a given date """
+	return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Sick Leave'})
+
+def get_annual_leave_employees(date):
+	""" returns list of employees who's employee availability status is annual leave for a given date """
+	return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Annual Leave'})
+
+def get_emergency_leave_employees(date):
+	""" returns list of employees who's employee availability status is emergency leave for a given date """
+	return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Emergency Leave'})
 
 @frappe.whitelist()
 def get_years():
