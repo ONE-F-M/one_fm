@@ -112,7 +112,7 @@ class MOIResidencyJawazat(Document):
             "issued_on":today,
             "valid_till":self.new_residency_expiry_date
             })
-        employee.work_permit_expiry_date = self.new_residency_expiry_date
+        employee.residency_expiry_date = self.new_residency_expiry_date
         employee.save()
             
 #fetching the list of employee has Extend and renewal status from HR list. 
