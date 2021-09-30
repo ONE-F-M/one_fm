@@ -5,11 +5,13 @@ import frappe
 from frappe import _
 from frappe.utils import cstr, cint, getdate, add_to_date
 from calendar import monthrange
-from frappe import msgprint
 import pandas as pd
 
+employees_not_rostered = set()
 
 def execute(filters=None):
+	global employees_not_rostered
+	employees_not_rostered.clear()
 	if filters:
 		days_in_month = monthrange(cint(filters.year), cint(filters.month))[1]
 		filters["start_date"] = filters.year + "-" + filters.month + "-" + "1"
@@ -23,8 +25,8 @@ def get_columns(filters):
 		_("Date") + ":Date:150",
 		_("Active Employees") + ":Int:150",
 		_("Employees Rostered") + ":Int:250",
-		_("Employees Not Rostered") + ":Int:200",
-		_("Employees On Day Off/Leave") + ":Int:200",
+		_("Employees Not Rostered") + ":Int:250",
+		_("Employees On Day Off/Leave") + ":Int:250",
 		_("Result") + ":Data:150"
 	]	
 
@@ -49,6 +51,8 @@ def get_data(filters=None):
 
 			for employee in employee_list:
 				if not frappe.db.exists({'doctype': 'Employee Schedule', 'date': date, 'employee': employee.employee}):
+					global employees_not_rostered
+					employees_not_rostered.add(employee.employee + ": " + get_employee_name(employee.employee))
 					employee_not_rostered_count = employee_not_rostered_count + 1
 
 			result = "OK"
@@ -61,7 +65,7 @@ def get_data(filters=None):
 				len(rostered_employees),
 				employee_not_rostered_count,
 				len(employees_on_day_off_leave),
-				result
+				result			
 			]
 
 			data.append(row)
@@ -102,3 +106,12 @@ def get_years():
 		year_list = [getdate().year]
 
 	return "\n".join(str(year) for year in year_list)
+
+
+@frappe.whitelist()
+def get_employees_not_rostered():
+	return employees_not_rostered
+
+
+def get_employee_name(employee_code):
+	return frappe.db.get_value("Employee", employee_code, "employee_name")		

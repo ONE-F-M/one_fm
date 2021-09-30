@@ -32,7 +32,21 @@ frappe.query_reports["Roster Employee"] = {
 			"reqd": 1
 		},
 	],
-	"onload": function() {
+	"onload": function(report) {
+		report.page.add_inner_button(__("View employees not rostered"), function() {
+			frappe.call({
+				method: "one_fm.one_fm.report.roster_employee.roster_employee.get_employees_not_rostered", 
+				callback: function(r){
+					var employees = r.message;
+					message = "<div><b>Employees not rostered: </b><br><ul>";
+					for(let i=0;i<employees.length;i++){
+						message += "<li>"+ employees[i] + "</li>"
+					}
+					message += "</ul></div>";
+					frappe.msgprint(message)
+				}
+			})
+		}).addClass("btn-primary");
 		return  frappe.call({
 			method: "one_fm.one_fm.report.roster_employee.roster_employee.get_years",
 			callback: function(r) {
