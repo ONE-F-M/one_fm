@@ -17,6 +17,19 @@ frappe.query_reports["Accommodation Checkin Checkout Report"] = {
 			"options": "Accommodation Unit"
 		},
 		{
+			"fieldname":"accommodation_space",
+			"label": __("Space"),
+			"fieldtype": "Link",
+			"options": "Accommodation Space",
+			"get_query": function(){
+				return {
+					"filters": {
+						'bed_space_available': 1
+					}
+				}
+			}
+		},
+		{
 			"fieldname":"bed",
 			"label": __("Bed"),
 			"fieldtype": "Link",
@@ -34,15 +47,16 @@ frappe.query_reports["Accommodation Checkin Checkout Report"] = {
 			"fieldtype": "Data"
 		},
 		{
-			"fieldname":"accommodation_not_provided_by_company",
-			"label": __("Not Provided by Company"),
-			"fieldtype": "Check"
-		},
-		{
 			"fieldname":"tenant_category",
 			"label": __("Tenant Category"),
 			"fieldtype": "Select",
 			"options": "\nGranted Service\nPaid Service"
-		}
+		},
+		{
+			"fieldname":"current_list_only",
+			"label": __("Current List Only"),
+			"fieldtype": "Check",
+			"default": true
+		},
 	]
 };

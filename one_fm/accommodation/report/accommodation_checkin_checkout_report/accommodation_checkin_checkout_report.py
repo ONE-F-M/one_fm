@@ -6,31 +6,37 @@ import frappe
 from frappe import _
 
 def execute(filters=None):
-	columns, data = get_columns(), get_data(filters)
+	columns, data = get_columns(filters), get_data(filters)
 	return columns, data
 
-def get_columns():
-    return [
-        _("Accommodation") + ":Link/Accommodation:80",
+def get_columns(filters):
+	columns = [
+		_("Accommodation") + ":Link/Accommodation:80",
 		_("Unit") + ":Link/Accommodation Unit:80",
+		_("Space") + ":Link/Accommodation Space:120",
 		_("Bed") + ":Link/Bed:120",
 		_("Employee ID") + ":Data:120",
 		_("Employee Name") + ":Data:180",
 		_("CIVIL ID") + ":Data:100",
 		_("Checkin") + ":Date:100",
-		_("Checkin Ref") + ":Link/Accommodation Checkin Checkout:120",
-		_("Checkout") + ":Date:100",
-		_("Checkout Ref") + ":Link/Accommodation Checkin Checkout:120",
-		_("Tenant Category") + ":Data:120",
-		_("Designation") + ":Data:120",
-		_("Project") + ":Data:120",
-		_("Nationality") + ":Data:120",
-		_("Employee Status") + ":Data:180"
-    ]
+		_("Checkin Ref") + ":Link/Accommodation Checkin Checkout:120"
+	]
+
+	if not filters.get('current_list_only'):
+		columns.append(_("Checkout") + ":Date:100")
+		columns.append(_("Checkout Ref") + ":Link/Accommodation Checkin Checkout:120")
+
+	columns.append(_("Tenant Category") + ":Data:120")
+	columns.append(_("Designation") + ":Data:120")
+	columns.append(_("Project") + ":Data:120")
+	columns.append(_("Nationality") + ":Data:120")
+	columns.append(_("Employee Status") + ":Data:180")
+
+	return columns
 
 def get_conditions(filters):
 	conditions = ""
-	fields = ['accommodation', 'accommodation_unit', 'bed', 'employee', 'employee_id', 'tenant_category']
+	fields = ['accommodation', 'accommodation_unit', 'accommodation_space', 'bed', 'employee', 'employee_id', 'tenant_category']
 	for field in fields:
 		if filters.get(field):
 			conditions += " and {0}='{1}' ".format(field, filters.get(field))
@@ -38,13 +44,12 @@ def get_conditions(filters):
 
 def get_data(filters):
 	data=[]
+	current_list_only = filters.get('current_list_only')
 	conditions = get_conditions(filters)
 	acc_list=frappe.db.sql("""select * from `tabAccommodation Checkin Checkout` where type='IN' {0}""".format(conditions), as_dict=1)
 	for acc in acc_list:
 		checkout_date = ''
 		checkout = ''
-		accommodation_not_provided_by_company = True
-		accommodation_by_company = False
 		designation = ''
 		project = ''
 		nationality = ''
@@ -55,16 +60,17 @@ def get_data(filters):
 			project = employee.project
 			employee_status = employee.status
 			nationality = employee.one_fm_nationality
-			if filters.get('accommodation_not_provided_by_company'):
-				accommodation_by_company = frappe.db.get_value('Employee', acc.employee, 'one_fm_provide_accommodation_by_company')
-		if acc.checked_out:
+		if acc.checked_out and not current_list_only:
 			checkout = frappe.db.exists('Accommodation Checkin Checkout', {'checkin_reference': acc.name})
 			if checkout:
 				checkout_date = frappe.db.get_value('Accommodation Checkin Checkout', checkout, 'checkin_checkout_date_time')
-		if accommodation_not_provided_by_company and not accommodation_by_company:
+		if acc.checked_out and current_list_only:
+			pass
+		else:
 			row = [
 				acc.accommodation,
 				acc.accommodation_unit,
+				acc.accommodation_space,
 				acc.bed,
 				acc.employee_id,
 				acc.full_name,
