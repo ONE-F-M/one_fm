@@ -46,14 +46,14 @@ var transfer_accommodation = function(frm) {
 	}
 };
 
-var transfer_accommodation_action = function(frm, bed) {
+var transfer_accommodation_action = function(frm, bed, transfer_datetime, reason_for_transfer) {
 	frappe.call({
 		doc: frm.doc,
 		method: 'transfer_accommodation',
-		args: {bed: bed},
+		args: {bed: bed, transfer_datetime: transfer_datetime, reason_for_transfer: reason_for_transfer},
 		callback: function(r) {
-			if(!data.exc){
-				frm.reload_doc();
+			if(!r.exc && r.message){
+				frappe.set_route('Form', frm.doc.doctype, r.message);
 			}
 		},
 		freeze: true,
@@ -84,24 +84,37 @@ var transfer_accommodation_dialoge = function(frm) {
 					}
 				}
 			},
-			{fieldtype: "Column Break"},
 			{fieldtype: "Link", label: "Space", fieldname: "space", reqd: 1, options: "Accommodation Space",
 				get_query: function(){
 					return {
 						filters: {
 							'accommodation': dialog.get_value('accommodation'),
 							'accommodation_unit': dialog.get_value('unit'),
+							'bed_space_available': 1
+						}
+					}
+				}
+			},
+			{fieldtype: "Link", label: "Bed", fieldname: "bed", options:"Bed", reqd: 1,
+				get_query: function(){
+					return {
+						filters: {
+							'accommodation': dialog.get_value('accommodation'),
+							'accommodation_unit': dialog.get_value('unit'),
+							'accommodation_space': dialog.get_value('space'),
 							'status': 'Vacant'
 						}
 					}
 				}
 			},
-			{fieldtype: "Link", label: "Bed", fieldname: "bed", options:"Bed", reqd: 1}
+			{fieldtype: "Column Break"},
+			{fieldtype: "Datetime", label: "Transfer Date Time", fieldname: "transfer_datetime", options:"Today", reqd: 1},
+			{fieldtype: "Small Text", label: "Reason for Transfer", fieldname: "reason_for_transfer", reqd: 1}
 		],
 		primary_action_label: __("Transfer"),
 		primary_action : function(){
 			if(dialog.get_value('bed')){
-				transfer_accommodation_action(frm, dialog.get_value('bed'));
+				transfer_accommodation_action(frm, dialog.get_value('bed'), dialog.get_value('transfer_datetime'), dialog.get_value('reason_for_transfer'));
 				dialog.hide();
 			}
 			else{

@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "SP-.######",
  "creation": "2020-06-01 20:37:39.777928",
  "doctype": "DocType",
@@ -109,16 +110,14 @@
    "fieldname": "arrival_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "Arrival Time",
-   "reqd": 1
+   "label": "Arrival Time"
   },
   {
    "depends_on": "eval:doc.permission_type==\"Leave Early\"",
    "fieldname": "leaving_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "Leaving Time",
-   "reqd": 1
+   "label": "Leaving Time"
   },
   {
    "fieldname": "amended_from",
@@ -140,7 +139,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2020-06-06 15:47:13.655713",
+ "links": [],
+ "modified": "2021-09-14 15:39:51.980874",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",

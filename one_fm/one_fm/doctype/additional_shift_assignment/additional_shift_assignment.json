@@ -7,6 +7,7 @@
  "field_order": [
   "employee",
   "employee_name",
+  "employee_id",
   "project",
   "site",
   "shift"
@@ -50,11 +51,18 @@
    "label": "Shift",
    "options": "Operations Shift",
    "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-08-11 16:56:07.616700",
+ "modified": "2021-09-21 15:51:28.270343",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Additional Shift Assignment",

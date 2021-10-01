@@ -100,8 +100,11 @@ function load_js(page) {
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterOtMonth");
 			let wrapper_element = get_wrapper_element();
-			if (page.search_key) {
-				$(wrapper_element).find(".search-employee").val(page.search_key);
+			if (page.employee_search_name) {
+				$(wrapper_element).find(".search-employee-name").val(page.employee_search_name);
+			}
+			if (page.employee_search_id) {
+				$(wrapper_element).find(".search-employee-id").val(page.employee_search_id);
 			}
 			get_roster_data(page, true);
 
@@ -167,8 +170,11 @@ function load_js(page) {
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
 			let wrapper_element = get_wrapper_element();
-			if (page.search_key) {
-				$(wrapper_element).find(".search-employee").val(page.search_key);
+			if (page.employee_search_name) {
+				$(wrapper_element).find(".search-employee-name").val(page.employee_search_name);
+			}
+			if (page.employee_search_id) {
+				$(wrapper_element).find(".search-employee-id").val(page.employee_search_id);
 			}
 			get_roster_data(page);
 		});
@@ -960,10 +966,10 @@ function bind_events(page) {
 
 function bind_search_bar_event(page) {
 	let wrapper_element = get_wrapper_element();
-	$(wrapper_element).find(".search-employee").keypress(function (event) {
+	$(wrapper_element).find(".search-employee-name").keypress(function (event) {
 		if (event.which == 13) {
 			// alert("You pressed enter");
-			page.search_key = frappe.utils.xss_sanitise($(wrapper_element).find(".search-employee").val());
+			page.employee_search_name = frappe.utils.xss_sanitise($(wrapper_element).find(".search-employee-name").val());
 			if (wrapper_element == ".rosterMonth") {
 				get_roster_data(page);
 			} else if (wrapper_element == ".rosterWeek") {
@@ -976,8 +982,36 @@ function bind_search_bar_event(page) {
 		}
 	});
 	$('.closed').on('click', function (event) {
-		$(wrapper_element).find(".search-employee").val('');
-		page.search_key = '';
+		$(wrapper_element).find(".search-employee-name").val('');
+		page.employee_search_name = '';
+		if (wrapper_element == ".rosterMonth") {
+			get_roster_data(page);
+		} else if (wrapper_element == ".rosterWeek") {
+			get_roster_week_data(page);
+		} else if (wrapper_element == ".rosterOtMonth") {
+			get_roster_data(page, true);
+		} else if (wrapper_element == ".rosterOtWeek") {
+			get_roster_week_data(page, true);
+		}
+	});
+	$(wrapper_element).find(".search-employee-id").keypress(function (event) {
+		if (event.which == 13) {
+			// alert("You pressed enter");
+			page.employee_search_id = frappe.utils.xss_sanitise($(wrapper_element).find(".search-employee-id").val());
+			if (wrapper_element == ".rosterMonth") {
+				get_roster_data(page);
+			} else if (wrapper_element == ".rosterWeek") {
+				get_roster_week_data(page);
+			} else if (wrapper_element == ".rosterOtMonth") {
+				get_roster_data(page, true);
+			} else if (wrapper_element == ".rosterOtWeek") {
+				get_roster_week_data(page, true);
+			}
+		}
+	});
+	$('.closed').on('click', function (event) {
+		$(wrapper_element).find(".search-employee-id").val('');
+		page.employee_search_id = '';
 		if (wrapper_element == ".rosterMonth") {
 			get_roster_data(page);
 		} else if (wrapper_element == ".rosterWeek") {
@@ -997,16 +1031,20 @@ function get_roster_data(page, isOt) {
 	let a1 = performance.now();
 	classgrt = [];
 	classgrtw = [];
-	let search_key = '';
-	if (page.search_key) {
-		search_key = page.search_key;
+	let employee_search_name = '';
+	let employee_search_id = ''
+	if (page.employee_search_name) {
+		employee_search_name = page.employee_search_name;
+	}
+	if (page.employee_search_id) {
+		employee_search_id = page.employee_search_id;
 	}
 	let {start_date, end_date} = page;
 	let { project, site, shift, department, post_type } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
 	if (project || site || shift || department || post_type){
 		$('#cover-spin').show(0);
-		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, search_key, project, site, shift, department, post_type, isOt, limit_start, limit_page_length })
+		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, post_type, isOt, limit_start, limit_page_length })
 			.then(res => {
 				let a2 = performance.now();
 				console.log("REQ TIME", a2 - a1);
@@ -1123,7 +1161,10 @@ function render_roster(res, page, isOt) {
 			};
 			let attendancemap = {
 				'P': 'greenboxcolor',
-				'A': 'redboxcolor'
+				'A': 'redboxcolor',
+				'WFH': 'greenboxcolor',
+				'HD': 'greenboxcolor',
+				'OL': 'redboxcolor'
 			};
 			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance, asa } = employees_data[employee_key][i];
 			//OT schedule view
@@ -1215,15 +1256,15 @@ function render_roster(res, page, isOt) {
 function get_roster_week_data(page, isOt) {
 	classgrt = [];
 	classgrtw = [];
-	let search_key = '';
-	if (page.search_key) {
-		search_key = page.search_key;
+	let employee_search_name = '';
+	if (page.employee_search_name) {
+		employee_search_name = page.employee_search_name;
 	}
 	let { start_date, end_date } = page;
 	let { project, site, shift, department, post_type } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
 	console.log(limit_start, limit_page_length);
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, search_key, project, site, shift, department, post_type, isOt, limit_start, limit_page_length })
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_name, project, site, shift, department, post_type, isOt, limit_start, limit_page_length })
 		.then(res => {
 			let { post_types_data, employees_data, total } = res;
 			page.pagination.total = total;
@@ -1847,11 +1888,11 @@ function GetHeaders(IsMonthSet, element) {
 			var todayDaydate = calDate.format("DD");
 			var th = "";// "<th id="data-day_" + i + "" onclick="ChangeRosteringDate(" + i + ",this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
-				th = '<th class="greytablebg vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="greytablebg vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			} else if (todayDaydate === getdateres) {
-				th = '<th class="hightlightedtable vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="hightlightedtable vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			} else {
-				th = '<th class=" vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class=" vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			dataHTML = dataHTML + th;
 		}
@@ -1873,10 +1914,10 @@ function GetHeaders(IsMonthSet, element) {
 
 			var th = "";// "<th id="data-day_" + i + "" onclick="ChangeRosteringDate(" + i + ",this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
-				th = '<th class="greytablebg vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="greytablebg vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			else {
-				th = '<th class="vertical-sticky" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			dataHTML = dataHTML + th;
 
@@ -2242,7 +2283,8 @@ function setup_staff_filters(page) {
 		department: '',
 		designation: '',
 		post_type: '',
-		search_key: ''
+		employee_search_name: '',
+		employee_search_id: ''
 	};
 	let pagination = {
 		limit_start: 0,
@@ -2376,6 +2418,7 @@ function staff_edit_dialog() {
 						};
 					}
 				},
+
 				onchange: function () {
 					let name = d.get_value('shift');
 					if (name) {
@@ -2388,46 +2431,15 @@ function staff_edit_dialog() {
 					}
 				}
 			},
-			{
-				'label': 'Post Type', 'fieldname': 'post_type', 'reqd': 1, 'fieldtype': 'Link', 'options': 'Post Type', get_query: function () {
-					let shift = d.get_value('shift');
-					if (shift) {
-						return {
-							query: "one_fm.one_fm.page.roster.roster.get_filtered_post_types",
-							filters: { shift }
-						};
-					}
-				}
-			},
-			{ 'fieldtype': 'Section Break' },
-			{ 'label': 'Assign from', 'fieldname': 'assign_from', 'fieldtype': 'Select', 'reqd': 1, 'options': '\nDate\nImmediately' },
-			{
-				'label': 'Assign from date', 'fieldname': 'assign_date', 'fieldtype': 'Date', 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'), 'depends_on': "eval:this.get_value('assign_from') == 'Date'",
-				onchange: function () {
-					let assign_date = d.get_value('assign_date');
-					if (assign_date && moment(assign_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
-						frappe.throw(__("Assign from Date cannot be same or before as today."));
-					}
-				}
-			},
-			{ 'fieldtype': 'Column Break' },
-			{
-				'label': 'Assign till date', 'fieldname': 'assign_till_date', 'fieldtype': 'Date', 'default': frappe.datetime.add_days(frappe.datetime.nowdate(), '1'),
-				onchange: function () {
-					let assign_date = d.get_value('assign_till_date');
-					if (assign_date && moment(assign_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
-						frappe.throw(__("Assign from Date cannot be same or before as today."));
-					}
-				}
-			},
+			{'label': 'Request Employee Assignment', 'fieldname': 'request_employee_assignment', 'fieldtype': 'Check'},
 		],
 		primary_action: function () {
-			let { shift, post_type, assign_from, assign_date, assign_till_date } = d.get_values();
+			let { shift, request_employee_assignment } = d.get_values();
 
 			$('#cover-spin').show(0);
 			frappe.call({
 				method: 'one_fm.one_fm.page.roster.roster.assign_staff',
-				args: { employees, shift, post_type, assign_from, assign_date, assign_till_date },
+				args: { employees, shift, request_employee_assignment},
 				callback: function (r) {
 					d.hide();
 					$('#cover-spin').hide();
@@ -2819,6 +2831,8 @@ function schedule_change_post(page) {
 				}
 			},
 			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
+			{ 'label': 'Keep Days Off', 'fieldname': 'keep_days_off', 'fieldtype': 'Check' },
+			{ 'label': 'Request Employee Schedule', 'fieldname': 'request_employee_schedule', 'fieldtype': 'Check' },
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
 			{
 				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:this.get_value("project_end_date")==0', onchange: function () {
@@ -2832,12 +2846,10 @@ function schedule_change_post(page) {
 					}
 				}
 			},
-
-
 		],
 		primary_action: function () {
 
-			let { shift, site, post_type, project, start_date, project_end_date, end_date } = d.get_values();
+			let { shift, site, post_type, project, start_date, project_end_date, keep_days_off, end_date, request_employee_schedule } = d.get_values();
 			$('#cover-spin').show(0);
 			let element = get_wrapper_element();
 			if (element == ".rosterOtMonth") {
@@ -2846,7 +2858,7 @@ function schedule_change_post(page) {
 				otRoster = false;
 			}
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-				{ employees, shift, post_type, otRoster, start_date, project_end_date, end_date })
+				{ employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, end_date })
 				.then(res => {
 					d.hide();
 					$('#cover-spin').hide();

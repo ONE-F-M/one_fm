@@ -383,8 +383,8 @@ def create_onboarding_from_job_offer(job_offer):
         if not job_offer.onboarding_officer:
             frappe.msgprint(_("Please Select Onboarding Officer to Create Onboard Employee"))
         elif not frappe.db.exists('Onboard Employee', {'job_offer': job_offer.name}):
-            fields = ['employee_grade', 'job_applicant', 'is_g2g_fees_needed', 'is_residency_fee_needed',
-                'g2g_fee_and_residency_fine_amount']
+            fields = ['employee_grade', 'job_applicant', 'is_g2g_fees_needed', 'is_residency_fine_needed',
+                'g2g_fee_amount', 'is_residency_fine_needed']
             one_fm_fields = ['salary_structure', 'job_offer_total_salary', 'provide_salary_advance', 'salary_advance_amount',
                 'provide_accommodation_by_company', 'provide_transportation_by_company']
             o_employee = frappe.new_doc('Onboard Employee')

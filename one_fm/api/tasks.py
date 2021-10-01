@@ -52,12 +52,12 @@ def send_checkin_hourly_reminder():
 def final_reminder():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
+	date = getdate() 
 
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
 		# shift_start is equal to now time - notification reminder in mins
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
-			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
@@ -70,10 +70,9 @@ def final_reminder():
 				WHERE
 					empChkin.log_type="IN"
 				AND empChkin.skip_auto_attendance=0
-				AND date(empChkin.time)="{date}"
+				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
-
 			if len(recipients) > 0:
 				recipients = [recipient[0] for recipient in recipients if recipient[0]]
 				subject = _("Final Reminder: Please checkin in the next five minutes.")
@@ -85,8 +84,6 @@ def final_reminder():
 
 		# shift_end is equal to now time - notification reminder in mins
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
-			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-		
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp  
 				WHERE
@@ -99,13 +96,12 @@ def final_reminder():
 				WHERE
 					empChkin.log_type="OUT"
 				AND empChkin.skip_auto_attendance=0
-				AND date(empChkin.time)="{date}"
+				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 
 			if len(recipients) > 0:	
 				recipients = [recipient[0] for recipient in recipients if recipient[0]]
-	
 				subject = _("Final Reminder: Please checkout in the next five minutes.")
 				message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 				send_notification(subject, message, recipients)
@@ -160,15 +156,21 @@ def supervisor_reminder():
 
 			if len(recipients) > 0:
 				for recipient in recipients:
-					op_shift =  frappe.get_doc("Operations Shift", recipient.shift)
-					for_user = get_notification_user(op_shift) if get_notification_user(op_shift) else get_employee_user_id(recipient.reports_to)	
-					if for_user is not None:
-						subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
-						message = _("""
-						<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
-						<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
-						""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkin_time)
-						send_notification(subject, message, [for_user])
+					action_user, Role = get_action_user(recipient.name,recipient.shift)
+					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
+					subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
+					action_message = _("""
+					<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
+					<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
+					""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkin_time)
+					if action_user is not None:
+						send_notification(subject, action_message, [action_user])
+					
+					notify_message = _("""Note that {employee} from Shift {shift} has Not Checked in yet.""").format(employee=recipient.employee_name, shift=recipient.shift)
+					if Role:
+						notify_user = get_notification_user(recipient.name,recipient.shift, Role)
+						if notify_user is not None:
+							send_notification(subject, notify_message, notify_user)
 
 		#Send notification to supervisor of those who haven't checked out
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time()):
@@ -192,15 +194,21 @@ def supervisor_reminder():
 
 		 	if len(recipients) > 0:
 		 		for recipient in recipients:
-		 			op_shift =  frappe.get_doc("Operations Shift", recipient.shift)
-		 			for_user = get_notification_user(op_shift) if get_notification_user(op_shift) else get_employee_user_id(recipient.reports_to)	
-		 			if for_user is not None:
-						 subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
-						 message = _("""
+		 			action_user, Role = get_action_user(recipient.name,recipient.shift)
+					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
+		 			subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
+		 			action_message = _("""
 						 <a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
 						 <br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
 						 """).format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
-						 send_notification(subject, message, [for_user])
+		 			if action_user is not None:
+						 send_notification(subject, action_message, [action_user])
+					
+		 			notify_message = _("""Note that {employee} from Shift {shift} has Not Checked Out yet.""").format(employee=recipient.employee_name, shift=recipient.shift)
+		 			if Role:
+						 notify_user = get_notification_user(recipient.name,recipient.shift, Role)
+						 if notify_user is not None:
+							 send_notification(subject, notify_message, notify_user)
 
 					
 def send_notification(subject, message, recipients):
@@ -213,7 +221,7 @@ def send_notification(subject, message, recipients):
 		notification.document_name = " "
 		notification.save()
 		notification.document_name = notification.name
-		notification.save()
+		notification.save(ignore_permissions=True)
 		frappe.db.commit()	
 
 def get_active_shifts(now_time):
@@ -232,27 +240,69 @@ def get_active_shifts(now_time):
 				IF(end_time < start_time, DATE_ADD(CAST(end_time as date), INTERVAL 1 DAY), CAST(end_time as date)) 
 	""".format(current_time=now_time), as_dict=1)
 
-def get_notification_user(operations_shift):
+def get_action_user(employee, shift):
 		"""
 				Shift > Site > Project > Reports to
 		"""
-		if operations_shift.supervisor:
-			supervisor = get_employee_user_id(operations_shift.supervisor)
-			if supervisor != operations_shift.owner:
-				return supervisor
 		
+		Employee = frappe.get_doc("Employee", {"name":employee})
+		operations_shift = frappe.get_doc("Operations Shift", shift)
 		operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-		if operations_site.account_supervisor:
-			account_supervisor = get_employee_user_id(operations_site.account_supervisor)
-			if account_supervisor != operations_shift.owner:
-				return account_supervisor
+		project = frappe.get_doc("Project", operations_site.project)
+		report_to = get_employee_user_id(Employee.reports_to) if Employee.reports_to else ""
 
-		if operations_site.project:
-			project = frappe.get_doc("Project", operations_site.project)
-			if project.account_manager:
-				account_manager = get_employee_user_id(project.account_manager)
-				if account_manager != operations_shift.owner:
-					return account_manager
+		if report_to:
+			action_user = report_to
+			Role = "Report To"
+		else:
+			if operations_shift.supervisor:
+				shift_supervisor = get_employee_user_id(operations_shift.supervisor)
+				if shift_supervisor != operations_shift.owner:
+					action_user = shift_supervisor
+					Role = "Shift Supervisor"
+
+			elif operations_site.account_supervisor:
+				site_supervisor = get_employee_user_id(operations_site.account_supervisor)
+				if site_supervisor != operations_shift.owner:
+					action_user = site_supervisor
+					Role = "Site Supervisor"
+
+			elif operations_site.project:
+				if project.account_manager:
+					project_manager = get_employee_user_id(project.account_manager)
+					if project_manager != operations_shift.owner:
+						action_user = project_manager
+						Role = "Project Manager"
+		 
+		return action_user, Role
+
+def get_notification_user(employee, shift, Role):
+		"""
+				Shift > Site > Project > Reports to
+		"""
+		Employee = frappe.get_doc("Employee", {"name":employee})
+		operations_shift = frappe.get_doc("Operations Shift", shift)
+		operations_site = frappe.get_doc("Operations Site", operations_shift.site)
+		project = frappe.get_doc("Project", operations_site.project)
+		
+		report_to = get_employee_user_id(Employee.reports_to) if Employee.reports_to else ""
+
+		if operations_site.project and project.account_manager and get_employee_user_id(project.account_manager) != operations_shift.owner:
+			project_manager = get_employee_user_id(project.account_manager)
+		if operations_site.account_supervisor and get_employee_user_id(operations_site.account_supervisor) != operations_shift.owner:
+			site_supervisor = get_employee_user_id(operations_site.account_supervisor)
+		elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owne:
+			shift_supervisor = get_employee_user_id(operations_shift.supervisor)
+					
+		if Role == "Shift Supervisor":
+			notify_user = [site_supervisor,project_manager]
+		elif Role == "Site Supervisor":
+			notify_user = [project_manager]
+		else:
+			notify_user = []
+
+		return notify_user
+
 def get_location(shift):
 	print(shift)
 	site = frappe.get_value("Operations Shift", {"shift_type":shift}, "site")
@@ -270,10 +320,11 @@ def checkin_deadline():
 	today = now_datetime().strftime("%Y-%m-%d")
 	shifts_list = get_active_shifts(now_time)
 	penalty_code = "106"
-	issuing_user = frappe.session.user
+	
 	
 	for shift in shifts_list:
 		location = get_location(shift.name)
+		
 		if location:
 			penalty_location = str(location[0].latitude)+","+str(location[0].longitude)
 		else:
@@ -300,12 +351,14 @@ def checkin_deadline():
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:	
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
+
 				for employee in employees: 
-					print(employee)
-					
+					print(shift)
+					op_shift =  frappe.get_doc("Operations Shift", {"shift_type":shift.name})
+					issuing_user = get_notification_user(op_shift) if get_notification_user(op_shift) else get_employee_user_id(employee.reports_to)
+
 					curr_shift = get_current_shift(employee)
 					issue_penalty(employee, today, penalty_code, curr_shift.shift, issuing_user, penalty_location)
-					
 					mark_attendance(employee, today, 'Absent', shift.name)
 				
 			frappe.db.commit()
@@ -433,11 +486,12 @@ def update_shift_type():
 		doc.save()
 		frappe.db.commit()
 
-
+@frappe.whitelist()
 def process_attendance():
-	now_time = now_datetime().strftime("%H:%M")
+	now_time = now_datetime().strftime("%y-%m-%d %H:%M:00")
 	shift_types = frappe.get_all("Shift Type", {"last_sync_of_checkin": now_time})
 	for shift_type in shift_types:
+		print(shift_type)
 		frappe.enqueue(mark_auto_attendance, shift_type, worker='long')
 
 def mark_auto_attendance(shift_type):
@@ -446,7 +500,7 @@ def mark_auto_attendance(shift_type):
 
 
 def update_shift_details_in_attendance(doc, method):
-	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "date": doc.attendance_date}):
+	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
 		site, project, shift, post_type, post_abbrv = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv"])
 		frappe.db.sql("""update `tabAttendance`
 			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s 
@@ -480,10 +534,10 @@ def generate_payroll():
 
 
 def generate_penalties():
-	print("HEllo")
-	start_date = add_to_date(getdate(), days=-30)
+	start_date = add_to_date(getdate(), months=-1)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
-	print (str(start_date) + str(end_date))
+	print(start_date)
+	print(end_date)
 
 	filters = {
 		'penalty_issuance_time': ['between', (start_date, end_date)],
@@ -574,5 +628,5 @@ def create_penalty_deduction(start_date, end_date, employee, total_penalty_amoun
 	penalty_deduction.deducted_amount = deducted_amount
 	penalty_deduction.balance_amount = balance_amount
 	penalty_deduction.insert()
-	#penalty_deduction.submit()
+	penalty_deduction.submit()
 	frappe.db.commit()

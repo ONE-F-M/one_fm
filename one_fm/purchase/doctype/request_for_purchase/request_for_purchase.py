@@ -17,7 +17,8 @@ class RequestforPurchase(Document):
 	def on_submit(self):
 		self.notify_request_for_material_accepter()
 		frappe.msgprint(_("Notification sent to purchaser"))
-
+		
+	@frappe.whitelist()
 	def send_request_for_purchase(self):
 		self.status = "Approved"
 		self.save()

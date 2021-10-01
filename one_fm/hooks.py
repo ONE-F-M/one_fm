@@ -133,7 +133,14 @@ home_page = "landing_page"
 # Document Events
 # ---------------
 # Hook on document methods and events
-
+permission_query_conditions = {
+	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
+	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions"
+}
+has_permission = {
+ 	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
+ 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission"
+}
 
 doc_events = {
 	"Stock Entry": {
@@ -299,7 +306,7 @@ scheduler_events = {
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
-		'one_fm.utils.send_gp_letter_reminder',
+		'one_fm.utils.send_gp_letter_reminder'
 	],
 
 	"weekly": [
@@ -333,6 +340,7 @@ scheduler_events = {
 		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
+			'one_fm.api.tasks.process_attendance'
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.supervisor_reminder",
@@ -388,8 +396,7 @@ scheduler_events = {
 			'one_fm.utils.check_pam_visa_approval_submission_six_half'
 		],
 		"0 7 * * *": [
-			'one_fm.utils.check_pam_visa_approval_submission_seven',
-			'one_fm.utils.roster_daily_report_task'
+			'one_fm.utils.check_pam_visa_approval_submission_seven'
 		],
 		"30 12 * * *": [
 			'one_fm.utils.check_upload_original_visa_submission_reminder1'
