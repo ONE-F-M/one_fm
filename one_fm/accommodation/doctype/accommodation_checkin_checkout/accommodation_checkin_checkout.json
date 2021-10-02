@@ -33,11 +33,14 @@
   "tenant_details_section",
   "full_name",
   "passport_number",
+  "designation",
+  "project",
   "nationality",
   "column_break_7",
   "employee_id",
   "civil_id",
   "employment_type",
+  "employee_status",
   "bed_details_section",
   "accommodation",
   "floor",
@@ -382,11 +385,32 @@
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.status",
+   "fieldname": "employee_status",
+   "fieldtype": "Data",
+   "label": "Employee Status",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-09-28 13:10:00.224681",
+ "modified": "2021-10-02 02:37:08.730836",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",
