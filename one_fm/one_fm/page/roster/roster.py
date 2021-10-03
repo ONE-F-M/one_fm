@@ -153,11 +153,12 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
 		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"], order_by="date asc, employee_name asc", ignore_permissions=True)
-		
+		attendences = frappe.db.get_list("Attendance", {'attendance_date': ["between", (start_date, add_to_date(cstr(getdate()), days=-1))], 'employee': key[0]}, ["status"])
 		if isOt:
 			filters.pop("roster_type", None)
 		schedule_list = []
 		schedule = {}
+
 		for date in	pd.date_range(start=start_date, end=end_date):
 			if date < getdate() and frappe.db.exists("Employee Schedule", {'date': cstr(date).split(" ")[0], 'employee': key[0], 'employee_availability': 'Working'}):
 				attendance_abbr = 'A'
@@ -221,11 +222,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	return master_data
 
 def filter_redundant_employees(employees):
-	result = []
-	for employee in employees:
-		if employee not in result:
-			result.append(employee)
-	return result		
+	return list({employee['employee']:employee for employee in employees}.values())
 
 @frappe.whitelist(allow_guest=True)
 def get_post_view(start_date, end_date,  project=None, site=None, shift=None, post_type=None, active_posts=1, limit_start=0, limit_page_length=100):
@@ -314,17 +311,18 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 		validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")
 	
 	if not cint(request_employee_schedule):
-		for emp in employees:
-			if frappe.db.exists("Employee Schedule", {'employee': emp, 'employee_availability': 'Working', 'date': ['between', (start_date, end_date)]}):
-				for date in pd.date_range(start=start_date, end=end_date):
-					shift_es = frappe.db.get_value("Employee Schedule", {'employee': emp, 'employee_availability': 'Working', 'date': date}, ["shift"])
-					supervisor = frappe.db.get_value("Operations Shift", shift_es, ["supervisor"])
-					if user_employee.name != supervisor:
-						validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
-						break
-				else:
-					continue
-				break
+		for emp in json.loads(employees):
+			print(emp)
+			for date in pd.date_range(start=start_date, end=end_date):
+				shift_es = frappe.db.get_value("Employee Schedule", {'employee': emp, 'employee_availability': 'Working', 'date': date}, ["shift"])
+				supervisor = frappe.db.get_value("Operations Shift", shift_es, ["supervisor"])
+				if user_employee.name != supervisor:
+					print("not same...")
+					validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
+					break
+			else:
+				continue
+			break
 	
 	if len(validation_logs) > 0:
 		frappe.throw(validation_logs)
@@ -834,7 +832,7 @@ def assign_staff(employees, shift, request_employee_assignment):
 	validation_logs = []
 	user, user_roles, user_employee = get_current_user_details()
 	if not cint(request_employee_assignment):
-		for emp in employees:
+		for emp in json.loads(employees):
 			emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
 			supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
 			if user_employee.name != supervisor:
