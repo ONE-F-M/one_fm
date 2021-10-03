@@ -153,7 +153,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
 		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"], order_by="date asc, employee_name asc", ignore_permissions=True)
-		attendences = frappe.db.get_list("Attendance", {'attendance_date': ["between", (start_date, add_to_date(cstr(getdate()), days=-1))], 'employee': key[0]}, ["status"])
+		#attendences = frappe.db.get_list("Attendance", {'attendance_date': ["between", (start_date, add_to_date(cstr(getdate()), days=-1))], 'employee': key[0]}, ["status_abbr"])
 		if isOt:
 			filters.pop("roster_type", None)
 		schedule_list = []
