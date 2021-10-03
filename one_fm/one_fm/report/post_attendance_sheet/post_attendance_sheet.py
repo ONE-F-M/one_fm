@@ -378,31 +378,20 @@ def get_attendance_list_post(conditions, filters):
 		msgprint(_("No attendance record found"), alert=True, indicator="orange")
 
 	att_map = {}
-	schedule = frappe.get_all("Employee Schedule", {"date":['between', (filters["start_date"], filters["end_date"])]},["employee_availability","post_type","date","employee"])
-	list_schedule = schedule
+	day_off_list = frappe.get_all("Employee Schedule", {"date":['between', (filters["start_date"], filters["end_date"])],"employee_availability":"Day Off"},["date","employee"])
 	for d in attendance_list:
 		att_map.setdefault(d.employee, frappe._dict()).setdefault(d.day_of_month, "")
-		att_map[d.employee][d.day_of_month] = [d.status,d.post_type]            
+		if d.post_type:
+		    att_map[d.employee][d.day_of_month] = [d.status,d.post_type]            
 	
 	#fill day's status with nearest working day's post. 
-	if schedule:
-		for s in schedule:
-			emp = s.employee
-			dates = s.date
-			day = int(dates.strftime("%d"))
-			att_map.setdefault(emp, frappe._dict()).setdefault(day, "")
-			if s.employee_availability=="Day Off":
-				post = get_post(list_schedule,day,emp)
-				if post:
-					att_map[emp][day] = ["Weekly Off",post]
+	for day_off in day_off_list:
+		emp = day_off.employee
+		dates = day_off.date
+		day = int(dates.strftime("%d"))
+		att_map.setdefault(emp, frappe._dict()).setdefault(day, "")
+		att_map[emp][day] = "Weekly Off"
 	return att_map
-
-def get_post(schedule,day,employee):
-	# get Post_type from employee schedule list of employee with nearest working day.
-	i = schedule.index(list(filter(lambda n: n.get('employee_availability') != "Day Off" and n.get('employee') == employee  and abs(day-int(n.get('date').strftime("%d"))) <= 2, schedule))[0])
-	if i:
-		post = schedule[i].post_type
-		return post
 
 def get_conditions(filters):
 	if not (filters.get("month") and filters.get("year")):
