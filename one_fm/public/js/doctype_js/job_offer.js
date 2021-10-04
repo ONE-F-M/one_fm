@@ -172,7 +172,9 @@ var set_salary_details = function(frm, erf) {
 var set_salary_structure_to_salary_details = function(frm) {
   frm.clear_table('one_fm_salary_details');
   let total_amount = 0;
-  if(frm.doc.one_fm_salary_structure){
+  let base = frm.doc.base
+  console.log(base)
+  if(frm.doc.one_fm_salary_structure && base){
     frappe.call({
       method: 'frappe.client.get',
       args: {
@@ -183,10 +185,25 @@ var set_salary_structure_to_salary_details = function(frm) {
         if(r && r.message){
           if(r.message.earnings){
             r.message.earnings.forEach((item, i) => {
-              total_amount += item.amount;
-              let salary = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'one_fm_salary_details');
-              frappe.model.set_value(salary.doctype, salary.name, 'salary_component', item.salary_component);
-              frappe.model.set_value(salary.doctype, salary.name, 'amount', item.amount);
+              console.log(item.amount_based_on_formula)
+              if(item.amount_based_on_formula && item.formula){
+                let formula = item.formula;
+                const percent = formula.split("*")[1];
+                let amount = parseInt(base)*parseFloat(percent);
+                total_amount += amount;
+                if(amount!=0){
+                  let salary = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'one_fm_salary_details');
+                  frappe.model.set_value(salary.doctype, salary.name, 'salary_component', item.salary_component);
+                  frappe.model.set_value(salary.doctype, salary.name, 'amount', amount);
+                }
+              } else {
+                total_amount += item.amount;
+                if(item.amount!=0){
+                  let salary = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'one_fm_salary_details');
+                  frappe.model.set_value(salary.doctype, salary.name, 'salary_component', item.salary_component);
+                  frappe.model.set_value(salary.doctype, salary.name, 'amount', item.amount);
+                } 
+              }
             });
           }
         }
