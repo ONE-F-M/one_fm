@@ -48,7 +48,7 @@ def execute(filters=None):
 
 	if filters.group_by:
 		if filters.group_by == "Post Type":
-		    emp_map, group_by_parameters = get_employee_details_post(filters.company)
+		    emp_map, group_by_parameters = get_employee_details_post(filters.company,filters["month"],filters["year"])
 		else:
 		    emp_map, group_by_parameters = get_employee_details(filters.group_by, filters.company)
 		holiday_list = []
@@ -59,7 +59,7 @@ def execute(filters=None):
 		emp_map = get_employee_details(filters.group_by, filters.company)
 		holiday_list = [emp_map[d]["holiday_list"] for d in emp_map if emp_map[d]["holiday_list"]]
 
-
+	print(emp_map)
 	default_holiday_list = frappe.get_cached_value('Company',  filters.get("company"),  "default_holiday_list")
 	holiday_list.append(default_holiday_list)
 	holiday_list = list(set(holiday_list))
@@ -352,7 +352,7 @@ def get_attendance_list(conditions, filters):
 		conditions, filters, as_dict=1)
 	if not attendance_list:
 		msgprint(_("No attendance record found"), alert=True, indicator="orange")
-
+	#print(attendance_list)
 	att_map = {}
 	day_off_list = frappe.get_all("Employee Schedule", {"date":['between', (filters["start_date"], filters["end_date"])],"employee_availability":"Day Off"},["date","employee"])
 
@@ -381,8 +381,7 @@ def get_attendance_list_post(conditions, filters):
 	day_off_list = frappe.get_all("Employee Schedule", {"date":['between', (filters["start_date"], filters["end_date"])],"employee_availability":"Day Off"},["date","employee"])
 	for d in attendance_list:
 		att_map.setdefault(d.employee, frappe._dict()).setdefault(d.day_of_month, "")
-		if d.post_type:
-		    att_map[d.employee][d.day_of_month] = [d.status,d.post_type]            
+		att_map[d.employee][d.day_of_month] = [d.status,d.post_type]            
 	
 	#fill day's status with nearest working day's post. 
 	for day_off in day_off_list:
@@ -409,14 +408,13 @@ def get_conditions(filters):
 
 	return conditions, filters
 
-def get_employee_details_post(company):
+def get_employee_details_post(company, month, year):
 	group_by = "post_type"
 	emp_map = {}
-	query = """SELECT DISTINCT Emp.name, Emp.employee_name, Emp.designation, Emp.department, Emp.branch, Emp.company,
-		Emp.holiday_list, At.post_type from `tabEmployee` Emp, `tabAttendance` At WHERE Emp.name = At.employee AND Emp.company = %s""" % frappe.db.escape(company)
 
-	employee_details = frappe.db.sql(query , as_dict=1)
-	print(employee_details)
+	employee_details = frappe.db.sql("""SELECT DISTINCT Emp.name, Emp.employee_name, Emp.designation, Emp.department, Emp.branch, Emp.company,
+		Emp.holiday_list, At.post_type from `tabEmployee` Emp, `tabAttendance` At WHERE Emp.name = At.employee AND Emp.company = {company} AND month(attendance_date) = {month} and year(attendance_date) = {year}"""
+		.format(company=frappe.db.escape(company),month=month,year=year), as_dict=1)
 	group_by_parameters = []
 	if group_by:
 		group_by_parameters = list(set(detail.get(group_by, "") for detail in employee_details if detail.get(group_by, "")))
