@@ -311,14 +311,13 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 	
 	if not cint(request_employee_schedule):
 		for emp in json.loads(employees):
-			print(emp)
 			for date in pd.date_range(start=start_date, end=end_date):
 				shift_es = frappe.db.get_value("Employee Schedule", {'employee': emp, 'employee_availability': 'Working', 'date': date}, ["shift"])
-				supervisor = frappe.db.get_value("Operations Shift", shift_es, ["supervisor"])
-				if user_employee.name != supervisor:
-					print("not same...")
-					validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
-					break
+				if shift_es:
+					supervisor = frappe.db.get_value("Operations Shift", shift_es, ["supervisor"])
+					if supervisor and user_employee.name != supervisor:
+						validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
+						break
 			else:
 				continue
 			break
@@ -340,7 +339,6 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 						'end_date': end_date,
 						'employee': employee
 					}, as_dict=1)
-					print(from_schedule)
 					if len(from_schedule) > 0:
 						from_shift = from_schedule[0].shift
 						from_post_type = from_schedule[0].post_type
