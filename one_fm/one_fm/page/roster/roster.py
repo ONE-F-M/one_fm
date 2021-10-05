@@ -153,27 +153,26 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})
 		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"], order_by="date asc, employee_name asc", ignore_permissions=True)
-		#attendences = frappe.db.get_list("Attendance", {'attendance_date': ["between", (start_date, add_to_date(cstr(getdate()), days=-1))], 'employee': key[0]}, ["status_abbr"])
 		if isOt:
 			filters.pop("roster_type", None)
 		schedule_list = []
 		schedule = {}
 
 		for date in	pd.date_range(start=start_date, end=end_date):
-			if date < getdate() and frappe.db.exists("Employee Schedule", {'date': cstr(date).split(" ")[0], 'employee': key[0], 'employee_availability': 'Working'}):
-				attendance_abbr = 'A'
+			if date < getdate():
 				if frappe.db.exists("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}):
-					attendance = frappe.db.get_value("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}, ["status"])
-					attendance_split = attendance.split(" ")
-					if len(attendance_split) >= 1:
-						attendance_abbr = ''
-						for _as in attendance_split:
-							attendance_abbr += _as[0]			
-				schedule = {
+					attendance = frappe.db.get_value("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}, ["status"])			
+					schedule = {
+						'employee': key[0],
+						'employee_name': key[1],
+						'date': cstr(date).split(" ")[0],
+						'attendance': attendance
+					}
+				else:
+					schedule = {
 					'employee': key[0],
 					'employee_name': key[1],
-					'date': cstr(date).split(" ")[0],
-					'attendance': attendance_abbr 
+					'date': cstr(date).split(" ")[0]
 				}
 			elif not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
 				schedule = {

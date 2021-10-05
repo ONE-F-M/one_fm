@@ -1160,11 +1160,18 @@ function render_roster(res, page, isOt) {
 				'Emergency Leave': 'EL'
 			};
 			let attendancemap = {
-				'P': 'greenboxcolor',
-				'A': 'redboxcolor',
-				'WFH': 'greenboxcolor',
-				'HD': 'greenboxcolor',
-				'OL': 'redboxcolor'
+				'Present': 'greenboxcolor',
+				'Absent': 'redboxcolor',
+				'Work From Home': 'greenboxcolor',
+				'Half Day': 'greenboxcolor',
+				'On Leave': 'redboxcolor'
+			};
+			let attendance_abbr_map = {
+				'Present': 'P',
+				'Absent': 'A',
+				'Work From Home': 'WFH',
+				'Half Day': 'HD',
+				'On Leave': 'OL'
 			};
 			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance, asa } = employees_data[employee_key][i];
 			//OT schedule view
@@ -1221,7 +1228,7 @@ function render_roster(res, page, isOt) {
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance}</div>
+							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}</div>
 					</td>`;
 				} else {
 					sch = `
