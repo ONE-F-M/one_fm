@@ -73,6 +73,9 @@ frappe.ui.form.on('Job Offer', {
   one_fm_salary_structure: function(frm) {
     set_salary_structure_to_salary_details(frm);
   },
+  base: function(frm) {
+    set_salary_structure_to_salary_details(frm);
+  },
   employee_grade: function(frm) {
     set_filters(frm);
   }

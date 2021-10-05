@@ -507,11 +507,12 @@ def update_shift_details_in_attendance(doc, method):
 	"Work From Home": "WFH"
 	}
 	status_abbr = status_map[doc.status]
+	frappe.db.sql("""update `tabAttendance` set status_abbr = %s where name = %s """, (status_abbr, doc.name))
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
 		site, project, shift, post_type, post_abbrv = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv"])
 		frappe.db.sql("""update `tabAttendance`
-			set status_abbr = %s, project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s 
-			where name = %s """, (status_abbr, project, site, shift, post_type, post_abbrv, doc.name))
+			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s 
+			where name = %s """, (project, site, shift, post_type, post_abbrv, doc.name))
 
 def generate_payroll():
 	start_date = add_to_date(getdate(), months=-1)
