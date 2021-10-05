@@ -15,6 +15,7 @@ from one_fm.grd.doctype.paci import paci
 class MOIResidencyJawazat(Document):
     def validate(self):
         self.set_grd_values()
+        self.set_new_expiry_date()
         self.set_company_address()
         self.set_company_unified_number()
         self.set_paci_number()
@@ -24,7 +25,11 @@ class MOIResidencyJawazat(Document):
             self.grd_supervisor = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
-    
+    def set_new_expiry_date(self):
+        if self.category != "Extend":
+            employee = frappe.get_doc('Employee',self.employee)
+            self.new_residency_expiry_date = employee.work_permit_expiry_date
+            
     def set_company_address(self):
         """This method sets the company address from MOCI document"""
         missing_field = False
