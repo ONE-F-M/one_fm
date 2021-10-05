@@ -69,7 +69,6 @@ def final_reminder():
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"
-				AND empChkin.skip_auto_attendance=0
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
@@ -95,7 +94,6 @@ def final_reminder():
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="OUT"
-				AND empChkin.skip_auto_attendance=0
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
@@ -498,16 +496,8 @@ def mark_auto_attendance(shift_type):
 	doc = frappe.get_doc("Shift Type", shift_type.name)
 	doc.process_auto_attendance()	
 
+
 def update_shift_details_in_attendance(doc, method):
-	status_map = {
-	"Absent": "A",
-	"Half Day": "HD",
-	"On Leave": "L",
-	"Present": "P",
-	"Work From Home": "WFH"
-	}
-	status_abbr = status_map[doc.status]
-	frappe.db.sql("""update `tabAttendance` set status_abbr = %s where name = %s """, (status_abbr, doc.name))
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
 		site, project, shift, post_type, post_abbrv = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv"])
 		frappe.db.sql("""update `tabAttendance`
