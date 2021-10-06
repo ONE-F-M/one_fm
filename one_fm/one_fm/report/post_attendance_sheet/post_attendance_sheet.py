@@ -15,7 +15,8 @@ status_map = {
 	"Weekly Off": "<b>WO</b>",
 	"On Leave": "L",
 	"Present": "P",
-	"Work From Home": "WFH"
+	"Work From Home": "WFH",
+    "Unmarked": "-"
 	}
 
 day_abbr = [
@@ -59,7 +60,7 @@ def execute(filters=None):
 		emp_map = get_employee_details(filters.group_by, filters.company)
 		holiday_list = [emp_map[d]["holiday_list"] for d in emp_map if emp_map[d]["holiday_list"]]
 
-	print(emp_map)
+	#print(emp_map)
 	default_holiday_list = frappe.get_cached_value('Company',  filters.get("company"),  "default_holiday_list")
 	holiday_list.append(default_holiday_list)
 	holiday_list = list(set(holiday_list))
@@ -139,6 +140,16 @@ def get_chart_data(emp_att_map, days):
 	chart["type"] = "line"
 
 	return chart
+def get_day_off(employee,filters):
+	#{'HR-EMP-00002': {1: ['Absent', None]}, 'HR-EMP-00003': {3: ['Present', 'ERPNext Developer']}}
+	day_off_list = frappe.get_all("Employee Schedule", {"date":['between', (filters["start_date"], filters["end_date"])],"employee_availability":"Day Off", "employee":employee},["date"])
+	lists={}
+	for day_off in day_off_list:
+		dates = day_off.date
+		day = int(dates.strftime("%d"))
+		lists.setdefault(employee, frappe._dict()).setdefault(day, "")
+		lists[employee][day] = "Weekly Off"
+	return(lists)
 
 def add_data_post(parameter, employee_map, att_map, filters, holiday_map, conditions, default_holiday_list, leave_list=None):
 
@@ -156,13 +167,18 @@ def add_data_post(parameter, employee_map, att_map, filters, holiday_map, condit
 
 		total_p = total_a = total_l = total_h = total_um= 0.0
 		emp_status_map = []
+		day_off = get_day_off(emp,filters)
+		print(day_off)
 		for day in range(filters["total_days_in_month"]):
 			status = None
 			if att_map.get(emp).get(day + 1):
 				if att_map.get(emp).get(day + 1)[1] == parameter:
 				    status = att_map.get(emp).get(day + 1)[0]
 			else:
-				status = None
+				if day_off:
+				    status = day_off.get(emp).get(day + 1)
+				if status is None:
+				    status = "Unmarked"
 
 			if status is None and holiday_map:
 				emp_holiday_list = emp_det.holiday_list if emp_det.holiday_list else default_holiday_list
@@ -239,6 +255,7 @@ def add_data(employee_map, att_map, filters, holiday_map, conditions, default_ho
 
 	record = []
 	emp_att_map = {}
+	print(att_map)
 	for emp in employee_map:
 		emp_det = employee_map.get(emp)
 		if not emp_det or emp not in att_map:
@@ -251,9 +268,16 @@ def add_data(employee_map, att_map, filters, holiday_map, conditions, default_ho
 
 		total_p = total_a = total_l = total_h = total_um= 0.0
 		emp_status_map = []
+		day_off = get_day_off(emp,filters)
+		print(day_off)
 		for day in range(filters["total_days_in_month"]):
 			status = None
 			status = att_map.get(emp).get(day + 1)
+			if status is None:
+				if day_off:
+				    status = day_off.get(emp).get(day + 1)
+				if status is None:
+				    status = "Unmarked"
 
 			if status is None and holiday_map:
 				emp_holiday_list = emp_det.holiday_list if emp_det.holiday_list else default_holiday_list
