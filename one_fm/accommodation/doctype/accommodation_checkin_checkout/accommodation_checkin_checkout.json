@@ -391,6 +391,7 @@
    "fieldname": "designation",
    "fieldtype": "Link",
    "label": "Designation",
+   "options": "Designation",
    "read_only": 1
   },
   {
@@ -398,6 +399,7 @@
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
+   "options": "Project",
    "read_only": 1
   },
   {
@@ -410,7 +412,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-10-02 02:37:08.730836",
+ "modified": "2021-10-06 11:48:13.222242",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",
