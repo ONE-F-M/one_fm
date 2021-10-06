@@ -33,7 +33,7 @@ frappe.ui.form.on('Request for Material', {
 				filters: {'company': doc.company}
 			};
 		};
-		
+
 	},
 	onload_post_render: function(frm) {
 		frm.get_field("items").grid.set_multiple_add("item_code", "qty");
@@ -63,40 +63,10 @@ frappe.ui.form.on('Request for Material', {
 				}
 			});
 		}
-		frm.set_query("project", function() {
-			return {
-				filters: [
-					['customer', '=', frm.doc.customer]
-				]
-			};
-		});
-		frm.set_query("site", function() {
-			return {
-				filters: [
-					['project', '=', frm.doc.project]
-				]
-			};
-		});
-		frm.set_query("t_warehouse", function() {
-				return {
-					filters: [
-						['is_group', '=', 0]
-					]
-				};
-			});
-		// frm.set_query('warehouse', function () {
-		// 	if(frm.doc.type == 'Project'){
-		// 		return {
-		// 			filters: {
-		// 				'one_fm_project': frm.doc.project,
-		// 				'is_group': 0
-		// 			}
-		// 		};
-		// 	}
-		// });
+		set_filters(frm);
 	},
 	// after_save: function(frm){
-	// 	let item_changes = 
+	// 	let item_changes =
 	// 	frm.doc.items.forEach((item, i) => {
 	// 		if(item.remarks){
 	// 			notify_changes_to_requester(item.remarks)
@@ -126,7 +96,7 @@ frappe.ui.form.on('Request for Material', {
 					// 	frappe.msgprint(__("Warning: Requested Qty exceeds Qty in warehouse"));
 					// }
 				});
-				
+
 				if(item_exist_in_stock){
 					if(frm.doc.type=="Individual" || frm.doc.type=="Onboarding" || frm.doc.type=="Project"|| frm.doc.type=="Project Mobilization" || frm.doc.type=="Stock"){
 						frappe.db.get_value('Stock Entry', {'one_fm_request_for_material': frm.doc.name}, ['name', 'docstatus'],function(r) {
@@ -148,9 +118,9 @@ frappe.ui.form.on('Request for Material', {
 									    () => frm.events.make_stock_entry(frm), __('Create'));
 								}else{
 									frm.add_custom_button(__("Material Transfer"),//changed from Issue to transfer temporarily
-									    () => frm.events.make_stock_entry_issue(frm), __('Create'));					
+									    () => frm.events.make_stock_entry_issue(frm), __('Create'));
 								}
-								
+
 							}
 						});
 						frm.add_custom_button(__("Sales Invoice"),
@@ -174,13 +144,13 @@ frappe.ui.form.on('Request for Material', {
 							            () => frm.events.make_request_for_purchase(frm), __('Create'));
 								}
 							});
-							
+
 						}
 						if(any_items_ordered){
 							frm.add_custom_button(__("Make Delivery Note"),
 						 	    () => frm.events.make_delivery_note(frm), __('Create'));
 						}
-						
+
 					}
 					// else if (frm.doc.type=="Stock"){
 					// 	frm.add_custom_button(__("Transfer Material"),
@@ -190,7 +160,7 @@ frappe.ui.form.on('Request for Material', {
 					// 	// frm.add_custom_button(__("Make Delivery Note"),
 					// 	// 	() => frm.events.make_delivery_note(frm), __('Create'));
 					// }
-					
+
 				}
 				else {
 					//Needs further dicussion with Jamsheer
@@ -304,7 +274,7 @@ frappe.ui.form.on('Request for Material', {
 			}
 		});
 	},
-	
+
 
 	get_item_data: function(frm, item) {
 		if (!item.item_code) return;
@@ -338,7 +308,7 @@ frappe.ui.form.on('Request for Material', {
 						if(!d[k]) d[k] = v;
 						if(d.qty>d.actual_qty){
 							d.pur_qty = d.qty-d.actual_qty
-							d.quantity_to_transfer = d.actual_qty	
+							d.quantity_to_transfer = d.actual_qty
 						} else if(d.qty<d.actual_qty){
 							d.pur_qty = 0
 							d.quantity_to_transfer = d.qty
@@ -427,6 +397,29 @@ frappe.ui.form.on('Request for Material', {
 		set_warehouse_filters(frm)
 	}
 });
+
+var set_filters = function(frm) {
+	frm.set_query("project", function() {
+		return {
+			filters: [
+				['customer', '=', frm.doc.customer]
+			]
+		};
+	});
+	frm.set_query("site", function() {
+		return {
+			filters: [
+				['project', '=', frm.doc.project]
+			]
+		};
+	});
+	var wh_filters = {'is_group': 0};
+	frm.set_query("t_warehouse", function() {
+		return {
+			filters: filters
+		};
+	});
+};
 
 
 var fetch_designation_items = function(frm) {
@@ -566,7 +559,7 @@ var set_employee_or_project = function(frm) {
 			frm.set_df_property('project', 'reqd', false);
 		}
 	}
-	
+
 
 	// else if(frm.doc.type){
 	// 	frm.set_df_property('employee', 'reqd', (frm.doc.type=='Individual')?true:false);
@@ -620,7 +613,7 @@ frappe.ui.form.on("Request for Material Item", {
 		if ((flt(d.quantity_to_transfer)+flt(d.pur_qty)) > (flt(d.qty))) {
 			frappe.msgprint(__("Warning: Cannot exceed total Material Requested Qty"));
 		}
-		
+
 
 	},
 	quantity_to_transfer: function (frm, doctype, name){
