@@ -12,6 +12,7 @@ from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import create_payroll_entry
 from erpnext.hr.doctype.attendance.attendance import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
+from one_fm.api.api import push_notification
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -59,7 +60,7 @@ def final_reminder():
 		# shift_start is equal to now time - notification reminder in mins
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp
+				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee=emp.name 
 				AND tSA.start_date="{date}"
@@ -72,14 +73,20 @@ def final_reminder():
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+			print(recipients)
 			if len(recipients) > 0:
-				recipients = [recipient[0] for recipient in recipients if recipient[0]]
+				user_id = []
+				employee_id = []
+				for recipient in recipients:
+					user_id.append(recipient[0])
+					employee_id.append(recipient[1])
 				subject = _("Final Reminder: Please checkin in the next five minutes.")
 				message = _("""
 					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
 					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
 					""")
-				send_notification(subject, message, recipients)
+				send_notification(subject, message, user_id)
+				push_notification(employee_id, "Final Reminder", "Please checkin in the next five minutes.")
 
 		# shift_end is equal to now time - notification reminder in mins
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
@@ -97,12 +104,17 @@ def final_reminder():
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
-
-			if len(recipients) > 0:	
-				recipients = [recipient[0] for recipient in recipients if recipient[0]]
+			print(recipients)
+			if len(recipients) > 0:
+				user_id = []
+				employee_id = []
+				for recipient in recipients:
+					user_id.append(recipient[0])
+					employee_id.append(recipient[1])
 				subject = _("Final Reminder: Please checkout in the next five minutes.")
 				message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 				send_notification(subject, message, recipients)
+				push_notification(employee_id, "Final Reminder", "Please checkout in the next five minutes.")
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
@@ -210,6 +222,7 @@ def supervisor_reminder():
 
 					
 def send_notification(subject, message, recipients):
+	print(recipients)
 	for user in recipients:
 		notification = frappe.new_doc("Notification Log")
 		notification.subject = subject
