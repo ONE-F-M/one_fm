@@ -119,17 +119,17 @@ def push_notification(employee_id, title, body):
     registration_tokens = []
     for emp in employee_id:
         token = frappe.get_all("Employee", {"name": emp}, "fcm_token")
-        if token:
+        if token[0].fcm_token:
             registration_tokens.append(token[0].fcm_token)
     # This Device token comes from the client FCM SDKs.
 
     # See documentation on defining a message payload.
-    print(registration_tokens[0])
-    message = messaging.Message(
-    notification=messaging.Notification(title, body),
-    token=registration_tokens[0],
-    )
-    response = messaging.send(message)
+    for registration_token in registration_tokens:
+        message = messaging.Message(
+        notification=messaging.Notification(title, body),
+        token=registration_token,
+        )
+        response = messaging.send(message)
     # See the BatchResponse reference documentation
     # for the contents of response.
     print(response)
