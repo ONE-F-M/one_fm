@@ -25,11 +25,13 @@
   "first_name_arabic",
   "second_name_arabic",
   "third_name_arabic",
+  "forth_name_in_arabic",
   "last_name_arabic",
   "column_break_15",
   "first_name_english",
   "second_name_english",
   "third_name_english",
+  "forth_name",
   "last_name_english",
   "section_break_20",
   "one_fm_civil_id",
@@ -453,9 +455,11 @@
   },
   {
    "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_centralized_number",
    "fieldname": "centeralized_number",
    "fieldtype": "Data",
-   "label": "Centeralized Number"
+   "label": "Centeralized Number",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.employee_id",
@@ -506,11 +510,25 @@
   {
    "fieldname": "section_break_8",
    "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "employee.one_fm_forth_name_in_arabic",
+   "fieldname": "forth_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Forth Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_forth_name",
+   "fieldname": "forth_name",
+   "fieldtype": "Data",
+   "label": "Forth Name",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-04 15:27:10.903210",
+ "modified": "2021-10-07 11:18:29.962985",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
