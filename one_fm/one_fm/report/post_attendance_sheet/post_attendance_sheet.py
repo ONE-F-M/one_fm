@@ -168,7 +168,6 @@ def add_data_post(parameter, employee_map, att_map, filters, holiday_map, condit
 		total_p = total_a = total_l = total_h = total_um= 0.0
 		emp_status_map = []
 		day_off = get_day_off(emp,filters)
-		print(day_off)
 		for day in range(filters["total_days_in_month"]):
 			status = None
 			if att_map.get(emp).get(day + 1):
@@ -255,7 +254,6 @@ def add_data(employee_map, att_map, filters, holiday_map, conditions, default_ho
 
 	record = []
 	emp_att_map = {}
-	print(att_map)
 	for emp in employee_map:
 		emp_det = employee_map.get(emp)
 		if not emp_det or emp not in att_map:
@@ -269,7 +267,6 @@ def add_data(employee_map, att_map, filters, holiday_map, conditions, default_ho
 		total_p = total_a = total_l = total_h = total_um= 0.0
 		emp_status_map = []
 		day_off = get_day_off(emp,filters)
-		print(day_off)
 		for day in range(filters["total_days_in_month"]):
 			status = None
 			status = att_map.get(emp).get(day + 1)

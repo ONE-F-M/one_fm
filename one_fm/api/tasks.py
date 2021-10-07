@@ -73,7 +73,6 @@ def final_reminder():
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
-			print(recipients)
 			if len(recipients) > 0:
 				user_id = []
 				employee_id = []
@@ -104,7 +103,6 @@ def final_reminder():
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
-			print(recipients)
 			if len(recipients) > 0:
 				user_id = []
 				employee_id = []
@@ -222,7 +220,6 @@ def supervisor_reminder():
 
 					
 def send_notification(subject, message, recipients):
-	print(recipients)
 	for user in recipients:
 		notification = frappe.new_doc("Notification Log")
 		notification.subject = subject
