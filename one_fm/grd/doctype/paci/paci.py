@@ -88,7 +88,7 @@ class PACI(Document):
             "issued_on":today,
             "valid_till":self.new_civil_id_expiry_date
             })
-        employee.work_permit_expiry_date = self.new_residency_expiry_date
+        employee.civil_id_expiry_date = self.new_civil_id_expiry_date
         employee.save()
     
 

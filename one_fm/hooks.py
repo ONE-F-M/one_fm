@@ -325,8 +325,8 @@ scheduler_events = {
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_renewal_operator_to_apply',#mi
 			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_transfer_operator_to_apply',
-			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.py.system_remind_renewal_operator_to_apply',#moi
-			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.py.system_remind_transfer_operator_to_apply',
+			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_remind_renewal_operator_to_apply',#moi
+			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.paci.paci.system_remind_renewal_operator_to_apply',#paci
 			'one_fm.grd.doctype.paci.paci.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_renewal',#paci hawiyati

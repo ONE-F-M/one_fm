@@ -151,7 +151,8 @@ def creat_fp_record(preparation_name):
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
             if employee.nationality in nationalities:
-                creat_fp(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
+                if employee.renewal_or_extend == "Renewal" or employee.renewal_or_extend == "Local Transfer":
+                    creat_fp(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
 
 #Auto generated everyday at 8am
 def get_employee_list():

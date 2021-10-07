@@ -39,10 +39,7 @@ class PIFSSForm103(Document):
 		# self.check_penality_for_registration()#for setting the 3 dates to identify to whom is the penlty (date of request - Date of Register - Date of Acceptance - Date of Joining) 
 	def employee_full_name(self):
 		"""This method arranges the names in the print format based on what is filled in employee doctype"""
-		employee_full_name=[]
 		if self.employee:
-			employee_full_name = [{'First Name in Arabic':'first_name'},{'Second Name in Arabic':'second_name'},
-				{'Third Name in Arabic':'third_name'},{'Last Name in Arabic':'last_name'}]
 			employee = frappe.get_doc('Employee',self.employee)
 			if employee.one_fm_first_name_in_arabic and not employee.one_fm_second_name_in_arabic and not employee.one_fm_third_name_in_arabic and employee.one_fm_last_name_in_arabic:
 				self.first_name = employee.one_fm_first_name_in_arabic
@@ -59,9 +56,6 @@ class PIFSSForm103(Document):
 				self.second_name = employee.one_fm_third_name_in_arabic
 				self.third_name = employee.one_fm_last_name_in_arabic
 				self.last_name = ''
-			# elif not employee.one_fm_first_name_in_arabic:
-			# 	message_detail = '<b style="color:red; text-align:center"> You Need to Set The Missing Data In Employee Doctype</b><br>'
-			# 	self.set_mendatory_fields(employee_full_name,message_detail)
 				
 
 	def check_employee_fields(self):
@@ -128,6 +122,7 @@ class PIFSSForm103(Document):
 			field_list = [{'Request Type':'request_type'},{'Employee':'employee'},{'Company Name':'company_name'}
 						,{'Signatory Name':'signatory_name'}]
 			self.set_mendatory_fields(field_list)
+			
 
 		if self.workflow_state == "Pending by GRD":
 			field_list = [{'Attach 103 Signed Form':'attach_signed_form'}]
@@ -179,7 +174,7 @@ class PIFSSForm103(Document):
 	def notify_grd_to_check_status_on_pifss(self):
 		"""
 		This method for notifying operator to check the status of the employee on PIFSS website
-		after 5 days of Applying,
+		after 2 days of Applying,
 		(Accepted, Rejected, Under Process)
 		For removing and Enrolling Kuwaiti On PIFSS
 		"""
@@ -200,7 +195,7 @@ class PIFSSForm103(Document):
 		"""
 		today = date.today()
 		if self.workflow_state == "Under Process" and self.pifss_is_under_process_on:
-			if date_diff(today,self.pifss_is_under_process_on) == 2:#2
+			if date_diff(today,self.pifss_is_under_process_on) == 2:
 				page_link = get_url("/desk#Form/PIFSS Form 103/" + self.name)
 				subject = _("Check PIFSS website response for {0} employee <a href='{1}'></a>").format(self.employee_name,page_link)
 				message = "<p>Check Status for {0} of {1} <a href='{2}'> on PIFSS Website</a>.</p>".format(self.request_type,self.employee_name,page_link)
