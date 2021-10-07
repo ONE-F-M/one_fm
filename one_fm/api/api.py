@@ -101,7 +101,7 @@ def rename_post(posts):
             print(frappe.get_traceback())
 
 @frappe.whitelist()
-def store_fcm_token():
+def store_fcm_token(employee_id ,fcm_token):
     Employee = frappe.get_doc("Employee",{"name":employee_id})
     try:
         if Employee:
