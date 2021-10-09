@@ -1,0 +1,131 @@
+{
+ "actions": [],
+ "creation": "2021-09-28 08:25:09.661548",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "old_value",
+  "delta_amount",
+  "details",
+  "relieving_date",
+  "column_break_5",
+  "pifss_no",
+  "new_value",
+  "date_of_change",
+  "date_of_joining",
+  "column_break_9",
+  "status",
+  "updated_total_subscription",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "old_value",
+   "fieldtype": "Data",
+   "label": "Old Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "new_value",
+   "fieldtype": "Data",
+   "label": "New Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nIncreased\nDecreased\nNew\nLeft"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PIFSS Monthly Deduction Tool Table",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.pifss_id_no",
+   "fetch_if_empty": 1,
+   "fieldname": "pifss_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "PIFSS No"
+  },
+  {
+   "depends_on": "eval:doc.status == \"Increased\" || doc.status == \"Decreased\"",
+   "fieldname": "details",
+   "fieldtype": "Text",
+   "label": "Details"
+  },
+  {
+   "depends_on": "eval: doc.status == \"Left\"",
+   "fetch_from": "employee.relieving_date",
+   "fieldname": "relieving_date",
+   "fieldtype": "Date",
+   "label": "Relieving Date"
+  },
+  {
+   "depends_on": "eval:doc.status == \"New\"",
+   "fetch_from": "employee.date_of_joining",
+   "fieldname": "date_of_joining",
+   "fieldtype": "Date",
+   "label": "Date of Joining",
+   "mandatory_depends_on": "eval:doc.status == \"New\""
+  },
+  {
+   "depends_on": "eval: doc.status == \"Increased\" || doc.status == \"Decreased\"",
+   "fieldname": "delta_amount",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Delta Amount",
+   "precision": "3"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "updated_total_subscription",
+   "fieldtype": "Data",
+   "label": "Updated Total Subscription",
+   "precision": "3"
+  },
+  {
+   "depends_on": "eval: doc.status == \"Increased\" || doc.status == \"Decreased\"",
+   "fieldname": "date_of_change",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date Of Change"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2021-10-03 10:16:34.371710",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PIFSS Monthly Deduction Tool Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
