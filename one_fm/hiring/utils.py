@@ -473,7 +473,7 @@ def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
 
 @frappe.whitelist()
 def set_employee_name(doc,method):
-		doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic, doc.one_fm_last_name_in_arabic]))
+		doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_forth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
 
 @frappe.whitelist()#old wp was rejected
 def create_new_work_permit(work_permit):
