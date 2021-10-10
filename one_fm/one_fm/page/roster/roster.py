@@ -81,7 +81,7 @@ def get_staff_filters_data():
 
 
 @frappe.whitelist()
-def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, post_type=None, isOt=None, limit_start=0, limit_page_length=100):
+def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, post_type=None, designation=None, isOt=None, limit_start=0, limit_page_length=100):
 	start = time.time()
 		
 	master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
@@ -93,7 +93,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	}
 
 	if post_type:
-		filters.update({'post_type': post_type})	
+		filters.update({'post_type': post_type})		
 
 	if employee_search_id:
 		employee_filters.update({'employee_id': employee_search_id})
@@ -123,6 +123,8 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		employee_filters.pop('employee_availability')
 	else: 
 		employee_filters.update({'status': 'Active'})
+		if designation:
+			employee_filters.update({'designation' : designation})
 		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 		employees_asa = frappe.db.get_list("Additional Shift Assignment", additional_assignment_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 		if len(employees_asa) > 0:
@@ -140,6 +142,8 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		employee_filters.pop('department', None)
 	if post_type:
 		employee_filters.update({'post_type': post_type})
+	if designation:
+		employee_filters.pop('designation', None)
 
 	#------------------- Fetch post types ------------------------#
 	post_types_list = frappe.db.get_list("Post Schedule", employee_filters, ["distinct post_type", "post_abbrv"], ignore_permissions=True)
