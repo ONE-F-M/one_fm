@@ -304,7 +304,7 @@ class LeaveApplication(Document):
             frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
             return
         email_template = frappe.get_doc("Email Template", template)
-        message = frappe.render_template(email_template.response, args)
+        message = frappe.render_template(email_template.response_html, args)
 
         self.notify({
             # for post in messages
@@ -325,7 +325,7 @@ class LeaveApplication(Document):
                 frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
                 return
             email_template = frappe.get_doc("Email Template", template)
-            message = frappe.render_template(email_template.response, args)
+            message = frappe.render_template(email_template.response_html, args)
 
             self.notify({
                 # for post in messages

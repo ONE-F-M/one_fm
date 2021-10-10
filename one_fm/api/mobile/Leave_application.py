@@ -64,6 +64,15 @@ def leave_type_list(employee):
         return frappe.utils.response.report_error(e)
 
 @frappe.whitelist()
+def leave_notify(docname,status):
+    doc = frappe.get_doc("Leave Application",{"name":docname})
+    doc.status=status
+    doc.save()
+    doc.submit()
+    frappe.db.commit()
+    return doc
+
+@frappe.whitelist()
 def create_new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,half_day_date=None):
     """
 	Params:
