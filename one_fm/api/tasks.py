@@ -74,18 +74,7 @@ def final_reminder():
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:
-				user_id = []
-				employee_id = []
-				for recipient in recipients:
-					user_id.append(recipient[0])
-					employee_id.append(recipient[1])
-				subject = _("Final Reminder: Please checkin in the next five minutes.")
-				message = _("""
-					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
-					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
-					""")
-				send_notification(subject, message, user_id)
-				push_notification(employee_id, "Final Reminder", "Please checkin in the next five minutes.")
+				notify(recipients,"IN")
 
 		# shift_end is equal to now time - notification reminder in mins
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
@@ -104,15 +93,30 @@ def final_reminder():
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:
-				user_id = []
-				employee_id = []
-				for recipient in recipients:
-					user_id.append(recipient[0])
-					employee_id.append(recipient[1])
-				subject = _("Final Reminder: Please checkout in the next five minutes.")
-				message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
-				send_notification(subject, message, recipients)
-				push_notification(employee_id, "Final Reminder", "Please checkout in the next five minutes.")
+				notify(recipients,"OUT")
+
+def notify(recipients,log_type):
+	checkin_subject = _("Final Reminder: Please checkin in the next five minutes.")
+	checkin_message = _("""
+					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
+					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
+					""")
+	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
+	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
+	Notification_title = "Final Reminder"
+	user_id = []
+	employee_id = []
+	for recipient in recipients:
+		user_id.append(recipient[0])
+		employee_id.append(recipient[1])
+		if log_type=="IN":
+			send_notification(checkin_subject, checkin_message, user_id)
+			push_notification(employee_id, Notification_title, "Please checkin in the next five minutes.")
+		if log_type=="OUT":
+			send_notification(checkout_subject, checkout_message, user_id)
+			push_notification(employee_id, Notification_title, "Please checkout in the next five minutes.")
+
+
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])

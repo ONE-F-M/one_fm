@@ -176,7 +176,7 @@ def add_data_post(parameter, employee_map, att_map, filters, holiday_map, condit
 			else:
 				if day_off:
 				    status = day_off.get(emp).get(day + 1)
-				if status is None:
+				if not status:
 				    status = "Unmarked"
 
 			if status is None and holiday_map:
@@ -270,10 +270,10 @@ def add_data(employee_map, att_map, filters, holiday_map, conditions, default_ho
 		for day in range(filters["total_days_in_month"]):
 			status = None
 			status = att_map.get(emp).get(day + 1)
-			if status is None:
+			if not status:
 				if day_off:
 				    status = day_off.get(emp).get(day + 1)
-				if status is None:
+				if not status:
 				    status = "Unmarked"
 
 			if status is None and holiday_map:
