@@ -168,6 +168,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		}, as_dict=1)
 		schedule_list = []
 		schedule = {}
+		default_shift = frappe.db.get_value("Employee", {'employee': key[0]}, ["shift"])
 
 		for date in	pd.date_range(start=start_date, end=end_date):
 			if date < getdate() and any(cstr(attendance.attendance_date) == cstr(date).split(" ")[0] for attendance in attendances):
@@ -187,7 +188,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 				}
 			else:
 				schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {})
-				default_shift = frappe.db.get_value("Employee", {'employee': key[0]}, ["shift"])
 				if schedule.shift and schedule.shift != default_shift:
 					schedule.update({'asa': default_shift})
 			schedule_list.append(schedule)
