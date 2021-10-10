@@ -157,29 +157,28 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
 		filters.update({'date': ['between', (cstr(getdate()), end_date)], 'employee': key[0]})
 		if isOt:
-			filters.update({'roster_type' : 'Over-Time'})
+			filters.update({'roster_type' : 'Over-Time'})	
 		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"], order_by="date asc, employee_name asc", ignore_permissions=True)
 		if isOt:
 			filters.pop("roster_type", None)
+		attendances = frappe.db.sql("""select status, attendance_date from `tabAttendance` where  attendance_date >= %(start_date)s and attendance_date < %(today)s and employee = %(employee)s""", {
+			'start_date': start_date,
+			'today': cstr(getdate()),
+			'employee': key[0]
+		}, as_dict=1)
 		schedule_list = []
 		schedule = {}
 
 		for date in	pd.date_range(start=start_date, end=end_date):
-			if date < getdate():
-				if frappe.db.exists("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}):
-					attendance = frappe.db.get_value("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}, ["status"])			
-					schedule = {
-						'employee': key[0],
-						'employee_name': key[1],
-						'date': cstr(date).split(" ")[0],
-						'attendance': attendance
-					}
-				else:
-					schedule = {
+			if date < getdate() and any(cstr(attendance.attendance_date) == cstr(date).split(" ")[0] for attendance in attendances):
+				attendance = next((attendance for attendance in attendances if cstr(attendance.attendance_date) == cstr(date).split(" ")[0]), {})			
+				schedule = {
 					'employee': key[0],
 					'employee_name': key[1],
-					'date': cstr(date).split(" ")[0]
+					'date': cstr(date).split(" ")[0],
+					'attendance': attendance.status
 				}
+				
 			elif not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
 				schedule = {
 					'employee': key[0],
