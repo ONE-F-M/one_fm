@@ -121,13 +121,15 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		master_data.update({'total' : len(employees)})
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 		employee_filters.pop('employee_availability')
-	else:  
+	else: 
+		employee_filters.update({'status': 'Active'})
 		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 		employees_asa = frappe.db.get_list("Additional Shift Assignment", additional_assignment_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 		if len(employees_asa) > 0:
 			employees.extend(employees_asa)
 			employees = filter_redundant_employees(employees)
-		master_data.update({'total': len(employees)})	
+		master_data.update({'total': len(employees)})
+		employee_filters.pop('status', None)	
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 
 	if employee_search_name:
