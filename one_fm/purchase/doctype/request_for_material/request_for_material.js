@@ -47,10 +47,10 @@ frappe.ui.form.on('Request for Material', {
 		}
 		if(frm.doc.docstatus == 0){
 			if (frappe.user.has_role("Stock User")){
-				frm.set_df_property('type', 'options', "\nIndividual\nStock\nProject\nOnboarding");
+				frm.set_df_property('type', 'options', "\nIndividual\nDepartment\nStock\nProject\nOnboarding");
 			}
 			else{
-				frm.set_df_property('type', 'options', "\nIndividual\nProject\nOnboarding");
+				frm.set_df_property('type', 'options', "\nIndividual\nDepartment\nProject\nOnboarding");
 			}
 		}
 		if(frm.is_new()){
@@ -64,6 +64,7 @@ frappe.ui.form.on('Request for Material', {
 			});
 		}
 		set_filters(frm);
+		set_warehouse_filters(frm);
 	},
 	// after_save: function(frm){
 	// 	let item_changes =
@@ -394,7 +395,16 @@ frappe.ui.form.on('Request for Material', {
 	type: function(frm) {
 		set_employee_or_project(frm);
 		set_item_field_property(frm);
-		set_warehouse_filters(frm)
+		set_warehouse_filters(frm);
+	},
+	project: function(frm) {
+		set_warehouse_filters(frm);
+	},
+	department: function(frm) {
+		set_warehouse_filters(frm);
+	},
+	site: function(frm) {
+		set_warehouse_filters(frm);
 	}
 });
 
@@ -413,10 +423,9 @@ var set_filters = function(frm) {
 			]
 		};
 	});
-	var wh_filters = {'is_group': 0};
 	frm.set_query("t_warehouse", function() {
 		return {
-			filters: filters
+			filters: {'is_group': 0}
 		};
 	});
 };
@@ -520,24 +529,39 @@ var set_item_field_property = function(frm) {
 };
 
 var set_warehouse_filters = function(frm) {
-	if(frm.doc.type=='Project'){
-		frm.set_query("t_warehouse", function() {
-			return {
-				filters: [
-					['is_group', '=', 0],
-					['warehouse_type', '=', frm.doc.site]
-
-				]
-			};
-		});
+	var wh_filters = {'is_group': 0};
+	if(frm.doc.type == 'Individual' || frm.doc.type == 'Department'){
+		wh_filters = {'is_group': 0, 'department': frm.doc.department};
 	}
+	if(frm.doc.type == 'Project'){
+		wh_filters = {'is_group': 0, 'one_fm_project': frm.doc.project, 'one_fm_site': frm.doc.site};
+	}
+	frm.set_query("t_warehouse", function() {
+		return {
+			filters: wh_filters
+		};
+	});
 }
 
 var set_employee_or_project = function(frm) {
 	if(frm.doc.type){
+		frm.set_df_property('department', 'read_only', true);
 		if(frm.doc.type=='Individual'){
 			frm.set_df_property('employee', 'reqd', true);
 			frm.set_df_property('project', 'reqd', false);
+			frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
+				if(r && r.name){
+					frm.set_value('employee', r.name);
+				}
+				else{
+					frappe.throw(__('Employee or Employee email not created for current user'))
+				}
+			});
+		}
+		else if(frm.doc.type=='Department'){
+			frm.set_df_property('employee', 'reqd', false);
+			frm.set_df_property('department', 'reqd', true);
+			frm.set_df_property('department', 'read_only', false);
 			frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
 				if(r && r.name){
 					frm.set_value('employee', r.name);
