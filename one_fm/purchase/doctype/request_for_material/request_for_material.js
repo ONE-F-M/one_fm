@@ -699,7 +699,9 @@ erpnext.buying.MaterialRequestController = erpnext.buying.BuyingController.exten
 
 	items_add: function(doc, cdt, cdn) {
 		var row = frappe.get_doc(cdt, cdn);
-		this.frm.script_manager.copy_from_first_row("items", row, ["uom"]);
+		if(!row.uom){
+			this.frm.script_manager.copy_from_first_row("items", row, ["uom"]);
+		}
 		if(doc.schedule_date) {
 			row.schedule_date = doc.schedule_date;
 			refresh_field("schedule_date", cdn, "items");
