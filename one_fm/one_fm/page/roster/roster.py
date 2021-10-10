@@ -343,6 +343,9 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 						from_shift = from_schedule[0].shift
 						from_post_type = from_schedule[0].post_type
 						frappe.enqueue(create_request_employee_schedule, employee=employee, from_shift=from_shift, from_post_type=from_post_type, to_shift=shift, to_post_type=post_type, otRoster=otRoster, start_date=start_date, end_date=end_date, is_async=True, queue='long')
+					else:
+						frappe.throw("This employee is not scheduled. Please uncheck Request Employee Schedule option.")
+						frappe.log_error("This employee is not scheduled. Please uncheck Request Employee Schedule option.")	
 				frappe.enqueue(update_roster, key="roster_view", is_async=True, queue='long')
 			
 			end = time.time()
