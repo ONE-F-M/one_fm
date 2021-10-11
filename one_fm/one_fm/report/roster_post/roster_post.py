@@ -51,7 +51,7 @@ class RosterPost(object):
             "width": 250
 		})
 		self.columns.append({
-			"label": _("Posts_filled"),
+			"label": _("Posts filled"),
             "fieldname": "posts_filled",
             "fieldtype": "Int",
             "width": 250
