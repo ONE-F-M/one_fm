@@ -30,11 +30,24 @@ def validate_job_offer(doc, method):
         salary_structure = frappe.get_doc('Salary Structure', doc.one_fm_salary_structure)
         total_amount = 0
         doc.set('one_fm_salary_details', [])
+        base = doc.base
         for salary in salary_structure.earnings:
-            total_amount += salary.amount
-            salary_details = doc.append('one_fm_salary_details')
-            salary_details.salary_component = salary.salary_component
-            salary_details.amount = salary.amount
+            if salary.amount_based_on_formula and salary.formula:
+                formula = salary.formula
+                percent = formula.split("*")[1]
+                amount = int(base)*float(percent)
+                total_amount += amount
+                if amount!=0:
+                    salary_details = doc.append('one_fm_salary_details')
+                    salary_details.salary_component = salary.salary_component
+                    salary_details.amount = amount
+                    doc.one_fm_job_offer_total_salary = total_amount
+            else:
+                total_amount += salary.amount
+                if salary.amount!=0:
+                    salary_details = doc.append('one_fm_salary_details')
+                    salary_details.salary_component = salary.salary_component
+                    salary_details.amount = salary.amount
         doc.one_fm_job_offer_total_salary = total_amount
     elif doc.one_fm_salary_details:
         total_amount = 0
