@@ -1040,11 +1040,11 @@ function get_roster_data(page, isOt) {
 		employee_search_id = page.employee_search_id;
 	}
 	let {start_date, end_date} = page;
-	let { project, site, shift, department, post_type } = page.filters;
+	let { project, site, shift, department, post_type, designation } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	if (project || site || shift || department || post_type){
+	if (project || site || shift || department || post_type || designation){
 		$('#cover-spin').show(0);
-		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, post_type, isOt, limit_start, limit_page_length })
+		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, post_type, designation, isOt, limit_start, limit_page_length })
 			.then(res => {
 				let a2 = performance.now();
 				console.log("REQ TIME", a2 - a1);
@@ -1160,11 +1160,18 @@ function render_roster(res, page, isOt) {
 				'Emergency Leave': 'EL'
 			};
 			let attendancemap = {
-				'P': 'greenboxcolor',
-				'A': 'redboxcolor',
-				'WFH': 'greenboxcolor',
-				'HD': 'greenboxcolor',
-				'OL': 'redboxcolor'
+				'Present': 'greenboxcolor',
+				'Absent': 'redboxcolor',
+				'Work From Home': 'greenboxcolor',
+				'Half Day': 'greenboxcolor',
+				'On Leave': 'redboxcolor'
+			};
+			let attendance_abbr_map = {
+				'Present': 'P',
+				'Absent': 'A',
+				'Work From Home': 'WFH',
+				'Half Day': 'HD',
+				'On Leave': 'OL'
 			};
 			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance, asa } = employees_data[employee_key][i];
 			//OT schedule view
@@ -1221,7 +1228,7 @@ function render_roster(res, page, isOt) {
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance}</div>
+							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}</div>
 					</td>`;
 				} else {
 					sch = `
@@ -1607,6 +1614,7 @@ function setup_filters(page) {
 			get_shifts(page);
 			get_departments(page);
 			get_post_types(page);
+			get_designations(page);
 		})
 		.then(r => {
 			get_roster_data(page);
@@ -1727,6 +1735,28 @@ function get_departments(page) {
 			});
 
 		});
+}
+
+function get_designations(page){
+	frappe.xcall('one_fm.api.mobile.roster.get_designations')
+		.then(res => {
+			let parent = $('[data-page-route="roster"] #rosteringdesignationselect');
+			let designation_data = [];
+			res.forEach(element => {
+				let { name } = element;
+				designation_data.push({ 'id': name, 'text': name });
+			});
+			parent.select2({ data: designation_data });
+			$(parent).on('select2:select', function (e) {
+				page.filters.designation = $(this).val();
+				let element = get_wrapper_element().slice(1);
+				console.log("6");
+				page[element](page);
+			});
+		})
+		.catch(e => {
+			console.log(e);
+		})
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

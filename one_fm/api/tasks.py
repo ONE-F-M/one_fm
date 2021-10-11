@@ -69,7 +69,6 @@ def final_reminder():
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"
-				AND empChkin.skip_auto_attendance=0
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
@@ -95,7 +94,6 @@ def final_reminder():
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="OUT"
-				AND empChkin.skip_auto_attendance=0
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
@@ -219,7 +217,7 @@ def send_notification(subject, message, recipients):
 		notification.document_type = "Notification Log"
 		notification.for_user = user
 		notification.document_name = " "
-		notification.save()
+		notification.save(ignore_permissions=True)
 		notification.document_name = notification.name
 		notification.save(ignore_permissions=True)
 		frappe.db.commit()	

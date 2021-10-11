@@ -405,7 +405,6 @@ def get_assigned_shifts(employee_id, project=None, site=None):
 @frappe.whitelist()
 def get_departments():
 	try:
-		print(frappe.get_list("Department", limit_page_length=9999))
 		return frappe.get_list("Department",{"is_group": 0}, limit_page_length=9999, order_by="name asc")
 	
 	except Exception as e:
@@ -427,6 +426,12 @@ def get_post_types(shift=None):
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
+@frappe.whitelist()
+def get_designations():
+	try:
+		return frappe.db.get_list("Designation", limit_page_length=9999, order_by="name asc")
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)	
 
 @frappe.whitelist()
 def get_post_details(post_name):

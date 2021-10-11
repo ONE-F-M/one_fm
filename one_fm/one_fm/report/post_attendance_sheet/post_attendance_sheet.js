@@ -50,7 +50,6 @@ frappe.query_reports["Post Attendance Sheet"] = {
 			"label": __("Project"),
 			"fieldtype": "Link",
 			"options": "Project",
-			"default": frappe.defaults.get_user_default("Project"),
 			"reqd": 0
 		},
 		{

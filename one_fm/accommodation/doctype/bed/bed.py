@@ -42,7 +42,7 @@ class Bed(Document):
 					bed=%(bed)s and name=%(bed_in_space)s
 			"""
 			filters = {
-				'disabled': self.disabled, 'gender': self.gender,
+				'disabled': self.disabled, 'gender': self.gender, 'status': self.status,
 				'bed_type': self.bed_type, 'bed': self.name, 'bed_in_space': bed_in_space
 			}
 			frappe.db.sql(query, filters)
