@@ -212,7 +212,7 @@ def email_notification_reminder(grd_user,moi_list,reminder_number, action,type, 
     message_list=[]
     for moi in moi_list:
         page_link = get_url("/desk#Form/MOI Residency Jawazat/"+moi.name)
-        message = "<a href='{0}'>{1}</a>".format(page_link, moi.civil_id)
+        message = "<a href='{0}'>{1}</a>".format(page_link, moi.one_fm_civil_id)
         message_list.append(message)
 
     if message_list:
