@@ -315,17 +315,18 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 		validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")
 	
 	if not cint(request_employee_schedule):
-		for emp in json.loads(employees):
-			for date in pd.date_range(start=start_date, end=end_date):
-				shift_es = frappe.db.get_value("Employee Schedule", {'employee': emp, 'employee_availability': 'Working', 'date': date}, ["shift"])
-				if shift_es:
-					supervisor = frappe.db.get_value("Operations Shift", shift_es, ["supervisor"])
-					if supervisor and user_employee.name != supervisor:
-						validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
-						break
-			else:
-				continue
-			break
+		if "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
+			for emp in json.loads(employees):
+				for date in pd.date_range(start=start_date, end=end_date):
+					shift_es = frappe.db.get_value("Employee Schedule", {'employee': emp, 'employee_availability': 'Working', 'date': date}, ["shift"])
+					if shift_es:
+						supervisor = frappe.db.get_value("Operations Shift", shift_es, ["supervisor"])
+						if supervisor and user_employee.name != supervisor:
+							validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
+							break
+				else:
+					continue
+				break
 	
 	if len(validation_logs) > 0:
 		frappe.throw(validation_logs)
