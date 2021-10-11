@@ -1296,6 +1296,10 @@ def validate_job_applicant(doc, method):
         validate_mandatory_childs(doc)
     if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
         create_job_offer_from_job_applicant(doc.name)
+    if doc.one_fm_number_of_kids > 0:
+        """This part is comparing the number of children with the listed children details in the table and ask user to add all childrens"""
+        if doc.one_fm_number_of_kids != len(doc.one_fm_kids_details):
+            frappe.throw("Please List All Children in the Table.")
 
 def validate_pam_file_number_and_pam_designation(doc, method):
     if doc.one_fm_erf:
