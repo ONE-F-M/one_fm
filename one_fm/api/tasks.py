@@ -289,31 +289,33 @@ def get_action_user(employee, shift):
 		return action_user, Role
 
 def get_notification_user(employee, shift, Role):
-		"""
-				Shift > Site > Project > Reports to
-		"""
-		Employee = frappe.get_doc("Employee", {"name":employee})
-		operations_shift = frappe.get_doc("Operations Shift", shift)
-		operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-		project = frappe.get_doc("Project", operations_site.project)
-		
-		report_to = get_employee_user_id(Employee.reports_to) if Employee.reports_to else ""
+	print(Role)
+	"""
+			Shift > Site > Project > Reports to
+	"""
+	Employee = frappe.get_doc("Employee", {"name":employee})
+	operations_shift = frappe.get_doc("Operations Shift", shift)
+	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
+	project = frappe.get_doc("Project", operations_site.project)
+	project_manager = site_supervisor = shift_supervisor = None
 
-		if operations_site.project and project.account_manager and get_employee_user_id(project.account_manager) != operations_shift.owner:
-			project_manager = get_employee_user_id(project.account_manager)
-		if operations_site.account_supervisor and get_employee_user_id(operations_site.account_supervisor) != operations_shift.owner:
-			site_supervisor = get_employee_user_id(operations_site.account_supervisor)
-		elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owne:
-			shift_supervisor = get_employee_user_id(operations_shift.supervisor)
-					
-		if Role == "Shift Supervisor":
-			notify_user = [site_supervisor,project_manager]
-		elif Role == "Site Supervisor":
-			notify_user = [project_manager]
-		else:
-			notify_user = []
+	report_to = get_employee_user_id(Employee.reports_to) if Employee.reports_to else ""
 
-		return notify_user
+	if operations_site.project and project.account_manager and get_employee_user_id(project.account_manager) != operations_shift.owner:
+		project_manager = get_employee_user_id(project.account_manager)
+	if operations_site.account_supervisor and get_employee_user_id(operations_site.account_supervisor) != operations_shift.owner:
+		site_supervisor = get_employee_user_id(operations_site.account_supervisor)
+	elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owne:
+		shift_supervisor = get_employee_user_id(operations_shift.supervisor)
+				
+	if Role == "Shift Supervisor" and site_supervisor and project_manager:
+		notify_user = [site_supervisor,project_manager]
+	elif Role == "Site Supervisor" and project_manager:
+		notify_user = [project_manager]
+	else:
+		notify_user = []
+
+	return notify_user
 
 def get_location(shift):
 	print(shift)
