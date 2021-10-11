@@ -13,6 +13,7 @@ from one_fm.hiring.utils import update_onboarding_doc
 
 class MGRP(Document):
 	def validate(self):
+		self.children_table()
 		self.set_grd_values()
 		self.set_status()
 		if not self.end_of_service_attachment:
@@ -59,6 +60,36 @@ class MGRP(Document):
 		if not self.grd_operator:
 			self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_pifss")
 
+	def children_table(self):
+		"""This method is getting the child table details from the employee record based on the selected employee"""
+		table=[]
+		if self.employee:
+			child_num = frappe.db.get_value('Employee',{'name':self.employee},['number_of_children'])
+			if child_num:
+				employee = frappe.get_doc('Employee',self.employee)
+				for child in employee.children_details:
+					table.append({
+						'child_name': child.child_name,
+						'child_name_in_arabic': child.child_name_in_arabic,
+						'age': child.age,
+						'work_status': child.work_status,
+						'married': child.married,
+						'health_status': child.health_status
+					})
+
+			if len(table)>0:
+				for row in table:
+					children = self.append('children_details_table',{})
+					children.child_name = row['child_name']
+					children.child_name_in_arabic = row['child_name_in_arabic']
+					children.age = row['age']
+					children.work_status = row['work_status']
+					children.married = row['married']
+					children.health_status = row['health_status']
+				children.save()
+				frappe.db.commit()
+
+			print("child table >",self.children_details_table)
 	def set_status(self):
 		if self.status == "New Kuwaiti":
 			self.db_set('status',"Registration")
@@ -67,6 +98,14 @@ class MGRP(Document):
 
 
 	def check_workflow_states(self):
+		if self.workflow_state == "Form Printed":
+			field_list = [{'Status':'status'},{'Employee':'employee'},{'Company Name':'company_name'}
+						,{'Signatory Name':'signatory_name'}]
+			self.set_mendatory_fields(field_list)
+		
+		if self.workflow_state == "Apply Online by PRO":
+			field_list = [{'Attach MGRP Signed Form':'attach_mgrp_signed_form'}]
+			self.set_mendatory_fields(field_list)
 
 		if self.workflow_state == "Awaiting Response" and self.flag == 0:#check the previous workflow (DRAFT) required fields
 			message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply through <a href="{0}">MGRP Website</a></b><br><b>You Will Be Notified Daily at 8am To Check Applicantion Status</b>'.format(self.mgrp_website)
@@ -125,6 +164,29 @@ def notify_awaiting_response_mgrp(doc, method): #will run everyday at 8 am
 		notification.save()
 		frappe.db.commit()
 
+
+@frappe.whitelist()
+def get_signatory_name_for_mgrp(parent):
+	"""Mehtod fetching the name of the company and passing child table field upon company name"""
+	names=[]
+	names.append(' ')#add empty record, to check if this field got selected by onboard user else it will throw message to fill the empty record
+	if parent:
+		doc = frappe.get_doc('PIFSS Authorized Signatory',parent)
+
+		for autorized_signatory in doc.authorized_signatory:
+			if autorized_signatory.authorized_signatory_name_arabic:
+				names.append(autorized_signatory.authorized_signatory_name_arabic)
+	print("Names",names)
+	return names
+
+@frappe.whitelist()
+def get_signatory_user_for_mgrp(company_name,user_name):
+	"""Method getting user id & attached signature from record based on given filter"""
+	print("Doc_name==>",company_name)
+	parent = frappe.db.get_value('PIFSS Authorized Signatory',{'company_name_arabic':company_name},['name'])
+	user,signature = frappe.db.get_value('PAM Authorized Signatory Table',{'parent':parent,'authorized_signatory_name_arabic':user_name},['user','signature'])
+	print("User & Signature",user,signature)
+	return user,signature
 
 @frappe.whitelist()#onboarding linking
 def create_mgrp_form_for_onboarding(employee, onboard_employee):
