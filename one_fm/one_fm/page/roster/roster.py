@@ -81,7 +81,7 @@ def get_staff_filters_data():
 
 
 @frappe.whitelist()
-def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, post_type=None, isOt=None, limit_start=0, limit_page_length=100):
+def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, post_type=None, designation=None, isOt=None, limit_start=0, limit_page_length=100):
 	start = time.time()
 		
 	master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
@@ -93,7 +93,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	}
 
 	if post_type:
-		filters.update({'post_type': post_type})	
+		filters.update({'post_type': post_type})		
 
 	if employee_search_id:
 		employee_filters.update({'employee_id': employee_search_id})
@@ -121,13 +121,17 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		master_data.update({'total' : len(employees)})
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 		employee_filters.pop('employee_availability')
-	else:  
+	else: 
+		employee_filters.update({'status': 'Active'})
+		if designation:
+			employee_filters.update({'designation' : designation})
 		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 		employees_asa = frappe.db.get_list("Additional Shift Assignment", additional_assignment_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 		if len(employees_asa) > 0:
 			employees.extend(employees_asa)
 			employees = filter_redundant_employees(employees)
-		master_data.update({'total': len(employees)})	
+		master_data.update({'total': len(employees)})
+		employee_filters.pop('status', None)	
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 
 	if employee_search_name:
@@ -138,6 +142,8 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		employee_filters.pop('department', None)
 	if post_type:
 		employee_filters.update({'post_type': post_type})
+	if designation:
+		employee_filters.pop('designation', None)
 
 	#------------------- Fetch post types ------------------------#
 	post_types_list = frappe.db.get_list("Post Schedule", employee_filters, ["distinct post_type", "post_abbrv"], ignore_permissions=True)
@@ -151,29 +157,29 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
 		filters.update({'date': ['between', (cstr(getdate()), end_date)], 'employee': key[0]})
 		if isOt:
-			filters.update({'roster_type' : 'Over-Time'})
+			filters.update({'roster_type' : 'Over-Time'})	
 		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"], order_by="date asc, employee_name asc", ignore_permissions=True)
 		if isOt:
 			filters.pop("roster_type", None)
+		attendances = frappe.db.sql("""select status, attendance_date from `tabAttendance` where  attendance_date >= %(start_date)s and attendance_date < %(today)s and employee = %(employee)s""", {
+			'start_date': start_date,
+			'today': cstr(getdate()),
+			'employee': key[0]
+		}, as_dict=1)
 		schedule_list = []
 		schedule = {}
+		default_shift = frappe.db.get_value("Employee", {'employee': key[0]}, ["shift"])
 
 		for date in	pd.date_range(start=start_date, end=end_date):
-			if date < getdate():
-				if frappe.db.exists("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}):
-					attendance = frappe.db.get_value("Attendance", {'attendance_date': cstr(date).split(" ")[0], 'employee': key[0]}, ["status"])			
-					schedule = {
-						'employee': key[0],
-						'employee_name': key[1],
-						'date': cstr(date).split(" ")[0],
-						'attendance': attendance
-					}
-				else:
-					schedule = {
+			if date < getdate() and any(cstr(attendance.attendance_date) == cstr(date).split(" ")[0] for attendance in attendances):
+				attendance = next((attendance for attendance in attendances if cstr(attendance.attendance_date) == cstr(date).split(" ")[0]), {})			
+				schedule = {
 					'employee': key[0],
 					'employee_name': key[1],
-					'date': cstr(date).split(" ")[0]
+					'date': cstr(date).split(" ")[0],
+					'attendance': attendance.status
 				}
+				
 			elif not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
 				schedule = {
 					'employee': key[0],
@@ -182,7 +188,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 				}
 			else:
 				schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {})
-				default_shift = frappe.db.get_value("Employee", {'employee': key[0]}, ["shift"])
 				if schedule.shift and schedule.shift != default_shift:
 					schedule.update({'asa': default_shift})
 			schedule_list.append(schedule)
@@ -310,17 +315,18 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 		validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")
 	
 	if not cint(request_employee_schedule):
-		for emp in json.loads(employees):
-			for date in pd.date_range(start=start_date, end=end_date):
-				shift_es = frappe.db.get_value("Employee Schedule", {'employee': emp, 'employee_availability': 'Working', 'date': date}, ["shift"])
-				if shift_es:
-					supervisor = frappe.db.get_value("Operations Shift", shift_es, ["supervisor"])
-					if supervisor and user_employee.name != supervisor:
-						validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
-						break
-			else:
-				continue
-			break
+		if "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
+			for emp in json.loads(employees):
+				for date in pd.date_range(start=start_date, end=end_date):
+					shift_es = frappe.db.get_value("Employee Schedule", {'employee': emp, 'employee_availability': 'Working', 'date': date}, ["shift"])
+					if shift_es:
+						supervisor = frappe.db.get_value("Operations Shift", shift_es, ["supervisor"])
+						if supervisor and user_employee.name != supervisor:
+							validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
+							break
+				else:
+					continue
+				break
 	
 	if len(validation_logs) > 0:
 		frappe.throw(validation_logs)
@@ -343,6 +349,9 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 						from_shift = from_schedule[0].shift
 						from_post_type = from_schedule[0].post_type
 						frappe.enqueue(create_request_employee_schedule, employee=employee, from_shift=from_shift, from_post_type=from_post_type, to_shift=shift, to_post_type=post_type, otRoster=otRoster, start_date=start_date, end_date=end_date, is_async=True, queue='long')
+					else:
+						frappe.throw("This employee is not scheduled. Please uncheck Request Employee Schedule option.")
+						frappe.log_error("This employee is not scheduled. Please uncheck Request Employee Schedule option.")	
 				frappe.enqueue(update_roster, key="roster_view", is_async=True, queue='long')
 			
 			end = time.time()
