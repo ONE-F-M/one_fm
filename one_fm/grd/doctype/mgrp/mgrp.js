@@ -28,7 +28,6 @@ frappe.ui.form.on('MGRP', {
 		set_dates(frm);
 	},
 	status: function(frm) {
-		let {status} = frm.doc;
 		if(status === "Registration"){
 			frm.set_value("naming_series", "REG-.{employee}.-");
 		}else if(status === "Cancellation"){

@@ -176,16 +176,13 @@ def get_signatory_name_for_mgrp(parent):
 		for autorized_signatory in doc.authorized_signatory:
 			if autorized_signatory.authorized_signatory_name_arabic:
 				names.append(autorized_signatory.authorized_signatory_name_arabic)
-	print("Names",names)
 	return names
 
 @frappe.whitelist()
 def get_signatory_user_for_mgrp(company_name,user_name):
 	"""Method getting user id & attached signature from record based on given filter"""
-	print("Doc_name==>",company_name)
 	parent = frappe.db.get_value('PIFSS Authorized Signatory',{'company_name_arabic':company_name},['name'])
 	user,signature = frappe.db.get_value('PAM Authorized Signatory Table',{'parent':parent,'authorized_signatory_name_arabic':user_name},['user','signature'])
-	print("User & Signature",user,signature)
 	return user,signature
 
 @frappe.whitelist()#onboarding linking
