@@ -261,7 +261,9 @@ frappe.ui.form.on('Request for Material', {
 				if (!r.exc) {
 					frm.reload_doc();
 				}
-			}
+			},
+			freeze: true,
+			freeze_message: __('Updating the Request..!')
 		});
 	},
 	update_status: function(frm, stop_status) {
@@ -505,15 +507,13 @@ var fetch_erf_items = function(frm){
 };
 
 var set_item_field_property = function(frm) {
-	if((frm.doc.docstatus == 1 && frappe.session.user == frm.doc.request_for_material_accepter)
-		|| frm.doc.type == 'Stock'){
+	if((frm.doc.docstatus == 1 && frappe.session.user == frm.doc.request_for_material_accepter) || frm.doc.type == 'Stock'){
 		var df = frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name);
 		df.read_only = false;
 	}
-	// if((frm.doc.docstatus == 1 && frm.doc.status == 'Approved')
-	// 	|| frm.doc.type == 'Stock'){
-	// 	frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
-	// }
+	else if((frm.doc.docstatus == 1 && frm.doc.status == 'Approved') || frm.doc.type == 'Stock'){
+		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
+	}
 	if(frm.doc.type == 'Stock'){
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).read_only = true;
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = false;

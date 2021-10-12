@@ -90,6 +90,7 @@
    "oldfieldname": "po_details",
    "oldfieldtype": "Table",
    "options": "Request for Supplier Quotation Item",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -192,13 +193,14 @@
   }
  ],
  "icon": "fa fa-shopping-cart",
+ "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2020-06-06 08:33:35.311627",
+ "modified": "2021-10-11 08:21:35.285799",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Request for Supplier Quotation",
- "owner": "omar.ja93@gmail.com",
+ "owner": "Administrator",
  "permissions": [
   {
    "amend": 1,

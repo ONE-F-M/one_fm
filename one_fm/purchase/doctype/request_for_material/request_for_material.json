@@ -113,6 +113,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -124,7 +125,6 @@
    "options": "\nDraft\nAccepted\nApproved\nRejected\nStopped\nCancelled\nPending\nPartially Ordered\nOrdered\nIssued\nTransferred\nReceived",
    "print_hide": 1,
    "print_width": "100px",
-   "read_only": 1,
    "search_index": 1,
    "width": "100px"
   },
@@ -472,7 +472,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-10 21:30:13.151888",
+ "modified": "2021-10-11 00:04:29.697430",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
