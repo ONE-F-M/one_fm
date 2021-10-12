@@ -39,6 +39,18 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 				});
 			});
 
+			frm.add_custom_button(__("Create Supplier Quotation"), function() {
+				frappe.call({
+					method: "create_quotation_from_supplier",
+					doc: frm.doc,
+					callback: function(r){
+						var doclist = frappe.model.sync(r.message);
+						frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+					},
+					freeze: true
+				});
+			});
+
 
 		}
 
