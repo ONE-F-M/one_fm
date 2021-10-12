@@ -304,7 +304,7 @@ class LeaveApplication(Document):
             frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
             return
         email_template = frappe.get_doc("Email Template", template)
-        message = frappe.render_template(email_template.response, args)
+        message = frappe.render_template(email_template.response_html, args)
 
         self.notify({
             # for post in messages
@@ -325,7 +325,7 @@ class LeaveApplication(Document):
                 frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
                 return
             email_template = frappe.get_doc("Email Template", template)
-            message = frappe.render_template(email_template.response, args)
+            message = frappe.render_template(email_template.response_html, args)
 
             self.notify({
                 # for post in messages
@@ -449,6 +449,41 @@ def get_leave_details(employee, date):
     }
 
     return ret
+
+@frappe.whitelist()
+def notifier_leave(doc, supervisor):
+    args = doc.as_dict()
+    template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
+    if not template:
+        frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
+        return
+    email_template = frappe.get_doc("Email Template", template)
+    message = frappe.render_template(email_template.response, args)
+
+    try:
+        frappe.sendmail(
+            recipients = supervisor,
+            sender = frappe.get_doc('User', frappe.session.user).email,
+            subject = email_template.subject,
+            message = message,
+        )
+        frappe.msgprint(_("Email sent to {0}").format(supervisor))
+    except frappe.OutgoingEmailError:
+            pass
+
+def notify(self, args):
+    # args -> message, message_to, subject
+    
+    contact = args.message_to
+    if not isinstance(contact, list):
+        if not args.notify == "employee":
+            contact = frappe.get_doc('User', contact).email or contact
+
+    sender              = dict()
+    sender['email']     = frappe.get_doc('User', frappe.session.user).email
+    sender['full_name'] = frappe.utils.get_fullname(sender['email'])
+
+    
 
 @frappe.whitelist()
 def get_leave_balance_on(employee, leave_type, date, to_date=None, consider_all_leaves_in_the_allocation_period=False):
@@ -766,6 +801,12 @@ def get_approved_leaves_for_period(employee, leave_type, from_date, to_date):
                 leave_app.from_date, leave_app.to_date)
 
     return leave_days
+
+# get Shift of an employee for given Date
+@frappe.whitelist()
+def get_employee_schedule(employee, from_date, to_date):
+    Shift = frappe.get_all("Employee Schedule",{"employee": employee, "date": ['between', (from_date, to_date)]},["shift","date"])
+    return Shift
 
 @frappe.whitelist()
 def get_leave_approver(employee):
