@@ -1645,99 +1645,67 @@ def update_onboarding_doc_for_bank_account(doc):
         oe.save(ignore_permissions=True)
 
 
-def roster_daily_report_task():
-    frappe.enqueue(create_roster_daily_report, is_async=True, queue='long')
 
-def create_roster_daily_report():
-    """
-    A function that creates a Roster Daily Report document,
-    obtaining the post schedule data and employee schedule data and
-    computing the result of Roster being either 'OK' or 'NOT OK',
-    for a date range starting from today until the next 14 days.
-    """
+def issue_employee_roster_actions():
+    frappe.enqueue(create_roster_employee_actions, is_async=True, queue='long')
 
-    # start date for which the report data is created
+
+def create_roster_employee_actions():
+    """ 
+    This function creates a Roster Employee Actions document and issues notifications to relevant supervisors 
+    directing them to schedule employees that are unscheduled and assigned to them.
+    It computes employees not scheduled for the span of two weeks, starting from tomorrow.
+    """
+    
+    #-------------------- Roster Employee actions ------------------#
+
+    # start date to be from tomorrow
     start_date = add_to_date(cstr(getdate()), days=1)
     # end date to be 14 days after start date
     end_date = add_to_date(start_date, days=14)
 
-    roster_daily_report_doc = frappe.new_doc("Roster Daily Report")
+    # fetch employees that are active and don't have a schedule in the specified date range
+    employees_not_rostered = frappe.db.sql("""
+                            select 
+                                employee from `tabEmployee` 
+                            where 
+                                employee not in 
+                                (select employee 
+                                from `tabEmployee Schedule` 
+                                where date >= %(start)s and date <=%(end)s) """, 
+                                {'start': start_date, 'end': end_date})
+    
+    employees = ()
 
-    # set document creation date
-    roster_daily_report_doc.date = cstr(getdate())
+    # fetch employees that are not rostered from the result returned by the query and append to tuple
+    for emp in employees_not_rostered:
+        employees = employees + emp
+    
+    # fetch supervisors and list of employees(not rostered) under them 
+    result = frappe.db.sql("""select sv.employee, group_concat(e.employee) 
+            from `tabEmployee` e
+            join `tabOperations Shift` sh on sh.name = e.shift 
+            join `tabEmployee` sv on sh.supervisor=sv.employee
+            where e.employee in {employees}
+            group by sv.employee """.format(employees=employees))
 
-    for date in pd.date_range(start=start_date, end=end_date):
+    # for each supervisor, create a roster action
+    for res in result:
+        supervisor = res[0]
+        employees = res[1].split(",")
 
-        """ Post report data """
-        active_posts = len(frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["post_type"]))
-        posts_off = len(frappe.db.get_list("Post Schedule", {'post_status': 'Post Off', 'date': date}))
+        roster_employee_actions_doc = frappe.new_doc("Roster Employee Actions")
+        roster_employee_actions_doc.start_date = start_date
+        roster_employee_actions_doc.end_date = end_date
+        roster_employee_actions_doc.status = "Pending"
+        roster_employee_actions_doc.action_type = "Roster Employee"
+        roster_employee_actions_doc.supervisor = supervisor
 
-        posts_filled_count = 0
-        posts_not_filled_count = 0
+        for emp in employees:
+            roster_employee_actions_doc.append('employees_not_rostered', {
+                'employee': emp
+            })
 
-        post_types = frappe.db.get_list("Post Schedule", ["distinct post_type", "post_abbrv"])
-        for post_type in post_types:
-            # For each post type, get all post schedules and employee schedules assigned to the post type
-            posts_count = len(frappe.db.get_list("Post Schedule", {'post_type': post_type.post_type, 'date': date, 'post_status': 'Planned'}))
-            posts_fill_count = len(frappe.db.get_list("Employee Schedule", {'post_type': post_type.post_type, 'date': date, 'employee_availability': 'Working'}))
-
-            # Compare count of post schedule vs employee schedule for the given post type, compute post filled/not filled count
-            if posts_count == posts_fill_count:
-                posts_filled_count = posts_filled_count + posts_fill_count
-            elif posts_count > posts_fill_count:
-                posts_filled_count = posts_filled_count + posts_fill_count
-                posts_not_filled_count = posts_not_filled_count + (posts_count - posts_fill_count)
-
-        post_result = "OK"
-        # If posts are not filled, result is set to 'NOT OK'
-        if posts_not_filled_count > 0:
-            post_result = "NOT OK"
-
-        # Add row to child table
-        roster_daily_report_doc.append("post_daily_report",{
-            'date': cstr(date).split(" ")[0],
-            'active_posts': active_posts,
-            'posts_off': posts_off,
-            'posts_filled': posts_filled_count,
-            'posts_not_filled': posts_not_filled_count,
-            'result': post_result
-        })
-
-        """ Employee report data """
-        rostered_employees_count = len(frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Working'}))
-        employee_leave_count = len(frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': ('not in', ('Working'))}))
-
-        employee_not_rostered_count = 0
-
-        # Get list of all employees
-        employee_list = frappe.db.get_list("Employee", {'status': 'Active'}, ["employee"])
-        for employee in employee_list:
-            # For each employee, check if an employee schedule does not exist for the given date and compute employee not rostered count
-            if not frappe.db.exists({'doctype': 'Employee Schedule', 'date': date, 'employee': employee.employee}):
-                employee_not_rostered_count = employee_not_rostered_count + 1
-
-        employee_result = "OK"
-        # If employees are available but are not rostered, set result to 'NOT OK'
-        if employee_not_rostered_count > 0:
-            employee_result = "NOT OK"
-
-        # Add row to child table
-        roster_daily_report_doc.append("employee_daily_report",{
-            'date': cstr(date).split(" ")[0],
-            'employees_rostered':rostered_employees_count,
-            'employees_on_leave': employee_leave_count,
-            'employees_not_rostered': employee_not_rostered_count,
-            'result': employee_result
-        })
-
-    roster_daily_report_doc.save()
-    frappe.db.commit()
-
-    # # Notify concerned users
-    # user_list = frappe.db.get_list("User")
-    # for user in user_list:
-    #     roles = frappe.get_roles(user.name)
-    #     if "Operations Manager" in roles or "Projects Manager" in roles or "Shift Supervisor" in roles or "Site Supervisor" in roles:
-    #         subject = "Roster Daily Report for {start_date} to {end_date}".format(start_date = start_date, end_date = end_date)
-    #         message = "Roster Daily Report for {start_date} to {end_date} has beeen created. Please review the report and take neccessary actions if required.".format(start_date = start_date, end_date = end_date)
-    #         create_notification_log(subject, message, [user.name], roster_daily_report_doc)
+        roster_employee_actions_doc.save()
+        frappe.db.commit()
+    #-------------------- END Roster Employee actions ------------------#
