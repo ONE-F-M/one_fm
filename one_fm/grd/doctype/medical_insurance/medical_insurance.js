@@ -15,9 +15,9 @@ frappe.ui.form.on('Medical Insurance', {
             ).addClass('btn-primary');
         }
     },
-    onload: function(frm){
-        set_employee_details(frm);
-    },
+    // onload: function(frm){
+    //     set_employee_details(frm);
+    // },
     work_permit: function(frm){
         set_employee_details(frm);
         set_insurance_type(frm);

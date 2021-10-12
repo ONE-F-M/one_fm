@@ -473,7 +473,34 @@ def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
 
 @frappe.whitelist()
 def set_employee_name(doc,method):
-		doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_forth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
+    """This method for getting the arabic full name
+    and fetching children details from job applicant"""
+    doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_forth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
+    
+    if doc.job_applicant:
+        table=[]
+        applicant = frappe.get_doc('Job Applicant',doc.job_applicant)
+        for child in applicant.one_fm_kids_details:
+            table.append({
+                'child_name': child.child_name,
+                'child_name_in_arabic': child.child_name_in_arabic,
+                'age': child.age,
+                'work_status': child.work_status,
+                'married': child.married,
+                'health_status': child.health_status
+            })
+
+        if len(table)>0:
+            for row in table:
+                children = doc.append('children_details',{})
+                children.child_name = row['child_name']
+                children.child_name_in_arabic = row['child_name_in_arabic']
+                children.age = row['age']
+                children.work_status = row['work_status']
+                children.married = row['married']
+                children.health_status = row['health_status']
+            children.save()
+            frappe.db.commit()
 
 @frappe.whitelist()#old wp was rejected
 def create_new_work_permit(work_permit):
