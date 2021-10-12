@@ -1520,6 +1520,7 @@ def set_salary_details(job_offer, erf):
         salary_details.salary_component = salary.salary_component
         salary_details.amount = salary.amount
     job_offer.one_fm_job_offer_total_salary = total_amount
+    job_offer.base = total_amount
 
 def set_other_benefits_to_terms(job_offer, erf):
     # if erf.other_benefits:

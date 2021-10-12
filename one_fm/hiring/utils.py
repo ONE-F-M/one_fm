@@ -22,15 +22,19 @@ def get_performance_profile_guid():
         return get_url(file_path)
 
 def validate_job_offer(doc, method):
+    salary_per_person_from_erf = 0
     if doc.one_fm_erf and not doc.one_fm_salary_structure:
         erf_salary_structure = frappe.db.get_value('ERF', doc.one_fm_erf, 'salary_structure')
         if erf_salary_structure:
             doc.one_fm_salary_structure = erf_salary_structure
+        if not doc.base:
+            salary_per_person = frappe.db.get_value('ERF', doc.one_fm_erf, 'salary_per_person')
+            salary_per_person_from_erf = salary_per_person if salary_per_person else 0
     if doc.one_fm_salary_structure:
         salary_structure = frappe.get_doc('Salary Structure', doc.one_fm_salary_structure)
         total_amount = 0
         doc.set('one_fm_salary_details', [])
-        base = doc.base
+        base = doc.base if doc.base else salary_per_person_from_erf
         for salary in salary_structure.earnings:
             if salary.amount_based_on_formula and salary.formula:
                 formula = salary.formula
@@ -198,7 +202,7 @@ def create_wp_for_transferable_employee(doc):
                     from one_fm.grd.doctype.work_permit import work_permit
                     work_permit.create_work_permit_transfer(tp.name,employee)#create wp for local transfer
                     notify_grd_operator_for_transfer_wp_record(tp)
-        
+
 def notify_grd_operator_for_transfer_wp_record(tp):
     operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     wp = frappe.db.get_value("Work Permit",{'transfer_paper':tp.name,'work_permit_status':'Draft'})
@@ -208,7 +212,7 @@ def notify_grd_operator_for_transfer_wp_record(tp):
         subject = ("Apply for Transfer Work Permit Online")
         message = "<p>Please Apply for Transfer Work Permit Online for employee civil ID: <a href='{0}'>{1}</a>.</p>".format(page_link, wp_record.civil_id)
         create_notification_log(subject, message, [operator], wp_record)
-    
+
 def update_erf_close_with(doc):
     if doc.one_fm_erf:
         erf = frappe.get_doc('ERF', doc.one_fm_erf)
@@ -476,7 +480,7 @@ def set_employee_name(doc,method):
     """This method for getting the arabic full name
     and fetching children details from job applicant"""
     doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_forth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
-    
+
     if doc.job_applicant:
         table=[]
         applicant = frappe.get_doc('Job Applicant',doc.job_applicant)
@@ -520,4 +524,3 @@ def create_new_work_permit(work_permit):
         wp.preparation = doc.preparation
     wp.save(ignore_permissions=True)
     return wp
-
