@@ -1646,8 +1646,9 @@ def update_onboarding_doc_for_bank_account(doc):
 
 
 
-def issue_employee_roster_actions():
+def issue_roster_actions():
     frappe.enqueue(create_roster_employee_actions, is_async=True, queue='long')
+    frappe.enqueue(create_roster_post_actions, is_async=True, queue='long')
 
 
 def create_roster_employee_actions():
@@ -1656,14 +1657,13 @@ def create_roster_employee_actions():
     directing them to schedule employees that are unscheduled and assigned to them.
     It computes employees not scheduled for the span of two weeks, starting from tomorrow.
     """
-    
-    #-------------------- Roster Employee actions ------------------#
 
     # start date to be from tomorrow
     start_date = add_to_date(cstr(getdate()), days=1)
     # end date to be 14 days after start date
     end_date = add_to_date(start_date, days=14)
 
+    #-------------------- Roster Employee actions ------------------#
     # fetch employees that are active and don't have a schedule in the specified date range
     employees_not_rostered = frappe.db.sql("""
                             select 
@@ -1708,4 +1708,36 @@ def create_roster_employee_actions():
 
         roster_employee_actions_doc.save()
         frappe.db.commit()
+        
     #-------------------- END Roster Employee actions ------------------#
+
+
+def create_roster_post_actions():
+    """
+    This function creates a Roster Post Actions document that issues actions to supervisors to fill post types that are not filled.
+    """
+
+    # start date to be from tomorrow
+    start_date = add_to_date(cstr(getdate()), days=1)
+    # end date to be 14 days after start date
+    end_date = add_to_date(start_date, days=14)
+
+    post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "post_type", "post"], order_by="date asc")
+    employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "post_type"], order_by="date asc")
+    
+    for ps in post_schedules:
+        if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.post_type == ps.post_type for es in employee_schedules):
+            post_type = ps.post_type
+            shift = ps.shift
+            supervisor = frappe.db.get_value("Operations Shift", shift, ["supervisor"])
+            action_type = "Fill Post Type"
+            date = cstr(ps.date).split(" ")[0]
+            
+            roster_post_action_doc = frappe.new_doc("Roster Post Actions")
+            roster_post_action_doc.status = "Pending"
+            roster_post_action_doc.action_type = action_type
+            roster_post_action_doc.post_type = post_type
+            roster_post_action_doc.date = date
+            roster_post_action_doc.supervisor = supervisor
+            roster_post_action_doc.save()
+            frappe.db.commit()
