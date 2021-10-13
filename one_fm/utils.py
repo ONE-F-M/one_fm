@@ -1647,6 +1647,7 @@ def update_onboarding_doc_for_bank_account(doc):
 
 
 def issue_roster_actions():
+    # Queue roster actions functions to backgrounds jobs
     frappe.enqueue(create_roster_employee_actions, is_async=True, queue='long')
     frappe.enqueue(create_roster_post_actions, is_async=True, queue='long')
 
@@ -1714,7 +1715,7 @@ def create_roster_employee_actions():
 
 def create_roster_post_actions():
     """
-    This function creates a Roster Post Actions document that issues actions to supervisors to fill post types that are not filled.
+    This function creates a Roster Post Actions document that issues actions to supervisors to fill post types that are not filled for a given date.
     """
 
     # start date to be from tomorrow
@@ -1722,13 +1723,18 @@ def create_roster_post_actions():
     # end date to be 14 days after start date
     end_date = add_to_date(start_date, days=14)
 
+    # Fetch post schedules in the date range that are active
     post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "post_type", "post"], order_by="date asc")
+    # Fetch employee schedules for employees who are working
     employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "post_type"], order_by="date asc")
     
     for ps in post_schedules:
+        # if there is not any employee schedule that matches the post schedule for the specified date,
+        # create a an action asking the supervisor of the shift the post is scheduled in to fill the post type.
         if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.post_type == ps.post_type for es in employee_schedules):
             post_type = ps.post_type
             shift = ps.shift
+            # Fetch supervisor oif the shift
             supervisor = frappe.db.get_value("Operations Shift", shift, ["supervisor"])
             action_type = "Fill Post Type"
             date = cstr(ps.date).split(" ")[0]
