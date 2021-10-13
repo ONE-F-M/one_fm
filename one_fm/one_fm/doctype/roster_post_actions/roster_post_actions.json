@@ -1,0 +1,123 @@
+{
+ "actions": [],
+ "autoname": "format:{#####}-{date}-{post_type}-{action_type}",
+ "creation": "2021-10-13 12:21:16.765478",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "date",
+  "status",
+  "supervisor",
+  "action_type",
+  "post_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nCompleted\nOverdue\nCancelled"
+  },
+  {
+   "fieldname": "supervisor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Supervisor",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "action_type",
+   "fieldtype": "Select",
+   "label": "Action Type",
+   "options": "Fill Post Type\nReview Post Type"
+  },
+  {
+   "fieldname": "post_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Post Type",
+   "options": "Post Type",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-10-13 14:58:49.498162",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Roster Post Actions",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Shift Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Site Supervisor",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
