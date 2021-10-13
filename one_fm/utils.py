@@ -1730,11 +1730,11 @@ def create_roster_post_actions():
     
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date,
-        # create a an action asking the supervisor of the shift the post is scheduled in to fill the post type.
+        # create a an action asking the supervisor of the shift of the post in which it is scheduled, to fill the post type.
         if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.post_type == ps.post_type for es in employee_schedules):
             post_type = ps.post_type
             shift = ps.shift
-            # Fetch supervisor oif the shift
+            # Fetch supervisor of the shift
             supervisor = frappe.db.get_value("Operations Shift", shift, ["supervisor"])
             action_type = "Fill Post Type"
             date = cstr(ps.date).split(" ")[0]
