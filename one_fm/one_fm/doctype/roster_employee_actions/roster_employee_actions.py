@@ -9,7 +9,7 @@ from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, get_link_to_
 
 class RosterEmployeeActions(Document):
 	def autoname(self):
-		self.name = self.start_date + "|" + self.end_date + "|" + self.action_type + self.supervisor
+		self.name = self.start_date + "|" + self.end_date + "|" + self.action_type  + "|" + self.supervisor
 
 	def after_insert(self):
 		# send notification to supervisor
