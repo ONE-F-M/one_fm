@@ -1,9 +1,9 @@
 import itertools
 from datetime import timedelta
 from string import Template
-from calendar import month
-from datetime import timedelta
-
+from calendar import month, monthrange
+from datetime import datetime, timedelta
+from frappe import enqueue
 import frappe, erpnext
 from frappe import _
 from frappe.utils import now_datetime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today
@@ -95,6 +95,7 @@ def final_reminder():
 			if len(recipients) > 0:
 				notify(recipients,"OUT")
 
+@frappe.whitelist()
 def notify(recipients,log_type):
 	checkin_subject = _("Final Reminder: Please checkin in the next five minutes.")
 	checkin_message = _("""
@@ -109,14 +110,12 @@ def notify(recipients,log_type):
 	for recipient in recipients:
 		user_id.append(recipient[0])
 		employee_id.append(recipient[1])
-		if log_type=="IN":
-			send_notification(checkin_subject, checkin_message, user_id)
-			push_notification(employee_id, Notification_title, "Please checkin in the next five minutes.")
-		if log_type=="OUT":
-			send_notification(checkout_subject, checkout_message, user_id)
-			push_notification(employee_id, Notification_title, "Please checkout in the next five minutes.")
-
-
+	if log_type=="IN":
+		send_notification(checkin_subject, checkin_message, user_id)
+		push_notification(employee_id, Notification_title, "Please checkin in the next five minutes.")
+	if log_type=="OUT":
+		send_notification(checkout_subject, checkout_message, user_id)
+		push_notification(employee_id, Notification_title, "Please checkout in the next five minutes.")
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
