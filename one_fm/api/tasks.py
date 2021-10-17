@@ -643,3 +643,46 @@ def create_penalty_deduction(start_date, end_date, employee, total_penalty_amoun
 	penalty_deduction.insert()
 	penalty_deduction.submit()
 	frappe.db.commit()
+
+#this function is to generate Site Allowance as Earing Component in Salary Slip. It is monthly calculated based on employees attendance
+def generate_site_allowance():
+	#get list of all site that includes Site Allowance.
+	operations_site = frappe.get_all("Operations Site", {"include_site_allowance":"1"},["name","allowance_amount"])
+
+	#Gather the required Date details such as start date, and respective end date. Get current year and month to get the no. of days in the current month.
+	start_date = add_to_date(getdate(), months=-1)
+	end_date = get_end_date(start_date, 'monthly')['end_date']
+	currentMonth = datetime.datetime.now().month
+	currentYear = datetime.datetime.now().year
+	no_of_days = monthrange(currentYear, currentMonth)[1]
+
+	#generate site allowance for each site. Gets the employee and his/her respective no. of days in a given site.
+	if operations_site:
+			for site in operations_site:
+				employee_det = frappe.db.sql("""
+							SELECT employee,count(attendance_date) FROM `tabAttendance` 
+							WHERE
+								site = "{site}" 
+							AND attendance_date between '{start_date}' and '{end_date}'
+							And status = "Present"
+							GROUP BY employee
+						""".format(site=site.name,start_date = cstr(start_date), end_date = cstr(end_date)), as_list=1)
+
+				if employee_det:
+					for employee in employee_det:
+						#calculate Monthly_site_allowance with the rate of allowance per day.
+						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee[1])
+						create_additional_salary(employee[0], Monthly_site_allowance, "Site Allowance")
+
+#this function creates additional salary for a given component.
+def create_additional_salary(employee, amount, component):
+	additional_salary = frappe.new_doc("Additional Salary")
+	additional_salary.employee = employee
+	additional_salary.salary_component = component
+	additional_salary.amount = amount
+	additional_salary.payroll_date = getdate()
+	additional_salary.company = erpnext.get_default_company()
+	additional_salary.overwrite_salary_structure_amount = 1
+	additional_salary.notes = "Site Allowance"
+	additional_salary.insert()
+	additional_salary.submit()
