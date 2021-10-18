@@ -205,7 +205,7 @@ function load_js(page) {
 						{
 							fieldname: 'sb4',
 							fieldtype: 'Section Break',
-							depends_on: "eval:this.get_value('post_status') == 'Plan Post'",
+							depends_on: "eval:doc.post_status == 'Plan Post'",
 						},
 						{
 							label: 'Plan From Date',
@@ -223,7 +223,7 @@ function load_js(page) {
 							label: 'Plan Till Date',
 							fieldname: 'plan_end_date',
 							fieldtype: 'Date',
-							depends_upon: 'eval:this.get_value("project_end_date")==0',
+							depends_upon: 'eval:doc.project_end_date==0',
 							onchange: function () {
 								let plan_end_date = d.get_value('plan_end_date');
 								if (plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))) {
@@ -234,7 +234,7 @@ function load_js(page) {
 						{
 							fieldname: 'sb1',
 							fieldtype: 'Section Break',
-							depends_on: "eval:this.get_value('post_status') == 'Cancel Post'",
+							depends_on: "eval:doc.post_status == 'Cancel Post'",
 						},
 						{
 							label: 'Cancel From Date',
@@ -252,7 +252,7 @@ function load_js(page) {
 							label: 'Cancel Till Date',
 							fieldname: 'cancel_end_date',
 							fieldtype: 'Date',
-							depends_upon: 'eval:this.get_value("project_end_date")==0',
+							depends_upon: 'eval:doc.project_end_date==0',
 							onchange: function () {
 								let plan_end_date = d.get_value('cancel_end_date');
 								if (plan_end_date && moment(plan_end_date).isBefore(moment(frappe.datetime.nowdate()))) {
@@ -263,7 +263,7 @@ function load_js(page) {
 						{
 							fieldname: 'sb3',
 							fieldtype: 'Section Break',
-							depends_on: "eval:this.get_value('post_status') == 'Post Off'",
+							depends_on: "eval:doc.post_status == 'Post Off'",
 						},
 						{
 							label: 'Paid',
@@ -294,10 +294,10 @@ function load_js(page) {
 						{
 							fieldname: 'sb5',
 							fieldtype: 'Section Break',
-							depends_on: "eval:this.get_value('post_status') == 'Post Off'",
+							depends_on: "eval:doc.post_status == 'Post Off'",
 						},
 						{ label: 'Repeat', fieldname: 'repeat', fieldtype: 'Select', options: 'Does not repeat\nDaily\nWeekly\nMonthly\nYearly' },
-						{ 'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("post_status")=="Post Off" && this.get_value("repeat")=="Weekly"' },
+						{ 'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:doc.post_status=="Post Off" && doc.repeat=="Weekly"' },
 						{ 'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check' },
 						{ 'label': 'Wednesday', 'fieldname': 'wednesday', 'fieldtype': 'Check' },
 						{ 'label': 'Saturday', 'fieldname': 'saturday', 'fieldtype': 'Check' },
@@ -307,12 +307,12 @@ function load_js(page) {
 						{ 'fieldtype': 'Column Break', 'fieldname': 'cb2' },
 						{ 'label': 'Tuesday', 'fieldname': 'tuesday', 'fieldtype': 'Check' },
 						{ 'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check' },
-						{ 'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:this.get_value("post_status")=="Post Off" && this.get_value("repeat")!= "Does not repeat"' },
-						{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'depends_upon': 'eval:this.get_value("project_end_date")==0' },
+						{ 'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:doc.post_status=="Post Off" && doc.repeat!= "Does not repeat"' },
+						{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'depends_upon': 'eval:doc.project_end_date==0' },
 						{
 							fieldname: 'sb2',
 							fieldtype: 'Section Break',
-							depends_on: "eval:this.get_value('post_status') == 'Suspend Post'",
+							depends_on: "eval:doc.post_status == 'Suspend Post'",
 						},
 						{
 							label: 'Paid',
@@ -361,7 +361,7 @@ function load_js(page) {
 							label: 'Suspend Till Date',
 							fieldname: 'suspend_to_date',
 							fieldtype: 'Date',
-							depends_on: 'eval:this.get_value("project_end_date")==0',
+							depends_on: 'eval:doc.project_end_date==0',
 							onchange: function () {
 								let suspend_to_date = d.get_value('suspend_to_date');
 								if (suspend_to_date && moment(suspend_to_date).isBefore(moment(frappe.datetime.nowdate()))) {
@@ -2704,7 +2704,7 @@ function unschedule_staff(page) {
 					}
 				}
 			},
-			{ 'fieldtype': 'Section Break', 'depends_on': "eval:this.get_value('select_end') == 1" },
+			{ 'fieldtype': 'Section Break', 'depends_on': "eval:doc.select_end == 1" },
 			{
 				'label': 'End Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'default': date, onchange: function () {
 					let end_date = d.get_value('end_date');
@@ -2865,7 +2865,7 @@ function schedule_change_post(page) {
 			{ 'label': 'Request Employee Schedule', 'fieldname': 'request_employee_schedule', 'fieldtype': 'Check' },
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
 			{
-				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:this.get_value("project_end_date")==0', onchange: function () {
+				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:doc.project_end_date==0', onchange: function () {
 					let end_date = d.get_value('end_date');
 					let start_date = d.get_value('start_date');
 					if (end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
@@ -3039,8 +3039,8 @@ function dayoff(page) {
 		'title': 'Day Off',
 		'fields': [
 			{ 'label': 'Selected days only', 'fieldname': 'selected_dates', 'fieldtype': 'Check', 'default': 0 },
-			{ 'label': 'Repeat', 'fieldname': 'repeat', 'fieldtype': 'Select', 'depends_on': 'eval:this.get_value("selected_dates")==0', 'options': 'Does not repeat\nDaily\nWeekly\nMonthly\nYearly' },
-			{ 'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:this.get_value("repeat")=="Weekly" && this.get_value("selected_dates")==0' },
+			{ 'label': 'Repeat', 'fieldname': 'repeat', 'fieldtype': 'Select', 'depends_on': 'eval:doc.selected_dates==0', 'options': 'Does not repeat\nDaily\nWeekly\nMonthly\nYearly' },
+			{ 'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:doc.repeat=="Weekly" && doc.selected_dates==0' },
 			{ 'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check' },
 			{ 'label': 'Wednesday', 'fieldname': 'wednesday', 'fieldtype': 'Check' },
 			{ 'label': 'Saturday', 'fieldname': 'saturday', 'fieldtype': 'Check' },
@@ -3050,8 +3050,8 @@ function dayoff(page) {
 			{ 'fieldtype': 'Column Break', 'fieldname': 'cb2' },
 			{ 'label': 'Tuesday', 'fieldname': 'tuesday', 'fieldtype': 'Check' },
 			{ 'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check' },
-			{ 'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:this.get_value("selected_dates")==0' },
-			{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'depends_on': 'eval:this.get_value("repeat")!= "Does not repeat" && this.get_value("project_end_date")==0' },
+			{ 'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:doc.selected_dates==0' },
+			{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'depends_on': 'eval:doc.repeat!= "Does not repeat" && doc.project_end_date==0' },
 			{'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
 		],
 		primary_action: function () {
