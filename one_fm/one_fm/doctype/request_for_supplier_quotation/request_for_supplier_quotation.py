@@ -40,6 +40,19 @@ class RequestforSupplierQuotation(Document):
     def on_cancel(self):
         frappe.db.set(self, 'status', 'Cancelled')
 
+    @frappe.whitelist()
+    def create_quotation_from_supplier(self):
+        quotation = frappe.new_doc('Quotation From Supplier')
+        quotation.request_for_quotation = self.name
+        quotation.request_for_purchase = self.request_for_purchase
+        if self.items:
+            for rfq_item in self.items:
+                item = quotation.append('items')
+                item.item_name = rfq_item.item_name
+                item.description = rfq_item.description
+                item.qty = rfq_item.qty
+                item.uom = rfq_item.uom
+        return quotation.as_dict()
 
     def get_supplier_group_list(self,supplier_group):
         supplier_group_list = frappe.db.sql("select parent from `tabSupplier Group Table` where parenttype='Supplier' and subgroup='{0}' order by parent".format(supplier_group),as_list=True)

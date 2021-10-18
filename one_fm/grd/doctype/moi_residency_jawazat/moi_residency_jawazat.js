@@ -16,7 +16,7 @@ frappe.ui.form.on('MOI Residency Jawazat', {
 
 	},
 	onload: function(frm) {
-		set_employee_details(frm);
+		// set_employee_details(frm);
 		if(frm.doc.__islocal){
 			frappe.call({
 				method:"frappe.client.get_value",

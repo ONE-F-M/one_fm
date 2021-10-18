@@ -12,6 +12,7 @@ from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import create_payroll_entry
 from erpnext.hr.doctype.attendance.attendance import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
+from one_fm.api.api import push_notification
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -59,7 +60,7 @@ def final_reminder():
 		# shift_start is equal to now time - notification reminder in mins
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp
+				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee=emp.name 
 				AND tSA.start_date="{date}"
@@ -73,13 +74,7 @@ def final_reminder():
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:
-				recipients = [recipient[0] for recipient in recipients if recipient[0]]
-				subject = _("Final Reminder: Please checkin in the next five minutes.")
-				message = _("""
-					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
-					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
-					""")
-				send_notification(subject, message, recipients)
+				notify(recipients,"IN")
 
 		# shift_end is equal to now time - notification reminder in mins
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
@@ -97,12 +92,31 @@ def final_reminder():
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+			if len(recipients) > 0:
+				notify(recipients,"OUT")
 
-			if len(recipients) > 0:	
-				recipients = [recipient[0] for recipient in recipients if recipient[0]]
-				subject = _("Final Reminder: Please checkout in the next five minutes.")
-				message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
-				send_notification(subject, message, recipients)
+def notify(recipients,log_type):
+	checkin_subject = _("Final Reminder: Please checkin in the next five minutes.")
+	checkin_message = _("""
+					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
+					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
+					""")
+	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
+	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
+	Notification_title = "Final Reminder"
+	user_id = []
+	employee_id = []
+	for recipient in recipients:
+		user_id.append(recipient[0])
+		employee_id.append(recipient[1])
+		if log_type=="IN":
+			send_notification(checkin_subject, checkin_message, user_id)
+			push_notification(employee_id, Notification_title, "Please checkin in the next five minutes.")
+		if log_type=="OUT":
+			send_notification(checkout_subject, checkout_message, user_id)
+			push_notification(employee_id, Notification_title, "Please checkout in the next five minutes.")
+
+
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
@@ -275,31 +289,33 @@ def get_action_user(employee, shift):
 		return action_user, Role
 
 def get_notification_user(employee, shift, Role):
-		"""
-				Shift > Site > Project > Reports to
-		"""
-		Employee = frappe.get_doc("Employee", {"name":employee})
-		operations_shift = frappe.get_doc("Operations Shift", shift)
-		operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-		project = frappe.get_doc("Project", operations_site.project)
-		
-		report_to = get_employee_user_id(Employee.reports_to) if Employee.reports_to else ""
+	print(Role)
+	"""
+			Shift > Site > Project > Reports to
+	"""
+	Employee = frappe.get_doc("Employee", {"name":employee})
+	operations_shift = frappe.get_doc("Operations Shift", shift)
+	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
+	project = frappe.get_doc("Project", operations_site.project)
+	project_manager = site_supervisor = shift_supervisor = None
 
-		if operations_site.project and project.account_manager and get_employee_user_id(project.account_manager) != operations_shift.owner:
-			project_manager = get_employee_user_id(project.account_manager)
-		if operations_site.account_supervisor and get_employee_user_id(operations_site.account_supervisor) != operations_shift.owner:
-			site_supervisor = get_employee_user_id(operations_site.account_supervisor)
-		elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owne:
-			shift_supervisor = get_employee_user_id(operations_shift.supervisor)
-					
-		if Role == "Shift Supervisor":
-			notify_user = [site_supervisor,project_manager]
-		elif Role == "Site Supervisor":
-			notify_user = [project_manager]
-		else:
-			notify_user = []
+	report_to = get_employee_user_id(Employee.reports_to) if Employee.reports_to else ""
 
-		return notify_user
+	if operations_site.project and project.account_manager and get_employee_user_id(project.account_manager) != operations_shift.owner:
+		project_manager = get_employee_user_id(project.account_manager)
+	if operations_site.account_supervisor and get_employee_user_id(operations_site.account_supervisor) != operations_shift.owner:
+		site_supervisor = get_employee_user_id(operations_site.account_supervisor)
+	elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owne:
+		shift_supervisor = get_employee_user_id(operations_shift.supervisor)
+				
+	if Role == "Shift Supervisor" and site_supervisor and project_manager:
+		notify_user = [site_supervisor,project_manager]
+	elif Role == "Site Supervisor" and project_manager:
+		notify_user = [project_manager]
+	else:
+		notify_user = []
+
+	return notify_user
 
 def get_location(shift):
 	print(shift)

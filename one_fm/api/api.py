@@ -4,11 +4,17 @@ import pandas as pd
 from frappe.utils import cstr
 from frappe.model.rename_doc import rename_doc
 import requests
+import firebase_admin
 from firebase_admin import messaging
+from firebase_admin import credentials
 
 import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
+
+
+cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/private/files/one-fm-70641-firebase-adminsdk-nuf6h-667458c1a5.json")
+firebase_admin.initialize_app(cred)
 
 @frappe.whitelist()
 def _one_fm():
@@ -109,21 +115,21 @@ def store_fcm_token(employee_id ,fcm_token):
         print(frappe.get_traceback())
 
 @frappe.whitelist()
-def final_reminder_notification(employee_id):
+def push_notification(employee_id, title, body):
     registration_tokens = []
     for emp in employee_id:
         token = frappe.get_all("Employee", {"name": emp}, "fcm_token")
-        registration_tokens.append(token[0].fcm_token)
+        if token[0].fcm_token:
+            registration_tokens.append(token[0].fcm_token)
     # This Device token comes from the client FCM SDKs.
 
     # See documentation on defining a message payload.
-    print(registration_tokens)
-    message = messaging.MulticastMessage(
-    data={'score': '850', 'time': '2:45'},
-    tokens=registration_tokens,
-    )
-    response = messaging.send_multicast(message)
+    for registration_token in registration_tokens:
+        message = messaging.Message(
+        notification=messaging.Notification(title, body),
+        token=registration_token,
+        )
+        response = messaging.send(message)
     # See the BatchResponse reference documentation
     # for the contents of response.
-    print('{0} messages were sent successfully'.format(response.success_count))
-    return response
+    print(response)
