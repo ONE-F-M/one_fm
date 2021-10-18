@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "field:site_name",
  "creation": "2020-04-24 12:07:47.302499",
  "doctype": "DocType",
@@ -13,6 +14,9 @@
   "column_break_7",
   "account_supervisor",
   "account_supervisor_name",
+  "site_allowance_section",
+  "include_site_allowance",
+  "allowance_amount",
   "section_break_15",
   "transport_required",
   "column_break_17",
@@ -160,9 +164,27 @@
    "fieldname": "contact_html",
    "fieldtype": "HTML",
    "label": "Contact Html"
+  },
+  {
+   "default": "0",
+   "fieldname": "include_site_allowance",
+   "fieldtype": "Check",
+   "label": "Include Site Allowance"
+  },
+  {
+   "depends_on": "eval:doc.include_site_allowance==\"1\";",
+   "fieldname": "allowance_amount",
+   "fieldtype": "Currency",
+   "label": "Allowance Amount"
+  },
+  {
+   "fieldname": "site_allowance_section",
+   "fieldtype": "Section Break",
+   "label": "Site Allowance"
   }
  ],
- "modified": "2021-05-13 13:37:16.149674",
+ "links": [],
+ "modified": "2021-10-18 14:15:30.537669",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Site",
