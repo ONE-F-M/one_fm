@@ -10,26 +10,25 @@ import frappe, os
 from frappe.model.document import Document
 from frappe.utils import get_site_base_path
 from frappe.utils.data import flt, nowdate, getdate, cint
-from frappe.utils.csvutils import read_csv_content_from_uploaded_file
 from frappe.utils.password import update_password as _update_password
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate
 
 
 
 def test_excel():
-    import xlsxwriter 
+    import xlsxwriter
 
-    workbook = xlsxwriter.Workbook('/home/frappe/frappe-bench/apps/one_fm/one_fm/hello.xlsx') 
-    
-    worksheet = workbook.add_worksheet() 
-    
-    worksheet.write('A1', 'Sr.No') 
-    worksheet.write('B1', 'Candidate Name In English') 
-    worksheet.write('C1', 'Candidate Name In Arabic') 
+    workbook = xlsxwriter.Workbook('/home/frappe/frappe-bench/apps/one_fm/one_fm/hello.xlsx')
+
+    worksheet = workbook.add_worksheet()
+
+    worksheet.write('A1', 'Sr.No')
+    worksheet.write('B1', 'Candidate Name In English')
+    worksheet.write('C1', 'Candidate Name In Arabic')
     worksheet.write('D1', 'Passport Number')
     worksheet.write('E1', 'Candidate Nationality in Arabic')
     worksheet.write('F1', 'Company Name in Arabic')
-    
+
     worksheet.set_column('B:F', 22)
 
     candidates = ['1','Omhhar','عمر','12345','فلسطيني','ONE FM']
@@ -37,8 +36,8 @@ def test_excel():
     row = 1
     column = 0
 
-    for candidate in candidates: 
-        worksheet.write(row, column, candidate) 
+    for candidate in candidates:
+        worksheet.write(row, column, candidate)
         column += 1
 
     row += 1
@@ -50,7 +49,7 @@ def test_excel():
 def add_uniform_item():
     from frappe.utils.csvutils import read_csv_content
     from frappe.core.doctype.data_import.importer import upload
-    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/uniform_item.csv", "r") as infile:   
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/uniform_item.csv", "r") as infile:
         rows = read_csv_content(infile.read())
         i = 0
         for index, row in enumerate(rows):
@@ -136,7 +135,7 @@ def add_uniform_item():
 def add_services_item():
     from frappe.utils.csvutils import read_csv_content
     from frappe.core.doctype.data_import.importer import upload
-    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/services_item.csv", "r") as infile:   
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/services_item.csv", "r") as infile:
         rows = read_csv_content(infile.read())
         i = 0
         for index, row in enumerate(rows):
@@ -222,7 +221,7 @@ def add_services_item():
 def add_contarcting_item():
     from frappe.utils.csvutils import read_csv_content
     from frappe.core.doctype.data_import.importer import upload
-    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/contarcting_item.csv", "r") as infile:   
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/contarcting_item.csv", "r") as infile:
         rows = read_csv_content(infile.read())
         i = 0
         for index, row in enumerate(rows):
@@ -307,7 +306,7 @@ def add_contarcting_item():
 def add_consumables_item():
     from frappe.utils.csvutils import read_csv_content
     from frappe.core.doctype.data_import.importer import upload
-    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/consumables_item.csv", "r") as infile:   
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/consumables_item.csv", "r") as infile:
         rows = read_csv_content(infile.read())
         i = 0
         for index, row in enumerate(rows):
@@ -390,7 +389,7 @@ def add_consumables_item():
 def add_asset_item():
     from frappe.utils.csvutils import read_csv_content
     from frappe.core.doctype.data_import.importer import upload
-    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/asset_item.csv", "r") as infile:   
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/asset_item.csv", "r") as infile:
         rows = read_csv_content(infile.read())
         i = 0
         for index, row in enumerate(rows):
@@ -474,7 +473,7 @@ def add_asset_item():
 def add_suppliers():
     from frappe.utils.csvutils import read_csv_content
     from frappe.core.doctype.data_import.importer import upload
-    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/supplier_code.csv", "r") as infile:   
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing Data/supplier_code.csv", "r") as infile:
         rows = read_csv_content(infile.read())
         i = 0
         for index, row in enumerate(rows):
@@ -565,7 +564,7 @@ def add_suppliers():
 def add_fm_item_group():
     from frappe.utils.csvutils import read_csv_content
     from frappe.core.doctype.data_import.importer import upload
-    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing master plan .csv", "r") as infile:   
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Purchasing master plan .csv", "r") as infile:
         rows = read_csv_content(infile.read())
         i = 0
         for index, row in enumerate(rows):
@@ -593,7 +592,7 @@ def update_administrator_pass():
 def add_fm_accounts():
     from frappe.utils.csvutils import read_csv_content
     from frappe.core.doctype.data_import.importer import upload
-    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Chart_of_Accounts.csv", "r") as infile:   
+    with open("/home/frappe/frappe-bench/apps/one_fm/one_fm/Chart_of_Accounts.csv", "r") as infile:
         rows = read_csv_content(infile.read())
         i = 0
         for index, row in enumerate(rows):
@@ -622,4 +621,3 @@ def get_website_info_data():
 def send_email_tst():
     msg = """Hiii this is tst email"""
     frappe.sendmail(recipients="omar.ja93@gmail.com", sender="omar.ja93@gmail.com", content=msg, subject="test subject")
-
