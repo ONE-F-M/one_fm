@@ -11,7 +11,7 @@ from frappe.model.document import Document
 from frappe.utils import get_site_base_path
 from erpnext.hr.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
-from frappe.utils.csvutils import read_csv_content_from_uploaded_file, read_csv_content
+from frappe.utils.csvutils import read_csv_content
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime, add_to_date
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
