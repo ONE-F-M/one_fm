@@ -130,6 +130,6 @@ def push_notification(employee_id, title, body):
         token=registration_token,
         )
         response = messaging.send(message)
+        return response
     # See the BatchResponse reference documentation
     # for the contents of response.
-    print(response)
