@@ -1,0 +1,13 @@
+import frappe
+from frappe import _
+
+#This function returns the list of salary slips of a given employee, within the dictionary with "name","start_date", "end_date", "status", "total_working_days".
+@frappe.whitelist()
+def get_salary_slip_list(employee_id):
+    try:
+        Salary_list = frappe.get_all("Salary Slip", filters={'employee':employee_id}, fields=["name","start_date", "end_date", "status", "total_working_days"])
+        return Salary_list 
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)
