@@ -13,3 +13,9 @@ from frappe.model.document import Document
 from frappe import _
 class TestPIFSSMonthlyDeduction(unittest.TestCase):
 	pass
+
+def test():
+	e = frappe.db.get_value("Employee", {"one_fm_nationality":"Kuwaiti"})
+	ee = frappe.db.get_value("Employee", {"name":"HR-EMP-00002","relieving_date":['=','']},["one_fm_nationality"])
+	print("n = ",e)
+	print("n&r = ",ee)

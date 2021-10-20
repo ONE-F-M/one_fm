@@ -1,11 +1,15 @@
 {
  "actions": [],
- "autoname": "format:{MM}-{YYYY}-{#####}",
+ "autoname": "naming_series:",
  "creation": "2020-11-05 21:36:26.021218",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "naming_series",
+  "pifss_monthly_deduction_tool",
+  "deduction_month",
+  "data_2",
   "attach_report",
   "fetch_data",
   "attach_manual_report",
@@ -18,8 +22,6 @@
   "attached_on",
   "finance_section_section",
   "total_payment_required",
-  "data_2",
-  "deduction_month",
   "section_break_4",
   "deductions",
   "section_break_8",
@@ -82,8 +84,7 @@
   {
    "fieldname": "deduction_month",
    "fieldtype": "Date",
-   "label": "Deduction Month",
-   "read_only": 1
+   "label": "Deduction Month"
   },
   {
    "collapsible": 1,
@@ -129,6 +130,7 @@
   },
   {
    "bold": 1,
+   "default": "0",
    "fieldname": "total_sub",
    "fieldtype": "Currency",
    "label": "+     Total Subscription",
@@ -136,8 +138,11 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
+   "default": "0",
    "fieldname": "total_deduction",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Total Employee Deduction",
    "precision": "3",
    "read_only": 1
@@ -160,7 +165,8 @@
   },
   {
    "bold": 1,
-   "description": "Employee Deduction  + Employee Additional Deduction",
+   "default": "0",
+   "depends_on": "additional_attach_report",
    "fieldname": "total_additional_deduction",
    "fieldtype": "Currency",
    "label": "+  Employees Total Additional Deduction",
@@ -169,6 +175,7 @@
   },
   {
    "bold": 1,
+   "default": "828.982",
    "description": "The amount will be taken from report, (828.982)KD ",
    "fieldname": "remaining_amount",
    "fieldtype": "Currency",
@@ -176,6 +183,7 @@
   },
   {
    "bold": 1,
+   "default": "0",
    "depends_on": "additional_attach_report",
    "fieldname": "total_payments",
    "fieldtype": "Currency",
@@ -440,11 +448,29 @@
    "fieldtype": "Attach",
    "hidden": 1,
    "label": "PIFSS Website"
+  },
+  {
+   "bold": 1,
+   "default": "PMD-.{deduction_month}.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Series",
+   "no_copy": 1,
+   "print_hide": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "pifss_monthly_deduction_tool",
+   "fieldtype": "Link",
+   "label": "PIFSS Monthly Deduction Tool",
+   "options": "PIFSS Monthly Deduction Tool"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-05 10:53:08.737395",
+ "modified": "2021-10-04 13:06:31.050420",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
