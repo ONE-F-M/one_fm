@@ -3,15 +3,17 @@
 frappe.ui.form.on('PIFSS Monthly Deduction', {
 
     fetch_data: function(frm) {
-        /*
-        This is an Ajax call that calls a method with a document name as an argument,
-        the callback is a dictionary list of the 2 attached files(csv file and additional report file),
-        then, it will add the dictionary into the deductions table.
-        */
+        //checks if the document not saved
         if(frm.doc.__unsaved || frm.is_new()){//Check if the document is saved or new
             frappe.throw('Please Save the Document First');
         }
         else{
+			/*
+        This is an Ajax call that calls a method with a document name as an argument,
+        the callback is a dictionary list of the 2 attached files(csv file and additional report file),
+		the callback recieves list of [dataTable,len(dataTable)]
+        then, it will add the dictionary into the deductions table.
+        */
             let doc_name = frm.doc.name;
             if(doc_name){
                 frappe.call({
@@ -55,11 +57,11 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
         }
         
     },
-    // remaining_amount: function(frm){
-    //  if(frm.doc.remaining_amount){
-    //      frm.set_value("total_payments",frm.doc.total_sub+frm.doc.remaining_amount+frm.doc.total_additional_deduction);
-    //  }
-    // },
+    remaining_amount: function(frm){
+     if(frm.doc.remaining_amount){
+         frm.set_value("total_payments",frm.doc.total_sub+frm.doc.remaining_amount+frm.doc.total_additional_deduction);
+     }
+    },
     basic_insurance: function(frm){
         if(frm.doc.basic_insurance){
             frm.set_value("difference_in_basic_insurance", frm.doc.basic_insurance-frm.doc.basic_insurance_in_csv);
@@ -87,7 +89,6 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
             frm.set_value("difference_unemployment_insurance",frm.doc.unemployment_insurance-frm.doc.unemployment_insurance_in_csv);
         }if (frm.doc.difference_unemployment_insurance!=0){
             $('input[data-fieldname="difference_unemployment_insurance"]').css("color","red")
-            // $('input[data-fieldname="difference_unemployment_insurance"]').css("background-color","#FFE4C4")
             document.querySelectorAll("[data-fieldname='difference_unemployment_insurance']")[1].style.backgroundColor ="red";
         }
     },
@@ -95,7 +96,6 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
         if(frm.doc.unemployment_insurance){
             frm.set_value("difference_compensation",frm.doc.compensation-frm.doc.compensation_in_csv);
         }if (frm.doc.difference_compensation!=0){
-            // $('input[data-fieldname="difference_compensation"]').css("background-color","#FFE4C4")
             document.querySelectorAll("[data-fieldname='difference_compensation']")[1].style.backgroundColor ="red";
         }
     },
