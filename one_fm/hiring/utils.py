@@ -395,15 +395,23 @@ def btn_create_onboarding_from_job_offer(job_offer):
     else:
         frappe.throw(_('There is no job offer {0} exists').format(job_offer))
 
+# Method to create Onboard Employee doctype from Job Offer
 def create_onboarding_from_job_offer(job_offer):
+    # Onboard Employee document can create for Candidate Accepted Job Offer
     if job_offer.status == 'Accepted':
+        # Onboard Employee document can create only if Job Offer is assigned to an Onboarding Officer
         if not job_offer.onboarding_officer:
             frappe.msgprint(_("Please Select Onboarding Officer to Create Onboard Employee"))
+        # Onboard Employee document can create only if there is no Onboard Employee document is linke with this Job Offer
         elif not frappe.db.exists('Onboard Employee', {'job_offer': job_offer.name}):
+            # Fields in the job offer
             fields = ['employee_grade', 'job_applicant', 'is_g2g_fees_needed', 'is_residency_fine_needed',
                 'g2g_fee_amount', 'is_residency_fine_needed']
+            # Custom Fields in the Job Offer
             one_fm_fields = ['salary_structure', 'job_offer_total_salary', 'provide_salary_advance', 'salary_advance_amount',
                 'provide_accommodation_by_company', 'provide_transportation_by_company']
+
+            # Start to Create Onboard Employee Document
             o_employee = frappe.new_doc('Onboard Employee')
             o_employee.job_offer = job_offer.name
             o_employee.reports_to = job_offer.reports_to
@@ -417,14 +425,20 @@ def create_onboarding_from_job_offer(job_offer):
                 for salary_detail in job_offer.one_fm_salary_details:
                     o_employee_salary_details.salary_component = salary_detail.salary_component
                     o_employee_salary_details.amount = salary_detail.amount
+
+            # Get Job Applicant document linked with the Job Offer and Set details in Job Applicant to Onboard Employee document
             if job_offer.job_applicant:
+                # Fields in Job Applicant
                 fields = ['email_id', 'department', 'project', 'source', 'nationality_no', 'nationality_subject',
                     'date_of_naturalization']
+
+                # Custom Fields in Job Applicant
                 one_fm_fields = ['applicant_is_overseas_or_local', 'is_transferable', 'designation', 'agency', 'gender', 'religion',
                     'date_of_birth', 'erf', 'height', 'place_of_birth', 'marital_status', 'nationality', 'contact_number',
                     'secondary_contact_number', 'passport_number', 'passport_holder_of', 'passport_issued', 'passport_expire',
                     'passport_type', 'visa_type', 'civil_id', 'cid_expire', 'is_uniform_needed_for_this_job', 'shoulder_width',
                     'waist_size', 'shoe_size']
+
                 job_applicant = frappe.get_doc('Job Applicant', job_offer.job_applicant)
                 for d in fields:
                     o_employee.set(d, job_applicant.get(d))
@@ -434,17 +448,23 @@ def create_onboarding_from_job_offer(job_offer):
                     else:
                         o_employee.set(od, job_applicant.get('one_fm_'+od))
 
+                # Set Documents attached in the Job Applicant to Onboard Employee document
                 for applicant_document in job_applicant.one_fm_documents_required:
                     doc_required = o_employee.append('applicant_documents')
-                    fields = ['document_required', 'required_when', 'or_required_when', 'type_of_copy', 'or_type_of_copy', 'not_mandatory']
+                    fields = ['document_required', 'attach', 'required_when', 'or_required_when', 'type_of_copy', 'or_type_of_copy', 'not_mandatory']
                     for field in fields:
                         doc_required.set(field, applicant_document.get(field))
+
+            # Get ERF details (tools needed for work) linked with the Job Offer and set to Onboard Employee document
             if job_offer.one_fm_erf:
-                erf = frappe.get_doc('ERF', job_offer.one_fm_erf)
-                if erf and erf.tool_request_item:
-                    o_employee.tools_needed_for_work = True
+                tools_needed_for_work = False
+                if frappe.db.exists('ERF Tool Request Item', {'parent': job_offer.one_fm_erf}):
+                    tools_needed_for_work = True
+                o_employee.tools_needed_for_work = tools_needed_for_work
+
             o_employee.save(ignore_permissions=True)
 
+            # Create an assignment to this Onboard Employee document for the Onboarding Officer selected in the Job Offer
             args = {
                 'assign_to': [job_offer.onboarding_officer],
                 'doctype': o_employee.doctype,
