@@ -130,7 +130,6 @@
   },
   {
    "bold": 1,
-   "default": "0",
    "fieldname": "total_sub",
    "fieldtype": "Currency",
    "label": "+     Total Subscription",
@@ -139,7 +138,6 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "0",
    "fieldname": "total_deduction",
    "fieldtype": "Currency",
    "hidden": 1,
@@ -165,7 +163,6 @@
   },
   {
    "bold": 1,
-   "default": "0",
    "depends_on": "additional_attach_report",
    "fieldname": "total_additional_deduction",
    "fieldtype": "Currency",
@@ -183,7 +180,6 @@
   },
   {
    "bold": 1,
-   "default": "0",
    "depends_on": "additional_attach_report",
    "fieldname": "total_payments",
    "fieldtype": "Currency",
@@ -465,12 +461,13 @@
    "fieldname": "pifss_monthly_deduction_tool",
    "fieldtype": "Link",
    "label": "PIFSS Monthly Deduction Tool",
-   "options": "PIFSS Monthly Deduction Tool"
+   "options": "PIFSS Monthly Deduction Tool",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-04 13:06:31.050420",
+ "modified": "2021-10-22 18:32:13.064455",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",

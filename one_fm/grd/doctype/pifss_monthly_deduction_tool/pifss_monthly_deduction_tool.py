@@ -14,18 +14,14 @@ import pandas as pd
 from one_fm.api.notification import create_notification_log
 class PIFSSMonthlyDeductionTool(Document):
 
-	# def on_submit(self):
-	# 	for row in self.pifss_tracking_changes:
-	# 		if row.status == "Decreased" or row.status == "Increased":
-	# 			number_of_months = self.set_update_total_subscription(row.date_of_change)
-	# 			print("The month is ",number_of_months)
-	# 			print("Value after submitted",number_of_months*cint(row.new_value))
-	# 			row.updated_total_subscription = number_of_months*flt(row.new_value)
-	# 		if row.status == "New":
-	# 			number_of_months = self.set_update_total_subscription(row.date_of_joining)
-	# 			row.updated_total_subscription = number_of_months*flt(row.new_value)
-	# 		row.save()
-	# 	self.status = "Completed"
+	def on_submit(self):
+		self.check_flag_for_additional_salary()
+
+	def validate(self):
+		self.set_grd_user()
+
+	def set_grd_user(self):
+		self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_pifss")
 
 	def on_update(self):
 		self.compare_employee_in_months()
@@ -99,19 +95,18 @@ class PIFSSMonthlyDeductionTool(Document):
 	
 	def check_workflow_status(self):
 		"""This method checks the workflow status and throw the required fields"""
-		if self.workflow_state == "Under Process":
+		if self.workflow_state == "Pending By Operator":
 			field_list = [{'Old PIFSS Monthly Deduction':'old_pifss_monthly_deduction'},{'New PIFSS Monthly Deduction':'new_pifss_monthly_deduction'}]
 			self.set_mendatory_fields(field_list)
 			self.check_mandatory_fields()
-			self.check_relieving_date_for_left_employee()
+			self.validate_dates()
 			self.add_update_total_supscription()
 			self.set_has_tracking_record_flag()
-			self.create_additional_salary()
 
-		if self.workflow_state == "Completed":
-			frappe.throw("Hi")
+		if self.workflow_state == "Rejected By Supervisor":
+			field_list = [{'Reason Of Rejection':'reason_of_rejection'}]
+			self.set_mendatory_fields(field_list)
 			
-
 	def set_mendatory_fields(self,field_list,idx=None):
 		"""The method throw message with the rows that contains missing fields"""
 		mandatory_fields = []
@@ -144,7 +139,7 @@ class PIFSSMonthlyDeductionTool(Document):
 			message += '</ul>'
 			frappe.throw(message)
 	
-	def check_relieving_date_for_left_employee(self):
+	def validate_dates(self):
 		"""This method validate the relieving date and date of change fields, and throw message for Operator to modify the dates"""
 		for row in self.pifss_tracking_changes:
 			if row.status == "Left" and row.relieving_date:
@@ -159,9 +154,20 @@ class PIFSSMonthlyDeductionTool(Document):
 		for row in self.pifss_tracking_changes:
 			if row.status == "Decreased" or row.status == "Increased":
 				number_of_months = self.set_update_total_subscription(row.date_of_change)
+				print("number_of_months=>",number_of_months)
 				row.updated_total_subscription = number_of_months*flt(row.new_value)
 				row.save()
 				frappe.db.commit()
+
+	def set_update_total_subscription(self,date_input):
+		"""This method will return the number of months from the input date value"""
+		month_of_pifss = date.today()#end date
+		date_of_change = getdate(date_input)#start date
+		num_of_months = (month_of_pifss.year - date_of_change.year) * 12 + (month_of_pifss.month - date_of_change.month)#calculating the months between 2 dates
+		if num_of_months >0:
+			return num_of_months
+		if num_of_months == 0:
+			return 1
 
 	def set_has_tracking_record_flag(self):
 		"""This method will set the flag per employee in the pifss monthly deduction doctype
@@ -177,65 +183,27 @@ class PIFSSMonthlyDeductionTool(Document):
 					row.save()
 		frappe.db.commit()
 
-	def create_additional_salary(self):
-		"""This method gathering total subscription values and calles additional salary method"""
-		list_of_id=[cint(row.pifss_no) for row in self.pifss_tracking_changes if row.status != "Left"]#creating list of pifss_id for all employee in the tracking table, convert pifss_id to int because it will be fetched from monthly deduction table as an integer
-		list_of_id_and_total=[{cint(row.pifss_no) : row.updated_total_subscription} for row in self.pifss_tracking_changes if row.status != "Left"]#creating list of pifss_id for all employee in the tracking table,convert pifss_id to int because it will be fetched from monthly deduction table as an integer
-		print("list_of_employee==>",list_of_id_and_total)
-		
+	def check_flag_for_additional_salary(self):
+		""" This method checks the (has tracking record) flag filed in pifss monthly deduction, 
+		if flag is 1, the total subscription will be taken from the pifss monthly deduction tool
+		 otherwise it will be taken from the pifss monthly deduction record to create the additional salary"""
+		list_of_id_and_total=[{cint(row.pifss_no):row.updated_total_subscription} for row in self.pifss_tracking_changes if row.status != "Left"]#creating list of pifss_id for all employee in the tracking table,convert pifss_id to int because it will be fetched from monthly deduction table as an integer
+		employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))#fetch contribution from pifss settings
 		monthly_doc = frappe.get_doc('PIFSS Monthly Deduction',self.new_pifss_monthly_deduction)
-		for row in monthly_doc.deductions:#fetch child table for pifss monthly deduction for all employee		
+		for row in monthly_doc.deductions:#fetch child table for pifss monthly deduction for all employee	
+				
 			employee_name = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no})
-			print("employee_name=>",employee_name,"=>list_of_id",list_of_id)
 			if employee_name:
-				if row.has_tracking_record == 1:
+				if row.has_tracking_record == 1:#if employee in the tracking system get their update subscription
 					for value in list_of_id_and_total:
-						id = row.pifss_id_no
-						print("value",value[cint(id)],"=>id",id)
-						# print("value",value[cint(row.pifss_id_no)])
-					# employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))#fetch contribution from pifss settings
-					# amount = flt(list_of_id_and_total[row.pifss_id_no] * (employee_contribution_percentage / 100), precision=3)
-					# create_additional_salary(employee_name,amount)#create additional salary
-		
-		# #fetch the deduction table from pifss monthly deduction document
-		# monthly_doc = frappe.get_doc('PIFSS Monthly Deduction',self.new_pifss_monthly_deduction)
+						amount = flt(value[cint(row.pifss_id_no)] * (employee_contribution_percentage / 100), precision=3)
+						create_additional_salary(employee_name,amount)#create additional salary
+						break #exit the loop after getting the new total subscription for the employee with the pifss_id 
+				if row.has_tracking_record == 0:#if employee not in the tracking system get their total subscription from deductions table
+					amount = flt(cint(row.pifss_id_no) * (employee_contribution_percentage / 100), precision=3)
+					create_additional_salary(employee_name,amount)#create additional salary
 
-		# #fetch child table for pifss monthly deduction for all employee
-		# for row in monthly_doc.deductions:
-		# 	if frappe.db.exists("Employee", {"pifss_id_no": row.pifss_id_no}):
-		# 		#fetch employee record 
-		# 		employee_record = frappe.get_doc('Employee',{"pifss_id_no": row.pifss_id_no})
-		# 		if not employee_record.relieving_date:
-		# 			#fetch controbution from pifss settings
-		# 			employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))
-		# 			# if row.pifss_id_no in name_and_pifss_list[1]:
-		# 			# 	for employee in tracking_record.pifss_tracking_changes:
-		# 			# if employee.pifss_no == row.pifss_id_no:
-		# 			amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
-		# 			create_additional_salary(employee_record, amount)
-
-		# 		if employee_record.relieving_date:
-		# 			continue
-			
-
-		#TODO: fetch controbution for pifss settings
-
-
-		#TODO: fetch child table for pifss monthly deduction for all employee
-
-
-		#TODO: if employee in the tracking system get their update subscription
-
-
-		#TODO: create additional salary
-
-	def set_update_total_subscription(self,date_input):
-		"""This method will return the number of months employee got the changes in their total subscription"""
-		month_of_pifss = date.today()#end date
-		change_date = getdate(date_input)#start date
-		num_of_months = (month_of_pifss.year - change_date.year) * 12 + (month_of_pifss.month - change_date.month)#calculating the months between 2 dates
-		if num_of_months >=0:
-			return num_of_months
+	
 
 def sub_total_subscription(new_value,old_value):
 	"""This method checks the status of the total subscription between last 2 months and return the status with delta amount"""

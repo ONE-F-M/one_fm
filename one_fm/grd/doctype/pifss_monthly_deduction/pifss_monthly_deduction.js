@@ -54,7 +54,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 			frm.set_value("difference_compensation", 0);
 		}
 		if(frm.doc.workflow_state == 'Completed' && frm.doc.docstatus === 1){
-			if (!frm.doc.__onload){
+			if (!frm.doc.pifss_monthly_deduction_tool){
 				frm.add_custom_button(__('Start Pifss Monthly Deduction Tool'),
 					function () {
 						frappe.call({
@@ -70,7 +70,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 					}
 			);
 		}
-			else if (frm.doc.__onload) {
+			else if (frm.doc.pifss_monthly_deduction_tool) {
 			frm.add_custom_button(__('Go to Pifss Monthly Deduction Tracking Tool'),
 				function () {
 					frappe.set_route("Form", "PIFSS Monthly Deduction Tool", frm.doc.pifss_monthly_deduction_tool);

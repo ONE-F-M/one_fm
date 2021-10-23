@@ -36,8 +36,6 @@ class PIFSSMonthlyDeduction(Document):
 		self.check_attachment_status()
 		self.check_workflow_states()
 		self.set_total_values()
-		# self.notify_grd_supervisor()
-		# self.notify_finance()
 		
 	def set_total_values(self):
 		"""This method additing the columns in the deductions table and setting them in the total amounts values"""
@@ -77,9 +75,9 @@ class PIFSSMonthlyDeduction(Document):
 				self.compensation_in_csv=compensation
 
 				if not self.total_payments:
-					if self.remaining_amount or self.total_additional_deduction or self.total_sub:
+					if self.remaining_amount and self.total_additional_deduction and self.total_sub:
 						self.total_payments = self.remaining_amount+self.total_additional_deduction+self.total_sub
-	frappe.db.commit()
+		frappe.db.commit()
 			
 	
 	def check_workflow_states(self):
@@ -166,52 +164,9 @@ class PIFSSMonthlyDeduction(Document):
 				if not frappe.db.exists("Notification Log",{'subject':subject}):#this will restrict notification to be send once
 					create_notification_log(subject,message,email,payment_request)
 
-	def check_tracking_record_submission(self,track_doc):
-		if track_doc:
-			self.pifss_monthly_deduction_tool = track_doc.name
-			self.save()
-			if track_doc.docstatus != 1:
-				page_link = get_url("/desk#Form/PIFSS Monthly Deduction Tool/"+track_doc.name)
-				frappe.throw('<b style="color:red; text-align:center;">First, You Need To Submit <a herf="{0}" target="_blank">PIFSS Monthly Deduction Tool</a></b>'.format(page_link))
 	
 	def on_submit(self):
-		
-		# for row in self.deductions:
-		# 	if frappe.db.exists("Employee", {"pifss_id_no": row.pifss_id_no}):#,"relieving_date":['=','']}
-		# 		employee = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no})# create payrol upon employee status (active,left)
-		# 		employee_record = frappe.get_doc('Employee',employee)
-		# 		if not employee_record.relieving_date:
-		# 			employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))
-		# 			# if row.pifss_id_no in name_and_pifss_list[1]:
-		# 			# 	for employee in tracking_record.pifss_tracking_changes:
-		# 			# if employee.pifss_no == row.pifss_id_no:
-		# 			amount = flt(employee.updated_total_subscription * (employee_contribution_percentage / 100), precision=3)
-		# 			create_additional_salary(employee, amount)
-					
-		# 			# elif row.pifss_id_no not in name_and_pifss_list[1]:
-		# 			# 	amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
-		# 			# 	create_additional_salary(employee, amount)
-
-		# 		if employee_record.relieving_date:
-		# 			continue
-		
 		self.create_legal_investigation() #create legal investigation with the addtional amount stored in the pifss monthly deduction section
-	# if not value:
-	# 	page_link = get_url("/desk#Form/PIFSS Monthly Deduction Tool/"+tracking_record.name)
-	# 	frappe.throw("You Need to Submit PIFSS Monthly Deduction Tool First else<a href='{0}'>PIFSS Tracking System</a>").format(page_link)
-			# missing_list.append(row.pifss_id_no)
-	
-	# self.notify_payroll(missing_list)
-
-	def call_track_pifss_changes(self):
-		doc = pifss_monthly_deduction_tool.track_pifss_changes(self.name)
-		return doc
-
-	def check_tracking_submittion(self,track_doc):
-		if track_doc.docstatus == 0:
-			page_link = get_url("/desk#Form/PIFSS Monthly Deduction Tool/"+track_doc.name)
-			frappe.throw("You Need to Submit PIFSS Monthly Deduction Tool First inside<a href='{0}'>PIFSS Tracking System</a>").format(page_link)
-		return False
 
 	def notify_payroll(self, employee_list):
 		email = frappe.get_value("HR Settings", "HR Settings", "payroll_notifications_email")
@@ -237,18 +192,6 @@ class PIFSSMonthlyDeduction(Document):
 			legal_record.save()
 			#whom should I inform once legal investigation record is created
 
-def create_additional_salary(employee, amount):
-	additional_salary = frappe.new_doc("Additional Salary")
-	additional_salary.employee = employee
-	additional_salary.salary_component = "Social Security"
-	additional_salary.amount = amount
-	additional_salary.payroll_date = getdate()
-	additional_salary.company = erpnext.get_default_company()
-	additional_salary.overwrite_salary_structure_amount = 1
-	additional_salary.notes = "Social Security Deduction"
-	additional_salary.insert()
-	additional_salary.submit()
-
 def create_payment_request(total_payment_required, name, report):
 	if not frappe.db.exists("Payment Request", {"reference_doctype":"PIFSS Monthly Deduction","reference_name": name}):
 		subject = _("PIFSS Monthly Deduction Payments")
@@ -268,8 +211,6 @@ def create_payment_request(total_payment_required, name, report):
 		payment_request.mode_of_payment = "Cheque"
 		payment_request.status = "Requested"
 		payment_request.insert()
-	
-
 	
 def auto_create_pifss_monthly_deduction_record():# call this method at 8 am of first day of each month
 	create_pifss_mothly_dedution_record()	
@@ -291,7 +232,6 @@ def notify_pro(pifss_mothly_dedution):
 		message = _("PIFSS Monthly Deduction record is created: {0}").format(page_link)
 		create_notification_log(subject,message,[email], doc)
 
-
 @frappe.whitelist()
 def import_deduction_data(doc_name):
 	"""This method fetching the csv file and storing its value into list of objects"""
@@ -311,7 +251,6 @@ def import_deduction_data(doc_name):
 				civil_id = ' '
 			employee_amount = flt(row[1] * (47.72/ 100))
 			table_data.append({'pifss_id_no': row[12],'civil_id':civil_id,'total_subscription': flt(row[1]), 'compensation_amount':row[2], 'unemployment_insurance':row[3],'fund_increase':row[4],'supplementary_insurance':row[5],'basic_insurance':row[6],'employee_deduction':employee_amount,'additional_deduction':0})
-		print("===> First Table",table_data)
 
 	additional_table = []
 	if doc.additional_attach_report:
@@ -322,7 +261,7 @@ def import_deduction_data(doc_name):
 			if frappe.db.exists("Employee", {"one_fm_civil_id": row[7]}):
 				additional_amount = flt(row[1], precision=3)#employee_amount
 				additional_table.append({'civil_id': cstr(row[7]), 'additional_deduction': additional_amount})
-	print("===> Second Table",additional_table)
+	
 	
 	list_additional_values = [value for elem in additional_table for value in elem.values()]#convert table_data to values
 	for employee in table_data:
