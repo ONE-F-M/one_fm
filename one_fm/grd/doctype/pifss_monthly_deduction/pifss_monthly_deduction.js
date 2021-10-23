@@ -3,15 +3,19 @@
 frappe.ui.form.on('PIFSS Monthly Deduction', {
 
 	fetch_data: function(frm) {
+		//checks if the document not saved
+		if(frm.doc.__unsaved || frm.is_new()){//Check if the document is saved or new
+			frappe.throw('Please Save the Document First');
+		}
+		else if(!frm.doc.attach_report || !frm.doc.additional_attach_report){
+			frappe.throw('Please Attach The Required Documents');
+		}
+		else if(frm.doc.attach_report || frm.doc.additional_attach_report){
 		/*
 		This is an Ajax call that calls a method with a document name as an argument,
 		the callback is a dictionary list of the 2 attached files(csv file and additional report file),
 		then, it will add the dictionary into the deductions table.
 		*/
-		if(frm.doc.__unsaved || frm.is_new()){//Check if the document is saved or new
-			frappe.throw('Please Save the Document First');
-		}
-		else{
 			let doc_name = frm.doc.name;
 			if(doc_name){
 				frappe.call({
@@ -55,7 +59,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 		}
 		if(frm.doc.workflow_state == 'Completed' && frm.doc.docstatus === 1){
 			if (!frm.doc.pifss_monthly_deduction_tool){
-				frm.add_custom_button(__('Start Pifss Monthly Deduction Tool'),
+				frm.add_custom_button(__('Create Pifss Monthly Deduction Tool'),
 					function () {
 						frappe.call({
 							method: 'one_fm.grd.doctype.pifss_monthly_deduction_tool.pifss_monthly_deduction_tool.track_pifss_changes',
@@ -63,6 +67,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 							callback: function(r){
 								frm.set_value('pifss_monthly_deduction_tool', r.message);
 								frappe.set_route("Form", "PIFSS Monthly Deduction Tool", frm.doc.pifss_monthly_deduction_tool);
+								frm.reload_doc();
 					  },
 					  freeze: true,
 					  freeze_message: __("Creating Pifss Monthly Deduction Tracking Tool ...!")
@@ -79,11 +84,11 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 	}
 		
 	},
-	// remaining_amount: function(frm){
-	// 	if(frm.doc.remaining_amount){
-	// 		frm.set_value("total_payments",frm.doc.total_sub+frm.doc.remaining_amount+frm.doc.total_additional_deduction);
-	// 	}
-	// },
+	remaining_amount: function(frm){
+		if(frm.doc.remaining_amount){
+			frm.set_value("total_payments",frm.doc.total_sub+frm.doc.remaining_amount+frm.doc.total_additional_deduction);
+		}
+	},
 	basic_insurance: function(frm){
 		if(frm.doc.basic_insurance){
 			frm.set_value("difference_in_basic_insurance", frm.doc.basic_insurance-frm.doc.basic_insurance_in_csv);
@@ -111,7 +116,6 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 			frm.set_value("difference_unemployment_insurance",frm.doc.unemployment_insurance-frm.doc.unemployment_insurance_in_csv);
 		}if (frm.doc.difference_unemployment_insurance!=0){
 			$('input[data-fieldname="difference_unemployment_insurance"]').css("color","red")
-			// $('input[data-fieldname="difference_unemployment_insurance"]').css("background-color","#FFE4C4")
 			document.querySelectorAll("[data-fieldname='difference_unemployment_insurance']")[1].style.backgroundColor ="red";
 		}
 	},
@@ -119,7 +123,6 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 		if(frm.doc.unemployment_insurance){
 			frm.set_value("difference_compensation",frm.doc.compensation-frm.doc.compensation_in_csv);
 		}if (frm.doc.difference_compensation!=0){
-			// $('input[data-fieldname="difference_compensation"]').css("background-color","#FFE4C4")
 			document.querySelectorAll("[data-fieldname='difference_compensation']")[1].style.backgroundColor ="red";
 		}
 	},
