@@ -1,7 +1,6 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 frappe.ui.form.on('PIFSS Monthly Deduction', {
-
 	fetch_data: function(frm) {
 		//checks if the document not saved
 		if(frm.doc.__unsaved || frm.is_new()){//Check if the document is saved or new
@@ -134,4 +133,3 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 	},
 		
 });
-

@@ -273,4 +273,3 @@ def import_deduction_data(doc_name):
 					})
 	return table_data,len(table_data)
 
-	
