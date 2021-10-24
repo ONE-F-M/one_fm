@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe, erpnext
 from frappe.model.document import Document
-from frappe.utils import flt, getdate
+from frappe.utils import flt, getdate, cstr
 import pandas as pd
 import math
 from datetime import date
@@ -37,6 +37,49 @@ class PIFSSMonthlyDeduction(Document):
 		self.check_workflow_states()
 		self.notify_grd_supervisor()
 		self.notify_finance()
+		self.set_total_values()
+	
+	def set_total_values(self):
+		"""This method additing the columns in the deductions table and setting them in the total amounts values"""
+        
+		subscription=0.0
+		additional=0.0 
+		basic=0.0
+		supplementary=0.0
+		fund=0.0
+		unemployment=0.0
+		compensation=0.0
+
+		if self.attach_report and self.additional_attach_report:
+			if not self.total_sub and not self.total_additional_deduction: 
+				for row in self.deductions:
+						if row.total_subscription:
+							subscription += row.total_subscription
+						if row.additional_deduction:
+							additional +=row.additional_deduction
+						if row.basic_insurance:
+							basic +=row.basic_insurance
+						if row.supplementary_insurance:
+							supplementary +=row.supplementary_insurance
+						if row.fund_increase:
+							fund += row.fund_increase
+						if row.unemployment_insurance:
+								unemployment +=row.unemployment_insurance
+						if row.compensation_amount:
+							compensation += row.compensation_amount
+
+                self.total_additional_deduction=additional
+                self.total_sub=subscription
+                self.basic_insurance_in_csv=basic
+                self.supplementary_insurance_in_csv=supplementary
+                self.fund_increase_in_csv=fund
+                self.unemployment_insurance_in_csv=unemployment
+                self.compensation_in_csv=compensation
+
+                if not self.total_payments:
+                    if self.remaining_amount and self.total_additional_deduction and self.total_sub:
+                        self.total_payments = self.remaining_amount+self.total_additional_deduction+self.total_sub
+        frappe.db.commit()
 		
 
 	def check_workflow_states(self):
@@ -86,10 +129,17 @@ class PIFSSMonthlyDeduction(Document):
 
 	def check_attachment_status(self):
 		if not self.attach_report or self.attach_report == "":
+			#delete child table values from frontend and db
+			frappe.db.sql("""delete from `tabPIFSS Monthly Deduction Employees` 
+			where parent = %s""", self.name) 
 			self.set("deductions", [])
-			fields = ['basic_insurance_in_csv','supplementary_insurance_in_csv','fund_increase_in_csv','unemployment_insurance_in_csv','compensation_in_csv']
+			#delete values from frontend and db
+			frappe.db.sql("""update `tabPIFSS Monthly Deduction`
+			set total_sub=0 and total_additional_deduction=0 and basic_insurance_in_csv=0 and supplementary_insurance_in_csv=0 and fund_increase_in_csv=0 and unemployment_insurance_in_csv=0 and compensation_in_csv=0
+			where name = %s""", self.name)
+			fields = ['total_sub','total_additional_deduction','basic_insurance_in_csv','supplementary_insurance_in_csv','fund_increase_in_csv','unemployment_insurance_in_csv','compensation_in_csv']
 			for field in fields:
-				self.set(field,"")
+				self.set(field,0)
 	
 	def notify_grd_supervisor(self):
 		if self.workflow_state == "Pending By Supervisor":
@@ -202,36 +252,42 @@ def notify_pro(pifss_mothly_dedution):
 
 
 @frappe.whitelist()
-def import_deduction_data(file_url):
-	url = frappe.get_site_path() + file_url
-	data = {}
-	table_data = []
-	civil_id = ""
-	df = pd.read_csv(url, encoding='utf-8', skiprows = 3)
-	for index, row in df.iterrows():
-		if frappe.db.exists("Employee", {"pifss_id_no": row[12]}):
-			employee = frappe.get_doc('Employee', {'pifss_id_no':row[12]})
-			if employee.one_fm_civil_id:
-				civil_id = employee.one_fm_civil_id
-		if not frappe.db.exists("Employee", {"pifss_id_no": row[12]}):
-			civil_id = ' '
-			# print(row[7],row[8],row[9],row[10],row[11],row[12],row[13])
-		employee_amount = flt(row[1] * (47.72/ 100))
-		table_data.append({'pifss_id_no': row[12],'civil_id':civil_id,'total_subscription': flt(row[1]), 'compensation_amount':row[2], 'unemployment_insurance':row[3],'fund_increase':row[4],'supplementary_insurance':row[5],'basic_insurance':row[6],'employee_deduction':employee_amount})
-	data.update({'table_data': table_data})
-	return data
+def import_deduction_data(doc_name):
+    """This method fetching the csv file and storing its value into list of objects"""
+    doc = frappe.get_doc('PIFSS Monthly Deduction',doc_name)
+    file_url_1 = doc.attach_report
+    if file_url_1:
+        url_1 = frappe.get_site_path() + file_url_1
+        table_data = []
+        civil_id = ""
+        df_1 = pd.read_csv(url_1, encoding='utf-8', skiprows = 3)
+        for index, row in df_1.iterrows():
+            if frappe.db.exists("Employee", {"pifss_id_no": row[12]}):
+                one_fm_civil_id = frappe.db.get_value('Employee',{'pifss_id_no':row[12]},['one_fm_civil_id'])
+                if one_fm_civil_id:
+                    civil_id = one_fm_civil_id
+            if not frappe.db.exists("Employee", {"pifss_id_no": row[12]}):
+                civil_id = ' '
+            employee_amount = flt(row[1] * (47.72/ 100))
+            table_data.append({'pifss_id_no': row[12],'civil_id':civil_id,'total_subscription': flt(row[1]), 'compensation_amount':row[2], 'unemployment_insurance':row[3],'fund_increase':row[4],'supplementary_insurance':row[5],'basic_insurance':row[6],'employee_deduction':employee_amount,'additional_deduction':0})
 
-
-@frappe.whitelist()
-def import_additional_deduction_data(file_url):
-	url = frappe.get_site_path() + file_url
-	data = {}	
-	table_data = []
-	df = pd.read_csv(url, encoding='utf-8')
-	for index, row in df.iterrows():
-		if frappe.db.exists("Employee", {"one_fm_civil_id": row[7]}):
-			employee = frappe.get_doc('Employee', {'one_fm_civil_id':row[7]})
-			additional_amount = flt(row[1], precision=3)#employee_amount
-			table_data.append({'pifss_id_no': employee.pifss_id_no, 'additional_deduction': additional_amount})
-	data.update({'table_data': table_data})
-	return data
+    additional_table = []
+    if doc.additional_attach_report:
+        file_url_2 = doc.additional_attach_report
+        url_2 = frappe.get_site_path() + file_url_2     
+        df_2 = pd.read_csv(url_2, encoding='utf-8')
+        for index, row in df_2.iterrows():
+            if frappe.db.exists("Employee", {"one_fm_civil_id": row[7]}):
+                additional_amount = flt(row[1], precision=3)#employee_amount
+                additional_table.append({'civil_id': cstr(row[7]), 'additional_deduction': additional_amount})
+    
+    
+    list_additional_values = [value for elem in additional_table for value in elem.values()]#convert table_data to values
+    for employee in table_data:
+        if employee['civil_id'] in list_additional_values:
+            for record in additional_table:
+                if employee['civil_id'] == record['civil_id']:
+                    employee.update({
+                        'additional_deduction':record['additional_deduction']
+                    })
+    return table_data,len(table_data)
