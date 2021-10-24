@@ -6,7 +6,7 @@ from frappe import _
 def get_salary_slip_list(employee_id):
     try:
         salary_list = frappe.get_all("Salary Slip", filters={'employee':employee_id}, fields=["name","start_date", "end_date", "status", "total_working_days"])
-        return Salary_list 
+        return salary_list 
     except Exception as e:
         print(frappe.get_traceback())
         frappe.log_error(frappe.get_traceback())
