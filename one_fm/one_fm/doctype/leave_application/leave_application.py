@@ -304,7 +304,7 @@ class LeaveApplication(Document):
             frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
             return
         email_template = frappe.get_doc("Email Template", template)
-        message = frappe.render_template(email_template.response_html, args)
+        message = frappe.render_template(email_template.response, args)
 
         self.notify({
             # for post in messages
@@ -808,14 +808,17 @@ def get_employee_schedule(employee, from_date, to_date):
     Shift = frappe.get_all("Employee Schedule",{"employee": employee, "date": ['between', (from_date, to_date)]},["shift","date"])
     return Shift
 
+#fetches the leave approver for a given employee
 @frappe.whitelist()
 def get_leave_approver(employee):
-    leave_approver, department, Report_To = frappe.db.get_value("Employee", employee, ["leave_approver", "department", "reports_to"])
-    if not leave_approver and department:
+    #check if employee has leave approver or report to assigned in the employee doctype
+    leave_approver, Report_To = frappe.db.get_value("Employee", employee, ["leave_approver", "reports_to"])
+    if not leave_approver:
         if Report_To:
-            approver = Report_To
+            approver = frappe.db.get_value('Employee', {'name': Report_To}, ['user_id'])
         else:
-            approver = frappe.db.get_value('Department Approver', {'parent': department,'parentfield': 'leave_approvers', 'idx': 1}, 'approver')
+            #if not, return the 'Operational Manager' as the leave approver
+            approver = frappe.db.get_value('Employee', {'Designation': "Operation Manager"}, ['user_id'])
     else:
         approver = leave_approver
     return approver
