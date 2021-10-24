@@ -62,7 +62,8 @@
    "fieldname": "pifss_no",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "PIFSS No"
+   "label": "PIFSS No",
+   "print_hide": 1
   },
   {
    "depends_on": "eval:doc.status == \"Increased\" || doc.status == \"Decreased\"",
@@ -73,6 +74,7 @@
   {
    "depends_on": "eval: doc.status == \"Left\"",
    "fetch_from": "employee.relieving_date",
+   "fetch_if_empty": 1,
    "fieldname": "relieving_date",
    "fieldtype": "Date",
    "label": "Relieving Date"
@@ -106,7 +108,8 @@
    "fieldname": "updated_total_subscription",
    "fieldtype": "Data",
    "label": "Updated Total Subscription",
-   "precision": "3"
+   "precision": "3",
+   "read_only": 1
   },
   {
    "depends_on": "eval: doc.status == \"Increased\" || doc.status == \"Decreased\"",
@@ -119,7 +122,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-10-03 10:16:34.371710",
+ "modified": "2021-10-23 08:50:34.205378",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction Tool Table",
