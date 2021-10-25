@@ -420,7 +420,7 @@ def create_wp_kuwaiti(employee,status,name):
 
 ############################################################################# Reminder Notification 
 def system_remind_renewal_operator_to_apply():# cron job at 4pm
-    """This is a cron method runs every day at 4pm. It gets Draft renewal work permit list and reminds operator to apply on pam website"""
+    """This is a cron method runs every day at 8pm. It gets Draft renewal work permit list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     work_permit_list = frappe.db.get_list('Work Permit',
@@ -428,7 +428,7 @@ def system_remind_renewal_operator_to_apply():# cron job at 4pm
     notification_reminder(work_permit_list,supervisor,renewal_operator,"Renewal")
 
 def system_remind_transfer_operator_to_apply():# cron job at 4pm
-    """This is a cron method runs every day at 4pm. It gets Draft transfer work permit list and reminds operator to apply on pam website"""
+    """This is a cron method runs every day at 8pm. It gets Draft transfer work permit list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     work_permit_list = frappe.db.get_list('Work Permit',
