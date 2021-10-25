@@ -79,7 +79,7 @@ def final_reminder():
 		# shift_end is equal to now time - notification reminder in mins
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp  
+				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp  
 				WHERE
 			  		tSA.employee = emp.name 
 				AND tSA.start_date="{date}" 
