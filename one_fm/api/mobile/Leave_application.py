@@ -93,6 +93,7 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason,ha
         #else keep it open and that sends the approval notification to the 'leave approver'.
         else:
             doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,half_day,half_day_date,leave_approver)
+    return doc
 
 #create new leave application doctype
 frappe.whitelist()
@@ -111,7 +112,6 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,ha
         leave.leave_approver = leave_approver
         leave.save()
         frappe.db.commit()
-        print(leave)
         return leave
      except Exception as e:
         print(frappe.get_traceback())
