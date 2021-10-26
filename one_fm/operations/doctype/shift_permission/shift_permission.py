@@ -12,6 +12,7 @@ from one_fm.api.notification import create_notification_log, get_employee_user_i
 
 class ShiftPermission(Document):
 	def validate(self):
+		self.check_permission_type()
 		date = getdate(self.date).strftime('%d-%m-%Y')
 		if not self.assigned_shift or not self.shift or not self.shift_supervisor or not self.shift_type:
 			frappe.throw(_("Shift details are missing. Please make sure date is correct."))
@@ -21,6 +22,29 @@ class ShiftPermission(Document):
 	
 		if self.docstatus==0 and frappe.db.exists("Shift Permission", {"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift, "permission_type": self.permission_type}):
 			frappe.throw(_("{employee} has already applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date)))
+
+	def check_permission_type(self):
+		if self.permission_type == "Arrive Late":
+			field_list = [{'Arrival Time':'arrival_time'}]
+			self.set_mendatory_fields(field_list)
+		if self.permission_type == "Leave Early":
+			field_list = [{'Leaving Time':'leaving_time'}]
+			self.set_mendatory_fields(field_list)
+
+	#this method will display the mendatory fields for the user
+	def set_mendatory_fields(self,field_list):
+		mandatory_fields = []
+		for fields in field_list:
+			for field in fields:
+				if not self.get(fields[field]):
+					mandatory_fields.append(field)
+        
+		if len(mandatory_fields) > 0:
+			message= 'Mandatory fields required in Shift Permission<br><br><ul>'
+			for mandatory_field in mandatory_fields:
+				message += '<li>' + mandatory_field +'</li>'
+			message += '</ul>'
+			frappe.throw(message)
 
 	def after_insert(self):
 		self.send_notification()
