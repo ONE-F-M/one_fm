@@ -106,14 +106,14 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval:doc.permission_type==\"Arrive Late\"",
+   "depends_on": "eval:doc.permission_type == \"Arrive Late\"",
    "fieldname": "arrival_time",
    "fieldtype": "Time",
    "in_list_view": 1,
    "label": "Arrival Time"
   },
   {
-   "depends_on": "eval:doc.permission_type==\"Leave Early\"",
+   "depends_on": "eval:doc.permission_type== \"Leave Early\"",
    "fieldname": "leaving_time",
    "fieldtype": "Time",
    "in_list_view": 1,
@@ -140,7 +140,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-14 15:39:51.980874",
+ "modified": "2021-10-26 17:11:43.384152",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
