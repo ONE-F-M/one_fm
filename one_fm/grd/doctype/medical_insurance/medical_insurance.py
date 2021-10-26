@@ -85,7 +85,7 @@ def get_employee_data_from_civil_id(civil_id):
         return frappe.get_doc('Employee', employee_id)
     
 ############################################################################# Reminder Notification 
-def system_remind_renewal_operator_to_apply():# cron job at 8pm
+def system_remind_renewal_operator_to_apply_mi():# cron job at 8pm
     """This is a cron method runs every day at 8pm. It gets Draft renewal Medical Insurance list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
@@ -94,7 +94,7 @@ def system_remind_renewal_operator_to_apply():# cron job at 8pm
     notification_reminder(medical_insurance_list,supervisor,renewal_operator,"Renewal or New")
     
 
-def system_remind_transfer_operator_to_apply():# cron job at 8pm
+def system_remind_transfer_operator_to_apply_mi():# cron job at 8pm
     """This is a cron method runs every day at 8pm. It gets Draft transfer Medical Insurance list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
