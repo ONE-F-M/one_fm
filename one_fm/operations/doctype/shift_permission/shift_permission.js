@@ -35,9 +35,6 @@ function get_shift_assignment(frm){
 }
 
 function set_shift_details(frm, name, supervisor, shift, shift_type){
-	console.log("supervisor",supervisor)
-	console.log("shift",shift)
-	console.log("shift_type",shift_type)
 	frappe.model.set_value(frm.doctype, frm.docname, "assigned_shift", name);
 	frappe.model.set_value(frm.doctype, frm.docname, "shift_supervisor", supervisor);
 	frappe.model.set_value(frm.doctype, frm.docname, "shift", shift);
