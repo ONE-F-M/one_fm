@@ -80,7 +80,7 @@ def scan_checkpoint(qr_code, latitude, longitude):
 	newscan.save()
 	frappe.db.commit()
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def scan_checkpoint_mobile(user, qr_code, latitude, longitude):
 	""" Creates a Checkpoint Assignment Scan document provided the user email, a QR code and the location coordinates.
 
@@ -99,7 +99,7 @@ def scan_checkpoint_mobile(user, qr_code, latitude, longitude):
 		employee = frappe.get_value("Employee", {"user_id": user}, ["name"]) 
 
 		if not employee:
-			return response('No employee found for user {user}'.format(user=user), 400)
+			return response('No employee found for user email: {user}'.format(user=user), 400)
 
 		cur_datetime = get_datetime()
 	
