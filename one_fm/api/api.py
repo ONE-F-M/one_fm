@@ -100,6 +100,17 @@ def rename_post(posts):
         except Exception as e:
             print(frappe.get_traceback())
 
+# This function allows you to fetch the list of Shift Permission of a given employee.
+# params: employee_ID (eg: HR-EMP-00001)
+# returns: List of shift Permission with name, date and workflow_state of the doc.
+@frappe.whitelist()
+def list_shift_permission(employee_id):
+    try:
+        shift_permission = frappe.get_list("Shift Permission", filters={'employee':employee_id}, fields=["name","date","workflow_state"])
+        return shift_permission
+    except Exception as e:
+        print(frappe.get_traceback())
+
 @frappe.whitelist()
 def store_fcm_token(employee_id ,fcm_token):
     Employee = frappe.get_doc("Employee",{"name":employee_id})
