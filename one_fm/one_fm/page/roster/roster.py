@@ -162,7 +162,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		if isOt:
 			filters.pop("roster_type", None)
 
-		attendances = frappe.db.get_list("Attendance", {'attendance_date': ['between', (start_date, add_to_date(cstr(getdate()), days=-1))], 'employee': key[0]}, ["status", "attendance_date"], order_by="date asc, employee_name asc", ignore_permissions=True)	
+		attendances = frappe.db.get_list("Attendance", {'attendance_date': ['between', (start_date, add_to_date(cstr(getdate()), days=-1))], 'employee': key[0]}, ["status", "attendance_date"], ignore_permissions=True)	
 		schedule_list = []
 		schedule = {}
 		default_shift = frappe.db.get_value("Employee", {'employee': key[0]}, ["shift"])
