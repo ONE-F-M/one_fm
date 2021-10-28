@@ -21,26 +21,26 @@ class ShiftPermission(Document):
 			self.set_mendatory_fields(field_list)
 		if self.permission_type == "Leave Early":
 			field_list = [{'Leaving Time':'leaving_time'}]
-			self.set_mendatory_fields(field_list)
+			self.set_mandatory_fields(field_list)
 
-	#this method is checking shift details information
+	# This method validates the shift details availability for employee
 	def check_shift_details_value(self):
 		if not self.assigned_shift or not self.shift or not self.shift_supervisor or not self.shift_type:
 			frappe.throw(_("Shift details are missing. Please make sure date is correct."))
 
-	#this method validate the permission date to not be past dates
+	# This method validates the permission date and avoid creating permission for previous days
 	def validate_date(self):
 		if self.docstatus==0 and getdate(self.date) < getdate():
 			frappe.throw(_("Oops! You cannot apply for permission for a previous date."))
 	
-	#This method checks if employee having a permission record in the dame day
+	# This method validates any dublicate permission for the employee on same day
 	def validate_record(self):
 		date = getdate(self.date).strftime('%d-%m-%Y')
 		if self.docstatus==0 and frappe.db.exists("Shift Permission", {"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift, "permission_type": self.permission_type}):
 			frappe.throw(_("{employee} has already applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date)))
 
-	#this method will display the mendatory fields for the user
-	def set_mendatory_fields(self,field_list):
+	# This method will display the mandatory fields for the user
+	def set_mandatory_fields(self,field_list):
 		mandatory_fields = []
 		for fields in field_list:
 			for field in fields:
