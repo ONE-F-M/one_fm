@@ -125,7 +125,6 @@ def push_notification(employee_id, title, body):
 
     # See documentation on defining a message payload.
     for registration_token in registration_tokens:
-        print(registration_token)
         message = messaging.Message(
             data= {
             "title": title,
@@ -149,7 +148,6 @@ def push_notification(employee_id, title, body):
             token=registration_token,
             )
         response = messaging.send(message)
-        print(response)
     return response
     # See the BatchResponse reference documentation
     # for the contents of response.
