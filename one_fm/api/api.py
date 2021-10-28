@@ -110,6 +110,7 @@ def list_shift_permission(employee_id):
         return shift_permission
     except Exception as e:
         print(frappe.get_traceback())
+        return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def store_fcm_token(employee_id ,fcm_token):
