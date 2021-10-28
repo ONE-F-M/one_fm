@@ -79,7 +79,7 @@ def final_reminder():
 		# shift_end is equal to now time - notification reminder in mins
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp  
+				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp  
 				WHERE
 			  		tSA.employee = emp.name 
 				AND tSA.start_date="{date}" 
@@ -672,15 +672,15 @@ def generate_site_allowance():
 					for employee in employee_det:
 						#calculate Monthly_site_allowance with the rate of allowance per day.
 						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee[1])
-						create_additional_salary(employee[0], Monthly_site_allowance, "Site Allowance")
+						create_additional_salary(employee[0], Monthly_site_allowance, "Site Allowance", end_date)
 
 #this function creates additional salary for a given component.
-def create_additional_salary(employee, amount, component):
+def create_additional_salary(employee, amount, component, end_date):
 	additional_salary = frappe.new_doc("Additional Salary")
 	additional_salary.employee = employee
 	additional_salary.salary_component = component
 	additional_salary.amount = amount
-	additional_salary.payroll_date = getdate()
+	additional_salary.payroll_date = end_date
 	additional_salary.company = erpnext.get_default_company()
 	additional_salary.overwrite_salary_structure_amount = 1
 	additional_salary.notes = "Site Allowance"

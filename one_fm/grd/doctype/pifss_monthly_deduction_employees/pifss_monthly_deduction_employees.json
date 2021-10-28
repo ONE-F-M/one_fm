@@ -25,7 +25,8 @@
   "column_break_18",
   "additional_deduction",
   "column_break_20",
-  "total_deductions"
+  "total_deductions",
+  "has_tracking_record"
  ],
  "fields": [
   {
@@ -144,11 +145,19 @@
    "in_list_view": 1,
    "label": "Compensation Amount",
    "precision": "3"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "has_tracking_record",
+   "fieldtype": "Check",
+   "label": "Has Tracking Record",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2021-08-03 17:03:31.737666",
+ "modified": "2021-10-20 13:20:55.988213",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction Employees",

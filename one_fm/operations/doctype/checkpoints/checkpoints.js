@@ -22,7 +22,7 @@ frappe.ui.form.on('Checkpoints', {
 		frm.set_query("site_name", function() {
 			return {
 				filters: {
-					"project_name": frm.doc.project_name
+					"project": frm.doc.project_name
 				}
 					
 				
