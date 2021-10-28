@@ -15,3 +15,19 @@ def create_notification_log(subject, message, for_users, reference_doc):
 
 def get_employee_user_id(employee):
 	return frappe.get_value("Employee", {"name": employee}, "user_id")
+
+
+# This function returns the list of notification of a given user_id, within the dictionary with "name","subject".
+@frappe.whitelist()
+def get_notification_list(user_id):
+	"""
+	Params:
+	User id: Employee User ID
+    Return: List of Notification
+	"""
+	try:
+		notification_list = frappe.get_all("Notification Log", filters={'for_user':user_id, 'one_fm_mobile_app':1}, fields=["name","subject"])
+		return notification_list 
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback())
+		return frappe.utils.response.report_error(e)
