@@ -118,7 +118,7 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason,ha
                 for user in notify_user:
                     notifier_leave(doc, user)
 
-frappe.whitelist()
+@frappe.whitelist()
 def new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,half_day_date,leave_approver):
      try:
         leave = frappe.new_doc("Leave Application")
