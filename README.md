@@ -1,8 +1,8 @@
 ## One Fm
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Frappe-12.7.1-blue?style=for-the-badge&logo=frappe">
-  <img src="https://img.shields.io/badge/ERPNext-12.0.0-green?style=for-the-badge&logo=erpnext">
+  <img src="https://img.shields.io/badge/Frappe-13.13.0-blue?style=for-the-badge&logo=frappe">
+  <img src="https://img.shields.io/badge/ERPNext-13.13.0-green?style=for-the-badge&logo=erpnext">
   <br/>
 </p>
 
