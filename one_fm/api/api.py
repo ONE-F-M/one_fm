@@ -110,6 +110,7 @@ def list_shift_permission(employee_id):
         return shift_permission
     except Exception as e:
         print(frappe.get_traceback())
+        return frappe.utils.response.report_error(e.http_status_code)
 
 # This function allows you to fetch the details of a given Shift Permission.
 # params: Sift Permission name (eg: SP-000001)
@@ -121,6 +122,7 @@ def shift_permission_details(shift_permission_id):
         return shift_permission
     except Exception as e:
         print(frappe.get_traceback())
+        return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def store_fcm_token(employee_id ,fcm_token):
