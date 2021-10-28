@@ -34,7 +34,7 @@ class Penalty(Document):
 
 		if (doc_before_update and doc_before_update.workflow_state != "Penalty Rejected") and self.workflow_state == "Penalty Rejected":
 			legal_inv = self.create_legal_investigation()
-			self.db_set("legal_investigation_code", legal_inv)		
+			self.db_set("legal_investigation_code", legal_inv.name)		
 
 	def validate(self):
 		self.validate_self_issuance()
@@ -59,6 +59,7 @@ class Penalty(Document):
 		legal_inv.reference_doctype = self.doctype
 		legal_inv.reference_docname = self.name
 		legal_inv.investigation_lead = legal_manager[0].name
+		legal_inv.investigation_subject = "Penalty"
 		legal_inv.append("legal_investigation_employees", {
 			"employee_id": self.issuer_employee,
 			"employee_name": self.issuer_name,
