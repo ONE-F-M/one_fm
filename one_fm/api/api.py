@@ -114,7 +114,6 @@ def store_fcm_token(employee_id ,fcm_token):
     except Exception as e:
         print(frappe.get_traceback())
 
-
 @frappe.whitelist()
 def push_notification(employee_id, title, body):
     registration_tokens = []
@@ -126,6 +125,7 @@ def push_notification(employee_id, title, body):
 
     # See documentation on defining a message payload.
     for registration_token in registration_tokens:
+        print(registration_token)
         message = messaging.Message(
             data= {
             "title": title,
@@ -134,18 +134,15 @@ def push_notification(employee_id, title, body):
             "showButtonCheckOut": 'True',
             "showButtonArrivingLate": 'True'
             },
-            android=messaging.AndroidConfig(
-                notification=messaging.AndroidNotification(
-                    title=title,
-                    body=body,
-                    click_action = "oneFmNotificationCategory2",
-                ),
+            notification=messaging.Notification(
+                title=title,
+                body=body,
             ),
             apns=messaging.APNSConfig(
                 payload=messaging.APNSPayload(
                     aps=messaging.Aps(
                         badge=0,
-                        mutable_content= 1
+                        mutable_content= 1,
                     ),
                 ),
             ),
