@@ -3,7 +3,7 @@ from frappe import _
 
 # This method is creating shift permission record and setting the the shift details
 @frappe.whitelist()
-def create_shift_permission(employee,permission_type,date,reason,leaving_time=None,arrival_time=None):
+def create_shift_permission(employee, permission_type, date, reason, leaving_time=None, arrival_time=None):
     """
 	Params:
 	employee: HO employee ERP id
@@ -52,16 +52,3 @@ def get_employee_roles(employee_id):
     user_id = frappe.db.get_value('Employee',{'name':employee_id},['user_id'])
     user_roles = frappe.get_roles(user_id)
     return user_roles
-        
-
-
-
-
-
-
-
-
-
-
-
-
