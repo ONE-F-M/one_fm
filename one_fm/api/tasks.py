@@ -230,6 +230,7 @@ def send_notification(subject, message, recipients):
 		notification.document_type = "Notification Log"
 		notification.for_user = user
 		notification.document_name = " "
+		notification.one_fm_mobile_app = 1
 		notification.save(ignore_permissions=True)
 		notification.document_name = notification.name
 		notification.save(ignore_permissions=True)
