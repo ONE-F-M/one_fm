@@ -128,18 +128,6 @@ def store_fcm_token(employee_id ,fcm_token):
     except Exception as e:
         print(frappe.get_traceback())
 
-# This function allows you to fetch the list of Shift Permission of a given employee.
-# params: employee_ID (eg: HR-EMP-00001)
-# returns: List of shift Permission with name, date and workflow_state of the doc.
-@frappe.whitelist()
-def list_shift_permission(employee_id):
-    try:
-        shift_permission = frappe.get_list("Shift Permission", filters={'employee':employee_id}, fields=["name","date","workflow_state"])
-        return shift_permission
-    except Exception as e:
-        print(frappe.get_traceback())
-        return frappe.utils.response.report_error(e.http_status_code)
-
 @frappe.whitelist()
 def push_notification(employee_id, title, body):
     registration_tokens = []
@@ -151,6 +139,7 @@ def push_notification(employee_id, title, body):
 
     # See documentation on defining a message payload.
     for registration_token in registration_tokens:
+        print(registration_token)
         message = messaging.Message(
                 data= {
                 "title": title,
