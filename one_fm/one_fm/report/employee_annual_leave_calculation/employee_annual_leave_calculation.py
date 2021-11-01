@@ -91,9 +91,6 @@ def get_data(filters, leave_types):
 					relieving_date = getdate(employee.relieving_date)
 					from_date = getdate(filters.from_date)
 					month_diff_factor = month_diff(relieving_date, from_date)
-					# TODO:
-					# if relieving_date > from_date:
-					# 	set month_diff_factor
 					if month_diff_factor > 0 and relieving_date < add_days(from_date, 30):
 						day_diff = date_diff(add_days(from_date, 30), getdate(employee.relieving_date))
 						provision_days_of_alloc = (30/365)*day_diff
