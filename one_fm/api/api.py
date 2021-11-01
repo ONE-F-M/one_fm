@@ -171,8 +171,15 @@ def push_notification(employee_id, title, body):
     # See the BatchResponse reference documentation
     # for the contents of response.
 
+# This function is used to send notification through Firebase CLoud Message. 
+# It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
+# Params: employee_id e.g. HR_EMP_00001
 @frappe.whitelist()
-def test_rest_api(employee_id):
+def push_notification_rest_api(employee_id):
+    """
+    serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
+    Device Token is store in employee doctype using 'store_fcm_token' on device end.
+    """
     serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
     token = frappe.get_all("Employee", {"name": employee_id}, "fcm_token")
     deviceToken = token[0].fcm_token
@@ -182,6 +189,7 @@ def test_rest_api(employee_id):
             'Authorization': 'key=' + serverToken,
         }
 
+    #Body in json form defining a message payload to send through API.
     body = {
              "to":deviceToken,
                 "data": {
@@ -199,7 +207,8 @@ def test_rest_api(employee_id):
                 },
                 "mutable_content": True
             }
-    response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
+    #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
+     response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
     print(response.status_code)
 
     print(response.json())
