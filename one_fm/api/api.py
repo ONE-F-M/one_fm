@@ -7,6 +7,8 @@ import requests
 import firebase_admin
 from firebase_admin import messaging
 from firebase_admin import credentials
+import requests
+import json
 
 import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
@@ -126,28 +128,65 @@ def push_notification(employee_id, title, body):
     # See documentation on defining a message payload.
     for registration_token in registration_tokens:
         message = messaging.Message(
-            data= {
-            "title": title,
-            "body": body,
-            "showButtonCheckIn": 'True',
-            "showButtonCheckOut": 'True',
-            "showButtonArrivingLate": 'True'
-            },
-            notification=messaging.Notification(
-                title=title,
-                body=body,
-            ),
-            apns=messaging.APNSConfig(
-                payload=messaging.APNSPayload(
-                    aps=messaging.Aps(
-                        badge=0,
-                        mutable_content= 1,
+                data= {
+                "title": title,
+                "body": body,
+                "showButtonCheckIn": 'True',
+                "showButtonCheckOut": 'True',
+                "showButtonArrivingLate": 'True'
+                },
+                android=messaging.AndroidConfig(
+                    notification=messaging.AndroidNotification(
+                        title=title,
+                        body=body,
+                        click_action = "oneFmNotificationCategory1",
                     ),
                 ),
-            ),
-            token=registration_token,
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(
+                            badge=0,
+                            mutable_content= 1,
+                            category = "oneFmNotificationCategory1"
+                        ),
+                    ),
+                ),
+                token=registration_token,
             )
         response = messaging.send(message)
     return response
     # See the BatchResponse reference documentation
     # for the contents of response.
+
+@frappe.whitelist()
+def test_rest_api(employee_id):
+    serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
+    token = frappe.get_all("Employee", {"name": employee_id}, "fcm_token")
+    deviceToken = token[0].fcm_token
+
+    headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=' + serverToken,
+        }
+
+    body = {
+             "to":deviceToken,
+                "data": {
+                "title": "Check in reminder new",
+                "body" : "Please click on below button to mark your attendance new",
+                "showButtonCheckIn": True,
+                "showButtonCheckOut": True,
+                "showButtonArrivingLate": True
+                },
+                "notification": {
+                    "body": "body",
+                    "title": "title",
+                    "badge": 0,
+                    "click_action": "oneFmNotificationCategory1"
+                },
+                "mutable_content": True
+            }
+    response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
+    print(response.status_code)
+
+    print(response.json())
