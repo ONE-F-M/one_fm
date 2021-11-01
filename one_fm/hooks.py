@@ -315,7 +315,8 @@ scheduler_events = {
   ],
 
 	"monthly": [
-		"one_fm.accommodation.utils.execute_monthly"
+		"one_fm.accommodation.utils.execute_monthly",
+		"one_fm.utils.send_roster_report"
 
 	],
 
