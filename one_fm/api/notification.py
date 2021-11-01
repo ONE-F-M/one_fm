@@ -31,6 +31,7 @@ def get_notification_list(user_id):
 		if len(notification_list)>0:
 			return notification_list 
 		else:
+
 			return ('No Notification.')
 
 	except Exception as e:
