@@ -12,6 +12,7 @@ from erpnext.hr.report.employee_leave_balance_summary.employee_leave_balance_sum
 	import get_department_leave_approver_map
 
 def execute(filters=None):
+	# Get the list of  Paid annula leave Leave type
 	leave_types = frappe.db.sql_list("select name from `tabLeave Type` where one_fm_is_paid_annual_leave=1 order by name asc")
 
 	columns = get_columns(leave_types, filters)
@@ -60,6 +61,8 @@ def get_data(filters, leave_types):
 	department_approver_map = get_department_leave_approver_map(filters.get('department'))
 
 	data = []
+
+	# Iterating all active employees to get the annual leave allocations
 	for employee in active_employees:
 		leave_approvers = department_approver_map.get(employee.department_name, [])
 		if employee.leave_approver:
@@ -67,8 +70,9 @@ def get_data(filters, leave_types):
 
 		if (len(leave_approvers) and user in leave_approvers) or (user in ["Administrator", employee.user_id]) or ("HR Manager" in frappe.get_roles(user)):
 			row = [employee.name, employee.employee_id, employee.employee_name, employee.date_of_joining, employee.department, employee.one_fm_basic_salary]
+			# Calculating the salary per day, assuming that 30 days of month
 			salary_per_day = employee.one_fm_basic_salary/30
-			allocation_per_month = (30/365)*30
+
 			for leave_type in leave_types:
 				# leaves taken
 				leaves_taken = get_leaves_for_period(employee.name, leave_type,
@@ -86,10 +90,10 @@ def get_data(filters, leave_types):
 				if employee.relieving_date:
 					relieving_date = getdate(employee.relieving_date)
 					from_date = getdate(filters.from_date)
-					# if relieving_date > from_date:
 					month_diff_factor = month_diff(relieving_date, from_date)
-					# else:
-					# 	month_diff_factor = month_diff(from_date, relieving_date)
+					# TODO:
+					# if relieving_date > from_date:
+					# 	set month_diff_factor
 					if month_diff_factor > 0 and relieving_date < add_days(from_date, 30):
 						day_diff = date_diff(add_days(from_date, 30), getdate(employee.relieving_date))
 						provision_days_of_alloc = (30/365)*day_diff
@@ -97,7 +101,6 @@ def get_data(filters, leave_types):
 						provision_days_of_alloc = 0
 				provision_days_of_alloc_amount = provision_days_of_alloc * salary_per_day
 
-				# row += [opening, leaves_taken, closing]
 				row += [opening, opening_leave_amount, provision_days_of_alloc, provision_days_of_alloc_amount]
 
 
