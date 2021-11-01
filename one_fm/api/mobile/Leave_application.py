@@ -95,9 +95,8 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason,ha
             doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,half_day,half_day_date,leave_approver)
     return doc
 
-#create new leave application doctype
-frappe.whitelist()
-def new_leave_application(employee,from_date,to_date,leave_type,status,reason,half_day,half_day_date,leave_approver):
+@frappe.whitelist()
+def new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,half_day_date,leave_approver):
      try:
         leave = frappe.new_doc("Leave Application")
         leave.employee=employee
