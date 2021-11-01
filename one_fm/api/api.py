@@ -161,7 +161,7 @@ def push_notification(employee_id, title, body):
 # It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
 # Params: employee_id e.g. HR_EMP_00001
 @frappe.whitelist()
-def push_notification_rest_api(employee_id):
+def push_notification_rest_api(employee_id, title, body):
     """
     serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
     Device Token is store in employee doctype using 'store_fcm_token' on device end.
@@ -179,15 +179,13 @@ def push_notification_rest_api(employee_id):
     body = {
              "to":deviceToken,
                 "data": {
-                "title": "Check in reminder new",
-                "body" : "Please click on below button to mark your attendance new",
                 "showButtonCheckIn": True,
                 "showButtonCheckOut": True,
                 "showButtonArrivingLate": True
                 },
                 "notification": {
-                    "body": "body",
-                    "title": "title",
+                    "body": body,
+                    "title": title,
                     "badge": 0,
                     "click_action": "oneFmNotificationCategory1"
                 },
