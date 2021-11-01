@@ -159,7 +159,8 @@ def push_notification(employee_id, title, body):
 
 # This function is used to send notification through Firebase CLoud Message. 
 # It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
-# Params: employee_id e.g. HR_EMP_00001
+# Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message"
+# bench execute --kwargs "{'employee_id':'HR-EMP-00001','title':'Hello','body':'Testing'}" one_fm.api.api.push_notification_rest_api
 @frappe.whitelist()
 def push_notification_rest_api(employee_id, title, body):
     """
