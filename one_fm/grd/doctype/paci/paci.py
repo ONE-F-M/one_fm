@@ -125,7 +125,7 @@ def notify_operator_to_take_hawiyati_renewal():#cron job at 8pm in working days
     renewal_list=[]
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
-    paci_list_renewal = frappe.db.get_list('PACI',{'category':'Renewal','workflow_state':"Under Process"},['civil_id','name','upload_civil_id_payment_datetime'])
+    paci_list_renewal = frappe.db.get_list('PACI',{'category':'Renewal','workflow_state':"Under Process",'upload_hawiyati':['=','']},['civil_id','name','upload_civil_id_payment_datetime'])
     for paci in paci_list_renewal:
         if date_diff(date.today(),getdate(paci.upload_civil_id_payment_datetime))>=2:
             renewal_list.append(paci)
@@ -135,14 +135,14 @@ def notify_operator_to_take_hawiyati_transfer(): #cron job at 8pm in working day
     transfer_list=[]
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
-    paci_list_transfer = frappe.db.get_list('PACI',{'category':'Transfer','workflow_state':"Under Process"},['civil_id','name','upload_civil_id_payment_datetime'])
+    paci_list_transfer = frappe.db.get_list('PACI',{'category':'Transfer','workflow_state':"Under Process",'upload_hawiyati':['=','']},['civil_id','name','upload_civil_id_payment_datetime'])
     for paci in paci_list_transfer:
         if date_diff(date.today(),getdate(paci.upload_civil_id_payment_datetime))>=2:
             transfer_list.append(paci)
     email_notification_reminder(transfer_operator,paci_list_transfer,"Reminder","Upload Hawiyati for","Transfer", supervisor)
 
 def system_remind_renewal_operator_to_apply():# cron job at 8pm in working days
-    """This is a cron method runs every day at 4pm. It gets Draft renewal PACI list and reminds operator to apply on pam website"""
+    """This is a cron method runs every day at 8pm. It gets Draft renewal PACI list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     paci_list = frappe.db.get_list('PACI',
