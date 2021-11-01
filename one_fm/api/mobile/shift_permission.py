@@ -52,3 +52,15 @@ def get_employee_roles(employee_id):
     user_id = frappe.db.get_value('Employee',{'name':employee_id},['user_id'])
     user_roles = frappe.get_roles(user_id)
     return user_roles
+
+# This function allows you to fetch the details of a given Shift Permission.
+# params: Sift Permission name (eg: SP-000001)
+# returns: Details of shift Permission as a doc.
+@frappe.whitelist()
+def shift_permission_details(shift_permission_id):
+    try:
+        shift_permission = frappe.get_doc("Shift Permission", {'name':shift_permission_id},["*"])
+        return shift_permission
+    except Exception as e:
+        print(frappe.get_traceback())
+        return frappe.utils.response.report_error(e.http_status_code)
