@@ -100,6 +100,7 @@ def rename_post(posts):
         except Exception as e:
             print(frappe.get_traceback())
 
+        
 @frappe.whitelist()
 def store_fcm_token(employee_id ,fcm_token):
     Employee = frappe.get_doc("Employee",{"name":employee_id})
@@ -113,7 +114,6 @@ def store_fcm_token(employee_id ,fcm_token):
             return False
     except Exception as e:
         print(frappe.get_traceback())
-
 
 @frappe.whitelist()
 def push_notification(employee_id, title, body):

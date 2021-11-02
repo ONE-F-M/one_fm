@@ -1,7 +1,8 @@
 import frappe, base64
 from frappe.utils import cint
 from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
-from one_fm.legal.doctype.penalty.penalty import send_email_to_legal, recognize_face
+from one_fm.legal.doctype.penalty.penalty import send_email_to_legal, upload_image
+from one_fm.one_fm.page.face_recognition.face_recognition import recognize_face
 from frappe import _
 import pickle, face_recognition
 import json
@@ -146,7 +147,8 @@ def accept_penalty(file, retries, docname):
 		retries_left = cint(retries) - 1
 		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
 		penalty = frappe.get_doc("Penalty", docname)
-		if recognize_face(file, OUTPUT_IMAGE_PATH, retries_left) or retries_left == 0:
+		image = upload_image(file, OUTPUT_IMAGE_PATH)
+		if recognize_face(file) or retries_left == 0:
 			if retries_left == 0:
 				penalty.verified = 0
 				send_email_to_legal(penalty)
