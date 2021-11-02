@@ -7,6 +7,8 @@ import requests
 import firebase_admin
 from firebase_admin import messaging
 from firebase_admin import credentials
+import requests
+import json
 
 import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
@@ -20,12 +22,11 @@ firebase_admin.initialize_app(cred)
 def _one_fm():
     print(frappe.local.lang)
 
-
 def set_posts_active():
     posts = frappe.get_all("Operations Post", {"site": "Head Office"})
     print(posts)
     for post in posts:
-        for date in	pd.date_range(start="2021-03-01", end="2021-03-31"):
+        for date in pd.date_range(start="2021-03-01", end="2021-03-31"):
             sch = frappe.new_doc("Post Schedule")
             sch.post = post.name
             sch.date = cstr(date.date())
@@ -100,7 +101,6 @@ def rename_post(posts):
         except Exception as e:
             print(frappe.get_traceback())
 
-        
 @frappe.whitelist()
 def store_fcm_token(employee_id ,fcm_token):
     Employee = frappe.get_doc("Employee",{"name":employee_id})
@@ -127,32 +127,74 @@ def push_notification(employee_id, title, body):
     # See documentation on defining a message payload.
     for registration_token in registration_tokens:
         message = messaging.Message(
-            data= {
-            "title": title,
-            "body": body,
-            "showButtonCheckIn": 'True',
-            "showButtonCheckOut": 'True',
-            "showButtonArrivingLate": 'True'
-            },
-            android=messaging.AndroidConfig(
-                notification=messaging.AndroidNotification(
-                    title=title,
-                    body=body,
-                    click_action = "oneFmNotificationCategory2",
-                ),
-            ),
-            apns=messaging.APNSConfig(
-                payload=messaging.APNSPayload(
-                    aps=messaging.Aps(
-                        badge=0,
-                        mutable_content= 1
+                data= {
+                "title": title,
+                "body": body,
+                "showButtonCheckIn": 'True',
+                "showButtonCheckOut": 'True',
+                "showButtonArrivingLate": 'True'
+                },
+                android=messaging.AndroidConfig(
+                    notification=messaging.AndroidNotification(
+                        title=title,
+                        body=body,
+                        click_action = "oneFmNotificationCategory1",
                     ),
                 ),
-            ),
-            token=registration_token,
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(
+                            badge=0,
+                            mutable_content= 1,
+                            category = "oneFmNotificationCategory1"
+                        ),
+                    ),
+                ),
+                token=registration_token,
             )
         response = messaging.send(message)
-        print(response)
     return response
     # See the BatchResponse reference documentation
     # for the contents of response.
+
+# This function is used to send notification through Firebase CLoud Message. 
+# It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
+# Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message"
+# bench execute --kwargs "{'employee_id':'HR-EMP-00001','title':'Hello','body':'Testing'}" one_fm.api.api.push_notification_rest_api
+@frappe.whitelist()
+def push_notification_rest_api(employee_id, title, body):
+    """
+    serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
+    Device Token is store in employee doctype using 'store_fcm_token' on device end.
+    """
+    serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
+    token = frappe.get_all("Employee", {"name": employee_id}, "fcm_token")
+    deviceToken = token[0].fcm_token
+
+    headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=' + serverToken,
+        }
+
+    #Body in json form defining a message payload to send through API.
+    body = {
+             "to":deviceToken,
+                "data": {
+                "showButtonCheckIn": True,
+                "showButtonCheckOut": True,
+                "showButtonArrivingLate": True
+                },
+                "notification": {
+                    "body": body,
+                    "title": title,
+                    "badge": 0,
+                    "click_action": "oneFmNotificationCategory1"
+                },
+                "mutable_content": True
+            }
+
+    #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
+    response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
+    print(response.status_code)
+
+    print(response.json())
