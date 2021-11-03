@@ -1654,7 +1654,7 @@ def update_onboarding_doc_for_bank_account(doc):
 def issue_roster_actions():
     # Queue roster actions functions to backgrounds jobs
     frappe.enqueue(create_roster_employee_actions, is_async=True, queue='long')
-    frappe.enqueue(create_roster_post_actions, is_async=True, queue='long')
+    # frappe.enqueue(create_roster_post_actions, is_async=True, queue='long')
 
 
 def create_roster_employee_actions():
