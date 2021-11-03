@@ -101,12 +101,20 @@ def rename_post(posts):
         except Exception as e:
             print(frappe.get_traceback())
 
+"""
+This function stores FCM Token  and Device OS in employee doctype 
+that is fetched from device/app end when user logs in.
+Params: Employee ID (Single employee ID), FCM Token and Device OS comes from the client side.
+It returns true or false based on the execution.
+eg:bench execute --kwargs "{'employee_id':'HR-EMP-00002','fcm_token':'da1GTbVdQjGE951M9ty109:APA91bHjQxCXI7mwQemv3_TUrY47JKoc15Gqrq52N8iGQZQPyKZDpedpMEdQ5zt9oy8RjUyrBEWqWvSz00nSxdKXaBNswcrhZAwspMHX71P2S36hj_eP3WPhHnKQh3wRa8tBPTzjFjA3', 'device_os':'IOS'}" one_fm.api.api.store_fcm_token 
+"""
 @frappe.whitelist()
-def store_fcm_token(employee_id ,fcm_token):
+def store_fcm_token(employee_id ,fcm_token,device_os):
     Employee = frappe.get_doc("Employee",{"name":employee_id})
     try:
         if Employee:
-            Employee.fcm_token= fcm_token
+            Employee.fcm_token = fcm_token
+            Employee.device_os = device_os
             Employee.save()
             frappe.db.commit()
             return True
@@ -115,32 +123,30 @@ def store_fcm_token(employee_id ,fcm_token):
     except Exception as e:
         print(frappe.get_traceback())
 
+"""
+    This Function send push notification to group of devices. here, we use 'firebase admin' librabry to send the message.
+    Params: employee_id is a list of employee ID's, title and body are message string to send it through notification.
+    It returns the response received.
+"""
 @frappe.whitelist()
 def push_notification(employee_id, title, body):
     registration_tokens = []
+    # Collect the registration token from employee doctype for the given list of employees
     for emp in employee_id:
         token = frappe.get_all("Employee", {"name": emp}, "fcm_token")
         if token[0].fcm_token:
             registration_tokens.append(token[0].fcm_token)
-    # This Device token comes from the client FCM SDKs.
 
-    # See documentation on defining a message payload.
+    # Create message payload. 
     for registration_token in registration_tokens:
         message = messaging.Message(
                 data= {
                 "title": title,
-                "body": body,
+                "body" : body,
                 "showButtonCheckIn": 'True',
-                "showButtonCheckOut": 'True',
-                "showButtonArrivingLate": 'True'
+                "showButtonCheckOut": 'False',
+                "showButtonArrivingLate": 'False'
                 },
-                android=messaging.AndroidConfig(
-                    notification=messaging.AndroidNotification(
-                        title=title,
-                        body=body,
-                        click_action = "oneFmNotificationCategory1",
-                    ),
-                ),
                 apns=messaging.APNSConfig(
                     payload=messaging.APNSPayload(
                         aps=messaging.Aps(
@@ -154,8 +160,6 @@ def push_notification(employee_id, title, body):
             )
         response = messaging.send(message)
     return response
-    # See the BatchResponse reference documentation
-    # for the contents of response.
 
 # This function is used to send notification through Firebase CLoud Message. 
 # It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
@@ -177,20 +181,15 @@ def push_notification_rest_api(employee_id, title, body):
         }
 
     #Body in json form defining a message payload to send through API.
-    body = {
-             "to":deviceToken,
-                "data": {
+    body = {       
+            "to":deviceToken,
+            "data": {
+                "title": title,
+                "body" : body,
                 "showButtonCheckIn": True,
-                "showButtonCheckOut": True,
-                "showButtonArrivingLate": True
-                },
-                "notification": {
-                    "body": body,
-                    "title": title,
-                    "badge": 0,
-                    "click_action": "oneFmNotificationCategory1"
-                },
-                "mutable_content": True
+                "showButtonCheckOut": False,
+                "showButtonArrivingLate": False
+                }
             }
 
     #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
