@@ -1,5 +1,4 @@
 import frappe
-from frappe.utils import getdate
 from frappe import _
 
 # This method is creating shift permission record and setting the the shift details
@@ -12,12 +11,10 @@ def create_shift_permission(employee, permission_type, date, reason, leaving_tim
     Return: shift permission record
 	"""
     try:
-        
-        check_timing_values(permission_type, leaving_time=None, arrival_time=None)# Validate time based on permission type
         shift, type, assigned_shift, shift_supervisor = get_shift_details(employee,date)
         if shift and type and assigned_shift and shift_supervisor:
-            has_dublicate = validate_record(employee, date, assigned_shift, permission_type)
-            if not has_dublicate:
+            has_duplicate= validate_record(employee, date, assigned_shift, permission_type)
+            if not has_duplicate:
                 doc = frappe.new_doc('Shift Permission')
                 doc.employee = employee
                 doc.date = date
@@ -33,31 +30,24 @@ def create_shift_permission(employee, permission_type, date, reason, leaving_tim
                 doc.shift_type = type
                 doc.save()
                 frappe.db.commit()
-                return {'message':"Shift Permission Successfully Created",'data':doc}
-            elif has_dublicate:
+                return response({'message':"Shift Permission Successfully Created",'data':doc},201)
+            elif has_duplicate:
                 doc = frappe.get_doc('Shift Permission',{"employee": employee, "date":date, "assigned_shift": assigned_shift, "permission_type": permission_type})
-                return {'message':"{0} has already applied for permission to {1} on {2}.".format(doc.emp_name, permission_type.lower(), date),'data':{}}
+                return response({'message':"{0} has already applied for permission to {1} on {2}.".format(doc.emp_name, permission_type.lower(), date),'data':{}},409)
 
         elif not shift or not type or not assigned_shift or not shift_supervisor:
-            return {'message':"Shift Details are missing, Please Make sure You are have a Scheduled record on {0}".format(date),'data':{}}
+            return response({'message':"Shift Details are missing, Please Make sure You are have a Scheduled record on {0}".format(date),'data':{}},400)
            
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
-        return {'message':"Shift Permission Not Created Successfully",'data':{}}
+        return response({'message':"Shift Permission Not Created Successfully",'data':{}},400)
 
-# This method validates any dublicate permission for the employee on same day
+# This method validates any duplicate permission for the employee on same day
 def validate_record(employee, date, assigned_shift, permission_type):
     if frappe.db.exists("Shift Permission", {"employee": employee, "date":date, "assigned_shift": assigned_shift, "permission_type": permission_type}):
         return True
     else:
         return False 
-
-# Check The time provide upon Permission time
-def check_timing_values(permission_type, leaving_time=None, arrival_time=None):
-        if permission_type == "Arrive Late" and not arrival_time:
-            return {'message':"Arrive Time is Required to Complete Your Permission",'data':{}}
-        if permission_type == "Leave Early" and not leaving_time:
-            return {'message':"Leaving Time is Required to Complete Your Permission",'data':{}}
 
 # Fetching shift details of the employee and adding them in shift permission record
 def get_shift_details(employee, date):
@@ -66,21 +56,28 @@ def get_shift_details(employee, date):
         shift_supervisor = frappe.db.get_value('Operations Shift',{'name':shift},['supervisor'])
         assigned_shift = frappe.db.get_value('Shift Assignment',{'employee':employee,'start_date':date},['name']) # start date and end date of HO employee are the same in the shift assignment
         if not assigned_shift:
-            return {'message':"You Don't Have Shift Assignment on {date}".format(date=date),'data':{}}
+            return response({'message':"You Don't Have Shift Assignment on {date}".format(date=date),'data':{}},400)
         elif assigned_shift:
             return shift, type, assigned_shift, shift_supervisor
     elif not shift and not type:
-        return {'message':"You Don't Have Shift on {date}".format(date=date),'data':{}}
-    
-    
+        return response({'message':"You Don't Have Shift on {date}".format(date=date),'data':{}},400)
+        
 # This method is returning employee roles upon employee_id
 @frappe.whitelist()
 def get_employee_roles(employee_id):
     """
 	Params:
-	employee: HO employee ERP id
+	employee: employee ERP id
     Returns: roles of employee
 	"""
     user_id = frappe.db.get_value('Employee',{'name':employee_id},['user_id'])
     user_roles = frappe.get_roles(user_id)
-    return {'messages':"Roles Are Successfully Listed ",'data':user_roles}
+    return response({'messages':"Roles Are Successfully Listed ",'data':user_roles},200)
+
+# This method returing the message and status code of the API
+def response(message, status_code):
+    """
+    Params: message, status code
+    """
+    frappe.local.response["message"] = message
+    frappe.local.response["http_status_code"] = status_code
