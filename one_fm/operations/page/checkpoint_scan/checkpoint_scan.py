@@ -96,14 +96,10 @@ def scan_checkpoint_mobile(user, qr_code, latitude, longitude):
 	"""
 	try:
 		# get employee details from user email
-		employee, employee_name = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_name"]) 
+		employee = frappe.get_value("Employee", {"user_id": user}, ["name"]) 
 
 		if not employee:
-			return {
-				'message': 'Bad request',
-				'error': 'No employee found for user {user}'.format(user=user),
-				'status': 400
-			}, 400
+			return response('No employee found for user email: {user}'.format(user=user), 400)
 
 		cur_datetime = get_datetime()
 	
@@ -123,20 +119,12 @@ def scan_checkpoint_mobile(user, qr_code, latitude, longitude):
 			site_location = frappe.get_value("Operations Site", checkpoint_assignment.site, "site_location")
 
 			if not site_location:
-				return {
-					'message': 'Bad request',
-					'error': 'No site found in the checkpoint assignment.',
-					'status': 400
-				}, 400
+				return response('No site found in the checkpoint assignment.', 400)
 
 			site_lat, site_lng, radius = frappe.get_value("Location", site_location, ["latitude","longitude", "geofence_radius"] )
 
 			if not site_lat or not site_lng or not radius:
-				return {
-					'message': 'Bad request',
-					'error': 'Coordinates not found for site {site}.'.format(site=site_location),
-					'status': 400
-				}, 400
+				return response('Coordinates not found for site {site}.'.format(site=site_location), 400)
 			
 			# compute distance between site and user
 			distance =  flt(haversine(site_lat, site_lng, latitude, longitude), precision=2)
@@ -179,23 +167,18 @@ def scan_checkpoint_mobile(user, qr_code, latitude, longitude):
 		
 		else:
 			# If no checkpoint is found for the qr code provided
-			return {
-				'message': 'Bad request',
-				'error': 'Checkpoint not found in the system. Please check again.',
-				'status': 400
-			}, 400
+			return response('Checkpoint not found in the system. Please check again.', 400)
 		
-		newscan.save()
+		newscan.save(ignore_permissions=True)
 		frappe.db.commit()
 
-		return {
-			'message': 'Success',
-			'status': 201
-		}, 201
+		return response("Checkpoint Assignment Scan successfully created!", 201)
 	
 	except Exception as e:
-		return {
-			'message': 'Internal server error',
-			'message': e,
-			'status': frappe.utils.response.report_error(e.http_status_code)
-		}, frappe.utils.response.report_error(e.http_status_code)
+		return response(e, 500)
+
+
+def response(message, status_code):
+	frappe.local.response["message"] = message
+	frappe.local.response["http_status_code"] = status_code
+	return

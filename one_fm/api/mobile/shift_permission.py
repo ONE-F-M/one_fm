@@ -81,3 +81,29 @@ def response(message, status_code):
     """
     frappe.local.response["message"] = message
     frappe.local.response["http_status_code"] = status_code
+    return user_roles
+
+
+# This function allows you to fetch the list of Shift Permission of a given employee.
+# params: employee_ID (eg: HR-EMP-00001)
+# returns: List of shift Permission with name, date and workflow_state of the doc.
+@frappe.whitelist()
+def list_shift_permission(employee_id):
+    try:
+        shift_permission = frappe.get_list("Shift Permission", filters={'employee':employee_id}, fields=["name","date","workflow_state"])
+        return shift_permission
+    except Exception as e:
+        print(frappe.get_traceback())
+        return frappe.utils.response.report_error(e.http_status_code)
+
+# This function allows you to fetch the details of a given Shift Permission.
+# params: Sift Permission name (eg: SP-000001)
+# returns: Details of shift Permission as a doc.
+@frappe.whitelist()
+def shift_permission_details(shift_permission_id):
+    try:
+        shift_permission = frappe.get_doc("Shift Permission", {'name':shift_permission_id},["*"])
+        return shift_permission
+    except Exception as e:
+        print(frappe.get_traceback())
+        return frappe.utils.response.report_error(e.http_status_code)

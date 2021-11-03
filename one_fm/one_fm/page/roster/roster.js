@@ -1224,7 +1224,7 @@ function render_roster(res, page, isOt) {
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else if (attendance && !employee_availability) {
-					if (attendance == 'P') { j++; }
+					if (attendance == 'Present') { j++; }
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center so"
