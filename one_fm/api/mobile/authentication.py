@@ -25,10 +25,6 @@ def login(client_id, grant_type, employee_id, password):
 	Returns: 
 		Access token, refresh token, Enrollment status for checkin, Employee Id, Employee name, Employee image, Employee/Supervisor flag. 
 	"""
-	# client_id="0412d50b81"
-	# grant_type="password"
-	# employee_id="123445"
-	# password="99585496"
 	try:
 		# username = frappe.get_value("Employee", employee_id, "user_id")
 		username =  frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
