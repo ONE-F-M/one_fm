@@ -419,16 +419,16 @@ def create_wp_kuwaiti(employee,status,name):
         work_permit.save()
 
 ############################################################################# Reminder Notification 
-def system_remind_renewal_operator_to_apply():# cron job at 4pm
-    """This is a cron method runs every day at 8pm. It gets Draft renewal work permit list and reminds operator to apply on pam website"""
+def system_remind_renewal_operator_to_apply():
+    """This is a cron method runs every day at 8am. It gets Draft renewal work permit list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     work_permit_list = frappe.db.get_list('Work Permit',
     {'date_of_application':['<=',date.today()],'workflow_state':['in',('Draft','Apply Online by PRO')],'work_permit_type':['in',('Renewal Non Kuwaiti','Renewal Kuwaiti')]},['civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
     notification_reminder(work_permit_list,supervisor,renewal_operator,"Renewal")
 
-def system_remind_transfer_operator_to_apply():# cron job at 4pm
-    """This is a cron method runs every day at 8pm. It gets Draft transfer work permit list and reminds operator to apply on pam website"""
+def system_remind_transfer_operator_to_apply():
+    """This is a cron method runs every day at 8am. It gets Draft transfer work permit list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     work_permit_list = frappe.db.get_list('Work Permit',
@@ -477,7 +477,7 @@ def email_notification_reminder(grd_user,work_permit_list,reminder_number, actio
         make(
             subject=_('{0}: {1} {2} Work Permit'.format(reminder_number,action,type)),
             content=message,
-            recipients=[grd_user],
+            recipients=[grd_user,'a.alshawa@armor-services.com','j.poil@armor-services.com'],# Adding Temporary users to Track Reminder Bug
             cc=cc,
             send_email=True,
         )
