@@ -40,7 +40,7 @@ def create_shift_permission(employee, permission_type, date, reason, leaving_tim
            
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
-        return response({'message':"Shift Permission Not Created Successfully",'data':{}},400)
+        return response({'message':"Shift Permission Not Created Successfully",'data':{}},500)
 
 # This method validates any duplicate permission for the employee on same day
 def validate_record(employee, date, assigned_shift, permission_type):
@@ -81,7 +81,7 @@ def response(message, status_code):
     """
     frappe.local.response["message"] = message
     frappe.local.response["http_status_code"] = status_code
-    return user_roles
+    return
 
 
 # This function allows you to fetch the list of Shift Permission of a given employee.
