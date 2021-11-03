@@ -54,8 +54,9 @@ frappe.ui.form.on('Penalty', {
 								console.log(frm.doc.retries);
 								verify_accept(imgUrl.split(",")[1], frm.doc.retries, frm.doc.name, d, frm);
 							},
-							hide: function(){
+							close: function(){
 								stop_cam(preview);
+								d.hide();
 								console.log(stop_cam, preview);
 									// super.set_secondary_action();
 								// d.hide()
@@ -149,7 +150,7 @@ function verify_accept(file, retries, docname, d, frm){
 			load_camera(d);
 		}
 		else{
-			d.hide();
+			d.close();
 			frm.reload_doc();
 		}
 	})

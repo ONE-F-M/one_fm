@@ -82,43 +82,20 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason,ha
     leave_type=from leave policy
     half_day=1 or 0
 	"""
-    List_Shifts = get_employee_schedule(employee, from_date,to_date)
-    Shifts = []
-    #Shift_dict = {}
-    
-    for i in range(len(List_Shifts)):
-        if List_Shifts[i].shift not in Shifts:
-            Shifts.append(List_Shifts[i].shift)
-        #Shift_dict.setdefault(List_Shifts[i].shift, []).append(List_Shifts[i].date)
-    
-    #if there are multiple shift, create seperate leave application
-    if len(Shifts)>1:
-        doc = None
-        for i in range(len(List_Shifts)):
-            leave_approver, Role = get_action_user(employee,List_Shifts[i].shift)
-            if leave_approver is not None:
-                if str(List_Shifts[i].date)==half_day_date:
-                    doc = new_leave_application(employee,List_Shifts[i].date,List_Shifts[i].date,leave_type,reason,'1',half_day_date,leave_approver)
-                else:
-                    
-                    doc= new_leave_application(employee,List_Shifts[i].date,List_Shifts[i].date,leave_type,reason,'0',None,leave_approver)
+    #get Leave Approver of the employee.
+    leave_approver = get_leave_approver(employee)
+    if leave_approver:
+        #if sick leave, automatically accept the leave application
+        if leave_type == "Sick Leave":
+            doc = new_leave_application(employee,from_date,to_date,leave_type,"Approved",reason,half_day,half_day_date,leave_approver)
+            doc.submit()
+            frappe.db.commit()
+        #else keep it open and that sends the approval notification to the 'leave approver'.
+        else:
+            doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,half_day,half_day_date,leave_approver)
+    return doc
 
-            if Role:
-                notify_user = get_notification_user(employee,List_Shifts[i].shift, Role)
-                if notify_user is not None:
-                    for user in notify_user:
-                        notifier_leave(doc, user)
-    else:
-        leave_approver, Role = get_action_user(employee,List_Shifts[i].shift)
-        if leave_approver is not None:
-            doc = new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,half_day_date,leave_approver)
-        if Role:
-            notify_user = get_notification_user(employee,List_Shifts[i].shift, Role)
-            if notify_user is not None:
-                for user in notify_user:
-                    notifier_leave(doc, user)
-
-frappe.whitelist()
+@frappe.whitelist()
 def new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,half_day_date,leave_approver):
      try:
         leave = frappe.new_doc("Leave Application")
@@ -130,11 +107,10 @@ def new_leave_application(employee,from_date,to_date,leave_type,reason,half_day,
         leave.half_day=half_day
         leave.half_day_date=half_day_date
         leave.follow_via_email=1
-        leave.status="Open"
+        leave.status=status
         leave.leave_approver = leave_approver
         leave.save()
         frappe.db.commit()
-        print(leave)
         return leave
      except Exception as e:
         print(frappe.get_traceback())

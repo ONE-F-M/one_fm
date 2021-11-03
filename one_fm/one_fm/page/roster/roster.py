@@ -155,17 +155,14 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 
 	#------------------- Fetch Employee Schedule --------------------#
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
-		filters.update({'date': ['between', (cstr(getdate()), end_date)], 'employee': key[0]})
+		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})	
 		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"], order_by="date asc, employee_name asc", ignore_permissions=True)
 		if isOt:
 			filters.pop("roster_type", None)
-		attendances = frappe.db.sql("""select status, attendance_date from `tabAttendance` where  attendance_date >= %(start_date)s and attendance_date < %(today)s and employee = %(employee)s""", {
-			'start_date': start_date,
-			'today': cstr(getdate()),
-			'employee': key[0]
-		}, as_dict=1)
+
+		attendances = frappe.db.get_list("Attendance", {'attendance_date': ['between', (start_date, add_to_date(cstr(getdate()), days=-1))], 'employee': key[0]}, ["status", "attendance_date"], ignore_permissions=True)	
 		schedule_list = []
 		schedule = {}
 		default_shift = frappe.db.get_value("Employee", {'employee': key[0]}, ["shift"])

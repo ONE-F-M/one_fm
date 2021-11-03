@@ -10,6 +10,7 @@ import base64
 from frappe import _
 import pickle, face_recognition
 from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datetime
+from one_fm.one_fm.page.face_recognition.face_recognition import recognize_face
 
 class Penalty(Document):
 	def after_insert(self):
@@ -32,7 +33,9 @@ class Penalty(Document):
 			self.update_penalty_deductions()
 
 		if (doc_before_update and doc_before_update.workflow_state != "Penalty Rejected") and self.workflow_state == "Penalty Rejected":
-			self.create_legal_investigation()
+			legal_inv = self.create_legal_investigation()
+			self.db_set("legal_investigation_code", legal_inv.name)		
+
 	def validate(self):
 		self.validate_self_issuance()
 	
@@ -49,11 +52,14 @@ class Penalty(Document):
 		frappe.db.commit()
 
 	def create_legal_investigation(self):
-		if frappe.db.exists("Legal Investigation",{"reference_doctype": self.doctype, "reference_name": self.name}):
+		if frappe.db.exists("Legal Investigation",{"reference_doctype": self.doctype, "reference_docname": self.name}):
 			frappe.throw(_("Legal Investigaton already created."))
+		legal_manager = frappe.get_all("Employee", {"designation":"Legal Manager"},["name"])
 		legal_inv = frappe.new_doc("Legal Investigation")
-		legal_inv.penalty_code = self.name
-		legal_inv.investigation_lead = None
+		legal_inv.reference_doctype = self.doctype
+		legal_inv.reference_docname = self.name
+		legal_inv.investigation_lead = legal_manager[0].name
+		legal_inv.investigation_subject = "Penalty"
 		legal_inv.append("legal_investigation_employees", {
 			"employee_id": self.issuer_employee,
 			"employee_name": self.issuer_name,
@@ -68,23 +74,22 @@ class Penalty(Document):
 		})	
 		legal_inv.start_date = add_to_date(getdate(), days=2)
 		legal_inv.save(ignore_permissions=True)
-
-		self.db_set("legal_investigation_code", legal_inv.name)		
 		frappe.db.commit()
+		return legal_inv
 
 @frappe.whitelist()
 def accept_penalty(file, retries, docname):
-	print(retries)
 	retries_left = cint(retries) - 1
 	OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
 	penalty = frappe.get_doc("Penalty", docname)
-	if recognize_face(file, OUTPUT_IMAGE_PATH, retries_left) or retries_left == 0:
+	image = upload_image(file, OUTPUT_IMAGE_PATH)
+	if recognize_face(image) or retries_left == 0:
 		if retries_left == 0:
 			penalty.verified = 0
 			send_email_to_legal(penalty)
 		else:
 			penalty.verified = 1		
-		penalty.workflow_state = "Penalty Accepted"
+			penalty.workflow_state = "Penalty Accepted"
 		penalty.save(ignore_permissions=True)
 		
 		file_doc = frappe.get_doc({
@@ -128,11 +133,14 @@ def send_email_to_legal(penalty, message=None):
 	frappe.sendmail([legal], subject=subject, message=message, reference_doctype=penalty.doctype, reference_name=penalty.name)
 
 
-
+"""
 def recognize_face(base64image, OUTPUT_IMAGE_PATH, retries_left):
 	try:
 		ENCODINGS_PATH = frappe.utils.cstr(
-			frappe.local.site)+"/private/files/facial_recognition/"+frappe.session.user+".pickle"
+			frappe.local.site)+"/private/files/face_feauture_extract/"+frappe.session.user+".pickle"
+
+		extract_feature()
+
 		# values should be "hog" or "cnn" . cnn is CPU and memory intensive.
 		DETECTION_METHOD = "hog"
 
@@ -157,7 +165,7 @@ def recognize_face(base64image, OUTPUT_IMAGE_PATH, retries_left):
 
 	except Exception as e:
 		print(frappe.get_traceback())
-
+"""
 
 def upload_image(base64image, OUTPUT_IMAGE_PATH):
 	try:
@@ -214,10 +222,6 @@ def has_permission():
 		# dont allow non Administrator user to view / edit Administrator user
 		return True
 
-@frappe.whitelist()
-def create_legal_inv(doctype, docname):
-	doc = frappe.get_doc(doctype, docname)
-	doc.create_legal_investigation()
 
 def notify_employee_autoreject(doc):
 	link = get_link_to_form(doc.doctype, doc.name)

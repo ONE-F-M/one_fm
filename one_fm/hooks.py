@@ -315,7 +315,8 @@ scheduler_events = {
   ],
 
 	"monthly": [
-		"one_fm.accommodation.utils.execute_monthly"
+		"one_fm.accommodation.utils.execute_monthly",
+		"one_fm.utils.send_roster_report"
 
 	],
 
@@ -414,7 +415,7 @@ scheduler_events = {
 		"00 00 24 * *": [
 			'one_fm.api.tasks.generate_penalties'
 		],
-		"00 01 24 * *": [
+		"00 12 01 * *": [
 			'one_fm.api.tasks.generate_site_allowance'
 		],
 		"00 02 24 * *": [

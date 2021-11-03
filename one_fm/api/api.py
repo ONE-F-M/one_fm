@@ -100,6 +100,7 @@ def rename_post(posts):
         except Exception as e:
             print(frappe.get_traceback())
 
+        
 @frappe.whitelist()
 def store_fcm_token(employee_id ,fcm_token):
     Employee = frappe.get_doc("Employee",{"name":employee_id})
@@ -126,10 +127,32 @@ def push_notification(employee_id, title, body):
     # See documentation on defining a message payload.
     for registration_token in registration_tokens:
         message = messaging.Message(
-        notification=messaging.Notification(title, body),
-        token=registration_token,
-        )
+            data= {
+            "title": title,
+            "body": body,
+            "showButtonCheckIn": 'True',
+            "showButtonCheckOut": 'True',
+            "showButtonArrivingLate": 'True'
+            },
+            android=messaging.AndroidConfig(
+                notification=messaging.AndroidNotification(
+                    title=title,
+                    body=body,
+                    click_action = "oneFmNotificationCategory2",
+                ),
+            ),
+            apns=messaging.APNSConfig(
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(
+                        badge=0,
+                        mutable_content= 1
+                    ),
+                ),
+            ),
+            token=registration_token,
+            )
         response = messaging.send(message)
-        return response
+        print(response)
+    return response
     # See the BatchResponse reference documentation
     # for the contents of response.
