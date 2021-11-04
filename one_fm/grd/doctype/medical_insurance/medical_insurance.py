@@ -85,17 +85,17 @@ def get_employee_data_from_civil_id(civil_id):
         return frappe.get_doc('Employee', employee_id)
     
 ############################################################################# Reminder Notification 
-def system_remind_renewal_operator_to_apply():# cron job at 8pm
-    """This is a cron method runs every day at 4pm. It gets Draft renewal Medical Insurance list and reminds operator to apply on pam website"""
+def system_remind_renewal_operator_to_apply_mi():
+    """This is a cron method runs every day at 8am. It gets Draft renewal Medical Insurance list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
-    {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    {'date_of_application':['<=',date.today()],'workflow_state':'Apply Online by PRO','insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     notification_reminder(medical_insurance_list,supervisor,renewal_operator,"Renewal or New")
     
 
-def system_remind_transfer_operator_to_apply():# cron job at 8pm
-    """This is a cron method runs every day at 4pm. It gets Draft transfer Medical Insurance list and reminds operator to apply on pam website"""
+def system_remind_transfer_operator_to_apply_mi():
+    """This is a cron method runs every day at 8am. It gets Draft transfer Medical Insurance list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
