@@ -118,7 +118,7 @@ def shift_permission_approved(supervisor_id, shift_permission_id):
                 notify_for_shift_permission_status(subject,message,user_id,shift_permission_record,1)
                 return response({'message':"Shift Permission Approved Successfully",'data':{shift_permission_record.workflow_state}},200)
             elif shift_permission_record.workflow_state == "Approved":
-                return response({'message':"Shift Permission is Already Approved",'data':{}},500)
+                return response({'message':"Shift Permission is Already Approved",'data':{}},400)
         elif shift_supervisor != supervisor_id:
             return response({'message':"Only Supervisor Has The Right to Approve",'data':{}},400)
     except Exception as e:
@@ -144,7 +144,7 @@ def shift_permission_rejected(supervisor_id, shift_permission_id):
                 notify_for_shift_permission_status(subject,message,user_id,shift_permission_record,1)
                 return response({'message':"Shift Permission Rejected Successfully",'data':{shift_permission_record.workflow_state}},200)
             elif shift_permission_record.workflow_state == "Rejected":
-                return response({'message':"Shift Permission is Already Rejected",'data':{}},500)
+                return response({'message':"Shift Permission is Already Rejected",'data':{}},400)
         elif shift_supervisor != supervisor_id:
             return response({'message':"Only Supervisor Has The Right to Reject",'data':{}},400)
     except Exception as e:
@@ -171,7 +171,7 @@ def shift_permission_cancelled(supervisor_id, shift_permission_id):
                 notify_for_shift_permission_status(subject,message,user_id,shift_permission_record,1)
                 return response({'message':"Shift Permission Cancelled Successfully",'data':{shift_permission_record.workflow_state}},200)
             elif shift_permission_record.workflow_state == "Cancelled":
-                return response({'message':"Shift Permission is Already Cancelled",'data':{}},500)
+                return response({'message':"Shift Permission is Already Cancelled",'data':{}},400)
         elif shift_supervisor != supervisor_id:
             return response({'message':"Only Supervisor Has The Right to Cancel",'data':{}},400)
     except Exception as e:

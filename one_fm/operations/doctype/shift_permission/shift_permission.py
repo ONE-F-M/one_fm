@@ -13,8 +13,6 @@ class ShiftPermission(Document):
 		self.check_permission_type()
 		self.check_shift_details_value()
 		self.validate_date()
-
-	def on_update(self):
 		self.validate_record()
 
 	def check_permission_type(self):
