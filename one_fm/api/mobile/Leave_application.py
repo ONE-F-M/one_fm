@@ -97,37 +97,37 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason):
         return response('You have already applied leave for this date.',[], 400)
     else:
         if leave_approver:
-            #if sick leave, automatically accept the leave application
-            if leave_type == "Sick Leave":
-                doc = new_leave_application(employee,from_date,to_date,leave_type,"Approved",reason,leave_approver)
-                doc.submit()
-                frappe.db.commit()
-            #else keep it open and that sends the approval notification to the 'leave approver'.
-            else:
-                doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,leave_approver)
-            return response('Success',doc, 201)
+            try:
+                #if sick leave, automatically accept the leave application
+                if leave_type == "Sick Leave":
+                    doc = new_leave_application(employee,from_date,to_date,leave_type,"Approved",reason,leave_approver)
+                    doc.submit()
+                    frappe.db.commit()
+                #else keep it open and that sends the approval notification to the 'leave approver'.
+                else:
+                    doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,leave_approver)
+                return response('Success',doc, 201)
+            except Exception as e:
+                frappe.log_error(frappe.get_traceback())
+                return response(e,[], 500)
         else:
             return response("You don't have a leave approver.",[], 400)
 
 #create new leave application doctype
 frappe.whitelist()
 def new_leave_application(employee,from_date,to_date,leave_type,status,reason,leave_approver):
-     try:
-        leave = frappe.new_doc("Leave Application")
-        leave.employee=employee
-        leave.leave_type=leave_type
-        leave.from_date=from_date
-        leave.to_date=to_date
-        leave.description=reason or "None"
-        leave.follow_via_email=1
-        leave.status=status
-        leave.leave_approver = leave_approver
-        leave.save()
-        frappe.db.commit()
-        return leave
-     except Exception as e:
-        frappe.log_error(frappe.get_traceback())
-        return response(e,[], 500)
+    leave = frappe.new_doc("Leave Application")
+    leave.employee=employee
+    leave.leave_type=leave_type
+    leave.from_date=from_date
+    leave.to_date=to_date
+    leave.description=reason or "None"
+    leave.follow_via_email=1
+    leave.status=status
+    leave.leave_approver = leave_approver
+    leave.save()
+    frappe.db.commit()
+    return leave     
 
 # Function to create response to the API. It generates json with message, data object and the status code.
 def response(message, data, status_code):
