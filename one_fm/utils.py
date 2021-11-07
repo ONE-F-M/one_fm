@@ -1720,7 +1720,7 @@ def create_roster_employee_actions():
 
 def create_roster_post_actions():
     """
-    This function creates a Roster Post Actions document that issues actions to supervisors to fill post types that are not filled for a given date.
+    This function creates a Roster Post Actions document that issues actions to supervisors to fill post types that are not filled for a given date range.
     """
 
     # start date to be from tomorrow
@@ -1728,30 +1728,48 @@ def create_roster_post_actions():
     # end date to be 14 days after start date
     end_date = add_to_date(start_date, days=14)
 
+    post_types_not_filled_set = set()
+
     # Fetch post schedules in the date range that are active
     post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "post_type", "post"], order_by="date asc")
     # Fetch employee schedules for employees who are working
     employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "post_type"], order_by="date asc")
     
     for ps in post_schedules:
-        # if there is not any employee schedule that matches the post schedule for the specified date,
-        # create a an action asking the supervisor of the shift of the post in which it is scheduled, to fill the post type.
+        # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
         if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.post_type == ps.post_type for es in employee_schedules):
-            post_type = ps.post_type
-            shift = ps.shift
-            # Fetch supervisor of the shift
-            supervisor = frappe.db.get_value("Operations Shift", shift, ["supervisor"])
-            action_type = "Fill Post Type"
-            date = cstr(ps.date).split(" ")[0]
-            
-            roster_post_action_doc = frappe.new_doc("Roster Post Actions")
-            roster_post_action_doc.status = "Pending"
-            roster_post_action_doc.action_type = action_type
-            roster_post_action_doc.post_type = post_type
-            roster_post_action_doc.date = date
-            roster_post_action_doc.supervisor = supervisor
-            roster_post_action_doc.save()
-            frappe.db.commit()
+            post_types_not_filled_set.add(ps.post_type)
+    
+    # Convert set to tuple for passing it in the sql query as a parameter
+    post_types_not_filled = tuple(post_types_not_filled_set)
+
+    # Fetch supervisor and post types in his/her shift 
+    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.post_type) 
+            from `tabPost Schedule` ps
+            join `tabOperations Shift` sh on sh.name = ps.shift 
+            join `tabEmployee` sv on sh.supervisor=sv.employee
+            where ps.post_type in {post_types}
+            group by sv.employee""".format(post_types=post_types_not_filled))
+    
+    # For each supervisor, create post actions to fill post type specifying the post types not filled
+    for res in result:
+        supervisor = res[0]
+        post_types = res[1].split(",")
+        
+        roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
+        roster_post_actions_doc.start_date = start_date
+        roster_post_actions_doc.end_date = end_date
+        roster_post_actions_doc.status = "Pending"
+        roster_post_actions_doc.action_type = "Fill Post Type"
+        roster_post_actions_doc.supervisor = supervisor
+
+        for post_type in post_types:
+            roster_post_actions_doc.append('post_types_not_filled', {
+                'post_type': post_type
+            })
+
+        roster_post_actions_doc.save()
+        frappe.db.commit()
 
 def send_roster_report():
     # Enqueue roster report generation to background
