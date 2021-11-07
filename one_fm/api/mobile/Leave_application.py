@@ -6,7 +6,6 @@ import datetime
 from one_fm.one_fm.doctype.leave_application.leave_application import get_leave_approver,get_employee_schedule, notifier_leave
 import collections
 from one_fm.api.tasks import get_action_user,get_notification_user
-from one_fm.operations.page.checkpoint_scan.checkpoint_scan import response
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -80,18 +79,22 @@ def leave_notify(docname,status):
 def create_new_leave_application(employee,from_date,to_date,leave_type,reason):
     """
     Params:
-    employee: erp id
-    from_date,to_date,half_day_date= date in YYYY-MM-DD format
-    leave_type=from leave policy
-    half_day=1 or 0
+        employee: erp id
+        from_date,to_date,half_day_date= date in YYYY-MM-DD format
+        leave_type=from leave policy
+        reason
+    Return:
+        Success, 201 : Success on Creation of Leave Application
+		Bad request, 400: When Leave already Exists or when employee doesn't have a leave approver.
+		server error, 500: Failed to create new leave application
     """
     #get Leave Approver of the employee.
     leave_approver = get_leave_approver(employee)
     #check if leave exist and overlaps with the given date (StartDate1 <= EndDate2) and (StartDate2 <= EndDate1)
     leave_exist = frappe.get_list("Leave Application", filters={"employee": employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]})
-    print(leave_exist)
+    # Return response status 400, if the leave exists.
     if leave_exist:
-        return response('You have already applied leave for this date.', 400)
+        return response('You have already applied leave for this date.',[], 400)
     else:
         if leave_approver:
             #if sick leave, automatically accept the leave application
@@ -102,7 +105,9 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason):
             #else keep it open and that sends the approval notification to the 'leave approver'.
             else:
                 doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,leave_approver)
-        return doc
+            return response('Success',doc, 201)
+        else:
+            return response("You don't have a leave approver.",[], 400)
 
 #create new leave application doctype
 frappe.whitelist()
@@ -121,6 +126,12 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,le
         frappe.db.commit()
         return leave
      except Exception as e:
-        print(frappe.get_traceback())
         frappe.log_error(frappe.get_traceback())
-        return frappe.utils.response.report_error(e)
+        return response(e,[], 500)
+
+# Function to create response to the API. It generates json with message, data object and the status code.
+def response(message, data, status_code):
+     frappe.local.response["message"] = message
+     frappe.local.response["data_obj"] = data
+     frappe.local.response["http_status_code"] = status_code
+     return
