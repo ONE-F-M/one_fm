@@ -13,12 +13,14 @@ class ShiftPermission(Document):
 		self.check_permission_type()
 		self.check_shift_details_value()
 		self.validate_date()
+
+	def on_update(self):
 		self.validate_record()
-		
+
 	def check_permission_type(self):
 		if self.permission_type == "Arrive Late":
 			field_list = [{'Arrival Time':'arrival_time'}]
-			self.set_mendatory_fields(field_list)
+			self.set_mandatory_fields(field_list)
 		if self.permission_type == "Leave Early":
 			field_list = [{'Leaving Time':'leaving_time'}]
 			self.set_mandatory_fields(field_list)
@@ -36,7 +38,7 @@ class ShiftPermission(Document):
 	# This method validates any dublicate permission for the employee on same day
 	def validate_record(self):
 		date = getdate(self.date).strftime('%d-%m-%Y')
-		if self.docstatus==0 and frappe.db.exists("Shift Permission", {"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift, "permission_type": self.permission_type}):
+		if self.docstatus==0 and frappe.db.exists("Shift Permission", {"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift, "permission_type": self.permission_type, "workflow_state":"Pending"}):
 			frappe.throw(_("{employee} has already applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date)))
 
 	# This method will display the mandatory fields for the user
