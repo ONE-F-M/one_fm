@@ -106,7 +106,7 @@ This function stores FCM Token  and Device OS in employee doctype
 that is fetched from device/app end when user logs in.
 Params: Employee ID (Single employee ID), FCM Token and Device OS comes from the client side.
 It returns true or false based on the execution.
-eg:bench execute --kwargs "{'employee_id':'HR-EMP-00002','fcm_token':'da1GTbVdQjGE951M9ty109:APA91bHjQxCXI7mwQemv3_TUrY47JKoc15Gqrq52N8iGQZQPyKZDpedpMEdQ5zt9oy8RjUyrBEWqWvSz00nSxdKXaBNswcrhZAwspMHX71P2S36hj_eP3WPhHnKQh3wRa8tBPTzjFjA3', 'device_os':'IOS'}" one_fm.api.api.store_fcm_token 
+eg:bench execute --kwargs "{'employee_id':'HR-EMP-00002','fcm_token':'cKg2nMfqwUpDinaWmUmVXp:APA91bHYAT2UxhesFtFHgweK8umoXm2LR9xyvi1L1OoefDRb3f1etOQbR3MZRFwL7Vwgc6hHrXO7urQWg3iy5SwTh_iE0lQP0Ny3O2nkcK_5Zo_UCQPMbZORF2Y5beejJbiHcQXA_x1C', 'device_os':'IOS'}" one_fm.api.api.store_fcm_token 
 """
 @frappe.whitelist()
 def store_fcm_token(employee_id ,fcm_token,device_os):
@@ -159,6 +159,7 @@ def push_notification(employee_id, title, body):
                 token=registration_token,
             )
         response = messaging.send(message)
+        print(response)
     return response
 
 # This function is used to send notification through Firebase CLoud Message. 
