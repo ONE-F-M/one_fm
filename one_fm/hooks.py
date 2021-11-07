@@ -315,7 +315,8 @@ scheduler_events = {
   ],
 
 	"monthly": [
-		"one_fm.accommodation.utils.execute_monthly"
+		"one_fm.accommodation.utils.execute_monthly",
+		"one_fm.utils.send_roster_report"
 
 	],
 
@@ -323,8 +324,8 @@ scheduler_events = {
 		"0 8 * * 0,1,2,3,4":[#run durring working days only
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
-			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_renewal_operator_to_apply',#mi
-			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_transfer_operator_to_apply',
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_renewal_operator_to_apply_mi',#mi
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_transfer_operator_to_apply_mi',
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_remind_renewal_operator_to_apply',#moi
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.paci.paci.system_remind_renewal_operator_to_apply',#paci
@@ -414,7 +415,7 @@ scheduler_events = {
 		"00 00 24 * *": [
 			'one_fm.api.tasks.generate_penalties'
 		],
-		"00 11 30 * *": [
+		"00 12 01 * *": [
 			'one_fm.api.tasks.generate_site_allowance'
 		],
 		"00 02 24 * *": [

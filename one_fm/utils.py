@@ -1654,7 +1654,7 @@ def update_onboarding_doc_for_bank_account(doc):
 def issue_roster_actions():
     # Queue roster actions functions to backgrounds jobs
     frappe.enqueue(create_roster_employee_actions, is_async=True, queue='long')
-    frappe.enqueue(create_roster_post_actions, is_async=True, queue='long')
+    # frappe.enqueue(create_roster_post_actions, is_async=True, queue='long')
 
 
 def create_roster_employee_actions():
@@ -1752,3 +1752,166 @@ def create_roster_post_actions():
             roster_post_action_doc.supervisor = supervisor
             roster_post_action_doc.save()
             frappe.db.commit()
+
+def send_roster_report():
+    # Enqueue roster report generation to background
+    frappe.enqueue(generate_roster_report, is_async=True, queue='long')
+
+def generate_roster_report():
+    """
+    This method creates a monthly company wide roster Post and Employee report in a tabular format
+    and sends it via email to users having role as 'Operations Manager'.
+    """
+
+    start_date = cstr(getdate())
+    end_date = add_to_date(start_date, days=30)
+
+    # ---------------------- Roster Post Report -----------------------#
+    post_report_table = """
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <td><b>Date</b></td>
+                <td><b>Active Posts</b></td>
+                <td><b>Posts Off</b></td>
+                <td><b>Posts Filled</b></td>
+                <td><b>Posts Not Filled</b></td>
+                <td><b>Result</b></td>
+            </tr>
+        </thead>
+        <tbody>
+    """
+
+    for date in pd.date_range(start=start_date, end=end_date):
+        active_posts = len(frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["post_type"]))
+        posts_off = len(frappe.db.get_list("Post Schedule", {'post_status': 'Post Off', 'date': date}))
+
+        posts_filled_count = 0
+        posts_not_filled_count = 0
+
+        post_types = frappe.db.get_list("Post Schedule", ["distinct post_type", "post_abbrv"])
+        for post_type in post_types:
+            # For each post type, get all post schedules and employee schedules assigned to the post type
+            posts_count = len(frappe.db.get_list("Post Schedule", {'post_type': post_type.post_type, 'date': date, 'post_status': 'Planned'}))
+            posts_fill_count = len(frappe.db.get_list("Employee Schedule", {'post_type': post_type.post_type, 'date': date, 'employee_availability': 'Working'}))
+
+            # Compare count of post schedule vs employee schedule for the given post type, compute post filled/not filled count
+            if posts_count == posts_fill_count:
+                posts_filled_count += posts_fill_count
+            elif posts_count > posts_fill_count:
+                posts_filled_count += posts_fill_count
+                posts_not_filled_count = posts_not_filled_count + (posts_count - posts_fill_count)
+
+        result = "OK"
+        if posts_not_filled_count > 0:
+            result = "NOT OK"
+        
+        # Append row to post table
+        post_report_table += """<tr><td>{current_date}</td>""".format(current_date=cstr(date).split(" ")[0])
+        post_report_table += """<td>{active_posts}</td>""".format(active_posts=active_posts)
+        post_report_table += """<td>{posts_off}</td>""".format(posts_off=posts_off)
+        post_report_table += """<td>{posts_filled}</td>""".format(posts_filled=posts_fill_count)
+        post_report_table += """<td>{posts_not_filled}</td>""".format(posts_not_filled=posts_not_filled_count)
+        post_report_table += """<td>{result}</td></tr>""".format(result=result)
+
+    post_report_table += """
+        </tbody>
+    </table>
+    """
+
+    # ------------------- Roster Employee Report -------------------#
+    employee_report_table = """
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <td><b>Date</b></td>
+                <td><b>Active Employees</b></td>
+                <td><b>Rostered</b></td>
+                <td><b>Not Rostered</b></td>
+                <td><b>Day offs</b></td>
+                <td><b>Sick Leaves</b></td>
+                <td><b>Annual Leaves</b></td>
+                <td><b>Emergency Leaves</b></td>
+                <td><b>Result</b></td>
+            </tr>
+        </thead>
+        <tbody>
+    """
+    for date in pd.date_range(start=start_date, end=end_date):
+        employee_list = get_active_employees(date)
+        rostered_employees = get_working_employees(date)
+        employees_on_day_off = get_day_off_employees(date)
+        employees_on_sick_leave = get_sick_leave_employees(date)
+        employees_on_annual_leave = get_annual_leave_employees(date)
+        employees_on_emergency_leave = get_emergency_leave_employees(date)
+
+        employee_not_rostered_count = 0
+
+        for employee in employee_list:
+            # If no employee schedule is found for an employee on the current date, increment not rostered count
+            if not frappe.db.exists({'doctype': 'Employee Schedule', 'date': date, 'employee': employee.employee}):
+                employee_not_rostered_count += 1
+
+        result = "OK"
+        if employee_not_rostered_count > 0:
+            result = "NOT OK"
+
+        # Append row to employee table
+        employee_report_table += """<tr><td>{current_date}</td>""".format(current_date=cstr(date).split(" ")[0])
+        employee_report_table += """<td>{employee_list}</td>""".format(employee_list=len(employee_list))
+        employee_report_table += """<td>{rostered_employees}</td>""".format(rostered_employees=len(rostered_employees))
+        employee_report_table += """<td>{employees_not_rostered_count}</td>""".format(employees_not_rostered_count=employee_not_rostered_count)
+        employee_report_table += """<td>{employees_on_day_off}</td>""".format(employees_on_day_off=len(employees_on_day_off))
+        employee_report_table += """<td>{employees_on_sick_leave}</td>""".format(employees_on_sick_leave=len(employees_on_sick_leave))
+        employee_report_table += """<td>{employees_on_annual_leave}</td>""".format(employees_on_annual_leave=len(employees_on_annual_leave))
+        employee_report_table += """<td>{employees_on_emergency_leave}</td>""".format(employees_on_emergency_leave=len(employees_on_emergency_leave))
+        employee_report_table += """<td>{result}</td></tr>""".format(result=result)
+
+    employee_report_table += """
+        </tbody>
+    </table>
+    """
+    
+    recipients = []
+
+    # get list of all entries having role as Operations Manager included
+    parent_list = frappe.db.sql("""SELECT DISTINCT parent FROM `tabHas Role` WHERE role=%(role)s""",{'role': "Operations Manager"}, as_dict=1)
+    
+    for parent in parent_list:
+        # Check if parent is an employee. If yes, append to recipients list
+        if frappe.db.exists("Employee", {'user_id': parent.parent}):
+            recipients.append(parent.parent)
+
+    # Send Roster Post report email to Operations Managers
+    post_report_subject = "Roster Post Report from {start_date} to {end_date}".format(start_date=start_date, end_date=end_date)
+    frappe.sendmail(recipients= recipients, content=post_report_table, subject=post_report_subject ,delayed=False)
+
+    # Send Roster Employee report email to Operations Managers
+    employee_report_subject = "Roster Employee Report from {start_date} to {end_date}".format(start_date=start_date, end_date=end_date)
+    frappe.sendmail(recipients= recipients, content=employee_report_table, subject=employee_report_subject ,delayed=False)
+
+
+
+def get_active_employees(date):
+        """ returns list of all active employees from where date of joining is greater than provided date """
+        return frappe.db.get_list("Employee", {'status': 'Active', 'date_of_joining': ('<=', date)}, ["employee"])
+
+def get_working_employees(date):
+    """ returns list of employees who's employee availability status is 'working' for a given date """
+    return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Working'})
+
+def get_day_off_employees(date):
+    """ returns list of employees who's employee availability status is day off for a given date """
+    return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Day Off'})
+
+def get_sick_leave_employees(date):
+    """ returns list of employees who's employee availability status is sick leave for a given date """
+    return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Sick Leave'})
+
+def get_annual_leave_employees(date):
+    """ returns list of employees who's employee availability status is annual leave for a given date """
+    return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Annual Leave'})
+
+def get_emergency_leave_employees(date):
+    """ returns list of employees who's employee availability status is emergency leave for a given date """
+    return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Emergency Leave'})
