@@ -124,7 +124,7 @@ def store_fcm_token(employee_id ,fcm_token,device_os):
         print(frappe.get_traceback())
 
 """
-    This Function send push notification to group of devices. here, we use 'firebase admin' librabry to send the message.
+    This Function send push notification to group of devices. here, we use 'firebase admin' library to send the message.
     Params: employee_id is a list of employee ID's, title and body are message string to send it through notification.
     It returns the response received.
 """
