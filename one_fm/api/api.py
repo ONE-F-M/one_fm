@@ -5,7 +5,11 @@ from frappe.utils import cstr
 from frappe.model.rename_doc import rename_doc
 import requests
 import firebase_admin
-from firebase_admin import messaging, credentials
+from firebase_admin import messaging
+from firebase_admin import credentials
+import requests
+import json
+
 import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
@@ -125,23 +129,19 @@ def store_fcm_token(employee_id ,fcm_token,device_os):
     It returns the response received.
 """
 @frappe.whitelist()
-def push_notification(employee_id, title, body):
-    registration_tokens = []
+def push_notification(employee_id, title, body, checkin, arriveLate ,checkout ):
     # Collect the registration token from employee doctype for the given list of employees
-    for emp in employee_id:
-        token = frappe.get_all("Employee", {"name": emp}, "fcm_token")
-        if token[0].fcm_token:
-            registration_tokens.append(token[0].fcm_token)
-
+    registration_token = frappe.get_value("Employee", {"name": employee_id}, "fcm_token")
+    
     # Create message payload. 
-    for registration_token in registration_tokens:
+    if registration_token :
         message = messaging.Message(
                 data= {
                 "title": title,
                 "body" : body,
-                "showButtonCheckIn": 'True',
-                "showButtonCheckOut": 'False',
-                "showButtonArrivingLate": 'False'
+                "showButtonCheckIn": checkin,
+                "showButtonCheckOut": checkout,
+                "showButtonArrivingLate": arriveLate
                 },
                 apns=messaging.APNSConfig(
                     payload=messaging.APNSPayload(
