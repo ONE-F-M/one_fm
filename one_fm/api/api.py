@@ -196,5 +196,4 @@ def push_notification_rest_api(employee_id, title, body):
     #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
     response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
     print(response.status_code)
-
     print(response.json())
