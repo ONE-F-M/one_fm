@@ -19,22 +19,31 @@ def get_employee_user_id(employee):
 	return frappe.get_value("Employee", {"name": employee}, "user_id")
 
 
-# This function returns the list of notification of a given user_id, within the dictionary of "name","subject".
+# This method is returning employee notification list
 @frappe.whitelist()
-def get_notification_list(user_id):
+def get_notification_list():
 	"""
 	Params:
-	User id: Employee User ID
-	Return: List of Notification
+	employee: employee ERP id 
+	Returns: notification list
 	"""
 	try:
-		notification_list = frappe.get_all("Notification Log", filters={'for_user':user_id, 'one_fm_mobile_app':1}, fields=["name","subject"])
+		notification_list = frappe.get_all("Notification Log", filters={'for_user':frappe.session.user, 'one_fm_mobile_app':0}, fields=["name","subject"])
 		if len(notification_list)>0:
-			return notification_list 
+			return response("Notifications Are Listed Sucessfully", notification_list, True, 200)
 		else:
-
-			return ('No Notification.')
-
+			return response("No Notifications Yet", {}, True, 200)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback())
 		return frappe.utils.response.report_error(e)
+
+# This method returing the message and status code of the API
+def response(message, data, success, status_code):
+    """
+    Params: message, status code
+    """
+    frappe.local.response["message"] = message
+    frappe.local.response["data"] = data
+    frappe.local.response["success"] = success
+    frappe.local.response["http_status_code"] = status_code
+    return
