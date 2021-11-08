@@ -34,14 +34,14 @@ def create_shift_permission(employee, permission_type, date, reason, leaving_tim
                 return response("Shift Permission Successfully Created",doc,True,201)
             elif has_duplicate:
                 doc = frappe.get_doc('Shift Permission',{"employee": employee, "date":date, "assigned_shift": assigned_shift, "permission_type": permission_type})
-                return response("{0} has already applied for permission to {1} on {2}.".format(doc.emp_name, permission_type.lower(), date), {}, False, 200)
+                return response("{0} has already applied for permission to {1} on {2}.".format(doc.emp_name, permission_type.lower(), date), {}, False, 409)
 
         elif not shift or not type or not assigned_shift or not shift_supervisor:
-            return response("Shift Permission Not Created Successfully", {}, False, 200)
+            return response("Shift Permission Not Created Successfully", {}, False, 400)
            
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
-        return response("Shift Permission Not Created Successfully", {}, False, 200)
+        return response("Shift Permission Not Created Successfully", {}, False, 500)
 
 # This method validates any duplicate permission for the employee on same day
 def validate_record(employee, date, assigned_shift, permission_type):
