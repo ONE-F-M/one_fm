@@ -37,11 +37,11 @@ def create_shift_permission(employee, permission_type, date, reason, leaving_tim
                 return response("{0} has already applied for permission to {1} on {2}.".format(doc.emp_name, permission_type.lower(), date), {}, False, 409)
 
         elif not shift or not type or not assigned_shift or not shift_supervisor:
-            return response("Shift Permission Not Created Successfully", {}, False, 400)
+            return response("Could Not Create Shift Permission, Shift Details are missing.", {}, False, 400)
            
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
-        return response("Shift Permission Not Created Successfully", {}, False, 500)
+        return frappe.utils.response.report_error(e.http_status_code)
 
 # This method validates any duplicate permission for the employee on same day
 def validate_record(employee, date, assigned_shift, permission_type):
@@ -123,7 +123,7 @@ def shift_permission_approved(supervisor_id, shift_permission_id):
             return response("Only Supervisor Has The Right to Approve", {}, False, 400)
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
-        return response("Shift Permission Not Approved Successfully", {}, False, 500)
+        return frappe.utils.response.report_error(e.http_status_code)
 
 # This function allows Shift Permission supervisor to reject the permission and notify the employee.
 # params: supervisor_id (eg: HR-EMP-00001) & Sift Permission id (eg: SP-000001)
@@ -149,7 +149,7 @@ def shift_permission_rejected(supervisor_id, shift_permission_id):
             return response("Only Supervisor Has The Right to Reject", {}, False, 400)
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
-        return response("Shift Permission Not Rejected Successfully", {}, False, 500)
+        return frappe.utils.response.report_error(e.http_status_code)
 
 # This function allows Shift Permission supervisor to cancel the permission and notify the employee.
 # params: supervisor_id (eg: HR-EMP-00001) & Sift Permission id (eg: SP-000001)
@@ -176,7 +176,7 @@ def shift_permission_cancelled(supervisor_id, shift_permission_id):
             return response("Only Supervisor Has The Right to Cancel", {}, False, 400)
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
-        return response("Shift Permission Not Cancelled Successfully", {}, False, 500)
+        return frappe.utils.response.report_error(e.http_status_code)
 
 # This method sends notification
 # params: subject, message, user, shift_permission_record, and mobile_notification
