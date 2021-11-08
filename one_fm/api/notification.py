@@ -31,10 +31,10 @@ def get_notification_list():
 		notification_list = frappe.get_all("Notification Log", filters={'for_user':frappe.session.user, 'one_fm_mobile_app':1}, fields=["name","subject"])
 		if len(notification_list)>0:
 			return response("Notifications Are Listed Sucessfully", notification_list, True, 200)
-			
+
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback())
-		return frappe.utils.response.report_error(e.http_status_code)
+		return frappe.utils.response.report_error(e)
 
 # This method returing the message and status code of the API
 def response(message, data, success, status_code):
