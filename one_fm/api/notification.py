@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 
-def create_notification_log(subject, message, for_users, reference_doc):
+def create_notification_log(subject, message, for_users, reference_doc, mobile_notification=None):
 	for user in for_users:
 		doc = frappe.new_doc('Notification Log')
 		doc.subject = subject
@@ -10,6 +10,7 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		doc.document_type = reference_doc.doctype
 		doc.document_name = reference_doc.name
 		doc.from_user = reference_doc.modified_by
+		doc.one_fm_mobile_app = mobile_notification
 		doc.save(ignore_permissions=True)
 		frappe.publish_realtime(event='eval_js', message="frappe.show_alert({message: '"+message+"', indicator: 'blue'})", user=user)
 	frappe.db.commit()

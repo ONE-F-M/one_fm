@@ -811,14 +811,17 @@ def get_employee_schedule(employee, from_date, to_date):
 #fetches the leave approver for a given employee
 @frappe.whitelist()
 def get_leave_approver(employee):
+    approver = None
     #check if employee has leave approver or report to assigned in the employee doctype
     leave_approver, report_to = frappe.db.get_value("Employee", employee, ["leave_approver", "reports_to"])
     if not leave_approver:
         if report_to:
             approver = frappe.db.get_value('Employee', {'name': report_to}, ['user_id'])
         else:
-            #if not, return the 'Operational Manager' as the leave approver
-            approver = frappe.db.get_value('Employee', {'Designation': "Operation Manager"}, ['user_id'])
+            #if not, return the 'Operational Manager' as the leave approver. But, check if employee himself is not a leave manager.
+            operation_manager = frappe.db.get_value('Employee', {'Designation': "Operation Manager"}, ['name','user_id'])
+            if operation_manager[0]!= employee:
+                approver = operation_manager[1]
     else:
         approver = leave_approver
     return approver

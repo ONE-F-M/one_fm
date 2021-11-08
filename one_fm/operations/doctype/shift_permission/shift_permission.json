@@ -140,7 +140,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-27 10:22:12.585705",
+ "modified": "2021-11-06 16:56:05.624791",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
@@ -156,6 +156,20 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Shift Supervisor",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
