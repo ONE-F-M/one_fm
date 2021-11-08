@@ -58,6 +58,7 @@ def final_reminder():
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
 		# shift_start is equal to now time - notification reminder in mins
+		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
@@ -66,7 +67,14 @@ def final_reminder():
 				AND tSA.start_date="{date}"
 				AND tSA.shift_type="{shift_type}" 
 				AND tSA.docstatus=1
-				AND tSA.employee 
+				AND tSA.employee
+				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+				WHERE
+					emp_sp.employee=emp.name
+				AND emp_sp.workflow_state="Approved"
+				AND emp_sp.shift_type="{shift_type}"
+				AND emp_sp.date="{date}"
+				AND emp_sp.permission_type="Arrive Late")
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"
@@ -77,6 +85,7 @@ def final_reminder():
 				notify(recipients,"IN")
 
 		# shift_end is equal to now time - notification reminder in mins
+		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp  
@@ -85,7 +94,14 @@ def final_reminder():
 				AND tSA.start_date="{date}" 
 				AND tSA.shift_type="{shift_type}" 
 				AND tSA.docstatus=1
-				AND tSA.employee 
+				AND tSA.employee
+				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+				WHERE
+					emp_sp.employee=emp.name
+				AND emp_sp.workflow_state="Approved"
+				AND emp_sp.shift_type="{shift_type}"
+				AND emp_sp.date="{date}"
+				AND emp_sp.permission_type="Leave Early")
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="OUT"
@@ -144,7 +160,7 @@ def supervisor_reminder():
 		t = shift.supervisor_reminder_shift_start
 		b = strfdelta(shift.start_time, '%H:%M:%S')
 		
-		#Send notification to supervisor of those who haven't checked in
+		# Send notification to supervisor of those who haven't checked in and don't have accepted Arrive Late shift permission
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			print(date)
@@ -156,7 +172,14 @@ def supervisor_reminder():
 				AND tSA.start_date="{date}"
 				AND tSA.shift_type="{shift_type}" 
 				AND tSA.docstatus=1
-				AND tSA.employee 
+				AND tSA.employee
+				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+				WHERE
+					emp_sp.employee=emp.name
+				AND emp_sp.workflow_state="Approved"
+				AND emp_sp.shift_type="{shift_type}"
+				AND emp_sp.date="{date}"
+				AND emp_sp.permission_type="Arrive Late")
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 					WHERE
 						empChkin.log_type="IN"
@@ -183,7 +206,7 @@ def supervisor_reminder():
 						if notify_user is not None:
 							send_notification(subject, notify_message, notify_user)
 
-		#Send notification to supervisor of those who haven't checked out
+		#Send notification to supervisor of those who haven't checked out and don't have accepted Leave Early shift permission
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time()):
 		 	date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		 	checkin_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
@@ -194,7 +217,14 @@ def supervisor_reminder():
 		 		AND tSA.start_date="{date}"
 		 		AND tSA.shift_type="{shift_type}" 
 		 		AND tSA.docstatus=1
-				AND tSA.employee 
+				AND tSA.employee
+				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+				WHERE
+					emp_sp.employee=emp.name
+				AND emp_sp.workflow_state="Approved"
+				AND emp_sp.shift_type="{shift_type}"
+				AND emp_sp.date="{date}"
+				AND emp_sp.permission_type="Leave Early")
 		 		NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 		 			WHERE
 		 				empChkin.log_type="OUT"
@@ -335,7 +365,6 @@ def checkin_deadline():
 	shifts_list = get_active_shifts(now_time)
 	penalty_code = "106"
 	
-	
 	for shift in shifts_list:
 		location = get_location(shift.name)
 		
@@ -347,7 +376,6 @@ def checkin_deadline():
 		#print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
 		if shift.deadline!=0 and strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.deadline))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp  
 				WHERE
@@ -355,7 +383,13 @@ def checkin_deadline():
 				AND tSA.start_date="{date}" 
 				AND tSA.shift_type="{shift_type}" 
 				AND tSA.docstatus=1
-				AND tSA.employee 
+				AND tSA.employee
+				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+            	WHERE
+					emp_sp.employee=emp.name
+				AND emp_sp.workflow_state="Approved"
+				AND emp_sp.shift_type="{shift_type}"
+				AND emp_sp.date="{date}")
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"
@@ -385,8 +419,6 @@ def automatic_checkout():
 		#print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-			# print(shift.name, now_time, shift.end_time)
-		
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp  
 				WHERE
@@ -394,7 +426,7 @@ def automatic_checkout():
 				AND tSA.start_date="{date}" 
 				AND tSA.shift_type="{shift_type}" 
 				AND tSA.docstatus=1
-				AND tSA.employee 
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="OUT"
