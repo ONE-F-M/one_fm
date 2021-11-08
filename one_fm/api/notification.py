@@ -19,16 +19,19 @@ def get_employee_user_id(employee):
 	return frappe.get_value("Employee", {"name": employee}, "user_id")
 
 
-# This method is returning employee notification list
+# This function returns notification list of a given employee.
+# params: employee_id (eg: HR-EMP-00003)
+# returns: Notification List.
 @frappe.whitelist()
-def get_notification_list():
+def get_notification_list(employee_id):
 	"""
 	Params:
 	employee: employee ERP id 
 	Returns: notification list
 	"""
 	try:
-		notification_list = frappe.get_all("Notification Log", filters={'for_user':frappe.session.user, 'one_fm_mobile_app':1}, fields=["name","subject"])
+		user_id = frappe.db.get_value("Employee",{'name':employee_id},['user_id'])
+		notification_list = frappe.get_all("Notification Log", filters={'for_user':user_id, 'one_fm_mobile_app':1}, fields=["name","subject"])
 		if len(notification_list)>0:
 			return response("Notifications Are Listed Sucessfully", notification_list, True, 200)
 
