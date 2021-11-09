@@ -5,9 +5,7 @@ from frappe.utils import cstr
 from frappe.model.rename_doc import rename_doc
 import requests
 import firebase_admin
-from firebase_admin import messaging
-from firebase_admin import credentials
-
+from firebase_admin import messaging, credentials
 import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
@@ -20,12 +18,11 @@ firebase_admin.initialize_app(cred)
 def _one_fm():
     print(frappe.local.lang)
 
-
 def set_posts_active():
     posts = frappe.get_all("Operations Post", {"site": "Head Office"})
     print(posts)
     for post in posts:
-        for date in	pd.date_range(start="2021-03-01", end="2021-03-31"):
+        for date in pd.date_range(start="2021-03-01", end="2021-03-31"):
             sch = frappe.new_doc("Post Schedule")
             sch.post = post.name
             sch.date = cstr(date.date())
@@ -100,13 +97,20 @@ def rename_post(posts):
         except Exception as e:
             print(frappe.get_traceback())
 
-        
+"""
+This function stores FCM Token  and Device OS in employee doctype 
+that is fetched from device/app end when user logs in.
+Params: Employee ID (Single employee ID), FCM Token and Device OS comes from the client side.
+It returns true or false based on the execution.
+eg:bench execute --kwargs "{'employee_id':'HR-EMP-00002','fcm_token':'cKg2nMfqwUpDinaWmUmVXp:APA91bHYAT2UxhesFtFHgweK8umoXm2LR9xyvi1L1OoefDRb3f1etOQbR3MZRFwL7Vwgc6hHrXO7urQWg3iy5SwTh_iE0lQP0Ny3O2nkcK_5Zo_UCQPMbZORF2Y5beejJbiHcQXA_x1C', 'device_os':'IOS'}" one_fm.api.api.store_fcm_token 
+"""
 @frappe.whitelist()
-def store_fcm_token(employee_id ,fcm_token):
+def store_fcm_token(employee_id ,fcm_token,device_os):
     Employee = frappe.get_doc("Employee",{"name":employee_id})
     try:
         if Employee:
-            Employee.fcm_token= fcm_token
+            Employee.fcm_token = fcm_token
+            Employee.device_os = device_os
             Employee.save()
             frappe.db.commit()
             return True
@@ -115,44 +119,77 @@ def store_fcm_token(employee_id ,fcm_token):
     except Exception as e:
         print(frappe.get_traceback())
 
+"""
+    This Function send push notification to group of devices. here, we use 'firebase admin' library to send the message.
+    Params: employee_id is a list of employee ID's, title and body are message string to send it through notification.
+    It returns the response received.
+"""
 @frappe.whitelist()
 def push_notification(employee_id, title, body):
     registration_tokens = []
+    # Collect the registration token from employee doctype for the given list of employees
     for emp in employee_id:
         token = frappe.get_all("Employee", {"name": emp}, "fcm_token")
         if token[0].fcm_token:
             registration_tokens.append(token[0].fcm_token)
-    # This Device token comes from the client FCM SDKs.
 
-    # See documentation on defining a message payload.
+    # Create message payload. 
     for registration_token in registration_tokens:
         message = messaging.Message(
-            data= {
-            "title": title,
-            "body": body,
-            "showButtonCheckIn": 'True',
-            "showButtonCheckOut": 'True',
-            "showButtonArrivingLate": 'True'
-            },
-            android=messaging.AndroidConfig(
-                notification=messaging.AndroidNotification(
-                    title=title,
-                    body=body,
-                    click_action = "oneFmNotificationCategory2",
-                ),
-            ),
-            apns=messaging.APNSConfig(
-                payload=messaging.APNSPayload(
-                    aps=messaging.Aps(
-                        badge=0,
-                        mutable_content= 1
+                data= {
+                "title": title,
+                "body" : body,
+                "showButtonCheckIn": 'True',
+                "showButtonCheckOut": 'False',
+                "showButtonArrivingLate": 'False'
+                },
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(
+                            badge=0,
+                            mutable_content= 1,
+                            category = "oneFmNotificationCategory1"
+                        ),
                     ),
                 ),
-            ),
-            token=registration_token,
+                token=registration_token,
             )
         response = messaging.send(message)
         print(response)
     return response
-    # See the BatchResponse reference documentation
-    # for the contents of response.
+
+# This function is used to send notification through Firebase CLoud Message. 
+# It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
+# Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message"
+# bench execute --kwargs "{'employee_id':'HR-EMP-00001','title':'Hello','body':'Testing'}" one_fm.api.api.push_notification_rest_api
+@frappe.whitelist()
+def push_notification_rest_api(employee_id, title, body):
+    """
+    serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
+    Device Token is store in employee doctype using 'store_fcm_token' on device end.
+    """
+    serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
+    token = frappe.get_all("Employee", {"name": employee_id}, "fcm_token")
+    deviceToken = token[0].fcm_token
+
+    headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=' + serverToken,
+        }
+
+    #Body in json form defining a message payload to send through API.
+    body = {       
+            "to":deviceToken,
+            "data": {
+                "title": title,
+                "body" : body,
+                "showButtonCheckIn": True,
+                "showButtonCheckOut": False,
+                "showButtonArrivingLate": False
+                }
+            }
+
+    #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
+    response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
+    print(response.status_code)
+    print(response.json())

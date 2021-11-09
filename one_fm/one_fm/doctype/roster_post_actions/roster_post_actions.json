@@ -1,28 +1,25 @@
 {
  "actions": [],
- "autoname": "format:{#####}-{date}-{post_type}-{action_type}",
  "creation": "2021-10-13 12:21:16.765478",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "date",
+  "start_date",
+  "col_br_1",
+  "end_date",
+  "actions_section",
   "status",
-  "supervisor",
   "action_type",
-  "post_type"
+  "supervisor",
+  "supervisor_name",
+  "post_types_not_filled"
  ],
  "fields": [
   {
-   "fieldname": "date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Date",
-   "reqd": 1
-  },
-  {
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
    "options": "Pending\nCompleted\nOverdue\nCancelled"
   },
@@ -31,7 +28,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Supervisor",
-   "options": "Employee"
+   "options": "Employee",
+   "reqd": 1
   },
   {
    "fieldname": "action_type",
@@ -40,17 +38,46 @@
    "options": "Fill Post Type\nReview Post Type"
   },
   {
-   "fieldname": "post_type",
-   "fieldtype": "Link",
+   "fieldname": "start_date",
+   "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Post Type",
-   "options": "Post Type",
+   "label": "Start Date",
    "reqd": 1
+  },
+  {
+   "fieldname": "col_br_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "actions_section",
+   "fieldtype": "Section Break",
+   "label": "Actions"
+  },
+  {
+   "fieldname": "post_types_not_filled",
+   "fieldtype": "Table",
+   "label": "Post Types Not Filled",
+   "options": "Post Types Not Filled",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "supervisor.employee_name",
+   "fieldname": "supervisor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Supervisor Name",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-10-13 14:58:49.498162",
+ "modified": "2021-11-07 11:08:24.652142",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Post Actions",
