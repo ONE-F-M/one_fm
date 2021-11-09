@@ -227,7 +227,8 @@ doc_events = {
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
-		"on_submit": "one_fm.api.tasks.update_shift_details_in_attendance"
+		"on_submit": "one_fm.one_fm.utils.attendance_on_submit",
+		"on_cancel": "one_fm.one_fm.utils.attendance_on_cancel"
 	},
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
@@ -243,7 +244,7 @@ doc_events = {
 		"on_submit": "one_fm.api.doc_events.update_training_event_data"
 	},
 	"Training Result" :{
-		"on_submit": "one_fm.api.doc_events.update_certification_data" 
+		"on_submit": "one_fm.api.doc_events.update_certification_data"
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
@@ -300,7 +301,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
-		
+
 
 	],
 	"hourly": [

@@ -7,6 +7,7 @@ from frappe.utils import today, add_days, get_url
 from frappe.integrations.offsite_backup_utils import get_latest_backup_file, send_email, validate_file_size, get_chunk_site
 from one_fm.api.notification import create_notification_log
 from frappe.utils.user import get_users_with_role
+from erpnext.hr.utils import get_holidays_for_employee
 
 @frappe.whitelist()
 def employee_grade_validate(doc, method):
@@ -104,7 +105,7 @@ def notify_recruiter_after_checking(doc):
                 dt.db_set('one_fm_notify_recruiter', 1)
                 dt.db_set('one_fm_applicant_status', "Checked By GRD")
 
-            if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0: 
+            if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0:
                 email = users
                 page_link = get_url("/desk#List/Job Applicant/" + dt.name)
                 message="<p>Transfer for {0} has no issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
@@ -112,8 +113,8 @@ def notify_recruiter_after_checking(doc):
                 create_notification_log(subject,message,email,dt)#remove [email]
                 dt.db_set('one_fm_notify_recruiter', 1)
                 dt.db_set('one_fm_applicant_status', "Checked By GRD")
-                notify_pam_authorized_signature(doc)#Inform Authorized signature 
-                
+                notify_pam_authorized_signature(doc)#Inform Authorized signature
+
 def notify_pam_authorized_signature(doc):
     user = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':doc.one_fm_signatory_name},['user'])
     page_link = get_url("/desk#Form/Job Applicant/" + doc.name)
@@ -177,11 +178,11 @@ def validate_mendatory_fields_for_recruiter(doc):
             {'Nationality':'one_fm_nationality'}, {'Previous Designation':'one_fm_previous_designation'},
             {'Passport Number':'one_fm_passport_number'}, {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
             {'Marital Status':'one_fm_marital_status'}, {'Previous Work Permit Salary':'one_fm_work_permit_salary'}]
-    
+
     if not visa.has_previous_job:
         field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'},
             {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
-            {'Nationality':'one_fm_nationality'},{'Passport Number':'one_fm_passport_number'}, 
+            {'Nationality':'one_fm_nationality'},{'Passport Number':'one_fm_passport_number'},
             {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
             {'Marital Status':'one_fm_marital_status'}]
 
@@ -212,7 +213,7 @@ def get_signatory_name(parent,name):
                 if pas.authorized_signatory_name_arabic:
                     names.append(pas.authorized_signatory_name_arabic)
         elif not doc:
-            frappe.throw("PAM File Number Has No PAM Authorized Signatory List")       
+            frappe.throw("PAM File Number Has No PAM Authorized Signatory List")
     return names,doc.name
 
 @frappe.whitelist()
@@ -220,7 +221,7 @@ def get_signatory_name_erf_file(parent,name):
     """
     This method fetching all Autorized Signatory based on the PAM file selection in erf
     """
-    
+
     names=[]
     names.append(' ')
     if parent and name:
@@ -266,4 +267,55 @@ def notify_operator_with_supervisor_response(name):
         subject = _("Supervisor Rejected Your Changes in Job Applicant and Provide Suggested Changes")
         message = "<p>Kindly, you are requested to Check Suggestions box for Job Applicant: {0} and check if candidate has external issues while transfering  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
         create_notification_log(subject, message, [grd_operator], job_Applicant)
- 
+
+def attendance_on_submit(doc, method):
+    from one_fm.api.tasks import update_shift_details_in_attendance
+    update_shift_details_in_attendance(doc, method)
+    manage_compensatory_leave_request_for_attendance_in_holiday(doc, method)
+
+def attendance_on_cancel(doc, method):
+    manage_compensatory_leave_request_for_attendance_in_holiday(doc, method)
+
+def manage_compensatory_leave_request_for_attendance_in_holiday(doc, method):
+    '''
+        Method used to create compensatory leave request from Holiday attendance
+        on_submit of attendance will trigger this method
+        args:
+            doc is attendance object
+            method is the method from the hook (like on_submit)
+        if method is "on_submit", then create and submit the compensatory leave request
+        if method is "on_cancel", then cancel the compensatory leave request, that is created for the attendance
+    '''
+
+    # Get holiday list of dicts with `holiday_date` and `description`
+    holidays = get_holidays_for_employee(doc.employee, doc.attendance_date, doc.attendance_date)
+
+    # process compensatory leave request if attendance status not equals "Absent" or "On Leave"
+    if len(holidays) > 0 and doc.status not in ["Absent", "On Leave"]:
+        # create and submit compensatory leave request on attendance submit
+        if method == 'on_submit':
+            reason = _("Worked on {0}".format(holidays[0].description))
+            create_compensatory_leave_request_from_attendance(doc, reason)
+
+        # cancel compensatory leave request on attendance cancel
+        if method == "on_cancel":
+            exist_compensatory_leave_request = frappe.db.exists('Compensatory Leave Request', {
+                'employee': doc.employee,
+                'work_from_date': doc.attendance_date,
+                'work_end_date': doc.attendance_date
+            })
+            if exist_compensatory_leave_request:
+                frappe.get_doc('Compensatory Leave Request', exist_compensatory_leave_request).cancel()
+
+def create_compensatory_leave_request_from_attendance(attendance, reason):
+    compensatory_leave_request = frappe.new_doc('Compensatory Leave Request')
+    compensatory_leave_request.employee = attendance.employee
+    compensatory_leave_request.work_from_date = attendance.attendance_date
+    compensatory_leave_request.work_end_date = attendance.attendance_date
+    if attendance.status == "Half Day":
+        compensatory_leave_request.half_day = True
+        compensatory_leave_request.half_day_date = attendance.attendance_date
+    compensatory_leave_request.reason = reason
+    compensatory_leave_request.leave_type = "Compensatory Off" # TODO: Configure leave type for "Compensatory Leave Request"
+    compensatory_leave_request.insert(ignore_permissions=True)
+    compensatory_leave_request.submit()
