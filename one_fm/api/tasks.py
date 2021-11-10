@@ -61,7 +61,7 @@ def final_reminder():
 		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
+				SELECT DISTINCT emp.user_id, emp.name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee=emp.name 
 				AND tSA.start_date="{date}"
@@ -88,7 +88,7 @@ def final_reminder():
 		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp  
+				SELECT DISTINCT emp.user_id, emp.name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp  
 				WHERE
 			  		tSA.employee = emp.name 
 				AND tSA.start_date="{date}" 
@@ -121,17 +121,25 @@ def notify(recipients,log_type):
 	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
 	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
+	Notification_body = "Please checkin in the next five minutes."
 	user_id = []
 	employee_id = []
 	for recipient in recipients:
 		user_id.append(recipient[0])
 		employee_id.append(recipient[1])
-	if log_type=="IN":
-		send_notification(checkin_subject, checkin_message, user_id)
-		push_notification(employee_id, Notification_title, "Please checkin in the next five minutes.")
-	if log_type=="OUT":
-		send_notification(checkout_subject, checkout_message, user_id)
-		push_notification(employee_id, Notification_title, "Please checkout in the next five minutes.")
+	for recipient in recipients:
+		user_id = recipient[0]
+		employee_id = recipient[1]
+		print(recipient)
+		if log_type=="IN":
+			send_notification(checkin_subject, checkin_message, user_id)
+			if recipient[2] == "Develope-Head Office-Morning-1":
+				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="True",checkout="False")
+			else:
+				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="False",checkout="False")
+		if log_type=="OUT":
+			send_notification(checkout_subject, checkout_message, user_id)
+			push_notification(employee_id, Notification_title, Notification_body, checkin="False",arriveLate="False",checkout="True")
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
@@ -252,19 +260,18 @@ def supervisor_reminder():
 							 send_notification(subject, notify_message, notify_user)
 
 					
-def send_notification(subject, message, recipients):
-	for user in recipients:
-		notification = frappe.new_doc("Notification Log")
-		notification.subject = subject
-		notification.email_content = message
-		notification.document_type = "Notification Log"
-		notification.for_user = user
-		notification.document_name = " "
-		notification.one_fm_mobile_app = 1
-		notification.save(ignore_permissions=True)
-		notification.document_name = notification.name
-		notification.save(ignore_permissions=True)
-		frappe.db.commit()	
+def send_notification(subject, message, user):
+	notification = frappe.new_doc("Notification Log")
+	notification.subject = subject
+	notification.email_content = message
+	notification.document_type = "Notification Log"
+	notification.for_user = user
+	notification.document_name = " "
+	notification.one_fm_mobile_app = 1
+	notification.save(ignore_permissions=True)
+	notification.document_name = notification.name
+	notification.save(ignore_permissions=True)
+	frappe.db.commit()	
 
 def get_active_shifts(now_time):
 	return frappe.db.sql("""
