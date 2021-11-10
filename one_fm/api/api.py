@@ -5,15 +5,10 @@ from frappe.utils import cstr
 from frappe.model.rename_doc import rename_doc
 import requests
 import firebase_admin
-from firebase_admin import messaging
-from firebase_admin import credentials
-import requests
-import json
-
+from firebase_admin import messaging, credentials
 import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
-
 
 cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/private/files/one-fm-70641-firebase-adminsdk-nuf6h-667458c1a5.json")
 firebase_admin.initialize_app(cred)
