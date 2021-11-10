@@ -303,13 +303,30 @@ def manage_attendance_on_holiday(doc, method):
             if not leave_type:
                 frappe.throw(_("Please Contact HRD to configure Leave Type for Holiday Compensatory Leave Request !!"))
 
-            create_additional_salary_from_attendance(doc, salary_component, remark)
+            if not is_site_allowance_exist_for_this_employee(doc.employee, doc.attendance_date):
+                create_additional_salary_from_attendance(doc, salary_component, remark)
             create_compensatory_leave_request_from_attendance(doc, leave_type, remark)
 
         # cancel additional salary and compensatory leave request on attendance cancel
         if method == "on_cancel":
             cancel_additional_salary_from_attendance(doc, salary_component)
             cancel_compensatory_leave_request_from_attendance(doc)
+
+def is_site_allowance_exist_for_this_employee(employee, date):
+    '''
+        Check if site allowance exists for the employee in the date
+        return bool
+    '''
+    # Get Employee Schedule for this employee and date
+    employee_schedule = frappe.db.exists('Employee Schedule',
+        {'employee': employee, 'date': date, 'employee_availability': 'Working'})
+    if employee_schedule:
+        # Get Operations Site from the Employee Schedule
+        operations_site = frappe.db.get_value('Employee Schedule', employee_schedule, 'site')
+        if operations_site:
+            # Return include site allowance, then return true
+            return frappe.db.get_value('Operations Site', operations_site, 'include_site_allowance')
+    return False
 
 def create_additional_salary_from_attendance(attendance, salary_component, notes=None):
     additional_salary = frappe.new_doc('Additional Salary')
@@ -351,7 +368,8 @@ def cancel_additional_salary_from_attendance(attendance, salary_component):
     exist_additional_salary = frappe.db.exists('Additional Salary', {
         'employee': attendance.employee,
         'payroll_date': attendance.attendance_date,
-        'salary_component': salary_component
+        'salary_component': salary_component,
+        'docstatus': 1
     })
     if exist_additional_salary:
         frappe.get_doc('Additional Salary', exist_additional_salary).cancel()
@@ -373,7 +391,8 @@ def cancel_compensatory_leave_request_from_attendance(attendance):
     exist_compensatory_leave_request = frappe.db.exists('Compensatory Leave Request', {
         'employee': attendance.employee,
         'work_from_date': attendance.attendance_date,
-        'work_end_date': attendance.attendance_date
+        'work_end_date': attendance.attendance_date,
+        'docstatus': 1
     })
     if exist_compensatory_leave_request:
         frappe.get_doc('Compensatory Leave Request', exist_compensatory_leave_request).cancel()
