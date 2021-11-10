@@ -39,7 +39,7 @@ jobs:
           git fetch --unshallow
           git checkout staging
           git pull
-          git merge --no-ff master-13 -m "Auto-merge master back to staging"
+          git merge --no-ff master-13 -m "Auto-merge master back to staging" --allow-unrelated-histories
           git push
           
       # Merges master back to sandbox
@@ -48,5 +48,5 @@ jobs:
           git fetch --unshallow
           git checkout sandbox
           git pull
-          git merge --no-ff master-13 -m "Auto-merge master back to sandbox"
+          git merge --no-ff master-13 -m "Auto-merge master back to sandbox" --allow-unrelated-histories
           git push
