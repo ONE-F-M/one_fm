@@ -37,6 +37,8 @@ jobs:
       - name: Merge master back to staging
         run: |
           git fetch
+          git checkout master-13
+          git pull
           git checkout staging
           git pull
           git merge --no-ff master-13 -m "Auto-merge master back to staging" --allow-unrelated-histories
@@ -46,7 +48,9 @@ jobs:
       - name: Merge master back to sandbox
         run: |
           git fetch
+          git checkout master-13
+          git pull
           git checkout sandbox
-          git pull --allow-unrelated-histories
+          git pull
           git merge --no-ff master-13 -m "Auto-merge master back to sandbox" --allow-unrelated-histories
           git push
