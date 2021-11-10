@@ -292,23 +292,30 @@ def manage_attendance_on_holiday(doc, method):
 
     # process compensatory leave request and additional salary if attendance status not equals "Absent" or "On Leave"
     if len(holidays) > 0 and doc.status not in ["Absent", "On Leave"]:
+        salary_component = frappe.db.get_single_value('HR and Payroll Additional Settings', 'holiday_additional_salary_component')
+        if not salary_component:
+            frappe.throw(_("Please Contact HRD to configure Salary Component for Holiday Additional Salary !!"))
 
         # create and submit additional salary and compensatory leave request on attendance submit
         if method == 'on_submit':
             remark = _("Worked on {0}".format(holidays[0].description))
-            create_additional_salary_from_attendance(doc, remark)
-            create_compensatory_leave_request_from_attendance(doc, remark)
+            leave_type = frappe.db.get_single_value('HR and Payroll Additional Settings', 'holiday_compensatory_leave_type')
+            if not leave_type:
+                frappe.throw(_("Please Contact HRD to configure Leave Type for Holiday Compensatory Leave Request !!"))
+
+            create_additional_salary_from_attendance(doc, salary_component, remark)
+            create_compensatory_leave_request_from_attendance(doc, leave_type, remark)
 
         # cancel additional salary and compensatory leave request on attendance cancel
         if method == "on_cancel":
-            cancel_additional_salary_from_attendance(doc)
+            cancel_additional_salary_from_attendance(doc, salary_component)
             cancel_compensatory_leave_request_from_attendance(doc)
 
-def create_additional_salary_from_attendance(attendance, notes=None):
+def create_additional_salary_from_attendance(attendance, salary_component, notes=None):
     additional_salary = frappe.new_doc('Additional Salary')
     additional_salary.employee = attendance.employee
     additional_salary.payroll_date = attendance.attendance_date
-    additional_salary.salary_component = "Holiday Salary" # TODO: Configure salary component for "Holiday Salary"
+    additional_salary.salary_component = salary_component
     additional_salary.notes = notes
     additional_salary.overwrite_salary_structure_amount = False
     additional_salary.amount = get_amount_for_additional_salary_for_holiday(attendance)
@@ -340,16 +347,16 @@ def get_amount_for_additional_salary_for_holiday(attendance):
 
     return hours_worked * basic_hourly_wage * 1.5 * 2
 
-def cancel_additional_salary_from_attendance(attendance):
+def cancel_additional_salary_from_attendance(attendance, salary_component):
     exist_additional_salary = frappe.db.exists('Additional Salary', {
         'employee': attendance.employee,
         'payroll_date': attendance.attendance_date,
-        'salary_component': "Holiday Salary"
+        'salary_component': salary_component
     })
     if exist_additional_salary:
         frappe.get_doc('Additional Salary', exist_additional_salary).cancel()
 
-def create_compensatory_leave_request_from_attendance(attendance, reason):
+def create_compensatory_leave_request_from_attendance(attendance, leave_type, reason):
     compensatory_leave_request = frappe.new_doc('Compensatory Leave Request')
     compensatory_leave_request.employee = attendance.employee
     compensatory_leave_request.work_from_date = attendance.attendance_date
@@ -358,7 +365,7 @@ def create_compensatory_leave_request_from_attendance(attendance, reason):
         compensatory_leave_request.half_day = True
         compensatory_leave_request.half_day_date = attendance.attendance_date
     compensatory_leave_request.reason = reason
-    compensatory_leave_request.leave_type = "Compensatory Off" # TODO: Configure leave type for "Compensatory Leave Request"
+    compensatory_leave_request.leave_type = leave_type
     compensatory_leave_request.insert(ignore_permissions=True)
     compensatory_leave_request.submit()
 
