@@ -1,0 +1,1 @@
+If you can see this file in staging and sandbox, then GitHub actions worked correctly
