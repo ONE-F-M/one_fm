@@ -510,6 +510,7 @@ def create_shift_assignment(schedule, date):
 	shift_assignment.shift_type = schedule.shift_type
 	shift_assignment.post_type = schedule.post_type
 	shift_assignment.post_abbrv = schedule.post_abbrv
+	shift_assignment.roster_type = schedule.roster_type
 	shift_assignment.submit()
 
 def update_shift_type():
@@ -547,10 +548,10 @@ def mark_auto_attendance(shift_type):
 
 def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
-		site, project, shift, post_type, post_abbrv = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv"])
+		site, project, shift, post_type, post_abbrv, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv", "roster_type"])
 		frappe.db.sql("""update `tabAttendance`
-			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s 
-			where name = %s """, (project, site, shift, post_type, post_abbrv, doc.name))
+			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s, roster_type = %s
+			where name = %s """, (project, site, shift, post_type, post_abbrv, roster_type, doc.name))
 
 def generate_payroll():
 	start_date = add_to_date(getdate(), months=-1)
