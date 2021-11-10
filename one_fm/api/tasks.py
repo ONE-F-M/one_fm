@@ -75,6 +75,7 @@ def final_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Arrive Late")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"
@@ -102,6 +103,7 @@ def final_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Leave Early")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="OUT"
@@ -111,8 +113,15 @@ def final_reminder():
 			if len(recipients) > 0:
 				notify(recipients,"OUT")
 
+#This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
 def notify(recipients,log_type):
+	"""
+	params: 
+	recipients: list consist of user ID, Emplloyee ID and shift.
+	log_type: In or Out
+	"""
+	#defining the subject and message
 	checkin_subject = _("Final Reminder: Please checkin in the next five minutes.")
 	checkin_message = _("""
 					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
@@ -122,18 +131,16 @@ def notify(recipients,log_type):
 	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
-	user_id = []
-	employee_id = []
-	for recipient in recipients:
-		user_id.append(recipient[0])
-		employee_id.append(recipient[1])
+	
+	#eg: recipient: ['s.shaikh@armor-services.com', 'HR-EMP-00001', 'Develope-Head Office-Morning-1']
 	for recipient in recipients:
 		user_id = recipient[0]
 		employee_id = recipient[1]
 		print(recipient)
 		if log_type=="IN":
 			send_notification(checkin_subject, checkin_message, user_id)
-			if recipient[2] == "Develope-Head Office-Morning-1":
+			#arrive late button is true only if the employee is assigned with shift to head office.
+			if recipient[2] == "Head Office-Head Office-Morning|08:00:0-17:00:0|9 hours":
 				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="True",checkout="False")
 			else:
 				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="False",checkout="False")
@@ -188,6 +195,7 @@ def supervisor_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Arrive Late")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 					WHERE
 						empChkin.log_type="IN"
@@ -233,6 +241,7 @@ def supervisor_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Leave Early")
+				AND tSA.employee
 		 		NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 		 			WHERE
 		 				empChkin.log_type="OUT"
@@ -398,6 +407,7 @@ def checkin_deadline():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Arrive Late")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"
