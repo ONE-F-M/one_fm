@@ -311,14 +311,34 @@ def create_additional_salary_from_attendance(attendance, notes=None):
     additional_salary.salary_component = "Holiday Salary" # TODO: Configure salary component for "Holiday Salary"
     additional_salary.notes = notes
     additional_salary.overwrite_salary_structure_amount = False
+    additional_salary.amount = get_amount_for_additional_salary_for_holiday(attendance)
+    if additional_salary.amount > 0:
+        additional_salary.insert(ignore_permissions=True)
+        additional_salary.submit()
+
+def get_amount_for_additional_salary_for_holiday(attendance):
+    '''
+        Method used to get calculated additional salary amount for holiday attendance
+        args:
+            attendance is attendance object
+    '''
+    # Calculate hours worked from the time in and time out recorded in attendance
     hours_worked = 0
     if attendance.in_time and attendance.out_time:
         hours_worked = time_diff_in_hours(attendance.out_time, attendance.in_time)
-    basic_hourly_wage = 1
-    amount = hours_worked * basic_hourly_wage * 1.5 * 2
-    additional_salary.amount = amount
-    additional_salary.insert(ignore_permissions=True)
-    additional_salary.submit()
+
+    # Get basic salary from the employee doctype
+    basic_salary = frappe.db.get_value('Employee', attendance.employee, 'one_fm_basic_salary')
+
+    # Calculate basic hourly wage
+    basic_hourly_wage = 0
+    shift_hours = 8 # Default 8 hour shift
+    if attendance.shift:
+        shift_hours = frappe.db.get_value('Shift Type', attendance.shift, 'duration')
+    if basic_salary and basic_salary > 0 and shift_hours:
+        basic_hourly_wage = basic_salary / (30 * shift_hours) # Assuming 30 days month
+
+    return hours_worked * basic_hourly_wage * 1.5 * 2
 
 def cancel_additional_salary_from_attendance(attendance):
     exist_additional_salary = frappe.db.exists('Additional Salary', {
