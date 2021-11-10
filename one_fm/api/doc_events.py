@@ -456,7 +456,7 @@ def create_additional_salary_for_overtime(doc, method):
 					hourly_wage = round(daily_wage/assigned_shift_duration, 3)
 
 					# Calculate overtime rate based on labor law
-					amount = round(hourly_wage*overtime_duration+1.5, 3)
+					amount = round(hourly_wage*overtime_duration*1.5, 3)
 					notes = "Calculated based on labor law => (Basic hourly wage) * (Duration of worked hours) * 1.5"
 
 					create_additional_salary(doc.employee, amount, component, payroll_date, notes)
