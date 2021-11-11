@@ -75,12 +75,14 @@ def final_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Arrive Late")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
-			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+
 			if len(recipients) > 0:
 				notify(recipients,"IN")
 
@@ -102,17 +104,26 @@ def final_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Leave Early")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="OUT"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
-			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+
 			if len(recipients) > 0:
 				notify(recipients,"OUT")
 
+#This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
 def notify(recipients,log_type):
+	"""
+	params: 
+	recipients: Dictionary consist of user ID and Emplloyee ID eg: [{'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}]
+	log_type: In or Out
+	"""
+	#defining the subject and message
 	checkin_subject = _("Final Reminder: Please checkin in the next five minutes.")
 	checkin_message = _("""
 					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
@@ -121,17 +132,30 @@ def notify(recipients,log_type):
 	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
 	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
+	Notification_body = "Please checkin in the next five minutes."
 	user_id = []
-	employee_id = []
+
+	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
 	for recipient in recipients:
-		user_id.append(recipient[0])
-		employee_id.append(recipient[1])
-	if log_type=="IN":
-		send_notification(checkin_subject, checkin_message, user_id)
-		push_notification(employee_id, Notification_title, "Please checkin in the next five minutes.")
-	if log_type=="OUT":
-		send_notification(checkout_subject, checkout_message, user_id)
-		push_notification(employee_id, Notification_title, "Please checkout in the next five minutes.")
+		# Append the list of user ID to send notification through email.
+		user_id.append(recipient.user_id)
+
+		# Get Employee ID and User Role for the given recipient
+		employee_id = recipient.name
+		user_roles = frappe.get_roles(recipient.user_id)
+
+		#cutomizing buttons according to log type.
+		if log_type=="IN":
+			#arrive late button is true only if the employee has the user role "Head Office Employee".
+			if "Head Office Employee" in user_roles:
+				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="True",checkout="False")
+			else:
+				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="False",checkout="False")
+		if log_type=="OUT":
+			push_notification(employee_id, Notification_title, Notification_body, checkin="False",arriveLate="False",checkout="True")
+	
+	# send notification mail to list of employee using user_id
+	send_notification(checkin_subject, checkin_message, user_id)
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
@@ -180,6 +204,7 @@ def supervisor_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Arrive Late")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 					WHERE
 						empChkin.log_type="IN"
@@ -225,6 +250,7 @@ def supervisor_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Leave Early")
+				AND tSA.employee
 		 		NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 		 			WHERE
 		 				empChkin.log_type="OUT"
@@ -391,6 +417,7 @@ def checkin_deadline():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Arrive Late")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"

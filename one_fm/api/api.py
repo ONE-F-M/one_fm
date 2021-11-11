@@ -10,7 +10,6 @@ import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
 
-
 cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/private/files/one-fm-70641-firebase-adminsdk-nuf6h-667458c1a5.json")
 firebase_admin.initialize_app(cred)
 
@@ -121,27 +120,25 @@ def store_fcm_token(employee_id ,fcm_token,device_os):
 
 """
     This Function send push notification to group of devices. here, we use 'firebase admin' library to send the message.
-    Params: employee_id is a list of employee ID's, title and body are message string to send it through notification.
+    Params: employee_id is a list of employee ID's,
+    title and body are message string to send it through notification.
+    checkin, arriveLate ,checkout are data to enable buttons.
     It returns the response received.
 """
 @frappe.whitelist()
-def push_notification(employee_id, title, body):
-    registration_tokens = []
+def push_notification(employee_id, title, body, checkin, arriveLate ,checkout ):
     # Collect the registration token from employee doctype for the given list of employees
-    for emp in employee_id:
-        token = frappe.get_all("Employee", {"name": emp}, "fcm_token")
-        if token[0].fcm_token:
-            registration_tokens.append(token[0].fcm_token)
-
+    registration_token = frappe.get_value("Employee", {"name": employee_id}, "fcm_token")
+    
     # Create message payload. 
-    for registration_token in registration_tokens:
+    if registration_token :
         message = messaging.Message(
                 data= {
                 "title": title,
                 "body" : body,
-                "showButtonCheckIn": 'True',
-                "showButtonCheckOut": 'False',
-                "showButtonArrivingLate": 'False'
+                "showButtonCheckIn": checkin,
+                "showButtonCheckOut": checkout,
+                "showButtonArrivingLate": arriveLate
                 },
                 apns=messaging.APNSConfig(
                     payload=messaging.APNSPayload(
