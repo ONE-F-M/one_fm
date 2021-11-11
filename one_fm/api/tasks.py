@@ -389,7 +389,8 @@ def checkin_deadline():
 					emp_sp.employee=emp.name
 				AND emp_sp.workflow_state="Approved"
 				AND emp_sp.shift_type="{shift_type}"
-				AND emp_sp.date="{date}")
+				AND emp_sp.date="{date}"
+				AND emp_sp.permission_type="Arrive Late")
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"

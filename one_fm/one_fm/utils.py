@@ -3,10 +3,11 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import today, add_days, get_url
+from frappe.utils import today, add_days, get_url, time_diff_in_hours
 from frappe.integrations.offsite_backup_utils import get_latest_backup_file, send_email, validate_file_size, get_chunk_site
 from one_fm.api.notification import create_notification_log
 from frappe.utils.user import get_users_with_role
+from erpnext.hr.utils import get_holidays_for_employee
 
 @frappe.whitelist()
 def employee_grade_validate(doc, method):
@@ -104,7 +105,7 @@ def notify_recruiter_after_checking(doc):
                 dt.db_set('one_fm_notify_recruiter', 1)
                 dt.db_set('one_fm_applicant_status', "Checked By GRD")
 
-            if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0: 
+            if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0:
                 email = users
                 page_link = get_url("/desk#List/Job Applicant/" + dt.name)
                 message="<p>Transfer for {0} has no issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
@@ -112,8 +113,8 @@ def notify_recruiter_after_checking(doc):
                 create_notification_log(subject,message,email,dt)#remove [email]
                 dt.db_set('one_fm_notify_recruiter', 1)
                 dt.db_set('one_fm_applicant_status', "Checked By GRD")
-                notify_pam_authorized_signature(doc)#Inform Authorized signature 
-                
+                notify_pam_authorized_signature(doc)#Inform Authorized signature
+
 def notify_pam_authorized_signature(doc):
     user = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':doc.one_fm_signatory_name},['user'])
     page_link = get_url("/desk#Form/Job Applicant/" + doc.name)
@@ -177,11 +178,11 @@ def validate_mendatory_fields_for_recruiter(doc):
             {'Nationality':'one_fm_nationality'}, {'Previous Designation':'one_fm_previous_designation'},
             {'Passport Number':'one_fm_passport_number'}, {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
             {'Marital Status':'one_fm_marital_status'}, {'Previous Work Permit Salary':'one_fm_work_permit_salary'}]
-    
+
     if not visa.has_previous_job:
         field_list = [{'CIVIL ID':'one_fm_cid_number'}, {'Date of Birth':'one_fm_date_of_birth'},
             {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
-            {'Nationality':'one_fm_nationality'},{'Passport Number':'one_fm_passport_number'}, 
+            {'Nationality':'one_fm_nationality'},{'Passport Number':'one_fm_passport_number'},
             {'What is Your Highest Educational Qualification':'one_fm_educational_qualification'},
             {'Marital Status':'one_fm_marital_status'}]
 
@@ -212,7 +213,7 @@ def get_signatory_name(parent,name):
                 if pas.authorized_signatory_name_arabic:
                     names.append(pas.authorized_signatory_name_arabic)
         elif not doc:
-            frappe.throw("PAM File Number Has No PAM Authorized Signatory List")       
+            frappe.throw("PAM File Number Has No PAM Authorized Signatory List")
     return names,doc.name
 
 @frappe.whitelist()
@@ -220,7 +221,7 @@ def get_signatory_name_erf_file(parent,name):
     """
     This method fetching all Autorized Signatory based on the PAM file selection in erf
     """
-    
+
     names=[]
     names.append(' ')
     if parent and name:
@@ -266,4 +267,132 @@ def notify_operator_with_supervisor_response(name):
         subject = _("Supervisor Rejected Your Changes in Job Applicant and Provide Suggested Changes")
         message = "<p>Kindly, you are requested to Check Suggestions box for Job Applicant: {0} and check if candidate has external issues while transfering  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
         create_notification_log(subject, message, [grd_operator], job_Applicant)
- 
+
+def attendance_on_submit(doc, method):
+    from one_fm.api.tasks import update_shift_details_in_attendance
+    update_shift_details_in_attendance(doc, method)
+    manage_attendance_on_holiday(doc, method)
+
+def attendance_on_cancel(doc, method):
+    manage_attendance_on_holiday(doc, method)
+
+def manage_attendance_on_holiday(doc, method):
+    '''
+        Method used to create compensatory leave request and additional salary for holiday attendance
+        on_submit or on_cancel of attendance will trigger this method
+        args:
+            doc is attendance object
+            method is the method from the hook (like on_submit)
+        if method is "on_submit", then create and submit the compensatory leave request and additional salary
+        if method is "on_cancel", then cancel the compensatory leave request and additional salary, that is created for the attendance
+    '''
+
+    # Get holiday list of dicts with `holiday_date` and `description`
+    holidays = get_holidays_for_employee(doc.employee, doc.attendance_date, doc.attendance_date)
+
+    # process compensatory leave request and additional salary if attendance status not equals "Absent" or "On Leave"
+    if len(holidays) > 0 and doc.status not in ["Absent", "On Leave"]:
+        salary_component = frappe.db.get_single_value('HR and Payroll Additional Settings', 'holiday_additional_salary_component')
+        if not salary_component:
+            frappe.throw(_("Please Contact HRD to configure Salary Component for Holiday Additional Salary !!"))
+
+        # create and submit additional salary and compensatory leave request on attendance submit
+        if method == 'on_submit':
+            remark = _("Worked on {0}".format(holidays[0].description))
+            leave_type = frappe.db.get_single_value('HR and Payroll Additional Settings', 'holiday_compensatory_leave_type')
+            if not leave_type:
+                frappe.throw(_("Please Contact HRD to configure Leave Type for Holiday Compensatory Leave Request !!"))
+
+            if not is_site_allowance_exist_for_this_employee(doc.employee, doc.attendance_date):
+                create_additional_salary_from_attendance(doc, salary_component, remark)
+            create_compensatory_leave_request_from_attendance(doc, leave_type, remark)
+
+        # cancel additional salary and compensatory leave request on attendance cancel
+        if method == "on_cancel":
+            cancel_additional_salary_from_attendance(doc, salary_component)
+            cancel_compensatory_leave_request_from_attendance(doc)
+
+def is_site_allowance_exist_for_this_employee(employee, date):
+    '''
+        Check if site allowance exists for the employee in the date
+        return bool
+    '''
+    # Get Employee Schedule for this employee and date
+    employee_schedule = frappe.db.exists('Employee Schedule',
+        {'employee': employee, 'date': date, 'employee_availability': 'Working'})
+    if employee_schedule:
+        # Get Operations Site from the Employee Schedule
+        operations_site = frappe.db.get_value('Employee Schedule', employee_schedule, 'site')
+        if operations_site:
+            # Return include site allowance, then return true
+            return frappe.db.get_value('Operations Site', operations_site, 'include_site_allowance')
+    return False
+
+def create_additional_salary_from_attendance(attendance, salary_component, notes=None):
+    additional_salary = frappe.new_doc('Additional Salary')
+    additional_salary.employee = attendance.employee
+    additional_salary.payroll_date = attendance.attendance_date
+    additional_salary.salary_component = salary_component
+    additional_salary.notes = notes
+    additional_salary.overwrite_salary_structure_amount = False
+    additional_salary.amount = get_amount_for_additional_salary_for_holiday(attendance)
+    if additional_salary.amount > 0:
+        additional_salary.insert(ignore_permissions=True)
+        additional_salary.submit()
+
+def get_amount_for_additional_salary_for_holiday(attendance):
+    '''
+        Method used to get calculated additional salary amount for holiday attendance
+        args:
+            attendance is attendance object
+    '''
+    # Calculate hours worked from the time in and time out recorded in attendance
+    hours_worked = 0
+    if attendance.in_time and attendance.out_time:
+        hours_worked = time_diff_in_hours(attendance.out_time, attendance.in_time)
+
+    # Get basic salary from the employee doctype
+    basic_salary = frappe.db.get_value('Employee', attendance.employee, 'one_fm_basic_salary')
+
+    # Calculate basic hourly wage
+    basic_hourly_wage = 0
+    shift_hours = 8 # Default 8 hour shift
+    if attendance.shift:
+        shift_hours = frappe.db.get_value('Shift Type', attendance.shift, 'duration')
+    if basic_salary and basic_salary > 0 and shift_hours:
+        basic_hourly_wage = basic_salary / (30 * shift_hours) # Assuming 30 days month
+
+    return hours_worked * basic_hourly_wage * 1.5 * 2
+
+def cancel_additional_salary_from_attendance(attendance, salary_component):
+    exist_additional_salary = frappe.db.exists('Additional Salary', {
+        'employee': attendance.employee,
+        'payroll_date': attendance.attendance_date,
+        'salary_component': salary_component,
+        'docstatus': 1
+    })
+    if exist_additional_salary:
+        frappe.get_doc('Additional Salary', exist_additional_salary).cancel()
+
+def create_compensatory_leave_request_from_attendance(attendance, leave_type, reason):
+    compensatory_leave_request = frappe.new_doc('Compensatory Leave Request')
+    compensatory_leave_request.employee = attendance.employee
+    compensatory_leave_request.work_from_date = attendance.attendance_date
+    compensatory_leave_request.work_end_date = attendance.attendance_date
+    if attendance.status == "Half Day":
+        compensatory_leave_request.half_day = True
+        compensatory_leave_request.half_day_date = attendance.attendance_date
+    compensatory_leave_request.reason = reason
+    compensatory_leave_request.leave_type = leave_type
+    compensatory_leave_request.insert(ignore_permissions=True)
+    compensatory_leave_request.submit()
+
+def cancel_compensatory_leave_request_from_attendance(attendance):
+    exist_compensatory_leave_request = frappe.db.exists('Compensatory Leave Request', {
+        'employee': attendance.employee,
+        'work_from_date': attendance.attendance_date,
+        'work_end_date': attendance.attendance_date,
+        'docstatus': 1
+    })
+    if exist_compensatory_leave_request:
+        frappe.get_doc('Compensatory Leave Request', exist_compensatory_leave_request).cancel()
