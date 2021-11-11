@@ -61,7 +61,7 @@ def final_reminder():
 		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id, emp.name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
+				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee=emp.name 
 				AND tSA.start_date="{date}"
@@ -81,7 +81,8 @@ def final_reminder():
 					empChkin.log_type="IN"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
-			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+
 			if len(recipients) > 0:
 				notify(recipients,"IN")
 
@@ -89,7 +90,7 @@ def final_reminder():
 		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id, emp.name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp  
+				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp  
 				WHERE
 			  		tSA.employee = emp.name 
 				AND tSA.start_date="{date}" 
@@ -109,7 +110,8 @@ def final_reminder():
 					empChkin.log_type="OUT"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
-			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+
 			if len(recipients) > 0:
 				notify(recipients,"OUT")
 
@@ -118,7 +120,7 @@ def final_reminder():
 def notify(recipients,log_type):
 	"""
 	params: 
-	recipients: list consist of user ID, Emplloyee ID and shift.
+	recipients: Dictionary consist of user ID and Emplloyee ID eg: [{'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}]
 	log_type: In or Out
 	"""
 	#defining the subject and message
@@ -132,15 +134,15 @@ def notify(recipients,log_type):
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
 	
-	#eg: recipient: ['s.shaikh@armor-services.com', 'HR-EMP-00001', 'Develope-Head Office-Morning-1']
+	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
 	for recipient in recipients:
-		user_id = recipient[0]
-		employee_id = recipient[1]
-		print(recipient)
+		user_id = recipient.user_id
+		employee_id = recipient.name
+		user_roles = frappe.get_roles(user_id)
 		if log_type=="IN":
 			send_notification(checkin_subject, checkin_message, user_id)
-			#arrive late button is true only if the employee is assigned with shift to head office.
-			if recipient[2] == "Head Office-Head Office-Morning|08:00:0-17:00:0|9 hours":
+			#arrive late button is true only if the employee has the user role "Head Office Employee".
+			if "Head Office Employee" == user_roles:
 				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="True",checkout="False")
 			else:
 				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="False",checkout="False")
