@@ -227,8 +227,11 @@ doc_events = {
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
-		"on_submit": "one_fm.one_fm.utils.attendance_on_submit",
-		"on_cancel": "one_fm.one_fm.utils.attendance_on_cancel"
+		"on_submit": [
+           		"one_fm.api.tasks.update_shift_details_in_attendance",
+           		"one_fm.api.doc_events.create_additional_salary_for_overtime"
+		],
+    		"on_cancel": "one_fm.one_fm.utils.attendance_on_cancel"
 	},
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
