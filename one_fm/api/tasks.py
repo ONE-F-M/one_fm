@@ -133,22 +133,29 @@ def notify(recipients,log_type):
 	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
-	
+	user_id = []
+
 	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
 	for recipient in recipients:
-		user_id = recipient.user_id
+		# Append the list of user ID to send notification through email.
+		user_id.append(recipient.user_id)
+
+		# Get Employee ID and User Role for the given recipient
 		employee_id = recipient.name
-		user_roles = frappe.get_roles(user_id)
+		user_roles = frappe.get_roles(recipient.user_id)
+
+		#cutomizing buttons according to log type.
 		if log_type=="IN":
-			send_notification(checkin_subject, checkin_message, user_id)
 			#arrive late button is true only if the employee has the user role "Head Office Employee".
 			if "Head Office Employee" in user_roles:
 				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="True",checkout="False")
 			else:
 				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="False",checkout="False")
 		if log_type=="OUT":
-			send_notification(checkout_subject, checkout_message, user_id)
 			push_notification(employee_id, Notification_title, Notification_body, checkin="False",arriveLate="False",checkout="True")
+	
+	# send notification mail to list of employee using user_id
+	send_notification(checkin_subject, checkin_message, user_id)
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
@@ -271,18 +278,19 @@ def supervisor_reminder():
 							 send_notification(subject, notify_message, notify_user)
 
 					
-def send_notification(subject, message, user):
-	notification = frappe.new_doc("Notification Log")
-	notification.subject = subject
-	notification.email_content = message
-	notification.document_type = "Notification Log"
-	notification.for_user = user
-	notification.document_name = " "
-	notification.one_fm_mobile_app = 1
-	notification.save(ignore_permissions=True)
-	notification.document_name = notification.name
-	notification.save(ignore_permissions=True)
-	frappe.db.commit()	
+def send_notification(subject, message, recipients):
+	for user in recipients:
+		notification = frappe.new_doc("Notification Log")
+		notification.subject = subject
+		notification.email_content = message
+		notification.document_type = "Notification Log"
+		notification.for_user = user
+		notification.document_name = " "
+		notification.one_fm_mobile_app = 1
+		notification.save(ignore_permissions=True)
+		notification.document_name = notification.name
+		notification.save(ignore_permissions=True)
+		frappe.db.commit()	
 
 def get_active_shifts(now_time):
 	return frappe.db.sql("""
