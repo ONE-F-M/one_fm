@@ -1,7 +1,7 @@
 from datetime import timedelta
 import itertools
 
-import frappe
+import frappe, erpnext
 from frappe import _
 from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
