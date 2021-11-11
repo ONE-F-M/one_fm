@@ -142,7 +142,7 @@ def notify(recipients,log_type):
 		if log_type=="IN":
 			send_notification(checkin_subject, checkin_message, user_id)
 			#arrive late button is true only if the employee has the user role "Head Office Employee".
-			if "Head Office Employee" == user_roles:
+			if "Head Office Employee" in user_roles:
 				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="True",checkout="False")
 			else:
 				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="False",checkout="False")
