@@ -1966,7 +1966,7 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
             if checkin_datetime:
                 if is_checkin_record_available(check_out_date, check_out_time, checkin_datetime, overtime_doc.start_time, overtime_doc.end_time):
                     if basic_salary:
-                        if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'salary_component':"Overtime Allowance"}):
+                        if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'notes':"Overtime Earning"}):
                             overtime_amount = rounded(flt(overtime_doc.overtime_hours)*1.5*flt(basic_salary),3) # Overtime = `overtime_hours` * 1.5 * basic hourly wage
                             create_additional_salary(doc.employee,overtime_amount)
                             update_employee_schedule(frappe.get_doc("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Day Off"}))
@@ -1977,7 +1977,7 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
             if cstr(check_out_time) >= cstr(overtime_doc.end_time):# Check-out time is equal to or after the requested time.
                 
                 if basic_salary:
-                    if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'salary_component':"Overtime Allowance"}):
+                    if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'notes':"Overtime Earning"}):
                         overtime_amount = rounded(flt(overtime_doc.overtime_hours)*1.5*flt(basic_salary),3) # Overtime = `overtime_hours` * 1.5 * basic hourly wage
                         create_additional_salary(doc.employee,overtime_amount)
                 if not basic_salary:

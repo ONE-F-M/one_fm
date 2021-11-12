@@ -10,17 +10,19 @@ from frappe.utils import rounded
 
 class OvertimeRequest(Document):
 	
-	def on_update(self):
+	def validate(self):
 		self.calculate_overtime_hours()
-		self.workflow_notification()
 		self.validate_mandatory()
+
+	def on_update(self):
+		self.workflow_notification()
+		
 
 	def calculate_overtime_hours(self):
 		"""This method sets the `overtime_hours` for Head Office employee"""
-		if self.request_type == "Head Office":
-			if self.start_time and self.end_time:
-				hours=time_diff_in_hours(self.end_time,self.start_time)
-				self.db_set('overtime_hours',rounded(hours,1))
+		if self.request_type == "Head Office" and self.start_time and self.end_time:
+			hours=time_diff_in_hours(self.end_time,self.start_time)
+			self.overtime_hours = rounded(hours,1)
 
 	def workflow_notification(self):
 		"""
@@ -36,7 +38,7 @@ class OvertimeRequest(Document):
 		if self.workflow_state == "Pending":
 			if self.request_type == "Head Office":
 				reports_to = frappe.db.get_value("Employee",{'name':self.employee},['reports_to'])
-				supervisor_name = self.get_employee_name(reports_to)
+				supervisor_name = frappe.db.get_value("Employee", reports_to, "employee_name")
 				employee_user_id = get_employee_user_id(self.employee)
 				subject = _("{employee} has Requested for {hours} Hours Overtime on {date}.".format(employee=supervisor_name, hours=rounded(self.overtime_hours,1), date=date))
 				message = _("{employee} has Requested for {hours} Hours Overtime on {date}.".format(employee=supervisor_name, hours=rounded(self.overtime_hours,1), date=date))
@@ -84,20 +86,13 @@ class OvertimeRequest(Document):
 				message = _("{employee} has Rejected The Overtime Request on {date}.".format(employee=employee_name, date=date))
 				create_notification_log(subject, message, [supervisor_user_id], self)
 
-	# Method returns employee full name 
-	def get_employee_name(self, employee_code):
-		"""
-		Param: `employee_code` (eg: HR-EMP-00004)
-		Return: `employee_name` (eg: Amna Hatem Alshawa)
-		"""
-		return frappe.db.get_value("Employee", employee_code, "employee_name")
-
 	# Method creating employee Schedula on The Acceptance of OT Request for Operations Employee
 	def create_employee_schedule(self):
 		"""
 		setting data << employee, shift, post type, date, employee_availability, Roster Type >>
 		"""
 		if not frappe.db.exists("Employee Schedule",{'employee':self.employee, 'date':self.date, 'shift':self.operation_shift, 'post_type':self.post_type, 'roster_type':"Over-Time"}):
+			print("created successfully")
 			employee_schedule = frappe.new_doc("Employee Schedule")
 			employee_schedule.employee = self.employee
 			employee_schedule.date = cstr(self.date)
@@ -105,7 +100,7 @@ class OvertimeRequest(Document):
 			employee_schedule.post_type = self.post_type
 			employee_schedule.shift = self.shift
 			employee_schedule.roster_type = "Over-Time"
-		employee_schedule.save(ignore_permissions=True)
+			employee_schedule.save(ignore_permissions=True)
 
 	# This method checks mandatory fields per Request Type
 	def validate_mandatory(self):

@@ -16,7 +16,7 @@
   "status",
   "date",
   "overtime_hours",
-  "operations_ot_section",
+  "shift_details_section",
   "shift",
   "column_break_12",
   "post_type",
@@ -105,12 +105,6 @@
    "options": "Post Type"
   },
   {
-   "depends_on": "eval: doc.request_type == \"Operations\"",
-   "fieldname": "operations_ot_section",
-   "fieldtype": "Section Break",
-   "label": "Operations OT"
-  },
-  {
    "fieldname": "shift",
    "fieldtype": "Link",
    "label": "Shift",
@@ -122,12 +116,18 @@
    "fieldtype": "Data",
    "label": "Full Name",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.request_type == \"Operations\"",
+   "fieldname": "shift_details_section",
+   "fieldtype": "Section Break",
+   "label": "Shift Details"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-11-11 10:00:23.943003",
+ "modified": "2021-11-12 12:40:34.775950",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Overtime Request",
@@ -143,6 +143,33 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects Manager",
+   "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
