@@ -72,7 +72,8 @@ doctype_js = {
 	"Purchase Order": "public/js/doctype_js/purchase_order.js",
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
 	"Payment Entry": "public/js/doctype_js/payment_entry.js",
-	"Item Price": "public/js/doctype_js/item_price.js"
+	"Item Price": "public/js/doctype_js/item_price.js",
+	"Employee Incentive": "public/js/doctype_js/employee_incentive.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -243,7 +244,7 @@ doc_events = {
 		"on_submit": "one_fm.api.doc_events.update_training_event_data"
 	},
 	"Training Result" :{
-		"on_submit": "one_fm.api.doc_events.update_certification_data" 
+		"on_submit": "one_fm.api.doc_events.update_certification_data"
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
@@ -300,7 +301,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
-		
+
 
 	],
 	"hourly": [
