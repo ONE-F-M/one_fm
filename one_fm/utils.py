@@ -3,16 +3,15 @@
 from __future__ import unicode_literals
 import itertools
 from one_fm.api.notification import create_notification_log
-import frappe
 from frappe import _
-import frappe, os
+import frappe, os, erpnext
 import json
 from frappe.model.document import Document
 from frappe.utils import get_site_base_path
 from erpnext.hr.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils.csvutils import read_csv_content
-from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime, add_to_date
+from frappe.utils import cint, cstr, flt, rounded,  nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime, add_to_date, time_diff, get_time, time_diff_in_hours
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
@@ -1933,3 +1932,108 @@ def get_annual_leave_employees(date):
 def get_emergency_leave_employees(date):
     """ returns list of employees who's employee availability status is emergency leave for a given date """
     return frappe.db.get_list("Employee Schedule", {'date': date, 'employee_availability': 'Emergency Leave'})
+
+
+@frappe.whitelist()
+def create_additional_salary_for_overtime_request_for_head_office(doc,method):
+    """
+    Method called in `Hook.py` Employee Checkin
+
+    Param: 
+    -------
+    checkout record
+    method: `on_update`
+
+    Returns:
+    --------
+    create Addiitonal Salary for Overtime request (OT request)
+
+    Explicit Explanation:
+    ----------------------
+    Method is covering two cases:
+    case1: Employee has OT request within a working day. The system will check the check-out time and accepted the OT request to create an additional salary.
+    case2: Employee has OT request within a day off. The system will check both check-in and checkout and accepted OT request to create additional salary and update employee schedule record.
+    """
+    
+    if doc.log_type == "OUT" and frappe.db.exists("Overtime Request",{'employee':doc.employee, 'request_type':"Head Office", 'date':getdate(doc.time), 'status':"Accepted"}):
+        check_out_time = get_time(doc.time)
+        check_out_date = getdate(doc.time) 
+        overtime_doc = frappe.get_doc("Overtime Request",{'employee':doc.employee, 'request_type':"Head Office", 'date':check_out_date, 'status':"Accepted"})
+        basic_salary = frappe.db.get_value("Employee",{'name':doc.employee},['one_fm_basic_salary'])
+        
+        if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Day Off"}):
+            checkin_datetime = frappe.db.get_value("Employee Checkin",{'employee':doc.employee, 'log_type':"IN"}, ['time'])
+            if checkin_datetime:
+                if is_checkin_record_available(check_out_date, check_out_time, checkin_datetime, overtime_doc.start_time, overtime_doc.end_time):
+                    if basic_salary:
+                        if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'notes':"Overtime Earning"}):
+                            overtime_amount = rounded(flt(overtime_doc.overtime_hours)*1.5*flt(basic_salary),3) # Overtime = `overtime_hours` * 1.5 * basic hourly wage
+                            create_additional_salary(doc.employee,overtime_amount)
+                            update_employee_schedule(frappe.get_doc("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Day Off"}))
+                    if not basic_salary:
+                        frappe.throw("Please Define The Basic Salary for {employee} to Create Overtime Allowance".format(employee=doc.employee))
+        
+        if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Working"}):
+            if cstr(check_out_time) >= cstr(overtime_doc.end_time):# Check-out time is equal to or after the requested time.
+                
+                if basic_salary:
+                    if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'notes':"Overtime Earning"}):
+                        overtime_amount = rounded(flt(overtime_doc.overtime_hours)*1.5*flt(basic_salary),3) # Overtime = `overtime_hours` * 1.5 * basic hourly wage
+                        create_additional_salary(doc.employee,overtime_amount)
+                if not basic_salary:
+                    frappe.throw("Please Define The Basic Salary for {employee} to Create Overtime Allowance".format(employee=doc.employee))
+
+# The method checks the availability of check-in records for Head Office employees during their Day Off 
+# and verifies both the check-in and checkout time with the requested time in the Overtime request (OT request)      
+def is_checkin_record_available(check_out_date, check_out_time, checkin_datetime, start_time, end_time):
+    """
+    Param: 
+    -------
+    check_out_date (eg: 2021-11-11)
+    check_out_time (eg: 11:00:00)
+    checkin_datetime (eg: 2021-11-11 11:00:00)
+    start_time (eg: 10:00:00) - `start_time` mentioned in the overtime request
+    end_time (eg: 11:00:00) - `end_time` mentioned in the overtime request
+
+    Returns:
+    --------
+     boolean (True or False)
+
+    The method verifies the check-in and checkout time to be within the start and end time in the overtime request
+    """
+    checkin_date = getdate(checkin_datetime)
+    checkin_time = get_time(checkin_datetime)
+    if checkin_date == check_out_date:
+        if cstr(checkin_time) <= cstr(start_time) and cstr(check_out_time) >= cstr(end_time):
+            return True     
+    else:
+        return False
+
+# The Method is updating Employee Schedule data for `employee_availability` and `roster_type`
+def update_employee_schedule(employee_schedule_doc):
+    """
+    Param:
+    ------
+    Employee Schedule doctype
+    """
+    employee_schedule_doc.employee_availability = "Working"
+    employee_schedule_doc.roster_type = "Over-Time"
+    employee_schedule_doc.save(ignore_permissions=True)
+                    
+# Create Additional Salary For employee and set the overtime allowance for them amount
+def create_additional_salary(employee, amount):
+	"""
+    Param:
+    ------
+    Employee & overtime amount
+    """
+	additional_salary = frappe.new_doc("Additional Salary")
+	additional_salary.employee = employee
+	additional_salary.salary_component = "Overtime Allowance"
+	additional_salary.amount = amount
+	additional_salary.payroll_date = getdate()
+	additional_salary.company = erpnext.get_default_company()
+	additional_salary.overwrite_salary_structure_amount = 1
+	additional_salary.notes = "Overtime Earning"
+	additional_salary.insert()
+	additional_salary.submit()
