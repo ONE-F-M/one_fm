@@ -6,7 +6,7 @@ from frappe.model.document import Document
 import frappe, erpnext
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
-from frappe.utils import get_url, getdate, cint,cstr,  flt, date_diff
+from frappe.utils import get_url, getdate, cint,cstr,  flt, date_diff, rounded
 from frappe.core.doctype.communication.email import make
 from frappe import _
 import pandas as pd
@@ -150,7 +150,12 @@ class PIFSSMonthlyDeductionTool(Document):
 		for row in self.pifss_tracking_changes:
 			if row.status == "Decreased" or row.status == "Increased":
 				number_of_months = self.set_update_total_subscription(row.date_of_change)
-				row.updated_total_subscription = number_of_months*flt(row.new_value)
+				row.updated_total_subscription = rounded(number_of_months*flt(row.new_value), 3)
+				row.save()
+				frappe.db.commit()
+
+			if row.status == "New":
+				row.updated_total_subscription = flt(row.new_value)
 				row.save()
 				frappe.db.commit()
 
@@ -167,7 +172,7 @@ class PIFSSMonthlyDeductionTool(Document):
 	def set_has_tracking_record_flag(self):
 		"""This method will set the flag per employee in the pifss monthly deduction doctype
 		   based on if they have record in the pifss monthly deduction tool doctype"""
-		list_of_employee=[cint(row.pifss_no) for row in self.pifss_tracking_changes]#creating list of pifss_id for all employee in the tracking table, convert pifss_id to int because it will be fetched from monthly deduction table as an integer
+		list_of_employee=[row.pifss_no for row in self.pifss_tracking_changes]#creating list of pifss_id for all employee in the tracking table, convert pifss_id to int because it will be fetched from monthly deduction table as an integer
 		monthly_doc = frappe.get_doc('PIFSS Monthly Deduction',self.new_pifss_monthly_deduction)
 		#fetch child table for pifss monthly deduction for all employee
 		for row in monthly_doc.deductions:
@@ -184,17 +189,19 @@ class PIFSSMonthlyDeductionTool(Document):
 		list_of_id_and_total=[{cint(row.pifss_no):row.updated_total_subscription} for row in self.pifss_tracking_changes if row.status != "Left"]#creating list of pifss_id for all employee in the tracking table,convert pifss_id to int because it will be fetched from monthly deduction table as an integer
 		employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))#fetch contribution from pifss settings
 		monthly_doc = frappe.get_doc('PIFSS Monthly Deduction',self.new_pifss_monthly_deduction)
+		
 		for row in monthly_doc.deductions:#fetch child table for pifss monthly deduction for all employee	
 				
 			employee_name = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no})
 			if employee_name:
 				if row.has_tracking_record == 1:#if employee in the tracking system get their update subscription
 					for value in list_of_id_and_total:
-						amount = flt(value[cint(row.pifss_id_no)] * (employee_contribution_percentage / 100), precision=3)
+						amount = flt(value[cint(row.pifss_id_no)]) * flt((employee_contribution_percentage / 100), precision=3)
 						create_additional_salary(employee_name,amount)#create additional salary
 						break #exit the loop after getting the new total subscription for the employee with the pifss_id 
 				if row.has_tracking_record == 0:#if employee not in the tracking system get their total subscription from deductions table
-					amount = flt(cint(row.pifss_id_no) * (employee_contribution_percentage / 100), precision=3)
+					amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
+					# amount = flt(cint(row.pifss_id_no) * (employee_contribution_percentage / 100), precision=3)
 					create_additional_salary(employee_name,amount)#create additional salary
 
 def sub_total_subscription(new_value,old_value):
