@@ -12,7 +12,7 @@ from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import create_payroll_entry
 from erpnext.hr.doctype.attendance.attendance import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
-from one_fm.api.api import push_notification
+from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -148,11 +148,11 @@ def notify(recipients,log_type):
 		if log_type=="IN":
 			#arrive late button is true only if the employee has the user role "Head Office Employee".
 			if "Head Office Employee" in user_roles:
-				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="True",checkout="False")
+				push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=True,arriveLate=True,checkout=False)
 			else:
-				push_notification(employee_id, Notification_title, Notification_body, checkin="True",arriveLate="False",checkout="False")
+				push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=True,arriveLate=False,checkout=False)
 		if log_type=="OUT":
-			push_notification(employee_id, Notification_title, Notification_body, checkin="False",arriveLate="False",checkout="True")
+			push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=False,arriveLate=False,checkout=True)
 	
 	# send notification mail to list of employee using user_id
 	send_notification(checkin_subject, checkin_message, user_id)
