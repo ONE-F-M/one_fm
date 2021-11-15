@@ -180,29 +180,28 @@ class PIFSSMonthlyDeductionTool(Document):
 				if row.pifss_id_no in list_of_employee:#if employee in the tracking system get their updated total subscription
 					row.has_tracking_record = 1
 					row.save()
-		frappe.db.commit()
+			frappe.db.commit()
 
 	def check_flag_for_additional_salary(self):
 		""" This method checks the (has tracking record) flag field in pifss monthly deduction, 
 		if flag is 1, the total subscription will be taken from the pifss monthly deduction tool
 		 otherwise it will be taken from the pifss monthly deduction record to create the additional salary"""
-		list_of_id_and_total=[{cint(row.pifss_no):row.updated_total_subscription} for row in self.pifss_tracking_changes if row.status != "Left"]#creating list of pifss_id for all employee in the tracking table,convert pifss_id to int because it will be fetched from monthly deduction table as an integer
+		list_of_id_and_total=[{"pifss_no":cint(row.pifss_no),"total_subscription":row.updated_total_subscription, "Checked":0} for row in self.pifss_tracking_changes if row.status != "Left"]#creating list of pifss_id for all employee in the tracking table,convert pifss_id to int because it will be fetched from monthly deduction table as an integer
 		employee_contribution_percentage = flt(frappe.get_value("PIFSS Settings", "PIFSS Settings", "employee_contribution"))#fetch contribution from pifss settings
 		monthly_doc = frappe.get_doc('PIFSS Monthly Deduction',self.new_pifss_monthly_deduction)
-		
 		for row in monthly_doc.deductions:#fetch child table for pifss monthly deduction for all employee	
-				
-			employee_name = frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no})
-			if employee_name:
+			if frappe.db.exists("Employee", {"pifss_id_no": row.pifss_id_no}):
 				if row.has_tracking_record == 1:#if employee in the tracking system get their update subscription
 					for value in list_of_id_and_total:
-						amount = flt(value[cint(row.pifss_id_no)]) * flt((employee_contribution_percentage / 100), precision=3)
-						create_additional_salary(employee_name,amount)#create additional salary
-						break #exit the loop after getting the new total subscription for the employee with the pifss_id 
+						if value['pifss_no'] == cint(row.pifss_id_no) and value['Checked'] == 0:
+							amount = flt(cint(value['total_subscription']) * (employee_contribution_percentage / 100), precision=3)
+							print("amnount1=>",amount)
+							value['Checked'] = 1
+							create_additional_salary(frappe.get_doc("Employee",{"pifss_id_no": row.pifss_id_no}),amount)#create additional salary
+							break #exit the loop after getting the new total subscription for the employee with the pifss_id 
 				if row.has_tracking_record == 0:#if employee not in the tracking system get their total subscription from deductions table
 					amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
-					# amount = flt(cint(row.pifss_id_no) * (employee_contribution_percentage / 100), precision=3)
-					create_additional_salary(employee_name,amount)#create additional salary
+					create_additional_salary(frappe.get_doc("Employee",{"pifss_id_no": row.pifss_id_no}),amount)#create additional salary
 
 def sub_total_subscription(new_value,old_value):
 	"""This method checks the status of the total subscription and returns the status with delta amount"""
