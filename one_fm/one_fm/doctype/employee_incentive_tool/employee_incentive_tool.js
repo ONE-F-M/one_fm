@@ -17,6 +17,13 @@ frappe.ui.form.on("Employee Incentive Tool", {
 	},
 	rewarded_by: function(frm) {
 		frm.trigger('set_wage_factor_label');
+		frm.trigger('calculate_incentive');
+	},
+	wage_factor: function(frm) {
+		frm.trigger('calculate_incentive');
+	},
+	salary_component: function(frm) {
+		frm.trigger('calculate_incentive');
 	},
 	set_earning_component_filter: function(frm) {
 		frm.set_query("salary_component", function() {
@@ -56,6 +63,11 @@ frappe.ui.form.on("Employee Incentive Tool", {
 				callback: function(r) {
 					if(!r.exc && r.message){
 						frappe.show_alert(__("Created {0} Employee Incentive(s)", [r.message]));
+						frappe.route_options = {
+							'owner': frappe.session.user,
+							'docstatus': 0
+						};
+						frappe.set_route('List', 'Employee Incentive');
 					}
 				},
 				freaze: true,

@@ -41,6 +41,7 @@ class EmployeeIncentiveTool(Document):
 				))
 				incentive.insert()
 				number_of_incentive += 1
+			self.reload()
 			return number_of_incentive
 
 def get_incentive_amount(rewarded_by, wage_factor, wage):
