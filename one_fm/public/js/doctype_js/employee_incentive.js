@@ -43,7 +43,7 @@ frappe.ui.form.on('Employee Incentive', {
 					}
 				},
 				freaze: true,
-				freaze_message: __("Get {0} Wage ..")
+				freaze_message: __("Get Wage ..")
 			});
 		}
 	},

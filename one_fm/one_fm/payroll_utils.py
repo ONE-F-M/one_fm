@@ -17,10 +17,10 @@ def get_wage_for_employee_incentive(employee, rewarded_by, on_date=today()):
     '''
         this function returns the wage of an employee based on the rewarded_by value
         if rewarded_by == "Number of Daily Wage" returns basic_salary/30
-        if rewarded_by == "Percentage of Monthly Wage" returns base(total salary with all allowances) noted in the salary strucure assignment
+        if rewarded_by == "Percentage of Monthly Wage" returns base(total salary with all allowances) noted in the salary structure assignment
 
         args:
-            employee: employee ID
+            employee: employee ID (Example: HR-EMP-00001)
             rewarded_by: "Percentage of Monthly Wage" or "Number of Daily Wage"
             on_date: Payroll Date
     '''
@@ -33,7 +33,7 @@ def get_wage_for_employee_incentive(employee, rewarded_by, on_date=today()):
         else:
             salary_structure_assignment = get_employee_salary_structure_assignment(employee, getdate(on_date))
             if salary_structure_assignment.base:
-                wage = salary_structure_assignment.base # Monthly total wage defined in the salary strucure
+                wage = salary_structure_assignment.base # Monthly total wage defined in the salary structure
     return wage
 
 def get_employee_salary_structure_assignment(employee, on_date):
@@ -62,7 +62,7 @@ def on_update_employee_incentive(doc, method):
 
 def send_employee_incentive_workflow_notification(doc):
     '''
-        This function is ude to send notification to the ERPNext users
+        This function is used to send notification to the ERPNext users
         args:
             doc: Object of Employee Incentive
     '''
