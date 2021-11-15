@@ -3469,5 +3469,133 @@
   ],
   "workflow_name": "PIFSS Monthly Deduction",
   "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Employee Incentive",
+  "is_active": 1,
+  "modified": "2021-11-13 23:32:24.245903",
+  "name": "Employee Incentive",
+  "override_status": 0,
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "Site Supervisor",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Draft",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Line Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved by Manager",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Line Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected by Manager",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved by HR Manager",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected by HR Manager",
+    "update_field": null,
+    "update_value": null
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Line Manager",
+    "condition": null,
+    "next_state": "Approved by Manager",
+    "parent": "Employee Incentive",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Line Manager",
+    "condition": null,
+    "next_state": "Rejected by Manager",
+    "parent": "Employee Incentive",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "HR Manager",
+    "condition": null,
+    "next_state": "Approved by HR Manager",
+    "parent": "Employee Incentive",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Approved by Manager"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "HR Manager",
+    "condition": null,
+    "next_state": "Rejected by HR Manager",
+    "parent": "Employee Incentive",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Rejected by Manager"
+   }
+  ],
+  "workflow_name": "Employee Incentive",
+  "workflow_state_field": "workflow_state"
  }
 ]
