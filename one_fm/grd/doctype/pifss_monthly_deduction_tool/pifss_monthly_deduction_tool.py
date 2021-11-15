@@ -197,11 +197,11 @@ class PIFSSMonthlyDeductionTool(Document):
 							amount = flt(cint(value['total_subscription']) * (employee_contribution_percentage / 100), precision=3)
 							print("amnount1=>",amount)
 							value['Checked'] = 1
-							create_additional_salary(frappe.get_doc("Employee",{"pifss_id_no": row.pifss_id_no}),amount)#create additional salary
+							create_additional_salary(frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no}),amount)#create additional salary
 							break #exit the loop after getting the new total subscription for the employee with the pifss_id 
 				if row.has_tracking_record == 0:#if employee not in the tracking system get their total subscription from deductions table
 					amount = flt(row.total_subscription * (employee_contribution_percentage / 100), precision=3)
-					create_additional_salary(frappe.get_doc("Employee",{"pifss_id_no": row.pifss_id_no}),amount)#create additional salary
+					create_additional_salary(frappe.db.get_value("Employee", {"pifss_id_no": row.pifss_id_no}),amount)#create additional salary
 
 def sub_total_subscription(new_value,old_value):
 	"""This method checks the status of the total subscription and returns the status with delta amount"""
