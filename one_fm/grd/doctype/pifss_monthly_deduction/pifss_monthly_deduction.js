@@ -74,7 +74,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 					}
 			);
 		}
-			else if (frm.doc.pifss_monthly_deduction_tool) {
+			if (frm.doc.pifss_monthly_deduction_tool) {
 			frm.add_custom_button(__('Go to Pifss Monthly Deduction Tracking Tool'),
 				function () {
 					frappe.set_route("Form", "PIFSS Monthly Deduction Tool", frm.doc.pifss_monthly_deduction_tool);
