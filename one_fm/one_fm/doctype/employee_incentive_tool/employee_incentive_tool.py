@@ -65,9 +65,8 @@ def get_employees(department, branch = None, company = None):
 		This function returns employee list
 		department, branch and company are filters to get employee list
 	'''
-	filters = {"status": "Active"}
-	for field, value in {'department': department,
-		'branch': branch, 'company': company}.items():
+	filters = {"status": "Active", "department": department}
+	for field, value in {'branch': branch, 'company': company}.items():
 		if value:
 			filters[field] = value
 

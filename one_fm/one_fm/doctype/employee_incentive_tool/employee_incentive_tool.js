@@ -54,10 +54,8 @@ frappe.ui.form.on("Employee Incentive Tool", {
 				doc: frm.doc,
 				method: 'create_employee_incentive',
 				callback: function(r) {
-					if(!r.exc){
-						if(r.message){
-							frappe.show_alert(__("Created {0} Employee Incentive(s)", [r.message]));
-						}
+					if(!r.exc && r.message){
+						frappe.show_alert(__("Created {0} Employee Incentive(s)", [r.message]));
 					}
 				},
 				freaze: true,
@@ -77,12 +75,11 @@ var load_employees = function(frm) {
 				company: frm.doc.company
 			},
 			callback: function(r) {
-				console.log(r);
 				var data = r.message;
 				data.forEach((item, i) => {
-					var employee_incentive = frm.add_child('employee_incentives')
-					employee_incentive.employee = item.employee
-					employee_incentive.employee_name = item.employee_name
+					var employee_incentive = frm.add_child('employee_incentives');
+					employee_incentive.employee = item.employee;
+					employee_incentive.employee_name = item.employee_name;
 				});
 				frm.refresh_fields();
 			}
