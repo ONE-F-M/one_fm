@@ -105,8 +105,6 @@ def store_fcm_token(employee_id ,fcm_token,device_os):
     Params: Employee ID (Single employee ID), FCM Token and Device OS comes from the client side.
     
     It returns true or false based on the execution.
-    
-    eg:bench execute --kwargs "{'employee_id':'HR-EMP-00002','fcm_token':'f0_1sEWK7kksiegwCZ7dUm:APA91bHCFXcmXdI7AnI_37dbfjTz5uKf46_kvwIXgmtSoxGCbApo4zFETfbaWaEj8FpKXzJlwUS6CTTCfSX8WStuiFx1oPR4gtH3I46-jNbQkbhfvXI_lR3mKDl6e2ek2nB_5OFTfH9c', 'device_os':'ios'}" one_fm.api.api.store_fcm_token 
     """
     Employee = frappe.get_doc("Employee",{"name":employee_id})
     try:
@@ -123,7 +121,7 @@ def store_fcm_token(employee_id ,fcm_token,device_os):
 
 
 @frappe.whitelist()
-def push_notification(employee_id, title, body, checkin, arriveLate ,checkout):
+def push_notification_for_checkin(employee_id, title, body, checkin, arriveLate ,checkout):
     """
     This Function send push notification to group of devices. here, we use 'firebase admin' library to send the message.
     
@@ -161,21 +159,20 @@ def push_notification(employee_id, title, body, checkin, arriveLate ,checkout):
     return response
 
 @frappe.whitelist()
-def push_notification_rest_api(employee_id, title, body, checkin, arriveLate ,checkout ):
+def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, arriveLate ,checkout ):
     """ 
     This function is used to send notification through Firebase CLoud Message. 
     It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
     
     Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message"
-    test Execution: bench execute --kwargs "{'employee_id':'HR-EMP-00001','title':'Hello','body':'Testing','checkin':'True','arriveLate':'True','checkout':'False'}" one_fm.api.api.push_notification_rest_api
 
     serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
     Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
     """
     serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
-    token = frappe.get_list("Employee", {"name": employee_id}, "fcm_token, device_os")
-    deviceToken = token[0].fcm_token
-    device_os = token[0].device_os
+    token, os = frappe.db.get_value("Employee", {"name": employee_id}, ["fcm_token", "device_os"])
+    deviceToken = token
+    device_os = os
 
     headers = {
             'Content-Type': 'application/json',
