@@ -15,7 +15,6 @@
   "wage_factor",
   "column_break_9",
   "salary_component",
-  "calculate_incentive",
   "section_break_12",
   "employee_incentives",
   "create_incentive"
@@ -85,14 +84,11 @@
    "fieldname": "employee_incentives",
    "fieldtype": "Table",
    "label": "Employee Incentive",
-   "options": "Employee Incentive Item"
+   "options": "Employee Incentive Item",
+   "read_only": 1
   },
   {
-   "fieldname": "calculate_incentive",
-   "fieldtype": "Button",
-   "label": "Calculate Incentive"
-  },
-  {
+   "depends_on": "eval: doc.rewarded_by && doc.wage_factor && doc.salary_component && doc.employee_incentives",
    "fieldname": "create_incentive",
    "fieldtype": "Button",
    "label": "Create Incentive"
@@ -101,7 +97,7 @@
  "hide_toolbar": 1,
  "issingle": 1,
  "links": [],
- "modified": "2021-11-15 06:44:09.672680",
+ "modified": "2021-11-15 11:25:08.711786",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Incentive Tool",
