@@ -129,7 +129,7 @@ class PIFSSMonthlyDeduction(Document):
 			self.db_set('total_payment_required',self.total)
 
 	def check_attachment_status(self):
-		if not self.attach_report or self.attach_report == "":
+		if not self.attach_report or not self.attach_report:
 			#delete child table values from frontend and db
 			frappe.db.sql("""delete from `tabPIFSS Monthly Deduction Employees` 
             where parent = %s""", self.name) 
@@ -249,7 +249,7 @@ def import_deduction_data(doc_name):
 					civil_id = one_fm_civil_id
 			if not frappe.db.exists("Employee", {"pifss_id_no": row[12]}):
 				civil_id = ' '
-			employee_amount = flt(row[1] * (47.72/ 100))
+			employee_amount = flt(row[1] * (47.730/ 100))
 			table_data.append({'pifss_id_no': row[12],'civil_id':civil_id,'total_subscription': flt(row[1]), 'compensation_amount':row[2], 'unemployment_insurance':row[3],'fund_increase':row[4],'supplementary_insurance':row[5],'basic_insurance':row[6],'employee_deduction':employee_amount,'additional_deduction':0})
 
 	additional_table = []
