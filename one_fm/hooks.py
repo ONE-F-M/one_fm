@@ -246,6 +246,10 @@ doc_events = {
 	"Training Result" :{
 		"on_submit": "one_fm.api.doc_events.update_certification_data"
 	},
+	"Employee Incentive": {
+		"on_update": "one_fm.one_fm.payroll_utils.on_update_employee_incentive",
+		"on_update_after_submit": "one_fm.one_fm.payroll_utils.on_update_after_submit_employee_incentive",
+	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
