@@ -1,7 +1,7 @@
 from datetime import timedelta
 import itertools
 
-import frappe
+import frappe, erpnext
 from frappe import _
 from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
@@ -400,3 +400,102 @@ def update_training_event_data(doc, method):
 				'training': doc.event_name,
 			})
 			doc_esm.save()
+
+# Attendance
+def create_additional_salary_for_overtime(doc, method):
+	""" 
+	This function creates an additional salary document for a given by specifying the salary component as Overtime Allowance,
+	by obtaining the details from Attendance where the roster type is set to Over-Time.
+	
+	The over time rate is fetched from the project which is linked with the shift the employee was working in.
+	The over time rate is calculated by multiplying the number of hours of the shift with the over time rate for the project.
+
+	In case of no overtime rate is set for the project, the labor law is followed to compute the overtime amount => (Basic wage) * (Number of working hours) * 1.5.
+
+	Args:
+		doc: The attendance document
+
+	"""
+
+	# Check if attendance is for roster type: Over-Time
+	if doc.roster_type == "Over-Time":
+
+		component = "Overtime Allowance"
+		payroll_date = cstr(getdate())
+
+		# Fetch project and duration of the shift employee worked in operations shift
+		project, overtime_duration = frappe.db.get_value("Operations Shift", doc.operations_shift, ["project", "duration"])
+
+		# Fetch overtime details from project
+		has_overtime_rate, overtime_rate = frappe.db.get_value("Project", {'name': project}, ["has_overtime_rate", "overtime_rate"])
+
+		# If project has a specified overtime rate, calculate amount based on overtime rate and create additional salary
+		if has_overtime_rate:
+			
+			if overtime_rate > 0:
+				amount = round(overtime_rate * overtime_duration, 3)
+				notes = "Calculated based on overtime rate set for the project: {project}".format(project=project)
+				
+				create_additional_salary(doc.employee, amount, component, payroll_date, notes)
+			
+			else:
+				frappe.throw(_("Overtime rate must be greater than zero for project: {project}".format(project=project)))
+
+		# If no overtime rate is specified, follow labor law => (Basic Hourly Wage * number of worked hours * 1.5)
+		else:
+			# Fetch assigned shift and basic salary for the given employee
+			assigned_shift, basic_salary = frappe.db.get_value("Employee", {'employee': doc.employee}, ["shift", "one_fm_basic_salary"])
+
+			if assigned_shift:
+				# Fetch duration of the shift employee is assigned to
+				assigned_shift_duration = frappe.db.get_value("Operations Shift", assigned_shift, ["duration"])
+
+				if basic_salary and basic_salary > 0:
+					# Compute hourly wage
+					daily_wage = round(basic_salary/30, 3)
+					hourly_wage = round(daily_wage/assigned_shift_duration, 3)
+
+					# Calculate overtime rate based on labor law
+					amount = round(hourly_wage*overtime_duration*1.5, 3)
+					notes = "Calculated based on labor law => (Basic hourly wage) * (Duration of worked hours) * 1.5"
+
+					create_additional_salary(doc.employee, amount, component, payroll_date, notes)
+				
+				else:
+					frappe.throw(_("Basic Salary not set for employee: {employee} in the employee record.".format(employee=doc.employee)))
+			
+			else:
+				frappe.throw(_("Shift not set for employee: {employee} in the employee record.".format(employee=doc.employee)))
+
+
+
+def create_additional_salary(employee, amount, component, payroll_date, notes):
+	""" 
+	This function creates a document in the Additonal Salary doctype.
+
+	Args:
+		employee: employee code (eg: HR-EMP-0001)
+		amount: amount to be considered in the additional salary
+		component: type of component
+		payroll_date: date that falls in the range during which this additional salary must be considered for payroll
+		notes: Any additional notes
+	
+	Raises:
+		exception e: Any internal server error
+	"""
+
+	try:
+		additional_salary = frappe.new_doc("Additional Salary")
+		additional_salary.employee = employee
+		additional_salary.salary_component = component
+		additional_salary.amount = amount
+		additional_salary.payroll_date = payroll_date
+		additional_salary.company = erpnext.get_default_company()
+		additional_salary.overwrite_salary_structure_amount = 1
+		additional_salary.notes = notes
+		additional_salary.insert()
+		additional_salary.submit()
+	
+	except Exception as e:
+		frappe.log_error(e)
+		frappe.throw(_(e))
