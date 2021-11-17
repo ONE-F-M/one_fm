@@ -149,7 +149,6 @@ def accept_penalty(file, retries, docname):
 		'success' message upon verification || updated retries and 'error' message || Exception. 
 	"""
 	try:
-		print(retries)
 		retries_left = cint(retries) - 1
 		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
 		penalty = frappe.get_doc("Penalty", docname)
@@ -172,7 +171,6 @@ def accept_penalty(file, retries, docname):
 				"folder": "Home/Attachments",
 				"is_private": 1
 			})
-			print(file_doc.as_dict())
 			file_doc.flags.ignore_permissions = True
 			file_doc.insert()
 

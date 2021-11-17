@@ -115,7 +115,6 @@ def accept_penalty(file, retries, docname):
 			"folder": "Home/Attachments",
 			"is_private": 1
 		})
-		print(file_doc.as_dict())
 		file_doc.flags.ignore_permissions = True
 		file_doc.insert()
 
