@@ -137,7 +137,7 @@ def accept_penalty(file, retries, docname):
 	"""
 	This is an API to accept penalty. To Accept Penalty, one needs to pass the face recognition test.
 	Image file in base64 format is passed through face regonition test. And, employee is given 3 tries.
-	If face recognition is true, the penalty gets excepted. 
+	If face recognition is true, the penalty gets accepted. 
 	If Face recognition fails even after 3 tries, the image is sent to legal mangager for investigation. 
 
 	Params:
