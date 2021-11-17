@@ -458,16 +458,16 @@
    "set_only_once": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "pifss_monthly_deduction_tool",
    "fieldtype": "Link",
    "label": "PIFSS Monthly Deduction Tool",
-   "options": "PIFSS Monthly Deduction Tool",
-   "read_only": 1
+   "options": "PIFSS Monthly Deduction Tool"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-22 18:32:13.064455",
+ "modified": "2021-11-16 15:32:10.702819",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
