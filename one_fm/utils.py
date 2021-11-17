@@ -1968,7 +1968,6 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
                     if basic_salary and shift_duration:
                         if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'notes':"Overtime Earning"}):
                             hourly_wage = rounded(rounded(flt(basic_salary)/30, 3) / shift_duration, 3)
-                            print("hourly_wage-----------> ",hourly_wage)
                             overtime_amount = rounded(flt(overtime_doc.overtime_hours) * hourly_wage * 1.5,3) # Overtime = `overtime_hours` * 1.5 * hourly_wage
                             create_additional_salary(doc.employee,overtime_amount)
                             update_employee_schedule(frappe.get_doc("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Day Off"}))
