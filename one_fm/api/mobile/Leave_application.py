@@ -169,24 +169,24 @@ def notify_leave_approver(doc):
 
     It's a action that takes place on update of Leave Application.
     """
-    if doc.status == "Open" and doc.docstatus < 1:
-        # notify leave approver about creation
-        if frappe.db.get_single_value("HR Settings", "send_leave_notification"):
-            if doc.leave_approver:
-                parent_doc = frappe.get_doc('Leave Application', doc.name)
-                args = parent_doc.as_dict()
+    #If Leave Approver Exist
+    if doc.leave_approver:
+        parent_doc = frappe.get_doc('Leave Application', doc.name)
+        args = parent_doc.as_dict() #fetch fields from the doc.
 
-                template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
-                if not template:
-                    frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
-                    return
-                email_template = frappe.get_doc("Email Template", template)
-                message = frappe.render_template(email_template.response_html, args)
+        #Fetch Email Template for Leave Approval. The email template is in HTML format.
+        template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
+        if not template:
+            frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
+            return
+        email_template = frappe.get_doc("Email Template", template)
+        message = frappe.render_template(email_template.response_html, args)
 
-                doc.notify({
-                    # for post in messages
-                    "message": message,
-                    "message_to": doc.leave_approver,
-                    # for email
-                    "subject": email_template.subject
-                })
+        #send notification
+        doc.notify({
+            # for post in messages
+            "message": message,
+            "message_to": doc.leave_approver,
+            # for email
+            "subject": email_template.subject
+        })
