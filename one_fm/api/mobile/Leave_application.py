@@ -167,7 +167,7 @@ def notify_leave_approver(doc):
     This function is to notify the leave approver and request his action. 
     The Message sent through mail consist of 2 action: Approve and Reject.(It is sent only when the not sick leave.)
 
-    Param: doc -> Leave Application DocName (which needs approval)
+    Param: doc -> Leave Application Doc (which needs approval)
 
     It's a action that takes place on update of Leave Application.
     """
