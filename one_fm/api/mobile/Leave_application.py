@@ -162,12 +162,12 @@ def get_leave_approver(employee):
         approver = leave_approver
     return approver
 
-def notify_leave_approver(doc, method):
+def notify_leave_approver(doc):
     """
     This function is to notify the leave approver and request his action. 
     The Message sent through mail consist of 2 action: Approve and Reject.(It is sent only when the not sick leave.)
 
-    It's a docevent that takes place on update of Leave Application.
+    It's a action that takes place on update of Leave Application.
     """
     if doc.status == "Open" and doc.docstatus < 1:
         # notify leave approver about creation

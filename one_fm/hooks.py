@@ -154,7 +154,6 @@ doc_events = {
 	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
-		"on_update": "one_fm.api.mobile.Leave_application.notify_leave_approver",
 		"validate": "one_fm.utils.validate_hajj_leave",
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
 	},
