@@ -176,9 +176,9 @@ def accept_penalty(file, retries, docname):
 
 			frappe.db.commit()
 
-			return response("Face Recognition Successfull.", True ,{},200)
+			return response("Face Recognition Successfull.", {}, True ,200)
 		else:
-			return response("Face Recognition Failed. You have "+str(retries_left)+" retries left.", False ,{"retries_left":retries_left},401)
+			return response("Face Recognition Failed. You have "+str(retries_left)+" retries left." ,{"retries_left":retries_left},False,401)
 			penalty.db_set("retries", retries_left)
 			frappe.throw(_("Face could not be recognized. You have {0} retries left.").format(frappe.bold(retries_left)), title='Validation Error')
 
@@ -203,14 +203,9 @@ def reject_penalty(rejection_reason, docname):
 			penalty.workflow_state = "Penalty Rejected"
 			penalty.save(ignore_permissions=True)
 			frappe.db.commit()
-			return {
-					'message': 'success'
-				}
+			return response("Penalty Rejected", {}, True, 200)
 		else:
-			return {
-					'message': f'No penalty {docname} found'
-				}
+			return response("No penalty {docname} found." , {}, False, 401)
 	except Exception as exc:
-		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
-		return frappe.utils.response.report_error(exc)
+		return response(exc,False,[], 500)
