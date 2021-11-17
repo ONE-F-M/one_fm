@@ -1960,14 +1960,16 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
         check_out_date = getdate(doc.time) 
         overtime_doc = frappe.get_doc("Overtime Request",{'employee':doc.employee, 'request_type':"Head Office", 'date':check_out_date, 'status':"Accepted"})
         basic_salary = frappe.db.get_value("Employee",{'name':doc.employee},['one_fm_basic_salary'])
-        
+        shift_duration = frappe.db.get_value("Operations Shift", {'site': "Wafra"},['duration'])#frappe.db.get_value("Operations Shift", {'project': "Head Office",'site': "Head Office"},['duration'])
         if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Day Off"}):
             checkin_datetime = frappe.db.get_value("Employee Checkin",{'employee':doc.employee, 'log_type':"IN"}, ['time'])
             if checkin_datetime:
                 if is_checkin_record_available(check_out_date, check_out_time, checkin_datetime, overtime_doc.start_time, overtime_doc.end_time):
-                    if basic_salary:
+                    if basic_salary and shift_duration:
                         if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'notes':"Overtime Earning"}):
-                            overtime_amount = rounded(flt(overtime_doc.overtime_hours)*1.5*flt(basic_salary),3) # Overtime = `overtime_hours` * 1.5 * basic hourly wage
+                            hourly_wage = rounded(rounded(flt(basic_salary)/30, 3) / shift_duration, 3)
+                            print("hourly_wage-----------> ",hourly_wage)
+                            overtime_amount = rounded(flt(overtime_doc.overtime_hours) * hourly_wage * 1.5,3) # Overtime = `overtime_hours` * 1.5 * hourly_wage
                             create_additional_salary(doc.employee,overtime_amount)
                             update_employee_schedule(frappe.get_doc("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Day Off"}))
                     if not basic_salary:
@@ -1976,9 +1978,10 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
         if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Working"}):
             if cstr(check_out_time) >= cstr(overtime_doc.end_time):# Check-out time is equal to or after the requested time.
                 
-                if basic_salary:
+                if basic_salary and shift_duration:
                     if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'notes':"Overtime Earning"}):
-                        overtime_amount = rounded(flt(overtime_doc.overtime_hours)*1.5*flt(basic_salary),3) # Overtime = `overtime_hours` * 1.5 * basic hourly wage
+                        hourly_wage = rounded(rounded(flt(basic_salary)/30, 3) / shift_duration, 3)
+                        overtime_amount = rounded(flt(overtime_doc.overtime_hours) * hourly_wage * 1.5 ,3) # Overtime = `overtime_hours` * 1.5 * hourly_wage
                         create_additional_salary(doc.employee,overtime_amount)
                 if not basic_salary:
                     frappe.throw("Please Define The Basic Salary for {employee} to Create Overtime Allowance".format(employee=doc.employee))
