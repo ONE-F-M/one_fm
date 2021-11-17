@@ -212,7 +212,7 @@ doc_events = {
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert",
-		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office" 
+		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office"
 	},
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
@@ -230,10 +230,11 @@ doc_events = {
 	},
 	"Attendance": {
 		"on_submit": [
-           		"one_fm.api.tasks.update_shift_details_in_attendance",
-           		"one_fm.api.doc_events.create_additional_salary_for_overtime"
+			"one_fm.api.tasks.update_shift_details_in_attendance",
+			"one_fm.api.doc_events.create_additional_salary_for_overtime",
+			"one_fm.one_fm.utils.manage_attendance_on_holiday"
 		],
-    		"on_cancel": "one_fm.one_fm.utils.attendance_on_cancel"
+		"on_cancel": "one_fm.one_fm.utils.manage_attendance_on_holiday"
 	},
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",

@@ -268,14 +268,6 @@ def notify_operator_with_supervisor_response(name):
         message = "<p>Kindly, you are requested to Check Suggestions box for Job Applicant: {0} and check if candidate has external issues while transfering  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
         create_notification_log(subject, message, [grd_operator], job_Applicant)
 
-def attendance_on_submit(doc, method):
-    from one_fm.api.tasks import update_shift_details_in_attendance
-    update_shift_details_in_attendance(doc, method)
-    manage_attendance_on_holiday(doc, method)
-
-def attendance_on_cancel(doc, method):
-    manage_attendance_on_holiday(doc, method)
-
 def manage_attendance_on_holiday(doc, method):
     '''
         Method used to create compensatory leave request and additional salary for holiday attendance
