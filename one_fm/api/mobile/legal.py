@@ -184,7 +184,7 @@ def accept_penalty(file, retries, docname):
 
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
-		return response(exc,False,[], 500)
+		return response(exc,{},False, 500)
 
 @frappe.whitelist()
 def reject_penalty(rejection_reason, docname):
@@ -208,4 +208,4 @@ def reject_penalty(rejection_reason, docname):
 			return response("No penalty {docname} found." , {}, False, 401)
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
-		return response(exc,False,[], 500)
+		return response(exc,{},False, 500)
