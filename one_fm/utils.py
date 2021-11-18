@@ -1960,7 +1960,7 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
         check_out_date = getdate(doc.time) 
         overtime_doc = frappe.get_doc("Overtime Request",{'employee':doc.employee, 'request_type':"Head Office", 'date':check_out_date, 'status':"Accepted"})
         basic_salary = frappe.db.get_value("Employee",{'name':doc.employee},['one_fm_basic_salary'])
-        shift_duration = frappe.db.get_value("Operations Shift", {'site': "Wafra"},['duration'])#frappe.db.get_value("Operations Shift", {'project': "Head Office",'site': "Head Office"},['duration'])
+        shift_duration = frappe.db.get_value("Operations Shift", {'project': "Head Office",'site': "Head Office"},['duration'])
         if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Day Off"}):
             checkin_datetime = frappe.db.get_value("Employee Checkin",{'employee':doc.employee, 'log_type':"IN"}, ['time'])
             if checkin_datetime:
