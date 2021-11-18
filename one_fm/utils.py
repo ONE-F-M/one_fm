@@ -2037,3 +2037,11 @@ def create_additional_salary(employee, amount):
 	additional_salary.notes = "Overtime Earning"
 	additional_salary.insert()
 	additional_salary.submit()
+
+def response(message, data, success, status_code):
+     # Function to create response to the API. It generates json with message, success, data object and the status code.
+     frappe.local.response["message"] = message
+     frappe.local.response["success"] = success
+     frappe.local.response["data_obj"] = data
+     frappe.local.response["http_status_code"] = status_code
+     return

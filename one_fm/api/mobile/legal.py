@@ -6,6 +6,7 @@ from one_fm.one_fm.page.face_recognition.face_recognition import recognize_face
 from frappe import _
 import pickle, face_recognition
 import json
+from one_fm.utils import response
 
 @frappe.whitelist()
 def get_employee_list(shift, penalty_occurence_time):
@@ -134,6 +135,11 @@ def get_penalty_details(penalty_name):
 @frappe.whitelist()
 def accept_penalty(file, retries, docname):
 	"""
+	This is an API to accept penalty. To Accept Penalty, one needs to pass the face recognition test.
+	Image file in base64 format is passed through face regonition test. And, employee is given 3 tries.
+	If face recognition is true, the penalty gets accepted. 
+	If Face recognition fails even after 3 tries, the image is sent to legal mangager for investigation. 
+
 	Params:
 	File: Base64 url of captured image.
 	Retries: number of tries left out of three
@@ -143,18 +149,17 @@ def accept_penalty(file, retries, docname):
 		'success' message upon verification || updated retries and 'error' message || Exception. 
 	"""
 	try:
-		print(retries)
 		retries_left = cint(retries) - 1
 		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
 		penalty = frappe.get_doc("Penalty", docname)
 		image = upload_image(file, OUTPUT_IMAGE_PATH)
-		if recognize_face(file) or retries_left == 0:
+		if recognize_face(image) or retries_left == 0:
 			if retries_left == 0:
 				penalty.verified = 0
 				send_email_to_legal(penalty)
 			else:
 				penalty.verified = 1		
-			penalty.workflow_state = "Penalty Accepted"
+				penalty.workflow_state = "Penalty Accepted"
 			penalty.save(ignore_permissions=True)
 			
 			file_doc = frappe.get_doc({
@@ -166,23 +171,20 @@ def accept_penalty(file, retries, docname):
 				"folder": "Home/Attachments",
 				"is_private": 1
 			})
-			print(file_doc.as_dict())
 			file_doc.flags.ignore_permissions = True
 			file_doc.insert()
 
 			frappe.db.commit()
 
-			return {
-				'message': 'success'
-			}
+			return response("Face Recognition Successfull.", {}, True ,200)
 		else:
+			return response("Face Recognition Failed. You have "+str(retries_left)+" retries left." ,{"retries_left":retries_left},False,401)
 			penalty.db_set("retries", retries_left)
 			frappe.throw(_("Face could not be recognized. You have {0} retries left.").format(frappe.bold(retries_left)), title='Validation Error')
 
 	except Exception as exc:
-		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
-		return frappe.utils.response.report_error(exc)
+		return response(exc,{},False, 500)
 
 @frappe.whitelist()
 def reject_penalty(rejection_reason, docname):
@@ -201,14 +203,9 @@ def reject_penalty(rejection_reason, docname):
 			penalty.workflow_state = "Penalty Rejected"
 			penalty.save(ignore_permissions=True)
 			frappe.db.commit()
-			return {
-					'message': 'success'
-				}
+			return response("Penalty Rejected", {}, True, 200)
 		else:
-			return {
-					'message': f'No penalty {docname} found'
-				}
+			return response("No penalty {docname} found." , {}, False, 401)
 	except Exception as exc:
-		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
-		return frappe.utils.response.report_error(exc)
+		return response(exc,{},False, 500)
