@@ -76,10 +76,10 @@ def employee_accept_or_reject_overtime_request(employee, overtime_request_id, wo
     try:
         overtime_request = frappe.get_doc('Overtime Request', overtime_request_id)
         if workflow_state not in ['Request Accepted', 'Request Rejected']:
-            return response("{0} can not {1}".format(overtime_request.employee_name, workflow_state), {}, False, 400)
+            return response("{0} can not {1}".format(overtime_request.full_name, workflow_state), {}, False, 400)
 
         if overtime_request.employee != employee:
-            return response("Only {0} Has The Right to Accept".format(overtime_request.employee_name), {}, False, 400)
+            return response("Only {0} Has The Right to Accept".format(overtime_request.full_name), {}, False, 400)
 
         if overtime_request.workflow_state == workflow_state:
             return response("Overtime {0} Already !".format(workflow_state), {}, False, 400)
@@ -89,12 +89,15 @@ def employee_accept_or_reject_overtime_request(employee, overtime_request_id, wo
             overtime_request.save()
             frappe.db.commit()
 
-            subject = _("{0} {1} Overtime Request {2}".format(overtime_request.employee_name, status, overtime_request.name))
+            subject = _("{0} {1} Overtime Request {2}".format(overtime_request.full_name, workflow_state, overtime_request.name))
             message = subject + _(" dated {0}.".format(overtime_request.date))
 
             create_notification_log(subject, message, [overtime_request.owner], overtime_request, True)
 
             return response("Overtime {0} Successfully".format(workflow_state), {overtime_request.workflow_state}, True, 200)
+
+        else:
+            return response("You can Accept/Reject an Overtime Request with Pending Status only ..!", {}, False, 400)
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
