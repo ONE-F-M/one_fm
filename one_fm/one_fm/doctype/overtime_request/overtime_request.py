@@ -16,7 +16,7 @@ class OvertimeRequest(Document):
 		self.validate_mandatory()
 
 	def validate_duplicate(self):
-		filters = {'request_type': self.request_type, 'employee': self.employee, 'date': self.date}
+		filters = {'request_type': self.request_type, 'employee': self.employee, 'date': self.date, 'name': ['!=', self.name]}
 		if self.request_type == 'Head Office':
 			filters['start_time'] = self.start_time
 			filters['end_time'] = self.end_time
