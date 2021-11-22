@@ -10,8 +10,14 @@ import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
 
-cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/private/files/one-fm-70641-firebase-adminsdk-nuf6h-667458c1a5.json")
-firebase_admin.initialize_app(cred)
+@frappe.whitelist()
+def initialize_firebase():
+    """
+        Initialize Firebase-Admin
+    """
+    #fetch credential file to initilize Firebase SDK
+    cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/private/files/one-fm-70641-firebase-adminsdk-nuf6h-667458c1a5.json")
+    firebase_admin.initialize_app(cred)
 
 @frappe.whitelist()
 def _one_fm():
@@ -131,6 +137,7 @@ def push_notification_for_checkin(employee_id, title, body, checkin, arriveLate 
     
     It returns the response received.
     """ 
+    initialize_firebase()
     # Collect the registration token from employee doctype for the given list of employees
     registration_token = frappe.get_value("Employee", {"name": employee_id}, "fcm_token")
     
