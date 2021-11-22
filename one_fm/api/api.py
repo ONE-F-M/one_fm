@@ -10,9 +10,14 @@ import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
 
-
-cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/private/files/one-fm-70641-firebase-adminsdk-nuf6h-667458c1a5.json")
-firebase_admin.initialize_app(cred)
+@frappe.whitelist()
+def initialize_firebase():
+    """
+        Initialize Firebase-Admin
+    """
+    #fetch credential file to initilize Firebase SDK
+    cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/private/files/one-fm-70641-firebase-adminsdk-nuf6h-667458c1a5.json")
+    firebase_admin.initialize_app(cred)
 
 @frappe.whitelist()
 def _one_fm():
@@ -97,15 +102,16 @@ def rename_post(posts):
         except Exception as e:
             print(frappe.get_traceback())
 
-"""
-This function stores FCM Token  and Device OS in employee doctype 
-that is fetched from device/app end when user logs in.
-Params: Employee ID (Single employee ID), FCM Token and Device OS comes from the client side.
-It returns true or false based on the execution.
-eg:bench execute --kwargs "{'employee_id':'HR-EMP-00002','fcm_token':'cKg2nMfqwUpDinaWmUmVXp:APA91bHYAT2UxhesFtFHgweK8umoXm2LR9xyvi1L1OoefDRb3f1etOQbR3MZRFwL7Vwgc6hHrXO7urQWg3iy5SwTh_iE0lQP0Ny3O2nkcK_5Zo_UCQPMbZORF2Y5beejJbiHcQXA_x1C', 'device_os':'IOS'}" one_fm.api.api.store_fcm_token 
-"""
 @frappe.whitelist()
 def store_fcm_token(employee_id ,fcm_token,device_os):
+    """
+    This function stores FCM Token  and Device OS in employee doctype 
+    that is fetched from device/app end when user logs in.
+    
+    Params: Employee ID (Single employee ID), FCM Token and Device OS comes from the client side.
+    
+    It returns true or false based on the execution.
+    """
     Employee = frappe.get_doc("Employee",{"name":employee_id})
     try:
         if Employee:
@@ -119,29 +125,33 @@ def store_fcm_token(employee_id ,fcm_token,device_os):
     except Exception as e:
         print(frappe.get_traceback())
 
-"""
-    This Function send push notification to group of devices. here, we use 'firebase admin' library to send the message.
-    Params: employee_id is a list of employee ID's, title and body are message string to send it through notification.
-    It returns the response received.
-"""
-@frappe.whitelist()
-def push_notification(employee_id, title, body):
-    registration_tokens = []
-    # Collect the registration token from employee doctype for the given list of employees
-    for emp in employee_id:
-        token = frappe.get_all("Employee", {"name": emp}, "fcm_token")
-        if token[0].fcm_token:
-            registration_tokens.append(token[0].fcm_token)
 
+@frappe.whitelist()
+def push_notification_for_checkin(employee_id, title, body, checkin, arriveLate ,checkout):
+    """
+    This Function send push notification to group of devices. here, we use 'firebase admin' library to send the message.
+    
+    Params: employee_id is a list of employee ID's,
+    title and body are message string to send it through notification.
+    checkin, arriveLate ,checkout are data to enable buttons.
+    
+    It returns the response received.
+    """ 
+    #Initialize Firebase-Admin
+    initialize_firebase()
+
+    # Collect the registration token from employee doctype for the given list of employees
+    registration_token = frappe.get_value("Employee", {"name": employee_id}, "fcm_token")
+    
     # Create message payload. 
-    for registration_token in registration_tokens:
+    if registration_token :
         message = messaging.Message(
                 data= {
                 "title": title,
                 "body" : body,
-                "showButtonCheckIn": 'True',
-                "showButtonCheckOut": 'False',
-                "showButtonArrivingLate": 'False'
+                "showButtonCheckIn": checkin,
+                "showButtonCheckOut": checkout,
+                "showButtonArrivingLate": arriveLate
                 },
                 apns=messaging.APNSConfig(
                     payload=messaging.APNSPayload(
@@ -155,41 +165,61 @@ def push_notification(employee_id, title, body):
                 token=registration_token,
             )
         response = messaging.send(message)
-        print(response)
     return response
 
-# This function is used to send notification through Firebase CLoud Message. 
-# It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
-# Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message"
-# bench execute --kwargs "{'employee_id':'HR-EMP-00001','title':'Hello','body':'Testing'}" one_fm.api.api.push_notification_rest_api
 @frappe.whitelist()
-def push_notification_rest_api(employee_id, title, body):
-    """
+def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, arriveLate ,checkout ):
+    """ 
+    This function is used to send notification through Firebase CLoud Message. 
+    It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
+    
+    Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message"
+
     serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
-    Device Token is store in employee doctype using 'store_fcm_token' on device end.
+    Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
     """
     serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
-    token = frappe.get_all("Employee", {"name": employee_id}, "fcm_token")
-    deviceToken = token[0].fcm_token
+    token, os = frappe.db.get_value("Employee", {"name": employee_id}, ["fcm_token", "device_os"])
+    deviceToken = token
+    device_os = os
 
     headers = {
             'Content-Type': 'application/json',
             'Authorization': 'key=' + serverToken,
         }
 
-    #Body in json form defining a message payload to send through API.
-    body = {       
+    #Body in json form defining a message payload to send through API. 
+    # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
+    if device_os == "android":
+         body = {       
             "to":deviceToken,
             "data": {
                 "title": title,
                 "body" : body,
-                "showButtonCheckIn": True,
-                "showButtonCheckOut": False,
-                "showButtonArrivingLate": False
+                "showButtonCheckIn": checkin,
+                "showButtonCheckOut": checkout,
+                "showButtonArrivingLate": arriveLate
                 }
+            }
+    else:
+        body = {       
+            "to":deviceToken,
+            "data": {
+                "title": title,
+                "body" : body,
+                "showButtonCheckIn": checkin,
+                "showButtonCheckOut": checkout,
+                "showButtonArrivingLate": arriveLate
+                },
+            "notification": {
+                "body": body,
+                "title": title,
+                "badge": 0,
+                "click_action": "oneFmNotificationCategory1"
+                },
+                "mutable_content": True
             }
 
     #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
     response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
-    print(response.status_code)
-    print(response.json())
+    return response

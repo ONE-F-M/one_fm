@@ -72,7 +72,8 @@ doctype_js = {
 	"Purchase Order": "public/js/doctype_js/purchase_order.js",
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
 	"Payment Entry": "public/js/doctype_js/payment_entry.js",
-	"Item Price": "public/js/doctype_js/item_price.js"
+	"Item Price": "public/js/doctype_js/item_price.js",
+	"Employee Incentive": "public/js/doctype_js/employee_incentive.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -211,7 +212,7 @@ doc_events = {
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
 		"after_insert": "one_fm.api.doc_events.checkin_after_insert",
-		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office" 
+		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office"
 	},
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
@@ -228,7 +229,12 @@ doc_events = {
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
-		"on_submit": "one_fm.api.tasks.update_shift_details_in_attendance"
+		"on_submit": [
+			"one_fm.api.tasks.update_shift_details_in_attendance",
+			"one_fm.api.doc_events.create_additional_salary_for_overtime",
+			"one_fm.one_fm.utils.manage_attendance_on_holiday"
+		],
+		"on_cancel": "one_fm.one_fm.utils.manage_attendance_on_holiday"
 	},
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
@@ -244,8 +250,12 @@ doc_events = {
 		"on_submit": "one_fm.api.doc_events.update_training_event_data"
 	},
 	"Training Result" :{
-		"on_submit": "one_fm.api.doc_events.update_certification_data" 
+		"on_submit": "one_fm.api.doc_events.update_certification_data"
 	},
+	"Employee Incentive": {
+		"on_update": "one_fm.one_fm.payroll_utils.on_update_employee_incentive",
+		"on_update_after_submit": "one_fm.one_fm.payroll_utils.on_update_after_submit_employee_incentive",
+	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -301,7 +311,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
-		
+
 
 	],
 	"hourly": [
