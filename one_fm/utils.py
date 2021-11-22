@@ -2027,6 +2027,7 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
                             create_additional_salary(doc.employee, overtime_amount, overtime_component)
                         else:
                             frappe.throw(_("No Working day overtime rate set in HR and Payroll Additional Settings."))
+
                 if not basic_salary:
                     frappe.throw("Please Define The Basic Salary for {employee} to Create Overtime Allowance".format(employee=doc.employee))
 
@@ -2075,7 +2076,6 @@ def create_additional_salary(employee, amount, overtime_component):
     Param:
     ------
     Employee & overtime amount & overtime_component
-
     overtime_component: (eg :"Overtime Allowance")
     """
 	additional_salary = frappe.new_doc("Additional Salary")
