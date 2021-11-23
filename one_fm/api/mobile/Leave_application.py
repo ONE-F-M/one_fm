@@ -3,7 +3,6 @@ from frappe import _
 from erpnext.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
 from datetime import date
 import datetime
-from one_fm.one_fm.doctype.leave_application.leave_application import get_leave_approver,get_employee_schedule, notifier_leave
 import collections
 from one_fm.api.tasks import get_action_user,get_notification_user
 
@@ -74,7 +73,7 @@ def leave_notify(docname,status):
     frappe.db.commit()
 
 #This function is the api to create a new leave notification.
-#bench execute --kwargs "{'employee':'HR-EMP-00002','from_date':'2021-11-02','to_date':'2021-11-02','leave_type':'Annual Leave','reason':'fever'}"  one_fm.api.mobile.Leave_application.create_new_leave_application
+#bench execute --kwargs "{'employee':'HR-EMP-00002','from_date':'2021-11-17','to_date':'2021-11-17','leave_type':'Annual Leave','reason':'fever'}"  one_fm.api.mobile.Leave_application.create_new_leave_application
 @frappe.whitelist()
 def create_new_leave_application(employee,from_date,to_date,leave_type,reason):
     """
@@ -135,3 +134,61 @@ def response(message, data, status_code):
      frappe.local.response["data_obj"] = data
      frappe.local.response["http_status_code"] = status_code
      return
+
+@frappe.whitelist()
+def get_leave_approver(employee):
+    """
+    This function fetches the leave approver for a given employee.
+    The leave approver is fetched  either Report_to or Leave Approver. 
+    But, if both don't exist, Operation manager is the Leave Approver.
+
+    Params: ERP Employee ID
+
+    Return: User ID of Leave Approver
+
+    """
+    approver = None
+    #check if employee has leave approver or report to assigned in the employee doctype
+    leave_approver, report_to = frappe.db.get_value("Employee", employee, ["leave_approver", "reports_to"])
+    if not leave_approver:
+        if report_to:
+            approver = frappe.db.get_value('Employee', {'name': report_to}, ['user_id'])
+        else:
+            #if not, return the 'Operational Manager' as the leave approver. But, check if employee himself is not a leave manager.
+            operation_manager = frappe.db.get_value('Employee', {'Designation': "Operation Manager"}, ['name','user_id'])
+            if operation_manager[0]!= employee:
+                approver = operation_manager[1]
+    else:
+        approver = leave_approver
+    return approver
+
+def notify_leave_approver(doc):
+    """
+    This function is to notify the leave approver and request his action. 
+    The Message sent through mail consist of 2 action: Approve and Reject.(It is sent only when the not sick leave.)
+
+    Param: doc -> Leave Application Doc (which needs approval)
+
+    It's a action that takes place on update of Leave Application.
+    """
+    #If Leave Approver Exist
+    if doc.leave_approver:
+        parent_doc = frappe.get_doc('Leave Application', doc.name)
+        args = parent_doc.as_dict() #fetch fields from the doc.
+
+        #Fetch Email Template for Leave Approval. The email template is in HTML format.
+        template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
+        if not template:
+            frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
+            return
+        email_template = frappe.get_doc("Email Template", template)
+        message = frappe.render_template(email_template.response_html, args)
+
+        #send notification
+        doc.notify({
+            # for post in messages
+            "message": message,
+            "message_to": doc.leave_approver,
+            # for email
+            "subject": email_template.subject
+        })
