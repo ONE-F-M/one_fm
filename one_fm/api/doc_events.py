@@ -1,7 +1,7 @@
 from datetime import timedelta
 import itertools
 
-import frappe
+import frappe, erpnext
 from frappe import _
 from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
@@ -9,6 +9,7 @@ from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_sh
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 import datetime
 from frappe.permissions import remove_user_permission
+from erpnext.hr.utils import get_holidays_for_employee
 
 #Shift Type
 @frappe.whitelist()
@@ -400,3 +401,162 @@ def update_training_event_data(doc, method):
 				'training': doc.event_name,
 			})
 			doc_esm.save()
+
+# Attendance
+def create_additional_salary_for_overtime(doc, method):
+	""" 
+	This function creates an additional salary document for a given by specifying the salary component for overtime set in the HR and Payroll Additional Settings,
+	by obtaining the details from Attendance where the roster type is set to Over-Time.
+	
+	The over time rate is fetched from the project which is linked with the shift the employee was working in.
+	The over time rate is calculated by multiplying the number of hours of the shift with the over time rate for the project.
+
+	In case of no overtime rate is set for the project, overtime rates are fetched from HR and Payroll Additional Settings.
+	Amount is calucated and additional salary is created as:
+	1. If employee has an existing basic schedule on the same day - working day rate is applied
+	2. Working on a holiday of type "weekly off: - day off rate is applied.
+	3. Working on a holiday of type non "weekly off" - public/additional holiday.   
+
+	Args:
+		doc: The attendance document
+
+	"""
+	roster_type_basic = "Basic"
+	roster_type_overtime = "Over-Time"
+
+	days_of_week = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+	# Check if attendance is for roster type: Over-Time
+	if doc.roster_type == roster_type_overtime:
+
+		payroll_date = cstr(getdate())
+
+		# Fetch payroll details from HR and Payroll Additional Settings
+		overtime_component = frappe.db.get_single_value("HR and Payroll Additional Settings", 'overtime_additional_salary_component')
+		working_day_overtime_rate = frappe.db.get_single_value("HR and Payroll Additional Settings", 'working_day_overtime_rate')
+		day_off_overtime_rate = frappe.db.get_single_value("HR and Payroll Additional Settings", 'day_off_overtime_rate')
+		public_holiday_overtime_rate = frappe.db.get_single_value("HR and Payroll Additional Settings", 'public_holiday_overtime_rate')
+
+		# Fetch project and duration of the shift employee worked in operations shift
+		project, overtime_duration = frappe.db.get_value("Operations Shift", doc.operations_shift, ["project", "duration"])
+
+		# Fetch overtime details from project
+		project_has_overtime_rate, project_overtime_rate = frappe.db.get_value("Project", {'name': project}, ["has_overtime_rate", "overtime_rate"])
+
+		# If project has a specified overtime rate, calculate amount based on overtime rate and create additional salary
+		if project_has_overtime_rate:
+			
+			if project_overtime_rate > 0:
+				amount = round(project_overtime_rate * overtime_duration, 3)
+				notes = "Calculated based on overtime rate set for the project: {project}".format(project=project)
+				
+				create_additional_salary(doc.employee, amount, overtime_component, payroll_date, notes)
+			
+			else:
+				frappe.throw(_("Overtime rate must be greater than zero for project: {project}".format(project=project)))
+
+		# If no overtime rate is specified, follow labor law => (Basic Hourly Wage * number of worked hours * 1.5)
+		else:
+			# Fetch assigned shift, basic salary  and holiday list for the given employee
+			assigned_shift, basic_salary, holiday_list = frappe.db.get_value("Employee", {'employee': doc.employee}, ["shift", "one_fm_basic_salary", "holiday_list"])
+			
+			if assigned_shift:
+				# Fetch duration of the shift employee is assigned to
+				assigned_shift_duration = frappe.db.get_value("Operations Shift", assigned_shift, ["duration"])
+
+				if basic_salary and basic_salary > 0:
+					# Compute hourly wage
+					daily_wage = round(basic_salary/30, 3)
+					hourly_wage = round(daily_wage/assigned_shift_duration, 3)
+
+					# Check if a basic schedule exists for the employee and the attendance date
+					if frappe.db.exists("Employee Schedule", {'employee': doc.employee, 'date': doc.attendance_date, 'employee_availability': "Working", 'roster_type': roster_type_basic}):
+						
+						if working_day_overtime_rate > 0:
+							
+							# Compute amount as per working day rate
+							amount = round(hourly_wage * overtime_duration * working_day_overtime_rate, 3)
+							notes = "Calculated based on working day rate => (Basic hourly wage) * (Duration of worked hours) * {working_day_overtime_rate}".format(working_day_overtime_rate=working_day_overtime_rate)
+							
+							create_additional_salary(doc.employee, amount, overtime_component, payroll_date, notes)
+						
+						else:
+							frappe.throw(_("No Wroking Day overtime rate set in HR and Payroll Additional Settings."))
+
+					# Check if attendance date falls in a holiday list
+					elif holiday_list:
+
+						# Pass last parameter as "False" to get weekly off days
+						holidays_weekly_off = get_holidays_for_employee(doc.employee, doc.attendance_date, doc.attendance_date, False, False)
+
+						# Pass last paramter as "True" to get non weekly off days, ie, public/additional holidays 
+						holidays_public_holiday = get_holidays_for_employee(doc.employee, doc.attendance_date, doc.attendance_date, False, True)
+
+						# Check for weekly off days length and if description of day off is set as one of the weekdays. (By default, description is set to a weekday name)
+						if len(holidays_weekly_off) > 0 and holidays_weekly_off[0].description in days_of_week:
+						
+							if day_off_overtime_rate > 0:
+								
+								# Compute amount as per day off rate
+								amount = round(hourly_wage * overtime_duration * day_off_overtime_rate, 3)
+								notes = "Calculated based on day off rate => (Basic hourly wage) * (Duration of worked hours) * {day_off_overtime_rate}".format(day_off_overtime_rate=day_off_overtime_rate)
+
+								create_additional_salary(doc.employee, amount, overtime_component, payroll_date, notes)
+							
+							else:
+								frappe.throw(_("No Day Off overtime rate set in HR and Payroll Additional Settings."))
+
+						# Check for weekly off days set to "False", ie, Public/additional holidays in holiday list
+						elif len(holidays_public_holiday) > 0:
+							
+							if public_holiday_overtime_rate > 0:
+								
+								# Compute amount as per public holiday rate
+								amount = round(hourly_wage * overtime_duration * public_holiday_overtime_rate, 3)
+								notes = "Calculated based on day off rate => (Basic hourly wage) * (Duration of worked hours) * {public_holiday_overtime_rate}".format(public_holiday_overtime_rate=public_holiday_overtime_rate)
+
+								create_additional_salary(doc.employee, amount, overtime_component, payroll_date, notes)
+							
+							else:
+								frappe.throw(_("No Public Holiday overtime rate set in HR and Payroll Additional Settings."))
+					else:
+						frappe.throw(_("No basic Employee Schedule or Holiday List found for employee: {employee}".format(employee=doc.employee)))
+				
+				else:
+					frappe.throw(_("Basic Salary not set for employee: {employee} in the employee record.".format(employee=doc.employee)))
+			
+			else:
+				frappe.throw(_("Shift not set for employee: {employee} in the employee record.".format(employee=doc.employee)))
+
+
+
+def create_additional_salary(employee, amount, component, payroll_date, notes):
+	""" 
+	This function creates a document in the Additonal Salary doctype.
+
+	Args:
+		employee: employee code (eg: HR-EMP-0001)
+		amount: amount to be considered in the additional salary
+		component: type of component
+		payroll_date: date that falls in the range during which this additional salary must be considered for payroll
+		notes: Any additional notes
+	
+	Raises:
+		exception e: Any internal server error
+	"""
+
+	try:
+		additional_salary = frappe.new_doc("Additional Salary")
+		additional_salary.employee = employee
+		additional_salary.salary_component = component
+		additional_salary.amount = amount
+		additional_salary.payroll_date = payroll_date
+		additional_salary.company = erpnext.get_default_company()
+		additional_salary.overwrite_salary_structure_amount = 1
+		additional_salary.notes = notes
+		additional_salary.insert()
+		additional_salary.submit()
+	
+	except Exception as e:
+		frappe.log_error(e)
+		frappe.throw(_(e))

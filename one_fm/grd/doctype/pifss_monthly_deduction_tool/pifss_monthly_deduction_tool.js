@@ -3,7 +3,7 @@
 
 frappe.ui.form.on('PIFSS Monthly Deduction Tool', {
 	refresh: function(frm){
-		//on submit of the tracking system it will create button to link it with pifss monthly deduction record
+		// `on_submit` of the `PIFSS Monthly Deduction Tool` it will create button to link it with pifss monthly deduction record
 		if(frm.doc.docstatus === 1){
 			frm.add_custom_button(__('Go to PIFSS Monthly Deduction'),
 			function(){

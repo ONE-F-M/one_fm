@@ -12,7 +12,7 @@ from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import create_payroll_entry
 from erpnext.hr.doctype.attendance.attendance import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
-from one_fm.api.api import push_notification
+from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -75,12 +75,14 @@ def final_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Arrive Late")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
-			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+
 			if len(recipients) > 0:
 				notify(recipients,"IN")
 
@@ -102,17 +104,26 @@ def final_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Leave Early")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="OUT"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
 				AND empChkin.shift_type="{shift_type}")
-			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+
 			if len(recipients) > 0:
 				notify(recipients,"OUT")
 
+#This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
 def notify(recipients,log_type):
+	"""
+	params: 
+	recipients: Dictionary consist of user ID and Emplloyee ID eg: [{'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}]
+	log_type: In or Out
+	"""
+	#defining the subject and message
 	checkin_subject = _("Final Reminder: Please checkin in the next five minutes.")
 	checkin_message = _("""
 					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
@@ -121,17 +132,30 @@ def notify(recipients,log_type):
 	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
 	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
+	Notification_body = "Please checkin in the next five minutes."
 	user_id = []
-	employee_id = []
+
+	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
 	for recipient in recipients:
-		user_id.append(recipient[0])
-		employee_id.append(recipient[1])
-	if log_type=="IN":
-		send_notification(checkin_subject, checkin_message, user_id)
-		push_notification(employee_id, Notification_title, "Please checkin in the next five minutes.")
-	if log_type=="OUT":
-		send_notification(checkout_subject, checkout_message, user_id)
-		push_notification(employee_id, Notification_title, "Please checkout in the next five minutes.")
+		# Append the list of user ID to send notification through email.
+		user_id.append(recipient.user_id)
+
+		# Get Employee ID and User Role for the given recipient
+		employee_id = recipient.name
+		user_roles = frappe.get_roles(recipient.user_id)
+
+		#cutomizing buttons according to log type.
+		if log_type=="IN":
+			#arrive late button is true only if the employee has the user role "Head Office Employee".
+			if "Head Office Employee" in user_roles:
+				push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=True,arriveLate=True,checkout=False)
+			else:
+				push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=True,arriveLate=False,checkout=False)
+		if log_type=="OUT":
+			push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=False,arriveLate=False,checkout=True)
+	
+	# send notification mail to list of employee using user_id
+	send_notification(checkin_subject, checkin_message, user_id)
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
@@ -180,6 +204,7 @@ def supervisor_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Arrive Late")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 					WHERE
 						empChkin.log_type="IN"
@@ -225,6 +250,7 @@ def supervisor_reminder():
 				AND emp_sp.shift_type="{shift_type}"
 				AND emp_sp.date="{date}"
 				AND emp_sp.permission_type="Leave Early")
+				AND tSA.employee
 		 		NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 		 			WHERE
 		 				empChkin.log_type="OUT"
@@ -389,7 +415,9 @@ def checkin_deadline():
 					emp_sp.employee=emp.name
 				AND emp_sp.workflow_state="Approved"
 				AND emp_sp.shift_type="{shift_type}"
-				AND emp_sp.date="{date}")
+				AND emp_sp.date="{date}"
+				AND emp_sp.permission_type="Arrive Late")
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin 
 				WHERE
 					empChkin.log_type="IN"
@@ -510,6 +538,7 @@ def create_shift_assignment(schedule, date):
 	shift_assignment.shift_type = schedule.shift_type
 	shift_assignment.post_type = schedule.post_type
 	shift_assignment.post_abbrv = schedule.post_abbrv
+	shift_assignment.roster_type = schedule.roster_type
 	shift_assignment.submit()
 
 def update_shift_type():
@@ -547,10 +576,10 @@ def mark_auto_attendance(shift_type):
 
 def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
-		site, project, shift, post_type, post_abbrv = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv"])
+		site, project, shift, post_type, post_abbrv, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv", "roster_type"])
 		frappe.db.sql("""update `tabAttendance`
-			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s 
-			where name = %s """, (project, site, shift, post_type, post_abbrv, doc.name))
+			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s, roster_type = %s
+			where name = %s """, (project, site, shift, post_type, post_abbrv, roster_type, doc.name))
 
 def generate_payroll():
 	start_date = add_to_date(getdate(), months=-1)
