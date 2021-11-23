@@ -45,6 +45,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 		}else{
 			document.querySelectorAll("[data-fieldname='fetch_data']")[1].style.backgroundColor ="red";
 		}
+		// set zero in the fields that calculate the difference if there is no value is set
 		if(!frm.doc.basic_insurance){
 			frm.set_value("difference_in_basic_insurance", 0);
 		}if(!frm.doc.supplementary_insurance){
@@ -57,6 +58,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 			frm.set_value("difference_compensation", 0);
 		}
 		if(frm.doc.workflow_state == 'Completed' && frm.doc.docstatus === 1){
+			// If `pifss_monthly_deduction_tool` is not set yet, button name will be `Create Pifss Monthly Deduction Tool` and will call the method for setting the name of the tool record
 			if (!frm.doc.pifss_monthly_deduction_tool){
 				frm.add_custom_button(__('Create Pifss Monthly Deduction Tool'),
 					function () {
@@ -66,15 +68,15 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 							callback: function(r){
 								frm.set_value('pifss_monthly_deduction_tool', r.message);
 								frappe.set_route("Form", "PIFSS Monthly Deduction Tool", frm.doc.pifss_monthly_deduction_tool);
-								frm.reload_doc();
+								frm.refresh();
 					  },
 					  freeze: true,
 					  freeze_message: __("Creating Pifss Monthly Deduction Tracking Tool ...!")
+					})
 					}).addClass('btn-primary'); 
-					}
-			);
 		}
-			else if (frm.doc.pifss_monthly_deduction_tool) {
+			if (frm.doc.pifss_monthly_deduction_tool) {
+			// If `pifss_monthly_deduction_tool` is set, button name will be `Go to Pifss Monthly Deduction Tracking Tool` and will call route to the name of the tool record
 			frm.add_custom_button(__('Go to Pifss Monthly Deduction Tracking Tool'),
 				function () {
 					frappe.set_route("Form", "PIFSS Monthly Deduction Tool", frm.doc.pifss_monthly_deduction_tool);
@@ -84,52 +86,40 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 		
 	},
 	remaining_amount: function(frm){
+		//  `remaining_amount` is the amount being paid by the company and it is fixed to be 828.98KWD 
 		if(frm.doc.remaining_amount){
 			frm.set_value("total_payments",frm.doc.total_sub+frm.doc.remaining_amount+frm.doc.total_additional_deduction);
 		}
 	},
-	basic_insurance: function(frm){
+	basic_insurance: function(frm){// calculating the difference between `basic_insurance` in manula document and csv file
 		if(frm.doc.basic_insurance){
 			frm.set_value("difference_in_basic_insurance", frm.doc.basic_insurance-frm.doc.basic_insurance_in_csv);
-		}if(frm.doc.difference_in_basic_insurance!=0 ){
-			document.querySelectorAll("[data-fieldname='difference_in_basic_insurance']")[1].style.backgroundColor ="red";
 		}
 	},
 	supplementary_insurance: function(frm){
-		if(frm.doc.supplementary_insurance){
+		if(frm.doc.supplementary_insurance){// calculating the difference between `supplementary_insurance` in manula document and csv file
 			frm.set_value("difference_supplementary_insurance",frm.doc.supplementary_insurance-frm.doc.supplementary_insurance_in_csv);
-		}if (frm.doc.difference_supplementary_insurance!=0){
-			document.querySelectorAll("[data-fieldname='difference_supplementary_insurance']")[1].style.backgroundColor ="red";
-			
 		}
 	},
 	fund_increase: function(frm){
-		if(frm.doc.fund_increase){
+		if(frm.doc.fund_increase){// calculating the difference between `fund_increase` in manula document and csv file
 			frm.set_value("difference_fund_increase",frm.doc.fund_increase-frm.doc.fund_increase_in_csv);
-		}if (frm.doc.difference_supplementary_insurance!=0){
-			document.querySelectorAll("[data-fieldname='difference_fund_increase']")[1].style.backgroundColor ="red";
 		}
 	},
 	unemployment_insurance: function(frm){
-		if(frm.doc.unemployment_insurance){
+		if(frm.doc.unemployment_insurance){ //calculating the difference between `unemployment_insurance` in manula document and csv file
 			frm.set_value("difference_unemployment_insurance",frm.doc.unemployment_insurance-frm.doc.unemployment_insurance_in_csv);
-		}if (frm.doc.difference_unemployment_insurance!=0){
-			$('input[data-fieldname="difference_unemployment_insurance"]').css("color","red")
-			document.querySelectorAll("[data-fieldname='difference_unemployment_insurance']")[1].style.backgroundColor ="red";
 		}
 	},
 	compensation: function(frm){
-		if(frm.doc.unemployment_insurance){
+		if(frm.doc.unemployment_insurance){//calculating the difference between `unemployment_insurance` in manula document and csv file
 			frm.set_value("difference_compensation",frm.doc.compensation-frm.doc.compensation_in_csv);
-		}if (frm.doc.difference_compensation!=0){
-			document.querySelectorAll("[data-fieldname='difference_compensation']")[1].style.backgroundColor ="red";
 		}
 	},
 	attach_invoice: function(frm){
-		if(frm.doc.attach_invoice){
+		if(frm.doc.attach_invoice){ //calculating the difference between `attach_invoice` in manula document and csv file
 			frm.set_value('attached_on',frappe.datetime.now_datetime());
 		}
-		
 	},
 		
 });
