@@ -9,9 +9,11 @@
   "holiday_compensatory_leave_type",
   "payroll_settings_section",
   "holiday_additional_salary_component",
+  "maximum_salary_deduction_percentage",
+  "overtime_additional_salary_section",
   "overtime_additional_salary_component",
-  "col_br_1",
   "working_day_overtime_rate",
+  "col_br_1",
   "day_off_overtime_rate",
   "public_holiday_overtime_rate"
  ],
@@ -52,8 +54,7 @@
   },
   {
    "fieldname": "col_br_1",
-   "fieldtype": "Column Break",
-   "label": "Overtime Amount = Basic Hourly Wage * Hours Worked * Overtime Rate"
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "working_day_overtime_rate",
@@ -72,12 +73,25 @@
    "fieldtype": "Float",
    "label": "Public Holiday Overtime Rate",
    "precision": "3"
+  },
+  {
+   "description": "Overtime Amount = Basic Hourly Wage * Hours Worked * Overtime Rate",
+   "fieldname": "overtime_additional_salary_section",
+   "fieldtype": "Section Break",
+   "label": "Overtime Additional Salary Settings"
+  },
+  {
+   "default": "10",
+   "description": "Percentage of Maximum Salary Deduction is used to warn the Payroll Officer about to Provide Justification to PAM for Maximum Deduction.",
+   "fieldname": "maximum_salary_deduction_percentage",
+   "fieldtype": "Percent",
+   "label": "Maximum Salary Deduction Percentage"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2021-11-16 14:27:26.511718",
+ "modified": "2021-11-24 23:36:18.010958",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
