@@ -139,3 +139,29 @@ def set_justification_needed_on_deduction_in_salary_slip(doc, method):
                             total_deduction += deduction.amount
                 if total_deduction > allowed_deduction:
                     doc.justification_needed_on_deduction = True
+    update_payroll_entry_details(doc)
+
+def update_payroll_entry_details(salary_slip):
+    '''
+        Funtion used to update payroll entry detaisl
+        args: Salary Slip Object
+        Update the Payroll Entry Details
+            by cross checking the employee id in the Payroll Entry Child and Salary Slip
+    '''
+    if salary_slip.payroll_entry:
+        query = """
+            update
+                `tabPayroll Employee Detail`
+            set
+                justification_needed_on_deduction = %(justification_needed_on_deduction)s
+            where
+				parenttype = 'Payroll Entry' and parent = %(payroll_entry)s
+				and employee = %(employee)s
+        """
+        return frappe.db.sql(query,
+			{
+				'justification_needed_on_deduction': salary_slip.justification_needed_on_deduction,
+				'payroll_entry': salary_slip.payroll_entry,
+				'employee': salary_slip.employee
+			}
+		)

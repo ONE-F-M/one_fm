@@ -75,6 +75,7 @@ doctype_js = {
 	"Item Price": "public/js/doctype_js/item_price.js",
 	"Employee Incentive": "public/js/doctype_js/employee_incentive.js",
 	"Salary Slip": "public/js/doctype_js/salary_slip.js",
+	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
