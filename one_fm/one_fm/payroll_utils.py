@@ -126,9 +126,16 @@ def set_justification_needed_on_deduction_in_salary_slip(doc, method):
     if doc.deductions and doc.total_deduction:
         maximum_deduction_percentage = frappe.db.get_single_value('HR and Payroll Additional Settings', 'maximum_salary_deduction_percentage')
         work_permit_salary = 0
+        total_deduction = doc.total_deduction
         if maximum_deduction_percentage > 0:
             work_permit_salary = frappe.db.get_value('Employee', doc.employee, 'work_permit_salary')
             if work_permit_salary > 0:
                 allowed_deduction = work_permit_salary * maximum_deduction_percentage * 0.01
-                if doc.total_deduction > allowed_deduction:
+                exclude_salary_component = frappe.db.get_single_value('HR and Payroll Additional Settings', 'exclude_salary_component')
+                if exclude_salary_component:
+                    total_deduction = 0
+                    for deduction in doc.deductions:
+                        if deduction.salary_component != exclude_salary_component:
+                            total_deduction += deduction.amount
+                if total_deduction > allowed_deduction:
                     doc.justification_needed_on_deduction = True
