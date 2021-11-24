@@ -8,7 +8,12 @@
   "hr_settings_section",
   "holiday_compensatory_leave_type",
   "payroll_settings_section",
-  "holiday_additional_salary_component"
+  "holiday_additional_salary_component",
+  "overtime_additional_salary_component",
+  "col_br_1",
+  "working_day_overtime_rate",
+  "day_off_overtime_rate",
+  "public_holiday_overtime_rate"
  ],
  "fields": [
   {
@@ -36,12 +41,43 @@
    "label": "Holiday Additional Salary Component",
    "options": "Salary Component",
    "reqd": 1
+  },
+  {
+   "fieldname": "overtime_additional_salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Overtime Additional Salary Component",
+   "options": "Salary Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_br_1",
+   "fieldtype": "Column Break",
+   "label": "Overtime Amount = Basic Hourly Wage * Hours Worked * Overtime Rate"
+  },
+  {
+   "fieldname": "working_day_overtime_rate",
+   "fieldtype": "Float",
+   "label": "Working Day Overtime Rate",
+   "precision": "3"
+  },
+  {
+   "fieldname": "day_off_overtime_rate",
+   "fieldtype": "Float",
+   "label": "Day Off Overtime Rate",
+   "precision": "3"
+  },
+  {
+   "fieldname": "public_holiday_overtime_rate",
+   "fieldtype": "Float",
+   "label": "Public Holiday Overtime Rate",
+   "precision": "3"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2021-11-10 10:14:11.824807",
+ "modified": "2021-11-16 14:27:26.511718",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
