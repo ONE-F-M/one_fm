@@ -97,7 +97,7 @@ def create_payroll_entry(start_date, end_date):
 		payroll_entry.fill_employee_details()
 		payroll_entry.save()
 		payroll_entry.submit()
-		frappe.commit()
+		frappe.db.commit()
 		return payroll_entry
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), cstr(start_date)+' | '+cstr(end_date))
