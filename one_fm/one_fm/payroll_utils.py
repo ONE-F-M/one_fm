@@ -119,7 +119,7 @@ def notify_employee_incentive(employee_incentive, action_user, notify_user_list)
 
 def set_justification_needed_on_deduction_in_salary_slip(doc, method):
     '''
-        Funtion to set Justification Needed on Deduction if it exceeds the Limit
+        Function to set Justification Needed on Deduction if it exceeds the Limit
         It will trigger on validate of Salary Slip from hooks
     '''
     doc.justification_needed_on_deduction = False
@@ -143,7 +143,7 @@ def set_justification_needed_on_deduction_in_salary_slip(doc, method):
 
 def update_payroll_entry_details(salary_slip):
     '''
-        Funtion used to update payroll entry detaisl
+        Function used to update payroll entry details
         args: Salary Slip Object
         Update the Payroll Entry Details
             by cross checking the employee id in the Payroll Entry Child and Salary Slip
