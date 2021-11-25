@@ -2,7 +2,7 @@ import frappe, erpnext
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff
 from frappe import _
-from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
+from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date, get_filter_condition, get_joining_relieving_condition, get_emp_list, get_sal_struct, remove_payrolled_employees
 
 
 def validate_employee_attendance(self):
@@ -29,6 +29,39 @@ def get_count_holidays_of_employee(self, employee):
 	if days and days[0][0]:
 		holidays = days[0][0]
 	return holidays
+
+frappe.whitelist()
+def get_emp_lists(self):
+		"""
+			Returns list of active employees based on selected criteria
+			and for which salary structure exists
+		"""
+		self.check_mandatory()
+		filters = self.make_filters()
+		cond = get_filter_condition(filters)
+		cond += get_joining_relieving_condition(self.start_date, self.end_date)
+
+		condition = ''
+		if self.payroll_frequency:
+			condition = """and payroll_frequency = '%(payroll_frequency)s'"""% {"payroll_frequency": self.payroll_frequency}
+
+		sal_struct = get_sal_struct(self.company, self.currency, self.salary_slip_based_on_timesheet, condition)
+		if sal_struct:
+			cond += "and t2.salary_structure IN %(sal_struct)s "
+			cond += "and t2.payroll_payable_account = %(payroll_payable_account)s "
+			cond += "and %(from_date)s >= t2.from_date"
+			emp_list = get_emp_list(sal_struct, cond, self.end_date, self.payroll_payable_account)
+			get_bank_details(emp_list)
+			emp_list = remove_payrolled_employees(emp_list, self.start_date, self.end_date)
+			return emp_list
+
+@frappe.whitelist()
+def get_bank_details(employee_details):
+	for employee in employee_details:
+		iban_no, bank_code = frappe.db.get_value("Bank Account",{"party":employee.employee},["iban","bank"])
+		employee.iban_number = iban_no
+		employee.bank_code = bank_code
+	return employee_details
 
 def get_count_employee_attendance(self, employee):
 	scheduled_days = 0
