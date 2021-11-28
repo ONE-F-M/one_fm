@@ -3,11 +3,12 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import today, add_days, get_url, time_diff_in_hours
+from frappe.utils import today, add_days, get_url, time_diff_in_hours, cstr
 from frappe.integrations.offsite_backup_utils import get_latest_backup_file, send_email, validate_file_size, get_chunk_site
 from one_fm.api.notification import create_notification_log
 from frappe.utils.user import get_users_with_role
 from erpnext.hr.utils import get_holidays_for_employee
+import openpyxl as xl;
 
 @frappe.whitelist()
 def employee_grade_validate(doc, method):
@@ -388,3 +389,40 @@ def cancel_compensatory_leave_request_from_attendance(attendance):
     })
     if exist_compensatory_leave_request:
         frappe.get_doc('Compensatory Leave Request', exist_compensatory_leave_request).cancel()
+
+def export_payroll_template():
+    
+    # Get default bank used to pay salaries
+    default_bank = frappe.db.get_single_value("HR and Payroll Additional Settings", 'default_bank')
+
+    # Fetch template and bank code for default bank
+    template_path, bank_code = frappe.db.get_value("Bank", {'name': default_bank}, ["payroll_export_template", "bank_code"])
+
+    # Export for NBK
+    if "nbk" in bank_code.lower():
+        export_nbk(template_path)
+
+def export_nbk(template_path):
+
+    pass
+    # path1 = cstr(frappe.local.site) + template_path
+
+    # wb1 = xl.load_workbook(filename=path1)
+    # ws1 = wb1.worksheets[0]
+
+    # c33 = ws1.cell(row=3, column=3)
+    # c33.value = "ONE FM"
+
+    # c313 = ws1.cell(row=13, column=5)
+    # c313.value = "NBK"
+
+    # wb1.save(path1)
+
+
+
+
+
+    
+
+
+
