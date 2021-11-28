@@ -13,6 +13,8 @@
   "exclude_salary_component",
   "overtime_additional_salary_section",
   "overtime_additional_salary_component",
+  "default_bank",
+  "col_br_1",
   "working_day_overtime_rate",
   "col_br_1",
   "day_off_overtime_rate",
@@ -94,12 +96,19 @@
    "fieldtype": "Link",
    "label": "Exclude Salary Component",
    "options": "Salary Component"
+  },
+  {
+   "fieldname": "default_bank",
+   "fieldtype": "Link",
+   "label": "Default Bank",
+   "options": "Bank",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2021-11-25 00:42:21.992011",
+ "modified": "2021-11-25 10:21:13.405896",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
