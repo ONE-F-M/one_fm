@@ -41,7 +41,7 @@ def fill_employee_details(self):
 	employees = self.get_emp_list()
 	
 	#Fetch Bank Details and update employee list 
-	get_bank_details(employees)
+	set_bank_details(employees)
 	
 	if not employees:
 		error_msg = _("No employees found for the mentioned criteria:<br>Company: {0}<br> Currency: {1}<br>Payroll Payable Account: {2}").format(
@@ -66,7 +66,7 @@ def fill_employee_details(self):
 		return self.validate_employee_attendance()
 
 @frappe.whitelist()
-def get_bank_details(employee_details):
+def set_bank_details(employee_details):
 	"""This Funtion Sets the bank Details of an employee. The data is fetched from Bank Account Doctype.
 
 	Args:
@@ -79,8 +79,6 @@ def get_bank_details(employee_details):
 		bank = frappe.db.get_list("Bank Account",{"party":employee.employee},["iban","bank"])
 		if not bank:
 			frappe.msgprint(_("Bank Details for {0} does not exists").format(employee.employee))
-			employee.iban_number = ""
-			employee.bank_code = ""
 		else:
 			employee.iban_number = bank[0].iban
 			employee.bank_code = bank[0].bank
