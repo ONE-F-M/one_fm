@@ -30,33 +30,53 @@ def get_count_holidays_of_employee(self, employee):
 		holidays = days[0][0]
 	return holidays
 
-frappe.whitelist()
-def get_emp_lists(self):
-		"""
-			Returns list of active employees based on selected criteria
-			and for which salary structure exists
-		"""
-		self.check_mandatory()
-		filters = self.make_filters()
-		cond = get_filter_condition(filters)
-		cond += get_joining_relieving_condition(self.start_date, self.end_date)
+@frappe.whitelist()
+def fill_employee_details(self):
+	"""
+	This Function fetches the employee details and updates the 'Employee Details' child table.
 
-		condition = ''
-		if self.payroll_frequency:
-			condition = """and payroll_frequency = '%(payroll_frequency)s'"""% {"payroll_frequency": self.payroll_frequency}
+	Returns:
+		list of active employees based on selected criteria
+		and for which salary structure exists.
+	"""	
+	self.set('employees', [])
+	employees = self.get_emp_list()
+	
+	#Fetch Bank Details and update employee list 
+	get_bank_details(employees)
+	
+	if not employees:
+		error_msg = _("No employees found for the mentioned criteria:<br>Company: {0}<br> Currency: {1}<br>Payroll Payable Account: {2}").format(
+			frappe.bold(self.company), frappe.bold(self.currency), frappe.bold(self.payroll_payable_account))
+		if self.branch:
+			error_msg += "<br>" + _("Branch: {0}").format(frappe.bold(self.branch))
+		if self.department:
+			error_msg += "<br>" + _("Department: {0}").format(frappe.bold(self.department))
+		if self.designation:
+			error_msg += "<br>" + _("Designation: {0}").format(frappe.bold(self.designation))
+		if self.start_date:
+			error_msg += "<br>" + _("Start date: {0}").format(frappe.bold(self.start_date))
+		if self.end_date:
+			error_msg += "<br>" + _("End date: {0}").format(frappe.bold(self.end_date))
+		frappe.throw(error_msg, title=_("No employees found"))
 
-		sal_struct = get_sal_struct(self.company, self.currency, self.salary_slip_based_on_timesheet, condition)
-		if sal_struct:
-			cond += "and t2.salary_structure IN %(sal_struct)s "
-			cond += "and t2.payroll_payable_account = %(payroll_payable_account)s "
-			cond += "and %(from_date)s >= t2.from_date"
-			emp_list = get_emp_list(sal_struct, cond, self.end_date, self.payroll_payable_account)
-			get_bank_details(emp_list)
-			emp_list = remove_payrolled_employees(emp_list, self.start_date, self.end_date)
-			return emp_list
+	for d in employees:
+		self.append('employees', d)
+
+	self.number_of_employees = len(self.employees)
+	if self.validate_attendance:
+		return self.validate_employee_attendance()
 
 @frappe.whitelist()
 def get_bank_details(employee_details):
+	"""This Funtion Sets the bank Details of an employee. The data is fetched from Bank Account Doctype.
+
+	Args:
+		employee_details (dict): Employee Details Child Table.
+
+	Returns:
+		employee_details ([dict): Sets the bank account IBAN code and Bank Code.
+	"""
 	for employee in employee_details:
 		iban_no, bank_code = frappe.db.get_value("Bank Account",{"party":employee.employee},["iban","bank"])
 		employee.iban_number = iban_no
@@ -78,9 +98,16 @@ def get_count_employee_attendance(self, employee):
 		marked_days = attendances[0][0]
 	return marked_days, scheduled_days
 
-
-
 def create_payroll_entry(start_date, end_date):
+	"""Create Payroll Entry doc from the given period.
+
+	Args:
+		start_date (date): Start date of the payroll
+		end_date (date): End Date of the payroll
+
+	Returns:
+		[doc]: newly created Payroll Entry Doc
+	"""
 	try:
 		#selected_dept = department
 		payroll_entry = frappe.new_doc("Payroll Entry")
@@ -101,8 +128,6 @@ def create_payroll_entry(start_date, end_date):
 		return payroll_entry
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), cstr(start_date)+' | '+cstr(end_date))
-
-
 
 def get_basic_salary(employee):
 	filters = {

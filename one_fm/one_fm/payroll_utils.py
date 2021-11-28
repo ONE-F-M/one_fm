@@ -153,7 +153,8 @@ def update_payroll_entry_details(salary_slip):
             update
                 `tabPayroll Employee Detail`
             set
-                justification_needed_on_deduction = %(justification_needed_on_deduction)s
+                justification_needed_on_deduction = %(justification_needed_on_deduction)s,
+                payment_amount = %(payment_amount)s
             where
 				parenttype = 'Payroll Entry' and parent = %(payroll_entry)s
 				and employee = %(employee)s
@@ -161,6 +162,7 @@ def update_payroll_entry_details(salary_slip):
         return frappe.db.sql(query,
 			{
 				'justification_needed_on_deduction': salary_slip.justification_needed_on_deduction,
+                'payment_amount': salary_slip.net_pay,
 				'payroll_entry': salary_slip.payroll_entry,
 				'employee': salary_slip.employee
 			}
