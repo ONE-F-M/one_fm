@@ -76,9 +76,14 @@ def get_bank_details(employee_details):
 		employee_details ([dict): Sets the bank account IBAN code and Bank Code.
 	"""
 	for employee in employee_details:
-		iban_no, bank_code = frappe.db.get_value("Bank Account",{"party":employee.employee},["iban","bank"])
-		employee.iban_number = iban_no
-		employee.bank_code = bank_code
+		bank = frappe.db.get_list("Bank Account",{"party":employee.employee},["iban","bank"])
+		if not bank:
+			frappe.msgprint(_("Bank Details for {0} does not exists").format(employee.employee))
+			employee.iban_number = ""
+			employee.bank_code = ""
+		else:
+			employee.iban_number = bank[0].iban
+			employee.bank_code = bank[0].bank
 	return employee_details
 
 def get_count_employee_attendance(self, employee):
