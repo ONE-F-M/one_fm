@@ -2,8 +2,6 @@ import frappe, erpnext
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff
 from frappe import _
-from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date, get_filter_condition, get_joining_relieving_condition, get_emp_list, get_sal_struct, remove_payrolled_employees
-
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []

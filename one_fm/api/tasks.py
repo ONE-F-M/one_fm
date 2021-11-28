@@ -622,11 +622,19 @@ def generate_penalties():
 		calculate_penalty_amount(key, start_date, end_date, employee_penalties)
 
 def calculate_penalty_amount(employee, start_date, end_date, logs):
+	"""This Funtion Calculates the Penalty Amount based on the occurance and employees basic salary.
+
+	Args:
+		employee (String): employee ID
+		start_date (date): Start Date of the payroll
+		end_date (date): Start Date of the payroll
+		logs ([type]): Employee's Penalty Log
+	"""	
 	filters = {
 		'docstatus': 1,
 		'employee': employee
 	}
-	
+
 	salary_structure, base = frappe.get_value("Salary Structure Assignment", filters, ["salary_structure","base"], order_by="from_date desc")
 	
 	if salary_structure:
@@ -690,8 +698,7 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		deducted_amount = total_penalty_amount
 		balance_amount = 0
 	
-	print(total_penalty_amount)
-
+	#Create Penalty Deduction Doc that in return creates Addition Salary with penalty component.
 	create_penalty_deduction(start_date, end_date, employee, total_penalty_amount, single_day_salary, max_amount, deducted_amount, balance_amount)
 
 
