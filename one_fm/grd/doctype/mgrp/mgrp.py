@@ -167,9 +167,17 @@ def notify_awaiting_response_mgrp(doc, method): #will run everyday at 8 am
 
 @frappe.whitelist()
 def get_signatory_name_for_mgrp(parent):
-	"""Mehtod fetching the name of the company and passing child table field upon company name"""
+	"""
+	This method is passing company name to fetch `authorized_signatory_name_arabic` from the child table Authorized Signatory in PIFSS Authorized Signatory Doctype
+
+	Args:
+		parent: it is the selected `company_name` to get the Authorized signatory list upon company name
+
+	Returns:
+		names: list of authorized signatory arabic names
+	"""
 	names=[]
-	names.append(' ')#add empty record, to check if this field got selected by onboard user else it will throw message to fill the empty record
+	names.append(' ')# add empty record, to check if this field got selected by onboard user else it will throw message to fill the empty record
 	if parent:
 		doc = frappe.get_doc('PIFSS Authorized Signatory',parent)
 
@@ -180,14 +188,31 @@ def get_signatory_name_for_mgrp(parent):
 
 @frappe.whitelist()
 def get_signatory_user_for_mgrp(company_name,user_name):
-	"""Method getting user id & attached signature from record based on given filter"""
+	"""
+	This method returns the `user_id` and `signature` of the selected authrized signatory
+	Args:
+		company_name: the selected company name in mgrp document
+		user_name: Authorized Signatory Arabic name
+
+	Returns:
+		user: Authorized Signatory user id to notify him later on
+		signature: Authorized Electronic signature 
+	"""
 	parent = frappe.db.get_value('PIFSS Authorized Signatory',{'company_name_arabic':company_name},['name'])
 	user,signature = frappe.db.get_value('PAM Authorized Signatory Table',{'parent':parent,'authorized_signatory_name_arabic':user_name},['user','signature'])
 	return user,signature
 
 @frappe.whitelist()#onboarding linking
 def create_mgrp_form_for_onboarding(employee, onboard_employee):
-	""" This Method for onboarding """
+	"""
+	This Method will be called in onboarding once pressing `MGRP` button and this button will show for Kuwaiti employee only
+	Args:
+		employee: (eg: HR-EMP-00001)
+		onboard_employee: link to onboard_employee table (eg: EMP-ONB-2021-00021)
+
+	Returns:
+		mgrp: MGRP object
+	"""
 	mgrp = frappe.new_doc('MGRP')
 	mgrp.status = "Registration"
 	mgrp.employee = employee
