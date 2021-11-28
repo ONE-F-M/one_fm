@@ -10,6 +10,7 @@
   "payroll_settings_section",
   "holiday_additional_salary_component",
   "overtime_additional_salary_component",
+  "default_bank",
   "col_br_1",
   "working_day_overtime_rate",
   "day_off_overtime_rate",
@@ -72,12 +73,19 @@
    "fieldtype": "Float",
    "label": "Public Holiday Overtime Rate",
    "precision": "3"
+  },
+  {
+   "fieldname": "default_bank",
+   "fieldtype": "Link",
+   "label": "Default Bank",
+   "options": "Bank",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2021-11-16 14:27:26.511718",
+ "modified": "2021-11-25 10:21:13.405896",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
