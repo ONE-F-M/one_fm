@@ -249,7 +249,7 @@ doc_events = {
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice"
 	},
 	"Salary Slip": {
-		"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
+		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
 		"validate": "one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip"
 	},
 	"Training Event":{

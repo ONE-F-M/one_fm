@@ -611,37 +611,48 @@ def generate_payroll():
 def generate_penalties():
 	start_date = add_to_date(getdate(), months=-1)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
-	print(start_date)
-	print(end_date)
 
 	filters = {
 		'penalty_issuance_time': ['between', (start_date, end_date)],
 		'workflow_state': 'Penalty Accepted'
 	}
 	logs = frappe.db.get_list('Penalty', filters=filters, fields="*", order_by="recipient_employee,penalty_issuance_time")
-	print(logs)
 	for key, group in itertools.groupby(logs, key=lambda x: (x['recipient_employee'])):
 		employee_penalties = list(group)
 		calculate_penalty_amount(key, start_date, end_date, employee_penalties)
 
-
-
 def calculate_penalty_amount(employee, start_date, end_date, logs):
+	"""This Funtion Calculates the Penalty Amount based on the occurance and employees basic salary.
+
+	Args:
+		employee (String): employee ID
+		start_date (date): Start Date of the payroll
+		end_date (date): Start Date of the payroll
+		logs ([type]): Employee's Penalty Log
+	"""	
 	filters = {
 		'docstatus': 1,
 		'employee': employee
 	}
-	salary_structure = frappe.get_value("Salary Structure Assignment", filters, "salary_structure", order_by="from_date desc")
-	basic_salary = frappe.db.sql("""
-		SELECT amount FROM `tabSalary Detail`
+
+	salary_structure, base = frappe.get_value("Salary Structure Assignment", filters, ["salary_structure","base"], order_by="from_date desc")
+	
+	if salary_structure:
+		basic = frappe.db.sql("""
+		SELECT amount,amount_based_on_formula,formula FROM `tabSalary Detail`
 		WHERE parenttype="Salary Structure" 
 		AND parent=%s 
 		AND salary_component="Basic"
-	""",(salary_structure), as_dict=1)
-	print(basic_salary)
+		""",(salary_structure), as_dict=1)
+		if basic[0].amount_based_on_formula == 1:
+			formula = basic[0].formula
+			percent = formula.replace('base*','')
+			basic_salary = int(base)*float(percent)
+		else:
+			basic_salary = basic[0].amount
 	
 	#Single day salary of employee = Basic Salary(WP salary) divided by 26 days
-	single_day_salary = basic_salary[0].amount / 26 
+	single_day_salary = basic_salary / 26 
 
 	#Existing balance amount
 	existing_balance = 0.00
@@ -668,7 +679,6 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 	""".format(refs=references), as_dict=1)
 
 	# Days deduction
-	print("Deduction:" + str(days_deduction))
 	days_deduction_amount = days_deduction[0].days_deduction * single_day_salary
 
 	# Damages amount
@@ -687,7 +697,8 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 	else:
 		deducted_amount = total_penalty_amount
 		balance_amount = 0
-
+	
+	#Create Penalty Deduction Doc that in return creates Addition Salary with penalty component.
 	create_penalty_deduction(start_date, end_date, employee, total_penalty_amount, single_day_salary, max_amount, deducted_amount, balance_amount)
 
 
