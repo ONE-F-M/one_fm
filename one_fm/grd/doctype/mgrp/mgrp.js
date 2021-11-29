@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('MGRP', {
-	onload: function(frm){
+	onload: function(frm){// Filtering employee field to list only kuwaiti employee as this process only for Kuwaiti's
 		frm.set_query("employee", function() {
 			return {
 				"filters": {
@@ -27,7 +27,7 @@ frappe.ui.form.on('MGRP', {
 	attach_mgrp_approval: function(frm){
 		set_dates(frm);
 	},
-	status: function(frm) {
+	status: function(frm) {// Customize naming series upon `status`
 		if(status === "Registration"){
 			frm.set_value("naming_series", "REG-.{employee}.-");
 		}else if(status === "Cancellation"){
@@ -36,8 +36,8 @@ frappe.ui.form.on('MGRP', {
 	},
 	refresh: function(frm){
 		if(frm.doc.company_name){
-			//this is passing company name as argument to (get_signatory_name)method in server side
-			// the method is returning field (arabic names) in child table of pifss Authorized Sinatury doctype 
+			//This method is passing company name as argument to (get_signatory_name) method in server side
+		   // and it is returning field (arabic names) in child table of pifss Authorized Sinatury doctype 
 			frappe.call({
 				method: "one_fm.grd.doctype.mgrp.mgrp.get_signatory_name_for_mgrp",
 				args:{

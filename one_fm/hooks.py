@@ -388,7 +388,6 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.notify_to_upload_hawiyati',
 			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
-			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_status_on_pifss',
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_under_process_status_on_pifss',
 			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp',
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
@@ -425,9 +424,6 @@ scheduler_events = {
 		],
 		"0 6 * * *":[
 			'one_fm.one_fm.sales_invoice_custom.create_sales_invoice'
-		],
-		"0 */48 * * *": [
-			'one_fm.one_fm.pifss.doctype.pifss_form_103.pifss_form_103.notify_open_pifss'
 		],
 		"00 00 24 * *": [
 			'one_fm.api.tasks.generate_penalties'

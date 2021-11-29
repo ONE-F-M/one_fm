@@ -1,7 +1,7 @@
 frappe.ui.form.on('PIFSS Form 103', {
 	
 	onload: function(frm){
-		frm.set_query("employee", function() {
+		frm.set_query("employee", function() {//filtering employee field to list only kuwaiti employee as this process only for Kuwaiti's
 			return {
 				"filters": {
 					"one_fm_nationality": "Kuwaiti",
@@ -9,7 +9,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 			};
 		});
 		frm.set_query("pifss_authorized_signatory", function() {
-			return {
+			return {//setting default value in a company field to be `ONE Facilities Management`
 				"filters": {
 					"company": "ONE Facilities Management",
 					"is_active": 1,
@@ -24,7 +24,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 			frm.set_df_property("request_type","read_only", 1);
 		} 
 		if(frm.doc.company_name){
-			frappe.call({
+			frappe.call({//This method runs on `refresh` and it passes (company name) and fetch list of `authorized_signatory_name_arabic` and setting it to `signatory_name` field
 				method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.get_signatory_name",
 				args:{
 					'parent': frm.doc.company_name,
@@ -40,13 +40,13 @@ frappe.ui.form.on('PIFSS Form 103', {
 			frm.refresh_field("signatory_name");
 		}
 		if(frm.doc.status == "Awaiting Response" && frm.doc.notify_grd_operator == 0){
-			
+			// send message box to grd user once state of the document is `Awaiting Response` which means waiting for pifss website response (Accept-Reject) for employee request (Registration - End of Service)
 			send_message(frm);
 		}
-		if (frm.doc.docstatus ==1 && frm.doc.request_type == "End of Service" && frm.doc.status != "Rejected") {//btn btn-primary btn-sm
+		if (frm.doc.docstatus ==1 && frm.doc.request_type == "End of Service" && frm.doc.status != "Rejected") {
 			
 			frm.add_custom_button(__('PAM - Work Permit Cancellation'),
-				function(){
+				function(){// on_submit of `End of Service` record a button `PAM - Work Permit Cancellation` will show to cancel employee work permit
 					
 					frappe.model.open_mapped_doc({
 					method: "one_fm.grd.utils.mappe_to_work_permit_cancellation",
@@ -57,7 +57,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 		}if (frm.doc.docstatus == 1 && frm.doc.request_type == "Registration" && frm.doc.status != "Rejected") {
 			
 			frm.add_custom_button(__('PAM - Work Permit Registration'),
-				function(){
+				function(){// on_submit of `Registration` record a button `PAM - Work Permit Registration` will show to create employee work permit
 					
 					frappe.model.open_mapped_doc({
 					method: "one_fm.grd.utils.mappe_to_work_permit_registration",
@@ -68,7 +68,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 		if (frm.doc.docstatus == 1 && frm.doc.workflow_state == "Rejected") {
 			
 			frm.add_custom_button(__('Re-Apply PIFSS Form 103'),
-				function(){
+				function(){// This Method runs when operator re-apply for a rejected PIFSS Form 103
 					frappe.call({
 					method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.create_103_form",
 					args: {
@@ -93,7 +93,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 	},
 	company_name: function(frm){
 		if(frm.doc.company_name){
-			frappe.call({
+			frappe.call({// This method runs on setting `company_name` value and it passes (company name) and fetch list of `authorized_signatory_name_arabic` and setting it to `signatory_name` field
 				method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.get_signatory_name",
 				args:{
 					'parent': frm.doc.company_name,
@@ -109,7 +109,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 			frm.refresh_field("signatory_name");
 		}
 	},
-	employee: function(frm) {
+	employee: function(frm) {// This method fetches the attached documents in employee doctype to PIFSS Form 103 record based upon `request_type`
 		let {employee, request_type} = frm.doc;
 		if(employee && request_type === "Registration"){
 			frappe.db.get_doc("Employee", employee)
@@ -149,7 +149,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 		set_employee_details(frm);
 
 	},
-	request_type: function(frm) {
+	request_type: function(frm) {// Customize naming series upon `request_type`
 		let {request_type} = frm.doc;
 		if(request_type === "Registration"){
 			frm.set_value("naming_series", "REG-.{employee}.-");
@@ -157,7 +157,7 @@ frappe.ui.form.on('PIFSS Form 103', {
 			frm.set_value("naming_series", "END-.{employee}.-");
 		}
 	},
-	signatory_name: function(frm){
+	signatory_name: function(frm){// This method fetches user_id from based on the selected authorized name
 		if(frm.doc.signatory_name){
 		frappe.call({
 			method: "one_fm.grd.doctype.pifss_form_103.pifss_form_103.get_signatory_user",
@@ -173,7 +173,6 @@ frappe.ui.form.on('PIFSS Form 103', {
 			});
 	}
 	else{
-		//frm.set_df_property('user', "options", null);
 		frm.set_value('user'," ")
 		frm.refresh_field("user");
 	}
@@ -190,12 +189,12 @@ reference_number: function(frm){
 	}
 	
 },
-attach_end_of_service_from_pifss_website: function(frm){
+attach_end_of_service_from_pifss_website: function(frm){// Auto set datatime field 
 	if(frm.doc.attach_end_of_service_from_pifss_website){
 		frm.set_value('attach_on_end_of_service',frappe.datetime.now_datetime())
 	}
 },
-attach_registration_from_pifss_website: function(frm){
+attach_registration_from_pifss_website: function(frm){// Auto set datatime field 
 	if(frm.doc.attach_registration_from_pifss_website){
 		frm.set_value('attach_on_registration',frappe.datetime.now_datetime())
 	}
@@ -229,7 +228,6 @@ var set_employee_details = function(frm){
 				frm.set_value('nationality_no', r.nationality_no);
 				frm.set_value('nationality_subject', r.nationality_subject);
 				frm.set_value('date_of_naturalization', r.date_of_naturalization);
-                // frm.set_value('duration_of_work_permit', r.message.one_fm_duration_of_work_permit);
                 frm.set_value('date_of_joining', r.message.date_of_joining);
 				frm.set_value('subscription_start_date', r.message.date_of_joining);
 				frm.set_value('position', r.message.one_fm_pam_designation);
@@ -250,7 +248,7 @@ var send_message = function(frm){
 	
 };
 var set_registered_date_on_pifss = function(frm){
-	if(frm.doc.reference_number){
+	if(frm.doc.reference_number){// Auto set datatime field 
 	frm.set_value('registered_on',frappe.datetime.now_datetime())
 	}
 };

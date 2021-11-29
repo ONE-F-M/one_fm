@@ -477,7 +477,7 @@ def email_notification_reminder(grd_user,work_permit_list,reminder_number, actio
         make(
             subject=_('{0}: {1} {2} Work Permit'.format(reminder_number,action,type)),
             content=message,
-            recipients=[grd_user,'a.alshawa@armor-services.com','j.poil@armor-services.com'],# Adding Temporary users to Track Reminder Bug
+            recipients=[grd_user],
             cc=cc,
             send_email=True,
         )
