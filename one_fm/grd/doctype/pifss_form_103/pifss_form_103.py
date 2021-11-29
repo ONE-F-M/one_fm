@@ -136,7 +136,7 @@ class PIFSSForm103(Document):
 			self.set_mendatory_fields(field_list,message_detail)
 
 		self.db_set('date_of_acceptance', date.today())
-		# his method will be used to create penalty for operator work delay, but not defined yet by project owner, what have been defined currently is tracking three dates 
+		# This method will be used to create penalty for operator work delay, but not defined yet by project owner, what have been defined currently is tracking three dates 
 		# (date_of_request, date_of_registration, date_of_acceptance)
 		# and based on these three dates we can create penalty on (employee: delay in providing his/her documents, operator: delay on registering employee on pifss, onboarding user: delay on requesting grd to apply for employee on pifss)
 		# self.check_penality() 
