@@ -95,6 +95,10 @@ class Preparation(Document):
         fingerprint_appointment.creat_fp_record(self.name)
   
     def send_notifications(self):
+        """
+        runs: `on_submit`
+        This method will notifiy operator to apply for the wp, mi, moi, paci, fp that are created for all employees in the list
+        """
         if self.grd_operator:
             page_link = get_url("/desk#Form/Preparation/" + self.name)
             message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
@@ -104,6 +108,12 @@ class Preparation(Document):
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def create_preparation():
+    """
+    runs: at 8am of the 15th in every month
+    This method will create preparation record that contain list of all employees that their residency expiry date will be between the first and the last date of the next month
+    This record will go to HR user to set value for each employee eihter renewal or extend and on the submit of this record it will asks for hr permission and approval.
+    Then, it will create wp, mi, moi, and paci records for all employees in the list.
+    """
     doc = frappe.new_doc('Preparation')
     doc.posting_date = nowdate()
     today = date.today()
