@@ -31,12 +31,22 @@ class Preparation(Document):
         self.set_hr_values()
     
     def set_grd_values(self):
+        """
+		runs: `validate`
+		param: preparation object
+		This method is fetching values of grd supervisor or operator for renewal from GRD settings 
+		"""
         if not self.grd_supervisor:
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
 
     def set_hr_values(self):
+        """
+		runs: `validate`
+		param: preparation object
+		This method is fetching values of hr user
+		"""
         if not self.hr_user:
             self.hr_user = frappe.db.get_single_value("Hiring Settings","default_hr_user")
 
@@ -100,7 +110,6 @@ def create_preparation():
     first_day = today.replace(day=1) + relativedelta(months=1)
     last_day = first_day.replace(day=calendar.monthrange(first_day.year, first_day.month)[1])
     get_employee_entries(doc,first_day,last_day)
-    #doc.save(ignore_permission=True)
 
 #Create list of employee Residency Expiry Date next month
 def get_employee_entries(doc,first_day,last_day):
@@ -120,7 +129,7 @@ def get_employee_entries(doc,first_day,last_day):
     doc.save()
     notify_hr(doc)
 
-#sort list based on residency expriy date
+# sort list based on residency expriy date to be displaied in the table based on their `residency_expiry_date`
 def sort(r):
     return r['residency_expiry_date']
 

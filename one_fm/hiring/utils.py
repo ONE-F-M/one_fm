@@ -480,6 +480,12 @@ def job_offer_onload(doc, method):
 
 @frappe.whitelist()
 def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
+    """
+    runs: `on_update` of employee doctype record
+    Args:
+        doc: employee object
+        method: on_update
+    """
     if doc.one_fm_nationality == "Kuwaiti":
         field_list = [{'Nationality No':'nationality_no'},{'Nationality Subject':'nationality_subject'},{'Date of Naturalization':'date_of_naturalization'}]
         mandatory_fields = []
@@ -497,38 +503,44 @@ def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
 
 @frappe.whitelist()
 def set_employee_name(doc,method):
-    """This method for getting the arabic full name
-    and fetching children details from job applicant"""
+    """
+    runs: `validate` of employee record
+    doc: employee object
+    method: validate
+    This method for getting the arabic full name and fetching children details from job applicant
+    """
     doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_forth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
 
     if doc.job_applicant:
         table=[]
         applicant = frappe.get_doc('Job Applicant',doc.job_applicant)
-        for child in applicant.one_fm_kids_details:
-            table.append({
-                'child_name': child.child_name,
-                'child_name_in_arabic': child.child_name_in_arabic,
-                'age': child.age,
-                'work_status': child.work_status,
-                'married': child.married,
-                'health_status': child.health_status
-            })
+        if applicant.one_fm_number_of_kids > 0:
+            for child in applicant.one_fm_kids_details:
+                table.append({
+                    'child_name': child.child_name,
+                    'child_name_in_arabic': child.child_name_in_arabic,
+                    'age': child.age,
+                    'work_status': child.work_status,
+                    'married': child.married,
+                    'health_status': child.health_status
+                })
 
-        if len(table)>0:
-            for row in table:
-                children = doc.append('children_details',{})
-                children.child_name = row['child_name']
-                children.child_name_in_arabic = row['child_name_in_arabic']
-                children.age = row['age']
-                children.work_status = row['work_status']
-                children.married = row['married']
-                children.health_status = row['health_status']
-            children.save()
-            frappe.db.commit()
+            if len(table) > 0:
+                for row in table:
+                    children = doc.append('children_details',{})
+                    children.child_name = row['child_name']
+                    children.child_name_in_arabic = row['child_name_in_arabic']
+                    children.age = row['age']
+                    children.work_status = row['work_status']
+                    children.married = row['married']
+                    children.health_status = row['health_status']
+                frappe.db.commit()
 
-@frappe.whitelist()#old wp was rejected
+@frappe.whitelist()# old wp was rejected
 def create_new_work_permit(work_permit):
-    """This Method If Work Permit got rejected """
+    """
+    This Method If Work Permit got rejected and it is called from wp.js file using `set_restart_application`
+    """
     doc = frappe.get_doc('Work Permit',work_permit)
     wp = frappe.new_doc('Work Permit')
     wp.employee = doc.employee

@@ -51,17 +51,20 @@ class PACI(Document):
                     mandatory_fields.append(field)
         
         if len(mandatory_fields) > 0:
-            message= 'Mandatory fields required in Work Permit form<br><br><ul>'
+            message= 'Mandatory fields required in PACI form<br><br><ul>'
             for mandatory_field in mandatory_fields:
                 message += '<li>' + mandatory_field +'</li>'
             message += '</ul>'
             frappe.throw(message)
 
     def set_New_civil_id_Expiry_date_in_employee_doctype(self):
-        """This method to sort records of employee documents upon document name;
-           First, get the employee document child table. second, find index of the document. Third, set the new document.
-           After that, clear the child table and append the new order"""
-
+        """
+        This method to sort records of employee documents upon document name;
+        First, get the employee document child table. 
+        second, find index of the document. 
+        Third, set the new document.
+        After that, clear the child table and append the new order
+        """
         today = date.today()
         Find = False
         employee = frappe.get_doc('Employee', self.employee)
@@ -89,8 +92,7 @@ class PACI(Document):
             "valid_till":self.new_civil_id_expiry_date
             })
         employee.civil_id_expiry_date = self.new_civil_id_expiry_date
-        employee.save()
-    
+        employee.save()    
 
 # Create PACI record once a month for renewals list  
 def create_PACI_renewal(preparation_name):
@@ -110,8 +112,7 @@ def create_PACI(employee,Type,preparation_name = None):
         if Type == "Renewal":
             start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE
         if Type == "Transfer":
-            start_day = today()
-        
+            start_day = today()       
         PACI_new = frappe.new_doc('PACI')
         PACI_new.employee = employee.name
         PACI_new.category = Type
@@ -120,8 +121,8 @@ def create_PACI(employee,Type,preparation_name = None):
         PACI_new.save()
 
 
-############################################################################# Reminder Notification 
-def notify_operator_to_take_hawiyati_renewal():#cron job at 8pm in working days
+#==============================================================================> Reminder Notification 
+def notify_operator_to_take_hawiyati_renewal():# cron job at 8am in working days
     renewal_list=[]
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
@@ -131,7 +132,7 @@ def notify_operator_to_take_hawiyati_renewal():#cron job at 8pm in working days
             renewal_list.append(paci)
     email_notification_reminder(renewal_operator,paci_list_renewal,"Reminder","Upload Hawiyati for","Renewal", supervisor)
 
-def notify_operator_to_take_hawiyati_transfer(): #cron job at 8pm in working days
+def notify_operator_to_take_hawiyati_transfer(): # cron job at 8am in working days
     transfer_list=[]
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
@@ -141,8 +142,10 @@ def notify_operator_to_take_hawiyati_transfer(): #cron job at 8pm in working day
             transfer_list.append(paci)
     email_notification_reminder(transfer_operator,paci_list_transfer,"Reminder","Upload Hawiyati for","Transfer", supervisor)
 
-def system_remind_renewal_operator_to_apply():# cron job at 8pm in working days
-    """This is a cron method runs every day at 8pm. It gets Draft renewal PACI list and reminds operator to apply on pam website"""
+def system_remind_renewal_operator_to_apply():# cron job at 8am in working days
+    """
+    This is a cron method runs every day at 8am. It gets Draft renewal PACI list and reminds operator to apply on pam website
+    """
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     paci_list = frappe.db.get_list('PACI',
@@ -150,8 +153,10 @@ def system_remind_renewal_operator_to_apply():# cron job at 8pm in working days
     notification_reminder(paci_list,supervisor,renewal_operator,"Renewal")
     
 
-def system_remind_transfer_operator_to_apply():# cron job at 8pm in working days
-    """This is a cron method runs every day at 4pm. It gets Draft transfer PACI list and reminds operator to apply on pam website"""
+def system_remind_transfer_operator_to_apply():# cron job at 8am in working days
+    """
+    This is a cron method runs every day at 8am. It gets Draft transfer PACI list and reminds operator to apply on pam website
+    """
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     paci_list = frappe.db.get_list('PACI',
@@ -160,7 +165,9 @@ def system_remind_transfer_operator_to_apply():# cron job at 8pm in working days
     
 
 def notification_reminder(paci_list,supervisor,operator,type):
-    """This method sends first, second, reminders and then send third one and cc supervisor in the email"""
+    """
+    This method sends first, second, reminders and then send third one and cc supervisor in the email
+    """
     first_reminder_list=[] 
     second_reminder_list=[] 
     penality_reminder_list=[] 
@@ -185,7 +192,9 @@ def notification_reminder(paci_list,supervisor,operator,type):
             frappe.db.set_value('PACI',paci.name,'reminder_grd_operator',1)
         
 def email_notification_reminder(grd_user,paci_list,reminder_number, action,type, cc=[]):
-    """This method send email to the required operator with the list of PACI for applying"""
+    """
+    This method send email to the required operator with the list of PACI that their date of application is today or passed already
+    """
     message_list=[]
     for paci in paci_list:
         page_link = get_url("/desk#Form/PACI/"+paci.name)
@@ -204,15 +213,6 @@ def email_notification_reminder(grd_user,paci_list,reminder_number, action,type,
             cc=cc,
             send_email=True,
         )
-
-def to_do_to_grd_users(subject, description, user):
-    frappe.get_doc({
-        "doctype": "ToDo",
-        "subject": subject,
-        "description": description,
-        "owner": user,
-        "date": today()
-    }).insert(ignore_permissions=True)
 
 def send_email(doc, recipients, message, subject):
 	frappe.sendmail(

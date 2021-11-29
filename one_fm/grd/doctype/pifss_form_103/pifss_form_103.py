@@ -246,7 +246,6 @@ class PIFSSForm103(Document):
 			create_notification_log(subject, message, [self.user], self)
 			self.db_set('notify_for_signature',1)
 
-
 	def recall_create_work_permit_new_kuwaiti(self):
 		if self.request_type == "Registration":
 			work_permit.create_work_permit_new_kuwaiti(self.name,self.employee)
