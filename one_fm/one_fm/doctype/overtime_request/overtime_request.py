@@ -9,14 +9,30 @@ from frappe import _
 from frappe.utils import rounded
 
 class OvertimeRequest(Document):
-	
+
 	def validate(self):
+		self.validate_duplicate()
 		self.calculate_overtime_hours()
 		self.validate_mandatory()
 
+	def validate_duplicate(self):
+		filters = {'request_type': self.request_type, 'employee': self.employee, 'date': self.date, 'name': ['!=', self.name]}
+		if self.request_type == 'Head Office':
+			filters['start_time'] = self.start_time
+			filters['end_time'] = self.end_time
+
+		elif self.request_type == 'Operations':
+			filters['shift'] = self.shift
+			filters['post_type'] = self.post_type
+
+		exists_overtime_request = frappe.db.exists('Overtime Request', filters)
+		if exists_overtime_request:
+			frappe.throw(_('Already exists a Overtime Request {0} for employee {1} on {2}!'.format(exists_overtime_request, self.employee, self.date)))
+
+
 	def on_update(self):
 		self.workflow_notification()
-		
+
 
 	def calculate_overtime_hours(self):
 		"""This method sets the `overtime_hours` for Head Office employee"""
@@ -29,8 +45,8 @@ class OvertimeRequest(Document):
 		Explicit Explanation:
 		---------------------
 		The method is checking `workflow_state` and notifying the requested employee upon `request_type`:
-		For `Head Office`: `report_to` is the one needed to be notified upon employee response (Accept or Reject) 
-		For `Operations`: Shift Supervisor `supervisor_name` is the one needed to be notified upon employee response (Accept or Reject) 
+		For `Head Office`: `report_to` is the one needed to be notified upon employee response (Accept or Reject)
+		For `Operations`: Shift Supervisor `supervisor_name` is the one needed to be notified upon employee response (Accept or Reject)
 
 		On Acceptance of OT request for `Operations` employee, Employee Schedule record will be created with the shift details mentioned in the OT request
 		"""
@@ -104,28 +120,26 @@ class OvertimeRequest(Document):
 
 	# This method checks mandatory fields per Request Type
 	def validate_mandatory(self):
-		if self.workflow_state == "Pending":
-			if self.request_type == "Head Office":
-				field_list = [{'Start Time':'start_time'},{'End Time':'end_time'}]
-				self.set_mendatory_fields(field_list)
+		mandatory_fields = []
+		if self.request_type == "Head Office":
+			if not self.start_time:
+				mandatory_fields.append('Start Time')
+			if not self.end_time:
+				mandatory_fields.append('End Time')
+			self.set_mendatory_fields(mandatory_fields)
 
-			if self.request_type == "Operations":
-				field_list = [{'Shift':'shift'},{'Post Type':'post_type'}]
-				self.set_mendatory_fields(field_list)
+		elif self.request_type == "Operations":
+			if not self.shift:
+				mandatory_fields.append('Shift')
+			if not self.post_type:
+				mandatory_fields.append('Post Type')
+			self.set_mendatory_fields(mandatory_fields)
 
 	# This Method throw the mandatory fields message to the user
-	def set_mendatory_fields(self, field_list):
-		mandatory_fields = []
-		for fields in field_list:
-			for field in fields:
-				if not self.get(fields[field]):
-					mandatory_fields.append(field)
-        
+	def set_mendatory_fields(self, mandatory_fields):
 		if len(mandatory_fields) > 0:
 			message= 'Mandatory Fields required For Overtime Request Form<br><br><ul>'
 			for mandatory_field in mandatory_fields:
 				message += '<li>' + mandatory_field +'</li>'
 			message += '</ul>'
 			frappe.throw(message)
-
-

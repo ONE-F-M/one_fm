@@ -73,7 +73,9 @@ doctype_js = {
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
 	"Payment Entry": "public/js/doctype_js/payment_entry.js",
 	"Item Price": "public/js/doctype_js/item_price.js",
-	"Employee Incentive": "public/js/doctype_js/employee_incentive.js"
+	"Employee Incentive": "public/js/doctype_js/employee_incentive.js",
+	"Salary Slip": "public/js/doctype_js/salary_slip.js",
+	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -154,7 +156,10 @@ doc_events = {
 	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
-		"validate": "one_fm.utils.validate_hajj_leave",
+		"validate": [
+			"one_fm.utils.validate_hajj_leave",
+			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
+		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
 	},
 	"Leave Type": {
@@ -244,7 +249,8 @@ doc_events = {
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice"
 	},
 	"Salary Slip": {
-		"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit"
+		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
+		"validate": "one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip"
 	},
 	"Training Event":{
 		"on_submit": "one_fm.api.doc_events.update_training_event_data"

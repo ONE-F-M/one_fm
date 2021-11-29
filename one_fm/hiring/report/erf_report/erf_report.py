@@ -42,7 +42,7 @@ def get_data(filters):
 		status = erf.status
 		if erf.status == 'Accepted':
 			status = 'Open'
-		if erf.docstatus = 2:
+		if erf.docstatus == 2:
 			status = 'Cancelled'
 		row = [
 			erf.erf_code,
