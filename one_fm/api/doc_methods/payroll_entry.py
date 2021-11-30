@@ -1,7 +1,9 @@
 import frappe, erpnext
+from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_existing_salary_slips
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff
 from frappe import _
+import openpyxl as xl
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
@@ -76,12 +78,13 @@ def set_bank_details(employee_details):
 		employee_details ([dict): Sets the bank account IBAN code and Bank Code.
 	"""
 	for employee in employee_details:
-		bank = frappe.db.get_list("Bank Account",{"party":employee.employee},["iban","bank"])
+		iban, bank, bank_account_no = frappe.db.get_value("Bank Account",{"party":employee.employee},["iban","bank", "bank_account_no"])
 		if not bank:
-			frappe.msgprint(_("Bank Details for {0} does not exists").format(employee.employee))
+			frappe.throw(_("Bank Details for {0} does not exists").format(employee.employee))
 		else:
-			employee.iban_number = bank[0].iban
-			employee.bank_code = bank[0].bank
+			employee.iban_number = iban or bank_account_no
+			bank_code = frappe.db.get_value("Bank", {'name': bank}, ["bank_code"])
+			employee.bank_code = bank_code
 	return employee_details
 
 def get_count_employee_attendance(self, employee):
@@ -147,3 +150,123 @@ def get_basic_salary(employee):
 		return basic_salary[0].amount if len(basic_salary) > 0 else 0.00
 	else: 
 		frappe.throw(_("No Assigned Salary Structure found for the selected employee."))
+
+@frappe.whitelist()
+def set_payroll_export_file(payroll_entry):
+	""" This method fetches the company bank details and makes a call to the export function based on the provided bank.
+
+	Args:
+		payroll_entry (document object): The payroll entry document object to set the export file field for.
+	"""
+	# Get default bank used to pay salaries
+	default_bank = frappe.db.get_single_value("HR and Payroll Additional Settings", 'default_bank')
+
+	# Fetch template and bank code for default bank
+	template_path, bank_code = frappe.db.get_value("Bank", {'name': default_bank}, ["payroll_export_template", "bank_code"])
+	
+	if "NBK" in bank_code:
+		# Enqueue method for longer list of employees
+		if len(payroll_entry.employees) < 30:
+			export_nbk(payroll_entry, template_path)
+		else:
+			frappe.enqueue(export_nbk, payroll_entry=payroll_entry, template_path=template_path)
+
+def export_nbk(payroll_entry, template_path):
+	"""This method fetches the bank template from the provided directory and exports the payroll data into the template and saves the template in the same directory.
+		Finally, it sets the attachment field value in the export_file field aas the path to this template.
+
+	Args:
+		payroll_entry (document object): The payroll entry document object to be used for exporting the payroll data into the provided bank template and set the export file field.
+		template_path (str): Path to the bank template file
+	"""
+
+	# Currency map as per NBK bank template
+	currency_map = {
+		'KWD': 'KWD - Kuwaiti Dinar',
+		'USD': 'USD - US Dollar',
+		'GBP': 'GBP - British Pound',
+		'EUR': 'EUR - EURO',
+		'CAD': 'CAD - Canadian Dollar',
+		'AUD': 'Australian Dollar'
+	}
+
+	# TODO: Fetch firm account number
+	# TODO: Fetch firm number
+	currency = currency_map[payroll_entry.currency]
+	posting_date = payroll_entry.posting_date.split("-") # [dd, mm, yyyy]
+	payment_month = posting_date[1] + "-" + posting_date[2] # mm-yyyy
+
+	employees = payroll_entry.employees
+
+	try:
+		# Load template file
+		source_filename = cstr(frappe.local.site) + template_path
+		source_wb = xl.load_workbook(filename=source_filename)
+		source_ws = source_wb.worksheets[0]
+
+		# Set basic payroll details in row and columns based on NBK bank template
+		source_ws.cell(row=3, column=3).value = payroll_entry.company
+		source_ws.cell(row=5, column=3).value = payroll_entry.payment_purpose
+		source_ws.cell(row=6, column=3).value = payment_month
+		source_ws.cell(row=7, column=3).value = currency
+
+		# Row number to start entering employee payroll data
+		source_ws_employee_row_number = 13
+
+		# Set column numbers based on NBK bank template
+		source_ws_emp_column_map = {
+			'Employee Number': 1,
+			'Employee Name': 2,
+			'Employee IBAN Number': 3,
+			'Payment Amount': 4,
+			'Bank Code': 5,
+			'Employee Civil ID': 6,
+			'MOSAL ID': 7
+		}
+
+		# Employee count for employee number column
+		employee_number_column_count = 1
+
+		employee_count = len(employees)
+		
+		# Employee list index
+		employee_index = 0
+		
+		# Set employee payroll details
+		while(employee_index < employee_count):
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Number"]).value = employee_number_column_count
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Name"]).value = employees[employee_index].employee_name
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee IBAN Number"]).value = employees[employee_index].iban_number
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Payment Amount"]).value = employees[employee_index].payment_amount
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Bank Code"]).value = employees[employee_index].bank_code
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Civil ID"]).value = employees[employee_index].civil_id_number
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["MOSAL ID"]).value = employees[employee_index].mosal_id
+
+			employee_number_column_count += 1
+			source_ws_employee_row_number += 1
+
+			employee_index += 1
+
+		# Increment index to row number after current employee payroll record
+		employee_index += 1
+
+		# Clear previous employee payroll details
+		while(employee_index < source_ws.max_row):
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Number"]).value = None
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Name"]).value = None
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee IBAN Number"]).value = None
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Payment Amount"]).value = None
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Bank Code"]).value = None
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Civil ID"]).value = None
+			source_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["MOSAL ID"]).value = None
+
+			source_ws_employee_row_number += 1
+			employee_index += 1
+
+		source_wb.save(source_filename)
+
+		# Set updated template path in payroll entry
+		payroll_entry.db_set('export_file', template_path)
+
+	except Exception as e:
+		frappe.throw(e)
