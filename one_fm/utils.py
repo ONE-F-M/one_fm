@@ -846,11 +846,13 @@ def increase_daily_leave_balance():
 
         # If True, then calculate new_leaves_allocated and update to the Leave Allocation
         if is_employee_allowed_to_avail_increment_existing_allocation(allocation, leave_type):
+            # Get Number of Leave Allocated for the allocation of an employee
             new_leaves_allocated = get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type)
             if new_leaves_allocated:
                 allocation.new_leaves_allocated = allocation.new_leaves_allocated+new_leaves_allocated
                 allocation.total_leaves_allocated = allocation.new_leaves_allocated+allocation.unused_leaves
                 allocation.save()
+                # Update Leave Ledger to reflect the Leave Allocation
                 update_leave_ledger_for_paid_annual_leave(allocation, leave_type.is_carry_forward)
 
 def update_leave_ledger_for_paid_annual_leave(allocation, is_carry_forward):
@@ -906,6 +908,7 @@ def get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type):
 
         if leave_days > 0:
             percent_of_reduction = 0
+            # Get sorted list of allocation reduction Matrix, since the number of paid sick leave mentioned in the table is start from zero
             allocation_reductions = sorted(leave_type.one_fm_annual_leave_allocation_reduction, key=lambda x: x.number_of_paid_sick_leave)
             for allocation_reduction in allocation_reductions:
                 if allocation_reduction.number_of_paid_sick_leave <= leave_days:
