@@ -696,8 +696,13 @@ def get_salary(employee):
 
     return salary_amount
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def hooked_leave_allocation_builder():
+    '''
+        Function used to create leave allocations
+         - Create Leave Allocation for Employee, who is having a valid leave policy
+        Triggered from hooks as daily event
+    '''
     # Get Active Employee List and set background job to create leave allocations based on the leave policy
     employee_list = frappe.get_all("Employee", filters={"status": "Active"},
         fields=["name", "date_of_joining", "went_to_hajj", "grade", "leave_policy"])
@@ -706,20 +711,36 @@ def hooked_leave_allocation_builder():
 def leave_allocation_builder(employee_list):
     '''
         Function used to create leave allocations for a given employee list
+         - Create Leave Allocation for Employee, who is having a valid leave policy
         args:
             employee_list: List of Employees with minimum data (name, date_of_joining, went_to_hajj, grade and leave_policy)
-
     '''
     from erpnext.hr.doctype.leave_allocation.leave_allocation import get_leave_allocation_for_period
-    # Get Leave Policy for employee
+
+    # Get Leave Type details (configurations)
     leave_type_details = get_leave_type_details()
+
+    # Iterate Employee List for finidng employee leave policy to create leave allocation
     for employee in employee_list:
+        # Get employee Leave Policy Object
         leave_policy = get_employee_leave_policy(employee)
+
+        # Check leave policy and details exists
         if leave_policy and leave_policy.leave_policy_details:
+
+            # Iterate Leave policy details to check if there any Leave Allocation exists, if not then create leave allocation
             for policy_detail in leave_policy.leave_policy_details:
+                # Find from_date and to_date to get leave allocation for the current period
                 if getdate(add_years(employee.date_of_joining, 1)) > getdate(nowdate()):
+                    '''
+                        If date of joining + 1 year greater than today, then from_date will be joining date.
+                    '''
                     from_date = getdate(employee.date_of_joining)
                 else:
+                    '''
+                        Else, from_date will be sum of joining date and difference in years
+                            between the date of joining and today
+                    '''
                     datetime1 = get_datetime(getdate(employee.date_of_joining))
                     datetime2 = get_datetime(getdate(nowdate()))
 
@@ -727,6 +748,7 @@ def leave_allocation_builder(employee_list):
                     difference_in_years = time_difference.years
                     from_date = getdate(add_years(employee.date_of_joining, difference_in_years))
 
+                # to_date is an year of addition to the from date
                 to_date = getdate(add_days(add_years(from_date, 1), -1))
 
                 # Check allocation exists for leave type in leave Policy, If not then create leave allocation
@@ -735,14 +757,30 @@ def leave_allocation_builder(employee_list):
                     create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date)
 
 def get_employee_leave_policy(employee):
+    '''
+        Function used to get leave policy for an employee
+        args:
+            employee: Object of Employee
+        return:
+            leave policy Object or False(Boolean)
+    '''
     leave_policy = employee.leave_policy
     if not leave_policy and employee.grade:
+        '''
+            If no leave policy configured in employee and grade is configured in employee,
+            get leave policy configured in Employee Grade
+        '''
         leave_policy = frappe.db.get_value("Employee Grade", employee.grade, "default_leave_policy")
     if leave_policy:
         return frappe.get_doc("Leave Policy", leave_policy)
     return False
 
 def get_leave_type_details():
+    '''
+        Function used to get existing leave type details
+        return:
+            Details of All leave type as dict
+    '''
 	leave_type_details = frappe._dict()
 	leave_types = frappe.get_all("Leave Type",
 		fields=["name", "is_lwp", "is_earned_leave", "is_compensatory", "is_carry_forward",
