@@ -151,6 +151,38 @@ def get_basic_salary(employee):
 	else: 
 		frappe.throw(_("No Assigned Salary Structure found for the selected employee."))
 
+def create_salary_slips_for_employees(employees, args, publish_progress=True):
+	""" Core method overridden here to call the method to set payroll export file upon submitting payroll entry. """
+
+	salary_slips_exists_for = get_existing_salary_slips(employees, args)
+	count=0
+	salary_slips_not_created = []
+	for emp in employees:
+		if emp not in salary_slips_exists_for:
+			args.update({
+				"doctype": "Salary Slip",
+				"employee": emp
+			})
+			ss = frappe.get_doc(args)
+			ss.insert()
+			count+=1
+			if publish_progress:
+				frappe.publish_progress(count*100/len(set(employees) - set(salary_slips_exists_for)),
+					title = _("Creating Salary Slips..."))
+
+		else:
+			salary_slips_not_created.append(emp)
+
+	payroll_entry = frappe.get_doc("Payroll Entry", args.payroll_entry)
+	payroll_entry.db_set("salary_slips_created", 1)
+	set_payroll_export_file(payroll_entry)
+	payroll_entry.notify_update()
+
+	if salary_slips_not_created:
+		frappe.msgprint(_("Salary Slips already exists for employees {}, and will not be processed by this payroll.")
+			.format(frappe.bold(", ".join([emp for emp in salary_slips_not_created]))) , title=_("Message"), indicator="orange")
+
+
 @frappe.whitelist()
 def set_payroll_export_file(payroll_entry):
 	""" This method fetches the company bank details and makes a call to the export function based on the provided bank.
