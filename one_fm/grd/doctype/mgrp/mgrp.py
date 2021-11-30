@@ -5,9 +5,8 @@
 from frappe.model.document import Document
 import frappe
 from frappe import _
-from frappe.utils import get_url, cint
+from frappe.utils import get_url, cint, today
 from one_fm.api.notification import create_notification_log
-# from frappe.utils import today
 from datetime import date
 from one_fm.hiring.utils import update_onboarding_doc
 from frappe.core.doctype.communication.email import make
@@ -20,7 +19,7 @@ class MGRP(Document):
 		if self.status == "Cancellation" and not self.end_of_service_attachment:
 			self.set_resignation_attachment()
 		if not self.date_of_application:
-			self.db_set('date_of_application',date.today())
+			self.date_of_application = today()
 
 	def after_insert(self):
 		update_onboarding_doc(self)
@@ -77,30 +76,18 @@ class MGRP(Document):
 		param: mgrp object
 		This method is getting the children details from the employee record based on the selected employee,
 		"""
-		table=[]
 		if self.employee and cint(self.number_of_children) > 0 and len(self.children_details_table) == 0:
 			child_num = frappe.db.get_value('Employee',{'name':self.employee},['number_of_children'])
 			if cint(child_num) > 0:
-				employee = frappe.get_doc('Employee',self.employee)
+				employee = frappe.get_doc('Employee',self.employee) # Fetching the children table from Employee to MGRP doctype
 				for child in employee.children_details:
-					table.append({
-						'child_name': child.child_name,
-						'child_name_in_arabic': child.child_name_in_arabic,
-						'age': child.age,
-						'work_status': child.work_status,
-						'married': child.married,
-						'health_status': child.health_status
-					})
-
-			if len(table) > 0:
-				for row in table:
 					children = self.append('children_details_table',{})
-					children.child_name = row['child_name']
-					children.child_name_in_arabic = row['child_name_in_arabic']
-					children.age = row['age']
-					children.work_status = row['work_status']
-					children.married = row['married']
-					children.health_status = row['health_status']
+					children.child_name = child.child_name
+					children.child_name_in_arabic = child.child_name_in_arabic
+					children.age = child.age
+					children.work_status = child.work_status
+					children.married = child.married
+					children.health_status = child.health_status
 				frappe.db.commit()
 
 	def set_status(self):

@@ -107,18 +107,18 @@ class PIFSSForm103(Document):
 		This function is setting today's date for `signature_date` and `employee_signature_date` that are required in the PIFSS 103 print format
 		"""
 		if not self.signature_date:
-			self.db_set("signature_date",date.today())
+			self.signature_date = today()
 		if not self.employee_signature_date:
-			self.db_set("employee_signature_date",date.today())
+			self.employee_signature_date = today()
 
 	def check_penality_for_registration(self):
 		if self.request_type == "Registration":
 			if not self.date_of_request:
 				if self.status == "Pending by GRD":
-					self.db_set('date_of_request',date.today())
+					self.date_of_request = today()
 			if not self.date_of_registeration:
 				if self.status == "Awaiting Response":
-					self.db_set('date_of_registeration',date.today())
+					self.date_of_registeration = today()
 
 	def on_submit(self):
 		"""
@@ -135,7 +135,7 @@ class PIFSSForm103(Document):
 			message_detail = '<b style="color:red; text-align:center;">First, You Need to Take Screenshot of {0} Status from <a href="{1}">PIFSS Website</a></b><br>'.format(self.request_type,self.pifss_website)
 			self.set_mendatory_fields(field_list,message_detail)
 
-		self.db_set('date_of_acceptance', date.today())
+		self.date_of_acceptance = today()
 		# This method will be used to create penalty for operator work delay, but not defined yet by project owner, what have been defined currently is tracking three dates 
 		# (date_of_request, date_of_registration, date_of_acceptance)
 		# and based on these three dates we can create penalty on (employee: delay in providing his/her documents, operator: delay on registering employee on pifss, onboarding user: delay on requesting grd to apply for employee on pifss)
@@ -166,7 +166,7 @@ class PIFSSForm103(Document):
 			field_list = [{'Attach 103 Signed Form':'attach_signed_form'}]
 			message_detail = '<b style="color:red; text-align:center;">First, You Need to Print The Form and Take Employee Signature</b><br>'
 			self.set_mendatory_fields(field_list,message_detail)
-			self.db_set('date_of_request',date.today())
+			self.date_of_request = today()
 
 
 		if self.workflow_state == "Awaiting Response":
@@ -174,7 +174,7 @@ class PIFSSForm103(Document):
 				field_list = [{'PIFSS Reference Number':'reference_number'}]
 				message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply for {0} through <a href="{1}" target="_blank">PIFSS Website</a></b><br>'.format(self.request_type,self.pifss_website)
 				self.set_mendatory_fields(field_list,message_detail)
-			self.db_set('date_of_registeration',date.today())
+			self.date_of_registeration = today()
 
 		if self.workflow_state == "Rejected":
 			if not self.reason_of_rejection:

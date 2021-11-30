@@ -111,7 +111,7 @@ def create_preparation():
     """
     runs: at 8am of the 15th in every month
     This method will create preparation record that contain list of all employees that their residency expiry date will be between the first and the last date of the next month
-    This record will go to HR user to set value for each employee eihter renewal or extend and on the submit of this record it will asks for hr permission and approval.
+    This record will go to HR user to set value for each employee either renewal or extend and on the submit of this record it will ask for hr permission and approval.
     Then, it will create wp, mi, moi, and paci records for all employees in the list.
     """
     doc = frappe.new_doc('Preparation')
