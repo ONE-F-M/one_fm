@@ -192,7 +192,7 @@ class PIFSSMonthlyDeduction(Document):
 			legal_record = frappe.new_doc('Legal Investigation')
 			legal_record.reference_doctype = "PIFSS Monthly Deduction"
 			legal_record.reference_docname = self.name
-			legal_record.start_date = date.today()
+			legal_record.start_date = today()
 			legal_record.investigation_subject = "Investigate the cause of the {0} KWD Additional Amount In PIFSS".format(penalty_amount)
 			legal_record.insert()
 			legal_record.save()
