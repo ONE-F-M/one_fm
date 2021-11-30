@@ -37,6 +37,27 @@ def get_notification_list(employee_id):
 		elif len(notification_list)==0:
 			return response("No Notification Yet", notification_list, True, 200)
 
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback())
+		return response(e, {}, False, 500)
+
+# This function deletes notification of a given `notification_name`
+# params: notification_name (eg: b9ddeb43dd) 
+@frappe.whitelist()
+def delete_notification(notification_name):
+	"""
+	Params:
+    notification_name
+	"""
+	try:
+		if frappe.db.exists("Notification Log",{'name':notification_name}):
+			frappe.delete_doc("Notification Log", notification_name, ignore_permissions=True)
+			frappe.db.commit()
+
+			return response("Notification is Deleted Sucessfully", {}, True, 200)
+
+		elif not frappe.db.exists("Notification Log",{'name':notification_name}):
+			return response("Notification Doesn't exist", {}, False, 400)
 
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback())
@@ -45,7 +66,12 @@ def get_notification_list(employee_id):
 # This method returing the message and status code of the API
 def response(message, data, success, status_code):
     """
-    Params: message, status code
+    Params: 
+	-------
+	message: 
+	status code: (eg: 200) based on the message
+	data: (eg {doctype_list} or {})
+	success: (eg: True or False)
     """
     frappe.local.response["message"] = message
     frappe.local.response["data"] = data

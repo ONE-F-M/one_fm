@@ -82,6 +82,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "deduction_month",
    "fieldtype": "Date",
    "label": "Deduction Month"
@@ -467,7 +468,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-11-16 15:32:10.702819",
+ "modified": "2021-11-22 15:33:49.522847",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",

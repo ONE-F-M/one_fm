@@ -24,6 +24,7 @@ import datetime
 from datetime import datetime, time
 from frappe import utils
 import pandas as pd
+from erpnext.hr.utils import get_holidays_for_employee
 
 
 
@@ -695,24 +696,51 @@ def get_salary(employee):
 
     return salary_amount
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def hooked_leave_allocation_builder():
-    # Get Active Employee List
+    '''
+        Function used to create leave allocations
+         - Create Leave Allocation for Employee, who is having a valid leave policy
+        Triggered from hooks as daily event
+    '''
+    # Get Active Employee List and set background job to create leave allocations based on the leave policy
     employee_list = frappe.get_all("Employee", filters={"status": "Active"},
         fields=["name", "date_of_joining", "went_to_hajj", "grade", "leave_policy"])
     frappe.enqueue(leave_allocation_builder, timeout=600, employee_list=employee_list)
 
 def leave_allocation_builder(employee_list):
+    '''
+        Function used to create leave allocations for a given employee list
+         - Create Leave Allocation for Employee, who is having a valid leave policy
+        args:
+            employee_list: List of Employees with minimum data (name, date_of_joining, went_to_hajj, grade and leave_policy)
+    '''
     from erpnext.hr.doctype.leave_allocation.leave_allocation import get_leave_allocation_for_period
-    # Get Leave Policy for employee
+
+    # Get Leave Type details (configurations)
     leave_type_details = get_leave_type_details()
+
+    # Iterate Employee List for finidng employee leave policy to create leave allocation
     for employee in employee_list:
+        # Get employee Leave Policy Object
         leave_policy = get_employee_leave_policy(employee)
+
+        # Check leave policy and details exists
         if leave_policy and leave_policy.leave_policy_details:
+
+            # Iterate Leave policy details to check if there any Leave Allocation exists, if not then create leave allocation
             for policy_detail in leave_policy.leave_policy_details:
+                # Find from_date and to_date to get leave allocation for the current period
                 if getdate(add_years(employee.date_of_joining, 1)) > getdate(nowdate()):
+                    '''
+                        If date of joining + 1 year greater than today, then from_date will be joining date.
+                    '''
                     from_date = getdate(employee.date_of_joining)
                 else:
+                    '''
+                        Else, from_date will be sum of joining date and difference in years
+                            between the date of joining and today
+                    '''
                     datetime1 = get_datetime(getdate(employee.date_of_joining))
                     datetime2 = get_datetime(getdate(nowdate()))
 
@@ -720,6 +748,7 @@ def leave_allocation_builder(employee_list):
                     difference_in_years = time_difference.years
                     from_date = getdate(add_years(employee.date_of_joining, difference_in_years))
 
+                # to_date is an year of addition to the from date
                 to_date = getdate(add_days(add_years(from_date, 1), -1))
 
                 # Check allocation exists for leave type in leave Policy, If not then create leave allocation
@@ -728,14 +757,30 @@ def leave_allocation_builder(employee_list):
                     create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date)
 
 def get_employee_leave_policy(employee):
+    '''
+        Function used to get leave policy for an employee
+        args:
+            employee: Object of Employee
+        return:
+            leave policy Object or False(Boolean)
+    '''
     leave_policy = employee.leave_policy
     if not leave_policy and employee.grade:
+        '''
+            If no leave policy configured in employee and grade is configured in employee,
+            get leave policy configured in Employee Grade
+        '''
         leave_policy = frappe.db.get_value("Employee Grade", employee.grade, "default_leave_policy")
     if leave_policy:
         return frappe.get_doc("Leave Policy", leave_policy)
     return False
 
 def get_leave_type_details():
+    '''
+        Function used to get existing leave type details
+        return:
+            Details of All leave type as dict
+    '''
 	leave_type_details = frappe._dict()
 	leave_types = frappe.get_all("Leave Type",
 		fields=["name", "is_lwp", "is_earned_leave", "is_compensatory", "is_carry_forward",
@@ -781,96 +826,163 @@ def create_leave_allocation(employee, policy_detail, leave_type_details, from_da
         allocation.submit()
 
 def increase_daily_leave_balance():
-    # Get List of Leave Allocation for today (Leave Type - Is Paid Annual Leave)
+    '''
+        Function is used to Increase daily leave balance for Annual Leave Allocation
+        Triggered from daily scheduler event in hooks
+        Annual Leave Allocation:
+            It is the Leave Allocation for every employee with a leave type marked true for `Is Paid Annual Leave`
+    '''
+
+    # Get List of Leave Allocation for today of a Leave Type (having Is Paid Annual Leave marekd True)
+    allocation_list = get_paid_annual_leave_allocation_list()
+
+    # Iterate Allocation List to increment Allocation
+    for leave_allocation in allocation_list:
+        # Get Allocation object from allocation list
+        allocation = frappe.get_doc("Leave Allocation", leave_allocation.name)
+
+        # Get Leave Type object from allocation list
+        leave_type = frappe.get_doc("Leave Type", leave_allocation.leave_type)
+
+        # If True, then calculate new_leaves_allocated and update to the Leave Allocation
+        if is_employee_allowed_to_avail_increment_existing_allocation(allocation, leave_type):
+            # Get Number of Leave Allocated for the allocation of an employee
+            new_leaves_allocated = get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type)
+            if new_leaves_allocated:
+                allocation.new_leaves_allocated = allocation.new_leaves_allocated+new_leaves_allocated
+                allocation.total_leaves_allocated = allocation.new_leaves_allocated+allocation.unused_leaves
+                allocation.save()
+                # Update Leave Ledger to reflect the Leave Allocation
+                update_leave_ledger_for_paid_annual_leave(allocation, leave_type.is_carry_forward)
+
+def update_leave_ledger_for_paid_annual_leave(allocation, is_carry_forward):
+    '''
+        Function is used to Update Leave Ledger Entry for Annual Leave Allocation
+        args:
+            allocation: Object of Leave Allocation
+            is_carry_forward: Boolean
+    '''
+    # Delete old ledger entry
+    frappe.db.sql("""DELETE FROM `tabLeave Ledger Entry`
+        WHERE `transaction_name`=%s""", (allocation.name))
+
+    # Create new ledger entry
+    args = {
+        'leaves': allocation.total_leaves_allocated,
+        'from_date': allocation.from_date,
+        'to_date': allocation.to_date,
+        'is_carry_forward': is_carry_forward
+    }
+    create_leave_ledger_entry(allocation, args, True)
+
+def get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type):
+    '''
+        Function is used to get new leave allocated for annual paid leave
+        args:
+            allocation: Object of Leave Allocation
+            leave_type: Object of Leave Type
+        return: Fraction of Allocation
+    '''
+    new_leaves_allocated = 0
+
+    # Fetch employee annual leave allocation from employee
+    employee_annual_leave = frappe.db.get_value('Employee', allocation.employee, 'annual_leave_balance')
+    if employee_annual_leave and employee_annual_leave <= 0:
+        # Fetch employee annual leave allocation from company defaults
+        employee_annual_leave = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
+
+    # calculate daily allocation factor
+    if employee_annual_leave > 0:
+        new_leaves_allocated = employee_annual_leave/365
+
+    # Set Daily Allocation from annual leave dependent leave type and reduction level
+    if leave_type.one_fm_annual_leave_allocation_reduction:
+        from erpnext.hr.doctype.leave_application.leave_application import get_leaves_for_period
+        leave_days = 0
+        if leave_type.one_fm_paid_sick_leave_type_dependent:
+            leave_days += get_leaves_for_period(allocation.employee, leave_type.one_fm_paid_sick_leave_type_dependent, allocation.from_date, allocation.to_date)
+        else:
+            leave_type_list = frappe.get_all('Leave Type', filters= {'one_fm_is_paid_sick_leave': 1}, fields= ["name"])
+            for lt in leave_type_list:
+                leave_days += get_leaves_for_period(allocation.employee, lt.name, allocation.from_date, allocation.to_date)
+
+        if leave_days > 0:
+            percent_of_reduction = 0
+            # Get sorted list of allocation reduction Matrix, since the number of paid sick leave mentioned in the table is start from zero
+            allocation_reductions = sorted(leave_type.one_fm_annual_leave_allocation_reduction, key=lambda x: x.number_of_paid_sick_leave)
+            for allocation_reduction in allocation_reductions:
+                if allocation_reduction.number_of_paid_sick_leave <= leave_days:
+                    percent_of_reduction = allocation_reduction.percentage_of_allocation_reduction
+            if percent_of_reduction > 0:
+                new_leaves_allocated -= new_leaves_allocated * (percent_of_reduction/100)
+
+    return new_leaves_allocated
+
+def get_paid_annual_leave_allocation_list(date=nowdate()):
+    '''
+        Function is used to get paid annual leave allocation
+        args:
+            date: date
+        return: List of Leave Allocation
+    '''
+    # Get List of Paid Annual Leave Allocation for a date of a Leave Type (having Is Paid Annual Leave marekd True)
     query = """
         select
             la.name, la.leave_type
         from
             `tabLeave Allocation` la, `tabLeave Type` lt
         where
-            lt.one_fm_is_paid_annual_leave=1 and la.docstatus=1 and '{0}' between from_date and to_date
+            lt.one_fm_is_paid_annual_leave=1 and la.docstatus=1 and '{0}' between la.from_date and la.to_date
             and la.leave_type=lt.name
     """
-    allocation_list = frappe.db.sql(query.format(getdate(nowdate())), as_dict=True)
-    from erpnext.hr.doctype.leave_application.leave_application import get_leaves_for_period
-    for alloc in allocation_list:
-        allow_allocation = True
+    return frappe.db.sql(query.format(getdate(date)), as_dict=True)
 
-        allocation = frappe.get_doc("Leave Allocation", alloc.name)
-        leave_type = frappe.get_doc("Leave Type", alloc.leave_type)
+def is_employee_allowed_to_avail_increment_existing_allocation(allocation, leave_type):
+    '''
+        Function is used to check whether the employee is allowed to avail incrementing the leave allocation
+        args:
+            allocation: Object of Leave Allocation
+            leave_type: Object of Leave Type
+        return: Boolean
+    '''
+    allow_allocation = True
 
-        # Check if employee absent today then not allow annual leave allocation for today
-        is_absent = frappe.db.sql("""select name, status from `tabAttendance` where employee = %s and
-            attendance_date = %s and docstatus = 1 and status = 'Absent' """,
-			(allocation.employee, getdate(nowdate())), as_dict=True)
-        if is_absent and len(is_absent) > 0:
-            allow_allocation = False
+    # Check if employee absent today then not allow annual leave allocation for today
+    is_absent = frappe.db.sql("""select name, status from `tabAttendance` where employee = %s and
+        attendance_date = %s and docstatus = 1 and status = 'Absent' """,
+        (allocation.employee, getdate(nowdate())), as_dict=True)
+    if is_absent and len(is_absent) > 0:
+        allow_allocation = False
 
-        # Check if employee on leave today and allow annual leave allocation for today
-        leave_appln = frappe.db.sql("""select name, status, leave_type from `tabLeave Application` where employee = %s and
-            (%s between from_date and to_date) and docstatus = 1""",
-			(allocation.employee, getdate(nowdate())), as_dict=True)
-        if leave_appln and len(leave_appln) > 0:
-            allow_allocation = False
-            if leave_type.leave_allocation_matrix:
-                for matrix in leave_type.leave_allocation_matrix:
-                    if matrix.leave_type == leave_appln[0].leave_type and matrix.allocate_on_leave_application_status == leave_appln[0].status:
-                        allow_allocation = True
+    # Get Leave Application for today for the employee in the allocation
+    query = """
+        select
+            name, status, leave_type
+        from
+            `tabLeave Application`
+        where
+            employee = %s and (%s between from_date and to_date) and docstatus = 1
+    """
+    leave_application = frappe.db.sql(query, (allocation.employee, getdate(nowdate())), as_dict=True)
 
-        if allow_allocation:
-            # Get Daily Allocation of Annual Leave
-            employee_annual_leave = frappe.db.get_value('Employee', allocation.employee, 'annual_leave_balance')
-            if employee_annual_leave > 0:
-                daily_allocation = employee_annual_leave/365
-            else:
-                default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
-                daily_allocation = default_annual_leave_balance/365
+    '''
+        If Leave Application exist for today,
+        Check the Leave Allocation Matrix stored inside the Leave Type for allow allocation
+    '''
+    if leave_application and len(leave_application) > 0:
+        allow_allocation = False
 
-            new_leaves_allocated = daily_allocation
+        # Check if Leave allocation matrix configured insde the Leave Type
+        if leave_type.leave_allocation_matrix:
+            for matrix in leave_type.leave_allocation_matrix:
+                '''
+                    Check if Leave Type in the Matrix and Leave Application Same
+                    and if Approval Status in Matrix and Leave Application Status then set allow_allocation as True
+                '''
+                if matrix.leave_type == leave_application[0].leave_type and matrix.allocate_on_leave_application_status == leave_application[0].status:
+                    allow_allocation = True
 
-            # Set Daily Allocation from annual leave dependent leave type and reduction level
-            if leave_type.one_fm_annual_leave_allocation_reduction:
-                leave_days = 0
-                if leave_type.one_fm_paid_sick_leave_type_dependent:
-                    leave_days += get_leaves_for_period(allocation.employee, leave_type.one_fm_paid_sick_leave_type_dependent, allocation.from_date, allocation.to_date)
-                else:
-                    leave_type_list = frappe.get_all('Leave Type', filters= {'one_fm_is_paid_sick_leave': 1}, fields= ["name"])
-                    for lt in leave_type_list:
-                        leave_days += get_leaves_for_period(allocation.employee, lt.name, allocation.from_date, allocation.to_date)
-
-                if leave_days > 0:
-                    percent_of_reduction = 0
-                    allocation_reduction = sorted(leave_type.one_fm_annual_leave_allocation_reduction, key=lambda x: x.number_of_paid_sick_leave)
-                    for alloc_reduction in allocation_reduction:
-                        if alloc_reduction.number_of_paid_sick_leave <= leave_days:
-                            percent_of_reduction = alloc_reduction.percentage_of_allocation_reduction
-                    if percent_of_reduction > 0:
-                        new_leaves_allocated = daily_allocation - daily_allocation * (percent_of_reduction/100)
-
-            allocation.new_leaves_allocated = allocation.new_leaves_allocated+new_leaves_allocated
-            allocation.total_leaves_allocated = allocation.new_leaves_allocated+allocation.unused_leaves
-            allocation.save()
-
-            ''' Delete old ledger entry'''
-            frappe.db.sql("""DELETE FROM `tabLeave Ledger Entry`
-                WHERE `transaction_name`=%s""", (allocation.name))
-
-            ''' Create new ledger entry'''
-            ledger = frappe._dict(
-                doctype='Leave Ledger Entry',
-                employee=allocation.employee,
-                leave_type=leave_type.name,
-                transaction_type='Leave Allocation',
-                transaction_name=allocation.name,
-                leaves = allocation.total_leaves_allocated,
-                from_date = allocation.from_date,
-                to_date = allocation.to_date,
-                is_carry_forward=leave_type.is_carry_forward,
-                is_expired=0,
-                is_lwp=0
-            )
-            frappe.get_doc(ledger).submit()
-
+    return allow_allocation
 
 def get_leave_allocation_records(date, employee=None, leave_type=None):
     conditions = (" and employee='%s'" % employee) if employee else ""
@@ -1657,8 +1769,8 @@ def issue_roster_actions():
 
 
 def create_roster_employee_actions():
-    """ 
-    This function creates a Roster Employee Actions document and issues notifications to relevant supervisors 
+    """
+    This function creates a Roster Employee Actions document and issues notifications to relevant supervisors
     directing them to schedule employees that are unscheduled and assigned to them.
     It computes employees not scheduled for the span of two weeks, starting from tomorrow.
     """
@@ -1671,25 +1783,25 @@ def create_roster_employee_actions():
     #-------------------- Roster Employee actions ------------------#
     # fetch employees that are active and don't have a schedule in the specified date range
     employees_not_rostered = frappe.db.sql("""
-                            select 
-                                employee from `tabEmployee` 
-                            where 
-                                employee not in 
-                                (select employee 
-                                from `tabEmployee Schedule` 
-                                where date >= %(start)s and date <=%(end)s) """, 
+                            select
+                                employee from `tabEmployee`
+                            where
+                                employee not in
+                                (select employee
+                                from `tabEmployee Schedule`
+                                where date >= %(start)s and date <=%(end)s) """,
                                 {'start': start_date, 'end': end_date})
-    
+
     employees = ()
 
     # fetch employees that are not rostered from the result returned by the query and append to tuple
     for emp in employees_not_rostered:
         employees = employees + emp
-    
-    # fetch supervisors and list of employees(not rostered) under them 
-    result = frappe.db.sql("""select sv.employee, group_concat(e.employee) 
+
+    # fetch supervisors and list of employees(not rostered) under them
+    result = frappe.db.sql("""select sv.employee, group_concat(e.employee)
             from `tabEmployee` e
-            join `tabOperations Shift` sh on sh.name = e.shift 
+            join `tabOperations Shift` sh on sh.name = e.shift
             join `tabEmployee` sv on sh.supervisor=sv.employee
             where e.employee in {employees}
             group by sv.employee """.format(employees=employees))
@@ -1713,7 +1825,7 @@ def create_roster_employee_actions():
 
         roster_employee_actions_doc.save()
         frappe.db.commit()
-        
+
     #-------------------- END Roster Employee actions ------------------#
 
 
@@ -1733,28 +1845,28 @@ def create_roster_post_actions():
     post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "post_type", "post"], order_by="date asc")
     # Fetch employee schedules for employees who are working
     employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "post_type"], order_by="date asc")
-    
+
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
         if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.post_type == ps.post_type for es in employee_schedules):
             post_types_not_filled_set.add(ps.post_type)
-    
+
     # Convert set to tuple for passing it in the sql query as a parameter
     post_types_not_filled = tuple(post_types_not_filled_set)
 
-    # Fetch supervisor and post types in his/her shift 
-    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.post_type) 
+    # Fetch supervisor and post types in his/her shift
+    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.post_type)
             from `tabPost Schedule` ps
-            join `tabOperations Shift` sh on sh.name = ps.shift 
+            join `tabOperations Shift` sh on sh.name = ps.shift
             join `tabEmployee` sv on sh.supervisor=sv.employee
             where ps.post_type in {post_types}
             group by sv.employee""".format(post_types=post_types_not_filled))
-    
+
     # For each supervisor, create post actions to fill post type specifying the post types not filled
     for res in result:
         supervisor = res[0]
         post_types = res[1].split(",")
-        
+
         roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
         roster_post_actions_doc.start_date = start_date
         roster_post_actions_doc.end_date = end_date
@@ -1822,7 +1934,7 @@ def generate_roster_report():
         result = "OK"
         if posts_not_filled_count > 0:
             result = "NOT OK"
-        
+
         # Append row to post table
         post_report_table += """<tr><td>{current_date}</td>""".format(current_date=cstr(date).split(" ")[0])
         post_report_table += """<td>{active_posts}</td>""".format(active_posts=active_posts)
@@ -1888,12 +2000,12 @@ def generate_roster_report():
         </tbody>
     </table>
     """
-    
+
     recipients = []
 
     # get list of all entries having role as Operations Manager included
     parent_list = frappe.db.sql("""SELECT DISTINCT parent FROM `tabHas Role` WHERE role=%(role)s""",{'role': "Operations Manager"}, as_dict=1)
-    
+
     for parent in parent_list:
         # Check if parent is an employee. If yes, append to recipients list
         if frappe.db.exists("Employee", {'user_id': parent.parent}):
@@ -1939,7 +2051,7 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
     """
     Method called in `Hook.py` Employee Checkin
 
-    Param: 
+    Param:
     -------
     checkout record
     method: `on_update`
@@ -1954,40 +2066,88 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
     case1: Employee has OT request within a working day. The system will check the check-out time and accepted the OT request to create an additional salary.
     case2: Employee has OT request within a day off. The system will check both check-in and checkout and accepted OT request to create additional salary and update employee schedule record.
     """
-    
-    if doc.log_type == "OUT" and frappe.db.exists("Overtime Request",{'employee':doc.employee, 'request_type':"Head Office", 'date':getdate(doc.time), 'status':"Accepted"}):
+    # Define the `overtime_request_type` `employee_availability` `roster_type` `week_days` values
+    overtime_request_type = "Head Office"
+    employee_availability = ["Day Off","Working"]
+    roster_type = ["Over-Time", "Basic"]
+    week_days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+
+    # Fetch payroll details from HR and Payroll Additional Settings
+    overtime_component = frappe.db.get_single_value("HR and Payroll Additional Settings", 'overtime_additional_salary_component')
+    working_day_overtime_rate = frappe.db.get_single_value("HR and Payroll Additional Settings", 'working_day_overtime_rate')
+    day_off_overtime_rate = frappe.db.get_single_value("HR and Payroll Additional Settings", 'day_off_overtime_rate')
+    public_holiday_overtime_rate = frappe.db.get_single_value("HR and Payroll Additional Settings", 'public_holiday_overtime_rate')
+
+    if doc.log_type == "OUT" and frappe.db.exists("Overtime Request",{'employee':doc.employee, 'request_type':overtime_request_type, 'date':getdate(doc.time), 'status':"Accepted"}):
         check_out_time = get_time(doc.time)
-        check_out_date = getdate(doc.time) 
-        overtime_doc = frappe.get_doc("Overtime Request",{'employee':doc.employee, 'request_type':"Head Office", 'date':check_out_date, 'status':"Accepted"})
-        basic_salary = frappe.db.get_value("Employee",{'name':doc.employee},['one_fm_basic_salary'])
-        
-        if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Day Off"}):
+        check_out_date = getdate(doc.time)
+        overtime_doc = frappe.get_doc("Overtime Request",{'employee':doc.employee, 'request_type':overtime_request_type, 'date':check_out_date, 'status':"Accepted"})
+        basic_salary, employee_holiday_list = frappe.db.get_value("Employee",{'name':doc.employee},['one_fm_basic_salary', 'holiday_list'])
+        shift_duration = frappe.db.get_value("Operations Shift", doc.operations_shift,['duration'])
+
+        # Pass last parameter as "False" to get weekly off days
+        holidays_weekly_off = get_holidays_for_employee(doc.employee, check_out_date, check_out_date, False, False)
+
+        # Pass last paramter as "True" to get non weekly off days, ie, public/additional holidays
+        holidays_public_holiday = get_holidays_for_employee(doc.employee, check_out_date, check_out_date, False, True)
+
+        # Check if Employee in a Day OFF
+        if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':employee_availability[0]}):
+            # Get checkin_time for the employee in the same day of OT request
             checkin_datetime = frappe.db.get_value("Employee Checkin",{'employee':doc.employee, 'log_type':"IN"}, ['time'])
             if checkin_datetime:
                 if is_checkin_record_available(check_out_date, check_out_time, checkin_datetime, overtime_doc.start_time, overtime_doc.end_time):
-                    if basic_salary:
-                        if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'notes':"Overtime Earning"}):
-                            overtime_amount = rounded(flt(overtime_doc.overtime_hours)*1.5*flt(basic_salary),3) # Overtime = `overtime_hours` * 1.5 * basic hourly wage
-                            create_additional_salary(doc.employee,overtime_amount)
-                            update_employee_schedule(frappe.get_doc("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Day Off"}))
+                    if basic_salary and shift_duration:
+                        if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'salary_component':overtime_component}):
+
+                            # Check if dayoff is not public holiday
+                            if employee_holiday_list:
+                                if len(holidays_weekly_off) > 0 and holidays_weekly_off[0].description in week_days:
+
+                                    if day_off_overtime_rate > 0:
+                                        hourly_wage = rounded(rounded(flt(basic_salary)/30, 3) / shift_duration, 3)
+                                        overtime_amount = rounded(flt(overtime_doc.overtime_hours) * hourly_wage * day_off_overtime_rate,3) # Overtime = `overtime_hours` * day_off_overtime_rate * hourly_wage
+                                        create_additional_salary_for_ot(doc.employee, overtime_amount, overtime_component)
+                                        update_employee_schedule(frappe.get_doc("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':employee_availability[0]}),employee_availability[1],roster_type[0])
+                                    else:
+                                        frappe.throw(_("No Day Off overtime rate set in HR and Payroll Additional Settings."))
+
+                                # Check if the day off is public holiday
+                                elif len(holidays_public_holiday) > 0:
+
+                                    if public_holiday_overtime_rate > 0:
+                                        hourly_wage = rounded(rounded(flt(basic_salary)/30, 3) / shift_duration, 3)
+                                        overtime_amount = rounded(flt(overtime_doc.overtime_hours) * hourly_wage * public_holiday_overtime_rate,3) # Overtime = `overtime_hours` * public_holiday_overtime_rate * hourly_wage
+                                        create_additional_salary_for_ot(doc.employee, overtime_amount, overtime_component)
+                                        update_employee_schedule(frappe.get_doc("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':employee_availability[0]}),employee_availability[1],roster_type[0])
+                                    else:
+                                        frappe.throw(_("No Public Holiday overtime rate set in HR and Payroll Additional Settings."))
+
                     if not basic_salary:
                         frappe.throw("Please Define The Basic Salary for {employee} to Create Overtime Allowance".format(employee=doc.employee))
-        
-        if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':"Working"}):
-            if cstr(check_out_time) >= cstr(overtime_doc.end_time):# Check-out time is equal to or after the requested time.
-                
-                if basic_salary:
-                    if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'notes':"Overtime Earning"}):
-                        overtime_amount = rounded(flt(overtime_doc.overtime_hours)*1.5*flt(basic_salary),3) # Overtime = `overtime_hours` * 1.5 * basic hourly wage
-                        create_additional_salary(doc.employee,overtime_amount)
+
+        # Check if Employee in a Working day
+        if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':employee_availability[1]}):
+            if cstr(check_out_time) >= cstr(overtime_doc.end_time):# Check-out time is equal or after the requested time.
+
+                if basic_salary and shift_duration:
+                    if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'salary_component':overtime_component}):
+                        if working_day_overtime_rate > 0:
+                            hourly_wage = rounded(rounded(flt(basic_salary)/30, 3) / shift_duration, 3)
+                            overtime_amount = rounded(flt(overtime_doc.overtime_hours) * hourly_wage * working_day_overtime_rate ,3) # Overtime = `overtime_hours` * working_day_overtime_rate * hourly_wage
+                            create_additional_salary(doc.employee, overtime_amount, overtime_component)
+                        else:
+                            frappe.throw(_("No Working day overtime rate set in HR and Payroll Additional Settings."))
+
                 if not basic_salary:
                     frappe.throw("Please Define The Basic Salary for {employee} to Create Overtime Allowance".format(employee=doc.employee))
 
-# The method checks the availability of check-in records for Head Office employees during their Day Off 
-# and verifies both the check-in and checkout time with the requested time in the Overtime request (OT request)      
+# The method checks the availability of check-in records for Head Office employees during their Day Off
+# and verifies both the check-in and checkout time with the requested time in the Overtime request (OT request)
 def is_checkin_record_available(check_out_date, check_out_time, checkin_datetime, start_time, end_time):
     """
-    Param: 
+    Param:
     -------
     check_out_date (eg: 2021-11-11)
     check_out_time (eg: 11:00:00)
@@ -2005,31 +2165,34 @@ def is_checkin_record_available(check_out_date, check_out_time, checkin_datetime
     checkin_time = get_time(checkin_datetime)
     if checkin_date == check_out_date:
         if cstr(checkin_time) <= cstr(start_time) and cstr(check_out_time) >= cstr(end_time):
-            return True     
+            return True
     else:
         return False
 
 # The Method is updating Employee Schedule data for `employee_availability` and `roster_type`
-def update_employee_schedule(employee_schedule_doc):
+def update_employee_schedule(employee_schedule_doc,employee_availability,roster_type):
     """
     Param:
     ------
     Employee Schedule doctype
+    employee_availability: (eg: Working)
+    roster_type: (eg: Over-Time)
     """
-    employee_schedule_doc.employee_availability = "Working"
-    employee_schedule_doc.roster_type = "Over-Time"
+    employee_schedule_doc.employee_availability = employee_availability #Working
+    employee_schedule_doc.roster_type = roster_type #  "Over-Time"
     employee_schedule_doc.save(ignore_permissions=True)
-                    
-# Create Additional Salary For employee and set the overtime allowance for them amount
-def create_additional_salary(employee, amount):
+
+# Create Additional Salary For employee and set the overtime allowance for them and the OT amount
+def create_additional_salary_for_ot(employee, amount, overtime_component):
 	"""
     Param:
     ------
-    Employee & overtime amount
+    Employee & overtime amount & overtime_component
+    overtime_component: (eg :"Overtime Allowance")
     """
 	additional_salary = frappe.new_doc("Additional Salary")
 	additional_salary.employee = employee
-	additional_salary.salary_component = "Overtime Allowance"
+	additional_salary.salary_component = overtime_component
 	additional_salary.amount = amount
 	additional_salary.payroll_date = getdate()
 	additional_salary.company = erpnext.get_default_company()
@@ -2037,3 +2200,11 @@ def create_additional_salary(employee, amount):
 	additional_salary.notes = "Overtime Earning"
 	additional_salary.insert()
 	additional_salary.submit()
+
+def response(message, data, success, status_code):
+     # Function to create response to the API. It generates json with message, success, data object and the status code.
+     frappe.local.response["message"] = message
+     frappe.local.response["success"] = success
+     frappe.local.response["data_obj"] = data
+     frappe.local.response["http_status_code"] = status_code
+     return
