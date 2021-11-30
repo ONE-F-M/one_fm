@@ -23,7 +23,6 @@ class TransferPaper(Document):
         # self.set_pas_values()
         self.set_grd_values()
         
-    
     def on_update(self):
         self.check_workflow_states()
 
@@ -87,7 +86,6 @@ class TransferPaper(Document):
                     if doc.one_fm_signatory_name == authorized.authorized_signatory_name_arabic:
                         self.db_set('authorized_signature', authorized.signature)
                 
-
     def arrange_arabic_name(self):
         """This method arranges the names in the print format based on what is filled in job applicant doctype"""
         if self.applicant:
@@ -121,7 +119,6 @@ class TransferPaper(Document):
         if self.workflow_state == "Under Process":
             field_list = [{'Attach Signed TP':'attach_tp'}]
             self.set_mendatory_fields(field_list)
-
 
     def set_mendatory_fields(self,field_list,message_detail=None):
         mandatory_fields = []
@@ -165,7 +162,6 @@ class TransferPaper(Document):
     def recall_create_transfer_work_permit(self,employee):
         work_permit.create_work_permit_transfer(self.name,employee)
         
-
     def notify_grd_transfer_wp_record(self):
         wp = frappe.db.get_value("Work Permit",{'transfer_paper':self.name,'work_permit_status':'Draft'})
         if wp:
@@ -174,9 +170,3 @@ class TransferPaper(Document):
             subject = ("Apply for Transfer Work Permit Online")
             message = "<p>Please Apply for Transfer WP Online for <a href='{0}'></a>.</p>".format(page_link, wp_record.employee)
             create_notification_log(subject, message, [self.grd_operator_transfer], wp_record)
-    
-
-    
-
-    
-

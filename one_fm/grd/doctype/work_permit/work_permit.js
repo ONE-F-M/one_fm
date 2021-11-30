@@ -127,7 +127,7 @@ if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "Cancellation" && frm.
     frm.add_custom_button(__('MGRP Cancellation'),
       function() {
           frappe.model.open_mapped_doc({
-          method: "one_fm.grd.utils.mappe_to_mgrp",
+          method: "one_fm.grd.utils.map_to_mgrp",
           frm: frm
             });
       }).addClass('btn-primary');	
@@ -137,7 +137,7 @@ if (frm.doc.docstatus == 1 && frm.doc.work_permit_type == "Cancellation" && frm.
     frm.add_custom_button(__('MGRP Registration'),
       function() {
           frappe.model.open_mapped_doc({
-          method: "one_fm.grd.utils.mappe_to_mgrp",
+          method: "one_fm.grd.utils.map_to_mgrp",
           frm: frm
             });
       }).addClass('btn-primary');	

@@ -3,17 +3,26 @@
 
 frappe.ui.form.on('HR and Payroll Additional Settings', {
 	refresh: function(frm) {
-		frm.set_query("holiday_compensatory_leave_type", function() {
-			return {
-				filters: {
-					"is_compensatory": true
-				}
-			};
-		});
-		frm.set_query("holiday_additional_salary_component", function() {
-			return {
-				filters: {'type': 'Earning'}
-			};
-		});
+		set_filters(frm);
 	}
 });
+
+var set_filters = function(frm) {
+	frm.set_query("holiday_compensatory_leave_type", function() {
+		return {
+			filters: {
+				"is_compensatory": true
+			}
+		};
+	});
+	frm.set_query("holiday_additional_salary_component", function() {
+		return {
+			filters: {'type': 'Earning'}
+		};
+	});
+	frm.set_query("exclude_salary_component", function() {
+		return {
+			filters: {'type': 'Deduction'}
+		};
+	});
+};

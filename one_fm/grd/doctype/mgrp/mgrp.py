@@ -5,26 +5,31 @@
 from frappe.model.document import Document
 import frappe
 from frappe import _
-from frappe.utils import get_url
+from frappe.utils import get_url, cint, today
 from one_fm.api.notification import create_notification_log
-# from frappe.utils import today
 from datetime import date
 from one_fm.hiring.utils import update_onboarding_doc
-
+from frappe.core.doctype.communication.email import make
 class MGRP(Document):
 	def validate(self):
-		self.children_table()
+		self.get_children_table()
 		self.set_grd_values()
 		self.set_status()
-		if not self.end_of_service_attachment:
+		self.set_progress()
+		if self.status == "Cancellation" and not self.end_of_service_attachment:
 			self.set_resignation_attachment()
 		if not self.date_of_application:
-			self.set_date_of_applicantion_value()
+			self.date_of_application = today()
 
 	def after_insert(self):
 		update_onboarding_doc(self)
 
 	def set_progress(self):
+		"""
+		runs: `validate`
+		param: mgrp object
+		This method visualizing the progress in `Onboard Employee` record under progress section
+		"""
 		progress_wf_list = {'Draft': 0, 'Form Printed': 10}
 		if self.workflow_state in progress_wf_list:
 			self.progress = progress_wf_list[self.workflow_state]
@@ -44,60 +49,69 @@ class MGRP(Document):
 		update_onboarding_doc(self)
 
 	def set_resignation_attachment(self):
-		""" If the resination form is not set from the employee attachments, will fetch the attachment and set its value"""
-		Table = frappe.get_doc('Employee',{'one_fm_civil_id':self.civil_id},['one_fm_employee_documents'])
-		for row in Table.one_fm_employee_documents:
+		""" 
+		runs: `validate`
+		param: mgrp object
+		This method checks if resignation form is not set in employee attachments, will fetch the attachment and set its value
+		"""
+		table = frappe.get_doc('Employee',{'one_fm_civil_id':self.civil_id},['one_fm_employee_documents'])
+		for row in table.one_fm_employee_documents:
 			if row.document_name  == "Resignation Form":
 				self.db_set('end_of_service_attachment',row.attach)
-
-	def set_date_of_applicantion_value(self):
-		self.db_set('date_of_application',date.today())
-
-
+		
 	def set_grd_values(self):
+		"""
+		runs: `validate`
+		param: mgrp object
+		This method sets the user_id for both GRD Supervisor and Operator handling pifss form GRD Settings Doctype
+		"""
 		if not self.grd_supervisor:
 			self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
 		if not self.grd_operator:
 			self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_pifss")
 
-	def children_table(self):
-		"""This method is getting the child table details from the employee record based on the selected employee"""
-		table=[]
-		if self.employee:
+	def get_children_table(self):
+		"""
+		runs: `validate`
+		param: mgrp object
+		This method is getting the children details from the employee record based on the selected employee,
+		"""
+		if self.employee and cint(self.number_of_children) > 0 and len(self.children_details_table) == 0:
 			child_num = frappe.db.get_value('Employee',{'name':self.employee},['number_of_children'])
-			if child_num:
-				employee = frappe.get_doc('Employee',self.employee)
+			if cint(child_num) > 0:
+				employee = frappe.get_doc('Employee',self.employee) # Fetching the children table from Employee to MGRP doctype
 				for child in employee.children_details:
-					table.append({
-						'child_name': child.child_name,
-						'child_name_in_arabic': child.child_name_in_arabic,
-						'age': child.age,
-						'work_status': child.work_status,
-						'married': child.married,
-						'health_status': child.health_status
-					})
-
-			if len(table)>0:
-				for row in table:
 					children = self.append('children_details_table',{})
-					children.child_name = row['child_name']
-					children.child_name_in_arabic = row['child_name_in_arabic']
-					children.age = row['age']
-					children.work_status = row['work_status']
-					children.married = row['married']
-					children.health_status = row['health_status']
-				children.save()
+					children.child_name = child.child_name
+					children.child_name_in_arabic = child.child_name_in_arabic
+					children.age = child.age
+					children.work_status = child.work_status
+					children.married = child.married
+					children.health_status = child.health_status
 				frappe.db.commit()
 
-			print("child table >",self.children_details_table)
 	def set_status(self):
-		if self.status == "New Kuwaiti":
-			self.db_set('status',"Registration")
-		if self.status == "Cancellation":
-			self.db_set('status',"Cancellation")
+		"""
+		runs: `validate`
+		param: mgrp object
+		This method sets mgrp status upon `work_permit_type` otherwise it will asks user to set status value
+		"""
+		if self.work_permit_type:
+			if self.work_permit_type == "New Kuwaiti":
+				self.db_set('status',"Registration")
+			if self.work_permit_type == "Cancellation":
+				self.db_set('status',"Cancellation")
+		else:
+			field_list = [{'Status':'status'}]
+			self.set_mendatory_fields(field_list)
 
 
 	def check_workflow_states(self):
+		"""
+		runs: `on_update`
+		param: mgrp object
+		This method asks for mandatory fields in every `workflow_state` 
+		"""
 		if self.workflow_state == "Form Printed":
 			field_list = [{'Status':'status'},{'Employee':'employee'},{'Company Name':'company_name'}
 						,{'Signatory Name':'signatory_name'}]
@@ -107,7 +121,7 @@ class MGRP(Document):
 			field_list = [{'Attach MGRP Signed Form':'attach_mgrp_signed_form'}]
 			self.set_mendatory_fields(field_list)
 
-		if self.workflow_state == "Awaiting Response" and self.flag == 0:#check the previous workflow (DRAFT) required fields
+		if self.workflow_state == "Awaiting Response" and self.flag == 0:
 			message_detail = '<b style="color:red; text-align:center;">First, You Need to Apply through <a href="{0}">MGRP Website</a></b><br><b>You Will Be Notified Daily at 8am To Check Applicantion Status</b>'.format(self.mgrp_website)
 			frappe.msgprint(message_detail)
 			self.db_set('flag',1)
@@ -118,6 +132,13 @@ class MGRP(Document):
 			self.set_mendatory_fields(field_list,message_detail)
 
 	def set_mendatory_fields(self,field_list,message_detail=None):
+		"""
+		This method throws a message and the mandatory fields that need to be set by user
+
+		Args:
+			field_list: List of dictionary having the lable and field name (eg: [{'Status':'status'},{'Employee':'employee'}] )
+			message_detail(optional): The message will have detailed description or sometime a website link to help operator fetch the needed values from mgrp website directly. Defaults to None.
+		"""
 		mandatory_fields = []
 		for fields in field_list:
 			for field in fields:
@@ -127,49 +148,63 @@ class MGRP(Document):
 		if len(mandatory_fields) > 0:
 			if message_detail:
 				message = message_detail
-				message += '<br>Mandatory fields required in PIFSS 103 form<br><br><ul>'
+				message += '<br>Mandatory fields required in MGRP form<br><br><ul>'
 			else:
-				message= 'Mandatory fields required in PIFSS 103 form<br><br><ul>'
+				message= 'Mandatory fields required in MGRP form<br><br><ul>'
 			for mandatory_field in mandatory_fields:
 				message += '<li>' + mandatory_field +'</li>'
 			message += '</ul>'
 			frappe.throw(message)
 
+def notify_awaiting_response_mgrp():
+	"""
+	runs: `Hooks` everyday at 8am
+	This method fetches list of objects having `Awaiting Response` workflow state
+	"""
+	mgrp_list = frappe.db.get_list('MGRP',{'workflow_state':['=',('Awaiting Response')]},['name','civil_id'])
+	notification_reminder(mgrp_list)
 
-	# def check_mgrp_website_response(self):
-	# 	if self.workflow_state == "Awaiting Response":
-	# 		page_link = get_url("/desk#Form/MGRP/" + self.name)
-	# 		subject = _("Check MGRP website response")
-	# 		message = "<p>Please check {0} response throught MGRP Website <a href='{1}'></a></p>".format(self.status,page_link)
-	# 		create_notification_log(subject, message, [self.grd_operator], self)
+def notification_reminder(mgrp_list):
+	"""
+	This method for notifying operator to check the status of the employee on MGRP website
+	
+	Args:
+		mgrp_list ([list of objects]): [list of objects having `Awaiting Response` workflow state]
+	"""
+	message_list=[]
+	grd_user = frappe.db.get_single_value("GRD Settings", "default_grd_operator_pifss")
+	grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
+	for mgrp in mgrp_list:
+		page_link = get_url("/desk#Form/MGRP/"+mgrp.name)
+		message = "<a href='{0}'>{1}</a>".format(page_link, mgrp.civil_id)
+		message_list.append(message)
 
-def notify_awaiting_response_mgrp(doc, method): #will run everyday at 8 am
-	docs = frappe.get_all("MGRP", {"workflow_state": ("in", ["Awaiting Response"]),"date_of_application":("<",date.today())})
-	subject = _("Reminder: Awaiting Response MGRP's")
-	for_users = doc.grd_operator
-
-	message = "Below is the list of Awaiting Response MGRP (Click on the name to open the form).<br><br>"
-	for doc in docs:
-		message += "<a href='/desk#Form/MGRP/{doc}'>{doc}</a> <br>".format(doc=doc.name)
-
-
-	for user in for_users:
-		notification = frappe.new_doc("Notification Log")
-		notification.subject = subject
-		notification.email_content = message
-		notification.document_type = "Notification Log"
-		notification.for_user = user
-		notification.save()
-		notification.document_name = notification.name
-		notification.save()
-		frappe.db.commit()
-
+	if message_list:
+		message = "<p>Please Check MGRP website for MGRP listed below</p><ol>".format()
+		for msg in message_list:
+			message += "<li>"+msg+"</li>"
+		message += "<ol>"
+		make(
+			subject=_('Awaiting Response MGRP'),
+			content=message,
+			recipients=[grd_user],
+			cc=grd_supervisor,
+			send_email=True,
+		)
 
 @frappe.whitelist()
 def get_signatory_name_for_mgrp(parent):
-	"""Mehtod fetching the name of the company and passing child table field upon company name"""
+	"""
+	This method is passing company name to fetch `authorized_signatory_name_arabic` from the child table Authorized Signatory in PIFSS Authorized Signatory Doctype
+
+	Args:
+		parent: it is the selected `company_name` to get the Authorized signatory list upon company name
+
+	Returns:
+		names: list of authorized signatory arabic names
+	"""
 	names=[]
-	names.append(' ')#add empty record, to check if this field got selected by onboard user else it will throw message to fill the empty record
+	names.append(' ')# add empty record, to check if this field got selected by onboard user else it will throw message to fill the empty record
 	if parent:
 		doc = frappe.get_doc('PIFSS Authorized Signatory',parent)
 
@@ -180,14 +215,31 @@ def get_signatory_name_for_mgrp(parent):
 
 @frappe.whitelist()
 def get_signatory_user_for_mgrp(company_name,user_name):
-	"""Method getting user id & attached signature from record based on given filter"""
+	"""
+	This method returns the `user_id` and `signature` of the selected authrized signatory
+	Args:
+		company_name: the selected company name in mgrp document
+		user_name: Authorized Signatory Arabic name
+
+	Returns:
+		user: Authorized Signatory user id to notify him later on
+		signature: Authorized Electronic signature 
+	"""
 	parent = frappe.db.get_value('PIFSS Authorized Signatory',{'company_name_arabic':company_name},['name'])
 	user,signature = frappe.db.get_value('PAM Authorized Signatory Table',{'parent':parent,'authorized_signatory_name_arabic':user_name},['user','signature'])
 	return user,signature
 
-@frappe.whitelist()#onboarding linking
+@frappe.whitelist()
 def create_mgrp_form_for_onboarding(employee, onboard_employee):
-	""" This Method for onboarding """
+	"""
+	This Method will be called in onboarding once pressing `MGRP` button and this button will show for Kuwaiti employee only
+	Args:
+		employee: (eg: HR-EMP-00001)
+		onboard_employee: link to onboard_employee table (eg: EMP-ONB-2021-00021)
+
+	Returns:
+		mgrp: MGRP object
+	"""
 	mgrp = frappe.new_doc('MGRP')
 	mgrp.status = "Registration"
 	mgrp.employee = employee
