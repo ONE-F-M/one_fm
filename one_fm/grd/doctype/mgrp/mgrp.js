@@ -34,6 +34,9 @@ frappe.ui.form.on('MGRP', {
 			frm.set_value("naming_series", "END-.{employee}.-");
 		}
 	},
+	company_name: function(frm){
+		frm.save() // saving the document after selecting the comapny name to fetch the authorized signatory list upon company name
+	},
 	refresh: function(frm){
 		if(frm.doc.company_name){
 			//This method is passing company name as argument to (get_signatory_name) method in server side
