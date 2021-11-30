@@ -781,14 +781,12 @@ def get_leave_type_details():
         return:
             Details of All leave type as dict
     '''
-	leave_type_details = frappe._dict()
-	leave_types = frappe.get_all("Leave Type",
-		fields=["name", "is_lwp", "is_earned_leave", "is_compensatory", "is_carry_forward",
-            "expire_carry_forwarded_leaves_after_days", "one_fm_is_hajj_leave", "one_fm_is_paid_sick_leave",
-            "one_fm_is_paid_annual_leave"])
-	for d in leave_types:
-		leave_type_details.setdefault(d.name, d)
-	return leave_type_details
+    leave_type_details = frappe._dict()
+    leave_types = frappe.get_all("Leave Type",
+        fields=["name", "is_lwp", "is_earned_leave", "is_compensatory", "is_carry_forward", "expire_carry_forwarded_leaves_after_days", "one_fm_is_hajj_leave", "one_fm_is_paid_sick_leave", "one_fm_is_paid_annual_leave"])
+    for d in leave_types:
+        leave_type_details.setdefault(d.name, d)
+    return leave_type_details
 
 def create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date):
     ''' Creates leave allocation for the given employee in the provided leave policy '''
