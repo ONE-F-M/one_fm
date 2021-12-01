@@ -258,6 +258,9 @@ doc_events = {
 	"Employee Incentive": {
 		"on_update": "one_fm.one_fm.payroll_utils.on_update_employee_incentive",
 		"on_update_after_submit": "one_fm.one_fm.payroll_utils.on_update_after_submit_employee_incentive",
+	},
+	"Payroll Entry": {
+		"on_submit": "one_fm.api.doc_methods.payroll_entry.set_payroll_export_file_path",
 	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
