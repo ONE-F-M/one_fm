@@ -198,10 +198,10 @@ def set_payroll_export_file(payroll_entry):
 	
 	if "NBK" in bank_code:
 		# Enqueue method for longer list of employees
-		if len(payroll_entry.employees) < 30:
-			export_nbk(payroll_entry, template_path)
-		else:
+		if len(payroll_entry.employees) > 30:
 			frappe.enqueue(export_nbk, payroll_entry=payroll_entry, template_path=template_path)
+		else:
+			export_nbk(payroll_entry, template_path)
 
 def export_nbk(payroll_entry, template_path):
 	"""This method fetches the bank template from the provided directory and exports the payroll data into the template and saves the template in the same directory.
