@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff
 from frappe import _
 import openpyxl as xl
+import time
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
@@ -180,6 +181,8 @@ def export_nbk(doc, template_path):
 		template_path (str): Path to the bank template file
 	"""
 
+	start = time.time()
+
 	try:
 		# Load template file
 		source_filename = cstr(frappe.local.site) + template_path
@@ -263,7 +266,9 @@ def export_nbk(doc, template_path):
 
 		# Set updated template path in payroll entry
 		doc.export_file = template_path
-		print("here")
+		end = time.time()
+
+		print("Total Execution Time: ", end-start)
 
 	except Exception as e:
 		frappe.throw(e)
