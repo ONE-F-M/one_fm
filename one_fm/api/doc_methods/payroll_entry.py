@@ -6,7 +6,6 @@ from frappe import _
 import openpyxl as xl
 import time
 from copy import copy
-import os.path
 from pathlib import Path
 
 def validate_employee_attendance(self):
