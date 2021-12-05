@@ -7,6 +7,7 @@ import openpyxl as xl
 import time
 from copy import copy
 import os.path
+from pathlib import Path
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
@@ -297,7 +298,8 @@ def export_nbk(doc, template_path):
 		destination_ws.cell(row=10, column=3).value = total_hash
 
 		# Setup destination file directory with payroll entry name as filename
-		destination_file = cstr(frappe.local.site) + "/private/files/{payroll_entry}.xlsx".format(payroll_entry=doc.name)
+		Path("/home/frappe/frappe-bench/sites/{0}/private/files/payroll-entry/".format(frappe.local.site)).mkdir(parents=True, exist_ok=True)
+		destination_file = cstr(frappe.local.site) + "/private/files/payroll-entry/{payroll_entry}.xlsx".format(payroll_entry=doc.name)
 		
 		# Save updated template in same source directory
 		destination_wb.save(filename=destination_file)
@@ -309,19 +311,18 @@ def export_nbk(doc, template_path):
 	except Exception as e:
 		frappe.throw(e)
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
+def download_excel_payroll_export_file(payroll_entry):
+	return get_excel_payroll_export_file(payroll_entry)
+
 def get_excel_payroll_export_file(payroll_entry):
+	app_url = frappe.local.conf.app_url
 	filename = payroll_entry + ".xlsx"
-	file = cstr(frappe.local.site) + "/private/files/" + filename
-    
+	path = "/private/files/payroll-entry/"
+
 	result = {}
-    
-	if os.path.isfile(file):
-		result.update({'message': "Success"})
-		result.update({'filename': filename})
-		result.update({'uri': file})
-    
-	else:
-		result.update({'message': "Failure"})
+	result.update({'filename': filename})
+	result.update({'app_url': app_url})
+	result.update({'path': path})
   
 	return result
