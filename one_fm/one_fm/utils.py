@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import today, add_days, get_url, time_diff_in_hours, cstr
+from frappe.utils import today, add_days, get_url, time_diff_in_hours
 from frappe.integrations.offsite_backup_utils import get_latest_backup_file, send_email, validate_file_size, get_chunk_site
 from one_fm.api.notification import create_notification_log
 from frappe.utils.user import get_users_with_role
