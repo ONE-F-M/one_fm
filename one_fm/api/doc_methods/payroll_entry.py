@@ -155,7 +155,7 @@ def get_basic_salary(employee):
 		frappe.throw(_("No Assigned Salary Structure found for the selected employee."))
 
 @frappe.whitelist()
-def set_payroll_export_file_path(doc, method):
+def export_payroll(doc, method):
 	""" This method fetches the company bank details and makes a call to the export function based on the provided bank.
 
 	Args:
