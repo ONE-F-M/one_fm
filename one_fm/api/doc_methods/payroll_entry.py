@@ -310,7 +310,7 @@ def export_nbk(doc, template_path):
 	except Exception as e:
 		frappe.throw(e)
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def download_excel_payroll_export_file(payroll_entry):
 	return get_excel_payroll_export_file(payroll_entry)
 
