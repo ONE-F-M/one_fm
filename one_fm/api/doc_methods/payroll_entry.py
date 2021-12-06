@@ -1,5 +1,4 @@
 import frappe, erpnext
-from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_existing_salary_slips
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff
 from frappe import _
