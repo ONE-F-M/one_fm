@@ -1,85 +1,90 @@
-if(window.localStorage.getItem("job-application-auth")){
-    // File Upload
-  function readURL(input) {
-    const loaderElement = document.getElementById("loader");
-    if (input.files && input.files[0]) {
-      var reader = new FileReader();
-      reader.fileName = input.files[0].name
-      reader.onload = function (e) {
-        console.log(e.target.fileName);
-        let fileType = e.target.fileName.split('.').pop(), allowdtypes = 'jpeg,jpg,png';
-        if (allowdtypes.indexOf(fileType) < 0) {
-          alert('Invalid file type, Upload only jpeg,jpg,png formats. aborted');
-          return false;
-        }
-        $(".image-upload-wrap").hide();
+const frontSide = document.getElementById("front_cid");
+const backSide = document.getElementById("back_cid");
+const uploadFile = document.getElementById("fileUpload");
+const imgPreview = document.getElementById("img-preview");
+var f1, f2;
 
-        $(".file-upload-image").attr("src", e.target.result);
-        console.log(e);
-        $(".file-upload-content").show();
+function upload_file(file, filename){
+  let xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/method/upload_file', true);
+  xhr.setRequestHeader('Accept', 'application/json');
+  xhr.setRequestHeader('X-Frappe-CSRF-Token', frappe.csrf_token);
+  let form_data = new FormData();
+  form_data.append('file', file, file.name);
+  xhr.send(form_data);
+};
 
-        $(".image-title").html(input.files[0].name);
-        Tesseract.recognize(e.target.result, "eng", {
-          logger: (m) => {
-            console.log(m);
-            loaderElement.style = "";
-          },
-        })
-        .then(({ data: { text } }) => {
-          console.log(text);
-          window.localStorage.setItem("civilId", text);
-        })
-        .then((a) => {
-          // window.location = "./job_application";
-        });
-      };
+function file1(input){
+let file = input.files[0];
+if (file) {
+  // Dynamically create a canvas element
+  var canvas = document.createElement("canvas");
 
-      reader.readAsDataURL(input.files[0]);
-    } else {
-      removeUpload();
-    }
-  }
+  // var canvas = document.getElementById("canvas");
+  var ctx = canvas.getContext("2d");
+  
+  // Actual resizing
+  ctx.drawImage(file, 0, 0, 300, 300);
 
-  function removeUpload() {
-      $(".file-upload-input").replaceWith($(".file-upload-input").clone());
-      $(".file-upload-content").hide();
-      $(".image-upload-wrap").show();
-  }
-  $(".image-upload-wrap").bind("dragover", function () {
-      $(".image-upload-wrap").addClass("image-dropping");
-  });
-  $(".image-upload-wrap").bind("dragleave", function () {
-      $(".image-upload-wrap").removeClass("image-dropping");
-  });
+  f2 = canvas.toDataURL('image/png', 1);
 
-  const getLinkedInData = async () => {
-      window.localStorage.setItem("linkedIn", false);
-      const code = window.location.search.slice(6);
-      console.log("code", code);
-      axios
-          .post("https://linked-be.vercel.app/api/accessCode", { code })
-          .then((result) => {
-              console.log(result);
-              localStorage.setItem("linkedInData", JSON.stringify(result));
-          })
-          .catch((err) => {
-              console.log(err);
-              // Do somthing
-          });
+  f2 = f2.replace(/^data:image\/\w+;base64,/, "");
+  console.log(f2)
+}
+  };
+  function file2(input){
+    let file = input.files[0];
+
+    let reader = new FileReader();
+
+    reader.readAsDataURL(file);
+
+    reader.onload = function() {
+      f2 = reader.result;
+      f2 = f2.replace(/^data:image\/\w+;base64,/, "");
+    };
+
+    reader.onerror = function() {
+      console.log(reader.error);
+    };
   };
 
-  if (window.localStorage.getItem("linkedIn")) {
-      getLinkedInData();
+  {/*
+function upload(){
+    console.log("Start")
+    if(f1 && f2){
+      console.log(f1)
+      let xhr = new XMLHttpRequest();
+      xhr.open('GET', '/api/method/one_fm.templates.pages.applicant-docs.fetch_text', true);
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.setRequestHeader('X-Frappe-CSRF-Token', frappe.csrf_token);
+      let form_data = new FormData();
+      form_data.append("file1", f1);
+      form_data.append("file2", f2);
+      console.log(form_data)
+      xhr.send(form_data);
+      console.log(xhr)
+    }
+    
   }
-}
-else {
-    alert("Please Signup or Login!");
-    window.location = "applicant-sign-up";
-}
-const skipSignup = () => {
-    if(localStorage.getItem("currentEasyJobOpening"))
-        window.location = "easy_apply";
-    else
-        window.location = "job_application";
-
-}
+*/}
+function upload(){
+  console.log("Start");
+  if (f1 && f2){
+    image = {Image1:f1, Image2:f2};
+    frappe.call({
+      type: "GET",
+      method: "one_fm.templates.pages.applicant-docs.fetch_text",
+      args: {image :JSON.stringify(image)},
+      callback: function(r) {
+        if(r && r.message){
+          console.log(r);
+        }
+        else{
+          console.log("Error");
+        }
+      }
+    });  
+  };
+  console.log("End");
+};
