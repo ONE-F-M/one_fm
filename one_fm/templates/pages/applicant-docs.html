@@ -4,19 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>One FM</title>
-    <link href="assets/one_fm/assets/css/applicant_login.css" rel="stylesheet" />
+    <title>One Facilities Management | Easy Job Application Portal</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css"
-        integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog=="
-        crossorigin="anonymous" />
-</head>
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v3.0.0/css/line.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">    
+    <link href="applicant-docs.css" rel="stylesheet" >
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
+</head>
 <body>
     <main>
         <article class="main-container">
-            <div class="row login-wrapper">
+            <div class="row login-wrapper rounded">
 
                 <!-- Contenido del lado izquierdo -->
                 <section class="col form-wrapper">
@@ -28,77 +29,96 @@
 
                         <!-- Mensaje de login -->
                         <div class="form-messages">
-                            <h2></h2>
-                            <p>Upload Your Documents, We'll Exctract Data from your Documents and make applying easy! </p>
+                            <h2>Upload Your Civil ID</h2>
+                            <h5>Welcome! Kindly, attach your civil ID below. Note: attach image file only!</h5>
                         </div>
 
                         <!-- Formulario -->
-                        <div id="loader" style="display: none;">
-                            <div class="wrapper">
-                                <div class="l"></div>
-                                <div class="l"></div>
+                        <form class="form">
+                            <label class="form-label" for="file">Upload Front Side of your civil ID:</label>
+                            <input class="form-control" type="file" id="front_cid" onchange="file1(this)" name="file"  accept="image/png, image/jpeg" size="30">
+                            
+                            <label class="form-label" for="file">Upload Back Side of your civil ID:</label>
+                            <input class="form-control" type="file" id="back_cid" onchange="file2(this)" name="file"  accept="image/png, image/jpeg" size="30">
+                            <br>
+                            <div class="col-auto">
+                                <button class="btn btn-primary btn-lg btn-block" type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()" class="btn btn-primary">Upload!</button>
                             </div>
-                            <p>Extracting Text from your civil id, We'll Redirect You as soon as it is done</p>
-                        </div>
-                        <div class="file-upload">
-                            <button class="file-upload-btn" type="button"
-                                onclick="$('.file-upload-input').trigger( 'click' )">Add Image</button>
-                            <div class="image-upload-wrap">
-                                <input class="file-upload-input" type='file' onchange="readURL(this);"
-                                    accept="image/*" />
-                                <!-- <div class="drag-text">
-                                    <h3>Drag and drop your Civil ID</h3>
-                                </div> -->
+                            <p id="demo"></p>
+                        </form>        
+
+                    </div>
+                
+                </section> 
+            </div>
+                <br><br>
+                <div  id="finalForm">
+                <div class="row login-wrapper rounded">
+
+                    <!-- Contenido del lado izquierdo -->
+                    <section class="col form-wrapper"><section class="col form-wrapper">
+
+                        <div class="form-container">
+
+                            <!-- Mensaje de login -->
+                            <div class="form-messages">
+                                <br><br>
+                                <p>Kindly, check the below input.</p>
                             </div>
-                            <div class="file-upload-content">
-                                <img class="file-upload-image" src="#" alt="your image" />
-                                <div class="image-title-wrap">
-                                    <button type="button" onclick="removeUpload()" class="remove-image">Remove <span
-                                            class="image-title">Uploaded Image</span></button>
+
+                            <!-- Formulario -->
+                            <form class="form">
+                                <label class="form-label" for="name">Your Name:
+                                <input class="form-control" type="text" id="name" name="name" size="50"></label><br>
+
+                                <label class="form-label" for="ar_name">Name(ar):</label>
+                                <input class="form-control" type="text" id="ar_name" name="ar_name" size="50"></label><br>
+
+                                <label class="form-label" for="civilid">Civil ID:</label>
+                                <input class="form-control" type="text" id="civilid" name="civilid" size="50"></label><br>
+
+                                <label class="form-label" for="gender">Gender</label>
+                                <input class="form-control" type="text" id="gender" name="gender" size="50"></label><br>
+
+                                <label class="form-label" for="dob">Date Of Birth:</label>
+                                <input class="form-control" type="text" id="dob" name="dob" size="50"></label><br>
+
+                                <label class="form-label" for="expiry_date">Expiry Date:</label>
+                                <input class="form-control" type="text" id="expiry_date" name="expiry_date" size="50"></label><br>
+
+                                <label class="form-label" for="nationality">Nationality:</label>
+                                <input class="form-control" type="text" id="nationality" name="nationality" size="50"></label><br>                            
+
+                                <label class="form-label" for="paci_no">PACI No.:</label>
+                                <input class="form-control" type="text" id="paci_no" name="paci_no" size="50"></label><br>                            
+
+                                <div class="col-auto">
+                                    <button class="btn btn-primary btn-lg" type="button" href="json.json" value="submit" id="submitForm" onclick="Submit()" class="btn btn-primary">Submit!</button>
                                 </div>
-                            </div>
-                        </div>
-                        <!-- <a onclick="loader()">
-                            <button class="btn">Extract Text</button>
-                        </a> -->
-                        <!-- <a>
-                            <button class="btn">Add Other Image</button>
-                        </a> -->
-                        <!-- Separador entre botón y opciones -->
-                        <hr class="separator">
+                                <p id="demo"></p>
+                            </form>        
 
-                        <!-- Otras opciones de inicio login -->
-                        <a href="#" onclick="skipSignup()"><i class="fa fa-sign-out"></i>Skip, I'll Fill Manually</a>
-                    </div>
-
-                </section>
-
-                <!-- Contenido del lado derecho -->
-                <section class="col image-wrapper">
-
-                    <div class="image-message">
-
-                        <div class="image-hr-container">
-                            <hr class="image-hr">
                         </div>
 
-                        <div class="image-text">
-                            <h2>Start your journey now</h2>
-                            <p>Start your amazing JOB with us! Login into your account now and huwala.</p>
-                        </div>
-
-                    </div>
-
-                </section>
+                    </section>
+                </div>
             </div>
         </article>
     </main>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js"
-        integrity="sha512-quHCp3WbBNkwLfYUMd+KwBAgpVukJu5MncuQaWXgCrfgcxCJAq/fo+oqrRKOj+UKEmyMCG3tb8RB63W+EmrOBg=="
+  <!-- <script src="https://cdn.jsdelivr.net/npm/rater-js@1.0.1/index.min.js"></script> -->
+    <!-- <script src="https://code.jquery.com/jquery-1.12.4.js"></script> -->
+    <script src="applicant-docs.js"></script>
+    
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+        integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-        integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script>
-    <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
+    <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
+    <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
 </body>
 
 </html>

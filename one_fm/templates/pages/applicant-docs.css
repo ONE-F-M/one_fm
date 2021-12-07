@@ -257,7 +257,7 @@ header .icon {
 }
 
 form {
-	padding: 4em 20%;
+    padding: 1em 3%;
 	width: 100%;
 	margin: 0 auto;
 }
@@ -509,17 +509,17 @@ h2.heading {
 }
 
 /* Login */
-
 .main-container {
 	min-height: 100vh;
-	background-color: #ecf4f3;
-
-	display: flex;
-	align-items: center;
-	justify-content: center;
-
-	font-family: "Rubik", sans-serif;
-	font-size: 13px;
+    background-color: #ecf4f3;
+    display: block;
+    margin: auto;
+    padding: 10vh 12vh 17vw 26vw;
+    border-radius: 10px;
+    /* align-items: center; */
+    /* justify-content: center; */
+    font-family: "Rubik", sans-serif;
+    font-size: 24px;
 }
 
 .main-container a {
@@ -537,6 +537,7 @@ h2.heading {
 	min-height: 520px;
 	display: flex;
 }
+
 
 /* Estilos del contenedor del formulario */
 .main-container .login-wrapper .form-wrapper {
@@ -568,7 +569,7 @@ h2.heading {
 
 /* Estilos del formulario y sus mensajes */
 .main-container .login-wrapper .form-wrapper .form-container {
-	padding: 0px 60px;
+    padding: 4vh 4vh 5vw 5vw;
 }
 
 .main-container .login-wrapper .form-wrapper .form-container .form-messages {
@@ -578,10 +579,11 @@ h2.heading {
 }
 
 .main-container .login-wrapper .form-wrapper .form-container .form-messages h2 {
-	margin-bottom: 15px;
-	margin-top: 30px;
-	font-size: 20px;
-	font-weight: 600;
+    margin-bottom: 15px;
+    margin-top: 32px;
+    font-size: 29px;
+    font-weight: 600;
+    text-align: center;
 }
 
 .main-container .login-wrapper .form-wrapper .form-container .form input {
@@ -613,7 +615,7 @@ h2.heading {
 .main-container .login-wrapper .form-wrapper .form-container .form .login-button {
 	margin-top: 20px;
 	margin-bottom: 30px;
-	padding: 10px;
+	padding: 10vh 10vh 21vw 19vw;
 	border-radius: 50px;
 	background-color: #5e64ff;
 	color: #fff;
@@ -652,7 +654,7 @@ h2.heading {
 	background-position: center;
 	background-size: cover;
 
-	display: flex;
+	display: block;
 	flex-direction: column;
 	justify-content: flex-end;
 }

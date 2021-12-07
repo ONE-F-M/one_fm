@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "employee",
+  "work_permit_type",
   "date_of_application",
   "column_break_2",
   "status",
@@ -170,8 +171,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nRegistration\nCancellation",
-   "reqd": 1
+   "options": "\nRegistration\nCancellation"
   },
   {
    "fieldname": "grd_operator",
@@ -238,6 +238,7 @@
   },
   {
    "fetch_from": "employee.number_of_children",
+   "fetch_if_empty": 1,
    "fieldname": "number_of_children",
    "fieldtype": "Data",
    "label": "Number Of Children",
@@ -291,12 +292,18 @@
    "fieldname": "attach_mgrp_signed_form",
    "fieldtype": "Attach",
    "label": "Attach MGRP Signed Form"
+  },
+  {
+   "fieldname": "work_permit_type",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Work Permit Type"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-11 10:17:26.419257",
+ "modified": "2021-11-29 10:29:45.744902",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MGRP",

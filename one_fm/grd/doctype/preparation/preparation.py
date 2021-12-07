@@ -31,12 +31,22 @@ class Preparation(Document):
         self.set_hr_values()
     
     def set_grd_values(self):
+        """
+		runs: `validate`
+		param: preparation object
+		This method is fetching values of grd supervisor or operator for renewal from GRD settings 
+		"""
         if not self.grd_supervisor:
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
         if not self.grd_operator:
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
 
     def set_hr_values(self):
+        """
+		runs: `validate`
+		param: preparation object
+		This method is fetching values of hr user
+		"""
         if not self.hr_user:
             self.hr_user = frappe.db.get_single_value("Hiring Settings","default_hr_user")
 
@@ -85,6 +95,10 @@ class Preparation(Document):
         fingerprint_appointment.creat_fp_record(self.name)
   
     def send_notifications(self):
+        """
+        runs: `on_submit`
+        This method will notifiy operator to apply for the wp, mi, moi, paci, fp that are created for all employees in the list
+        """
         if self.grd_operator:
             page_link = get_url("/desk#Form/Preparation/" + self.name)
             message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
@@ -94,13 +108,18 @@ class Preparation(Document):
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def create_preparation():
+    """
+    runs: at 8am of the 15th in every month
+    This method will create preparation record that contain list of all employees that their residency expiry date will be between the first and the last date of the next month
+    This record will go to HR user to set value for each employee either renewal or extend and on the submit of this record it will ask for hr permission and approval.
+    Then, it will create wp, mi, moi, and paci records for all employees in the list.
+    """
     doc = frappe.new_doc('Preparation')
     doc.posting_date = nowdate()
     today = date.today()
     first_day = today.replace(day=1) + relativedelta(months=1)
     last_day = first_day.replace(day=calendar.monthrange(first_day.year, first_day.month)[1])
     get_employee_entries(doc,first_day,last_day)
-    #doc.save(ignore_permission=True)
 
 #Create list of employee Residency Expiry Date next month
 def get_employee_entries(doc,first_day,last_day):
@@ -120,7 +139,7 @@ def get_employee_entries(doc,first_day,last_day):
     doc.save()
     notify_hr(doc)
 
-#sort list based on residency expriy date
+# sort list based on residency expriy date to be displaied in the table based on their `residency_expiry_date`
 def sort(r):
     return r['residency_expiry_date']
 

@@ -1,85 +1,89 @@
-if(window.localStorage.getItem("job-application-auth")){
-    // File Upload
-  function readURL(input) {
-    const loaderElement = document.getElementById("loader");
-    if (input.files && input.files[0]) {
-      var reader = new FileReader();
-      reader.fileName = input.files[0].name
-      reader.onload = function (e) {
-        console.log(e.target.fileName);
-        let fileType = e.target.fileName.split('.').pop(), allowdtypes = 'jpeg,jpg,png';
-        if (allowdtypes.indexOf(fileType) < 0) {
-          alert('Invalid file type, Upload only jpeg,jpg,png formats. aborted');
-          return false;
-        }
-        $(".image-upload-wrap").hide();
+window.frappe = {};
+frappe.ready_events = [];
+frappe.ready = function (fn) {
+    frappe.ready_events.push(fn);
+}
+window.dev_server = {{dev_server}};
+window.socketio_port = {{frappe.socketio_port}};
 
-        $(".file-upload-image").attr("src", e.target.result);
-        console.log(e);
-        $(".file-upload-content").show();
+const frontSide = document.getElementById("front_cid");
+const backSide = document.getElementById("back_cid");
+const uploadFile = document.getElementById("fileUpload");
+const imgPreview = document.getElementById("img-preview");
+var f1, f2;
 
-        $(".image-title").html(input.files[0].name);
-        Tesseract.recognize(e.target.result, "eng", {
-          logger: (m) => {
-            console.log(m);
-            loaderElement.style = "";
-          },
-        })
-        .then(({ data: { text } }) => {
-          console.log(text);
-          window.localStorage.setItem("civilId", text);
-        })
-        .then((a) => {
-          // window.location = "./job_application";
-        });
-      };
+function file1(input){
+let file = input.files[0];
 
-      reader.readAsDataURL(input.files[0]);
-    } else {
-      removeUpload();
-    }
-  }
+    let reader = new FileReader();
 
-  function removeUpload() {
-      $(".file-upload-input").replaceWith($(".file-upload-input").clone());
-      $(".file-upload-content").hide();
-      $(".image-upload-wrap").show();
-  }
-  $(".image-upload-wrap").bind("dragover", function () {
-      $(".image-upload-wrap").addClass("image-dropping");
-  });
-  $(".image-upload-wrap").bind("dragleave", function () {
-      $(".image-upload-wrap").removeClass("image-dropping");
-  });
+    reader.readAsDataURL(file);
 
-  const getLinkedInData = async () => {
-      window.localStorage.setItem("linkedIn", false);
-      const code = window.location.search.slice(6);
-      console.log("code", code);
-      axios
-          .post("https://linked-be.vercel.app/api/accessCode", { code })
-          .then((result) => {
-              console.log(result);
-              localStorage.setItem("linkedInData", JSON.stringify(result));
-          })
-          .catch((err) => {
-              console.log(err);
-              // Do somthing
-          });
+    reader.onload = function() {
+      f1 = reader.result;
+      f1 = f1.replace(/^data:image\/\w+;base64,/, "");
+    };
+
+    reader.onerror = function() {
+      console.log(reader.error);
+    };
+
+  };
+  function file2(input){
+    let file = input.files[0];
+
+    let reader = new FileReader();
+
+    reader.readAsDataURL(file);
+
+    reader.onload = function() {
+      f2 = reader.result;
+      f2 = f2.replace(/^data:image\/\w+;base64,/, "");
+    };
+
+    reader.onerror = function() {
+      console.log(reader.error);
+    };
   };
 
-  if (window.localStorage.getItem("linkedIn")) {
-      getLinkedInData();
-  }
-}
-else {
-    alert("Please Signup or Login!");
-    window.location = "applicant-sign-up";
-}
-const skipSignup = () => {
-    if(localStorage.getItem("currentEasyJobOpening"))
-        window.location = "easy_apply";
-    else
-        window.location = "job_application";
+function upload(){
+  console.log("Start");
+  if (f1 && f2){
+    image = {Image1:f1, Image2:f2};
+    frappe.call({
+      type: "GET",
+      method: "one_fm.templates.pages.applicant-docs.fetch_text",
+      args: {image :JSON.stringify(image)},
+      callback: function(r) {
+        if(r && r.message){
+          fill_form(r.message)
+          console.log(r.message)
+        }
+        else{
+          console.log("Error");
+        }
+      }
+    });  
+  };
+  console.log("End");
+};
 
-}
+
+function fill_form(data){
+  {/* This Function fills the output form for user to view.
+  The value is fetched from the api*/}
+  if(data == "Error"){
+    alert("Sorry! Some Error Occured!!");
+  }
+  else {
+    document.getElementById("finalForm").style.display = "block";  
+    document.getElementById("name").value = data['Name'];
+    document.getElementById("ar_name").value = data['Arabic Name'];
+    document.getElementById("gender").value = data['Gender']
+    document.getElementById("civilid").value = data['Civil ID No.']
+    document.getElementById("nationality").value = data['Nationality']
+    document.getElementById("dob").value = data['Date Of Birth']
+    document.getElementById("expiry_date").value = data['Expiry Date']
+    document.getElementById("paci_no").value = data['PACI No.'] 
+  }
+};

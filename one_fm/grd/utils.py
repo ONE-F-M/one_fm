@@ -12,12 +12,6 @@ from frappe.model.mapper import get_mapped_doc
 from dateutil.relativedelta import relativedelta
 from one_fm.api.notification import create_notification_log
 
-def todo_after_insert(doc, method):
-    doctypes = ['Work Permit', 'Medical Insurance']
-    if doc.reference_type in doctypes and doc.reference_name and doc.owner and 'GRD Operator' in frappe.get_roles(doc.owner):
-        if not frappe.db.get_value(doc.reference_type, doc.reference_name, 'grd_operator'):
-            frappe.db.set_value(doc.reference_type, doc.reference_name, 'grd_operator', doc.owner)
-
 def sendmail_reminder_to_book_appointment_for_pifss(): #before 1 week of the new month
     today = date.today()
     first_day = today.replace(day=1) + relativedelta(months=1)
@@ -32,7 +26,7 @@ def sendmail_reminder_to_book_appointment_for_pifss(): #before 1 week of the new
             sender=supervisor,
             subject="Book Apointment For PIFSS", content=content)
 
-def sendmail_reminder_to_collect_pifss_documents(): #before 1 day of the new month
+def sendmail_reminder_to_collect_pifss_documents(): # before 1 day of the new month
     today = date.today()
     first_day = today.replace(day=1) + relativedelta(months=1)
     if date_diff(first_day,today) == 1:
@@ -81,14 +75,12 @@ def mappe_to_work_permit_registration(source_name, target_doc=None):
     return doc
 
 @frappe.whitelist()
-def mappe_to_mgrp(source_name, target_doc=None):
-    work_permit_record = frappe.get_doc('Work Permit',source_name)
-    print(work_permit_record.employee)
+def map_to_mgrp(source_name, target_doc=None):
     doc = get_mapped_doc("Work Permit", source_name, {
         "Work Permit": {
             "doctype": "MGRP",
             "field_map": {
-                "work_permit_type":"status",
+                "work_permit_type":"work_permit_type",
                 "employee":"employee",
                 "first_name":"first_name",
                 "civil_id":"civil_id",
