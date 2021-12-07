@@ -2106,7 +2106,9 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
                                     if day_off_overtime_rate > 0:
                                         hourly_wage = rounded(rounded(flt(basic_salary)/30, 3) / shift_duration, 3)
                                         overtime_amount = rounded(flt(overtime_doc.overtime_hours) * hourly_wage * day_off_overtime_rate,3) # Overtime = `overtime_hours` * day_off_overtime_rate * hourly_wage
+
                                         create_additional_salary_for_ot(doc.employee, overtime_amount, overtime_component)
+
                                         update_employee_schedule(frappe.get_doc("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':employee_availability[0]}),employee_availability[1],roster_type[0])
                                     else:
                                         frappe.throw(_("No Day Off overtime rate set in HR and Payroll Additional Settings."))
@@ -2117,7 +2119,9 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
                                     if public_holiday_overtime_rate > 0:
                                         hourly_wage = rounded(rounded(flt(basic_salary)/30, 3) / shift_duration, 3)
                                         overtime_amount = rounded(flt(overtime_doc.overtime_hours) * hourly_wage * public_holiday_overtime_rate,3) # Overtime = `overtime_hours` * public_holiday_overtime_rate * hourly_wage
+
                                         create_additional_salary_for_ot(doc.employee, overtime_amount, overtime_component)
+
                                         update_employee_schedule(frappe.get_doc("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':employee_availability[0]}),employee_availability[1],roster_type[0])
                                     else:
                                         frappe.throw(_("No Public Holiday overtime rate set in HR and Payroll Additional Settings."))
@@ -2127,6 +2131,7 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
 
         # Check if Employee in a Working day
         if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':employee_availability[1]}):
+
             if cstr(check_out_time) >= cstr(overtime_doc.end_time):# Check-out time is equal or after the requested time.
 
                 if basic_salary and shift_duration:
@@ -2181,11 +2186,14 @@ def update_employee_schedule(employee_schedule_doc,employee_availability,roster_
     employee_schedule_doc.save(ignore_permissions=True)
 
 # Create Additional Salary For employee and set the overtime allowance for them and the OT amount
+
 def create_additional_salary_for_ot(employee, amount, overtime_component):
+
 	"""
     Param:
     ------
     Employee & overtime amount & overtime_component
+
     overtime_component: (eg :"Overtime Allowance")
     """
 	additional_salary = frappe.new_doc("Additional Salary")
