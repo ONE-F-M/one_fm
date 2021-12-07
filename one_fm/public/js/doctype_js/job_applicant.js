@@ -10,26 +10,19 @@ frappe.ui.form.on('Job Applicant', {
 		});
 	},
 	refresh(frm) {
+		// Changes the buttons for `PAM File Number` and `PAM Desigantion` once operator wants to changethe data of any
 		if(frm.doc.pam_number_button == 0 || frm.is_new()){
 			document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#3789ff";
-			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.padding ='1em';
-			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1.6em';
 		}if(frm.doc.pam_designation_button == 0 || frm.is_new()){
 			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#3789ff";
-			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.padding ='1em';
 			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
 		}if(frm.doc.pam_number_button == 1 || !frm.is_new()){
 			document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#ec645e";
-			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.padding ='1em';
-			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1.6em';
 		}if(frm.doc.pam_designation_button == 1 || !frm.is_new()){
 			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#ec645e";
-			// document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.padding ='1em';
 			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
 		}
-		// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.padding ='1em';
 		document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1.6em';
-		// document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.padding ='1em';
 		document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
 		frm.set_df_property('status', 'label', 'Final Status');
 		frm.remove_custom_button("Job Offer");
@@ -115,7 +108,7 @@ frappe.ui.form.on('Job Applicant', {
 
 	},
 	one_fm_change_pam_file_number: function(frm){
-
+		// on the change of pam desigantion change the button color and set the flag value
 		let msg = __('Do You Want to Change PAM File Number?')
 		frappe.confirm(
 			msg,
@@ -131,7 +124,7 @@ frappe.ui.form.on('Job Applicant', {
 		);
 	},
 	one_fm_change_pam_designation: function(frm){
-
+		// on the change of pam desigantion change the button color and set the flag value
 		let msg = __('Do You Want to Change PAM Desigantion?')
 		frappe.confirm(
 			msg,
@@ -401,9 +394,9 @@ frappe.ui.form.on('Job Applicant', {
 	},
 	one_fm_has_issue: function(frm){
 		if(frm.doc.one_fm_has_issue && frappe.user.has_role("GRD Operator")){
-		//check the Authorized signatory based on file number
+		// check the Authorized signatory based on file number
 			if((frm.doc.pam_number_button == 1) && (frm.doc.one_fm_pam_file_number)){
-				//if PAM file Number has changes in job applicant, set the signatory names of the new file
+				// if PAM file Number has changes in job applicant, set the signatory names of the new file
 				frappe.call({
 					method: "one_fm.one_fm.utils.get_signatory_name",
 					args:{
@@ -423,7 +416,7 @@ frappe.ui.form.on('Job Applicant', {
 
 			}
 			if((frm.doc.pam_number_button == 0) && (frm.doc.one_fm_erf_pam_file_number)){
-				//if PAM file Number has changes in job applicant, set the signatory names of the old file in erf
+				// if PAM file Number has changes in job applicant, set the signatory names of the old file in erf
 				frappe.call({
 					method: "one_fm.one_fm.utils.get_signatory_name_erf_file",
 					args:{
@@ -522,7 +515,7 @@ frappe.ui.form.on('Job Applicant', {
 });
 
 var set_grd_field_properties = function(frm){
-	//Hide GRD section if transferable not selected yet
+	// Hide GRD section if transferable not selected yet
 	let hide_fields=['authorized_signatory','previous_company_details','authorized_signatory_section',
 	'one_fm_has_issue','one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation',
 	'one_fm_previous_company_trade_name_in_arabic','one_fm__previous_company_authorized_signatory_name_arabic',
@@ -535,7 +528,7 @@ var set_grd_field_properties = function(frm){
 		set_hidden_fields(frm, hide_fields, true);
 	 }
 
-	 //Hide irrelevant sections for GRD Operator and set read only option to the required fields
+	 // Hide irrelevant sections for GRD Operator and set read only option to the required fields
 	 if(frm.doc.one_fm_is_transferable == "Yes" && frappe.user.has_role("GRD Operator")){
 		let hide_fields=['one_fm_basic_skill_section','one_fm_uniform_measurements',
 		'one_fm_work_details_section','section_break_6','section_break_88',

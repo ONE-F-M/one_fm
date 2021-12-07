@@ -40,6 +40,8 @@ jobs:
           git checkout master-13
           git pull
           git checkout staging
+          git reset --hard
+          git clean -fd
           git pull
           git merge --no-ff master-13 -m "Auto-merge master back to staging" --allow-unrelated-histories
           git push
@@ -51,6 +53,8 @@ jobs:
           git checkout master-13
           git pull
           git checkout sandbox
+          git reset --hard
+          git clean -fd
           git pull
           git merge --no-ff master-13 -m "Auto-merge master back to sandbox" --allow-unrelated-histories
           git push
