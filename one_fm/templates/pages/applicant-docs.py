@@ -8,18 +8,14 @@ import base64
 
 @frappe.whitelist(allow_guest=True)
 def fetch_text(image):
-    print("Here")
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = frappe.utils.cstr(frappe.local.site)+'/private/files/inbound-theory-254808-c1818ddd7f9e.json'
 
     client = vision.ImageAnnotatorClient()
     
-    print(image)
     image_files = json.loads(image)
-    print(image_files)
+
     image_path_1 = upload_image(image_files["Image1"],"image1.png")
     image_path_2 = upload_image(image_files["Image2"],"image2.png")
-
-    print(image_path_1)
 
     """
     # or we can pass the image url
@@ -28,9 +24,9 @@ def fetch_text(image):
     """
 
     front_text = front_side_kuwaiti_civil_id(image_path_1, client)
-    print(front_text)
     back_text = back_side_kuwaiti_civil_id(image_path_2, client)
-    print(back_text)
+
+    front_text.update(back_text)
     if front_text:
         return front_text
     else:
@@ -113,7 +109,7 @@ def back_side_kuwaiti_civil_id(image_path, client):
     if find_index(assemble,"منزل"):
         emp_det["PACI No."] = texts[find_index(assemble,"منزل")+1].description
     else:
-        emp_det["PACI No."] = ""
+        emp_det["PACI No."] = " "
     
     return emp_det
     

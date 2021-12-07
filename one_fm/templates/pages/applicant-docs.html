@@ -9,21 +9,10 @@
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v3.0.0/css/line.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
-        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
-    <link rel="stylesheet" href="assets/one_fm/assets/css/job_application.css">
-    <link href="assets/one_fm/assets/css/applicant_login.css" rel="stylesheet" />
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">    
+    <link href="applicant-docs.css" rel="stylesheet" >
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="assets/one_fm/assets/phone-input/css/intlTelInput.css">
-    <script>
-        window.frappe = {};
-        frappe.ready_events = [];
-        frappe.ready = function (fn) {
-            frappe.ready_events.push(fn);
-        }
-        window.dev_server = {{ dev_server }};
-        window.socketio_port = {{ frappe.socketio_port }};
 
-    </script>
 </head>
 <body>
     <main>
@@ -47,20 +36,72 @@
                         <!-- Formulario -->
                         <form class="form">
                             <label class="form-label" for="file">Upload Front Side of your civil ID:</label>
-                            <input class="form-control" type="file" id="front_cid" onchange="file1(this)" name="file"  accept="image/png, image/jpeg">
+                            <input class="form-control" type="file" id="front_cid" onchange="file1(this)" name="file"  accept="image/png, image/jpeg" size="30">
                             
                             <label class="form-label" for="file">Upload Back Side of your civil ID:</label>
-                            <input class="form-control" type="file" id="back_cid" onchange="file2(this)" name="file"  accept="image/png, image/jpeg">
- 
+                            <input class="form-control" type="file" id="back_cid" onchange="file2(this)" name="file"  accept="image/png, image/jpeg" size="30">
+                            <br>
                             <div class="col-auto">
-                                <button type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()" class="btn btn-primary">Upload!</button>
+                                <button class="btn btn-primary btn-lg btn-block" type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()" class="btn btn-primary">Upload!</button>
                             </div>
                             <p id="demo"></p>
                         </form>        
 
                     </div>
+                
+                </section> 
+            </div>
+                <br><br>
+                <div  id="finalForm">
+                <div class="row login-wrapper rounded">
 
-                </section>
+                    <!-- Contenido del lado izquierdo -->
+                    <section class="col form-wrapper"><section class="col form-wrapper">
+
+                        <div class="form-container">
+
+                            <!-- Mensaje de login -->
+                            <div class="form-messages">
+                                <br><br>
+                                <p>Kindly, check the below input.</p>
+                            </div>
+
+                            <!-- Formulario -->
+                            <form class="form">
+                                <label class="form-label" for="name">Your Name:
+                                <input class="form-control" type="text" id="name" name="name" size="50"></label><br>
+
+                                <label class="form-label" for="ar_name">Name(ar):</label>
+                                <input class="form-control" type="text" id="ar_name" name="ar_name" size="50"></label><br>
+
+                                <label class="form-label" for="civilid">Civil ID:</label>
+                                <input class="form-control" type="text" id="civilid" name="civilid" size="50"></label><br>
+
+                                <label class="form-label" for="gender">Gender</label>
+                                <input class="form-control" type="text" id="gender" name="gender" size="50"></label><br>
+
+                                <label class="form-label" for="dob">Date Of Birth:</label>
+                                <input class="form-control" type="text" id="dob" name="dob" size="50"></label><br>
+
+                                <label class="form-label" for="expiry_date">Expiry Date:</label>
+                                <input class="form-control" type="text" id="expiry_date" name="expiry_date" size="50"></label><br>
+
+                                <label class="form-label" for="nationality">Nationality:</label>
+                                <input class="form-control" type="text" id="nationality" name="nationality" size="50"></label><br>                            
+
+                                <label class="form-label" for="paci_no">PACI No.:</label>
+                                <input class="form-control" type="text" id="paci_no" name="paci_no" size="50"></label><br>                            
+
+                                <div class="col-auto">
+                                    <button class="btn btn-primary btn-lg" type="button" href="json.json" value="submit" id="submitForm" onclick="Submit()" class="btn btn-primary">Submit!</button>
+                                </div>
+                                <p id="demo"></p>
+                            </form>        
+
+                        </div>
+
+                    </section>
+                </div>
             </div>
         </article>
     </main>
