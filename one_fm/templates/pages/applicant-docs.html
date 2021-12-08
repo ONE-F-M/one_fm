@@ -36,10 +36,10 @@
                         <!-- Formulario -->
                         <form class="form">
                             <label class="form-label" for="file">Upload Front Side of your civil ID:</label>
-                            <input class="form-control" type="file" id="front_cid" onchange="file1(this)" name="file"  accept="image/png, image/jpeg" size="30">
+                            <input class="form-control" type="file" id="front_cid" name="file"  accept="image/png, image/jpeg" size="30">
                             
                             <label class="form-label" for="file">Upload Back Side of your civil ID:</label>
-                            <input class="form-control" type="file" id="back_cid" onchange="file2(this)" name="file"  accept="image/png, image/jpeg" size="30">
+                            <input class="form-control" type="file" id="back_cid" name="file"  accept="image/png, image/jpeg" size="30">
                             <br>
                             <div class="col-auto">
                                 <button class="btn btn-primary btn-lg btn-block" type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()" class="btn btn-primary">Upload!</button>
@@ -52,7 +52,7 @@
                 </section> 
             </div>
                 <br><br>
-                <div  id="finalForm">
+                <div  id="finalForm" style="display: none;">
                 <div class="row login-wrapper rounded">
 
                     <!-- Contenido del lado izquierdo -->

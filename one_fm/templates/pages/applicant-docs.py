@@ -7,11 +7,22 @@ import base64
 
 
 @frappe.whitelist(allow_guest=True)
-def fetch_text(image):
+def fetch_text_for_kuwaiti_civilid(image):
+    """This API redirects the image fetched from frontend and 
+    runs it though Google Vision API, each side at a time.
+
+    Args:
+        image (json): Fetched from frontend, consist of two images(front and back)
+
+    Returns:
+        text_detected: dictionary consisting of text fetched from both front and back end.
+    """    
+    #initialize Google Vision
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = frappe.utils.cstr(frappe.local.site)+'/private/files/inbound-theory-254808-c1818ddd7f9e.json'
 
     client = vision.ImageAnnotatorClient()
     
+    # Load the Images
     image_files = json.loads(image)
 
     image_path_1 = upload_image(image_files["Image1"],"image1.png")
@@ -26,9 +37,11 @@ def fetch_text(image):
     front_text = front_side_kuwaiti_civil_id(image_path_1, client)
     back_text = back_side_kuwaiti_civil_id(image_path_2, client)
 
-    front_text.update(back_text)
-    if front_text:
-        return front_text
+    text_detected = front_text.update(back_text)
+    print(text_detected)
+
+    if text_detected:
+        return text_detected
     else:
         return "Error"
 

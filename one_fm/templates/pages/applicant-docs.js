@@ -6,11 +6,9 @@ frappe.ready = function (fn) {
 window.dev_server = {{dev_server}};
 window.socketio_port = {{frappe.socketio_port}};
 
-const frontSide = document.getElementById("front_cid");
-const backSide = document.getElementById("back_cid");
-const uploadFile = document.getElementById("fileUpload");
-const imgPreview = document.getElementById("img-preview");
-var f1, f2;
+//Name and Nationality should be fetched from link.
+const user_name = "Salwa";
+const nationality = "Kuwaiti"; //or Non-Kuwaiti
 
 function file1(input){
 let file = input.files[0];
@@ -29,30 +27,34 @@ let file = input.files[0];
     };
 
   };
-  function file2(input){
-    let file = input.files[0];
 
+  function fetch_base(file){
+    
     let reader = new FileReader();
 
     reader.readAsDataURL(file);
 
-    reader.onload = function() {
-      f2 = reader.result;
-      f2 = f2.replace(/^data:image\/\w+;base64,/, "");
+    reader.onload = function(f) {
+      return this.result;
+
     };
 
     reader.onerror = function() {
       console.log(reader.error);
     };
+    console.log(reader)
   };
 
 function upload(){
-  console.log("Start");
+  var f1 = fetch_base(document.getElementById("front_cid").files[0]);
+  var f2 = fetch_base(document.getElementById("back_cid").files[0]);
+
+  console.log(f1);
   if (f1 && f2){
     image = {Image1:f1, Image2:f2};
     frappe.call({
       type: "GET",
-      method: "one_fm.templates.pages.applicant-docs.fetch_text",
+      method: "one_fm.templates.pages.applicant-docs.fetch_text_for_kuwaiti_civilid",
       args: {image :JSON.stringify(image)},
       callback: function(r) {
         if(r && r.message){
