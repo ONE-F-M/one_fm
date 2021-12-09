@@ -58,7 +58,7 @@ function upload(){
       image = {front_side:front, back_side:back};
       frappe.call({
         type: "GET",
-        method: "one_fm.templates.pages.applicant-docs.fetch_text_for_kuwaiti_civilid",
+        method: "one_fm.templates.pages.applicant-docs.get_civil_id_text",
         args: {image :JSON.stringify(image)},
         callback: function(r) {
           console.log(r)
