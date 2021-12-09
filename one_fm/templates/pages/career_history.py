@@ -3,7 +3,7 @@ import frappe, json
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url
-from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link
+from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
 
 def get_context(context):
     context.title = _("Career History")
@@ -28,3 +28,21 @@ def create_career_history_from_portal(job_applicant):
     '''
     # Create Career History
     return True
+
+@frappe.whitelist()
+def send_career_history_magic_link(job_applicant):
+    '''
+        Method used to send the magic Link for Career History to the Job Applicant
+        args:
+            job_applicant: ID of the Job Applicant
+    '''
+    applicant_email = frappe.db.get_value('Job Applicant', job_applicant, 'one_fm_email_id')
+    # Check applicant have an email id or not
+    if applicant_email:
+        # Email Magic Link to the Applicant
+        subject = "Fill your Career History Sheet"
+        url_prefix = "/career_history?magic_link="
+        msg = "<b>Fill your Career History Sheet by clciking on the magic link below</b>"
+        send_magic_link('Job Applicant', job_applicant, 'Career History', [applicant_email], url_prefix, msg, subject)
+    else:
+        frappe.throw(_("No Email ID found for the Job Applicant"))
