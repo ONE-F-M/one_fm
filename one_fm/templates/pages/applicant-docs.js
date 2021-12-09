@@ -81,7 +81,7 @@ function upload(){
     image = {Image1:f1, Image2:f2};
     frappe.call({
       type: "GET",
-      method: "one_fm.templates.pages.applicant_docs.fetch_text_for_kuwaiti_civilid",
+      method: "one_fm.templates.pages.applicant-docs.fetch_text_for_kuwaiti_civilid",
       args: {image :JSON.stringify(image)},
       callback: function(r) {
         if(r && r.message){
