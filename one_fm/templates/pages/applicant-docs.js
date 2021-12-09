@@ -50,7 +50,6 @@ function test(input){
 }
 
 function upload(){
-<<<<<<< HEAD
   civilid_check = document.getElementById("noCivilID").checked;
   console.log(civilid_check)
 
@@ -72,25 +71,6 @@ function upload(){
           else{
             console.log("Error");
           }
-=======
-  var f1 = fetch_base(document.getElementById("front_cid").files[0]);
-  var f2 = fetch_base(document.getElementById("back_cid").files[0]);
-
-  console.log(f1);
-  if (f1 && f2){
-    image = {Image1:f1, Image2:f2};
-    frappe.call({
-      type: "GET",
-      method: "one_fm.templates.pages.applicant-docs.fetch_text_for_kuwaiti_civilid",
-      args: {image :JSON.stringify(image)},
-      callback: function(r) {
-        if(r && r.message){
-          fill_form(r.message)
-          console.log(r.message)
-        }
-        else{
-          console.log("Error");
->>>>>>> Update method name
         }
       });  
     };
