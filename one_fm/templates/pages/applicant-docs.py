@@ -5,18 +5,21 @@ from frappe.utils import cstr
 import json
 import base64
 
-@frappe.whitelist()
-def fetch_text_for_kuwaiti_civilid(images):
+@frappe.whitelist(allow_guest=True)
+def get_civil_id_text(images):
     """This API redirects the image fetched from frontend and 
     runs it though Google Vision API, each side at a time.
 
     Args:
-        images (json): Consist of two base64 encoded images(front_side, back_side).
+        images (json): Consist of two base64 encoded strings(front_side, back_side).
 
     Returns:
-        text_detected: dictionary consisting of text fetched from both front and back side.
+        result: dictionary consisting of text fetched from both front and back side.
     """    
     try:
+        
+        result = {}
+        
         #initialize google vision client library
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()
@@ -27,19 +30,28 @@ def fetch_text_for_kuwaiti_civilid(images):
         front_image = upload_image(image_files["front_side"],"image1.png")
         back_image = upload_image(image_files["back_side"],"image2.png")
 
-        front_text = front_side_kuwaiti_civil_id(front_image, client)
-        back_text = back_side_kuwaiti_civil_id(back_image, client)
+        front_text = get_front_side_civil_id_text(front_image, client)
+        back_text = get_back_side_civil_id_text(back_image, client)
 
-        text_detected = front_text.update(back_text)
-        print(text_detected)
-
-        return text_detected
+        result.update({'front_text': front_text})
+        result.update({'back_text': back_text})
+        
+        return result
     
     except Exception as e:
         frappe.throw(e)
 
-@frappe.whitelist(allow_guest=True)
-def front_side_kuwaiti_civil_id(image_path, client):
+def get_front_side_civil_id_text(image_path, client):
+    """ This method fetches the image from the provided image path, calls the vision api to exrtract text from the image
+        and parses through the obtained texts to get relevant texts for the required fields in the front side of the civil ID.
+
+    Args:
+        image_path (str): Path to image file
+        client (obj): Vision API client library object
+
+    Returns:
+        dict: Dictionary of obtained texts for the required fields.
+    """
 
     with io.open(image_path, 'rb') as image_file:
         content = image_file.read()
@@ -50,34 +62,43 @@ def front_side_kuwaiti_civil_id(image_path, client):
 
     texts = response.text_annotations
     
-    emp_det = {}
+    result = {}
     assemble = {}
     index = 0
 
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
     
-    emp_det["Civil ID No."] = texts[find_index(assemble,"CARD")+1].description
-    emp_det["Nationality"] = texts[find_index(assemble,"Nationality")+1].description
-    emp_det["Date Of Birth"] = texts[find_index(assemble,"Birth")+2].description
-    emp_det["Expiry Date"] = texts[find_index(assemble,"Birth")+3].description
+    result["Civil ID No."] = texts[find_index(assemble,"CARD")+1].description
+    result["Nationality"] = texts[find_index(assemble,"Nationality")+1].description
+    result["Date Of Birth"] = texts[find_index(assemble,"Birth")+2].description
+    result["Expiry Date"] = texts[find_index(assemble,"Birth")+3].description
     if texts[find_index(assemble,"Sex")-1].description == "M" or texts[find_index(assemble,"Sex")-1].description == "F":
-        emp_det["Gender"] = texts[find_index(assemble,"Sex")-1].description
+        result["Gender"] = texts[find_index(assemble,"Sex")-1].description
     else:
-        emp_det["Gender"] = ""
+        result["Gender"] = ""
 
-    emp_det["Name"] = ""
+    result["Name"] = ""
     for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Nationality")-2):
-        emp_det["Name"] = emp_det["Name"] + texts[i].description + " "
+        result["Name"] = result["Name"] + texts[i].description + " "
     
-    emp_det["Arabic Name"]= ""
+    result["Arabic Name"]= ""
     for i in range(find_index(assemble,"No")+1,find_index(assemble,"Name")-1):
-        emp_det["Arabic Name"] = emp_det["Arabic Name"] + texts[i].description + " "
+        result["Arabic Name"] = result["Arabic Name"] + texts[i].description + " "
 
-    return emp_det
+    return result
 
-@frappe.whitelist(allow_guest=True)
-def back_side_kuwaiti_civil_id(image_path, client):
+def get_back_side_civil_id_text(image_path, client):
+    """ This method fetches the image from the provided image path, calls the vision api to exrtract text from the image
+        and parses through the obtained texts to get relevant texts for the required fields in the back side side of the civil ID.
+
+    Args:
+        image_path (str): Path to image file
+        client (obj): Vision API client library object
+
+    Returns:
+        dict: Dictionary of obtained texts for the required fields.
+    """
     
     with io.open(image_path, 'rb') as image_file:
         content = image_file.read()
@@ -88,18 +109,18 @@ def back_side_kuwaiti_civil_id(image_path, client):
 
     texts = response.text_annotations
     
-    emp_det = {}
+    result = {}
     assemble = {}
     index = 0
     
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
     if find_index(assemble,"منزل"):
-        emp_det["PACI No."] = texts[find_index(assemble,"منزل")+1].description
+        result["PACI No."] = texts[find_index(assemble,"منزل")+1].description
     else:
-        emp_det["PACI No."] = " "
+        result["PACI No."] = " "
     
-    return emp_det
+    return result
 
 def find_index(dictionary, word):
     for d in dictionary:
