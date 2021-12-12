@@ -5,6 +5,14 @@ import frappe
 import json
 import base64
 
+@frappe.whitelist(allow_guest=True)
+def populate_nationality():
+    return frappe.get_list('Nationality', pluck='name')
+
+@frappe.whitelist(allow_guest=True)
+def fetch_nationality(code):
+    country = frappe.get_value('Country', {'code_alpha3':code},["country_name"])
+    return frappe.get_value('Nationality', {'country':country},["name"])
 
 @frappe.whitelist(allow_guest=True)
 def fetch_text_for_kuwaiti_civilid(image):
