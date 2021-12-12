@@ -10,23 +10,17 @@
   "job_applicant",
   "applicant_name",
   "erf",
-  "hiring_method",
-  "total_years_of_experience_str",
-  "total_years_of_experience",
   "column_break_5",
+  "hiring_method",
   "validated_by_recruiter_on",
-  "number_promotions_and_salary_changes",
+  "section_break_8",
+  "total_years_of_experience",
+  "total_number_of_promotions_and_salary_changes",
+  "column_break_11",
   "career_history_score",
   "pass_to_next_interview",
   "career_history_company_section",
-  "number_of_companies",
   "career_history_company",
-  "promotions_section",
-  "promotions",
-  "promotion_total_score",
-  "salary_hikes_section",
-  "salary_hikes",
-  "salary_hike_total_score",
   "shoves_and_tugs_section",
   "shoves",
   "shoves_and_tugs_cb_column",
@@ -68,19 +62,11 @@
   {
    "fieldname": "total_years_of_experience",
    "fieldtype": "Float",
-   "hidden": 1,
-   "label": "Total Years Of Experience",
-   "read_only": 1
+   "label": "Total Years Of Experience"
   },
   {
    "fieldname": "column_break_5",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "number_promotions_and_salary_changes",
-   "fieldtype": "Float",
-   "label": "Number Promotions and Salary Changes",
-   "read_only": 1
   },
   {
    "fieldname": "career_history_score",
@@ -92,15 +78,6 @@
    "fieldname": "career_history_company_section",
    "fieldtype": "Section Break",
    "label": "Career History Company"
-  },
-  {
-   "default": "1",
-   "description": "Mention the Number of Companies you've worked with including your current company",
-   "fieldname": "number_of_companies",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Number of Companies",
-   "reqd": 1
   },
   {
    "fieldname": "about_the_opportunity_section",
@@ -132,49 +109,6 @@
    "label": "Tugs"
   },
   {
-   "fieldname": "total_years_of_experience_str",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Total Years Of Experience",
-   "read_only": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "promotions_section",
-   "fieldtype": "Section Break",
-   "label": "Promotions"
-  },
-  {
-   "fieldname": "promotions",
-   "fieldtype": "Table",
-   "label": "Promotions",
-   "options": "Career History Promotion"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "salary_hikes_section",
-   "fieldtype": "Section Break",
-   "label": "Salary Hikes"
-  },
-  {
-   "fieldname": "salary_hikes",
-   "fieldtype": "Table",
-   "label": "Salary Hikes",
-   "options": "Career History Salary Hike"
-  },
-  {
-   "fieldname": "promotion_total_score",
-   "fieldtype": "Float",
-   "label": "Promotion Total Score",
-   "read_only": 1
-  },
-  {
-   "fieldname": "salary_hike_total_score",
-   "fieldtype": "Float",
-   "label": "Salary Hike Total Score",
-   "read_only": 1
-  },
-  {
    "fieldname": "validated_by_recruiter_on",
    "fieldtype": "Date",
    "label": "Validated By Recruiter On"
@@ -200,10 +134,23 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Hiring Method"
+  },
+  {
+   "fieldname": "total_number_of_promotions_and_salary_changes",
+   "fieldtype": "Float",
+   "label": "Total Number of Promotions and Salary Changes"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2020-05-29 20:52:34.114954",
+ "modified": "2021-12-12 23:17:33.063041",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",
