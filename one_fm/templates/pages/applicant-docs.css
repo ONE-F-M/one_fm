@@ -40,12 +40,24 @@
 }
 .message-block-head{
     display: flex;
+<<<<<<< HEAD
 }
 label {
     font-size: 0.785em;
     font-weight: 700;
     text-transform: uppercase;
     color: #bebfca;
+}
+.form-wrapper{
+    padding: 2px 10px;
+=======
+}
+label {
+    font-size: 0.785em;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #bebfca;
+>>>>>>> 5d0450a8 (Call Kuwaiti Civil ID API)
 }
 .form-wrapper{
     padding: 2px 10px;
