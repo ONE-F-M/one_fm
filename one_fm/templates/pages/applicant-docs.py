@@ -90,6 +90,24 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
         for i in range(find_index(assemble,"No")+1,find_index(assemble,"Name")-1):
             result["Arabic Name"] = result["Arabic Name"] + texts[i].description + " "
 
+    else:
+        result["Civil ID No."] = texts[find_index(assemble,"CARD")+1].description
+        result["Nationality"] = texts[find_index(assemble,"Nationality")+1].description
+        result["Date Of Birth"] = texts[find_index(assemble,"Birth")-7].description
+        result["Gender"] = ""
+        if texts[find_index(assemble,"Sex")-3].description == "M" or texts[find_index(assemble,"Sex")-3].description == "F":
+            result["Gender"] = texts[find_index(assemble,"Sex")-3].description
+
+        result["Name"] = ""
+        for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport")-1):
+            result["Name"] = result["Name"] + texts[i].description + " "
+        
+        result["Arabic Name"]= ""
+        for i in range(find_index(assemble,"CARD")+2,find_index(assemble,"Civil")):
+            result["Arabic Name"] = result["Arabic Name"] + texts[i].description + " "
+            
+        result["Arabic Name"] = result["Arabic Name"][::-1]
+    
     return result
 
 def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
@@ -126,6 +144,18 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
             result["PACI No."] = texts[find_index(assemble,":iall")-1].description
         else:
             result["PACI No."] = " "
+            
+    else:
+        result["PACI No."] = ""
+        if find_index(assemble,"YI"):
+            result["PACI No."] = texts[find_index(assemble,"YI")-1].description
+        
+        result["Sponsor Name"]= ""
+        if find_index(assemble, "(") and find_index(assemble, ")"):
+            for i in range(find_index(assemble,")")+1,find_index(assemble,"العنوان:")):
+                result["Sponsor Name"] = result["Sponsor Name"] + texts[i].description + " "
+                
+            result["Sponsor Name"] = result["Sponsor Name"][::-1]
     
     return result
 
