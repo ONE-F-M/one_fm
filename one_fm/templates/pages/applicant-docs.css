@@ -50,6 +50,7 @@ label {
 .form-wrapper{
     padding: 2px 10px;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
 =======
@@ -64,12 +65,18 @@ label {
 .form-wrapper{
     padding: 2px 10px;
 =======
+=======
+>>>>>>> 45f6e326 (Resolve Conflicts)
 }
 .input{
-    width: 25vw;
+    width:25vw;
 }
 .input2{
+<<<<<<< HEAD
     width: 15.5vw;
 >>>>>>> 4c34b307 (Call Kuwaiti Civil ID API)
 >>>>>>> 5424a161 (Call Kuwaiti Civil ID API)
+=======
+    width:15.5vw;
+>>>>>>> 45f6e326 (Resolve Conflicts)
 }
