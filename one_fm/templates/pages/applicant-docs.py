@@ -7,6 +7,15 @@ import base64
 import hashlib
 
 @frappe.whitelist(allow_guest=True)
+def populate_nationality():
+    return frappe.get_list('Nationality', pluck='name')
+
+@frappe.whitelist(allow_guest=True)
+def fetch_nationality(code):
+    country = frappe.get_value('Country', {'code_alpha3':code},["country_name"])
+    return frappe.get_value('Nationality', {'country':country},["name"])
+
+@frappe.whitelist(allow_guest=True)
 def get_civil_id_text(images, is_kuwaiti=0):
     """This API redirects the image fetched from frontend and 
     runs it though Google Vision API, each side at a time.
