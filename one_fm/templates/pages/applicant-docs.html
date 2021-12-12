@@ -42,7 +42,7 @@
                             <div class="row">
                                 <div class="form-group col-md-6">
                                     <label  for="file">Upload Front Side of your civil ID:</label>
-                                    <input class="form-control" type="file" id="front_cid" placeholder="Front Civil ID" onchange="front_civil_extract(this)" name="file"  accept="image/png, image/jpeg" size="30">
+                                    <input class="form-control input" type="file" id="front_cid" placeholder="Front Civil ID" onchange="front_civil_extract(this)" name="file"  accept="image/png, image/jpeg" >
                                     <div class="custom-control custom-checkbox checkbox-xl">
                                         <input type="checkbox" class="custom-control-input" id="noCivilID" >
                                         <label class="custom-control-label" for="noCivilID">No Civil ID</label>
@@ -50,7 +50,7 @@
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label  for="file">Upload Back Side of your civil ID:</label>
-                                    <input class="form-control" type="file" id="back_cid" placeholder="Back Civil ID" onchange="back_civil_extract(this)" name="file"  accept="image/png, image/jpeg" size="30">
+                                    <input class="form-control input" type="file" id="back_cid" placeholder="Back Civil ID" onchange="back_civil_extract(this)" name="file"  accept="image/png, image/jpeg" >
                                     <br>
                                 </div>
                             </div>
@@ -97,9 +97,13 @@
                             </div>
                         </div>
 
-                <div class="row rounded">
+                        <div class="form-container">
 
-                            <form >
+                            <!-- Mensaje de login -->
+               
+    
+                            <!-- Formulario -->
+                            <form class="form">
                                 <div class="row">
                                     <div class="form-group col-md-6">
                                         <label  for="name">Name:
@@ -117,34 +121,28 @@
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="dob">Date Of Birth:
-<<<<<<< HEAD
-<<<<<<< HEAD
-                                        <input class="form-control" type="date" id="dob" onchange="test(this)" name="dob" size="50"></label><br><br>
+
+                                        <input class="form-control input" type="date" id="dob" onchange="test(this)" name="dob" ></label><br><br>
                                     </div>   
                                 </div>               
                                 <div class="row">
                                     <div class="form-group col-md-6">        
                                         <label for="civilid">Civil ID:
-                                        <input class="form-control" type="text" id="civilid" name="civilid" size="50"></label><br><br>
+                                        <input class="form-control input" type="text" id="civilid" name="civilid" ></label><br><br>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="expiry_date">Civil ID Expiry Date:
-                                        <input class="form-control" type="date" id="expiry_date" name="expiry_date" size="50"><br><br>
+                                        <input class="form-control input" type="date" id="expiry_date" name="expiry_date" ><br><br>
                                     </div>   
                                 </div>
                                 <div class="row">
                                     <div class="form-group col-md-6">
                                         <label  for="nationality">Nationality:
-                                        <input class="form-control" type="text" id="nationality" name="nationality" size="50"></label><br>  <br>                          
+                                        <input class="form-control input" type="text" id="nationality" name="nationality" ></label><br>  <br>                          
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="paci_no">PACI No.:
-                                        <input class="form-control" type="text" id="paci_no" name="paci_no" size="50"></label><br>  <br>                          
-=======
-                                        <input class="form-control" type="date" id="dob" name="dob" size="50"></label><br><br>
-=======
-                                        <input class="form-control input" type="date" id="dob" name="dob" ></label><br><br>
->>>>>>> 4c34b307 (Call Kuwaiti Civil ID API)
+                                        <input class="form-control input" type="text" id="paci_no" name="paci_no" ></label><br>  <br>                          
                                     </div>   
                                 </div>    
 
