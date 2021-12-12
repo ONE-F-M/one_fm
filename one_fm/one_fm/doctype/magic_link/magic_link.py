@@ -104,3 +104,4 @@ def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subjec
 		magic_link_url = get_url(url_prefix) + encrypted_magic_link
 		msg += "<br/><a href='{0}'>Magic Link</a>".format(magic_link_url)
 		frappe.sendmail(sender=sender, recipients=recipients, content=msg, subject=subject)
+		frappe.msgprint(("<b><a href='{0}' target='_blank'>Click here to see the maigc link for Career History Sheet</a></b>".format(magic_link_url)), alert=True)
