@@ -4,6 +4,7 @@ import frappe
 from frappe.utils import cstr
 import json
 import base64
+import datetime
 import hashlib
 
 @frappe.whitelist(allow_guest=True)
@@ -84,8 +85,8 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
     if is_kuwaiti:
         result["Civil ID No."] = texts[find_index(assemble,"CARD")+1].description
         result["Nationality"] = texts[find_index(assemble,"Nationality")+1].description
-        result["Date Of Birth"] = texts[find_index(assemble,"Birth")+2].description
-        result["Expiry Date"] = texts[find_index(assemble,"Birth")+3].description
+        result["Date Of Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+        result["Expiry Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+3].description, '%d/%m/%Y').strftime('%Y-%m-%d')
         if texts[find_index(assemble,"Sex")-1].description == "M" or texts[find_index(assemble,"Sex")-1].description == "F":
             result["Gender"] = texts[find_index(assemble,"Sex")-1].description
         else:
@@ -147,10 +148,10 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
     
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
-    
+    print(texts[0].description)
     if is_kuwaiti:
-        if find_index(assemble,":iall"):
-            result["PACI No."] = texts[find_index(assemble,":iall")-1].description
+        if find_index(assemble,"all"):
+            result["PACI No."] = texts[find_index(assemble,"all")-1].description
         else:
             result["PACI No."] = " "
             

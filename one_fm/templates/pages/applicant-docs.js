@@ -7,7 +7,7 @@ window.dev_server = {{dev_server}};
 window.socketio_port = {{frappe.socketio_port}};
 
 var front_civil , back_civil, front_passport, back_passport;
-
+var is_kuwaiti = 0;
 function front_civil_extract(input){
     let file = input.files[0];
 
@@ -93,8 +93,7 @@ function populate_nationality(){
   }); 
 }
 
-function fetchNationality(input){
-  var code = input.value;
+function fetchNationality(code){
   frappe.call({
     type: "GET",
     method: "one_fm.templates.pages.applicant-docs.fetch_nationality",
@@ -110,14 +109,23 @@ function upload(){
   civilid_check = document.getElementById("noCivilID").checked;
   //civilid_check = document.getElementById("noPassport").checked;
   //front_civil , back_civil, front_passport, back_passport
+<<<<<<< HEAD
   {/*
+=======
+
+>>>>>>> 4129a86a (Resolve Conflicts)
   if(!civilid_check){
     if (front_civil && back_civil){
       image = {front_side:front_civil, back_side:back_civil};
       frappe.call({
         type: "GET",
+<<<<<<< HEAD
         method: "one_fm.templates.pages.applicant-docs.fetch_text_for_kuwaiti_civilid",
         args: {image :JSON.stringify(image)},
+=======
+        method: "one_fm.templates.pages.applicant-docs.get_civil_id_text",
+        args: {images :JSON.stringify(image), is_kuwaiti: is_kuwaiti},
+>>>>>>> 4129a86a (Resolve Conflicts)
         callback: function(r) {
           console.log(r)
           if(r && r.message){
@@ -150,13 +158,14 @@ function fill_form(data){
     alert("Sorry! Some Error Occured!!");
   }
   else {
-    document.getElementById("name").value = data['Name'];
-    document.getElementById("ar_name").value = data['Arabic Name'];
-    document.getElementById("gender").value = data['Gender']
-    document.getElementById("civilid").value = data['Civil ID No.']
-    document.getElementById("country_code").value = data['Nationality']
-    document.getElementById("dob").value = data['Date Of Birth']
-    document.getElementById("civil_expiry_date").value = data['Expiry Date']
-    document.getElementById("paci_no").value = data['PACI No.'] 
+    document.getElementById("name").value = data['front_text']['Name'];
+    document.getElementById("ar_name").value = data['front_text']['Arabic Name'];
+    document.getElementById("gender").value = data['front_text']['Gender']
+    document.getElementById("civilid").value = data['front_text']['Civil ID No.']
+    document.getElementById("country_code").value = data['front_text']['Nationality']
+    fetchNationality(data['front_text']['Nationality'])
+    document.getElementById("dob").value = data['front_text']['Date Of Birth']
+    document.getElementById("civil_expiry_date").value = data['front_text']['Expiry Date']
+    document.getElementById("paci_no").value = data['back_text']['PACI No.'] 
   }
 };
