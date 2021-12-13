@@ -2,7 +2,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 import frappe, json
-from frappe.utils import get_url, fmt_money, month_diff
+from frappe.utils import get_url, fmt_money, month_diff, add_days, add_years, getdate
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
 from frappe.modules import scrub
@@ -544,3 +544,23 @@ def create_new_work_permit(work_permit):
         wp.preparation = doc.preparation
     wp.save(ignore_permissions=True)
     return wp
+
+def update_leave_policy_assignments_expires_today():
+    '''
+        Method to create Leave Policy Assignment when existing one expires today
+    '''
+    # Get Active Leave Policy Assignment List thats ends today
+    leave_policy_assignments = frappe.db.get_list('Leave Policy Assignment', {'effective_to': getdate(today())})
+    for policy_assignment in leave_policy_assignments:
+        doc = frappe.get_doc('Leave Policy Assignment', policy_assignment.name)
+        # Check if the employee status not Left
+        if frappe.db.get_value('Employee', doc.employee, 'status') not in ['Left']:
+            leave_policy_assignment = frappe.new_doc('Leave Policy Assignment')
+            leave_policy_assignment.employee = doc.employee
+            leave_policy_assignment.effective_from = add_days(getdate(doc.effective_to), 1)
+            leave_policy_assignment.effective_to = add_years(getdate(leave_policy_assignment.effective_from), 1)
+            leave_policy_assignment.leave_policy = doc.leave_policy
+            leave_policy_assignment.carry_forward = doc.carry_forward
+            leave_policy_assignment.leaves_allocated = True
+            leave_policy_assignment.save(ignore_permissions=True)
+            leave_policy_assignment.submit()
