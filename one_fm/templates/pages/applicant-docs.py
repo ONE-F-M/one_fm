@@ -168,6 +168,84 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
     
     return result
 
+
+@frappe.whitelist(allow_guest=True)
+def get_passport_text(images):
+    try:
+        result = {}
+        
+        #initialize google vision client library
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
+        client = vision.ImageAnnotatorClient()
+        
+        # Load the Images
+        image_files = json.loads(images)
+
+        front_image_path = upload_image(image_files["front_side"],hashlib.md5((image_files["front_side"]).encode('utf-8')).hexdigest())
+        back_image_path = upload_image(image_files["back_side"],hashlib.md5((image_files["back_side"]).encode('utf-8')).hexdigest())
+
+        front_text = get_passport_front_text(front_image_path, client)
+        back_text = get_passport_back_text(back_image_path, client)
+        
+        result.update({'front_text': front_text})
+        result.update({'back_text': back_text})
+        
+        return result
+    
+    except Exception as e:
+        frappe.throw(e)
+
+def get_passport_front_text(image_path, client):
+    with io.open(image_path, 'rb') as image_file:
+        content = image_file.read()
+
+    image = vision.Image(content=content)
+
+    response = client.text_detection(image=image)  # returns TextAnnotation
+
+    texts = response.text_annotations
+    
+    result = {}
+    assemble = {}
+    index = 0
+    
+    for index in range(1,len(texts)):
+        assemble[index] = texts[index].description
+        
+    text_length = len(texts)
+    
+    result["Date of Issue"] = texts[text_length - 4].description
+    result["Date of Expiry"] = texts[text_length - 3].description
+    
+    mrz = texts[text_length - 1].description
+    
+    result["Passport Number"] = mrz.split("<")[0]
+        
+    return result
+
+def get_passport_back_text(image_path, client):
+    with io.open(image_path, 'rb') as image_file:
+        content = image_file.read()
+
+    image = vision.Image(content=content)
+
+    response = client.text_detection(image=image)  # returns TextAnnotation
+
+    texts = response.text_annotations
+    
+    result = {}
+    assemble = {}
+    index = 0
+    
+    for index in range(1,len(texts)):
+        assemble[index] = texts[index].description
+    
+    result["Place of Issue"] = ""
+    if find_index(assemble, "Place") and find_index(assemble, "of") and find_index(assemble, "Issue"):
+        result["Place of Issue"] = texts[find_index(assemble, "Issue") + 3].description
+        
+    return result
+
 def find_index(dictionary, word):
     for d in dictionary:
         if dictionary[d] == word:
