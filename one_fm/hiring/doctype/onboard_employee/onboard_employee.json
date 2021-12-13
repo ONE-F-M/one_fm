@@ -31,6 +31,7 @@
   "project",
   "operations_site",
   "operations_shift",
+  "leave_policy",
   "applicant_details_section",
   "gender",
   "date_of_birth",
@@ -128,7 +129,7 @@
   "pifss_form_103_section",
   "pifss_form_103",
   "pifss_form_103_docstatus",
-  "column_break_96",
+  "column_break_124",
   "pifss_form_103_status",
   "pifss_form_103_progress",
   "mgrp_section",
@@ -437,7 +438,7 @@
   },
   {
    "fieldname": "nationality_subject",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "Nationality Subject",
    "options": "\n\u0627\u0644\u0623\u0648\u0644\u064a\n\u0627\u0644\u062b\u0627\u0646\u064a\u0629\n\u0627\u0644\u062b\u0627\u0644\u062b\u0629\n\u0627\u0644\u0631\u0627\u0628\u0639\u0629\n\u0627\u0644\u062e\u0627\u0645\u0633\u0629\n\u0627\u0644\u0633\u0627\u0628\u0639\u0629\n\u0627\u0644\u062b\u0627\u0645\u0646\u0629"
   },
@@ -1022,6 +1023,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "fieldname": "informed_applicant",
    "fieldtype": "Check",
    "label": "Informed Applicant",
@@ -1029,6 +1031,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "depends_on": "informed_applicant",
    "fieldname": "applicant_attended",
    "fieldtype": "Check",
@@ -1044,6 +1047,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "fieldname": "user_created",
    "fieldtype": "Check",
    "label": "User Created",
@@ -1051,6 +1055,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "fieldname": "tools_needed_for_work",
    "fieldtype": "Check",
    "label": "Tools Needed for Work",
@@ -1195,6 +1200,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "fieldname": "is_g2g_fees_needed",
    "fieldtype": "Check",
    "label": "G2G Fees Needed"
@@ -1207,6 +1213,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "depends_on": "eval: doc.employee && doc.user_created",
    "fieldname": "inform_and_send_enrolment_details_to_employee",
    "fieldtype": "Check",
@@ -1215,6 +1222,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "depends_on": "eval: doc.employee && doc.user_created",
    "fieldname": "enrolled",
    "fieldtype": "Check",
@@ -1238,6 +1246,7 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "fieldname": "is_residency_fine_needed",
    "fieldtype": "Check",
    "label": "Residency Fine Needed"
@@ -1385,12 +1394,22 @@
    "fieldname": "repayment_start_date",
    "fieldtype": "Date",
    "label": "Repayment Start Date"
+  },
+  {
+   "fieldname": "leave_policy",
+   "fieldtype": "Link",
+   "label": "Leave Policy",
+   "options": "Leave Policy"
+  },
+  {
+   "fieldname": "column_break_124",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-12 23:53:59.160079",
+ "modified": "2021-12-13 04:43:40.955033",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
