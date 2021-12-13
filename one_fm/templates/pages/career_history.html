@@ -1,0 +1,27 @@
+{% extends "templates/web.html" %}
+
+{% block breadcrumbs %}
+  {% include "templates/includes/breadcrumbs.html" %}
+{% endblock %}
+
+{% block script %}
+  <script>{% include "templates/pages/career_history.js" %}</script>
+{% endblock %}
+
+{% block header %}
+  <h5 id="job_applicant" data="{{ job_applicant.name }}">Hey {{job_applicant.applicant_name}} !,
+		You’re Applying for {{job_applicant.one_fm_designation}} Position.</h5>
+	<h5>Enter all the details about your career in below form and tell us How great you’re!</h5>
+{% endblock %}
+
+{% block page_content %}
+	<br/>
+	<div class="row col-lg-12 col-md-12 mb-12 main_section">
+		
+	</div>
+
+	<br/>
+	<div class="col-sm-12">
+	<button class="btn btn-primary btn-sm btn-submit-career-history" type="button">{{ _("Submit") }}</button>
+	</div>
+{% endblock %}
