@@ -42,15 +42,11 @@
                             <div class="row">
                                 <div class="form-group col-md-6">
                                     <label  for="file">Upload Front Side of your civil ID:</label>
-                                    <input class="form-control input" type="file" id="front_cid" placeholder="Front Civil ID" onchange="front_civil_extract(this)" name="file"  accept="image/png, image/jpeg" >
-                                    <div class="custom-control custom-checkbox checkbox-xl">
-                                        <input type="checkbox" class="custom-control-input" id="noCivilID" >
-                                        <label class="custom-control-label" for="noCivilID">No Civil ID</label>
-                                    </div>
+                                    <input class="form-control input" type="file" id="front_cid" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg" >
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label  for="file">Upload Back Side of your civil ID:</label>
-                                    <input class="form-control input" type="file" id="back_cid" placeholder="Back Civil ID" onchange="back_civil_extract(this)" name="file"  accept="image/png, image/jpeg" >
+                                    <input class="form-control input" type="file" id="back_cid" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg" >
                                     <br>
                                 </div>
                             </div>
@@ -58,15 +54,11 @@
                             <div class="row">
                                     <div class="form-group col-md-6">
                                         <label  for="file">Upload Front Side of your passport:</label>
-                                        <input class="form-control input" type="file" id="front_passport" placeholder="Front Passport" onchange="front_passport_extract(this)" name="file"  accept="image/png, image/jpeg" >
-                                    <div class="custom-control custom-checkbox checkbox-xl">
-                                        <input type="checkbox" class="custom-control-input" id="noPassport" >
-                                        <label class="custom-control-label" for="noPassport">No Passport</label>
-                                    </div>
+                                        <input class="form-control input" type="file" id="front_passport" placeholder="Front Passport"  name="file"  accept="image/png, image/jpeg" >
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="file">Upload Back Side of your passport:</label>
-                                        <input class="form-control input" type="file" id="back_passport" placeholder="Back Passport" onchange="back_passport_extract(this)" name="file"  accept="image/png, image/jpeg" >
+                                        <input class="form-control input" type="file" id="back_passport" placeholder="Back Passport"  name="file"  accept="image/png, image/jpeg" >
                                         <br>
                                     </div>
                             </div>
@@ -83,7 +75,7 @@
             </div>
                 <br><br>
 
-                <div  id="finalForm" style="display: none;">
+                <div  id="finalForm">
 
                 <div class="row rounded">
 
@@ -104,22 +96,22 @@
                             <form class="form">
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label  for="name">Name:
-                                        <input class="form-control input" type="text" id="name" name="name" ></label><br><br>
+                                        <label  for="Name">Name:
+                                        <input class="form-control input" type="text" id="Name" name="name" ></label><br><br>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="ar_name">Name(ar):
-                                        <input class="form-control input" type="text" id="ar_name" name="ar_name" ></label><br><br>
+                                        <label  for="Arabic_Name">Name(ar):
+                                        <input class="form-control input" type="text" id="Arabic_Name" name="ar_name" ></label><br><br>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label  for="gender">Gender
-                                        <input class="form-control input" type="text" id="gender" name="gender" ></label><br><br>
+                                        <label  for="Gender">Gender
+                                        <input class="form-control input" type="text" id="Gender" name="gender" ></label><br><br>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="dob">Date Of Birth:
-                                        <input class="form-control input" type="date" id="dob" onchange="test(this)" name="dob" ></label><br><br>
+                                        <label  for="Date_Of_Birth">Date Of Birth:
+                                        <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" ></label><br><br>
 
                                     </div>   
 
@@ -128,69 +120,69 @@
 
                                 <div class="row">
                                     <div class="form-group col-md-6">        
-                                        <label for="civilid">Civil ID Number:
-                                        <input class="form-control input" type="text" id="civilid" name="civilid" ></label><br><br>
+                                        <label for="Civil_ID_No">Civil ID Number:
+                                        <input class="form-control input" type="text" id="Civil_ID_No" name="civilid" ></label><br><br>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="civil_expiry_date">Civil ID Expiry Date:
-                                        <input class="form-control input" type="date" id="civil_expiry_date" name="civil_expiry_date" ><br><br>
+                                        <label  for="Expiry_Date">Civil ID Expiry Date:
+                                        <input class="form-control input" type="date" id="Expiry_Date" name="civil_expiry_date" ><br><br>
                                     </div>   
                                 </div>
 
                                 <div class="row">
                                     <div class="form-group col-md-4">
-                                        <label  for="nationality">Nationality:
-                                        <select class="form-control input2" id="nationality" name="nationality" aria-placeholder="Select Your Nationality">
+                                        <label  for="Nationality">Nationality:
+                                        <select class="form-control input2" id="Nationality" name="nationality" aria-placeholder="Select Your Nationality">
                                             <option value="select" selected disabled>Select Your Nationality</option>
                                         </select></label><br>  <br>                          
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label  for="country_code">Country Code:
-                                        <input class="form-control input2" type="text" id="country_code" name="country_code" onchange="fetchNationality(this)" ></label><br>  <br>                          
+                                        <label  for="Country_Code">Country Code:
+                                        <input class="form-control input2" type="text" id="Country_Code" name="country_code" onchange="fetchNationality(this)" ></label><br>  <br>                          
                                     </div> 
                                     <div class="form-group col-md-4">
-                                        <label  for="birth_place">Place of Birth:
-                                        <input class="form-control input2" type="text" id="birth_place" name="birth_place" ></label><br>  <br>                          
+                                        <label  for="Birth_Place">Place of Birth:
+                                        <input class="form-control input2" type="text" id="Birth_Place" name="birth_place" ></label><br>  <br>                          
                                     </div>
                                     
                                 </div>
 
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label  for="paci_no">PACI No.:
-                                        <input class="form-control input" type="text" id="paci_no" name="paci_no" ></label><br>  <br>                          
+                                        <label  for="PACI_No">PACI No.:
+                                        <input class="form-control input" type="text" id="PACI_No" name="paci_no" ></label><br>  <br>                          
                                     </div> 
 
                                     <div class="form-group col-md-6" style="display: none;">
-                                        <label  for="sponsor">Sponsor
-                                        <input class="form-control input" type="text" id="sponsor" name="sponsor" ></label><br><br>
+                                        <label  for="Sponsor">Sponsor
+                                        <input class="form-control input" type="text" id="Sponsor" name="sponsor" ></label><br><br>
                                     </div>
                                       
                                 </div> 
 
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label  for="passport_no">Passport Number
-                                        <input class="form-control input" type="text" id="passport_no" name="passport_no" ></label><br><br>
+                                        <label  for="Passport_Number">Passport Number
+                                        <input class="form-control input" type="text" id="Passport_Number" name="passport_no" ></label><br><br>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="passport_type">Passport Type:
-                                        <input class="form-control input" type="text" id="passport_type" name="passport_type" ></label><br><br>
+                                        <label  for="Passport_Type">Passport Type:
+                                        <input class="form-control input" type="text" id="Passport_Type" name="passport_type" ></label><br><br>
                                     </div>
                                 </div> 
 
                                 <div class="row">
                                     <div class="form-group col-md-4">
-                                        <label  for="p_date_of_issue">Passport Date of Issue:
-                                        <input class="form-control input2" type="date" id="p_date_of_issue" name="p_date_of_issue" ></label><br><br>
+                                        <label  for="Passport_Date_of_Issue">Passport Date of Issue:
+                                        <input class="form-control input2" type="date" id="Passport_Date_of_Issue" name="p_date_of_issue" ></label><br><br>
                                     </div> 
                                     <div class="form-group col-md-4">
-                                        <label  for="passport_expiry_date">Passport Expiry Date:
-                                        <input class="form-control input2" type="date" id="passport_expiry_date" name="passport_expiry_date" ></label><br><br>
+                                        <label  for="Passport_Date_of_Expiry">Passport Expiry Date:
+                                        <input class="form-control input2" type="date" id="Passport_Date_of_Expiry" name="passport_expiry_date" ></label><br><br>
                                     </div>  
                                     <div class="form-group col-md-4">
-                                        <label  for="p_place_of_issue">Passport Place of Issue:
-                                        <input class="form-control input2" type="text" id="p_place_of_issue" name="p_place_of_issue" ></label><br><br>
+                                        <label  for="Passport_Place_of_Issue">Passport Place of Issue:
+                                        <input class="form-control input2" type="text" id="Passport_Place_of_Issue" name="p_place_of_issue" ></label><br><br>
                                     </div> 
                                 </div>
                             
