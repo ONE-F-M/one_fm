@@ -110,8 +110,8 @@ function upload(){
   //front_civil , back_civil, front_passport, back_passport
 
   if(!civilid_check){
-    if (front && back){
-      image = {front_side:front, back_side:back};
+    if (front_civil && back_civil){
+      image = {front_side:front_civil, back_side:back_civil};
       frappe.call({
         type: "GET",
         method: "one_fm.templates.pages.applicant-docs.get_civil_id_text",
