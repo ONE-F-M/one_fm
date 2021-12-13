@@ -83,12 +83,15 @@ function populate_nationality(){
     type: "GET",
     method: "one_fm.templates.pages.applicant-docs.populate_nationality",
     callback: function(r) {
-
       langArray = r.message;
-      var select = document.getElementById("nationality");
-      for (let i=0; i<=langArray.length;i++) {
-        select.options[select.options.length] = new Option(langArray[i], langArray[i]);
+      console.log(langArray)
+      if(langArray){
+        var select = document.getElementById("nationality");
+        for (let i=0; i<=langArray.length;i++) {
+          select.options[select.options.length] = new Option(langArray[i], langArray[i]);
      }
+
+      }
     }
   }); 
 }
@@ -99,8 +102,13 @@ function fetchNationality(code){
     method: "one_fm.templates.pages.applicant-docs.fetch_nationality",
     args: {code :code},
     callback: function(r) {
-      console.log(r)
-      document.getElementById("nationality").value = r.message;
+      if(r.message){
+        document.getElementById("nationality").value = r.message;
+      }
+      else{
+        document.getElementById("nationality").value = "";
+      }
+      
     }
   }); 
 }
@@ -109,23 +117,15 @@ function upload(){
   civilid_check = document.getElementById("noCivilID").checked;
   //civilid_check = document.getElementById("noPassport").checked;
   //front_civil , back_civil, front_passport, back_passport
-<<<<<<< HEAD
-  {/*
-=======
 
->>>>>>> 4129a86a (Resolve Conflicts)
+  populate_nationality()
   if(!civilid_check){
     if (front_civil && back_civil){
       image = {front_side:front_civil, back_side:back_civil};
       frappe.call({
         type: "GET",
-<<<<<<< HEAD
-        method: "one_fm.templates.pages.applicant-docs.fetch_text_for_kuwaiti_civilid",
-        args: {image :JSON.stringify(image)},
-=======
         method: "one_fm.templates.pages.applicant-docs.get_civil_id_text",
         args: {images :JSON.stringify(image), is_kuwaiti: is_kuwaiti},
->>>>>>> 4129a86a (Resolve Conflicts)
         callback: function(r) {
           console.log(r)
           if(r && r.message){
@@ -145,7 +145,6 @@ function upload(){
     document.getElementById("finalForm").style.display = "block";   
     document.getElementById("output_message").innerHTML = "Kindly fill in the following form and correct if any mistakes!";
   }
-  */}
   
   console.log("End");
 };
