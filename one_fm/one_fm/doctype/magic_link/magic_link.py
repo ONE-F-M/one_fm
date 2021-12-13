@@ -30,7 +30,7 @@ def get_magic_link(doctype, name, link_for):
 		return Magic Link ID
 	'''
 
-	# Check if magic_link exisit for the given doctype and not expired
+	# Check if magic_link exists for the given doctype and not expired
 	magic_link = frappe.db.exists('Magic link',
 		{'reference_doctype': doctype, 'reference_docname': name, 'expired': False, 'link_for': link_for})
 
@@ -76,7 +76,7 @@ def authorize_magic_link(encrypted_magic_link, doctype, link_for):
 		'''
 		decrypted_magic_link = decrypt(encrypted_magic_link)
 	except Exception as e:
-		frappe.throw(_("Not Permitted ! Magic Link is Not exisit !!"), frappe.PermissionError)
+		frappe.throw(_("Not Permitted ! Magic Link is Not exists !!"), frappe.PermissionError)
 
 	if decrypted_magic_link:
 		magic_link_exists = frappe.db.exists('Magic Link',
@@ -85,7 +85,7 @@ def authorize_magic_link(encrypted_magic_link, doctype, link_for):
 		if magic_link_exists:
 			return magic_link_exists
 		else:
-			frappe.throw(_("Not Permitted ! Magic Link is Expired or Not exisit!!"), frappe.PermissionError)
+			frappe.throw(_("Not Permitted ! Magic Link is Expired or Not exists !!"), frappe.PermissionError)
 
 def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subject):
 	'''
@@ -99,7 +99,7 @@ def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subjec
 		msg: Message content to the Recipients without the magic link
 		subject: Subject of the email
 	'''
-	# Check if magic_link exisit for the Job Applicant and not expired
+	# Check if magic_link exists for the Job Applicant and not expired
 	magic_link = get_magic_link(doctype, name, link_for)
 	if magic_link:
 		# Encrypt the magic link benfore send
