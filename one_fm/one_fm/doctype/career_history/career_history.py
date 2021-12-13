@@ -91,11 +91,11 @@ class CareerHistory(Document):
 
 		for company in start_date_in_company:
 			start_date = start_date_in_company[company]
-			if end_date_in_company[company]:
+			if company in end_date_in_company:
 				total_months_of_experience += month_diff(getdate(end_date_in_company[company]), getdate(start_date))-1
-			if promotions[company]:
+			if company in promotions:
 				total_number_of_promotions += len(promotions[company])-1
-			if salary_hikes[company]:
+			if company in salary_hikes:
 				total_number_of_salary_changes += len(salary_hikes[company])-1
 		self.total_number_of_promotions_and_salary_changes = total_number_of_promotions+total_number_of_salary_changes
 		if total_months_of_experience:
