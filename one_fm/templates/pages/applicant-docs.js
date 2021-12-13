@@ -6,15 +6,11 @@ frappe.ready = function (fn) {
 window.dev_server = {{dev_server}};
 window.socketio_port = {{frappe.socketio_port}};
 
-var civil_id_text, passport_text;
-
 var is_kuwaiti = 0;
 let civil_id_image = new FormData();
 let passport_image = new FormData();
 
 function extract_image(){
-  //var front_civil_id = document.getElementById("front_cid").files[0];
-  //var back_civil_id = document.getElementById("back_cid").files[0];
   extract(document.getElementById("front_cid").files[0],"Civil_ID","front_civil")
   extract(document.getElementById("back_cid").files[0],"Civil_ID","back_civil")
   extract(document.getElementById("front_passport").files[0],"Passport","front_passport")
@@ -133,7 +129,6 @@ function upload(){
       };
     }
   });
-  //console.log("End");
 };
 
 

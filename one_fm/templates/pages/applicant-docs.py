@@ -45,8 +45,8 @@ def get_civil_id_text():
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()
        
-        front_civil = frappe.local.form_dict['front_civil']
-        back_civil = frappe.local.form_dict['back_civil']
+        front_civil = frappe.local.form_dict['front']
+        back_civil = frappe.local.form_dict['back']
         is_kuwaiti = frappe.local.form_dict['is_kuwaiti']
 
         # Load the Images
@@ -190,9 +190,9 @@ def get_passport_text():
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()
         
-        front_passport = frappe.local.form_dict['front_passport']
-        back_passport = frappe.local.form_dict['back_passport']
-
+        front_passport = frappe.local.form_dict['front']
+        back_passport = frappe.local.form_dict['back']
+        
         front_image_path = upload_image(front_passport,hashlib.md5(front_passport.encode('utf-8')).hexdigest())
         back_image_path = upload_image(back_passport,hashlib.md5(back_passport.encode('utf-8')).hexdigest())
 
