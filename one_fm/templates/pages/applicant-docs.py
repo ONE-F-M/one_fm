@@ -6,7 +6,9 @@ import json
 import base64
 import datetime
 import hashlib
+
 from dateutil.parser import parse
+
 
 @frappe.whitelist(allow_guest=True)
 def populate_nationality():

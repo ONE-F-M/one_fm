@@ -8,6 +8,7 @@ window.socketio_port = {{frappe.socketio_port}};
 
 var front_civil , back_civil, front_passport, back_passport;
 var civil_id_text, passport_text;
+
 var is_kuwaiti = 0;
 function front_civil_extract(input){
     let file = input.files[0];
@@ -22,7 +23,9 @@ function front_civil_extract(input){
     };
 
     reader.onerror = function() {
+
       //console.log(reader.error);
+
     };
 
 };
@@ -40,6 +43,7 @@ function back_civil_extract(input){
 
     reader.onerror = function() {
       //console.log(reader.error);
+
     };
 };
 
@@ -55,7 +59,9 @@ function front_passport_extract(input){
   };
 
   reader.onerror = function() {
+
     //console.log(reader.error);
+
   };
 };
 
@@ -71,12 +77,16 @@ function back_passport_extract(input){
   };
 
   reader.onerror = function() {
+
     //console.log(reader.error);
+
   };
 };
 function test(input){
 var date = input.value;
+
 //console.log(date)
+
 }
 
 function populate_nationality(){
@@ -113,6 +123,7 @@ function fetchNationality(code){
   }); 
 }
 function upload(){
+
   populate_nationality()
   civilid_check = document.getElementById("noCivilID").checked;
   passport_check = document.getElementById("noPassport").checked;
@@ -122,6 +133,7 @@ function upload(){
   if(is_kuwaiti==1){
     document.getElementById("sponsor").style.display = "block"; 
   }
+
   if(!civilid_check){
     if (front_civil && back_civil){
       image = {front_side:front_civil, back_side:back_civil};
@@ -138,7 +150,7 @@ function upload(){
             //console.log(r.message)
           }
           else{
-            //console.log("Error");
+            console.log("Error");
           }
         }
       });  
@@ -164,7 +176,8 @@ function upload(){
             //console.log(r.message)
           }
           else{
-            //console.log("Error");
+            console.log("Error");
+
           }
         }
       });  
