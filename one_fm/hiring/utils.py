@@ -188,6 +188,28 @@ def employee_after_insert(doc, method):
     create_salary_structure_assignment(doc, method)
     update_erf_close_with(doc)
     create_wp_for_transferable_employee(doc)
+    create_leave_policy_assignment(doc)
+
+def create_leave_policy_assignment(doc):
+    '''
+        Method to create Leave Policy Assignment for an Employee, if employee have a Leave Policy
+        Create Leave Policy based on Joining Date
+        args:
+            doc: Employee Object
+    '''
+    if doc.leave_policy:
+        assignment = frappe.new_doc("Leave Policy Assignment")
+        assignment.employee = doc.name
+        assignment.assignment_based_on = 'Joining Date'
+        assignment.leave_policy = doc.leave_policy
+        assignment.effective_from = doc.date_of_joining
+        assignment.effective_to = add_year(doc.date_of_joining, 1)
+        assignment.carry_forward = True
+        assignment.save()
+        try:
+            assignment.submit()
+        except frappe.exceptions.ValidationError:
+            continue
 
 def create_wp_for_transferable_employee(doc):
     """
