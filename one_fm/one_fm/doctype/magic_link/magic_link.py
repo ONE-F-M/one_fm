@@ -67,18 +67,23 @@ def authorize_magic_link(encrypted_magic_link, doctype, link_for):
 
 		return Magic Link ID (example: ML.000001)
 	'''
+	# Set decrypted_magic_link as false to initialize
 	decrypted_magic_link = False
 	try:
+		'''
+			Set decrypted_magic_link as the decripted value (example: ML.000001, the magic link ID)
+			If the encrypted_magic_link is dirty then decrypt method will raise an exceptions
+		'''
 		decrypted_magic_link = decrypt(encrypted_magic_link)
 	except Exception as e:
 		frappe.throw(_("Not Permitted ! Magic Link is Not exisit !!"), frappe.PermissionError)
 
 	if decrypted_magic_link:
-		magic_link_exist = frappe.db.exists('Magic Link',
+		magic_link_exists = frappe.db.exists('Magic Link',
 			{'name': decrypted_magic_link, 'expired': False, 'reference_doctype': doctype, 'link_for': link_for})
 
-		if magic_link_exist:
-			return magic_link_exist
+		if magic_link_exists:
+			return magic_link_exists
 		else:
 			frappe.throw(_("Not Permitted ! Magic Link is Expired or Not exisit!!"), frappe.PermissionError)
 
