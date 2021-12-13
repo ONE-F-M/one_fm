@@ -82,6 +82,7 @@ class OnboardEmployee(Document):
 				employee.one_fm_first_name_in_arabic = employee.employee_name
 
 				employee.permanent_address = "Test"
+				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
 				employee.one_fm_pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
 				employee.reports_to = self.reports_to
 				employee.save(ignore_permissions=True)

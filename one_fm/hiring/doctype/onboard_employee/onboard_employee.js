@@ -141,7 +141,13 @@ var calculate_g2g_and_residency_total = function(frm) {
 };
 
 var set_filters = function(frm) {
-
+	frm.set_query('leave_policy', function() {
+		return {
+			filters: {
+				"docstatus": 1
+			}
+		};
+	});
 };
 
 var create_custom_buttons = function(frm) {

@@ -144,7 +144,7 @@
   "new_bank_account_needed",
   "attach_bank_form",
   "btn_create_bank_account",
-  "column_break_96",
+  "column_break_139",
   "bank_account_name",
   "bank_account",
   "bank_account_status",
@@ -188,7 +188,8 @@
   "request_for_material",
   "request_for_material_status",
   "request_for_material_docstatus",
-  "request_for_material_progress"
+  "request_for_material_progress",
+  "column_break_96"
  ],
  "fields": [
   {
@@ -1396,6 +1397,7 @@
    "label": "Repayment Start Date"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "leave_policy",
    "fieldtype": "Link",
    "label": "Leave Policy",
@@ -1404,12 +1406,16 @@
   {
    "fieldname": "column_break_124",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_139",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-13 04:43:40.955033",
+ "modified": "2021-12-13 19:30:04.092305",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
