@@ -83,12 +83,15 @@ function populate_nationality(){
     type: "GET",
     method: "one_fm.templates.pages.applicant-docs.populate_nationality",
     callback: function(r) {
-
       langArray = r.message;
-      var select = document.getElementById("nationality");
-      for (let i=0; i<=langArray.length;i++) {
-        select.options[select.options.length] = new Option(langArray[i], langArray[i]);
+      console.log(langArray)
+      if(langArray){
+        var select = document.getElementById("nationality");
+        for (let i=0; i<=langArray.length;i++) {
+          select.options[select.options.length] = new Option(langArray[i], langArray[i]);
      }
+
+      }
     }
   }); 
 }
@@ -99,8 +102,13 @@ function fetchNationality(code){
     method: "one_fm.templates.pages.applicant-docs.fetch_nationality",
     args: {code :code},
     callback: function(r) {
-      console.log(r)
-      document.getElementById("nationality").value = r.message;
+      if(r.message){
+        document.getElementById("nationality").value = r.message;
+      }
+      else{
+        document.getElementById("nationality").value = "";
+      }
+      
     }
   }); 
 }
@@ -108,7 +116,7 @@ function upload(){
   civilid_check = document.getElementById("noCivilID").checked;
   //civilid_check = document.getElementById("noPassport").checked;
   //front_civil , back_civil, front_passport, back_passport
-
+  populate_nationality()
   if(!civilid_check){
     if (front_civil && back_civil){
       image = {front_side:front_civil, back_side:back_civil};
