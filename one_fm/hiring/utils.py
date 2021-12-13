@@ -205,11 +205,9 @@ def create_leave_policy_assignment(doc):
         assignment.effective_from = doc.date_of_joining
         assignment.effective_to = add_year(doc.date_of_joining, 1)
         assignment.carry_forward = True
+        assignment.leaves_allocated = True # Since Leaves will be allocated from ONE FM Scheduler
         assignment.save()
-        try:
-            assignment.submit()
-        except frappe.exceptions.ValidationError:
-            continue
+        assignment.submit()
 
 def create_wp_for_transferable_employee(doc):
     """
