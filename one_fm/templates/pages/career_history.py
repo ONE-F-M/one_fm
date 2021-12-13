@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import frappe, json
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import get_url
+from frappe.utils import get_url, getdate, today
 from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
 
 def get_context(context):
@@ -18,16 +18,56 @@ def get_context(context):
     context.country_list = frappe.get_all('Country', fields=['name'])
 
 @frappe.whitelist(allow_guest=True)
-def create_career_history_from_portal(job_applicant):
+def create_career_history_from_portal(job_applicant, career_history_details):
     '''
         Method to create Career History from Portal
         args:
             job_applicant: Job Applicant ID
-            career_history_details:
+            career_history_details: Career History details as json
         Return Boolean
     '''
     # Create Career History
+    career_history = frappe.new_doc('Career History')
+    career_history.job_applicant = job_applicant
+
+    career_histories = json.loads(career_history_details)
+    for history in career_histories:
+        career_history_fields = ['company_name', 'country_of_employment', 'start_date', 'responsibility_one',
+            'responsibility_two', 'responsibility_three', 'job_title', 'monthly_salary_in_kwd']
+
+        company = career_history.append('career_history_company')
+        for field in career_history_fields:
+            company.set(field, history.get(field))
+
+        last_job_title = history.get('job_title')
+        last_salary = history.get('monthly_salary_in_kwd')
+        for promotion in history.get('promotions'):
+            company = career_history.append('career_history_company')
+            company.company_name = history.get('company_name')
+            company.job_title = last_job_title
+            if promotion.get('job_title'):
+                company.job_title = promotion.get('job_title')
+                last_job_title = promotion.get('job_title')
+            company.monthly_salary_in_kwd = last_salary
+            if promotion.get('monthly_salary_in_kwd'):
+                company.monthly_salary_in_kwd = promotion.get('monthly_salary_in_kwd')
+                last_salary = promotion.get('monthly_salary_in_kwd')
+            company.start_date = getdate(promotion.get('start_date'))
+        if history.get('left_the_company'):
+            company.end_date = history.get('left_the_company')
+        if history.get('reason_for_leaving_job'):
+            company.end_date = today()
+            company.why_do_you_plan_to_leave_the_job = history.get('reason_for_leaving_job')
+
+    career_history.save(ignore_permissions=True)
+    set_expire_magic_link(job_applicant)
     return True
+
+def set_expire_magic_link(job_applicant):
+    magic_link = frappe.db.exists('Magic Link', {'reference_doctype': 'Job Applicant',
+        'reference_docname': job_applicant, 'link_for': 'Career History', 'expired': False})
+    if magic_link:
+        frappe.db.set_value('Magic Link', magic_link, 'expired', True)
 
 @frappe.whitelist()
 def send_career_history_magic_link(job_applicant):
