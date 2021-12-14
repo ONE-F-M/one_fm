@@ -67,17 +67,22 @@ class OnboardEmployee(Document):
 	@frappe.whitelist()
 	def create_employee(self):
 		if self.duty_commencement_status == 'Applicant Signed and Uploaded':
+			if not self.leave_policy:
+				frappe.throw(_("Select Leave Policy before Creating Employee!"))
 			if not self.reports_to:
 				frappe.throw(_("Select reports to user!"))
 			elif self.job_offer:
 				employee = make_employee_from_job_offer(self.job_offer)
 				employee.reports_to = self.reports_to
 				if not employee.one_fm_civil_id:
-					employee.one_fm_civil_id = 'dsdsf' #self.civil_id
+					employee.one_fm_civil_id = self.civil_id
 				if not employee.one_fm_nationality:
 					employee.one_fm_nationality = self.nationality
+				employee.leave_policy = self.leave_policy
 				employee.one_fm_first_name_in_arabic = employee.employee_name
+
 				employee.permanent_address = "Test"
+				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
 				employee.one_fm_pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
 				employee.reports_to = self.reports_to
 				employee.save(ignore_permissions=True)
