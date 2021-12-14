@@ -1,5 +1,5 @@
 import os, io
-# from google.cloud import vision
+from google.cloud import vision
 import frappe
 from frappe.utils import cstr
 import json
