@@ -1,4 +1,3 @@
-window.frappe = {};
 frappe.ready_events = [];
 frappe.ready = function (fn) {
     frappe.ready_events.push(fn);
@@ -6,7 +5,7 @@ frappe.ready = function (fn) {
 window.dev_server = {{dev_server}};
 window.socketio_port = {{frappe.socketio_port}};
 
-var is_kuwaiti = 0;
+var is_kuwaiti = $('#Name').attr('is_kuwaiti');
 let civil_id_image = new FormData();
 let passport_image = new FormData();
 
@@ -45,7 +44,7 @@ function extract(file, type, key){
 function populate_nationality(){
   frappe.call({
     type: "GET",
-    method: "one_fm.templates.pages.applicant-docs.populate_nationality",
+    method: "one_fm.templates.pages.applicant_docs.populate_nationality",
     callback: function(r) {
       langArray = r.message;
       if(langArray){
@@ -62,7 +61,7 @@ function populate_nationality(){
 function fetchNationality(code){
   frappe.call({
     type: "GET",
-    method: "one_fm.templates.pages.applicant-docs.fetch_nationality",
+    method: "one_fm.templates.pages.applicant_docs.fetch_nationality",
     args: {code :code},
     callback: function(r) {
       if(r.message){
@@ -110,15 +109,15 @@ function upload(){
   populate_nationality();
 
   var method_map = {
-    'civil_id': '/api/method/one_fm.templates.pages.applicant-docs.get_civil_id_text',
-    'passport': '/api/method/one_fm.templates.pages.applicant-docs.get_passport_text'
+    'civil_id': '/api/method/one_fm.templates.pages.applicant_docs.get_civil_id_text',
+    'passport': '/api/method/one_fm.templates.pages.applicant_docs.get_passport_text'
   }
 
   civil_id_image.append("is_kuwaiti",is_kuwaiti)
 
   frappe.call({
     type: "GET",
-    method: "one_fm.templates.pages.applicant-docs.token",
+    method: "one_fm.templates.pages.applicant_docs.token",
     callback: function(r) {
       var token = r.message
       if (civil_id_image){
@@ -188,7 +187,7 @@ function Submit(){
         frappe.unfreeze();
         frappe.msgprint(frappe._("Succesfully Submitted your Details and our HR team will be responding to you soon."));
         if(r.message){
-          window.location.href = "/applicant-docs";
+          window.location.href = "/applicant_docs";
         }
       }
     });

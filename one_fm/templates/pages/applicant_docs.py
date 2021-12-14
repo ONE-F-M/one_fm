@@ -1,5 +1,5 @@
-import os, io
 from google.cloud import vision
+import os, io
 import frappe
 from frappe.utils import cstr
 import json
@@ -18,7 +18,11 @@ def get_context(context):
     magic_link = authorize_magic_link(frappe.form_dict.magic_link, 'Job Applicant', 'Job Applicant')
     if magic_link:
         # Find Job Applicant from the magic link
-        context.job_applicant = frappe.get_doc('Job Applicant', frappe.db.get_value('Magic Link', magic_link, 'reference_docname'))
+        job_applicant = frappe.get_doc('Job Applicant', frappe.db.get_value('Magic Link', magic_link, 'reference_docname'))
+        context.job_applicant = job_applicant
+        context.is_kuwaiti = 0
+        if job_applicant.nationality == 'Kuwaiti':
+            context.is_kuwaiti = 1
 
 @frappe.whitelist(allow_guest=True)
 def populate_nationality():
@@ -60,8 +64,8 @@ def get_civil_id_text():
 
         # Load the Images
 
-        front_image_path = upload_image(front_civil,"image1.png")
-        back_image_path = upload_image(back_civil,"image2.png")
+        front_image_path = upload_image(front_civil, hashlib.md5(front_civil.encode('utf-8')).hexdigest())
+        back_image_path = upload_image(back_civil, hashlib.md5(back_civil.encode('utf-8')).hexdigest())
 
         front_text = get_front_side_civil_id_text(front_image_path, client, is_kuwaiti)
         back_text = get_back_side_civil_id_text(back_image_path, client, is_kuwaiti)
@@ -324,7 +328,7 @@ def send_applicant_doc_magic_link(job_applicant):
     if applicant_email:
         # Email Magic Link to the Applicant
         subject = "Fill More Details"
-        url_prefix = "/applicant-docs?magic_link="
+        url_prefix = "/applicant_docs?magic_link="
         msg = "<b>Fill more details like your passport detaisl by clciking on the magic link below</b>"
         send_magic_link('Job Applicant', job_applicant, 'Job Applicant', [applicant_email], url_prefix, msg, subject)
     else:
