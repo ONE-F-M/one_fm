@@ -148,17 +148,18 @@ function fill_form(data, type){
       input_data(data,'front_text','Date_Of_Birth');
       input_data(data,'front_text','Expiry_Date');
       input_data(data,'back_text','PACI_No');
+      input_data(data,'front_text','Passport_Number');
       if(data['front_text']['Country_Code'] != undefined){
         fetchNationality(data['front_text']['Country_Code']);
       }
-      if(is_kuwaiti==1){
-        document.getElementById("Sponsor").style.display = "block"; 
+      if(is_kuwaiti==0){
+        document.getElementById("Sponsor_Name").style.display = "block"; 
+        input_data(data,'back_text','Sponsor_Name');
       }      
     }
     else if(type == "Passport"){
       input_data(data,'front_text','Passport_Date_of_Issue');
       input_data(data,'front_text','Passport_Date_of_Expiry');
-      input_data(data,'front_text','Passport_Number');
       input_data(data,'back_text','Passport_Place_of_Issue');
     }
   }
