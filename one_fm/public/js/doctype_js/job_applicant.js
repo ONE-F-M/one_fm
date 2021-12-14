@@ -48,6 +48,9 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__('Create'), function() {
 				create_career_history(frm);
 			}, __('Career History'));
+			frm.add_custom_button(__('Send Magic Link'), function() {
+				send_career_history_magic_link(frm);
+			}, __('Career History'));
 			frm.add_custom_button(__('View'), function() {
         view_career_history(frm);
       }, __('Career History'));
@@ -404,7 +407,7 @@ frappe.ui.form.on('Job Applicant', {
 						'name': frm.doc.name,
 						},
 					callback:function(r){
-						
+
 						frm.set_df_property('one_fm_signatory_name', "options", r.message[0]);
 						frm.set_value('one_fm_pam_authorized_signatory',r.message[1]);
 						frm.refresh_field("one_fm_pam_authorized_signatory");
@@ -745,6 +748,20 @@ var view_interview = function(frm) {
 var create_career_history = function(frm) {
   frappe.route_options = {"job_applicant": frm.doc.name};
 	frappe.new_doc("Career History");
+};
+
+var send_career_history_magic_link = function(frm) {
+	frappe.call({
+		method: 'one_fm.templates.pages.career_history.send_career_history_magic_link',
+		args: {'job_applicant': frm.doc.name},
+		callback: function(r) {
+			if(r && r.message){
+				frappe.msgprint(__("Succesfully Send the Magic Link"));
+			}
+		},
+		freeze: true,
+		freeze_message: __("Sending the magic link ..!")
+	});
 };
 
 var view_best_reference = function(frm) {

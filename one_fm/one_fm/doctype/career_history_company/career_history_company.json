@@ -11,26 +11,17 @@
   "monthly_salary_in_kwd",
   "country_of_employment",
   "column_break_4",
-  "job_start_date",
-  "job_end_date",
-  "years_of_experience_str",
-  "years_of_experience",
+  "start_date",
+  "end_date",
   "responsibilities_and_accomplishment_section",
   "responsibility_one",
   "responsibility_two",
-  "column_break_11",
   "responsibility_three",
+  "column_break_11",
   "major_accomplishment",
-  "promotions_and_salary_section",
-  "did_you_get_any_promotion",
-  "total_promotions",
-  "recruiter_validation_score_promotion",
-  "column_break_18",
-  "did_you_get_any_salary_increase",
-  "total_salary_changes",
-  "recruiter_validation_score_salary_change",
-  "section_break_29",
+  "section_break_18",
   "did_you_leave_the_job",
+  "column_break_20",
   "reason_for_leaving_job",
   "why_do_you_plan_to_leave_the_job"
  ],
@@ -46,27 +37,7 @@
    "fieldname": "job_title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Job Title",
-   "reqd": 1
-  },
-  {
-   "fieldname": "job_start_date",
-   "fieldtype": "Date",
-   "label": "Job Start Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "job_end_date",
-   "fieldtype": "Date",
-   "label": "Job End Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "years_of_experience",
-   "fieldtype": "Float",
-   "hidden": 1,
-   "label": "Years Of Experience",
-   "read_only": 1
+   "label": "Job Title"
   },
   {
    "fieldname": "column_break_4",
@@ -99,54 +70,8 @@
   {
    "description": "Please describe a major accomplishment while you worked here",
    "fieldname": "major_accomplishment",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Major Accomplishment"
-  },
-  {
-   "default": "No",
-   "fieldname": "did_you_get_any_promotion",
-   "fieldtype": "Select",
-   "label": "Did you get any Promotion",
-   "options": "Yes\nNo"
-  },
-  {
-   "depends_on": "eval:doc.did_you_get_any_promotion == 'Yes'",
-   "fieldname": "total_promotions",
-   "fieldtype": "Int",
-   "label": "Total Promotions",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_18",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.did_you_get_any_promotion == 'Yes'",
-   "fieldname": "recruiter_validation_score_promotion",
-   "fieldtype": "Float",
-   "label": "Recruiter Validation Score",
-   "read_only": 1
-  },
-  {
-   "default": "No",
-   "fieldname": "did_you_get_any_salary_increase",
-   "fieldtype": "Select",
-   "label": "Did you get any Salary Increase",
-   "options": "Yes\nNo"
-  },
-  {
-   "depends_on": "eval:doc.did_you_get_any_salary_increase == 'Yes'",
-   "fieldname": "total_salary_changes",
-   "fieldtype": "Int",
-   "label": "Total Salary Changes",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:doc.did_you_get_any_salary_increase == 'Yes'",
-   "fieldname": "recruiter_validation_score_salary_change",
-   "fieldtype": "Float",
-   "label": "Recruiter Validation Score",
-   "read_only": 1
   },
   {
    "default": "0",
@@ -156,40 +81,23 @@
    "label": "Current Job"
   },
   {
-   "fieldname": "section_break_29",
-   "fieldtype": "Section Break"
-  },
-  {
-   "depends_on": "eval: doc.current_job != 1 || doc.did_you_leave_the_job == 'Yes'",
+   "depends_on": "eval: doc.did_you_leave_the_job == 'Yes'",
    "fieldname": "reason_for_leaving_job",
    "fieldtype": "Data",
    "label": "Reason for Leaving Job"
   },
   {
    "default": "No",
-   "depends_on": "eval: doc.current_job == 1",
    "fieldname": "did_you_leave_the_job",
    "fieldtype": "Select",
    "label": "Did You Leave the Job",
    "options": "Yes\nNo"
   },
   {
-   "depends_on": "eval:doc.did_you_leave_the_job == 'No' && doc.current_job ==1",
+   "depends_on": "eval:doc.did_you_leave_the_job == 'No'",
    "fieldname": "why_do_you_plan_to_leave_the_job",
    "fieldtype": "Data",
    "label": "Why Do You Plan to Leave the Job"
-  },
-  {
-   "fieldname": "years_of_experience_str",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Years of Experience",
-   "read_only": 1
-  },
-  {
-   "fieldname": "promotions_and_salary_section",
-   "fieldtype": "Section Break",
-   "label": "Promotions and Salary Hikes"
   },
   {
    "fieldname": "country_of_employment",
@@ -198,15 +106,38 @@
    "options": "Country"
   },
   {
+   "columns": 1,
+   "description": "Monthly Salary in KWD",
    "fieldname": "monthly_salary_in_kwd",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Monthly Salary in KWD"
+   "label": "Salary"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "End Date"
+  },
+  {
+   "fieldname": "section_break_18",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-20 21:48:23.573919",
+ "modified": "2021-12-12 22:25:31.752203",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History Company",
