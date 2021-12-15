@@ -11,15 +11,16 @@ def update_notification_log():
 	
 	#for each notication, update the title, subject and category.
 	for notification in notification_list:
-		notification_doc = frappe.get_doc("Notification Log", notification.name)
 		subject = notification.subject
 		
         #split the subject into title and body.
-		title, body = subject.split(": ")
+		if len(subject.split(": ")) > 1:
+			title, body = subject.split(": ")
+			notification_doc = frappe.get_doc("Notification Log", notification.name)
 
-		#update and save the notification log 
-		notification_doc.title = title
-		notification_doc.subject = body
-		notification_doc.category = "Attendence"
-		notification_doc.save(ignore_permissions=True)
-		frappe.db.commit()
+			#update and save the notification log 
+			notification_doc.title = title
+			notification_doc.subject = body
+			notification_doc.category = "Attendence"
+			notification_doc.save(ignore_permissions=True)
+			frappe.db.commit()
