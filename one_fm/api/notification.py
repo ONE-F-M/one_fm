@@ -23,17 +23,33 @@ def get_employee_user_id(employee):
 # params: employee_id (eg: HR-EMP-00003)
 # returns: Notification List.
 @frappe.whitelist()
-def get_notification_list(employee_id):
+def get_notification_list():
 	"""
-	Params:
-	employee: employee ERP id 
 	Returns: notification list
 	"""
 	try:
-		user_id = frappe.db.get_value("Employee",{'name':employee_id},['user_id'])
-		notification_list = frappe.get_all("Notification Log", filters={'for_user':user_id, 'one_fm_mobile_app':1}, fields=["name","subject"])
+		#fetch Site and User ID
+		site = frappe.local.conf.app_url
+		user_id = frappe.session.user
+
+		#fetch Notification List which were sent to Mobile App 
+		notification_list = frappe.get_all("Notification Log", filters={'for_user':user_id,'one_fm_mobile_app': 1 }, fields=["name","title","subject","category","creation"])
+	
+		# Create Result List
+		result = []
+		for notification in notification_list:
+			notify ={
+				"name":notification.name,
+				"title" : notification.title,
+				"body" : notification.subject,
+				"notification category": notification.category,
+				"time": (notification.creation).strftime("%Y-%m-%d %H:%M:%S"),
+				"url": site+"notifications/"+notification.name
+				}
+			result.append(notify)
+
 		if len(notification_list)>0:
-			return response("Notifications Are Listed Sucessfully", notification_list, True, 200)
+			return response("Notifications Are Listed Sucessfully", result, True, 200)
 		elif len(notification_list)==0:
 			return response("No Notification Yet", notification_list, True, 200)
 

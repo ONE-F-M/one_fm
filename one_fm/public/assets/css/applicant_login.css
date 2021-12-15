@@ -540,10 +540,12 @@ h2.heading {
 
 /* Estilos del contenedor del formulario */
 .main-container .login-wrapper .form-wrapper {
-	min-width: 45%;
-
-	display: flex;
-	flex-direction: column;
+	min-width: 42%;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Estilos del header del formulario */

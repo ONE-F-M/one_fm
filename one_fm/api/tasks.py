@@ -32,6 +32,8 @@ def send_checkin_hourly_reminder():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
 
+	title = "Hourly Reminder"
+	category = "Attendance"
 	#Send notifications to employees assigned to a shift for hourly checkin
 	for shift in shifts_list:
 		if strfdelta(shift.start_time, '%H:%M:%S') != cstr(get_datetime(now_time).time()) and strfdelta(shift.end_time, '%H:%M:%S') != cstr(get_datetime(now_time).time()):
@@ -48,7 +50,7 @@ def send_checkin_hourly_reminder():
 			print(recipients)
 			subject = _("Hourly Reminder: Please checkin")
 			message = _('<a class="btn btn-warning" href="/desk#face-recognition">Hourly Check In</a>')
-			send_notification(subject, message, recipients)
+			send_notification(title, subject, message, category, recipients)
 
 def final_reminder():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
@@ -124,11 +126,13 @@ def notify(recipients,log_type):
 	log_type: In or Out
 	"""
 	#defining the subject and message
+	title  = "Final Reminder"
 	checkin_subject = _("Final Reminder: Please checkin in the next five minutes.")
 	checkin_message = _("""
 					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
 					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
 					""")
+	notification_category = "Attendance"
 	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
 	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
@@ -155,7 +159,7 @@ def notify(recipients,log_type):
 			push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=False,arriveLate=False,checkout=True)
 	
 	# send notification mail to list of employee using user_id
-	send_notification(checkin_subject, checkin_message, user_id)
+	send_notification(title, checkin_subject, checkin_message,notification_category,user_id)
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
@@ -179,7 +183,8 @@ def supervisor_reminder():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	today_datetime = today()	
 	shifts_list = get_active_shifts(now_time)
-
+	title = "Checkin Report"
+	category = "Attendance"
 	for shift in shifts_list:
 		t = shift.supervisor_reminder_shift_start
 		b = strfdelta(shift.start_time, '%H:%M:%S')
@@ -223,13 +228,13 @@ def supervisor_reminder():
 					<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
 					""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkin_time)
 					if action_user is not None:
-						send_notification(subject, action_message, [action_user])
+						send_notification(title, subject, action_message, category, [action_user])
 					
 					notify_message = _("""Note that {employee} from Shift {shift} has Not Checked in yet.""").format(employee=recipient.employee_name, shift=recipient.shift)
 					if Role:
 						notify_user = get_notification_user(recipient.name,recipient.shift, Role)
 						if notify_user is not None:
-							send_notification(subject, notify_message, notify_user)
+							send_notification(title, subject, notify_message, category, notify_user)
 
 		#Send notification to supervisor of those who haven't checked out and don't have accepted Leave Early shift permission
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time()):
@@ -275,17 +280,19 @@ def supervisor_reminder():
 		 			if Role:
 						 notify_user = get_notification_user(recipient.name,recipient.shift, Role)
 						 if notify_user is not None:
-							 send_notification(subject, notify_message, notify_user)
+							 send_notification(title, subject, notify_message, category, notify_user)
 
 					
-def send_notification(subject, message, recipients):
+def send_notification(title, subject, message, category, recipients):
 	for user in recipients:
 		notification = frappe.new_doc("Notification Log")
+		notification.title = title
 		notification.subject = subject
 		notification.email_content = message
 		notification.document_type = "Notification Log"
 		notification.for_user = user
 		notification.document_name = " "
+		notification.category = category
 		notification.one_fm_mobile_app = 1
 		notification.save(ignore_permissions=True)
 		notification.document_name = notification.name
