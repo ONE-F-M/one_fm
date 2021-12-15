@@ -74,6 +74,7 @@ doctype_js = {
 	"Payment Entry": "public/js/doctype_js/payment_entry.js",
 	"Item Price": "public/js/doctype_js/item_price.js",
 	"Employee Incentive": "public/js/doctype_js/employee_incentive.js",
+	"Employee": "public/js/doctype_js/employee.js",
 	"Salary Slip": "public/js/doctype_js/salary_slip.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 }
@@ -258,6 +259,9 @@ doc_events = {
 	"Employee Incentive": {
 		"on_update": "one_fm.one_fm.payroll_utils.on_update_employee_incentive",
 		"on_update_after_submit": "one_fm.one_fm.payroll_utils.on_update_after_submit_employee_incentive",
+	},
+	"Payroll Entry": {
+		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
 	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
@@ -314,8 +318,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
-
-
+		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",

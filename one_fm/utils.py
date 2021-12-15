@@ -2091,7 +2091,6 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
         holidays_public_holiday = get_holidays_for_employee(doc.employee, check_out_date, check_out_date, False, True)
 
         # Check if Employee in a Day OFF
-
         if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':employee_availability[0]}):
             # Get checkin_time for the employee in the same day of OT request
             checkin_datetime = frappe.db.get_value("Employee Checkin",{'employee':doc.employee, 'log_type':"IN"}, ['time'])
@@ -2134,7 +2133,6 @@ def create_additional_salary_for_overtime_request_for_head_office(doc,method):
         if frappe.db.exists("Employee Schedule",{'employee':doc.employee, 'date':check_out_date, 'employee_availability':employee_availability[1]}):
 
             if cstr(check_out_time) >= cstr(overtime_doc.end_time):# Check-out time is equal or after the requested time.
-
 
                 if basic_salary and shift_duration:
                     if overtime_doc.overtime_hours and not frappe.db.exists("Additional Salary",{'employee':doc.employee, 'payroll_date':getdate(), 'salary_component':overtime_component}):

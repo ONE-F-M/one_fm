@@ -11,10 +11,11 @@
   "holiday_additional_salary_component",
   "maximum_salary_deduction_percentage",
   "exclude_salary_component",
+  "default_bank",
   "overtime_additional_salary_section",
   "overtime_additional_salary_component",
-  "working_day_overtime_rate",
   "col_br_1",
+  "working_day_overtime_rate",
   "day_off_overtime_rate",
   "public_holiday_overtime_rate"
  ],
@@ -94,12 +95,20 @@
    "fieldtype": "Link",
    "label": "Exclude Salary Component",
    "options": "Salary Component"
+  },
+  {
+   "description": "Default bank used for Payroll",
+   "fieldname": "default_bank",
+   "fieldtype": "Link",
+   "label": "Default Bank",
+   "options": "Bank",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2021-11-25 00:42:21.992011",
+ "modified": "2021-12-05 13:28:13.733384",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
