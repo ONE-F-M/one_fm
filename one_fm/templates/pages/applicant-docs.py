@@ -90,11 +90,12 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
     result = {}
     assemble = {}
     index = 0
+    print(texts[0].description)
 
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
     
-    if is_kuwaiti:
+    if is_kuwaiti == 1:
         result["Civil_ID_No"] = texts[find_index(assemble,"CARD")+1].description
         result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
         result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
@@ -113,19 +114,21 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
             result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
 
     else:
-        result["Civil_ID_No"] = texts[find_index(assemble,"CARD")+1].description
+        result["Civil_ID_No"] = texts[find_index(assemble,"Civil")+3].description
         result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
-        result["Date_Of_Birth"] = texts[find_index(assemble,"Birth")-7].description
+        result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"لجن")+1].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+        result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"لجن")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+        result["Passport_Number"] = texts[find_index(assemble,"Nationality")+2].description
         result["Gender"] = ""
-        if texts[find_index(assemble,"Sex")-3].description == "M" or texts[find_index(assemble,"Sex")-3].description == "F":
-            result["Gender"] = texts[find_index(assemble,"Sex")-3].description
+        if texts[find_index(assemble,"Sex")+1].description == "M" or texts[find_index(assemble,"Sex")+1].description == "F":
+            result["Gender"] = texts[find_index(assemble,"Sex")+1].description
 
         result["Name"] = ""
-        for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport")-1):
+        for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport")):
             result["Name"] = result["Name"] + texts[i].description + " "
         
         result["Arabic_Name"]= ""
-        for i in range(find_index(assemble,"CARD")+2,find_index(assemble,"Civil")):
+        for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
             result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
             
         result["Arabic_Name"] = result["Arabic_Name"][::-1]
@@ -160,8 +163,7 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
     
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
-    print(texts[0].description)
-    if is_kuwaiti:
+    if is_kuwaiti == 1:
         if find_index(assemble,"all"):
             result["PACI_No"] = texts[find_index(assemble,"all")-1].description
         else:
@@ -172,12 +174,12 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
         if find_index(assemble,"YI"):
             result["PACI_No"] = texts[find_index(assemble,"YI")-1].description
         
-        result["Sponsor Name"]= ""
+        result["Sponsor_Name"]= ""
         if find_index(assemble, "(") and find_index(assemble, ")"):
             for i in range(find_index(assemble,")")+1,find_index(assemble,"العنوان:")):
-                result["Sponsor Name"] = result["Sponsor Name"] + texts[i].description + " "
+                result["Sponsor_Name"] = result["Sponsor_Name"] + texts[i].description + " "
                 
-            result["Sponsor Name"] = result["Sponsor Name"][::-1]
+            result["Sponsor_Name"] = result["Sponsor_Name"][::-1]
     
     return result
 
