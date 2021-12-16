@@ -6,13 +6,16 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from one_fm.hiring.utils import update_onboarding_doc, make_employee_from_job_offer
-from frappe.utils import today
+from frappe.utils import today, getdate, cstr
 from frappe import _
 
 class DutyCommencement(Document):
 	def validate(self):
 		if not self.posting_date:
 			self.posting_date = today()
+
+		if getdate(self.date_of_joining) < getdate():
+			frappe.throw(_("Date of joining cannot be before today"))
 		self.set_progress()
 		self.update_salary_details_from_job_offer()
 
