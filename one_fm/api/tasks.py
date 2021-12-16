@@ -127,7 +127,7 @@ def notify(recipients,log_type):
 	"""
 	#defining the subject and message
 	title  = "Final Reminder"
-	checkin_subject = _("Final Reminder: Please checkin in the next five minutes.")
+	checkin_subject = _("Please checkin in the next five minutes.")
 	checkin_message = _("""
 					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
 					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
@@ -222,7 +222,7 @@ def supervisor_reminder():
 				for recipient in recipients:
 					action_user, Role = get_action_user(recipient.name,recipient.shift)
 					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
-					subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
+					subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
 					action_message = _("""
 					<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
 					<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
@@ -268,13 +268,13 @@ def supervisor_reminder():
 		 		for recipient in recipients:
 		 			action_user, Role = get_action_user(recipient.name,recipient.shift)
 					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
-		 			subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
+		 			subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
 		 			action_message = _("""
 						 <a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
 						 <br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
 						 """).format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
 		 			if action_user is not None:
-						 send_notification(subject, action_message, [action_user])
+						 send_notification(title, subject, action_message, category, [action_user])
 					
 		 			notify_message = _("""Note that {employee} from Shift {shift} has Not Checked Out yet.""").format(employee=recipient.employee_name, shift=recipient.shift)
 		 			if Role:
