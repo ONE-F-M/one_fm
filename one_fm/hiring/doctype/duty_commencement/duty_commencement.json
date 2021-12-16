@@ -19,9 +19,13 @@
   "job_offer",
   "date_of_joining",
   "designation",
+  "reports_to",
   "project",
   "operations_site",
+  "operations_shift",
   "salary_details_section",
+  "base_salary",
+  "salary_structure",
   "salary_details",
   "basic_salary",
   "transportation_salary",
@@ -146,14 +150,16 @@
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
-   "options": "Project"
+   "options": "Project",
+   "read_only": 1
   },
   {
    "fetch_from": "onboard_employee.operations_site",
    "fieldname": "operations_site",
    "fieldtype": "Link",
    "label": "Site",
-   "options": "Operations Site"
+   "options": "Operations Site",
+   "read_only": 1
   },
   {
    "fieldname": "salary_details_section",
@@ -207,11 +213,42 @@
    "fieldname": "notes",
    "fieldtype": "Small Text",
    "label": "Notes"
+  },
+  {
+   "fetch_from": "onboard_employee.reports_to",
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "label": "Reports To",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "onboard_employee.operations_shift",
+   "fieldname": "operations_shift",
+   "fieldtype": "Link",
+   "label": "Shift",
+   "options": "Operations Shift",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_offer.base",
+   "fieldname": "base_salary",
+   "fieldtype": "Currency",
+   "label": "Base Salary",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_offer.one_fm_salary_structure",
+   "fieldname": "salary_structure",
+   "fieldtype": "Link",
+   "label": "Salary Structure",
+   "options": "Salary Structure",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-08-30 12:40:16.558769",
+ "modified": "2021-12-16 11:43:31.478425",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Duty Commencement",
