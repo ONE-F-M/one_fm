@@ -59,14 +59,16 @@
    "fetch_from": "onboard_employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
-   "label": "Employee Name"
+   "label": "Employee Name",
+   "read_only": 1
   },
   {
    "fetch_from": "onboard_employee.gender",
    "fieldname": "gender",
    "fieldtype": "Link",
    "label": "Gender",
-   "options": "Gender"
+   "options": "Gender",
+   "read_only": 1
   },
   {
    "fetch_from": "onboard_employee.nationality",
@@ -74,20 +76,23 @@
    "fieldname": "nationality",
    "fieldtype": "Link",
    "label": "Nationality",
-   "options": "Nationality"
+   "options": "Nationality",
+   "read_only": 1
   },
   {
    "fetch_from": "onboard_employee.civil_id",
    "fetch_if_empty": 1,
    "fieldname": "civil_id",
    "fieldtype": "Data",
-   "label": "CIVIL ID"
+   "label": "CIVIL ID",
+   "read_only": 1
   },
   {
    "fetch_from": "onboard_employee.passport_number",
    "fieldname": "passport_number",
    "fieldtype": "Data",
-   "label": "Passport Number"
+   "label": "Passport Number",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_5",
@@ -98,27 +103,31 @@
    "fieldname": "job_applicant",
    "fieldtype": "Link",
    "label": "Job Applicant",
-   "options": "Job Applicant"
+   "options": "Job Applicant",
+   "read_only": 1
   },
   {
    "fetch_from": "onboard_employee.job_offer",
    "fieldname": "job_offer",
    "fieldtype": "Link",
    "label": "Job Offer",
-   "options": "Job Offer"
+   "options": "Job Offer",
+   "read_only": 1
   },
   {
    "fetch_from": "onboard_employee.designation",
    "fieldname": "designation",
    "fieldtype": "Link",
    "label": "Designation",
-   "options": "Designation"
+   "options": "Designation",
+   "read_only": 1
   },
   {
    "default": "Today",
    "fieldname": "posting_date",
    "fieldtype": "Date",
-   "label": "Posting Date"
+   "label": "Posting Date",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_10",
@@ -248,7 +257,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-12-16 11:43:31.478425",
+ "modified": "2021-12-16 13:10:24.052479",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Duty Commencement",
