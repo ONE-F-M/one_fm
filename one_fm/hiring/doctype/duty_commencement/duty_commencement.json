@@ -23,6 +23,7 @@
   "project",
   "operations_site",
   "operations_shift",
+  "post_type",
   "salary_details_section",
   "base_salary",
   "salary_structure",
@@ -216,7 +217,8 @@
    "fetch_if_empty": 1,
    "fieldname": "date_of_joining",
    "fieldtype": "Date",
-   "label": "Date of Joining"
+   "label": "Date of Joining",
+   "reqd": 1
   },
   {
    "fieldname": "notes",
@@ -253,11 +255,18 @@
    "label": "Salary Structure",
    "options": "Salary Structure",
    "read_only": 1
+  },
+  {
+   "fieldname": "post_type",
+   "fieldtype": "Link",
+   "label": "Post Type",
+   "options": "Post Type",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-12-16 13:10:24.052479",
+ "modified": "2021-12-18 16:20:57.306793",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Duty Commencement",
