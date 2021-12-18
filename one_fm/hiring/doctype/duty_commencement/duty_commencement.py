@@ -52,11 +52,61 @@ class DutyCommencement(Document):
 		self.set_progress()
 		self.validate_attachments()
 		update_onboarding_doc(self)
+		if self.employee:
+			self.auto_checkin_candidate()
 
 	def validate_attachments(self):
 		if self.workflow_state == 'Applicant Signed and Uploaded':
 			if not self.attach_duty_commencement:
 				frappe.throw(_("Attach Signed Duty Commencement!"))
+
+	def auto_checkin_candidate(self):
+		
+		try:
+			# Create shift assignment if doj is today
+			if getdate(self.date_of_joining) == getdate():
+				shift_assignment = frappe.new_doc("Shift Assignment")
+				shift_assignment.start_date = self.date_of_joining
+				shift_assignment.employee = self.employee
+				shift_assignment.post_type = self.post_type
+				shift_assignment.shift = self.operations_shift
+				shift_assignment.site = self.operations_site
+				shift_assignment.project = self.project
+				shift_assignment.roster_type = "Basic"
+				shift_assignment.submit(ignore_permissions=True)
+
+				# Get current time in hh:mm:ss
+				current_time = frappe.utils.now().split(" ")[1].split(".")[0] # yyyy-mm-dd hh:mm:ss:ms => hh:mm:ss
+	
+				# Fetch shift start and end time
+				shift_start_time = frappe.db.get_value("Operations Shift", {'name': self.operations_shift}, ["start_time"]) # => hh:mm:ss
+
+				if shift_start_time:
+					# Convert "hh:mm:ss" to "hhmmss"
+					current_time_str_list = current_time.split(":")
+					shift_start_time_str_list = shift_start_time.split(":")
+					
+					current_time_str = ""
+					shift_start_time_str = ""
+					for i in current_time_str_list:
+						current_time_str += i
+					for i in shift_start_time_str_list:
+						shift_start_time_str += i
+
+					# If current time is past the shift time, auto check-in employee
+					if int(current_time_str) >= int(shift_start_time_str):
+						checkin = frappe.new_doc("Employee Checkin")
+						checkin.employee = self.employee
+						checkin.log_type = "IN"
+						checkin.skip_auto_attendance = 0
+						checkin.save(ignore_permissions=True)
+				else:
+					frappe.throw(_("Could not auto checkin employee. No start time set for duty commencement shift"))
+
+				frappe.db.commit()
+			
+		except Exception as e:
+			frappe.log_error(e)			
 
 	def on_cancel(self):
 		if self.workflow_state == 'Cancelled':
