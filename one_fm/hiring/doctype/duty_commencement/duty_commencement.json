@@ -9,6 +9,7 @@
   "naming_series",
   "onboard_employee",
   "employee_name",
+  "employee",
   "gender",
   "nationality",
   "civil_id",
@@ -262,11 +263,18 @@
    "label": "Post Type",
    "options": "Post Type",
    "reqd": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-12-18 16:20:57.306793",
+ "modified": "2021-12-18 18:10:27.493140",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Duty Commencement",
