@@ -86,7 +86,7 @@ def final_reminder():
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
-				notify(recipients,"IN")
+				frappe.enqueue(notify, recipients=recipients,log_type="IN", is_async=True, queue='long')
 
 		# shift_end is equal to now time - notification reminder in mins
 		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
@@ -115,7 +115,7 @@ def final_reminder():
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
-				notify(recipients,"OUT")
+				frappe.enqueue(notify, recipients=recipients,log_type="OUT", is_async=True, queue='long')
 
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
@@ -127,7 +127,7 @@ def notify(recipients,log_type):
 	"""
 	#defining the subject and message
 	title  = "Final Reminder"
-	checkin_subject = _("Final Reminder: Please checkin in the next five minutes.")
+	checkin_subject = _("Please checkin in the next five minutes.")
 	checkin_message = _("""
 					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
 					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
@@ -137,12 +137,12 @@ def notify(recipients,log_type):
 	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
-	user_id = []
+	user_id_list = []
 
 	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
 	for recipient in recipients:
 		# Append the list of user ID to send notification through email.
-		user_id.append(recipient.user_id)
+		user_id_list.append(recipient.user_id)
 
 		# Get Employee ID and User Role for the given recipient
 		employee_id = recipient.name
@@ -159,7 +159,10 @@ def notify(recipients,log_type):
 			push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=False,arriveLate=False,checkout=True)
 	
 	# send notification mail to list of employee using user_id
-	send_notification(title, checkin_subject, checkin_message,notification_category,user_id)
+	if log_type == "IN":
+		send_notification(title, checkin_subject, checkin_message,notification_category,user_id_list)
+	elif log_type == "OUT":
+		send_notification(title, checkout_subject, checkout_message, notification_category, user_id_list)
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
@@ -222,7 +225,7 @@ def supervisor_reminder():
 				for recipient in recipients:
 					action_user, Role = get_action_user(recipient.name,recipient.shift)
 					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
-					subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
+					subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
 					action_message = _("""
 					<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
 					<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
@@ -268,13 +271,13 @@ def supervisor_reminder():
 		 		for recipient in recipients:
 		 			action_user, Role = get_action_user(recipient.name,recipient.shift)
 					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
-		 			subject = _("Checkin Report: {employee} has not checked in yet.".format(employee=recipient.employee_name))
+		 			subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
 		 			action_message = _("""
 						 <a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
 						 <br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
 						 """).format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
 		 			if action_user is not None:
-						 send_notification(subject, action_message, [action_user])
+						 send_notification(title, subject, action_message, category, [action_user])
 					
 		 			notify_message = _("""Note that {employee} from Shift {shift} has Not Checked Out yet.""").format(employee=recipient.employee_name, shift=recipient.shift)
 		 			if Role:
