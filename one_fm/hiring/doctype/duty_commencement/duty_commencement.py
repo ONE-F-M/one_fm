@@ -49,6 +49,12 @@ class DutyCommencement(Document):
 			self.progress = progress_wf_list[self.workflow_state]
 
 	def after_insert(self):
+		employee_doc = frappe.get_doc("Employee", self.employee)
+		employee_doc.project = self.project
+		employee_doc.site = self.operations_site
+		employee_doc.shift = self.operations_shift
+		employee_doc.date_of_joining = self.date_of_joining
+		employee_doc.save(ignore_permissions=True)
 		update_onboarding_doc(self)
 
 	def on_update(self):
