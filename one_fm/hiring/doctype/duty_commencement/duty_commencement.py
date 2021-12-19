@@ -16,6 +16,9 @@ class DutyCommencement(Document):
 
 		if getdate(self.date_of_joining) < getdate():
 			frappe.throw(_("Date of joining cannot be before today"))
+
+		if not self.employee:
+			frappe.throw(_("No Employee created for {employee_name}. Please create employee from Onboard Employee.".format(employee_name=self.employee_name)))
 		self.set_progress()
 		self.update_salary_details_from_job_offer()
 
@@ -61,7 +64,7 @@ class DutyCommencement(Document):
 				frappe.throw(_("Attach Signed Duty Commencement!"))
 
 	def auto_checkin_candidate(self):
-		
+		"""This method creates a Shift Assignment and auto checks-in the employee if current time is past shift start time."""
 		try:
 			# Create shift assignment if doj is today
 			if getdate(self.date_of_joining) == getdate():
@@ -81,30 +84,35 @@ class DutyCommencement(Document):
 				# Fetch shift start and end time
 				shift_start_time = frappe.db.get_value("Operations Shift", {'name': self.operations_shift}, ["start_time"]) # => hh:mm:ss
 
-				if shift_start_time:
-					# Convert "hh:mm:ss" to "hhmmss"
-					current_time_str_list = current_time.split(":")
-					shift_start_time_str_list = shift_start_time.split(":")
-					
-					current_time_str = ""
-					shift_start_time_str = ""
-					for i in current_time_str_list:
-						current_time_str += i
-					for i in shift_start_time_str_list:
-						shift_start_time_str += i
-
-					# If current time is past the shift time, auto check-in employee
-					if int(current_time_str) >= int(shift_start_time_str):
-						checkin = frappe.new_doc("Employee Checkin")
-						checkin.employee = self.employee
-						checkin.log_type = "IN"
-						checkin.skip_auto_attendance = 0
-						checkin.save(ignore_permissions=True)
-				else:
+				if not shift_start_time:
 					frappe.throw(_("Could not auto checkin employee. No start time set for duty commencement shift"))
+				
+				# Convert "hh:mm:ss" to "hhmmss"
+				current_time_str_list = current_time.split(":")
+				shift_start_time_str_list = shift_start_time.split(":")
+				
+				current_time_str = ""
+				shift_start_time_str = ""
+				for i in current_time_str_list:
+					current_time_str += i
+				for i in shift_start_time_str_list:
+					shift_start_time_str += i
+
+				# If current time is past the shift time, auto check-in employee
+				if int(current_time_str) >= int(shift_start_time_str):
+					checkin = frappe.new_doc("Employee Checkin")
+					checkin.employee = self.employee
+					checkin.log_type = "IN"
+					checkin.skip_auto_attendance = 0
+					checkin.save(ignore_permissions=True)
+				else:
+					frappe.show_alert("Please inform employee to Checkin at shift start time.", 5)
 
 				frappe.db.commit()
 			
+			else:
+				frappe.show_alert("Make sure to roster this employee before Duty Commencement start date.", 5);
+		
 		except Exception as e:
 			frappe.log_error(e)			
 
