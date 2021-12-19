@@ -86,7 +86,7 @@ def final_reminder():
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
-				notify(recipients,"IN")
+				frappe.enqueue(notify, recipients=recipients,log_type="IN", is_async=True, queue='long')
 
 		# shift_end is equal to now time - notification reminder in mins
 		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
@@ -115,7 +115,7 @@ def final_reminder():
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
-				notify(recipients,"OUT")
+				frappe.enqueue(notify, recipients=recipients,log_type="OUT", is_async=True, queue='long')
 
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
@@ -137,12 +137,12 @@ def notify(recipients,log_type):
 	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
-	user_id = []
+	user_id_list = []
 
 	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
 	for recipient in recipients:
 		# Append the list of user ID to send notification through email.
-		user_id.append(recipient.user_id)
+		user_id_list.append(recipient.user_id)
 
 		# Get Employee ID and User Role for the given recipient
 		employee_id = recipient.name
@@ -159,7 +159,10 @@ def notify(recipients,log_type):
 			push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=False,arriveLate=False,checkout=True)
 	
 	# send notification mail to list of employee using user_id
-	send_notification(title, checkin_subject, checkin_message,notification_category,user_id)
+	if log_type == "IN":
+		send_notification(title, checkin_subject, checkin_message,notification_category,user_id_list)
+	elif log_type == "OUT":
+		send_notification(title, checkout_subject, checkout_message, notification_category, user_id_list)
 
 def insert_Contact():
 	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
