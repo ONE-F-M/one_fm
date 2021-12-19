@@ -52,6 +52,12 @@ def send_checkin_hourly_reminder():
 			message = _('<a class="btn btn-warning" href="/desk#face-recognition">Hourly Check In</a>')
 			send_notification(title, subject, message, category, recipients)
 
+@frappe.whitelist()
+def test():
+	final_reminder()
+	#frappe.enqueue(final_reminder, queue='short', timeout=1000, is_async=True)
+
+@frappe.whitelist()
 def final_reminder():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)

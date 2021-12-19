@@ -358,7 +358,8 @@ scheduler_events = {
 		],
 		"0/1 * * * *": [
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
-			'one_fm.api.tasks.process_attendance'
+			'one_fm.api.tasks.process_attendance',
+			"one_fm.api.tasks.test",
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.supervisor_reminder",
