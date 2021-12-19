@@ -16,9 +16,18 @@ class DutyCommencement(Document):
 
 		if getdate(self.date_of_joining) < getdate():
 			frappe.throw(_("Date of joining cannot be before today"))
-
-		if not self.employee:
+		
+		if self.workflow_state == "Applicant Signed and Uploaded" and self.employee:
+			employee_doc = frappe.get_doc("Employee", self.employee)
+			employee_doc.project = self.project
+			employee_doc.site = self.operations_site
+			employee_doc.shift = self.operations_shift
+			employee_doc.date_of_joining = self.date_of_joining
+			employee_doc.save(ignore_permissions=True)
+			self.auto_checkin_candidate()
+		elif self.workflow_state == "Applicant Signed and Uploaded" and not self.employee:
 			frappe.throw(_("No Employee created for {employee_name}. Please create employee from Onboard Employee.".format(employee_name=self.employee_name)))
+
 		self.set_progress()
 		self.update_salary_details_from_job_offer()
 
@@ -49,20 +58,12 @@ class DutyCommencement(Document):
 			self.progress = progress_wf_list[self.workflow_state]
 
 	def after_insert(self):
-		employee_doc = frappe.get_doc("Employee", self.employee)
-		employee_doc.project = self.project
-		employee_doc.site = self.operations_site
-		employee_doc.shift = self.operations_shift
-		employee_doc.date_of_joining = self.date_of_joining
-		employee_doc.save(ignore_permissions=True)
 		update_onboarding_doc(self)
 
 	def on_update(self):
 		self.set_progress()
 		self.validate_attachments()
 		update_onboarding_doc(self)
-		if self.employee:
-			self.auto_checkin_candidate()
 
 	def validate_attachments(self):
 		if self.workflow_state == 'Applicant Signed and Uploaded':
