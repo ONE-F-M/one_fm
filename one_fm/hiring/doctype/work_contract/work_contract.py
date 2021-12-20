@@ -77,14 +77,6 @@ class WorkContract(Document):
 		else:
 			return False
 	
-	def set_authorized_signatory(self):
-		#This function fetch the Authorized Signatory and sets "authorised_signatory_signature" field.
-		# for Time being, it's not being called. 
-		signature_doc_list = frappe.get_doc("PIFSS Authorized Signatory", {'name':"شركة ون لإدارة المرافق"})
-		for doc_list in signature_doc_list.authorized_signatory:
-			if doc_list.authorized_signatory_name_english == "Abdullah":
-				self.authorised_signatory_signature = doc_list.signature 
-				self.save()
 
 @frappe.whitelist()
 def get_employee_details_for_wc(type, employee=False, onboard_employee=False):
