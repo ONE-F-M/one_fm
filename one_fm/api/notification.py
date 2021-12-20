@@ -42,7 +42,7 @@ def get_notification_list():
 				"name":notification.name,
 				"title" : notification.title,
 				"body" : notification.subject,
-				"notification category": notification.category,
+				"notification_category": notification.category,
 				"time": (notification.creation).strftime("%Y-%m-%d %H:%M:%S"),
 				"url": site+"app/notification-log/"+notification.name
 				}
