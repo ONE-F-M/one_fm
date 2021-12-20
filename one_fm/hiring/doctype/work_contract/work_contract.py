@@ -28,8 +28,6 @@ class WorkContract(Document):
 
 	def after_insert(self):
 		update_onboarding_doc(self)
-		self.set_authorized_signatory()
-
 		
 	def on_update(self):
 		self.set_progress()
@@ -42,6 +40,7 @@ class WorkContract(Document):
 		if self.workflow_state == 'Send to Authorised Signatory' and not self.legal_receives_employee_file:
 			frappe.throw(_("Is Legal Receives Employee File ?, If yes please mark it!"))
 		if self.workflow_state == 'Submitted for Applicant Review':
+			#if applicant sign the contract, the workflow changes to "Applicant Signed",
 			if self.check_for_applicant_signature():
 				self.workflow_state = "Applicant Signed"
 				self.save()
@@ -79,9 +78,11 @@ class WorkContract(Document):
 			return False
 	
 	def set_authorized_signatory(self):
-		signature_doc_list = frappe.get_doc("PIFSS Authorized Signatory", {'name':"PAS-شركة ون لإدارة المرافق"})
+		#This function fetch the Authorized Signatory and sets "authorised_signatory_signature" field.
+		# for Time being, it's not being called. 
+		signature_doc_list = frappe.get_doc("PIFSS Authorized Signatory", {'name':"شركة ون لإدارة المرافق"})
 		for doc_list in signature_doc_list.authorized_signatory:
-			if doc_list.authorized_signatory_name_english == "Abdullah Moustafa Almarzouq":
+			if doc_list.authorized_signatory_name_english == "Abdullah":
 				self.authorised_signatory_signature = doc_list.signature 
 				self.save()
 
