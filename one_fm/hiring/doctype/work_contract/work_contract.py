@@ -79,9 +79,9 @@ class WorkContract(Document):
 			return False
 	
 	def set_authorized_signatory(self):
-		signature_doc_list = frappe.get_doc("PIFSS Authorized Signatory", {'name':"شركة ون لإدارة المرافق"})
+		signature_doc_list = frappe.get_doc("PIFSS Authorized Signatory", {'name':"PAS-شركة ون لإدارة المرافق"})
 		for doc_list in signature_doc_list.authorized_signatory:
-			if doc_list.authorized_signatory_name_english == "Abdullah":
+			if doc_list.authorized_signatory_name_english == "Abdullah Moustafa Almarzouq":
 				self.authorised_signatory_signature = doc_list.signature 
 				self.save()
 
