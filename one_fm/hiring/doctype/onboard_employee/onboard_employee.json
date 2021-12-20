@@ -1423,7 +1423,8 @@
    "fieldname": "declaration_of_electronic_signature",
    "fieldtype": "Link",
    "label": "Declaration of Electronic Signature",
-   "options": "Electronic Signature Declaration"
+   "options": "Electronic Signature Declaration",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_116",
@@ -1440,7 +1441,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-20 13:33:40.743045",
+ "modified": "2021-12-20 16:05:16.000010",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

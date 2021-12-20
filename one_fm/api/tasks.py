@@ -766,3 +766,12 @@ def create_additional_salary(employee, amount, component, end_date):
 	additional_salary.notes = "Site Allowance"
 	additional_salary.insert()
 	additional_salary.submit()
+
+def set_document_status(doc, method):
+	print("Method")
+	if doc.applicant_signature:
+		onboarding_employee_doc = frappe.db.get_doc("Onboard Employee", {"onboarding_employee":doc.onboarding_employee})
+		onboarding_employee_doc.electronic_signature_declaration_status = 1
+		electronic_signature_declaration_status.save(ignore_permissions=True)
+		electronic_signature_declaration_status.submit()
+		frappe.db.commit()

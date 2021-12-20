@@ -157,7 +157,10 @@ var create_custom_buttons = function(frm) {
 	if(!frm.doc.applicant_attended && frm.doc.informed_applicant){
 		btn_mark_applicant_attended(frm);
 	}
-	if(frm.doc.applicant_attended && !frm.doc.work_contract){
+	if(frm.doc.applicant_attended && !frm.doc.declaration_of_electronic_signature){
+        cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
+    }
+    if(frm.doc.declaration_of_electronic_signature && !frm.doc.work_contract){
 		cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
 	}
 	if(frm.doc.work_contract_status == "Applicant Signed" && !frm.doc.duty_commencement){

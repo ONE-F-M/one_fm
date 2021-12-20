@@ -262,6 +262,9 @@ doc_events = {
 	},
 	"Payroll Entry": {
 		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
+	},
+	"Electronic Signature Declaration": {
+		"on_update": "one_fm.api.tasks.set_document_status"
 	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
