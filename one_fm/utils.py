@@ -1623,13 +1623,13 @@ def set_erf_details(job_offer, erf):
 def set_salary_details(job_offer, erf):
     job_offer.one_fm_provide_salary_advance = erf.provide_salary_advance
     total_amount = 0
+    job_offer.base = erf.base
     for salary in erf.salary_details:
         total_amount += salary.amount
         salary_details = job_offer.append('one_fm_salary_details')
         salary_details.salary_component = salary.salary_component
         salary_details.amount = salary.amount
     job_offer.one_fm_job_offer_total_salary = total_amount
-    job_offer.base = total_amount
 
 def set_other_benefits_to_terms(job_offer, erf):
     # if erf.other_benefits:
