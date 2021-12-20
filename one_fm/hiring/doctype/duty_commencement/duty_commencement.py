@@ -75,50 +75,56 @@ class DutyCommencement(Document):
 		try:
 			# Create shift assignment if doj is today
 			if getdate(self.date_of_joining) == getdate():
-				shift_assignment = frappe.new_doc("Shift Assignment")
-				shift_assignment.start_date = self.date_of_joining
-				shift_assignment.employee = self.employee
-				shift_assignment.post_type = self.post_type
-				shift_assignment.shift = self.operations_shift
-				shift_assignment.site = self.operations_site
-				shift_assignment.project = self.project
-				shift_assignment.roster_type = "Basic"
-				shift_assignment.submit(ignore_permissions=True)
+				if not frappe.db.exists("Shift Assignment", {'employee': self.employee, 'start_date': self.date_of_joining}):
+					shift_assignment = frappe.new_doc("Shift Assignment")
+					shift_assignment.start_date = self.date_of_joining
+					shift_assignment.employee = self.employee
+					shift_assignment.post_type = self.post_type
+					shift_assignment.shift = self.operations_shift
+					shift_assignment.site = self.operations_site
+					shift_assignment.project = self.project
+					shift_assignment.roster_type = "Basic"
+					shift_assignment.submit(ignore_permissions=True)
+					frappe.msgprint(_("Shift Assignment created for today for this employee."), alert=True, indicator='green')
 
-				# Get current time in hh:mm:ss
-				current_time = frappe.utils.now().split(" ")[1].split(".")[0] # yyyy-mm-dd hh:mm:ss:ms => hh:mm:ss
-	
-				# Fetch shift start and end time
-				shift_start_time = frappe.db.get_value("Operations Shift", {'name': self.operations_shift}, ["start_time"]) # => hh:mm:ss
+					# Get current time in hh:mm:ss
+					current_time = frappe.utils.now().split(" ")[1].split(".")[0] # yyyy-mm-dd hh:mm:ss:ms => hh:mm:ss
+		
+					# Fetch shift start and end time
+					shift_start_time = frappe.db.get_value("Operations Shift", {'name': self.operations_shift}, ["start_time"]) # => hh:mm:ss
 
-				if not shift_start_time:
-					frappe.throw(_("Could not auto checkin employee. No start time set for duty commencement shift"))
+					if not shift_start_time:
+						frappe.throw(_("Could not auto checkin employee. No start time set for duty commencement shift"))
+					
+					# Convert "hh:mm:ss" to "hhmmss"
+					current_time_str_list = current_time.split(":")
+					shift_start_time_str_list = shift_start_time.split(":")
+					
+					current_time_str = ""
+					shift_start_time_str = ""
+					for i in current_time_str_list:
+						current_time_str += i
+					for i in shift_start_time_str_list:
+						shift_start_time_str += i
+
+					# If current time is past the shift time, auto check-in employee
+					if int(current_time_str) >= int(shift_start_time_str):
+						checkin = frappe.new_doc("Employee Checkin")
+						checkin.employee = self.employee
+						checkin.log_type = "IN"
+						checkin.skip_auto_attendance = 0
+						checkin.save(ignore_permissions=True)
+						frappe.msgprint(_("Auto checked-in employee as his shift has already started on date of joining."), alert=True, indicator='green')
+					else:
+						frappe.msgprint(_("Please inform employee to check in at shift start time."), alert=True, indicator='orange')
+
+					frappe.db.commit()
 				
-				# Convert "hh:mm:ss" to "hhmmss"
-				current_time_str_list = current_time.split(":")
-				shift_start_time_str_list = shift_start_time.split(":")
-				
-				current_time_str = ""
-				shift_start_time_str = ""
-				for i in current_time_str_list:
-					current_time_str += i
-				for i in shift_start_time_str_list:
-					shift_start_time_str += i
-
-				# If current time is past the shift time, auto check-in employee
-				if int(current_time_str) >= int(shift_start_time_str):
-					checkin = frappe.new_doc("Employee Checkin")
-					checkin.employee = self.employee
-					checkin.log_type = "IN"
-					checkin.skip_auto_attendance = 0
-					checkin.save(ignore_permissions=True)
 				else:
-					frappe.show_alert("Please inform employee to Checkin at shift start time.", 5)
-
-				frappe.db.commit()
+					frappe.msgprint(_("Shift Assignment already created for this employee on Duty Commencement start date."), alert=True, indicator='orange')
 			
 			else:
-				frappe.show_alert("Make sure to roster this employee before Duty Commencement start date.", 5);
+				frappe.msgprint(_("Make sure to roster employee before Duty Commencement start date."), alert=True, indicator='orange')
 		
 		except Exception as e:
 			frappe.log_error(e)			
