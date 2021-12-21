@@ -1018,5 +1018,17 @@
   "parenttype": null,
   "style": "",
   "workflow_state_name": "Work Contract"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2021-12-21 10:37:57.316937",
+  "name": "Inform Applicant",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "",
+  "workflow_state_name": "Inform Applicant"
  }
 ]
