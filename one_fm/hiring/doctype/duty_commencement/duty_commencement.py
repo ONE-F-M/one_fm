@@ -84,22 +84,20 @@ class DutyCommencement(Document):
 					shift_assignment.site = self.operations_site
 					shift_assignment.project = self.project
 					shift_assignment.roster_type = "Basic"
-					shift_assignment.submit(ignore_permissions=True)
+					shift_assignment.save(ignore_permissions=True)
+					shift_assignment.submit()
 					frappe.msgprint(_("Shift Assignment created for today for this employee."), alert=True, indicator='green')
 
 					# Get current time in hh:mm:ss
 					current_time = frappe.utils.now().split(" ")[1].split(".")[0] # yyyy-mm-dd hh:mm:ss:ms => hh:mm:ss
-		
 					# Fetch shift start and end time
 					shift_start_time = frappe.db.get_value("Operations Shift", {'name': self.operations_shift}, ["start_time"]) # => hh:mm:ss
-
 					if not shift_start_time:
 						frappe.throw(_("Could not auto checkin employee. No start time set for duty commencement shift"))
 					
 					# Convert "hh:mm:ss" to "hhmmss"
-					current_time_str_list = current_time.split(":")
-					shift_start_time_str_list = shift_start_time.split(":")
-					
+					current_time_str_list = cstr(current_time).split(":")
+					shift_start_time_str_list = cstr(shift_start_time).split(":")
 					current_time_str = ""
 					shift_start_time_str = ""
 					for i in current_time_str_list:
@@ -112,6 +110,12 @@ class DutyCommencement(Document):
 						checkin = frappe.new_doc("Employee Checkin")
 						checkin.employee = self.employee
 						checkin.log_type = "IN"
+						checkin.operations_shift = self.operations_shift
+						site = frappe.db.get_value("Operations Shift", {'name': self.operations_shift}, ["site"])
+						site_location = frappe.db.get_value("Operations Site", {'name': site}, ["site_location"])
+						latitude, longitude = frappe.db.get_value("Location", {'name': site_location}, ["latitude", "longitude"])
+						checkin.time = frappe.utils.now().split(".")[0]
+						checkin.device_id = cstr(latitude) + "," + cstr(longitude)
 						checkin.skip_auto_attendance = 0
 						checkin.save(ignore_permissions=True)
 						frappe.msgprint(_("Auto checked-in employee as his shift has already started on date of joining."), alert=True, indicator='green')
