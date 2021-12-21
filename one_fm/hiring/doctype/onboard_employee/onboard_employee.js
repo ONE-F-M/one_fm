@@ -152,11 +152,11 @@ var set_filters = function(frm) {
 };
 
 var create_custom_buttons = function(frm) {
-	if(frm.doc.applicant_attended && !frm.doc.declaration_of_electronic_signature){
-    cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
-  }
-  if(frm.doc.electronic_signature_declaration_status == 1 && !frm.doc.work_contract){
+	if(frm.doc.applicant_attended && !frm.doc.work_contract){
 		cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
+	}
+	if(frm.doc.electronic_signature_declaration_status != 1 && !frm.doc.declaration_of_electronic_signature){
+		cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
 	}
 	if(frm.doc.work_contract_status == "Applicant Signed" && frm.doc.workflow_state == 'Declaration of Electronic Signature' && !frm.doc.duty_commencement){
 		cutom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
