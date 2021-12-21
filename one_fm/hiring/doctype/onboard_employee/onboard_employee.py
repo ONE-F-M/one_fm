@@ -14,6 +14,20 @@ from frappe.utils import now, today
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 
 class OnboardEmployee(Document):
+	def on_update_after_submit(self):
+		self.validate_transition()
+		self.validate_on_complete()
+
+	def validate_transition(self):
+		if self.workflow_state == 'Declaration of Electronic Signature' and not self.work_contract:
+			frappe.throw(_("Work Contract is not created for this Applicant"))
+		if self.workflow_state == 'Bank Account' and not self.duty_commencement:
+			frappe.throw(_("Duty Commencement is not created for the Employee"))
+
+	def validate_on_complete(self):
+		if self.workflow_state == 'Completed' and not frappe.db.get_value('Employee', self.employee, 'enrolled'):
+			frappe.throw(_("Employee has not yet registered/enrolled in the mobile app"))
+
 	def validate_employee_creation(self):
 		if self.docstatus != 1:
 			frappe.throw(_("Submit this to create the Employee record"))
