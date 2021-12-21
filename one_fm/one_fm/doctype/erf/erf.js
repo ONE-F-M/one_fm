@@ -199,7 +199,10 @@ frappe.ui.form.on('ERF', {
 		set_salary_structure(frm);
 	},
 	salary_structure: function(frm) {
-		set_salary_details(frm);
+		set_salary_structure_to_salary_details(frm);
+	},
+	base: function(frm) {
+		set_salary_structure_to_salary_details(frm);
 	},
 	status: function(frm) {
 		set_reason_for_decline_reqd(frm);
@@ -821,32 +824,6 @@ var set_other_benefits = function(frm) {
 	}
 };
 
-var set_salary_details = function(frm) {
-	frm.clear_table('salary_details');
-	if(frm.doc.salary_structure){
-		frappe.call({
-			method: 'frappe.client.get',
-			args: {
-				doctype: 'Salary Structure',
-				filters: {name: frm.doc.salary_structure}
-			},
-			callback: function(r) {
-				if(r.message && r.message.earnings){
-					let earnings = r.message.earnings;
-					earnings.forEach((earning) => {
-						// TODO: Calculate formula values to the amount from salary Structure
-						let salary_detail = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'salary_details');
-        		frappe.model.set_value(salary_detail.doctype, salary_detail.name, 'salary_component', earning.salary_component);
-        		frappe.model.set_value(salary_detail.doctype, salary_detail.name, 'amount', earning.amount);
-					});
-				}
-				frm.refresh_field('salary_details');
-			}
-		});
-	}
-	frm.refresh_field('salary_details');
-};
-
 var set_salary_structure = function(frm) {
 	if(frm.doc.grade){
 		frappe.call({
@@ -1007,4 +984,37 @@ var set_designation_childs_in_erf = function(frm, data, child_doc, child_field, 
 		});
 	});
 	frm.refresh_field(child_field);
+};
+
+var set_salary_structure_to_salary_details = function(frm) {
+	frm.clear_table('salary_details');
+	let total_amount = 0;
+	frm.set_value('salary_per_person', total_amount);
+	frm.refresh_field('salary_details');
+	if(frm.doc.salary_structure && frm.doc.base){
+		frappe.call({
+			method: 'frappe.client.get',
+			args: {
+				doctype: 'Salary Structure',
+				filters: {'name': frm.doc.salary_structure}
+			},
+			callback: function(r) {
+				if(r && r.message && r.message.earnings){
+					r.message.earnings.forEach((item, i) => {
+						let amount = item.amount ? item.amount : 0
+						if(item.amount_based_on_formula && item.formula){
+							const percent = item.formula.split("*")[1];
+							amount = parseInt(frm.doc.base)*parseFloat(percent);
+						}
+						total_amount += amount;
+						let salary = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'salary_details');
+						frappe.model.set_value(salary.doctype, salary.name, 'salary_component', item.salary_component);
+						frappe.model.set_value(salary.doctype, salary.name, 'amount', amount);
+					});
+				}
+				frm.set_value('salary_per_person', total_amount);
+				frm.refresh_field('salary_details');
+			}
+		});
+	}
 };
