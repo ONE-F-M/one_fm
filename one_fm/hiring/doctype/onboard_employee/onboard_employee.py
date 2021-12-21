@@ -91,7 +91,7 @@ class OnboardEmployee(Document):
 			if not self.reports_to:
 				frappe.throw(_("Select reports to user!"))
 			if self.declaration_of_electronic_signature:
-				signature = frappe.get_value("Electronic Signature Declaration",self.declaration_of_electronic_signature,applicant_signature)
+				signature = frappe.get_value("Electronic Signature Declaration",self.declaration_of_electronic_signature,['applicant_signature'])
 			elif self.job_offer:
 				employee = make_employee_from_job_offer(self.job_offer)
 				employee.reports_to = self.reports_to
