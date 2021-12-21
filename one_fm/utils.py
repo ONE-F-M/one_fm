@@ -1726,6 +1726,10 @@ def set_warehouse_contact_from_project(doc, method):
             links.link_name = doc.name
             address.save(ignore_permissions=True)
 
+def validate_iban_is_filled(doc, method):
+    if not doc.iban and doc.workflow_state == 'Active Account':
+        frappe.throw(_("Please Set IBAN before you mark Active Account the Bank Account"))
+
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
 
