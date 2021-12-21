@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from one_fm.hiring.utils import update_onboarding_doc, make_employee_from_job_offer
+from one_fm.hiring.utils import update_onboarding_doc, make_employee_from_job_offer, update_onboarding_doc_workflow_sate
 from frappe.utils import today, getdate, cstr
 from frappe import _
 
@@ -62,13 +62,14 @@ class DutyCommencement(Document):
 
 	def on_update(self):
 		self.set_progress()
-		self.validate_attachments()
+		self.validate_submit()
 		update_onboarding_doc(self)
 
-	def validate_attachments(self):
+	def validate_submit(self):
 		if self.workflow_state == 'Applicant Signed and Uploaded':
 			if not self.attach_duty_commencement:
 				frappe.throw(_("Attach Signed Duty Commencement!"))
+			update_onboarding_doc_workflow_sate(self)
 
 	def auto_checkin_candidate(self):
 		"""This method creates a Shift Assignment and auto checks-in the employee if current time is past shift start time."""

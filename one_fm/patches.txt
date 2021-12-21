@@ -2,3 +2,4 @@
 one_fm.patches.v1_0.change_title_in_grd #2021-07-11
 one_fm.patches.v1_0.delete_fields #2021-07-11
 one_fm.patches.v1_0.assign_roles #2021-09-13
+one_fm.patches.v1_0.update_notification_logs #2021-12-15

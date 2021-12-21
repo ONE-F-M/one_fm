@@ -606,3 +606,19 @@ def update_leave_policy_assignments_expires_today():
             leave_policy_assignment.leaves_allocated = True
             leave_policy_assignment.save(ignore_permissions=True)
             leave_policy_assignment.submit()
+
+def update_onboarding_doc_workflow_sate(doc):
+    onboard_employee_id = False
+    if doc.doctype == 'Employee':
+        onboard_employee_id = frappe.db.exists('Onboard Employee', {'employee': doc.name, 'docstatus': 1})
+    elif frappe.get_meta(doc.doctype).has_field("onboard_employee") and doc.onboard_employee:
+        onboard_employee_id = doc.onboard_employee
+    if onboard_employee_id:
+        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_id)
+        if doc.doctype == 'Work Contract':
+            onboard_employee.workflow_state = 'Work Contract'
+        if doc.doctype == 'Duty Commencement' and onboard_employee.workflow_state == 'Declaration of Electronic Signature':
+            onboard_employee.workflow_state = 'Duty Commencement'
+        if doc.doctype == 'Employee' and onboard_employee.workflow_state == 'Bank Account' and doc.enrolled:
+            onboard_employee.workflow_state = 'Mobile App Enrolment'
+        onboard_employee.save(ignore_permissions=True)

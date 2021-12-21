@@ -14,6 +14,26 @@ from frappe.utils import now, today
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 
 class OnboardEmployee(Document):
+	def on_update(self):
+		if self.workflow_state == 'Inform Applicant':
+			self.inform_applicant()
+
+	def on_update_after_submit(self):
+		self.validate_transition()
+		self.validate_on_complete()
+
+	def validate_transition(self):
+		if self.workflow_state == 'Applicant Attended':
+			self.mark_applicant_attended()
+		if self.workflow_state == 'Declaration of Electronic Signature' and not self.work_contract:
+			frappe.throw(_("Work Contract is not created for this Applicant"))
+		if self.workflow_state == 'Bank Account' and not self.duty_commencement:
+			frappe.throw(_("Duty Commencement is not created for the Employee"))
+
+	def validate_on_complete(self):
+		if self.workflow_state == 'Completed' and not frappe.db.get_value('Employee', self.employee, 'enrolled'):
+			frappe.throw(_("Employee has not yet registered/enrolled in the mobile app"))
+
 	def validate_employee_creation(self):
 		if self.docstatus != 1:
 			frappe.throw(_("Submit this to create the Employee record"))
@@ -43,7 +63,6 @@ class OnboardEmployee(Document):
 	def mark_applicant_attended(self):
 		self.applicant_attended_orientation = now()
 		self.applicant_attended = True
-		self.save(ignore_permissions=True)
 
 	@frappe.whitelist()
 	def create_work_contract(self):
@@ -56,7 +75,29 @@ class OnboardEmployee(Document):
 			for filter in filters:
 				wc.set(filter, filters[filter])
 			wc.save(ignore_permissions=True)
+	
+	@frappe.whitelist()
+	def create_declaration_of_electronic_signature(self):
+		"""
+		Create declaration_of_electronic_signature from onboard employee doc.
+		"""
+		if not frappe.db.exists('Electronic Signature Declaration', {'onboarding_employee': self.name}):
+			doc = frappe.new_doc('Electronic Signature Declaration')
+			doc.onboarding_employee = self.name
+			doc.employee_name = self.employee_name
+			doc.employee_name_in_arabic = self.employee_name_in_arabic
+			doc.nationality = self.nationality
+			doc.civil_id = self.civil_id
+			doc.company = self.company
+			doc.declarationen = "<h4>I,  {0}, nationality  {1}, holding civil ID no. {2} the undersigned, acknowledge that the signature written at the bottom of this acknowledgment is my own, certified, and valid signature, and that I acknowledge the acceptance and enforcement of this signature against me and against others, and I authorize {3} company / to adopt this signature as a legally valid electronic signature.</h4>".format(self.employee_name,self.nationality,self.civil_id,self.company)
+			doc.declarationar = "<h4>{0} قر أنا الموقع أدناه  / ، واحمل بطاقة مدنية ر {1} الجنسية({2}) بأن التوقيع المدون أسفل هذا اإلقرار و التوقيع الخاص بي معتمد وساري ،وأنني اقر بقبول ونفاذ هذا التوقيع في مواجهتي مواجهة الغير ، باعتماد {3}وأنني افوض شركة / .هذا التوقيع كتوقيع إلكتروني ساري المفعول قانوناً</h4>".format(self.employee_name_in_arabic,frappe.db.get_value("Nationality", self.nationality, 'nationality_arabic'),self.civil_id,self.company)
+			doc.save(ignore_permissions=True)
+			doc.submit()
+			self.declaration_of_electronic_signature = doc.name
+			self.save(ignore_permissions=True)
+			frappe.db.commit()
 
+		
 	@frappe.whitelist()
 	def create_duty_commencement(self):
 		if self.work_contract_status == "Applicant Signed":
@@ -71,6 +112,8 @@ class OnboardEmployee(Document):
 				frappe.throw(_("Select Leave Policy before Creating Employee!"))
 			if not self.reports_to:
 				frappe.throw(_("Select reports to user!"))
+			if self.declaration_of_electronic_signature:
+				signature = frappe.get_value("Electronic Signature Declaration",self.declaration_of_electronic_signature,['applicant_signature'])
 			elif self.job_offer:
 				employee = make_employee_from_job_offer(self.job_offer)
 				employee.reports_to = self.reports_to
@@ -80,6 +123,7 @@ class OnboardEmployee(Document):
 					employee.one_fm_nationality = self.nationality
 				employee.leave_policy = self.leave_policy
 				employee.one_fm_first_name_in_arabic = employee.employee_name
+				employee.employee_signature = signature
 
 				employee.permanent_address = "Test"
 				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
@@ -189,7 +233,7 @@ class OnboardEmployee(Document):
 			# 	create_account = False
 			# 	frappe.msgprint(_("Please attach Bank Form to create New Bank Account."))
 			if create_account:
-				if self.account_name and self.bank:
+				if self.account_name and self.bank and self.iban:
 					bank_account = frappe.new_doc('Bank Account')
 					bank_account.account_name = self.account_name
 					bank_account.bank = self.bank
@@ -200,7 +244,7 @@ class OnboardEmployee(Document):
 					bank_account.onboard_employee = self.name
 					bank_account.save(ignore_permissions=True)
 				else:
-					frappe.msgprint(_('To Create Bank Account, Set Account Name and Bank !'))
+					frappe.msgprint(_('To Create Bank Account, Set Account Name, Bank and IBAN !'))
 
 	@frappe.whitelist()
 	def create_g2g_residency_payment_request(self):
