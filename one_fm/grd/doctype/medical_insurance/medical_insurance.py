@@ -18,7 +18,6 @@ class MedicalInsurance(Document):
     def validate(self):
         self.set_value()
         
-
     def set_value(self):
         if not self.grd_supervisor: 
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
@@ -40,10 +39,8 @@ class MedicalInsurance(Document):
         if self.upload_medical_insurance == None:
             frappe.throw(_('Upload Medical Insurance Is Required To Submit'))
 
-#need to be inside the class
+
 def valid_work_permit_exists(preparation_name):
-    # TODO: filter work permit records only take the non kuwaiti
-    
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
@@ -84,28 +81,34 @@ def get_employee_data_from_civil_id(civil_id):
     if employee_id:
         return frappe.get_doc('Employee', employee_id)
     
-############################################################################# Reminder Notification 
-def system_remind_renewal_operator_to_apply():# cron job at 8pm
-    """This is a cron method runs every day at 4pm. It gets Draft renewal Medical Insurance list and reminds operator to apply on pam website"""
+#=======================================================================> Reminder Notification 
+def system_remind_renewal_operator_to_apply_mi():
+    """
+    This is a cron method runs every day at 8am. It gets Draft `renewal` Medical Insurance list and reminds operator to apply on pam website
+    """
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
-    {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    {'date_of_application':['<=',today()],'workflow_state':'Apply Online by PRO','insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     notification_reminder(medical_insurance_list,supervisor,renewal_operator,"Renewal or New")
     
 
-def system_remind_transfer_operator_to_apply():# cron job at 8pm
-    """This is a cron method runs every day at 4pm. It gets Draft transfer Medical Insurance list and reminds operator to apply on pam website"""
+def system_remind_transfer_operator_to_apply_mi():
+    """
+    This is a cron method runs every day at 8am. It gets Draft `transfer` Medical Insurance list and reminds operator to apply on pam website
+    """
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
-    {'date_of_application':['<=',date.today()],'workflow_state':'Apply Online by PRO','insurance_status':['=',('Local Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
+    {'date_of_application':['<=',today()],'workflow_state':'Apply Online by PRO','insurance_status':['=',('Local Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     notification_reminder(medical_insurance_list,supervisor,transfer_operator,"Local Transfer")
     
 
 
 def notification_reminder(medical_insurance_list,supervisor,operator,type):
-    """This method sends first, second, reminders and then send third one and cc supervisor in the email"""
+    """
+    This method sends first, second, reminders and then send third one and cc supervisor in the email
+    """
     first_reminder_list=[] 
     second_reminder_list=[] 
     penality_reminder_list=[] 
@@ -130,7 +133,9 @@ def notification_reminder(medical_insurance_list,supervisor,operator,type):
             frappe.db.set_value('Medical Insurance',mi.name,'reminder_grd_operator',1)
         
 def email_notification_reminder(grd_user,medical_insurance_list,reminder_number, action,type, cc=[]):
-    """This method send email to the required operator with the list of Medical Insurance for applying"""
+    """
+    This method send email to the required operator with the list of Medical Insurance that their date of application is today or passed already
+    """
     message_list=[]
     for medical_insurance in medical_insurance_list:
         page_link = get_url("/desk#Form/Medical Insurance/"+medical_insurance.name)
@@ -149,43 +154,6 @@ def email_notification_reminder(grd_user,medical_insurance_list,reminder_number,
             cc=cc,
             send_email=True,
         )
-
-# Notify GRD Operator to mark mi lists as completed (second time) 
-def email_notification_to_grd_user(grd_user, mi_list, reminder_indicator, action, cc=[]):
-    recipients = {}
-    
-    for mi in mi_list:
-        page_link = get_url("/desk#Form/Medical Insurance/"+mi.name)
-        message = "<a href='{0}'>{1}</a>".format(page_link, mi.name)
-        
-        if mi[grd_user] in recipients:
-            recipients[mi[grd_user]].append(message)
-        else:
-            recipients[mi[grd_user]]=[message]
-
-    if recipients:
-        for recipient in recipients:
-            message = "<p>Please {0} Medical Insurance listed below</p><ol>".format(action)
-            for msg in recipients[recipient]:
-                message += "<li>"+msg+"</li>"
-            message += "<ol>"
-            frappe.sendmail(
-                recipients=[recipient],
-                cc=cc,
-                subject=_('{0} Medical Insurance'.format(action)),
-                message=message,
-                header=['Medical Insurance Reminder', reminder_indicator],
-            )
-            to_do_to_grd_users(_('{0} Medical Insurance'.format(action)), message, recipient)
-
-def to_do_to_grd_users(subject, description, user):
-    frappe.get_doc({
-        "doctype": "ToDo",
-        "subject": subject,
-        "description": description,
-        "owner": user,
-        "date": today()
-    }).insert(ignore_permissions=True)
 
 def send_email(doc, recipients, message, subject):
     frappe.sendmail(

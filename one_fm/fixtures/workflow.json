@@ -4,14 +4,40 @@
   "doctype": "Workflow",
   "document_type": "MGRP",
   "is_active": 1,
-  "modified": "2021-08-09 17:43:35.898848",
+  "modified": "2021-11-18 01:42:58.530722",
   "name": "MGRP",
   "override_status": 0,
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
+   {
+    "allow_edit": "HR User",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "MGRP",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Draft",
+    "update_field": "form_status",
+    "update_value": "Open"
+   },
+   {
+    "allow_edit": "HR User",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "MGRP",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Form Printed",
+    "update_field": "form_status",
+    "update_value": "Printed"
+   },
    {
     "allow_edit": "GRD Operator",
     "doc_status": "0",
@@ -22,8 +48,8 @@
     "parentfield": "states",
     "parenttype": "Workflow",
     "state": "Apply Online by PRO",
-    "update_field": null,
-    "update_value": null
+    "update_field": "form_status",
+    "update_value": "Pending by GRD"
    },
    {
     "allow_edit": "GRD Operator",
@@ -53,6 +79,28 @@
    }
   ],
   "transitions": [
+   {
+    "action": "Print",
+    "allow_self_approval": 1,
+    "allowed": "HR User",
+    "condition": null,
+    "next_state": "Form Printed",
+    "parent": "MGRP",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit to GRD",
+    "allow_self_approval": 1,
+    "allowed": "HR User",
+    "condition": null,
+    "next_state": "Apply Online by PRO",
+    "parent": "MGRP",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Form Printed"
+   },
    {
     "action": "Apply",
     "allow_self_approval": 1,
@@ -95,7 +143,7 @@
   "doctype": "Workflow",
   "document_type": "Work Permit",
   "is_active": 1,
-  "modified": "2021-08-09 16:57:27.723498",
+  "modified": "2021-09-12 15:27:39.765866",
   "name": "Work Permit",
   "override_status": 0,
   "parent": null,
@@ -151,6 +199,45 @@
     "parent": "Work Permit",
     "parentfield": "states",
     "parenttype": "Workflow",
+    "state": "Pending By Previous Company",
+    "update_field": "work_permit_status",
+    "update_value": "Pending by Previous Company"
+   },
+   {
+    "allow_edit": "GRD Supervisor",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Work Permit",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending  For Payment",
+    "update_field": "work_permit_status",
+    "update_value": "Pending by Supervisor for Payment"
+   },
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Work Permit",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending By Operator",
+    "update_field": "work_permit_status",
+    "update_value": "Pending by Operator"
+   },
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Work Permit",
+    "parentfield": "states",
+    "parenttype": "Workflow",
     "state": "Pending By PAM",
     "update_field": "work_permit_status",
     "update_value": "Pending by Operator"
@@ -158,6 +245,19 @@
    {
     "allow_edit": "GRD Operator",
     "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Work Permit",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Reason of Rejection",
+    "update_field": "work_permit_status",
+    "update_value": "Rejected"
+   },
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -217,11 +317,22 @@
     "state": "Pending By Supervisor"
    },
    {
+    "action": "Accept",
+    "allow_self_approval": 1,
+    "allowed": "GRD Supervisor",
+    "condition": "doc.work_permit_type == \"Local Transfer\"\n",
+    "next_state": "Pending By Previous Company",
+    "parent": "Work Permit",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending By Supervisor"
+   },
+   {
     "action": "Reject",
     "allow_self_approval": 1,
     "allowed": "GRD Supervisor",
     "condition": null,
-    "next_state": "Apply Online by PRO",
+    "next_state": "Rejected",
     "parent": "Work Permit",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -243,22 +354,77 @@
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
     "condition": null,
-    "next_state": "Rejected",
+    "next_state": "Reason of Rejection",
     "parent": "Work Permit",
     "parentfield": "transitions",
     "parenttype": "Workflow",
     "state": "Pending By PAM"
    },
    {
-    "action": "Restart Application",
+    "action": "Informed Previous Company",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
-    "condition": null,
-    "next_state": "Apply Online by PRO",
+    "condition": "doc.work_permit_type == \"Local Transfer\"\n",
+    "next_state": "Pending By PAM",
     "parent": "Work Permit",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Rejected"
+    "state": "Pending By Previous Company"
+   },
+   {
+    "action": "Accept",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": "doc.work_permit_type == \"Local Transfer\"",
+    "next_state": "Pending  For Payment",
+    "parent": "Work Permit",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending By PAM"
+   },
+   {
+    "action": "Paid",
+    "allow_self_approval": 1,
+    "allowed": "GRD Supervisor",
+    "condition": "doc.work_permit_type == \"Local Transfer\"",
+    "next_state": "Pending By Operator",
+    "parent": "Work Permit",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending  For Payment"
+   },
+   {
+    "action": "Done",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Completed",
+    "parent": "Work Permit",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending By Operator"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Reason of Rejection",
+    "parent": "Work Permit",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending By PAM"
+   },
+   {
+    "action": "Done",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Rejected",
+    "parent": "Work Permit",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Reason of Rejection"
    }
   ],
   "workflow_name": "Work Permit",
@@ -269,13 +435,13 @@
   "doctype": "Workflow",
   "document_type": "Medical Insurance",
   "is_active": 1,
-  "modified": "2021-07-26 11:40:37.727379",
+  "modified": "2021-11-18 01:43:30.455952",
   "name": "Medical Insurance",
   "override_status": 0,
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "GRD Operator",
@@ -325,13 +491,13 @@
   "doctype": "Workflow",
   "document_type": "MOI Residency Jawazat",
   "is_active": 1,
-  "modified": "2021-07-26 11:43:37.775899",
+  "modified": "2021-11-18 01:43:23.247401",
   "name": "MOI",
   "override_status": 0,
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "GRD Operator",
@@ -381,13 +547,13 @@
   "doctype": "Workflow",
   "document_type": "PACI",
   "is_active": 1,
-  "modified": "2021-07-26 11:46:44.962628",
+  "modified": "2021-10-26 15:49:10.692911",
   "name": "PACI",
   "override_status": 0,
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "GRD Operator",
@@ -434,7 +600,7 @@
     "action": "Done",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
-    "condition": "doc.upload_civil_id_payment",
+    "condition": "",
     "next_state": "Under Process",
     "parent": "PACI",
     "parentfield": "transitions",
@@ -461,13 +627,13 @@
   "doctype": "Workflow",
   "document_type": "Fingerprint Appointment",
   "is_active": 1,
-  "modified": "2021-07-26 15:55:41.708130",
+  "modified": "2021-09-12 11:08:16.101921",
   "name": "Fingerprint Appointment",
   "override_status": 0,
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "GRD Operator",
@@ -511,10 +677,10 @@
   ],
   "transitions": [
    {
-    "action": "Done",
+    "action": "Apply",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
-    "condition": "doc.date_and_time_confirmation",
+    "condition": "",
     "next_state": "Booked",
     "parent": "Fingerprint Appointment",
     "parentfield": "transitions",
@@ -525,7 +691,7 @@
     "action": "Done",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
-    "condition": "doc.date_and_time_confirmation and doc.required_transportation",
+    "condition": "",
     "next_state": "Completed",
     "parent": "Fingerprint Appointment",
     "parentfield": "transitions",
@@ -541,13 +707,13 @@
   "doctype": "Workflow",
   "document_type": "Transfer Paper",
   "is_active": 1,
-  "modified": "2021-07-26 12:07:03.928545",
+  "modified": "2021-11-18 01:43:05.706066",
   "name": "Transfer Paper",
   "override_status": 0,
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Recruiter",
@@ -559,8 +725,21 @@
     "parentfield": "states",
     "parenttype": "Workflow",
     "state": "Draft",
-    "update_field": null,
-    "update_value": null
+    "update_field": "tp_status",
+    "update_value": "Opened"
+   },
+   {
+    "allow_edit": "Recruiter",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Transfer Paper",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Form Printed",
+    "update_field": "tp_status",
+    "update_value": "Printed"
    },
    {
     "allow_edit": "Onboarding Officer",
@@ -573,7 +752,7 @@
     "parenttype": "Workflow",
     "state": "Pending by Onboarding",
     "update_field": "tp_status",
-    "update_value": "Opened"
+    "update_value": "Pending by Onboarding"
    },
    {
     "allow_edit": "Onboarding Officer",
@@ -586,11 +765,11 @@
     "parenttype": "Workflow",
     "state": "Under Process",
     "update_field": "tp_status",
-    "update_value": "Under-Process"
+    "update_value": "Pending By GRD"
    },
    {
     "allow_edit": "Onboarding Officer",
-    "doc_status": "0",
+    "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -599,23 +778,34 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": "tp_status",
-    "update_value": "Pending By GRD"
+    "update_value": "Completed"
    }
   ],
   "transitions": [
    {
-    "action": "Done",
+    "action": "Print",
     "allow_self_approval": 1,
     "allowed": "Recruiter",
     "condition": null,
-    "next_state": "Pending by Onboarding",
+    "next_state": "Form Printed",
     "parent": "Transfer Paper",
     "parentfield": "transitions",
     "parenttype": "Workflow",
     "state": "Draft"
    },
    {
-    "action": "Done",
+    "action": "Submit to Onboarding Officer",
+    "allow_self_approval": 1,
+    "allowed": "Onboarding Officer",
+    "condition": null,
+    "next_state": "Pending by Onboarding",
+    "parent": "Transfer Paper",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Form Printed"
+   },
+   {
+    "action": "Submit to GRD",
     "allow_self_approval": 1,
     "allowed": "Onboarding Officer",
     "condition": null,
@@ -629,7 +819,7 @@
     "action": "Done",
     "allow_self_approval": 1,
     "allowed": "Onboarding Officer",
-    "condition": "doc.signed == \"Yes\" ",
+    "condition": "",
     "next_state": "Completed",
     "parent": "Transfer Paper",
     "parentfield": "transitions",
@@ -645,7 +835,7 @@
   "doctype": "Workflow",
   "document_type": "PIFSS Form 103",
   "is_active": 1,
-  "modified": "2021-08-07 08:57:00.702138",
+  "modified": "2021-09-12 11:25:24.335418",
   "name": "PIFSS Form 103",
   "override_status": 0,
   "parent": null,
@@ -703,7 +893,7 @@
     "parenttype": "Workflow",
     "state": "Awaiting Response",
     "update_field": "status",
-    "update_value": "Awaiting Response"
+    "update_value": "Awaiting Response by PIFSS"
    },
    {
     "allow_edit": "GRD Operator",
@@ -1767,7 +1957,7 @@
   "doctype": "Workflow",
   "document_type": "Bank Account",
   "is_active": 1,
-  "modified": "2021-07-05 12:51:09.144291",
+  "modified": "2021-10-04 08:58:59.196865",
   "name": "Bank Account",
   "override_status": 0,
   "parent": null,
@@ -1776,7 +1966,7 @@
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Employee",
+    "allow_edit": "Accommodation User",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2325,13 +2515,13 @@
   "doctype": "Workflow",
   "document_type": "Shift Permission",
   "is_active": 1,
-  "modified": "2020-06-01 22:22:26.746456",
+  "modified": "2021-11-18 01:44:03.912134",
   "name": "Shift Permission",
   "override_status": 0,
   "parent": null,
   "parentfield": null,
   "parenttype": null,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Employee",
@@ -3371,7 +3561,7 @@
   "doctype": "Workflow",
   "document_type": "PIFSS Monthly Deduction",
   "is_active": 1,
-  "modified": "2021-08-04 12:01:17.406687",
+  "modified": "2021-10-18 13:03:56.736827",
   "name": "PIFSS Monthly Deduction",
   "override_status": 0,
   "parent": null,
@@ -3468,6 +3658,401 @@
    }
   ],
   "workflow_name": "PIFSS Monthly Deduction",
+  "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "PIFSS Monthly Deduction Tool",
+  "is_active": 1,
+  "modified": "2021-10-22 15:39:46.662280",
+  "name": "PIFSS Monthly Deduction Tool",
+  "override_status": 0,
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Draft",
+    "update_field": "status",
+    "update_value": "Open"
+   },
+   {
+    "allow_edit": "GRD Operator",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending By Operator",
+    "update_field": "status",
+    "update_value": "Pending By Operator"
+   },
+   {
+    "allow_edit": "GRD Supervisor",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending By Supervisor",
+    "update_field": "status",
+    "update_value": "Pending By Supervisor"
+   },
+   {
+    "allow_edit": "GRD Supervisor",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved By Supervisor",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "GRD Supervisor",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected By Supervisor",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "GRD Supervisor",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Completed",
+    "update_field": "status",
+    "update_value": "Completed"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Save",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Pending By Operator",
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit to GRD Supervisor",
+    "allow_self_approval": 1,
+    "allowed": "GRD Operator",
+    "condition": null,
+    "next_state": "Pending By Supervisor",
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending By Operator"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "GRD Supervisor",
+    "condition": null,
+    "next_state": "Approved By Supervisor",
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending By Supervisor"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "GRD Supervisor",
+    "condition": null,
+    "next_state": "Rejected By Supervisor",
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending By Supervisor"
+   },
+   {
+    "action": "Save",
+    "allow_self_approval": 1,
+    "allowed": "GRD Supervisor",
+    "condition": null,
+    "next_state": "Pending By Operator",
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Rejected By Supervisor"
+   },
+   {
+    "action": "Done",
+    "allow_self_approval": 1,
+    "allowed": "GRD Supervisor",
+    "condition": null,
+    "next_state": "Completed",
+    "parent": "PIFSS Monthly Deduction Tool",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Approved By Supervisor"
+   }
+  ],
+  "workflow_name": "PIFSS Monthly Deduction Tool",
+  "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Overtime Request",
+  "is_active": 1,
+  "modified": "2021-11-14 09:09:02.815632",
+  "name": "Overtime Request",
+  "override_status": 0,
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "Projects Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Overtime Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Draft",
+    "update_field": "status",
+    "update_value": "Draft"
+   },
+   {
+    "allow_edit": "Projects Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Overtime Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending",
+    "update_field": "status",
+    "update_value": "Pending"
+   },
+   {
+    "allow_edit": "Employee",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Overtime Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Request Accepted",
+    "update_field": "status",
+    "update_value": "Accepted"
+   },
+   {
+    "allow_edit": "Employee",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Overtime Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Request Rejected",
+    "update_field": "status",
+    "update_value": "Rejected"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Submit to Employee",
+    "allow_self_approval": 1,
+    "allowed": "Projects Manager",
+    "condition": null,
+    "next_state": "Pending",
+    "parent": "Overtime Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Accept",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "condition": null,
+    "next_state": "Request Accepted",
+    "parent": "Overtime Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "condition": null,
+    "next_state": "Request Rejected",
+    "parent": "Overtime Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending"
+   }
+  ],
+  "workflow_name": "Overtime Request",
+  "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Employee Incentive",
+  "is_active": 1,
+  "modified": "2021-11-18 13:52:51.357986",
+  "name": "Employee Incentive",
+  "override_status": 0,
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "Site Supervisor",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Draft",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Line Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved by Manager",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Line Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected by Manager",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved by HR Manager",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "HR Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Employee Incentive",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected by HR Manager",
+    "update_field": null,
+    "update_value": null
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Line Manager",
+    "condition": null,
+    "next_state": "Approved by Manager",
+    "parent": "Employee Incentive",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Line Manager",
+    "condition": null,
+    "next_state": "Rejected by Manager",
+    "parent": "Employee Incentive",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "HR Manager",
+    "condition": null,
+    "next_state": "Approved by HR Manager",
+    "parent": "Employee Incentive",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Approved by Manager"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "HR Manager",
+    "condition": null,
+    "next_state": "Rejected by HR Manager",
+    "parent": "Employee Incentive",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Rejected by Manager"
+   }
+  ],
+  "workflow_name": "Employee Incentive",
   "workflow_state_field": "workflow_state"
  }
 ]

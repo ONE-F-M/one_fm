@@ -2,7 +2,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 import frappe, json
-from frappe.utils import get_url, fmt_money, month_diff
+from frappe.utils import get_url, fmt_money, month_diff, add_days, add_years, getdate
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
 from frappe.modules import scrub
@@ -188,6 +188,48 @@ def employee_after_insert(doc, method):
     create_salary_structure_assignment(doc, method)
     update_erf_close_with(doc)
     create_wp_for_transferable_employee(doc)
+    create_leave_policy_assignment(doc)
+
+def create_leave_policy_assignment(doc):
+    '''
+        Method to create Leave Policy Assignment for an Employee, if employee have a Leave Policy
+        Create Leave Policy based on Joining Date
+        args:
+            doc: Employee Object
+    '''
+    if doc.leave_policy:
+        assignment = frappe.new_doc("Leave Policy Assignment")
+        assignment.employee = doc.name
+        assignment.assignment_based_on = 'Joining Date'
+        assignment.leave_policy = doc.leave_policy
+        assignment.effective_from = doc.date_of_joining
+        assignment.effective_to = add_years(doc.date_of_joining, 1)
+        assignment.carry_forward = True
+        assignment.leaves_allocated = True # Since Leaves will be allocated from ONE FM Scheduler
+        assignment.save()
+        assignment.submit()
+
+@frappe.whitelist()
+def grant_leave_alloc_for_employee(doc):
+    if not doc.leaves_allocated:
+        from erpnext.hr.doctype.leave_policy_assignment.leave_policy_assignment import get_leave_details
+        leave_allocations = {}
+        leave_type_details = get_leave_type_details()
+
+        leave_policy = frappe.get_doc("Leave Policy", doc.leave_policy)
+        date_of_joining = frappe.db.get_value("Employee", doc.employee, "date_of_joining")
+
+        for leave_policy_detail in leave_policy.leave_policy_details:
+            if not leave_type_details.get(leave_policy_detail.leave_type).is_lwp:
+                leave_allocation, new_leaves_allocated = doc.create_leave_allocation(
+                    leave_policy_detail.leave_type, leave_policy_detail.annual_allocation,
+                    leave_type_details, date_of_joining
+                )
+
+                leave_allocations[leave_policy_detail.leave_type] = {"name": leave_allocation, "leaves": new_leaves_allocated}
+
+        doc.db_set("leaves_allocated", 1)
+        return leave_allocations
 
 def create_wp_for_transferable_employee(doc):
     """
@@ -480,6 +522,12 @@ def job_offer_onload(doc, method):
 
 @frappe.whitelist()
 def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
+    """
+    runs: `on_update` of employee doctype record
+    Args:
+        doc: employee object
+        method: on_update
+    """
     if doc.one_fm_nationality == "Kuwaiti":
         field_list = [{'Nationality No':'nationality_no'},{'Nationality Subject':'nationality_subject'},{'Date of Naturalization':'date_of_naturalization'}]
         mandatory_fields = []
@@ -497,38 +545,32 @@ def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
 
 @frappe.whitelist()
 def set_employee_name(doc,method):
-    """This method for getting the arabic full name
-    and fetching children details from job applicant"""
+    """
+    runs: `validate` of employee record
+    doc: employee object
+    method: validate
+    This method for getting the arabic full name and fetching children details from job applicant to employee record
+    """
     doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_forth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
 
     if doc.job_applicant:
-        table=[]
-        applicant = frappe.get_doc('Job Applicant',doc.job_applicant)
-        for child in applicant.one_fm_kids_details:
-            table.append({
-                'child_name': child.child_name,
-                'child_name_in_arabic': child.child_name_in_arabic,
-                'age': child.age,
-                'work_status': child.work_status,
-                'married': child.married,
-                'health_status': child.health_status
-            })
-
-        if len(table)>0:
-            for row in table:
+        applicant = frappe.get_doc('Job Applicant',doc.job_applicant) # Fetching the children table from job applicant to Employee doctype
+        if applicant.one_fm_number_of_kids > 0:
+            for child in applicant.one_fm_kids_details:
                 children = doc.append('children_details',{})
-                children.child_name = row['child_name']
-                children.child_name_in_arabic = row['child_name_in_arabic']
-                children.age = row['age']
-                children.work_status = row['work_status']
-                children.married = row['married']
-                children.health_status = row['health_status']
-            children.save()
+                children.child_name = child.child_name
+                children.child_name_in_arabic = child.child_name_in_arabic
+                children.age = child.age
+                children.work_status = child.work_status
+                children.married = child.married
+                children.health_status = child.health_status
             frappe.db.commit()
 
-@frappe.whitelist()#old wp was rejected
+@frappe.whitelist()# old wp was rejected
 def create_new_work_permit(work_permit):
-    """This Method If Work Permit got rejected """
+    """
+    This Method If Work Permit got rejected and it is called from wp.js file using `set_restart_application`
+    """
     doc = frappe.get_doc('Work Permit',work_permit)
     wp = frappe.new_doc('Work Permit')
     wp.employee = doc.employee
@@ -544,3 +586,23 @@ def create_new_work_permit(work_permit):
         wp.preparation = doc.preparation
     wp.save(ignore_permissions=True)
     return wp
+
+def update_leave_policy_assignments_expires_today():
+    '''
+        Method to create Leave Policy Assignment when existing one expires today
+    '''
+    # Get Active Leave Policy Assignment List thats ends today
+    leave_policy_assignments = frappe.db.get_list('Leave Policy Assignment', {'effective_to': getdate(today())})
+    for policy_assignment in leave_policy_assignments:
+        doc = frappe.get_doc('Leave Policy Assignment', policy_assignment.name)
+        # Check if the employee status not Left
+        if frappe.db.get_value('Employee', doc.employee, 'status') not in ['Left']:
+            leave_policy_assignment = frappe.new_doc('Leave Policy Assignment')
+            leave_policy_assignment.employee = doc.employee
+            leave_policy_assignment.effective_from = add_days(getdate(doc.effective_to), 1)
+            leave_policy_assignment.effective_to = add_years(getdate(leave_policy_assignment.effective_from), 1)
+            leave_policy_assignment.leave_policy = doc.leave_policy
+            leave_policy_assignment.carry_forward = doc.carry_forward
+            leave_policy_assignment.leaves_allocated = True
+            leave_policy_assignment.save(ignore_permissions=True)
+            leave_policy_assignment.submit()

@@ -8,6 +8,10 @@ from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, get_link_to_
 
 
 class RosterPostActions(Document):
+
+	def autoname(self):
+		self.name = self.start_date + "|" + self.end_date + "|" + self.action_type  + "|" + self.supervisor
+
 	def after_insert(self):
 		# send notification to supervisor
 		user_id = frappe.db.get_value("Employee", self.supervisor, ["user_id"])

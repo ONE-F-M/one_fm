@@ -72,7 +72,11 @@ doctype_js = {
 	"Purchase Order": "public/js/doctype_js/purchase_order.js",
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
 	"Payment Entry": "public/js/doctype_js/payment_entry.js",
-	"Item Price": "public/js/doctype_js/item_price.js"
+	"Item Price": "public/js/doctype_js/item_price.js",
+	"Employee Incentive": "public/js/doctype_js/employee_incentive.js",
+	"Employee": "public/js/doctype_js/employee.js",
+	"Salary Slip": "public/js/doctype_js/salary_slip.js",
+	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -153,7 +157,10 @@ doc_events = {
 	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
-		"validate": "one_fm.utils.validate_hajj_leave",
+		"validate": [
+			"one_fm.utils.validate_hajj_leave",
+			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
+		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
 	},
 	"Leave Type": {
@@ -210,14 +217,12 @@ doc_events = {
 	},
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
-		"after_insert": "one_fm.api.doc_events.checkin_after_insert"
+		"after_insert": "one_fm.api.doc_events.checkin_after_insert",
+		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office"
 	},
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
 		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit"
-	},
-	"ToDo": {
-		"after_insert": "one_fm.grd.utils.todo_after_insert"
 	},
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
@@ -227,7 +232,12 @@ doc_events = {
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
-		"on_submit": "one_fm.api.tasks.update_shift_details_in_attendance"
+		"on_submit": [
+			"one_fm.api.tasks.update_shift_details_in_attendance",
+			"one_fm.api.doc_events.create_additional_salary_for_overtime",
+			"one_fm.one_fm.utils.manage_attendance_on_holiday"
+		],
+		"on_cancel": "one_fm.one_fm.utils.manage_attendance_on_holiday"
 	},
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
@@ -237,14 +247,22 @@ doc_events = {
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice"
 	},
 	"Salary Slip": {
-		"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit"
+		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
+		"validate": "one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip"
 	},
 	"Training Event":{
 		"on_submit": "one_fm.api.doc_events.update_training_event_data"
 	},
 	"Training Result" :{
-		"on_submit": "one_fm.api.doc_events.update_certification_data" 
+		"on_submit": "one_fm.api.doc_events.update_certification_data"
 	},
+	"Employee Incentive": {
+		"on_update": "one_fm.one_fm.payroll_utils.on_update_employee_incentive",
+		"on_update_after_submit": "one_fm.one_fm.payroll_utils.on_update_after_submit_employee_incentive",
+	},
+	"Payroll Entry": {
+		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
+	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -300,8 +318,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
-		
-
+		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -315,7 +332,8 @@ scheduler_events = {
   ],
 
 	"monthly": [
-		"one_fm.accommodation.utils.execute_monthly"
+		"one_fm.accommodation.utils.execute_monthly",
+		"one_fm.utils.send_roster_report"
 
 	],
 
@@ -323,8 +341,8 @@ scheduler_events = {
 		"0 8 * * 0,1,2,3,4":[#run durring working days only
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
-			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_renewal_operator_to_apply',#mi
-			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_transfer_operator_to_apply',
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_renewal_operator_to_apply_mi',#mi
+			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_transfer_operator_to_apply_mi',
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_remind_renewal_operator_to_apply',#moi
 			'one_fm.grd.doctype.moi_residency_jawazat.moi_residency_jawazat.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.paci.paci.system_remind_renewal_operator_to_apply',#paci
@@ -370,20 +388,15 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.notify_to_upload_hawiyati',
 			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
-			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_status_on_pifss',
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_under_process_status_on_pifss',
 			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp',
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
 			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
 			'one_fm.utils.issue_roster_actions'
-
-
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',
-
-
 		],
 		"0 11 * * *": [
 			'one_fm.utils.check_upload_tasriah_reminder1'
@@ -408,13 +421,10 @@ scheduler_events = {
 		"0 6 * * *":[
 			'one_fm.one_fm.sales_invoice_custom.create_sales_invoice'
 		],
-		"0 */48 * * *": [
-			'one_fm.one_fm.pifss.doctype.pifss_form_103.pifss_form_103.notify_open_pifss'
-		],
 		"00 00 24 * *": [
 			'one_fm.api.tasks.generate_penalties'
 		],
-		"00 11 26 * *": [
+		"00 01 24 * *": [
 			'one_fm.api.tasks.generate_site_allowance'
 		],
 		"00 02 24 * *": [

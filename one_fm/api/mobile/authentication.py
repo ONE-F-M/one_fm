@@ -14,6 +14,7 @@ from twilio.rest import Client
 
 @frappe.whitelist(allow_guest=True)
 def login(client_id, grant_type, employee_id, password):
+
 	"""
 	Params:
 	Client Id: Can be found in Social Login Key doctype.
@@ -25,6 +26,7 @@ def login(client_id, grant_type, employee_id, password):
 		Access token, refresh token, Enrollment status for checkin, Employee Id, Employee name, Employee image, Employee/Supervisor flag. 
 	"""
 	try:
+		site = "https://"+frappe.utils.cstr(frappe.local.site)
 		# username = frappe.get_value("Employee", employee_id, "user_id")
 		username =  frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
 		if not username:
@@ -39,13 +41,14 @@ def login(client_id, grant_type, employee_id, password):
 		session = requests.Session()
 
 		# Login
+		auth_api = site + "/api/method/frappe.integrations.oauth2.get_token"
 		response = session.post(
-		 	"https://dev.one-fm.com/api/method/frappe.integrations.oauth2.get_token",
+		 	auth_api,
 		 	data=args, headers=headers
 		)
 
 		if response.status_code == 200:
-			conn = FrappeClient("https://dev.one-fm.com",username=username, password=password)
+			conn = FrappeClient(site,username=username, password=password)
 			user, user_roles, user_employee =  conn.get_api("one_fm.api.mobile.roster.get_current_user_details")
 			res = response.json()
 			res.update(user_employee)

@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "autoname": "ML.######",
+ "creation": "2021-12-07 07:51:58.273268",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_doctype",
+  "reference_docname",
+  "link_for",
+  "created_on",
+  "expired",
+  "expired_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reference Doctype",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reference_docname",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Reference Docname",
+   "options": "reference_doctype",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "label": "Created On",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "expired",
+   "fieldtype": "Check",
+   "label": "Expired"
+  },
+  {
+   "fieldname": "expired_on",
+   "fieldtype": "Date",
+   "label": "Expired On"
+  },
+  {
+   "fieldname": "link_for",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Link For",
+   "options": "DocType",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-12-07 08:04:15.779244",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Magic Link",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -31,7 +31,9 @@ class MOIResidencyJawazat(Document):
             self.new_residency_expiry_date = employee.work_permit_expiry_date
             
     def set_company_address(self):
-        """This method sets the company address from MOCI document"""
+        """
+        This method sets the company address from MOCI document
+        """
         missing_field = False
         fields = ['company_pam_file_number','company_location','company_block_number','company_street_name','company_building_name','company_contact_number']
         for field in fields:
@@ -46,14 +48,19 @@ class MOIResidencyJawazat(Document):
             self.company_pam_file_number = moci.company_civil_id
 
     def set_company_unified_number(self):
-        """This method to set the unified number from private pam file to moi document"""
+        """
+        runs: `validate`
+        This method to set the unified number from private pam file to moi document
+        """
         if not self.company_centralized_number:
             number = frappe.db.get_value('PAM File',{'pam_file_number':self.company_pam_file_number},['company_unified_number'])
             if number:
                 self.company_centralized_number = number
 
     def set_paci_number(self):
-        """This method sets the paci number in moi document from pam authorized signatury under same file"""
+        """
+        This method sets the paci number in moi document from pam authorized signatury under same file
+        """
         if not self.paci_number:
             paci_number = frappe.db.get_value('PAM Authorized Signatory List',{'pam_file_number':self.company_pam_file_number},['company_paci_number'])
             self.paci_number = paci_number
@@ -87,10 +94,14 @@ class MOIResidencyJawazat(Document):
             frappe.throw(message)
 
     def set_residency_expiry_new_date_in_employee_doctype(self):
-        """This method to sort records of employee documents upon document name;
-           First, get the employee document child table. second, find index of the document. Third, set the new document.
-           After that, clear the child table and append the new order"""
-
+        """
+        runs: `on_submit`
+        This method to sort records of employee documents upon document name;
+        First, get the employee document child table. 
+        second, find index of the document. 
+        Third, set the new document.
+        After that, clear the child table and append the new order
+        """
         today = date.today()
         Find = False
         employee = frappe.get_doc('Employee', self.employee)
@@ -161,7 +172,7 @@ def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
     new_moi.category = category
     new_moi.insert()
 
-############################################################################# Reminder Notification 
+#=================================================================> Reminder Notification 
 def system_remind_renewal_operator_to_apply():# cron job at 4pm
     """This is a cron method runs every day at 4pm. It gets Draft renewal MOI list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
@@ -208,7 +219,9 @@ def notification_reminder(moi_list,supervisor,operator,type):
             frappe.db.set_value('MOI Residency Jawazat',moi.name,'reminded_grd_operator',1)
         
 def email_notification_reminder(grd_user,moi_list,reminder_number, action,type, cc=[]):
-    """This method send email to the required operator with the list of MOI Residency Jawazat for applying"""
+    """
+    This method send email to the required operator with the list of MOI Residency Jawazat that their date of application is today or passed already
+    """
     message_list=[]
     for moi in moi_list:
         page_link = get_url("/desk#Form/MOI Residency Jawazat/"+moi.name)
@@ -228,15 +241,6 @@ def email_notification_reminder(grd_user,moi_list,reminder_number, action,type, 
             send_email=True,
         )
 
-def to_do_to_grd_users(subject, description, user):
-    frappe.get_doc({
-        "doctype": "ToDo",
-        "subject": subject,
-        "description": description,
-        "owner": user,
-        "date": today()
-    }).insert(ignore_permissions=True)
-
 def create_notification_log(subject, message, for_users, reference_doc):
     for user in for_users:
         doc = frappe.new_doc('Notification Log')
@@ -247,6 +251,3 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.document_name = reference_doc.name
         doc.from_user = reference_doc.modified_by
         doc.insert(ignore_permissions=True)
-
-
-

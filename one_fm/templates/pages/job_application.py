@@ -5,15 +5,12 @@ from frappe.model.document import Document
 from frappe.utils import get_url
 
 def get_context(context):
-    context.show_search = True
-
-@frappe.whitelist(allow_guest=True)
-def get_dummy():
-    # doc = frappe.get_doc('ERF', fields=[*])
-    doc = frappe.db.get_all('ERF', fields=['*'])
-    # doc.title = 'Test'
-    # doc.save()
-    return doc
+    context.parents = [{'route': 'jobs', 'title': _('All Jobs') }]
+    context.title = _("Application")
+    # Get job opening id from url to the context // frappe.form_dict.<args in url>
+    context.job_opening = frappe.get_doc('Job Opening', frappe.form_dict.job_title)
+    # Get Country List to the context to show in the portal
+    context.country_list = frappe.get_all('Country', fields=['name'])
 
 @frappe.whitelist(allow_guest=True)
 def easy_apply(first_name, second_name, third_name, last_name, nationality, civil_id, applicant_email, applicant_mobile,
@@ -50,6 +47,71 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
         return 1
     except:
         return 0
+
+@frappe.whitelist(allow_guest=True)
+def create_job_applicant_from_job_portal(applicant_name, country, applicant_email, applicant_mobile, job_opening, files):
+    '''
+        Method to create Job Applicant from Portal
+        args:
+            applicant_name: Name of the Applicant
+            country: Country of the Applicant
+            applicant_email: Applicant Email ID
+            applicant_mobile: Applicant Mobile Number
+            job_opening: Job Opening ID
+            files: The CV attached
+        Return True if Job Applicant created Succesfully
+        Return job_applicant if Job Applicant already exists for the job opening and applicant email_id combination
+    '''
+
+    # Return job_applicant if Job Applicant already exists for the job opening and applicant email_id combination
+    job_applicant = frappe.db.exists("Job Applicant", {"job_title": job_opening, "email_id": applicant_email})
+    if job_applicant:
+        return job_applicant
+    else:
+        # Get Nationality from country given by the applicant
+        nationality = frappe.db.exists('Nationality', {'country': country})
+        # Create Job Applicant
+        job_applicant = frappe.new_doc('Job Applicant')
+        job_applicant.job_title = job_opening
+        job_applicant.applicant_name = applicant_name
+        job_applicant.one_fm_nationality = nationality if nationality else ''
+        job_applicant.one_fm_email_id = applicant_email
+        job_applicant.one_fm_contact_number = applicant_mobile
+        job_applicant.one_fm_erf = frappe.db.get_value('Job Opening', job_opening, "one_fm_erf")
+        job_applicant.one_fm_is_easy_apply = True
+
+        job_applicant.one_fm_first_name = applicant_name
+        job_applicant.one_fm_first_name_in_arabic = applicant_name
+        job_applicant.one_fm_last_name = applicant_name
+        job_applicant.one_fm_last_name_in_arabic = applicant_name
+
+        job_applicant.save(ignore_permissions=True)
+
+        # If files exisit, attach the file to Job Applicant created
+        if files:
+            files_json = json.loads(files)
+            files_obj = frappe._dict(files_json)
+            for file in files_obj:
+                # Attach the file to Job Applicant created
+                attach_file_to_job_applicant(files_obj[file]['files_data'], job_applicant)
+            job_applicant.save(ignore_permissions=True)
+        return True
+
+@frappe.whitelist()
+def attach_file_to_job_applicant(filedata, job_applicant):
+    '''
+        Method to save file to db, attach file to job applicant and set resume_attachment field in Job Applicant
+        args:
+            filedata: filedata
+            job_applicant: Object of Job Applicant
+    '''
+    from frappe.utils.file_manager import save_file
+    if filedata:
+        for fd in filedata:
+            # Save file and attach to Job Applicant
+            filedoc = save_file(fd["filename"], fd["dataurl"], "Job Applicant", job_applicant.name, decode=True, is_private=0)
+            # Set resume_attachment as url of the file stored
+            job_applicant.resume_attachment = filedoc.file_url
 
 def create_job_applicant_for_easy_apply(applicant_name, first_name, second_name, third_name, last_name, nationality,
         civil_id, applicant_email, applicant_mobile, cover_letter, job_opening, first_name_arabic, last_name_arabic, files=None):

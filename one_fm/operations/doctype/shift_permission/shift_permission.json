@@ -106,14 +106,14 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval:doc.permission_type==\"Arrive Late\"",
+   "depends_on": "eval:doc.permission_type == \"Arrive Late\"",
    "fieldname": "arrival_time",
    "fieldtype": "Time",
    "in_list_view": 1,
    "label": "Arrival Time"
   },
   {
-   "depends_on": "eval:doc.permission_type==\"Leave Early\"",
+   "depends_on": "eval:doc.permission_type== \"Leave Early\"",
    "fieldname": "leaving_time",
    "fieldtype": "Time",
    "in_list_view": 1,
@@ -140,7 +140,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-14 15:39:51.980874",
+ "modified": "2021-11-06 16:56:05.624791",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
@@ -157,9 +157,22 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Shift Supervisor",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

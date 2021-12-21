@@ -34,7 +34,7 @@ class Penalty(Document):
 
 		if (doc_before_update and doc_before_update.workflow_state != "Penalty Rejected") and self.workflow_state == "Penalty Rejected":
 			legal_inv = self.create_legal_investigation()
-			self.db_set("legal_investigation_code", legal_inv)		
+			self.db_set("legal_investigation_code", legal_inv.name)		
 
 	def validate(self):
 		self.validate_self_issuance()
@@ -59,6 +59,7 @@ class Penalty(Document):
 		legal_inv.reference_doctype = self.doctype
 		legal_inv.reference_docname = self.name
 		legal_inv.investigation_lead = legal_manager[0].name
+		legal_inv.investigation_subject = "Penalty"
 		legal_inv.append("legal_investigation_employees", {
 			"employee_id": self.issuer_employee,
 			"employee_name": self.issuer_name,
@@ -78,6 +79,20 @@ class Penalty(Document):
 
 @frappe.whitelist()
 def accept_penalty(file, retries, docname):
+	"""
+	This is an API to accept penalty. To Accept Penalty, one needs to pass the face recognition test.
+	Image file in base64 format is passed through face regonition test. And, employee is given 3 tries.
+	If face recognition is true, the penalty gets accepted. 
+	If Face recognition fails even after 3 tries, the image is sent to legal mangager for investigation. 
+
+	Params:
+	File: Base64 url of captured image.
+	Retries: number of tries left out of three
+	Docname: Name of the penalty doctype
+
+	Returns: 
+		'success' message upon verification || updated retries and 'error' message || Exception. 
+	"""
 	retries_left = cint(retries) - 1
 	OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
 	penalty = frappe.get_doc("Penalty", docname)
@@ -100,7 +115,6 @@ def accept_penalty(file, retries, docname):
 			"folder": "Home/Attachments",
 			"is_private": 1
 		})
-		print(file_doc.as_dict())
 		file_doc.flags.ignore_permissions = True
 		file_doc.insert()
 

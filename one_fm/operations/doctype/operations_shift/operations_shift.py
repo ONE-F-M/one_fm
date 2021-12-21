@@ -15,15 +15,25 @@ from datetime import timedelta
 class OperationsShift(Document):
 	
 	def autoname(self):
-		self.name = self.service_type+"-"+self.site+"-"+self.shift_classification+"-"+cstr(self.shift_number)
+		#this method is updating the name of the record and sending clear message through exception if any of the records are missing
+		try:
+			self.name = self.service_type+"-"+self.site+"-"+self.shift_classification+"-"+cstr(self.shift_number)
+		except Exception as e:
+			if not self.service_type and self.site and self.shift_classification:
+				frappe.throw("Kindly, make sure all required fields are not missing")
 
 	def on_update(self):
 		self.validate_name()
 
 	def validate_name(self):
-		new_name = self.service_type+"-"+self.site+"-"+self.shift_classification+"-"+cstr(self.shift_number)
-		if new_name != self.name:
-			rename_doc(self.doctype, self.name, new_name, force=True)
+		#this method is updating the name of the record and sending clear message through exception if any of the records are missing
+		try:
+			new_name = self.service_type+"-"+self.site+"-"+self.shift_classification+"-"+cstr(self.shift_number)
+			if new_name != self.name:
+				rename_doc(self.doctype, self.name, new_name, force=True)
+		except Exception as e:
+			if not self.service_type and self.site and self.shift_classification:
+				frappe.throw("Kindly, make sure all required fields are not missing")
 
 @frappe.whitelist()
 def create_posts(data, site_shift, site, project=None):
