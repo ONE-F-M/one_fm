@@ -145,6 +145,7 @@
   "bank_account_section",
   "account_name",
   "bank",
+  "iban",
   "new_bank_account_needed",
   "attach_bank_form",
   "btn_create_bank_account",
@@ -192,8 +193,7 @@
   "request_for_material",
   "request_for_material_status",
   "request_for_material_docstatus",
-  "request_for_material_progress",
-  "column_break_96"
+  "request_for_material_progress"
  ],
  "fields": [
   {
@@ -1437,6 +1437,12 @@
    "fieldtype": "Check",
    "label": "Electronic Signature Declaration Status",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "iban",
+   "fieldtype": "Data",
+   "label": "IBAN"
   }
  ],
  "index_web_pages_for_search": 1,

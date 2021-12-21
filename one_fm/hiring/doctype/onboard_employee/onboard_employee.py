@@ -210,7 +210,7 @@ class OnboardEmployee(Document):
 			# 	create_account = False
 			# 	frappe.msgprint(_("Please attach Bank Form to create New Bank Account."))
 			if create_account:
-				if self.account_name and self.bank:
+				if self.account_name and self.bank and self.iban:
 					bank_account = frappe.new_doc('Bank Account')
 					bank_account.account_name = self.account_name
 					bank_account.bank = self.bank
@@ -221,7 +221,7 @@ class OnboardEmployee(Document):
 					bank_account.onboard_employee = self.name
 					bank_account.save(ignore_permissions=True)
 				else:
-					frappe.msgprint(_('To Create Bank Account, Set Account Name and Bank !'))
+					frappe.msgprint(_('To Create Bank Account, Set Account Name, Bank and IBAN !'))
 
 	@frappe.whitelist()
 	def create_g2g_residency_payment_request(self):
