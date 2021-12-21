@@ -193,7 +193,8 @@
   "request_for_material",
   "request_for_material_status",
   "request_for_material_docstatus",
-  "request_for_material_progress"
+  "request_for_material_progress",
+  "column_break_96"
  ],
  "fields": [
   {
@@ -653,7 +654,6 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.docstatus > 0",
    "fieldname": "orientation_section",
    "fieldtype": "Section Break",
    "label": "Orientation Details"
@@ -1448,7 +1448,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-21 10:17:35.935003",
+ "modified": "2021-12-21 13:10:18.121184",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
