@@ -132,6 +132,10 @@ class OnboardEmployee(Document):
 				employee.save(ignore_permissions=True)
 				self.employee = employee.name
 				self.save(ignore_permissions=True)
+				duty_commencement_doc_name = frappe.db.get_value("Duty Commencement", {'job_applicant': self.job_applicant}, ["name"])
+				duty_commencement_doc = frappe.get_doc("Duty Commencement", duty_commencement_doc_name)
+				duty_commencement_doc.employee = employee.name
+				duty_commencement_doc.save(ignore_permissions=True)
 
 	def validate_orientation(self):
 		if not self.informed_applicant:
