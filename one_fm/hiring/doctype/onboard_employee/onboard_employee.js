@@ -328,7 +328,7 @@ var set_applicant_details = function(frm, applicant) {
 var check_signature = function(frm) {
 	if(frm.doc.declaration_of_electronic_signature){
 		frappe.call({
-			method: 'one_fm.hiring.doctype.electronic_signature_declaration.electronic_signature_declaration.get_signature_status',
+			method: 'one_fm.hiring.doctype.electronic_signature_declaration.electronic_signature_declaration.check_signature_status',
 			args:{'declaration_of_electronic_signature':frm.doc.declaration_of_electronic_signature},
 			callback: function(r) {
 				console.log(r)
