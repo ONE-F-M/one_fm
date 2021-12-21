@@ -6,6 +6,13 @@ window.dev_server = {{dev_server}};
 window.socketio_port = {{frappe.socketio_port}};
 
 var is_kuwaiti = $('#Name').attr('is_kuwaiti');
+
+window.onload = () =>{
+if(is_kuwaiti==0){
+  document.getElementById("Sponsor").style.display = "block";
+}
+populate_nationality();
+}
 let civil_id_image = new FormData();
 let passport_image = new FormData();
 
@@ -106,7 +113,7 @@ function send_request(method, data, token, type){
 }
 function upload(){
   extract_image();
-  populate_nationality();
+  
 
   var method_map = {
     'civil_id': '/api/method/one_fm.templates.pages.applicant_docs.get_civil_id_text',
@@ -152,7 +159,6 @@ function fill_form(data, type){
         fetchNationality(data['front_text']['Country_Code']);
       }
       if(is_kuwaiti==0){
-        document.getElementById("Sponsor_Name").style.display = "block";
         input_data(data,'back_text','Sponsor_Name');
       }
     }
@@ -166,6 +172,14 @@ function fill_form(data, type){
 
 function input_data(Data, key1, key2){
   if(Data[key1][key2]!= undefined){
+    if(key2 =="Gender"){
+      if(Data[key1][key2]=="M"){
+        document.getElementById(key2).value = "Male"
+      }
+      else if(Data[key1][key2]=="F"){
+        document.getElementById(key2).value = "Female"
+      }
+    }
     document.getElementById(key2).value = Data[key1][key2];
   }
 }
