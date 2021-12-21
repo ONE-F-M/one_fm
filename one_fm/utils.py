@@ -1760,9 +1760,9 @@ def update_onboarding_doc_for_bank_account(doc):
         oe.bank_account_status = doc.workflow_state
         oe.account_name = doc.account_name
         oe.bank = doc.bank
+        if oe.workflow_state == 'Duty Commencement':
+            oe.workflow_state = 'Bank Account'
         oe.save(ignore_permissions=True)
-
-
 
 def issue_roster_actions():
     # Queue roster actions functions to backgrounds jobs

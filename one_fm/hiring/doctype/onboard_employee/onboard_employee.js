@@ -152,19 +152,13 @@ var set_filters = function(frm) {
 };
 
 var create_custom_buttons = function(frm) {
-	if(!frm.doc.informed_applicant){
-		btn_inform_applicant(frm);
-	}
-	if(!frm.doc.applicant_attended && frm.doc.informed_applicant){
-		btn_mark_applicant_attended(frm);
-	}
 	if(frm.doc.applicant_attended && !frm.doc.declaration_of_electronic_signature){
-        cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
-    }
-    if(frm.doc.electronic_signature_declaration_status == 1 && !frm.doc.work_contract){
+    cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
+  }
+  if(frm.doc.electronic_signature_declaration_status == 1 && !frm.doc.work_contract){
 		cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
 	}
-	if(frm.doc.work_contract_status == "Applicant Signed" && !frm.doc.duty_commencement){
+	if(frm.doc.work_contract_status == "Applicant Signed" && frm.doc.workflow_state == 'Declaration of Electronic Signature' && !frm.doc.duty_commencement){
 		cutom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
 	}
 	if(frm.doc.duty_commencement_status == "Applicant Signed and Uploaded" && !frm.doc.employee){
@@ -221,44 +215,6 @@ var btn_create_loan_action = function(frm) {
 			freeze_message: (__('Creating Loan ....!'))
 		});
 	}
-};
-
-var btn_mark_applicant_attended = function(frm) {
-	frm.add_custom_button(__('Mark Applicant Attended'), function() {
-		frappe.call({
-			doc: frm.doc,
-			method: 'mark_applicant_attended',
-			callback: function(r) {
-				frm.reload_doc();
-			},
-			freeze: true,
-			freeze_message: __('Mark Applicant Attended ...!')
-		});
-	}).addClass('btn-primary');
-};
-
-var btn_inform_applicant = function(frm) {
-	frm.add_custom_button(__('Inform Applicant'), function() {
-		if(frm.doc.docstatus == 1){
-			if(frm.doc.orientation_location && frm.doc.orientation_on){
-				frappe.call({
-					doc: frm.doc,
-					method: 'inform_applicant',
-					callback: function(r) {
-						frm.reload_doc();
-					},
-					freeze: true,
-					freeze_message: __('Process Inform Applicant ...!')
-				});
-			}
-			else{
-				frappe.throw(__('Please set Orientation Location, Date and Time to proceed ..!'));
-			}
-		}
-		else{
-			frappe.throw(__('Please submit the document and proceed ..!'));
-		}
-	}).addClass('btn-primary');
 };
 
 var cutom_btn_and_action = function(frm, method, dt) {

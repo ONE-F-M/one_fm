@@ -14,11 +14,17 @@ from frappe.utils import now, today
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 
 class OnboardEmployee(Document):
+	def on_update(self):
+		if self.workflow_state == 'Inform Applicant':
+			self.inform_applicant()
+
 	def on_update_after_submit(self):
 		self.validate_transition()
 		self.validate_on_complete()
 
 	def validate_transition(self):
+		if self.workflow_state == 'Applicant Attended':
+			self.mark_applicant_attended()
 		if self.workflow_state == 'Declaration of Electronic Signature' and not self.work_contract:
 			frappe.throw(_("Work Contract is not created for this Applicant"))
 		if self.workflow_state == 'Bank Account' and not self.duty_commencement:
@@ -57,7 +63,6 @@ class OnboardEmployee(Document):
 	def mark_applicant_attended(self):
 		self.applicant_attended_orientation = now()
 		self.applicant_attended = True
-		self.save(ignore_permissions=True)
 
 	@frappe.whitelist()
 	def create_work_contract(self):
