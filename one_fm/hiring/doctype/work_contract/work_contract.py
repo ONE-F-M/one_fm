@@ -28,7 +28,7 @@ class WorkContract(Document):
 
 	def after_insert(self):
 		update_onboarding_doc(self)
-
+		
 	def on_update(self):
 		self.set_progress()
 		self.update_on_workflow_state()
@@ -39,6 +39,11 @@ class WorkContract(Document):
 			self.validate_attachments()
 		if self.workflow_state == 'Send to Authorised Signatory' and not self.legal_receives_employee_file:
 			frappe.throw(_("Is Legal Receives Employee File ?, If yes please mark it!"))
+		if self.workflow_state == 'Submitted for Applicant Review':
+			#if applicant sign the contract, the workflow changes to "Applicant Signed",
+			if self.check_for_applicant_signature():
+				self.workflow_state = "Applicant Signed"
+				self.save()
 		if self.workflow_state == 'Completed':
 			if not self.legal_receives_original_work_contract:
 				frappe.throw(_("Is Legal Receives Original Work Contract?, If yes please mark it!"))
@@ -65,6 +70,13 @@ class WorkContract(Document):
 	def on_trash(self):
 		if self.docstatus == 0:
 			update_onboarding_doc(self, True)
+	
+	def check_for_applicant_signature(self):
+		if self.employee_signature:
+			return True
+		else:
+			return False
+	
 
 @frappe.whitelist()
 def get_employee_details_for_wc(type, employee=False, onboard_employee=False):
@@ -78,6 +90,7 @@ def get_employee_details_for_wc(type, employee=False, onboard_employee=False):
 			return None
 		else:
 			return employee_details_for_wc(frappe.get_doc('Employee', employee))
+
 
 def employee_details_for_wc(employee_or_oe):
 	details = {}
