@@ -4,6 +4,7 @@
 frappe.ui.form.on('Onboard Employee', {
 	refresh: function(frm) {
 		set_progress_html(frm);
+		check_signature(frm);
 		if (frm.doc.employee) {
 			frm.add_custom_button(__('Employee'), function() {
 				frappe.set_route("Form", "Employee", frm.doc.employee);
@@ -160,7 +161,7 @@ var create_custom_buttons = function(frm) {
 	if(frm.doc.applicant_attended && !frm.doc.declaration_of_electronic_signature){
         cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
     }
-    if(frm.doc.declaration_of_electronic_signature && !frm.doc.work_contract){
+    if(frm.doc.electronic_signature_declaration_status == 1 && !frm.doc.work_contract){
 		cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
 	}
 	if(frm.doc.work_contract_status == "Applicant Signed" && !frm.doc.duty_commencement){
@@ -323,6 +324,21 @@ var set_applicant_details = function(frm, applicant) {
 	}
 	// frm.set_value('applicant_name', applicant.applicant_name);
 };
+
+var check_signature = function(frm) {
+	if(frm.doc.declaration_of_electronic_signature){
+		frappe.call({
+			method: 'one_fm.hiring.doctype.electronic_signature_declaration.electronic_signature_declaration.get_signature_status',
+			args:{'declaration_of_electronic_signature':frm.doc.declaration_of_electronic_signature},
+			callback: function(r) {
+				console.log(r)
+				if(r.message){
+					frm.set_value('electronic_signature_declaration_status', r.message);
+				}
+			}
+		});
+	}
+}
 
 var set_progress_html = function(frm) {
 	var $wrapper = frm.fields_dict['progress_html'].$wrapper;

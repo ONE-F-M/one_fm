@@ -90,6 +90,8 @@ class OnboardEmployee(Document):
 				frappe.throw(_("Select Leave Policy before Creating Employee!"))
 			if not self.reports_to:
 				frappe.throw(_("Select reports to user!"))
+			if self.declaration_of_electronic_signature:
+				signature = frappe.get_value("Electronic Signature Declaration",self.declaration_of_electronic_signature,applicant_signature)
 			elif self.job_offer:
 				employee = make_employee_from_job_offer(self.job_offer)
 				employee.reports_to = self.reports_to
@@ -99,6 +101,7 @@ class OnboardEmployee(Document):
 					employee.one_fm_nationality = self.nationality
 				employee.leave_policy = self.leave_policy
 				employee.one_fm_first_name_in_arabic = employee.employee_name
+				employee.employee_signature = signature
 
 				employee.permanent_address = "Test"
 				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')

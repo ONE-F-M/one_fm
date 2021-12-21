@@ -1432,8 +1432,9 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
    "fieldname": "electronic_signature_declaration_status",
-   "fieldtype": "Data",
+   "fieldtype": "Check",
    "label": "Electronic Signature Declaration Status",
    "read_only": 1
   }
@@ -1441,7 +1442,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-20 16:05:16.000010",
+ "modified": "2021-12-21 10:17:35.935003",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
