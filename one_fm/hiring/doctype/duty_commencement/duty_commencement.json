@@ -266,6 +266,7 @@
   },
   {
    "fetch_from": "onboard_employee.employee",
+   "fetch_if_empty": 1,
    "fieldname": "employee",
    "fieldtype": "Link",
    "label": "Employee",
@@ -275,7 +276,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-12-19 10:28:50.489477",
+ "modified": "2021-12-21 13:13:30.440487",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Duty Commencement",
