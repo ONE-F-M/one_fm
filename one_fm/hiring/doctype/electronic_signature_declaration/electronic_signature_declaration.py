@@ -13,8 +13,7 @@ class ElectronicSignatureDeclaration(Document):
 
 @frappe.whitelist()
 def get_signature_status(declaration_of_electronic_signature):
-	signature = frappe.get_value("Electronic Signature Declaration", declaration_of_electronic_signature, ['applicant_signature'])
-	if signature:
+	if frappe.get_value("Electronic Signature Declaration", declaration_of_electronic_signature, ['applicant_signature']):
 		return 1
 	else:
 		return 0
