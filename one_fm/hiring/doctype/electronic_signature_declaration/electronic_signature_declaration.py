@@ -8,7 +8,7 @@ from frappe.model import core_doctypes_list
 from frappe.model.document import Document
 from frappe.utils import cstr
 
-class frappe.get_value("Electronic Signature Declaration", declaration_of_electronic_signature, ['applicant_signature'])(Document):
+class ElectronicSignatureDeclaration(Document):
 	pass
 
 @frappe.whitelist()
@@ -22,7 +22,7 @@ def check_signature_status(declaration_of_electronic_signature):
 		1: [if signature exist]
 		0: [if signature doesn't exist]
 	"""
-	if frappe.get_value("Electronic Signature Declaration", declaration_of_electronic_signature, ['applicant_signature']):
+	if frappe.db.get_value("Electronic Signature Declaration", declaration_of_electronic_signature, ['applicant_signature']):
 		return 1
 	else:
 		return 0
