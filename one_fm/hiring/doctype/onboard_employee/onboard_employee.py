@@ -59,6 +59,9 @@ class OnboardEmployee(Document):
 	
 	@frappe.whitelist()
 	def create_declaration_of_electronic_signature(self):
+		"""
+		Create declaration_of_electronic_signature from onboard employee doc.
+		"""
 		if not frappe.db.exists('Electronic Signature Declaration', {'onboarding_employee': self.name}):
 			doc = frappe.new_doc('Electronic Signature Declaration')
 			doc.onboarding_employee = self.name
