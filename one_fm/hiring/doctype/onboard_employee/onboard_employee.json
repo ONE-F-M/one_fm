@@ -119,6 +119,10 @@
   "work_contract_status",
   "work_contract_docstatus",
   "work_contract_progress",
+  "declaration_of_electronic_signature_section",
+  "declaration_of_electronic_signature",
+  "column_break_116",
+  "electronic_signature_declaration_status",
   "duty_commencement_section",
   "duty_commencement_name",
   "duty_commencement",
@@ -748,10 +752,6 @@
    "label": "Bank Account Progress"
   },
   {
-   "fieldname": "column_break_96",
-   "fieldtype": "Column Break"
-  },
-  {
    "allow_on_submit": 1,
    "default": "0",
    "fieldname": "new_bank_account_needed",
@@ -1135,10 +1135,6 @@
    "label": "PIFSS Form 103 Progress"
   },
   {
-   "fieldname": "column_break_96",
-   "fieldtype": "Column Break"
-  },
-  {
    "depends_on": "eval:doc.docstatus > 0 && doc.employee && doc.nationality == 'Kuwaiti'",
    "fieldname": "mgrp_section",
    "fieldtype": "Section Break",
@@ -1410,12 +1406,43 @@
   {
    "fieldname": "column_break_139",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_96",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.docstatus > 0",
+   "fieldname": "declaration_of_electronic_signature_section",
+   "fieldtype": "Section Break",
+   "label": "Declaration of Electronic Signature"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus < 2",
+   "fieldname": "declaration_of_electronic_signature",
+   "fieldtype": "Link",
+   "label": "Declaration of Electronic Signature",
+   "options": "Electronic Signature Declaration",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_116",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "electronic_signature_declaration_status",
+   "fieldtype": "Check",
+   "label": "Electronic Signature Declaration Status",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-13 19:30:04.092305",
+ "modified": "2021-12-21 10:17:35.935003",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
