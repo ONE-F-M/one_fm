@@ -31,6 +31,8 @@
   "project",
   "operations_site",
   "operations_shift",
+  "day_off_category",
+  "number_of_days_off",
   "leave_policy",
   "applicant_details_section",
   "gender",
@@ -1443,12 +1445,25 @@
    "fieldname": "iban",
    "fieldtype": "Data",
    "label": "IBAN"
+  },
+  {
+   "fetch_from": "job_offer.day_off_category",
+   "fieldname": "day_off_category",
+   "fieldtype": "Select",
+   "label": "Day Off Category",
+   "options": "Weekly\nMonthly"
+  },
+  {
+   "fetch_from": "job_offer.number_of_days_off",
+   "fieldname": "number_of_days_off",
+   "fieldtype": "Int",
+   "label": "Number Of Days Off"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-21 13:10:18.121184",
+ "modified": "2021-12-22 16:08:47.225322",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
