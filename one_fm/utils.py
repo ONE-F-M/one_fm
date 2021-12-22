@@ -1726,6 +1726,10 @@ def set_warehouse_contact_from_project(doc, method):
             links.link_name = doc.name
             address.save(ignore_permissions=True)
 
+def validate_iban_is_filled(doc, method):
+    if not doc.iban and doc.workflow_state == 'Active Account':
+        frappe.throw(_("Please Set IBAN before you Mark Open the Bank Account"))
+
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
 
@@ -1756,9 +1760,9 @@ def update_onboarding_doc_for_bank_account(doc):
         oe.bank_account_status = doc.workflow_state
         oe.account_name = doc.account_name
         oe.bank = doc.bank
+        if oe.workflow_state == 'Duty Commencement':
+            oe.workflow_state = 'Bank Account'
         oe.save(ignore_permissions=True)
-
-
 
 def issue_roster_actions():
     # Queue roster actions functions to backgrounds jobs

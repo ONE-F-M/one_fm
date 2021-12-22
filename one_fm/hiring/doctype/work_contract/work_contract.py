@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from one_fm.hiring.utils import update_onboarding_doc
+from one_fm.hiring.utils import update_onboarding_doc, update_onboarding_doc_workflow_sate
 from frappe.utils import today
 from frappe import _
 
@@ -27,6 +27,7 @@ class WorkContract(Document):
 			self.progress = progress_wf_list[self.workflow_state]
 
 	def after_insert(self):
+		update_onboarding_doc_workflow_sate(self)
 		update_onboarding_doc(self)
 		
 	def on_update(self):
