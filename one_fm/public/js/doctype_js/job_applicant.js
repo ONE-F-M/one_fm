@@ -48,9 +48,12 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__('Create'), function() {
 				create_career_history(frm);
 			}, __('Career History'));
-			frm.add_custom_button(__('Send Magic Link'), function() {
-				send_career_history_magic_link(frm);
-			}, __('Career History'));
+			frm.add_custom_button(__('Career History'), function() {
+				send_magic_link(frm, 'one_fm.templates.pages.career_history.send_career_history_magic_link');
+			}, __('Send Magic Link'));
+			frm.add_custom_button(__('Applicant More Details'), function() {
+				send_magic_link(frm, 'one_fm.templates.pages.applicant_docs.send_applicant_doc_magic_link');
+			}, __('Send Magic Link'));
 			frm.add_custom_button(__('View'), function() {
         view_career_history(frm);
       }, __('Career History'));
@@ -750,9 +753,9 @@ var create_career_history = function(frm) {
 	frappe.new_doc("Career History");
 };
 
-var send_career_history_magic_link = function(frm) {
+var send_magic_link = function(frm, method) {
 	frappe.call({
-		method: 'one_fm.templates.pages.career_history.send_career_history_magic_link',
+		method: method,
 		args: {'job_applicant': frm.doc.name},
 		callback: function(r) {
 			if(r && r.message){

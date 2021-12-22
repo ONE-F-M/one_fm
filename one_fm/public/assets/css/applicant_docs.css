@@ -1,9 +1,8 @@
 .main-container{
-    width: 68vw;
+    width: 63vw;
     height: auto;
-    padding: 11vh;
-    margin: 0vh 16vw;
     display: block;
+	padding: 0vw 10%;
 }
 .form-container{
     width: 60vw;
