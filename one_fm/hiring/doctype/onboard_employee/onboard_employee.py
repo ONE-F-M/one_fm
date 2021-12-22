@@ -14,6 +14,18 @@ from frappe.utils import now, today
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 
 class OnboardEmployee(Document):
+    
+	def validate(self):
+		if not self.number_of_days_off:
+			frappe.throw(_("Please set the number of days off."))
+		if self.day_off_category == "Weekly":
+			if frappe.utils.cint(self.number_of_days_off) > 7:
+				frappe.throw(_("Number of days off cannot be more than a week.")) 
+		elif self.day_off_category == "Monthly":
+			if frappe.utils.cint(self.number_of_days_off) > 30:
+				frappe.throw(_("Number of days off cannot be more than a month.")) 
+     
+    
 	def on_update(self):
 		if self.workflow_state == 'Inform Applicant':
 			self.inform_applicant()

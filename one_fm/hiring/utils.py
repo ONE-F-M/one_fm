@@ -22,6 +22,16 @@ def get_performance_profile_guid():
         return get_url(file_path)
 
 def validate_job_offer(doc, method):
+    
+    # Validate day off
+    if not doc.number_of_days_off:
+        frappe.throw(_("Please set the number of days off."))
+    if doc.day_off_category == "Weekly":
+        if frappe.utils.cint(doc.number_of_days_off) > 7:
+            frappe.throw(_("Number of days off cannot be more than a week.")) 
+    elif doc.day_off_category == "Monthly":
+        if frappe.utils.cint(doc.number_of_days_off) > 30:
+            frappe.throw(_("Number of days off cannot be more than a month.")) 
     salary_per_person_from_erf = 0
     if doc.one_fm_erf and not doc.one_fm_salary_structure:
         erf_salary_structure = frappe.db.get_value('ERF', doc.one_fm_erf, 'salary_structure')
