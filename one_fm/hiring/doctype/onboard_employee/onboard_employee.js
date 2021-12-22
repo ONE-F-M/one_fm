@@ -289,7 +289,7 @@ var check_signature = function(frm) {
 			callback: function(r) {
 				console.log(r)
 				if(r.message){
-					frm.set_value('electronic_signature_declaration_status', r.message);
+					frm.set_value('declaration_status', r.message);
 				}
 			}
 		});
