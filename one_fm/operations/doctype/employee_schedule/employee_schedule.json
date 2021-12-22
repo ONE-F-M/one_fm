@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "format:{date}/{employee}/{roster_type}",
  "creation": "2020-05-12 15:44:18.133872",
  "doctype": "DocType",
@@ -21,7 +22,8 @@
   "project",
   "attendance_status_section",
   "attended_status",
-  "roster_type"
+  "roster_type",
+  "day_off_ot"
  ],
  "fields": [
   {
@@ -138,10 +140,17 @@
    "fieldtype": "Select",
    "label": "Roster Type",
    "options": "Basic\nOver-Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "day_off_ot",
+   "fieldtype": "Check",
+   "label": "Day Off OT"
   }
  ],
- "modified": "2021-05-26 08:59:21.055668",
- "modified_by": "m.ahmed@armor-services.com",
+ "links": [],
+ "modified": "2021-12-22 16:35:42.508708",
+ "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",
  "owner": "Administrator",
