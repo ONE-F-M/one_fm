@@ -120,14 +120,13 @@ function upload(){
     'passport': '/api/method/one_fm.templates.pages.applicant_docs.get_passport_text'
   }
 
-  civil_id_image.append("is_kuwaiti",is_kuwaiti)
-
   frappe.call({
     type: "GET",
     method: "one_fm.templates.pages.applicant_docs.token",
     callback: function(r) {
       var token = r.message
       if (civil_id_image){
+        civil_id_image.append("is_kuwaiti",is_kuwaiti)
         send_request(method_map['civil_id'], civil_id_image, token,"Civil ID")
       };
       if (passport_image){

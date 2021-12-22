@@ -111,8 +111,10 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
     if is_kuwaiti == 1:
         result["Civil_ID_No"] = texts[find_index(assemble,"CARD")+1].description
         result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
-        result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+3].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+        if is_date(texts[find_index(assemble,"Birth")+2].description):
+            result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+        if is_date(texts[find_index(assemble,"Birth")+3].description):
+            result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+3].description, '%d/%m/%Y').strftime('%Y-%m-%d')
         if texts[find_index(assemble,"Sex")-1].description == "M" or texts[find_index(assemble,"Sex")-1].description == "F":
             result["Gender"] = texts[find_index(assemble,"Sex")-1].description
         else:
@@ -129,8 +131,10 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
     else:
         result["Civil_ID_No"] = texts[find_index(assemble,"Civil")+3].description
         result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
-        result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"لجن")+1].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"لجن")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+        if is_date(texts[find_index(assemble,"Sex")+1].description):
+            result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+1].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+        if is_date(texts[find_index(assemble,"Sex")+2].description):
+            result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
         result["Passport_Number"] = texts[find_index(assemble,"Nationality")+2].description
         result["Gender"] = ""
         if texts[find_index(assemble,"Sex")+1].description == "M" or texts[find_index(assemble,"Sex")+1].description == "F":
