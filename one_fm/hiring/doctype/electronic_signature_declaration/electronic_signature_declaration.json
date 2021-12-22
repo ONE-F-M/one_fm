@@ -1,0 +1,164 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "DES-.YYYY.-.#####",
+ "creation": "2021-12-20 13:26:11.879056",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "onboarding_employee",
+  "posting_date",
+  "section_break_2",
+  "employee_name",
+  "nationality",
+  "company",
+  "column_break_6",
+  "employee_name_in_arabic",
+  "civil_id",
+  "declarations_section",
+  "declarationen",
+  "column_break_2",
+  "declarationar",
+  "section_break_4",
+  "applicant_signature",
+  "status",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "onboarding_employee",
+   "fieldtype": "Link",
+   "label": "Onboarding Employee",
+   "options": "Onboard Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Data",
+   "label": "Company"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Employee Name in Arabic"
+  },
+  {
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "Civil ID"
+  },
+  {
+   "fieldname": "declarations_section",
+   "fieldtype": "Section Break",
+   "label": "Declarations"
+  },
+  {
+   "fieldname": "declarationen",
+   "fieldtype": "Long Text",
+   "label": "Declaration(en)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "declarationar",
+   "fieldtype": "Long Text",
+   "label": "Declaration(ar)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "applicant_signature",
+   "fieldtype": "Signature",
+   "label": "Applicant Signature"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Electronic Signature Declaration",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Status",
+   "options": "\nOpen\nSubmit for Signature\nComplete",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-12-21 08:05:42.337891",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Electronic Signature Declaration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Onboarding Officer",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

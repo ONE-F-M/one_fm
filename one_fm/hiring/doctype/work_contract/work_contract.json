@@ -254,7 +254,7 @@
   }
  ],
  "links": [],
- "modified": "2021-07-13 11:03:51.625178",
+ "modified": "2021-12-20 20:16:34.445356",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
@@ -269,6 +269,7 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "select": 1,
    "share": 1,
    "write": 1
   },
@@ -281,6 +282,7 @@
    "read": 1,
    "report": 1,
    "role": "Onboarding Officer",
+   "select": 1,
    "share": 1,
    "write": 1
   }

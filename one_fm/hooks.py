@@ -214,6 +214,7 @@ doc_events = {
 	"Bank Account": {
 		"on_update": "one_fm.utils.bank_account_on_update",
 		"on_trash": "one_fm.utils.bank_account_on_trash",
+		"validate": "one_fm.utils.validate_iban_is_filled",
 	},
 	"Employee Checkin": {
 		"validate": "one_fm.api.doc_events.employee_checkin_validate",
@@ -262,7 +263,7 @@ doc_events = {
 	},
 	"Payroll Entry": {
 		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
-	}
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }

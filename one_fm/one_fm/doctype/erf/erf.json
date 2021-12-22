@@ -81,6 +81,7 @@
   "create_project_for_recruiter",
   "project_for_recruiter",
   "salary_compensation_budget_section",
+  "base",
   "salary_structure",
   "salary_details",
   "salary_per_person",
@@ -826,14 +827,22 @@
    "read_only": 1
   },
   {
+   "default": "0",
    "fieldname": "for_remote_working",
    "fieldtype": "Check",
    "label": "For Remote Working"
+  },
+  {
+   "description": "The total amount of salary per person",
+   "fieldname": "base",
+   "fieldtype": "Currency",
+   "label": "Base",
+   "permlevel": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-20 23:40:15.128860",
+ "modified": "2021-12-18 16:35:00.696615",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

@@ -1,4 +1,3 @@
-window.frappe = {};
 frappe.ready_events = [];
 frappe.ready = function (fn) {
     frappe.ready_events.push(fn);
@@ -6,7 +5,14 @@ frappe.ready = function (fn) {
 window.dev_server = {{dev_server}};
 window.socketio_port = {{frappe.socketio_port}};
 
-var is_kuwaiti = 0;
+var is_kuwaiti = $('#Name').attr('is_kuwaiti');
+
+window.onload = () =>{
+if(is_kuwaiti==0){
+  document.getElementById("Sponsor").style.display = "block";
+}
+populate_nationality();
+}
 let civil_id_image = new FormData();
 let passport_image = new FormData();
 
@@ -34,7 +40,7 @@ function extract(file, type, key){
       else{
         passport_image.append(key, result);
         return passport_image
-      }           
+      }
     };
   }
   else{
@@ -45,7 +51,7 @@ function extract(file, type, key){
 function populate_nationality(){
   frappe.call({
     type: "GET",
-    method: "one_fm.templates.pages.applicant-docs.populate_nationality",
+    method: "one_fm.templates.pages.applicant_docs.populate_nationality",
     callback: function(r) {
       langArray = r.message;
       if(langArray){
@@ -56,13 +62,13 @@ function populate_nationality(){
 
       }
     }
-  }); 
+  });
 }
 
 function fetchNationality(code){
   frappe.call({
     type: "GET",
-    method: "one_fm.templates.pages.applicant-docs.fetch_nationality",
+    method: "one_fm.templates.pages.applicant_docs.fetch_nationality",
     args: {code :code},
     callback: function(r) {
       if(r.message){
@@ -71,9 +77,9 @@ function fetchNationality(code){
       else{
         document.getElementById("Nationality").value = "";
       }
-      
+
     }
-  }); 
+  });
 }
 function send_request(method, data, token, type){
   var request = new XMLHttpRequest();
@@ -101,24 +107,24 @@ function send_request(method, data, token, type){
           indicator: "red",
           message: response._error_message,
         });
-        } 
+        }
       }
       };
 }
 function upload(){
   extract_image();
-  populate_nationality();
+  
 
   var method_map = {
-    'civil_id': '/api/method/one_fm.templates.pages.applicant-docs.get_civil_id_text',
-    'passport': '/api/method/one_fm.templates.pages.applicant-docs.get_passport_text'
+    'civil_id': '/api/method/one_fm.templates.pages.applicant_docs.get_civil_id_text',
+    'passport': '/api/method/one_fm.templates.pages.applicant_docs.get_passport_text'
   }
 
   civil_id_image.append("is_kuwaiti",is_kuwaiti)
-  
+
   frappe.call({
     type: "GET",
-    method: "one_fm.templates.pages.applicant-docs.token",
+    method: "one_fm.templates.pages.applicant_docs.token",
     callback: function(r) {
       var token = r.message
       if (civil_id_image){
@@ -153,9 +159,8 @@ function fill_form(data, type){
         fetchNationality(data['front_text']['Country_Code']);
       }
       if(is_kuwaiti==0){
-        document.getElementById("Sponsor_Name").style.display = "block"; 
         input_data(data,'back_text','Sponsor_Name');
-      }      
+      }
     }
     else if(type == "Passport"){
       input_data(data,'front_text','Passport_Date_of_Issue');
@@ -167,6 +172,60 @@ function fill_form(data, type){
 
 function input_data(Data, key1, key2){
   if(Data[key1][key2]!= undefined){
+    if(key2 =="Gender"){
+      if(Data[key1][key2]=="M"){
+        document.getElementById(key2).value = "Male"
+      }
+      else if(Data[key1][key2]=="F"){
+        document.getElementById(key2).value = "Female"
+      }
+    }
     document.getElementById(key2).value = Data[key1][key2];
   }
 }
+
+function Submit(){
+  var applicant_details = get_details_from_form();
+
+  if($('#Name').attr("data")){
+    frappe.freeze();
+    frappe.call({
+      type: "POST",
+      method: "one_fm.templates.pages.applicant_docs.update_job_applicant",
+      args: {
+        job_applicant: $('#Name').attr("data"),
+        data: applicant_details
+      },
+      btn: this,
+      callback: function(r){
+        frappe.unfreeze();
+        frappe.msgprint(frappe._("Succesfully Submitted your Details and our HR team will be responding to you soon."));
+        if(r.message){
+          window.location.href = "/applicant_docs";
+        }
+      }
+    });
+  }
+  else{
+    frappe.msgprint(frappe._("Please fill All the details to submit the Job Applicant"));
+  }
+}
+
+function get_details_from_form() {
+  var applicant_details = {};
+  applicant_details['applicant_name'] = $('#Name').val();
+  applicant_details['one_fm_first_name_in_arabic'] = $('#Arabic_Name').val();
+  applicant_details['one_fm_gender'] = $('#Gender').val();
+  applicant_details['one_fm_date_of_birth'] = $('#Date_Of_Birth').val();
+  applicant_details['one_fm_cid_number'] = $('#Civil_ID_No').val();
+  applicant_details['one_fm_cid_expire'] = $('#Expiry_Date').val();
+  applicant_details['one_fm_nationality'] = $('#Nationality').val();
+  applicant_details['one_fm_place_of_birth'] = $('#Birth_Place').val();
+  applicant_details['one_fm_passport_number'] = $('#Passport_Number').val();
+  applicant_details['one_fm_passport_type'] = $('#Passport_Type').val();
+  applicant_details['one_fm_passport_issued'] = $('#Passport_Date_of_Issue').val();
+  applicant_details['one_fm_passport_expire'] = $('#Passport_Date_of_Expiry').val();
+  applicant_details['one_fm_passport_holder_of'] = $('#Passport_Place_of_Issue').val();
+  // applicant_details['paci_no'] = $('#PACI_No').val();
+  return applicant_details;
+};
