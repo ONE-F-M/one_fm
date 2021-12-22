@@ -1623,13 +1623,13 @@ def set_erf_details(job_offer, erf):
 def set_salary_details(job_offer, erf):
     job_offer.one_fm_provide_salary_advance = erf.provide_salary_advance
     total_amount = 0
+    job_offer.base = erf.base
     for salary in erf.salary_details:
         total_amount += salary.amount
         salary_details = job_offer.append('one_fm_salary_details')
         salary_details.salary_component = salary.salary_component
         salary_details.amount = salary.amount
     job_offer.one_fm_job_offer_total_salary = total_amount
-    job_offer.base = total_amount
 
 def set_other_benefits_to_terms(job_offer, erf):
     # if erf.other_benefits:
@@ -1726,6 +1726,10 @@ def set_warehouse_contact_from_project(doc, method):
             links.link_name = doc.name
             address.save(ignore_permissions=True)
 
+def validate_iban_is_filled(doc, method):
+    if not doc.iban and doc.workflow_state == 'Active Account':
+        frappe.throw(_("Please Set IBAN before you Mark Open the Bank Account"))
+
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
 
@@ -1756,9 +1760,9 @@ def update_onboarding_doc_for_bank_account(doc):
         oe.bank_account_status = doc.workflow_state
         oe.account_name = doc.account_name
         oe.bank = doc.bank
+        if oe.workflow_state == 'Duty Commencement':
+            oe.workflow_state = 'Bank Account'
         oe.save(ignore_permissions=True)
-
-
 
 def issue_roster_actions():
     # Queue roster actions functions to backgrounds jobs

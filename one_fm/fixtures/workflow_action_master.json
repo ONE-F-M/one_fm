@@ -2,6 +2,16 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2021-11-20 15:16:04.292176",
+  "name": "Submit to Employee",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Submit to Employee"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2021-07-29 12:37:38.728094",
   "name": "Under Process",
   "parent": null,
@@ -358,5 +368,55 @@
   "parentfield": null,
   "parenttype": null,
   "workflow_action_name": "Submit to Finance"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-12-21 09:53:19.303716",
+  "name": "Work Contract",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Work Contract"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-12-21 09:53:27.341598",
+  "name": "Declaration of Electronic Signature",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Declaration of Electronic Signature"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-12-21 09:56:03.062315",
+  "name": "Bank Account",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Bank Account"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-12-21 09:56:10.596865",
+  "name": "Duty Commencement",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Duty Commencement"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2021-12-21 09:56:21.645448",
+  "name": "Mobile App Enrolment",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Mobile App Enrolment"
  }
 ]
