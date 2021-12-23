@@ -200,7 +200,7 @@ def export_payroll(doc, method):
 
 def export_nbk(doc, template_path):
 	"""This method fetches the bank template from the provided directory, copies the template style and data into a new workbook, writes payroll entry data 
-		into the new workbook and saves it in the private files directory of the current site.
+		into the new workbook and saves it in the public files directory of the current site.
 
 	Args:
 		payroll_entry (document object): The payroll entry document object to be used for exporting the payroll data into the provided bank template and set the export file field.
@@ -322,8 +322,8 @@ def export_nbk(doc, template_path):
 		destination_ws.cell(row=10, column=3).value = total_hash
 
 		# Setup destination file directory with payroll entry name as filename
-		Path("/home/frappe/frappe-bench/sites/{0}/private/files/payroll-entry/".format(frappe.local.site)).mkdir(parents=True, exist_ok=True)
-		destination_file = cstr(frappe.local.site) + "/private/files/payroll-entry/{payroll_entry}.xlsx".format(payroll_entry=doc.name)
+		Path("/home/frappe/frappe-bench/sites/{0}/public/files/payroll-entry/".format(frappe.local.site)).mkdir(parents=True, exist_ok=True)
+		destination_file = cstr(frappe.local.site) + "/public/files/payroll-entry/{payroll_entry}.xlsx".format(payroll_entry=doc.name)
 		
 		# Save updated template in same source directory
 		destination_wb.save(filename=destination_file)
@@ -338,10 +338,16 @@ def export_nbk(doc, template_path):
 
 frappe.whitelist()
 def export_cash_payroll(cash_payroll_employees, doc_name):
+	"""This method takes the list of employees who have salary mode set as Cash and exports the payroll employee details into an excel sheet.
+
+	Args:
+		cash_payroll_employees (List[dict]): payroll empployee details
+		doc_name (str): Name of the payroll entry document.
+	"""
 	try:
         # Setup destination file directory with payroll entry name as filename
-		Path("/home/frappe/frappe-bench/sites/{0}/private/files/payroll-entry/".format(frappe.local.site)).mkdir(parents=True, exist_ok=True)
-		destination_file = cstr(frappe.local.site) + "/private/files/payroll-entry/Cash-{payroll_entry}.xlsx".format(payroll_entry=doc_name)
+		Path("/home/frappe/frappe-bench/sites/{0}/public/files/payroll-entry/".format(frappe.local.site)).mkdir(parents=True, exist_ok=True)
+		destination_file = cstr(frappe.local.site) + "/public/files/payroll-entry/Cash-{payroll_entry}.xlsx".format(payroll_entry=doc_name)
 		destination_wb = xl.Workbook()
 		destination_ws = destination_wb.active
 		
@@ -380,7 +386,7 @@ def export_cash_payroll(cash_payroll_employees, doc_name):
 def download_payroll_export_file(payroll_entry):
 	app_url = frappe.local.conf.app_url
 	filename = payroll_entry + ".xlsx"
-	path = "private/files/payroll-entry/"
+	path = "/public/files/payroll-entry/"
 
 	result = {}
 	result.update({'filename': filename})
