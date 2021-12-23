@@ -405,7 +405,7 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date, keep_da
 				roster_doc.employee_availability = "Working"
 				roster_doc.post_type = post_type
 				roster_doc.roster_type = roster_type
-				roster_doc.day_off_ot = day_off_ot
+				roster_doc.day_off_ot = cint(day_off_ot)
 				roster_doc.save(ignore_permissions=True)
 		else:
 			if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type, 'employee_availability': 'Working'}):
@@ -905,7 +905,7 @@ def update_existing_schedule(roster, shift, site, shift_type, project, post_abbr
 	frappe.db.set_value("Employee Schedule", roster, "employee_availability", val=employee_availability)
 	frappe.db.set_value("Employee Schedule", roster, "post_type", val=post_type)
 	frappe.db.set_value("Employee Schedule", roster, "roster_type", val=roster_type)
-	frappe.db.set_value("Employee Schedule", roster, "day_off_ot", val=day_off_ot)
+	frappe.db.set_value("Employee Schedule", roster, "day_off_ot", val=cint(day_off_ot))
 
 
 @frappe.whitelist(allow_guest=True)
