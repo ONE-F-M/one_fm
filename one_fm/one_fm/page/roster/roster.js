@@ -1151,7 +1151,8 @@ function render_roster(res, page, isOt) {
 				'Sick Leave': 'purplebox',
 				'Emergency Leave': 'purplebox',
 				'Annual Leave': 'purplebox',
-				'ASA': 'pinkboxcolor'
+				'ASA': 'pinkboxcolor',
+				'Day Off OT': 'orangeboxcolor'
 			};
 			let leavemap = {
 				'Day Off': 'DO',
@@ -1173,15 +1174,22 @@ function render_roster(res, page, isOt) {
 				'Half Day': 'HD',
 				'On Leave': 'OL'
 			};
-			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance, asa } = employees_data[employee_key][i];
+			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot } = employees_data[employee_key][i];
 			//OT schedule view
 			if (isOt) {
-				if (post_abbrv && roster_type == 'Over-Time') {
+				if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}</div>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+					</td>`;
+				}else if(post_abbrv && roster_type == 'Over-Time' && day_off_ot==1){
+					j++;
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if (employee_availability && !post_abbrv) {
 					sch = `
@@ -2888,8 +2896,19 @@ function schedule_change_post(page) {
 			} else if (element == ".rosterMonth") {
 				otRoster = false;
 			}
+
+			// Validate day off ot while scheduling
+			if (otRoster == false && parseInt(day_off_ot) == 1){
+				$('#cover-spin').hide();
+				frappe.msgprint(
+					msg='Please select OT Roster tab to roster employees in Day Off OT.',
+					title='Error',
+					raise_exception=1
+				)
+				frappe.throw()
+			}
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-				{ employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, day_off_ot, request_employee_schedule, end_date })
+				{ employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date })
 				.then(res => {
 					d.hide();
 					$('#cover-spin').hide();
