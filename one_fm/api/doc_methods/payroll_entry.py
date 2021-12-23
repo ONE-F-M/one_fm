@@ -301,20 +301,21 @@ def export_nbk(doc, template_path):
 		
 		# Set employee payroll details
 		for employee in employees:
-			destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Number"]).value = employee_number_column_count
-			destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Name"]).value = employee.employee_name
-			destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee IBAN Number"]).value = employee.iban_number
-			destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Payment Amount"]).value = employee.payment_amount
-			destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Bank Code"]).value = employee.bank_code
-			destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Civil ID"]).value = employee.civil_id_number
-			destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["MOSAL ID"]).value = employee.mosal_id
+			if employee.salary_mode == "Bank":
+				destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Number"]).value = employee_number_column_count
+				destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Name"]).value = employee.employee_name
+				destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee IBAN Number"]).value = employee.iban_number
+				destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Payment Amount"]).value = employee.payment_amount
+				destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Bank Code"]).value = employee.bank_code
+				destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["Employee Civil ID"]).value = employee.civil_id_number
+				destination_ws.cell(row=source_ws_employee_row_number, column=source_ws_emp_column_map["MOSAL ID"]).value = employee.mosal_id
 
-			iban_multipier = int(employee.iban_number[-10:])
-			total_hash += round(iban_multipier * employee.payment_amount, 3)
-			total_amount += round(employee.payment_amount, 3)
+				iban_multipier = int(employee.iban_number[-10:])
+				total_hash += round(iban_multipier * employee.payment_amount, 3)
+				total_amount += round(employee.payment_amount, 3)
 
-			employee_number_column_count += 1
-			source_ws_employee_row_number += 1
+				employee_number_column_count += 1
+				source_ws_employee_row_number += 1
 
 		destination_ws.cell(row=8, column=3).value = len(employees)
 		destination_ws.cell(row=9, column=3).value = total_amount
