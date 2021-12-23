@@ -359,9 +359,9 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 			frappe.throw(_(e))
 
 def create_request_employee_schedule(employee, from_shift, from_post_type, to_shift, to_post_type, otRoster, start_date, end_date):
-	if otRoster == 'false':
+	if not bool(otRoster):
 		roster_type = 'Basic'
-	elif otRoster == 'true':
+	elif bool(otRoster):
 		roster_type = 'Over-Time'
 	req_es_doc = frappe.new_doc("Request Employee Schedule")
 	req_es_doc.employee = employee
