@@ -11,7 +11,11 @@ frappe.ui.form.on('Payroll Entry', {
 							let url = app_url + path + filename
 							window.open(url, "Download");
 						}else{
-							frappe.throw(_("Invalid URL"))
+							frappe.msgprint(
+								msg='No export file found',
+								title='Error',
+								raise_exception=1
+							)
 						}
 					}).catch(e =>{
 						console.log(e);
@@ -27,7 +31,11 @@ frappe.ui.form.on('Payroll Entry', {
 							let url = app_url + path + filename
 							window.open(url, "Download");
 						}else{
-							frappe.throw(_("Invalid URL"))
+							frappe.msgprint(
+								msg='No export file found',
+								title='Error',
+								raise_exception=1
+							)
 						}
 					}).catch(e =>{
 						console.log(e);
