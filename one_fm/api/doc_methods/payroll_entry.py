@@ -81,12 +81,16 @@ def set_bank_details(employee_details):
 	"""
 	for employee in employee_details:
 		iban, bank, bank_account_no = frappe.db.get_value("Bank Account",{"party":employee.employee},["iban","bank", "bank_account_no"])
+		salary_mode = frappe.db.get_value("Employee", {'name': employee.employee}, ["salary_mode"])
+		if not salary_mode:
+			frappe.throw(_("No salary mode set for {employee}".format(employee=employee.employee)))
 		if not bank:
 			frappe.throw(_("Bank Details for {0} does not exists").format(employee.employee))
-		else:
-			employee.iban_number = iban or bank_account_no
-			bank_code = frappe.db.get_value("Bank", {'name': bank}, ["bank_code"])
-			employee.bank_code = bank_code
+		
+		employee.salary_mode = salary_mode
+		employee.iban_number = iban or bank_account_no
+		bank_code = frappe.db.get_value("Bank", {'name': bank}, ["bank_code"])
+		employee.bank_code = bank_code
 	return employee_details
 
 def get_count_employee_attendance(self, employee):
@@ -165,13 +169,34 @@ def export_payroll(doc, method):
 
 	# Fetch template and bank code for default bank
 	template_path, bank_code = frappe.db.get_value("Bank", {'name': default_bank}, ["payroll_export_template", "bank_code"])
-	
+
+	cash_salary_employees = []
+
+	for employee in doc.employees:
+		if employee.salary_mode == "Cash":
+			cash_salary_employees.append(employee)
+		elif employee.salary_mode == "Bank":
+			if not employee.iban or not employee.bank_account_no:
+				frappe.throw(_("No Iban/Bank account set for employee: {employee}".format(employee=employee.employee)))
+		elif not employee.salary_mode:
+			frappe.throw(_("No salary mode set for employee: {employee}".format(employee=employee.employee)))
+
 	if "NBK" in bank_code:
 		# Enqueue method for longer list of employees
 		if len(doc.employees) > 30:
 			frappe.enqueue(export_nbk, doc=doc, template_path=template_path)
 		else:
 			export_nbk(doc, template_path)
+
+	if len(cash_salary_employees) > 0:
+		if len(cash_salary_employees) > 30:
+			frappe.enqueue(export_cash_payroll, cash_salary_employees=cash_salary_employees, doc_name=doc.name)
+		else:
+			export_cash_payroll(cash_salary_employees, doc.name)
+	else:
+		frappe.msgprint(_("No employees with salary mode as Cash."))
+	
+
 
 def export_nbk(doc, template_path):
 	"""This method fetches the bank template from the provided directory, copies the template style and data into a new workbook, writes payroll entry data 
@@ -309,14 +334,52 @@ def export_nbk(doc, template_path):
 	except Exception as e:
 		frappe.throw(e)
 
-@frappe.whitelist()
-def download_excel_payroll_export_file(payroll_entry):
-	return get_excel_payroll_export_file(payroll_entry)
 
-def get_excel_payroll_export_file(payroll_entry):
+frappe.whitelist()
+def export_cash_payroll(cash_payroll_employees, doc_name):
+	try:
+        # Setup destination file directory with payroll entry name as filename
+		Path("/home/frappe/frappe-bench/sites/{0}/private/files/payroll-entry/".format(frappe.local.site)).mkdir(parents=True, exist_ok=True)
+		destination_file = cstr(frappe.local.site) + "/private/files/payroll-entry/Cash-{payroll_entry}.xlsx".format(payroll_entry=doc_name)
+		destination_wb = xl.Workbook()
+		destination_ws = destination_wb.active
+		
+		# Fill color in first row
+		color_fill = xl.styles.PatternFill(start_color='FFFF00',
+                   end_color='FFFF00',
+                   fill_type='solid')
+		i = 1
+		while(i < 5):
+			destination_ws.cell(row=1, column=i).fill = color_fill
+			i += 1
+
+		# Set column names
+		destination_ws.cell(row=1, column=1).value = "Employee Name"
+		destination_ws.cell(row=1, column=2).value = "Payment Amount"
+		destination_ws.cell(row=1, column=3).value = "Civil ID"
+		destination_ws.cell(row=1, column=4).value = "Mosal ID"
+
+		row_number = 2
+		
+		# Fill employees in rows
+		for employee in cash_payroll_employees:
+			destination_ws.cell(row=row_number, column=1).value = employee.employee_name
+			destination_ws.cell(row=row_number, column=2).value = employee.payment_amount
+			destination_ws.cell(row=row_number, column=3).value = employee.civil_id_number
+			destination_ws.cell(row=row_number, column=4).value = employee.mosal_id
+
+			row_number += 1
+
+		destination_wb.save(filename=destination_file)
+
+	except Exception as e:
+		frappe.log_error(e)
+
+@frappe.whitelist()
+def download_payroll_export_file(payroll_entry):
 	app_url = frappe.local.conf.app_url
 	filename = payroll_entry + ".xlsx"
-	path = "/private/files/payroll-entry/"
+	path = "private/files/payroll-entry/"
 
 	result = {}
 	result.update({'filename': filename})
