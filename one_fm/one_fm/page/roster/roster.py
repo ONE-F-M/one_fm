@@ -158,7 +158,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})	
-		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"], order_by="date asc, employee_name asc", ignore_permissions=True)
+		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability", "day_off_ot"], order_by="date asc, employee_name asc", ignore_permissions=True)
 		if isOt:
 			filters.pop("roster_type", None)
 
@@ -287,7 +287,7 @@ def get_current_user_details():
 
 	
 @frappe.whitelist()
-def schedule_staff(employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, day_off_ot, request_employee_schedule, end_date=None):
+def schedule_staff(employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot=None, end_date=None):
 
 	validation_logs = []
 	
