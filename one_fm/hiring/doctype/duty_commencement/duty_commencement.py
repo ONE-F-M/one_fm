@@ -17,19 +17,25 @@ class DutyCommencement(Document):
 		if getdate(self.date_of_joining) < getdate():
 			frappe.throw(_("Date of joining cannot be before today"))
 
-		if self.workflow_state == "Applicant Signed and Uploaded" and self.employee:
-			employee_doc = frappe.get_doc("Employee", self.employee)
-			employee_doc.project = self.project
-			employee_doc.site = self.operations_site
-			employee_doc.shift = self.operations_shift
-			employee_doc.date_of_joining = self.date_of_joining
-			employee_doc.save(ignore_permissions=True)
-			self.auto_checkin_candidate()
-		elif self.workflow_state == "Applicant Signed and Uploaded" and not self.employee:
-			frappe.throw(_("No Employee created for {employee_name}. Please create employee from Onboard Employee.".format(employee_name=self.employee_name)))
-
 		self.set_progress()
 		self.update_salary_details_from_job_offer()
+
+	def validate_workflow(self):
+		if self.workflow_state == "Applicant Signed and Uploaded":
+			if self.employee:
+				self.auto_checkin_candidate()
+			else:
+				msg = """
+					No Employee created for {employee_name}. Please create employee from Onboard Employee
+					<a href='{url}'>{onboard_employee}</a>.
+				"""
+				from frappe.utils.data import get_absolute_url
+				frappe.msgprint(_(msg.format(
+					employee_name = self.employee_name,
+					url = get_absolute_url('Onboard Employee', self.onboard_employee),
+					onboard_employee = self.onboard_employee
+					)
+				))
 
 	def update_salary_details_from_job_offer(self):
 		if not self.salary_details and self.job_offer:
@@ -64,6 +70,7 @@ class DutyCommencement(Document):
 	def on_update(self):
 		self.set_progress()
 		self.validate_submit()
+		self.validate_workflow()
 		update_onboarding_doc(self)
 
 	def validate_submit(self):

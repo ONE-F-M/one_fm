@@ -10,7 +10,7 @@ from frappe.model.mapper import get_mapped_doc
 from one_fm.hiring.doctype.candidate_orientation.candidate_orientation import create_candidate_orientation
 from one_fm.hiring.doctype.work_contract.work_contract import employee_details_for_wc
 from one_fm.hiring.utils import make_employee_from_job_offer
-from frappe.utils import now, today
+from frappe.utils import now, today, getdate
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 
 class OnboardEmployee(Document):
@@ -50,6 +50,7 @@ class OnboardEmployee(Document):
 		if self.workflow_state == 'Duty Commencement' and not self.duty_commencement:
 			self.create_duty_commencement()
 			self.reload()
+
 		if self.workflow_state == 'Bank Account':
 			if not self.duty_commencement:
 				frappe.throw(_("Duty Commencement is not created for the Applicant"))
@@ -128,6 +129,7 @@ class OnboardEmployee(Document):
 		if self.work_contract_status == "Applicant Signed":
 			duty_commencement = frappe.new_doc('Duty Commencement')
 			duty_commencement.onboard_employee = self.name
+			duty_commencement.workflow_state = 'Open'
 			duty_commencement.flags.ignore_mandatory = True
 			duty_commencement.save(ignore_permissions=True)
 		else:
@@ -135,7 +137,7 @@ class OnboardEmployee(Document):
 
 	@frappe.whitelist()
 	def create_employee(self):
-		if self.duty_commencement_status == 'Applicant Signed and Uploaded':
+		if self.duty_commencement_status == 'Applicant Signed and Uploaded' and not self.employee:
 			if not self.leave_policy:
 				frappe.throw(_("Select Leave Policy before Creating Employee!"))
 			if not self.reports_to:
@@ -156,13 +158,19 @@ class OnboardEmployee(Document):
 				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
 				employee.one_fm_pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
 				employee.reports_to = self.reports_to
+				date_of_joining = frappe.db.get_value('Duty Commencement', self.duty_commencement, 'date_of_joining')
+				if date_of_joining:
+					employee.date_of_joining = getdate(date_of_joining)
+					self.date_of_joining = getdate(date_of_joining)
 				employee.save(ignore_permissions=True)
 				self.employee = employee.name
 				self.save(ignore_permissions=True)
-				duty_commencement_doc_name = frappe.db.get_value("Duty Commencement", {'job_applicant': self.job_applicant}, ["name"])
-				duty_commencement_doc = frappe.get_doc("Duty Commencement", duty_commencement_doc_name)
-				duty_commencement_doc.employee = employee.name
-				duty_commencement_doc.save(ignore_permissions=True)
+				self.update_duty_commencement()
+
+	def update_duty_commencement(self):
+		duty_commencement = frappe.get_doc("Duty Commencement", self.duty_commencement)
+		duty_commencement.employee = self.employee
+		duty_commencement.save(ignore_permissions=True)
 
 	def validate_orientation(self):
 		if not self.informed_applicant:
@@ -271,7 +279,7 @@ class OnboardEmployee(Document):
 					bank_account.onboard_employee = self.name
 					bank_account.save(ignore_permissions=True)
 				else:
-					frappe.msgprint(_('To Create Bank Account, Set Account Name, Bank and IBAN !'))
+					frappe.throw(_('To Create Bank Account, Set Account Name, Bank and IBAN !'))
 
 	@frappe.whitelist()
 	def create_g2g_residency_payment_request(self):
