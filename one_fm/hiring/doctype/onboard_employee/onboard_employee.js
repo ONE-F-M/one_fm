@@ -184,7 +184,7 @@ var create_custom_buttons = function(frm) {
 				frm.save("Update");
 			}).addClass('btn-primary');
 		}
-		if(frm.doc.employee && !frm.doc.bank_account){
+		if(frm.doc.employee && !frm.doc.bank_account && frm.doc.salary_mode=='Bank'){
 			cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
 		}
 		if(frm.doc.employee && !frm.doc.loan && frm.doc.net_loan_amount > 0){

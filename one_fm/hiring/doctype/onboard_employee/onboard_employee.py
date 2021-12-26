@@ -150,6 +150,7 @@ class OnboardEmployee(Document):
 				if not employee.one_fm_nationality:
 					employee.one_fm_nationality = self.nationality
 				employee.leave_policy = self.leave_policy
+				employee.salary_mode = self.salary_mode
 				employee.one_fm_first_name_in_arabic = employee.employee_name
 				if self.declaration_of_electronic_signature:
 					employee.employee_signature = frappe.get_value("Electronic Signature Declaration",self.declaration_of_electronic_signature,['applicant_signature'])

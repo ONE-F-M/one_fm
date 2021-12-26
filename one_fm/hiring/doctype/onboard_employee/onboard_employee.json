@@ -74,6 +74,7 @@
   "provide_transportation_by_company",
   "column_break_26",
   "salary_details",
+  "salary_mode",
   "uniform_measurements_section",
   "is_uniform_needed_for_this_job",
   "shoulder_width",
@@ -330,7 +331,7 @@
    "collapsible": 1,
    "fieldname": "job_offer_details_section",
    "fieldtype": "Section Break",
-   "label": "Job Offer Details"
+   "label": "Job Offer and Salary Details"
   },
   {
    "fieldname": "email_id",
@@ -1444,12 +1445,20 @@
    "fieldname": "number_of_days_off",
    "fieldtype": "Int",
    "label": "Number Of Days Off"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Bank",
+   "fieldname": "salary_mode",
+   "fieldtype": "Select",
+   "label": "Salary Mode",
+   "options": "\nBank\nCash\nCheque"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-26 20:13:28.841460",
+ "modified": "2021-12-27 00:49:35.316789",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
