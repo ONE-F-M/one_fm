@@ -206,7 +206,7 @@ class ERF(Document):
 
 	def notify_grd_supervisor(self):
 		grd_supervisor = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
-		page_link = get_url("/desk#Form/ERF/" + self.name)
+		page_link = get_url(self.get_url())
 		subject = _("Attention: You Are Requested to Fill GRD Section in ERF")
 		message = "<p>Kindly, you are requested to fill the PAM File Number and PAM Designation for ERF: {0}  <a href='{1}'></a></p>".format(self.name,page_link)
 		create_notification_log(subject, message, [grd_supervisor], self)
@@ -351,7 +351,7 @@ def get_job_openig_description_template():
 	"""
 
 def send_email(doc, recipients):
-	page_link = get_url("/desk#Form/ERF/" + doc.name)
+	page_link = get_url(doc.get_url())
 	message = "<p>Please Review the ERF <a href='{0}'>{1}</a> and take action.</p>".format(page_link, doc.name)
 	if doc.status == 'Declined' and doc.reason_for_decline:
 		message = "<p>ERF <a href='{0}'>{1}</a> is Declined due to {2}</p>".format(page_link, doc.name, doc.reason_for_decline)
