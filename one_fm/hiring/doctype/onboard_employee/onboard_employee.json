@@ -123,8 +123,6 @@
   "work_contract_progress",
   "declaration_of_electronic_signature_section",
   "declaration_of_electronic_signature",
-  "column_break_116",
-  "electronic_signature_declaration_status",
   "duty_commencement_section",
   "duty_commencement_name",
   "duty_commencement",
@@ -1429,18 +1427,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_116",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "0",
-   "fieldname": "electronic_signature_declaration_status",
-   "fieldtype": "Check",
-   "label": "Electronic Signature Declaration Status",
-   "read_only": 1
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "iban",
    "fieldtype": "Data",
@@ -1463,7 +1449,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-22 16:08:47.225322",
+ "modified": "2021-12-26 20:13:28.841460",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
