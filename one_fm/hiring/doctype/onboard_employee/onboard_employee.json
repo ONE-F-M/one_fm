@@ -288,6 +288,8 @@
    "options": "Employee Grade"
   },
   {
+   "fetch_from": "job_offer.project",
+   "fetch_if_empty": 1,
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
@@ -1042,6 +1044,8 @@
   },
   {
    "allow_on_submit": 1,
+   "fetch_from": "job_offer.reports_to",
+   "fetch_if_empty": 1,
    "fieldname": "reports_to",
    "fieldtype": "Link",
    "label": "Reports To",
@@ -1458,7 +1462,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-27 00:49:35.316789",
+ "modified": "2021-12-27 14:44:50.131921",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
