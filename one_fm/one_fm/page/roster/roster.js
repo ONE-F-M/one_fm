@@ -1072,7 +1072,7 @@ function render_roster(res, page, isOt) {
 	let $rosterMonth = isOt ? $('.rosterOtMonth') : $('.rosterMonth');
 	let $rosterMonthbody = isOt ? $('.rosterOtMonth').find('#calenderviewtable tbody') : $('.rosterMonth').find('#calenderviewtable tbody');
 	$rosterMonthbody.empty();
-	if (post_types_data.length > 0){
+	if (post_types_data.length == 0){
 		let pt_row = `
 			<tr class="colorclass scheduledStaff">
 				<td class="sticky">
