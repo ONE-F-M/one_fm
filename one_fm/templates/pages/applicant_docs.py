@@ -72,7 +72,6 @@ def get_civil_id_text():
 
         result.update({'front_text': front_text})
         result.update({'back_text': back_text})
-        print(result)
         return result
 
     except Exception as e:

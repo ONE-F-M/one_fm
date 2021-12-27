@@ -75,13 +75,13 @@
   },
   {
    "fieldname": "signature",
-   "fieldtype": "Attach",
+   "fieldtype": "Attach Image",
    "label": "Signature"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2021-12-22 12:34:08.588587",
+ "modified": "2021-12-27 15:48:17.935259",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM Authorized Signatory Table",
