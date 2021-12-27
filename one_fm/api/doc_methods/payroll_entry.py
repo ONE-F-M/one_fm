@@ -381,16 +381,3 @@ def export_cash_payroll(cash_payroll_employees, doc_name):
 
 	except Exception as e:
 		frappe.log_error(e)
-
-@frappe.whitelist()
-def download_payroll_export_file(payroll_entry):
-	app_url = frappe.local.conf.app_url
-	filename = payroll_entry + ".xlsx"
-	path = "/public/files/payroll-entry/"
-
-	result = {}
-	result.update({'filename': filename})
-	result.update({'app_url': app_url})
-	result.update({'path': path})
-  
-	return result
