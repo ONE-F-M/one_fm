@@ -264,6 +264,47 @@ var set_offer_details = function(frm, job_offer) {
 	}
 };
 
+var btn_mark_applicant_attended = function(frm) {
+	frm.add_custom_button(__('Mark Applicant Attended'), function() {
+		frappe.call({
+			doc: frm.doc,
+			method: 'mark_applicant_attended',
+			callback: function(r) {
+				if(!r.exc){
+							frm.reload_doc();
+						}
+			},
+			freeze: true,
+			freeze_message: __('Mark Applicant Attended ...!')
+		});
+	}).addClass('btn-primary');
+};
+var btn_inform_applicant = function(frm) {
+	frm.add_custom_button(__('Inform Applicant'), function() {
+		if(frm.doc.docstatus == 1){
+			if(frm.doc.orientation_location && frm.doc.orientation_on){
+				frappe.call({
+					doc: frm.doc,
+					method: 'inform_applicant',
+					callback: function(r) {
+						if(!r.exc){
+							frm.reload_doc();
+						}
+					},
+					freeze: true,
+					freeze_message: __('Process Inform Applicant ...!')
+				});
+			}
+			else{
+				frappe.throw(__('Please set Orientation Location, Date and Time to proceed ..!'));
+			}
+		}
+		else{
+			frappe.throw(__('Please submit the document and proceed ..!'));
+		}
+	}).addClass('btn-primary');
+};
+
 var set_applicant_details = function(frm, applicant) {
 	var fields = ['email_id', 'department', 'project', 'source', 'nationality_no', 'nationality_subject',
 		'date_of_naturalization'];
