@@ -7,6 +7,13 @@ window.socketio_port = {{frappe.socketio_port}};
 
 var is_kuwaiti = $('#Name').attr('is_kuwaiti');
 
+var applicant_name = (($('#Name').attr('data')).split(' ').slice(0, 2).join(' ')).replace(' ', '_');
+console.log(applicant_name)
+var front_cid_filepath = "";
+var back_cid_filepath = "";
+var front_passport_filepath = "";
+var back_passport_filepath = "";
+
 window.onload = () =>{
 if(is_kuwaiti==0){
   document.getElementById("Sponsor").style.display = "block";
@@ -17,12 +24,27 @@ let civil_id_image = new FormData();
 let passport_image = new FormData();
 
 function extract_image(){
-  extract(document.getElementById("front_cid").files[0],"Civil_ID","front_civil")
-  extract(document.getElementById("back_cid").files[0],"Civil_ID","back_civil")
-  extract(document.getElementById("front_passport").files[0],"Passport","front_passport")
-  extract(document.getElementById("back_passport").files[0],"Passport","back_passport")
-
+  extract(document.getElementById("Civil_ID_Front").files[0],"Civil_ID","front_civil")
+  extract(document.getElementById("Civil_ID_Back").files[0],"Civil_ID","back_civil")
+  extract(document.getElementById("Passport_Front").files[0],"Passport","front_passport")
+  extract(document.getElementById("Passport_Back").files[0],"Passport","back_passport")
 }
+
+function upload_image(file, file_url, filename, token){
+  var xhr = new XMLHttpRequest();
+  let form_data = new FormData();
+
+  xhr.open('POST', '/api/method/upload_file', true);
+
+  xhr.setRequestHeader("X-Frappe-CSRF-Token", token);
+  xhr.setRequestHeader("Accept", "application/json");
+
+  form_data.append('file', file, filename);
+  form_data.append('is_private', true)
+  form_data.append('file_url', file_url)
+  xhr.send(form_data);
+}
+
 function extract(file, type, key){
 
   if(file){
@@ -59,7 +81,6 @@ function populate_nationality(){
         for (let i=0; i<=langArray.length;i++) {
           select.options[select.options.length] = new Option(langArray[i], langArray[i]);
      }
-
       }
     }
   });
@@ -96,7 +117,7 @@ function send_request(method, data, token, type){
         let r = null;
         try {
           r = JSON.parse(request.responseText);
-          fill_form(r.message,request.type);
+          fill_form(r.message,request.type, token);
         } catch (e) {
           r = request.responseText;
         }
@@ -114,23 +135,20 @@ function send_request(method, data, token, type){
 function upload(){
   extract_image();
   
-
   var method_map = {
     'civil_id': '/api/method/one_fm.templates.pages.applicant_docs.get_civil_id_text',
     'passport': '/api/method/one_fm.templates.pages.applicant_docs.get_passport_text'
   }
-
-  civil_id_image.append("is_kuwaiti",is_kuwaiti)
-
   frappe.call({
     type: "GET",
     method: "one_fm.templates.pages.applicant_docs.token",
     callback: function(r) {
       var token = r.message
-      if (civil_id_image){
+       if (!!civil_id_image.entries().next().value){
+        civil_id_image.append("is_kuwaiti",is_kuwaiti)
         send_request(method_map['civil_id'], civil_id_image, token,"Civil ID")
       };
-      if (passport_image){
+      if (!!passport_image.entries().next().value){
         send_request(method_map['passport'], passport_image, token,"Passport")
       };
     }
@@ -138,7 +156,7 @@ function upload(){
 };
 
 
-function fill_form(data, type){
+function fill_form(data, type,token){
   {/* This Function fills the output form for user to view.
   The value is fetched from the api*/}
   if(data == "Error"){
@@ -158,15 +176,28 @@ function fill_form(data, type){
       if(data['front_text']['Country_Code'] != undefined){
         fetchNationality(data['front_text']['Country_Code']);
       }
+
+      front_cid_filepath = input_filepath(data, 'front_text', 'Civil_ID_Front',token)
+      back_cid_filepath = input_filepath(data, 'back_text', 'Civil_ID_Back',token)
+      
       if(is_kuwaiti==0){
         input_data(data,'back_text','Sponsor_Name');
       }
     }
     else if(type == "Passport"){
+      front_passport_filepath = input_filepath(data, 'front_text', 'Passport_Front',token)
+      back_passport_filepath = input_filepath(data, 'back_text', 'Passport_Back',token)
       input_data(data,'front_text','Passport_Date_of_Issue');
       input_data(data,'front_text','Passport_Date_of_Expiry');
       input_data(data,'back_text','Passport_Place_of_Issue');
     }
+  }
+};
+function input_filepath(Data, key1, key2,token){
+  if(Data[key1][key2]!= undefined){
+    console.log(key2)
+    upload_image(document.getElementById(key2).files[0],Data[key1][key2],applicant_name+"_"+key2+'.png',token)
+    return Data[key1][key2]
   }
 };
 
@@ -213,7 +244,6 @@ function Submit(){
 
 function get_details_from_form() {
   var applicant_details = {};
-  applicant_details['applicant_name'] = $('#Name').val();
   applicant_details['one_fm_first_name_in_arabic'] = $('#Arabic_Name').val();
   applicant_details['one_fm_gender'] = $('#Gender').val();
   applicant_details['one_fm_date_of_birth'] = $('#Date_Of_Birth').val();
@@ -226,6 +256,24 @@ function get_details_from_form() {
   applicant_details['one_fm_passport_issued'] = $('#Passport_Date_of_Issue').val();
   applicant_details['one_fm_passport_expire'] = $('#Passport_Date_of_Expiry').val();
   applicant_details['one_fm_passport_holder_of'] = $('#Passport_Place_of_Issue').val();
+
+  applicant_details['applicant_doc']={}
+  
+  get_filepath(applicant_details['applicant_doc'],front_cid_filepath, "Civil ID Front" )
+  get_filepath(applicant_details['applicant_doc'],back_cid_filepath, "Civil ID Back" )
+  get_filepath(applicant_details['applicant_doc'],front_passport_filepath, "Passport Front" )
+  get_filepath(applicant_details['applicant_doc'],back_passport_filepath, "Passport Back" )
+
   // applicant_details['paci_no'] = $('#PACI_No').val();
+  console.log(applicant_details)
   return applicant_details;
 };
+
+function get_filepath(object, value, key){
+  if(value != ""){
+    var file_name = key.replaceAll(" ","_")
+    console.log(file_name)
+    object[key] = applicant_name+"_"+file_name+'.png';
+  }
+  return object
+}
