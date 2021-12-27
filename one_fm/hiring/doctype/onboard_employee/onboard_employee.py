@@ -25,8 +25,6 @@ class OnboardEmployee(Document):
 	def validate_transition(self):
 		if self.workflow_state == 'Applicant Attended':
 			self.mark_applicant_attended()
-		if self.workflow_state == 'Declaration of Electronic Signature' and not self.work_contract:
-			frappe.throw(_("Work Contract is not created for this Applicant"))
 		if self.workflow_state == 'Bank Account' and not self.duty_commencement:
 			frappe.throw(_("Duty Commencement is not created for the Employee"))
 
@@ -74,13 +72,37 @@ class OnboardEmployee(Document):
 			wc = frappe.new_doc('Work Contract')
 			for filter in filters:
 				wc.set(filter, filters[filter])
+			
+			for applicant_docs in self.applicant_documents:
+				doc_required = wc.append('documents')
+				fields = ['document_required', 'attach', 'type_of_copy']
+				for field in fields:
+					doc_required.set(field, applicant_docs.get(field))
+
 			wc.save(ignore_permissions=True)
 	
+	@frappe.whitelist()
+	def check_signature_status(self):
+		"""This function is to check if the signature exist in the Electronic Signature Declaration doctype
+
+		Args:
+			declaration_of_electronic_signature ([doctype]): doc ID
+
+		Returns:
+			1: [if signature exist]
+			0: [if signature doesn't exist]
+		"""
+		if frappe.db.get_value("Electronic Signature Declaration", self.electronic_signature, ['applicant_signature']):
+			self.declaration_status = 1
+			self.save(ignore_permissions=True)
+			frappe.db.commit()
+
 	@frappe.whitelist()
 	def create_declaration_of_electronic_signature(self):
 		"""
 		Create declaration_of_electronic_signature from onboard employee doc.
 		"""
+		print("Created!")
 		if not frappe.db.exists('Electronic Signature Declaration', {'onboarding_employee': self.name}):
 			doc = frappe.new_doc('Electronic Signature Declaration')
 			doc.onboarding_employee = self.name
@@ -93,7 +115,7 @@ class OnboardEmployee(Document):
 			doc.declarationar = "<h4>{0} قر أنا الموقع أدناه  / ، واحمل بطاقة مدنية ر {1} الجنسية({2}) بأن التوقيع المدون أسفل هذا اإلقرار و التوقيع الخاص بي معتمد وساري ،وأنني اقر بقبول ونفاذ هذا التوقيع في مواجهتي مواجهة الغير ، باعتماد {3}وأنني افوض شركة / .هذا التوقيع كتوقيع إلكتروني ساري المفعول قانوناً</h4>".format(self.employee_name_in_arabic,frappe.db.get_value("Nationality", self.nationality, 'nationality_arabic'),self.civil_id,self.company)
 			doc.save(ignore_permissions=True)
 			doc.submit()
-			self.declaration_of_electronic_signature = doc.name
+			self.electronic_signature = doc.name
 			self.save(ignore_permissions=True)
 			frappe.db.commit()
 

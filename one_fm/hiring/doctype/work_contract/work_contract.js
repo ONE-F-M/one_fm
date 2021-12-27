@@ -2,6 +2,11 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Work Contract', {
+	refresh(frm) {
+        // if reference_type and reference_name are set,
+        // add a custom button to go to the reference form
+        populate_autorized_signatory(frm)
+    },
 	employee: function(frm) {
 		set_employee_details(frm);
 	},
@@ -9,6 +14,18 @@ frappe.ui.form.on('Work Contract', {
 		set_employee_details(frm);
 	}
 });
+
+var populate_autorized_signatory = function(frm) {
+	frappe.call({
+		doc: frm.doc,
+		method: 'get_authorized_signatory',
+			callback: function(r) {
+			if(r && r.message){
+				frm.set_df_property('select_authorised_signatory_signed_work_contract', 'options', r.message);
+			}
+		}
+	});
+};
 
 var set_employee_details = function(frm) {
 	frappe.call({

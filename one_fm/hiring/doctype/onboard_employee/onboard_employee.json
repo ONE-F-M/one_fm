@@ -120,7 +120,7 @@
   "work_contract_docstatus",
   "work_contract_progress",
   "declaration_of_electronic_signature_section",
-  "declaration_of_electronic_signature",
+  "electronic_signature",
   "column_break_116",
   "declaration_status",
   "duty_commencement_section",
@@ -1418,15 +1418,6 @@
    "label": "Declaration of Electronic Signature"
   },
   {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.docstatus < 2",
-   "fieldname": "declaration_of_electronic_signature",
-   "fieldtype": "Link",
-   "label": "Declaration of Electronic Signature",
-   "options": "Electronic Signature Declaration",
-   "read_only": 1
-  },
-  {
    "fieldname": "column_break_116",
    "fieldtype": "Column Break"
   },
@@ -1443,12 +1434,21 @@
    "fieldtype": "Check",
    "label": "Declaration Status",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.docstatus < 2",
+   "fieldname": "electronic_signature",
+   "fieldtype": "Link",
+   "label": "Declaration of Electronic Signature",
+   "options": "Electronic Signature Declaration",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-22 15:09:25.821512",
+ "modified": "2021-12-22 15:18:49.142389",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

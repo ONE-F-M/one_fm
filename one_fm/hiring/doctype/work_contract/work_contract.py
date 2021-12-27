@@ -18,6 +18,8 @@ class WorkContract(Document):
 		if not self.posting_date:
 			self.posting_date = today()
 		self.set_progress()
+		self.validate_authorized_signatory()
+
 
 	def set_progress(self):
 		progress_wf_list = {'Open': 0, 'Submitted for Applicant Review': 10, 'Applicant Signed': 20,
@@ -36,10 +38,8 @@ class WorkContract(Document):
 		update_onboarding_doc(self)
 
 	def update_on_workflow_state(self):
-		if self.workflow_state == 'Submitted to Legal':
+		if self.workflow_state == 'Send to Authorised Signatory':
 			self.validate_attachments()
-		if self.workflow_state == 'Send to Authorised Signatory' and not self.legal_receives_employee_file:
-			frappe.throw(_("Is Legal Receives Employee File ?, If yes please mark it!"))
 		if self.workflow_state == 'Submitted for Applicant Review':
 			#if applicant sign the contract, the workflow changes to "Applicant Signed",
 			if self.check_for_applicant_signature():
@@ -52,15 +52,15 @@ class WorkContract(Document):
 				frappe.throw(_("Attach Authorised Signatory Signed Work Contract!"))
 
 	def validate_attachments(self):
-		kuwaiti_nationality = ["Kuwaiti", "Non-Kuwaiti"]
-		if self.nationality not in kuwaiti_nationality and not self.original_passport_required:
-			frappe.throw(_("Mark Original Passport Required"))
-		if self.original_passport_required and self.nationality in kuwaiti_nationality:
-			frappe.throw(_("Mark Original Passport Required False for Kuwait/Non-Kuwaiti"))
-		if self.original_passport_required and not self.attach_signed_passport_receiving_copy:
-			frappe.throw(_("Attach Passport Receiving Copy!"))
-		elif self.nationality in kuwaiti_nationality and not self.attach_passport and not self.attach_non_kuwaiti_civil_id:
-			frappe.throw(_("Attch Passport or Non-Kuwait CIVIL ID"))
+		document_required = ["Civil ID Front","Civil ID Back","Passport Front","Passport Back"]
+		for applicant_docs in self.documents:
+			document_required.remove(applicant_docs.document_required)
+		if len(document_required) > 0:
+			frappe.throw(_("Please Attach "+ ' '.join(str(x) for x in document_required)+" !"))
+
+	def validate_authorized_signatory(self):
+		if not self.select_authorised_signatory_signed_work_contract:
+			frappe.throw(_("Please select Authorized Signatory!"))
 
 	def on_cancel(self):
 		if self.workflow_state == 'Applicant not Signed':
@@ -78,6 +78,15 @@ class WorkContract(Document):
 		else:
 			return False
 	
+	@frappe.whitelist()
+	def get_authorized_signatory(self):
+		authorize_signatory = []
+		if self.pam_file_number:
+			pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':self.pam_file_number},["*"],as_dict = True)
+			pam_auth_sign = pam_authorized_signatory.as_dict()
+			for auth_sign in pam_auth_sign["authorized_signatory"]:
+				authorize_signatory.append(auth_sign["authorized_signatory_name_english"])
+		return authorize_signatory
 
 @frappe.whitelist()
 def get_employee_details_for_wc(type, employee=False, onboard_employee=False):
