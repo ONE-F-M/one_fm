@@ -14,18 +14,18 @@ from frappe.utils import now, today, getdate
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 
 class OnboardEmployee(Document):
-    
+
 	def validate(self):
 		if not self.number_of_days_off:
 			frappe.throw(_("Please set the number of days off."))
 		if self.day_off_category == "Weekly":
 			if frappe.utils.cint(self.number_of_days_off) > 7:
-				frappe.throw(_("Number of days off cannot be more than a week.")) 
+				frappe.throw(_("Number of days off cannot be more than a week."))
 		elif self.day_off_category == "Monthly":
 			if frappe.utils.cint(self.number_of_days_off) > 30:
-				frappe.throw(_("Number of days off cannot be more than a month.")) 
-     
-    
+				frappe.throw(_("Number of days off cannot be more than a month."))
+
+
 	def on_update(self):
 		if self.workflow_state == 'Inform Applicant':
 			self.inform_applicant()
@@ -157,7 +157,7 @@ class OnboardEmployee(Document):
 
 				employee.permanent_address = "Test"
 				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
-				employee.one_fm_pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
+				employee.one_fm_pam_designation = 'PAM Designation' #frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
 				employee.reports_to = self.reports_to
 				date_of_joining = frappe.db.get_value('Duty Commencement', self.duty_commencement, 'date_of_joining')
 				if date_of_joining:
@@ -172,6 +172,7 @@ class OnboardEmployee(Document):
 		duty_commencement = frappe.get_doc("Duty Commencement", self.duty_commencement)
 		duty_commencement.employee = self.employee
 		duty_commencement.save(ignore_permissions=True)
+		duty_commencement.auto_checkin_candidate()
 
 	def validate_orientation(self):
 		if not self.informed_applicant:

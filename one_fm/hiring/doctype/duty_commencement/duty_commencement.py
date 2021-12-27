@@ -22,9 +22,7 @@ class DutyCommencement(Document):
 
 	def validate_workflow(self):
 		if self.workflow_state == "Applicant Signed and Uploaded":
-			if self.employee:
-				self.auto_checkin_candidate()
-			else:
+			if not self.employee:
 				msg = """
 					No Employee created for {employee_name}. Please create employee from Onboard Employee
 					<a href='{url}'>{onboard_employee}</a>.
