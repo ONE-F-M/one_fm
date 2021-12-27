@@ -157,7 +157,7 @@ class OnboardEmployee(Document):
 
 				employee.permanent_address = "Test"
 				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
-				employee.one_fm_pam_designation = 'PAM Designation' #frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
+				employee.one_fm_pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
 				employee.reports_to = self.reports_to
 				date_of_joining = frappe.db.get_value('Duty Commencement', self.duty_commencement, 'date_of_joining')
 				if date_of_joining:

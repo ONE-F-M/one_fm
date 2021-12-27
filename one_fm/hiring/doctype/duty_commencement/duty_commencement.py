@@ -21,19 +21,18 @@ class DutyCommencement(Document):
 		self.update_salary_details_from_job_offer()
 
 	def validate_workflow(self):
-		if self.workflow_state == "Applicant Signed and Uploaded":
-			if not self.employee:
-				msg = """
-					No Employee created for {employee_name}. Please create employee from Onboard Employee
-					<a href='{url}'>{onboard_employee}</a>.
-				"""
-				from frappe.utils.data import get_absolute_url
-				frappe.msgprint(_(msg.format(
-					employee_name = self.employee_name,
-					url = get_absolute_url('Onboard Employee', self.onboard_employee),
-					onboard_employee = self.onboard_employee
-					)
-				))
+		if self.workflow_state == "Applicant Signed and Uploaded" and not self.employee:
+			msg = """
+				No Employee created for {employee_name}. Please create employee from Onboard Employee
+				<a href='{url}'>{onboard_employee}</a>.
+			"""
+			from frappe.utils.data import get_absolute_url
+			frappe.msgprint(_(msg.format(
+				employee_name = self.employee_name,
+				url = get_absolute_url('Onboard Employee', self.onboard_employee),
+				onboard_employee = self.onboard_employee
+				)
+			))
 
 	def update_salary_details_from_job_offer(self):
 		if not self.salary_details and self.job_offer:
