@@ -1072,53 +1072,39 @@ function render_roster(res, page, isOt) {
 	let $rosterMonth = isOt ? $('.rosterOtMonth') : $('.rosterMonth');
 	let $rosterMonthbody = isOt ? $('.rosterOtMonth').find('#calenderviewtable tbody') : $('.rosterMonth').find('#calenderviewtable tbody');
 	$rosterMonthbody.empty();
-	if (post_types_data.length == 0){
+	for (post_type_name in post_types_data) {
 		let pt_row = `
-			<tr class="colorclass scheduledStaff">
-				<td class="sticky">
-					<div class="d-flex">
-						<div class="font16 paddingdiv borderleft"></div>
+		<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
+			<td class="sticky">
+				<div class="d-flex">
+					<div class="font16 paddingdiv cursorpointer orangecolor">
+						<i class="fa fa-plus" aria-hidden="true"></i>
 					</div>
-				</td>
-			</tr>
-			`;
+					<div class="font16 paddingdiv borderleft cursorpointer">
+						${post_type_name}
+					</div>
+				</div>
+			</td>
+		</tr>
+		`;
 		$rosterMonthbody.append(pt_row);
-	}
-	else{
-		for (post_type_name in post_types_data) {
-			let pt_row = `
-			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
-				<td class="sticky">
-					<div class="d-flex">
-						<div class="font16 paddingdiv cursorpointer orangecolor">
-							<i class="fa fa-plus" aria-hidden="true"></i>
-						</div>
-						<div class="font16 paddingdiv borderleft cursorpointer">
-							${post_type_name}
-						</div>
-					</div>
-				</td>
-			</tr>
-			`;
-			$rosterMonthbody.append(pt_row);
-			let { start_date, end_date } = page;
-			start_date = moment(start_date);
-			end_date = moment(end_date);
-			let i = 0;
-			let day = start_date;
-			while (day <= end_date) {
-				// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
-				let { date, post_type, count, highlight } = post_types_data[post_type_name][i];
-				let pt_count = `
-				<td class="${highlight}">
-					<div class="text-center" data-selectid="${post_type + "|" + date}">${count}</div>
-				</td>`;
-				$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_type)}']`).append(pt_count);
-				i++;
-				start_date.add(1, 'days');
-			}
-			$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_types_data[post_type_name][i - 1]["post_type"])}']`).append(`<td></td>`);
+		let { start_date, end_date } = page;
+		start_date = moment(start_date);
+		end_date = moment(end_date);
+		let i = 0;
+		let day = start_date;
+		while (day <= end_date) {
+			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
+			let { date, post_type, count, highlight } = post_types_data[post_type_name][i];
+			let pt_count = `
+			<td class="${highlight}">
+				<div class="text-center" data-selectid="${post_type + "|" + date}">${count}</div>
+			</td>`;
+			$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_type)}']`).append(pt_count);
+			i++;
+			start_date.add(1, 'days');
 		}
+		$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_types_data[post_type_name][i - 1]["post_type"])}']`).append(`<td></td>`);
 	}
 	let b2 = performance.now();
 	console.log("POST TYPE TIME", b2 - b1);
@@ -1920,7 +1906,7 @@ const search_staff = () => {
 function GetHeaders(IsMonthSet, element) {
 
 	var thHTML = "";
-	var thStartHTML = `<th class="sticky vertical-sticky" style="max-width: 140px !important; min-width: 140px !important;">Post Type / Days</th>`;
+	var thStartHTML = `<th class="sticky vertical-sticky" style="max-width: 238px !important; min-width: 238px !important;">Post Type / Days</th>`;
 	var thEndHTML = `<th class="vertical-sticky">Total</th>`;
 	element = get_wrapper_element(element);
 	var selectedMonth;
