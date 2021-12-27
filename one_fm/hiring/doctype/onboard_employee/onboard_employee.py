@@ -10,22 +10,22 @@ from frappe.model.mapper import get_mapped_doc
 from one_fm.hiring.doctype.candidate_orientation.candidate_orientation import create_candidate_orientation
 from one_fm.hiring.doctype.work_contract.work_contract import employee_details_for_wc
 from one_fm.hiring.utils import make_employee_from_job_offer
-from frappe.utils import now, today
+from frappe.utils import now, today, getdate
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 
 class OnboardEmployee(Document):
-    
+
 	def validate(self):
 		if not self.number_of_days_off:
 			frappe.throw(_("Please set the number of days off."))
 		if self.day_off_category == "Weekly":
 			if frappe.utils.cint(self.number_of_days_off) > 7:
-				frappe.throw(_("Number of days off cannot be more than a week.")) 
+				frappe.throw(_("Number of days off cannot be more than a week."))
 		elif self.day_off_category == "Monthly":
 			if frappe.utils.cint(self.number_of_days_off) > 30:
-				frappe.throw(_("Number of days off cannot be more than a month.")) 
-     
-    
+				frappe.throw(_("Number of days off cannot be more than a month."))
+
+
 	def on_update(self):
 		if self.workflow_state == 'Inform Applicant':
 			self.inform_applicant()
@@ -35,12 +35,29 @@ class OnboardEmployee(Document):
 		self.validate_on_complete()
 
 	def validate_transition(self):
-		if self.workflow_state == 'Applicant Attended':
+		if self.workflow_state == 'Applicant Attended' and not self.applicant_attended:
 			self.mark_applicant_attended()
-		if self.workflow_state == 'Declaration of Electronic Signature' and not self.work_contract:
-			frappe.throw(_("Work Contract is not created for this Applicant"))
-		if self.workflow_state == 'Bank Account' and not self.duty_commencement:
-			frappe.throw(_("Duty Commencement is not created for the Employee"))
+			self.reload()
+		if self.workflow_state == 'Work Contract' and not self.work_contract:
+			self.create_work_contract()
+			self.reload()
+		if self.workflow_state == 'Declaration of Electronic Signature':
+			if not self.work_contract:
+				frappe.throw(_("Work Contract is not created for this Applicant"))
+			elif not self.declaration_of_electronic_signature:
+				self.create_declaration_of_electronic_signature()
+				self.reload()
+		if self.workflow_state == 'Duty Commencement' and not self.duty_commencement:
+			self.create_duty_commencement()
+			self.reload()
+
+		if self.workflow_state == 'Bank Account':
+			if not self.duty_commencement:
+				frappe.throw(_("Duty Commencement is not created for the Applicant"))
+			if not self.employee:
+				frappe.throw(_("Employee is not created for the Applicant"))
+			elif not self.bank_account:
+				self.create_bank_account()
 
 	def validate_on_complete(self):
 		if self.workflow_state == 'Completed' and not frappe.db.get_value('Employee', self.employee, 'enrolled'):
@@ -75,6 +92,7 @@ class OnboardEmployee(Document):
 	def mark_applicant_attended(self):
 		self.applicant_attended_orientation = now()
 		self.applicant_attended = True
+		self.save(ignore_permissions=True)
 
 	@frappe.whitelist()
 	def create_work_contract(self):
@@ -87,15 +105,15 @@ class OnboardEmployee(Document):
 			for filter in filters:
 				wc.set(filter, filters[filter])
 			wc.save(ignore_permissions=True)
-	
+
 	@frappe.whitelist()
 	def create_declaration_of_electronic_signature(self):
 		"""
 		Create declaration_of_electronic_signature from onboard employee doc.
 		"""
-		if not frappe.db.exists('Electronic Signature Declaration', {'onboarding_employee': self.name}):
+		if not frappe.db.exists('Electronic Signature Declaration', {'onboard_employee': self.name}):
 			doc = frappe.new_doc('Electronic Signature Declaration')
-			doc.onboarding_employee = self.name
+			doc.onboard_employee = self.name
 			doc.employee_name = self.employee_name
 			doc.employee_name_in_arabic = self.employee_name_in_arabic
 			doc.nationality = self.nationality
@@ -105,28 +123,26 @@ class OnboardEmployee(Document):
 			doc.declarationar = "<h4>{0} قر أنا الموقع أدناه  / ، واحمل بطاقة مدنية ر {1} الجنسية({2}) بأن التوقيع المدون أسفل هذا اإلقرار و التوقيع الخاص بي معتمد وساري ،وأنني اقر بقبول ونفاذ هذا التوقيع في مواجهتي مواجهة الغير ، باعتماد {3}وأنني افوض شركة / .هذا التوقيع كتوقيع إلكتروني ساري المفعول قانوناً</h4>".format(self.employee_name_in_arabic,frappe.db.get_value("Nationality", self.nationality, 'nationality_arabic'),self.civil_id,self.company)
 			doc.save(ignore_permissions=True)
 			doc.submit()
-			self.declaration_of_electronic_signature = doc.name
-			self.save(ignore_permissions=True)
-			frappe.db.commit()
 
-		
 	@frappe.whitelist()
 	def create_duty_commencement(self):
 		if self.work_contract_status == "Applicant Signed":
 			duty_commencement = frappe.new_doc('Duty Commencement')
 			duty_commencement.onboard_employee = self.name
+			duty_commencement.workflow_state = 'Open'
+			duty_commencement.flags.ignore_mandatory = True
 			duty_commencement.save(ignore_permissions=True)
+		else:
+			frappe.throw(_("Work Contract needs to be Signed by Applicant to Create Duty Commencement"))
 
 	@frappe.whitelist()
 	def create_employee(self):
-		if self.duty_commencement_status == 'Applicant Signed and Uploaded':
+		if self.duty_commencement_status == 'Applicant Signed and Uploaded' and not self.employee:
 			if not self.leave_policy:
 				frappe.throw(_("Select Leave Policy before Creating Employee!"))
 			if not self.reports_to:
 				frappe.throw(_("Select reports to user!"))
-			if self.declaration_of_electronic_signature:
-				signature = frappe.get_value("Electronic Signature Declaration",self.declaration_of_electronic_signature,['applicant_signature'])
-			elif self.job_offer:
+			if self.job_offer:
 				employee = make_employee_from_job_offer(self.job_offer)
 				employee.reports_to = self.reports_to
 				if not employee.one_fm_civil_id:
@@ -134,20 +150,29 @@ class OnboardEmployee(Document):
 				if not employee.one_fm_nationality:
 					employee.one_fm_nationality = self.nationality
 				employee.leave_policy = self.leave_policy
+				employee.salary_mode = self.salary_mode
 				employee.one_fm_first_name_in_arabic = employee.employee_name
-				employee.employee_signature = signature
+				if self.declaration_of_electronic_signature:
+					employee.employee_signature = frappe.get_value("Electronic Signature Declaration",self.declaration_of_electronic_signature,['applicant_signature'])
 
 				employee.permanent_address = "Test"
 				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
 				employee.one_fm_pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
 				employee.reports_to = self.reports_to
+				date_of_joining = frappe.db.get_value('Duty Commencement', self.duty_commencement, 'date_of_joining')
+				if date_of_joining:
+					employee.date_of_joining = getdate(date_of_joining)
+					self.date_of_joining = getdate(date_of_joining)
 				employee.save(ignore_permissions=True)
 				self.employee = employee.name
 				self.save(ignore_permissions=True)
-				duty_commencement_doc_name = frappe.db.get_value("Duty Commencement", {'job_applicant': self.job_applicant}, ["name"])
-				duty_commencement_doc = frappe.get_doc("Duty Commencement", duty_commencement_doc_name)
-				duty_commencement_doc.employee = employee.name
-				duty_commencement_doc.save(ignore_permissions=True)
+				self.update_duty_commencement()
+
+	def update_duty_commencement(self):
+		duty_commencement = frappe.get_doc("Duty Commencement", self.duty_commencement)
+		duty_commencement.employee = self.employee
+		duty_commencement.save(ignore_permissions=True)
+		duty_commencement.auto_checkin_candidate()
 
 	def validate_orientation(self):
 		if not self.informed_applicant:
@@ -256,7 +281,7 @@ class OnboardEmployee(Document):
 					bank_account.onboard_employee = self.name
 					bank_account.save(ignore_permissions=True)
 				else:
-					frappe.msgprint(_('To Create Bank Account, Set Account Name, Bank and IBAN !'))
+					frappe.throw(_('To Create Bank Account, Set Account Name, Bank and IBAN !'))
 
 	@frappe.whitelist()
 	def create_g2g_residency_payment_request(self):

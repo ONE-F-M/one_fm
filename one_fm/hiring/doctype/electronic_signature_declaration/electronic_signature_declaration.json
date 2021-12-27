@@ -7,7 +7,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "onboarding_employee",
+  "onboard_employee",
   "posting_date",
   "section_break_2",
   "employee_name",
@@ -26,13 +26,6 @@
   "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "onboarding_employee",
-   "fieldtype": "Link",
-   "label": "Onboarding Employee",
-   "options": "Onboard Employee",
-   "read_only": 1
-  },
   {
    "fieldname": "section_break_2",
    "fieldtype": "Section Break",
@@ -120,12 +113,19 @@
    "fieldname": "posting_date",
    "fieldtype": "Date",
    "label": "Posting Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "onboard_employee",
+   "fieldtype": "Link",
+   "label": "Onboard Employee",
+   "options": "Onboard Employee"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-21 08:05:42.337891",
+ "modified": "2021-12-26 19:40:07.190868",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Electronic Signature Declaration",
