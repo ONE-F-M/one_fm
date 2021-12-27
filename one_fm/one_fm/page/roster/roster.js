@@ -1077,7 +1077,10 @@ function render_roster(res, page, isOt) {
 			<tr class="colorclass scheduledStaff">
 				<td class="sticky">
 					<div class="d-flex">
-						<div class="font16 paddingdiv borderleft"></div>
+						<div class="font16 paddingdiv cursorpointer orangecolor">
+							<i class="fa fa-plus" aria-hidden="true"></i>
+						</div>
+						<div class="font16 paddingdiv borderleft">No Post Types Found</div>
 					</div>
 				</td>
 			</tr>
