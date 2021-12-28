@@ -42,11 +42,8 @@ class OnboardEmployee(Document):
 			self.create_work_contract()
 			self.reload()
 		if self.workflow_state == 'Declaration of Electronic Signature':
-			if not self.work_contract:
-				frappe.throw(_("Work Contract is not created for this Applicant"))
-			elif not self.declaration_of_electronic_signature:
-				self.create_declaration_of_electronic_signature()
-				self.reload()
+			self.create_declaration_of_electronic_signature()
+			self.reload()
 		if self.workflow_state == 'Duty Commencement' and not self.duty_commencement:
 			self.create_duty_commencement()
 			self.reload()
@@ -130,6 +127,22 @@ class OnboardEmployee(Document):
 			doc.declarationar = "<h4>{0} قر أنا الموقع أدناه  / ، واحمل بطاقة مدنية ر {1} الجنسية({2}) بأن التوقيع المدون أسفل هذا اإلقرار و التوقيع الخاص بي معتمد وساري ،وأنني اقر بقبول ونفاذ هذا التوقيع في مواجهتي مواجهة الغير ، باعتماد {3}وأنني افوض شركة / .هذا التوقيع كتوقيع إلكتروني ساري المفعول قانوناً</h4>".format(self.employee_name_in_arabic,frappe.db.get_value("Nationality", self.nationality, 'nationality_arabic'),self.civil_id,self.company)
 			doc.save(ignore_permissions=True)
 			doc.submit()
+
+	@frappe.whitelist()
+	def check_signature_status(self):
+		"""This function is to check if the signature exist in the Electronic Signature Declaration doctype
+		Args:
+			declaration_of_electronic_signature ([doctype]): doc ID
+		Returns:
+			1: [if signature exist]
+			0: [if signature doesn't exist]
+		"""
+		if frappe.db.get_value("Electronic Signature Declaration", self.declaration_of_electronic_signature, ['applicant_signature']):
+			self.electronic_signature_status = 1
+		else:
+			self.electronic_signature_status = 0
+		self.save(ignore_permissions=True)
+		frappe.db.commit()
 
 	@frappe.whitelist()
 	def create_duty_commencement(self):

@@ -124,6 +124,7 @@
   "work_contract_progress",
   "declaration_of_electronic_signature_section",
   "declaration_of_electronic_signature",
+  "electronic_signature_status",
   "duty_commencement_section",
   "duty_commencement_name",
   "duty_commencement",
@@ -1457,12 +1458,20 @@
    "fieldtype": "Select",
    "label": "Salary Mode",
    "options": "\nBank\nCash\nCheque"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "electronic_signature_status",
+   "fieldtype": "Check",
+   "label": "Electronic Signature Status",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-27 14:44:50.131921",
+ "modified": "2021-12-28 10:47:07.592243",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

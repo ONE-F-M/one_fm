@@ -22,7 +22,6 @@
   "declarationar",
   "section_break_4",
   "applicant_signature",
-  "status",
   "amended_from"
  ],
  "fields": [
@@ -101,14 +100,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Status",
-   "options": "\nOpen\nSubmit for Signature\nComplete",
-   "read_only": 1
-  },
-  {
    "default": "Today",
    "fieldname": "posting_date",
    "fieldtype": "Date",
@@ -125,7 +116,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-26 19:40:07.190868",
+ "modified": "2021-12-28 10:25:26.544433",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Electronic Signature Declaration",

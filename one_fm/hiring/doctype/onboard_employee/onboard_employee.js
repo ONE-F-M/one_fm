@@ -4,6 +4,7 @@
 frappe.ui.form.on('Onboard Employee', {
 	refresh: function(frm) {
 		set_progress_html(frm);
+		check_signature(frm);
 		if (frm.doc.employee) {
 			frm.add_custom_button(__('Employee'), function() {
 				frappe.set_route("Form", "Employee", frm.doc.employee);
@@ -160,11 +161,11 @@ var create_custom_buttons = function(frm) {
 		4. Bank Account - Create only if Employee is Created
 	*/
 	if(frm.doc.docstatus < 2){
-		if(frm.doc.applicant_attended && !frm.doc.work_contract){
-			cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
-		}
-		if(frm.doc.work_contract && !frm.doc.declaration_of_electronic_signature){
+		if(frm.doc.applicant_attended && !frm.doc.declaration_of_electronic_signature){
 			cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
+		}
+		if(frm.doc.electronic_signature_status == 1 && !frm.doc.work_contract){
+			cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
 		}
 		if(frm.doc.work_contract_status == "Applicant Signed" && frm.doc.declaration_of_electronic_signature && !frm.doc.duty_commencement){
 			cutom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
@@ -304,6 +305,24 @@ var btn_inform_applicant = function(frm) {
 		}
 	}).addClass('btn-primary');
 };
+
+var check_signature = function(frm) {
+	if(frm.doc.declaration_of_electronic_signature){
+		frappe.call({
+			doc: frm.doc,
+			method: 'check_signature_status',
+			callback: function(r) {
+				console.log(r.message)
+				if(!r.exc){
+					return true
+				}
+			},
+			freeze: true,
+			freeze_message: __('reloading ...!')
+		});
+		refresh_field("declaration_status");
+	}
+}
 
 var set_applicant_details = function(frm, applicant) {
 	var fields = ['email_id', 'department', 'project', 'source', 'nationality_no', 'nationality_subject',
