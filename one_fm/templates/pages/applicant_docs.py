@@ -316,7 +316,7 @@ def upload_image(image, filename):
         str: Path to uploaded image
     """
     content = base64.b64decode(image)
-    image_path = cstr(frappe.local.site)+"/private/files/user_document/"+filename
+    image_path = cstr(frappe.local.site)+"/private/files/user/"+filename
 
     with open(image_path, "wb") as fh:
         fh.write(content)
