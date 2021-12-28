@@ -4060,7 +4060,7 @@
   "doctype": "Workflow",
   "document_type": "Onboard Employee",
   "is_active": 1,
-  "modified": "2021-12-27 00:54:49.330202",
+  "modified": "2021-12-28 12:03:11.469297",
   "name": "Onboard Employee",
   "override_status": 0,
   "parent": null,
@@ -4223,17 +4223,6 @@
     "state": "Inform Applicant"
    },
    {
-    "action": "Work Contract",
-    "allow_self_approval": 1,
-    "allowed": "Onboarding Officer",
-    "condition": null,
-    "next_state": "Work Contract",
-    "parent": "Onboard Employee",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "state": "Applicant Attended"
-   },
-   {
     "action": "Declaration of Electronic Signature",
     "allow_self_approval": 1,
     "allowed": "Onboarding Officer",
@@ -4242,7 +4231,18 @@
     "parent": "Onboard Employee",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Work Contract"
+    "state": "Applicant Attended"
+   },
+   {
+    "action": "Work Contract",
+    "allow_self_approval": 1,
+    "allowed": "Onboarding Officer",
+    "condition": null,
+    "next_state": "Work Contract",
+    "parent": "Onboard Employee",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Declaration of Electronic Signature"
    },
    {
     "action": "Duty Commencement",
@@ -4253,7 +4253,7 @@
     "parent": "Onboard Employee",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Declaration of Electronic Signature"
+    "state": "Work Contract"
    },
    {
     "action": "Open Bank Account",
@@ -4298,6 +4298,28 @@
     "parentfield": "transitions",
     "parenttype": "Workflow",
     "state": "Mobile App Enrolment"
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Onboarding Officer",
+    "condition": null,
+    "next_state": "Cancelled",
+    "parent": "Onboard Employee",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Inform Applicant"
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Onboarding Officer",
+    "condition": null,
+    "next_state": "Cancelled",
+    "parent": "Onboard Employee",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Applicant Attended"
    },
    {
     "action": "Cancel",

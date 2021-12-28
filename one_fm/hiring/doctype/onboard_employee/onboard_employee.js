@@ -4,7 +4,6 @@
 frappe.ui.form.on('Onboard Employee', {
 	refresh: function(frm) {
 		set_progress_html(frm);
-		check_signature(frm);
 		if (frm.doc.employee) {
 			frm.add_custom_button(__('Employee'), function() {
 				frappe.set_route("Form", "Employee", frm.doc.employee);
@@ -155,10 +154,10 @@ var create_custom_buttons = function(frm) {
 	/*
 		Button for creating the Work Contract, Declaration of Electronic Signature, Duty Commencement, Bank Account
 		will comes in the below order asper the workflow in Onboard Employee
-		1. Work Contract  - Create if Applicant Attended the Orientation
-		2. Declaration of Electronic Signature - Create after the Work Contract only
+		1. Declaration of Electronic Signature - Create if Applicant Attended the Orientation
+		2. Work Contract  - Create after the Declaration of Electronic Signature and electronic_signature_status should be True
 		3. Duty Commencement - Create after Declaration of Electronic Signature
-		4. Bank Account - Create only if Employee is Created
+		4. Bank Account - Create only if Employee is Created and salary mode is Bank
 	*/
 	if(frm.doc.docstatus < 2){
 		if(frm.doc.applicant_attended && !frm.doc.declaration_of_electronic_signature){
@@ -305,24 +304,6 @@ var btn_inform_applicant = function(frm) {
 		}
 	}).addClass('btn-primary');
 };
-
-var check_signature = function(frm) {
-	if(frm.doc.declaration_of_electronic_signature){
-		frappe.call({
-			doc: frm.doc,
-			method: 'check_signature_status',
-			callback: function(r) {
-				console.log(r.message)
-				if(!r.exc){
-					return true
-				}
-			},
-			freeze: true,
-			freeze_message: __('reloading ...!')
-		});
-		refresh_field("declaration_status");
-	}
-}
 
 var set_applicant_details = function(frm, applicant) {
 	var fields = ['email_id', 'department', 'project', 'source', 'nationality_no', 'nationality_subject',

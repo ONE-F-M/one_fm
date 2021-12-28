@@ -115,6 +115,9 @@
   "informed_applicant",
   "applicant_attended_orientation",
   "applicant_attended",
+  "declaration_of_electronic_signature_section",
+  "declaration_of_electronic_signature",
+  "electronic_signature_status",
   "work_contract_section",
   "work_contract_name",
   "work_contract",
@@ -122,9 +125,6 @@
   "work_contract_status",
   "work_contract_docstatus",
   "work_contract_progress",
-  "declaration_of_electronic_signature_section",
-  "declaration_of_electronic_signature",
-  "electronic_signature_status",
   "duty_commencement_section",
   "duty_commencement_name",
   "duty_commencement",
@@ -719,7 +719,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee && doc.salary_mode == 'Bank'",
    "fieldname": "bank_account_section",
    "fieldtype": "Section Break",
    "label": "Bank Account"
@@ -1471,7 +1471,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-28 10:47:07.592243",
+ "modified": "2021-12-28 12:13:42.073190",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
