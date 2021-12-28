@@ -14,11 +14,6 @@ class ElectronicSignatureDeclaration(Document):
 		self.update_onboarding_doc()
 		update_onboarding_doc_workflow_sate(self)
 
-	def on_update(self):
-		if self.applicant_signature:
-			self.signature_status = 1
-			self.save(ignore_permissions = True)
-
 	def update_onboarding_doc(self, cancel=False):
 		if self.onboard_employee:
 			onboard_employee = frappe.get_doc('Onboard Employee', self.onboard_employee)
@@ -26,6 +21,4 @@ class ElectronicSignatureDeclaration(Document):
 				onboard_employee.declaration_of_electronic_signature = ''
 			else:
 				onboard_employee.declaration_of_electronic_signature = self.name
-			
 			onboard_employee.save(ignore_permissions=True)
-	
