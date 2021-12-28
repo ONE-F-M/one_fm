@@ -135,22 +135,6 @@ class OnboardEmployee(Document):
 			doc.submit()
 
 	@frappe.whitelist()
-	def check_signature_status(self):
-		"""This function is to check if the signature exist in the Electronic Signature Declaration doctype
-		Args:
-			declaration_of_electronic_signature ([doctype]): doc ID
-		Returns:
-			1: [if signature exist]
-			0: [if signature doesn't exist]
-		"""
-		if frappe.db.get_value("Electronic Signature Declaration", self.declaration_of_electronic_signature, ['applicant_signature']):
-			self.electronic_signature_status = 1
-		else:
-			self.electronic_signature_status = 0
-		self.save(ignore_permissions=True)
-		frappe.db.commit()
-
-	@frappe.whitelist()
 	def create_duty_commencement(self):
 		if self.work_contract_status == "Applicant Signed":
 			duty_commencement = frappe.new_doc('Duty Commencement')
