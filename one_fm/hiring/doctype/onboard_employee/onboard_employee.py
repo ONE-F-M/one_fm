@@ -38,15 +38,18 @@ class OnboardEmployee(Document):
 		if self.workflow_state == 'Applicant Attended' and not self.applicant_attended:
 			self.mark_applicant_attended()
 			self.reload()
+
 		if self.workflow_state == 'Work Contract' and not self.work_contract:
-			self.create_work_contract()
-			self.reload()
-		if self.workflow_state == 'Declaration of Electronic Signature':
-			if not self.work_contract:
-				frappe.throw(_("Work Contract is not created for this Applicant"))
-			elif not self.declaration_of_electronic_signature:
-				self.create_declaration_of_electronic_signature()
+			if self.electronic_signature_status == 1:
+				self.create_work_contract()
 				self.reload()
+			else:
+				frappe.throw(_("Please Update Electronic Signature Declaration with Applicant Signature to Proceed"))
+
+		if self.workflow_state == 'Declaration of Electronic Signature':
+			self.create_declaration_of_electronic_signature()
+			self.reload()
+
 		if self.workflow_state == 'Duty Commencement' and not self.duty_commencement:
 			self.create_duty_commencement()
 			self.reload()
@@ -104,6 +107,13 @@ class OnboardEmployee(Document):
 			wc = frappe.new_doc('Work Contract')
 			for filter in filters:
 				wc.set(filter, filters[filter])
+
+			for applicant_docs in self.applicant_documents:
+				doc_required = wc.append('documents')
+				fields = ['document_required', 'attach', 'type_of_copy']
+				for field in fields:
+					doc_required.set(field, applicant_docs.get(field))
+
 			wc.save(ignore_permissions=True)
 
 	@frappe.whitelist()

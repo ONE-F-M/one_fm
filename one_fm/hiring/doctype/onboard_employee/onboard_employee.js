@@ -154,17 +154,17 @@ var create_custom_buttons = function(frm) {
 	/*
 		Button for creating the Work Contract, Declaration of Electronic Signature, Duty Commencement, Bank Account
 		will comes in the below order asper the workflow in Onboard Employee
-		1. Work Contract  - Create if Applicant Attended the Orientation
-		2. Declaration of Electronic Signature - Create after the Work Contract only
+		1. Declaration of Electronic Signature - Create if Applicant Attended the Orientation
+		2. Work Contract  - Create after the Declaration of Electronic Signature and electronic_signature_status should be True
 		3. Duty Commencement - Create after Declaration of Electronic Signature
-		4. Bank Account - Create only if Employee is Created
+		4. Bank Account - Create only if Employee is Created and salary mode is Bank
 	*/
 	if(frm.doc.docstatus < 2){
-		if(frm.doc.applicant_attended && !frm.doc.work_contract){
-			cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
-		}
-		if(frm.doc.work_contract && !frm.doc.declaration_of_electronic_signature){
+		if(frm.doc.applicant_attended && !frm.doc.declaration_of_electronic_signature){
 			cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
+		}
+		if(frm.doc.electronic_signature_status == 1 && !frm.doc.work_contract){
+			cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
 		}
 		if(frm.doc.work_contract_status == "Applicant Signed" && frm.doc.declaration_of_electronic_signature && !frm.doc.duty_commencement){
 			cutom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');

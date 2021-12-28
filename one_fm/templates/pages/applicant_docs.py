@@ -72,7 +72,6 @@ def get_civil_id_text():
 
         result.update({'front_text': front_text})
         result.update({'back_text': back_text})
-
         return result
 
     except Exception as e:
@@ -103,7 +102,7 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
     result = {}
     assemble = {}
     index = 0
-    print(texts[0].description)
+    result["Civil_ID_Front"] = image_path
 
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
@@ -177,6 +176,8 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
     result = {}
     assemble = {}
     index = 0
+    result["Civil_ID_Back"] = image_path
+
 
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
@@ -244,8 +245,9 @@ def get_passport_front_text(image_path, client):
         assemble[index] = texts[index].description
 
     text_length = len(texts)
-    print(text_length)
     fuzzy = False
+    result["Passport_Front"] = image_path
+
     if(text_length >= 5):
         if is_date(texts[text_length - 4].description, fuzzy):
             result["Passport_Date_of_Issue"] = datetime.datetime.strptime(texts[text_length - 4].description, '%d/%m/%Y').strftime('%Y-%m-%d')
@@ -275,6 +277,7 @@ def get_passport_back_text(image_path, client):
     result = {}
     assemble = {}
     index = 0
+    result["Passport_Back"] = image_path
 
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
@@ -342,7 +345,14 @@ def send_applicant_doc_magic_link(job_applicant):
 def update_job_applicant(job_applicant, data):
     doc = frappe.get_doc('Job Applicant', job_applicant)
     applicant_details = json.loads(data)
+
     for field in applicant_details:
         doc.set(field, applicant_details[field])
+    for documents in applicant_details['applicant_doc']:
+        doc.append("one_fm_documents_required", {
+		"document_required": documents,
+		"attach": frappe.get_value('File', {'file_name':applicant_details['applicant_doc'][documents]},["file_url"]),
+        "type_of_copy": "Soft Copy",
+	    })
     doc.save(ignore_permissions=True)
     return True

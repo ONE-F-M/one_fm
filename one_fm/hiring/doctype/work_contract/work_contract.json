@@ -29,14 +29,8 @@
   "monthly_salary",
   "working_hours",
   "section_break_23",
-  "original_passport_required",
-  "attach_signed_passport_receiving_copy",
-  "attach_passport",
-  "column_break_27",
-  "attach_non_kuwaiti_civil_id",
-  "legal_receives_employee_file",
-  "legal_receives_original_work_contract",
-  "attach_authorised_signatory_signed_work_contract",
+  "documents",
+  "select_authorised_signatory_signed_work_contract",
   "section_break_9",
   "note",
   "column_break_32",
@@ -189,38 +183,8 @@
   },
   {
    "fieldname": "section_break_23",
-   "fieldtype": "Section Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "0",
-   "fieldname": "original_passport_required",
-   "fieldtype": "Check",
-   "label": "Original Passport Required"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "original_passport_required",
-   "fieldname": "attach_signed_passport_receiving_copy",
-   "fieldtype": "Attach",
-   "label": "Attach Signed Passport Receiving Copy"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "attach_passport",
-   "fieldtype": "Attach",
-   "label": "Attach Passport"
-  },
-  {
-   "fieldname": "column_break_27",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval: !doc.original_passport_required",
-   "fieldname": "attach_non_kuwaiti_civil_id",
-   "fieldtype": "Attach",
-   "label": "Attach Non Kuwaiti CIVIL ID"
+   "fieldtype": "Section Break",
+   "label": "Applicant Documents"
   },
   {
    "fieldname": "column_break_32",
@@ -233,28 +197,20 @@
    "label": "Rejection Reason"
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "attach_authorised_signatory_signed_work_contract",
-   "fieldtype": "Attach",
-   "label": "Attach Authorised Signatory Signed Work Contract"
+   "fieldname": "documents",
+   "fieldtype": "Table",
+   "label": "Documents",
+   "options": "Job Applicant Required Document"
   },
   {
    "allow_on_submit": 1,
-   "default": "0",
-   "fieldname": "legal_receives_employee_file",
-   "fieldtype": "Check",
-   "label": "Legal Receives Employee File"
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "0",
-   "fieldname": "legal_receives_original_work_contract",
-   "fieldtype": "Check",
-   "label": "Legal Receives Original Work Contract"
+   "fieldname": "select_authorised_signatory_signed_work_contract",
+   "fieldtype": "Select",
+   "label": "Select Authorized Signatory Signed Work Contract"
   }
  ],
  "links": [],
- "modified": "2021-12-20 20:16:34.445356",
+ "modified": "2021-12-27 15:52:05.036358",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
