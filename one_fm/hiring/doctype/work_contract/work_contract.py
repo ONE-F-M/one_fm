@@ -34,33 +34,30 @@ class WorkContract(Document):
 		self.set_progress()
 		self.update_on_workflow_state()
 		update_onboarding_doc(self)
+		self.authorized_signatory_user_id = self.fetch_authorized_signatory_user_id()
+		
 
 	def update_on_workflow_state(self):
-		if self.workflow_state == 'Submitted to Legal':
+		if self.workflow_state == 'Send to Authorised Signatory':
 			self.validate_attachments()
-		if self.workflow_state == 'Send to Authorised Signatory' and not self.legal_receives_employee_file:
-			frappe.throw(_("Is Legal Receives Employee File ?, If yes please mark it!"))
+			self.validate_authorized_signatory()
+			email_authority_for_signature(self)
 		if self.workflow_state == 'Submitted for Applicant Review':
 			#if applicant sign the contract, the workflow changes to "Applicant Signed",
 			if self.check_for_applicant_signature():
 				self.workflow_state = "Applicant Signed"
 				self.save()
-		if self.workflow_state == 'Completed':
-			if not self.legal_receives_original_work_contract:
-				frappe.throw(_("Is Legal Receives Original Work Contract?, If yes please mark it!"))
-			if not self.attach_authorised_signatory_signed_work_contract:
-				frappe.throw(_("Attach Authorised Signatory Signed Work Contract!"))
 
 	def validate_attachments(self):
-		kuwaiti_nationality = ["Kuwaiti", "Non-Kuwaiti"]
-		if self.nationality not in kuwaiti_nationality and not self.original_passport_required:
-			frappe.throw(_("Mark Original Passport Required"))
-		if self.original_passport_required and self.nationality in kuwaiti_nationality:
-			frappe.throw(_("Mark Original Passport Required False for Kuwait/Non-Kuwaiti"))
-		if self.original_passport_required and not self.attach_signed_passport_receiving_copy:
-			frappe.throw(_("Attach Passport Receiving Copy!"))
-		elif self.nationality in kuwaiti_nationality and not self.attach_passport and not self.attach_non_kuwaiti_civil_id:
-			frappe.throw(_("Attch Passport or Non-Kuwait CIVIL ID"))
+		document_required = ["Civil ID Front","Civil ID Back","Passport Front","Passport Back"]
+		for applicant_docs in self.documents:
+			document_required.remove(applicant_docs.document_required)
+		if len(document_required) > 0:
+			frappe.throw(_("Please Attach "+ ' '.join(str(x) for x in document_required)+" !"))
+
+	def validate_authorized_signatory(self):
+		if not self.select_authorised_signatory_signed_work_contract:
+			frappe.throw(_("Please select Authorized Signatory!"))
 
 	def on_cancel(self):
 		if self.workflow_state == 'Applicant not Signed':
@@ -78,6 +75,53 @@ class WorkContract(Document):
 		else:
 			return False
 	
+	@frappe.whitelist()
+	def get_authorized_signatory(self):
+		authorize_signatory = []
+		if self.pam_file_number:
+			pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':self.pam_file_number},["*"],as_dict = True)
+			pam_auth_sign = pam_authorized_signatory.as_dict()
+			for auth_sign in pam_auth_sign["authorized_signatory"]:
+				authorize_signatory.append(auth_sign["authorized_signatory_name_english"])
+		return authorize_signatory
+
+
+	def fetch_authorized_signatory_user_id(self):
+		if self.select_authorised_signatory_signed_work_contract and self.pam_file_number:
+			pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':self.pam_file_number},["authorized_signatory"],as_dict = True)
+			pam_auth_sign = pam_authorized_signatory.as_dict()
+			for auth_sign in pam_auth_sign["authorized_signatory"]:
+				if self.select_authorised_signatory_signed_work_contract == auth_sign["authorized_signatory_name_english"]:
+					user_id = auth_sign["user"]
+			return user_id
+
+
+
+@frappe.whitelist()
+def autorized_signatory_approve(docname):
+	doc = frappe.get_doc("Work Contract", docname)
+	doc.authority_signature = fetch_authority_signature(doc)
+	doc.workflow_state = "Completed"
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+
+@frappe.whitelist()
+def autorized_signatory_reject(docname):
+	doc = frappe.get_doc("Work Contract", docname)
+	doc.workflow_state = "Cancelled"
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	print(doc.workflow_state)
+
+def	fetch_authority_signature(doc):
+		if doc.select_authorised_signatory_signed_work_contract and doc.pam_file_number:
+			pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':doc.pam_file_number},["authorized_signatory"],as_dict = True)
+			pam_auth_sign = pam_authorized_signatory.as_dict()
+			for auth_sign in pam_auth_sign["authorized_signatory"]:
+				if doc.select_authorised_signatory_signed_work_contract == auth_sign["authorized_signatory_name_english"]:
+					signature = auth_sign["signature"]
+		print(signature)
+		return signature
 
 @frappe.whitelist()
 def get_employee_details_for_wc(type, employee=False, onboard_employee=False):
@@ -119,3 +163,39 @@ def employee_details_for_wc(employee_or_oe):
 				details['effective_from'] = estimated_date_of_joining
 	details['working_hours'] = working_hours
 	return details
+
+
+def email_authority_for_signature(doc):
+	"""
+	This function is to notify the Authorized Signatory and request his action. 
+	The Message sent through mail consist of 2 action: Approve and Reject.
+
+	Param: doc -> Work Contract Doc
+
+	It's a action that takes place on update of Leave Application.
+	"""
+	#If Leave Approver Exist
+	print(doc.authorized_signatory_user_id)
+	if doc.authorized_signatory_user_id:
+		parent_doc = frappe.get_doc('Work Contract', doc.name)
+		args = parent_doc.as_dict() #fetch fields from the doc.
+
+		#Fetch Email Template for Leave Approval. The email template is in HTML format.
+		email_template = frappe.get_doc("Email Template", "Work Contract Approval",)
+		message = frappe.render_template(email_template.response_html, args)
+		subject = email_template.subject
+		recipient= [doc.authorized_signatory_user_id]
+		print(recipient)
+		#send Email notification
+		try:
+			frappe.sendmail(
+				recipients = recipient,
+				sender = frappe.get_doc('User', frappe.session.user).email,
+				subject = subject,
+				message = message,
+				reference_doctype = doc.doctype,
+				reference_name = doc.name,
+			)
+			frappe.msgprint(_("Email sent to {0}").format(doc.select_authorised_signatory_signed_work_contract))
+		except frappe.OutgoingEmailError:
+			pass

@@ -31,6 +31,8 @@
   "project",
   "operations_site",
   "operations_shift",
+  "day_off_category",
+  "number_of_days_off",
   "leave_policy",
   "applicant_details_section",
   "gender",
@@ -72,6 +74,7 @@
   "provide_transportation_by_company",
   "column_break_26",
   "salary_details",
+  "salary_mode",
   "uniform_measurements_section",
   "is_uniform_needed_for_this_job",
   "shoulder_width",
@@ -112,6 +115,9 @@
   "informed_applicant",
   "applicant_attended_orientation",
   "applicant_attended",
+  "declaration_of_electronic_signature_section",
+  "declaration_of_electronic_signature",
+  "electronic_signature_status",
   "work_contract_section",
   "work_contract_name",
   "work_contract",
@@ -119,10 +125,6 @@
   "work_contract_status",
   "work_contract_docstatus",
   "work_contract_progress",
-  "declaration_of_electronic_signature_section",
-  "declaration_of_electronic_signature",
-  "column_break_116",
-  "electronic_signature_declaration_status",
   "duty_commencement_section",
   "duty_commencement_name",
   "duty_commencement",
@@ -287,6 +289,8 @@
    "options": "Employee Grade"
   },
   {
+   "fetch_from": "job_offer.project",
+   "fetch_if_empty": 1,
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
@@ -330,7 +334,7 @@
    "collapsible": 1,
    "fieldname": "job_offer_details_section",
    "fieldtype": "Section Break",
-   "label": "Job Offer Details"
+   "label": "Job Offer and Salary Details"
   },
   {
    "fieldname": "email_id",
@@ -497,6 +501,8 @@
    "options": "Visa Type"
   },
   {
+   "fetch_from": "job_applicant.one_fm_cid_number",
+   "fetch_if_empty": 1,
    "fieldname": "civil_id",
    "fieldtype": "Data",
    "label": "CIVIL ID"
@@ -715,7 +721,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee && doc.salary_mode == 'Bank'",
    "fieldname": "bank_account_section",
    "fieldtype": "Section Break",
    "label": "Bank Account"
@@ -1041,6 +1047,8 @@
   },
   {
    "allow_on_submit": 1,
+   "fetch_from": "job_offer.reports_to",
+   "fetch_if_empty": 1,
    "fieldname": "reports_to",
    "fieldtype": "Link",
    "label": "Reports To",
@@ -1427,28 +1435,45 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_116",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "0",
-   "fieldname": "electronic_signature_declaration_status",
-   "fieldtype": "Check",
-   "label": "Electronic Signature Declaration Status",
-   "read_only": 1
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "iban",
    "fieldtype": "Data",
    "label": "IBAN"
+  },
+  {
+   "fetch_from": "job_offer.day_off_category",
+   "fieldname": "day_off_category",
+   "fieldtype": "Select",
+   "label": "Day Off Category",
+   "options": "Weekly\nMonthly"
+  },
+  {
+   "fetch_from": "job_offer.number_of_days_off",
+   "fieldname": "number_of_days_off",
+   "fieldtype": "Int",
+   "label": "Number Of Days Off"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Bank",
+   "fieldname": "salary_mode",
+   "fieldtype": "Select",
+   "label": "Salary Mode",
+   "options": "\nBank\nCash\nCheque"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "electronic_signature_status",
+   "fieldtype": "Check",
+   "label": "Electronic Signature Status",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-21 13:10:18.121184",
+ "modified": "2021-12-28 12:32:00.779684",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

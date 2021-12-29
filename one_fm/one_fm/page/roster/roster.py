@@ -158,7 +158,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
 		if isOt:
 			filters.update({'roster_type' : 'Over-Time'})	
-		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability"], order_by="date asc, employee_name asc", ignore_permissions=True)
+		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "post_type", "post_abbrv",  "shift", "roster_type", "employee_availability", "day_off_ot"], order_by="date asc, employee_name asc", ignore_permissions=True)
 		if isOt:
 			filters.pop("roster_type", None)
 
@@ -287,7 +287,7 @@ def get_current_user_details():
 
 	
 @frappe.whitelist()
-def schedule_staff(employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, end_date=None):
+def schedule_staff(employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot=None, end_date=None):
 
 	validation_logs = []
 	
@@ -334,7 +334,7 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 			start = time.time()
 			for employee in json.loads(employees):
 				if not cint(request_employee_schedule):
-					frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, keep_days_off=keep_days_off, is_async=True, queue='long')
+					frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot, is_async=True, queue='long')
 				else:
 					from_schedule = frappe.db.sql("""select shift, post_type from `tabEmployee Schedule` where shift!= %(shift)s and date >= %(start_date)s and date <= %(end_date)s and employee = %(employee)s""",{
 						'shift' : shift,
@@ -380,7 +380,7 @@ def create_request_employee_schedule(employee, from_shift, from_post_type, to_sh
 def update_roster(key):
 	frappe.publish_realtime(key, "Success")
 
-def schedule(employee, shift, post_type, otRoster, start_date, end_date, keep_days_off):
+def schedule(employee, shift, post_type, otRoster, start_date, end_date, keep_days_off, day_off_ot):
 	start = time.time()
 
 	if otRoster == 'false':
@@ -396,7 +396,7 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date, keep_da
 				site, project, shift_type= frappe.get_value("Operations Shift", shift, ["site", "project", "shift_type"])
 				post_abbrv = frappe.get_value("Post Type", post_type, "post_abbrv")
 				roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type })
-				update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type, roster_type)
+				update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type, roster_type, day_off_ot)
 			else:
 				roster_doc = frappe.new_doc("Employee Schedule")
 				roster_doc.employee = employee
@@ -405,13 +405,14 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date, keep_da
 				roster_doc.employee_availability = "Working"
 				roster_doc.post_type = post_type
 				roster_doc.roster_type = roster_type
+				roster_doc.day_off_ot = cint(day_off_ot)
 				roster_doc.save(ignore_permissions=True)
 		else:
 			if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type, 'employee_availability': 'Working'}):
 				site, project, shift_type= frappe.get_value("Operations Shift", shift, ["site", "project", "shift_type"])
 				post_abbrv = frappe.get_value("Post Type", post_type, "post_abbrv")
 				roster = frappe.get_value("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type })
-				update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type, roster_type)
+				update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", post_type, roster_type, day_off_ot)
 			elif not frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type}):
 				roster_doc = frappe.new_doc("Employee Schedule")
 				roster_doc.employee = employee
@@ -420,6 +421,7 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date, keep_da
 				roster_doc.employee_availability = "Working"
 				roster_doc.post_type = post_type
 				roster_doc.roster_type = roster_type
+				roster_doc.day_off_ot = day_off_ot
 				roster_doc.save(ignore_permissions=True)
 
 	"""Update employee assignment"""
@@ -893,7 +895,7 @@ def assign_job(employee, shift, site, project):
 	print("------------------[TIME TAKEN]===================", end-start)
 
 @frappe.whitelist(allow_guest=True)
-def update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, date, employee_availability, post_type, roster_type):
+def update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, date, employee_availability, post_type, roster_type, day_off_ot):
 	frappe.db.set_value("Employee Schedule", roster, "shift", val=shift)
 	frappe.db.set_value("Employee Schedule", roster, "site", val=site)
 	frappe.db.set_value("Employee Schedule", roster, "shift_type", val=shift_type)
@@ -903,6 +905,7 @@ def update_existing_schedule(roster, shift, site, shift_type, project, post_abbr
 	frappe.db.set_value("Employee Schedule", roster, "employee_availability", val=employee_availability)
 	frappe.db.set_value("Employee Schedule", roster, "post_type", val=post_type)
 	frappe.db.set_value("Employee Schedule", roster, "roster_type", val=roster_type)
+	frappe.db.set_value("Employee Schedule", roster, "day_off_ot", val=cint(day_off_ot))
 
 
 @frappe.whitelist(allow_guest=True)

@@ -4,7 +4,6 @@
 frappe.ui.form.on('Onboard Employee', {
 	refresh: function(frm) {
 		set_progress_html(frm);
-		check_signature(frm);
 		if (frm.doc.employee) {
 			frm.add_custom_button(__('Employee'), function() {
 				frappe.set_route("Form", "Employee", frm.doc.employee);
@@ -152,48 +151,58 @@ var set_filters = function(frm) {
 };
 
 var create_custom_buttons = function(frm) {
-	if(frm.doc.applicant_attended && !frm.doc.work_contract){
-		cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
+	/*
+		Button for creating the Work Contract, Declaration of Electronic Signature, Duty Commencement, Bank Account
+		will comes in the below order asper the workflow in Onboard Employee
+		1. Declaration of Electronic Signature - Create if Applicant Attended the Orientation
+		2. Work Contract  - Create after the Declaration of Electronic Signature and electronic_signature_status should be True
+		3. Duty Commencement - Create after Declaration of Electronic Signature
+		4. Bank Account - Create only if Employee is Created and salary mode is Bank
+	*/
+	if(frm.doc.docstatus < 2){
+		if(frm.doc.applicant_attended && !frm.doc.declaration_of_electronic_signature){
+			cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
+		}
+		if(frm.doc.electronic_signature_status == 1 && !frm.doc.work_contract){
+			cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
+		}
+		if(frm.doc.work_contract_status == "Applicant Signed" && frm.doc.declaration_of_electronic_signature && !frm.doc.duty_commencement){
+			cutom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
+		}
+		if(frm.doc.duty_commencement_status == "Applicant Signed and Uploaded" && !frm.doc.employee){
+			cutom_btn_and_action(frm, 'create_employee', 'Employee');
+		}
+		if(frm.doc.employee && !frm.doc.employee_id){
+			cutom_btn_and_action(frm, 'create_employee_id', 'Employee ID Card');
+		}
+		if(frm.doc.employee && !frm.doc.user_created){
+			cutom_btn_and_action(frm, 'create_user_and_permissions', 'ERPNext User');
+		}
+		if(frm.doc.employee && frm.doc.user_created && !frm.doc.inform_and_send_enrolment_details_to_employee){
+			frm.add_custom_button(__('Inform and Send Enrolment Details to Employee'), function() {
+				frm.set_value('inform_and_send_enrolment_details_to_employee', true);
+				frm.save("Update");
+			}).addClass('btn-primary');
+		}
+		if(frm.doc.employee && !frm.doc.bank_account && frm.doc.salary_mode=='Bank'){
+			cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
+		}
+		if(frm.doc.employee && !frm.doc.loan && frm.doc.net_loan_amount > 0){
+			frm.add_custom_button(__('Loan'), function() {
+				btn_create_loan_action(frm);
+			}, __('Create')).addClass('btn-primary');
+		}
+		if(frm.doc.employee && !frm.doc.mgrp && frm.doc.nationality == 'Kuwaiti'){
+			cutom_btn_and_action(frm, 'create_mgrp', 'MGRP');
+		}
+		if(frm.doc.employee && !frm.doc.pifss_form_103 && frm.doc.nationality == 'Kuwaiti'){
+			cutom_btn_and_action(frm, 'create_103_form', 'PIFSS Form 103');
+		}
+		if(frm.doc.employee && frm.doc.tools_needed_for_work && !frm.doc.request_for_material){
+			cutom_btn_and_action(frm, 'create_rfm_from_eo', 'Request for Material');
+		}
 	}
-	if(frm.doc.electronic_signature_declaration_status != 1 && !frm.doc.declaration_of_electronic_signature){
-		cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
-	}
-	if(frm.doc.work_contract_status == "Applicant Signed" && frm.doc.workflow_state == 'Declaration of Electronic Signature' && !frm.doc.duty_commencement){
-		cutom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
-	}
-	if(frm.doc.duty_commencement_status == "Applicant Signed and Uploaded" && !frm.doc.employee){
-		cutom_btn_and_action(frm, 'create_employee', 'Employee');
-	}
-	if(frm.doc.employee && !frm.doc.employee_id){
-		cutom_btn_and_action(frm, 'create_employee_id', 'Employee ID Card');
-	}
-	if(frm.doc.employee && !frm.doc.user_created){
-		cutom_btn_and_action(frm, 'create_user_and_permissions', 'ERPNext User');
-	}
-	if(frm.doc.employee && frm.doc.user_created && !frm.doc.inform_and_send_enrolment_details_to_employee){
-		frm.add_custom_button(__('Inform and Send Enrolment Details to Employee'), function() {
-			frm.set_value('inform_and_send_enrolment_details_to_employee', true);
-			frm.save("Update");
-		}).addClass('btn-primary');
-	}
-	if(frm.doc.employee && !frm.doc.bank_account){
-		cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
-	}
-	if(frm.doc.employee && !frm.doc.loan && frm.doc.net_loan_amount > 0){
-		frm.add_custom_button(__('Loan'), function() {
-			btn_create_loan_action(frm);
-		}, __('Create')).addClass('btn-primary');
-	}
-	if(frm.doc.employee && !frm.doc.mgrp && frm.doc.nationality == 'Kuwaiti'){
-		cutom_btn_and_action(frm, 'create_mgrp', 'MGRP');
-	}
-	if(frm.doc.employee && !frm.doc.pifss_form_103 && frm.doc.nationality == 'Kuwaiti'){
-		cutom_btn_and_action(frm, 'create_103_form', 'PIFSS Form 103');
-	}
-	if(frm.doc.employee && frm.doc.tools_needed_for_work && !frm.doc.request_for_material){
-		cutom_btn_and_action(frm, 'create_rfm_from_eo', 'Request for Material');
-	}
-}
+};
 
 var btn_create_loan_action = function(frm) {
 	if(!frm.doc.loan_type){
@@ -280,21 +289,6 @@ var set_applicant_details = function(frm, applicant) {
 	}
 	// frm.set_value('applicant_name', applicant.applicant_name);
 };
-
-var check_signature = function(frm) {
-	if(frm.doc.declaration_of_electronic_signature){
-		frappe.call({
-			method: 'one_fm.hiring.doctype.electronic_signature_declaration.electronic_signature_declaration.check_signature_status',
-			args:{'declaration_of_electronic_signature':frm.doc.declaration_of_electronic_signature},
-			callback: function(r) {
-				console.log(r)
-				if(r.message){
-					frm.set_value('electronic_signature_declaration_status', r.message);
-				}
-			}
-		});
-	}
-}
 
 var set_progress_html = function(frm) {
 	var $wrapper = frm.fields_dict['progress_html'].$wrapper;
