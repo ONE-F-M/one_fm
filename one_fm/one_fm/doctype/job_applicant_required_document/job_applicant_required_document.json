@@ -24,7 +24,6 @@
    "in_list_view": 1,
    "label": "Document Required",
    "options": "Recruitment Document Required",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -95,7 +94,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-05-26 21:41:31.598679",
+ "modified": "2021-12-26 18:34:04.603011",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Job Applicant Required Document",

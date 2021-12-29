@@ -16,20 +16,23 @@ class DutyCommencement(Document):
 
 		if getdate(self.date_of_joining) < getdate():
 			frappe.throw(_("Date of joining cannot be before today"))
-		
-		if self.workflow_state == "Applicant Signed and Uploaded" and self.employee:
-			employee_doc = frappe.get_doc("Employee", self.employee)
-			employee_doc.project = self.project
-			employee_doc.site = self.operations_site
-			employee_doc.shift = self.operations_shift
-			employee_doc.date_of_joining = self.date_of_joining
-			employee_doc.save(ignore_permissions=True)
-			self.auto_checkin_candidate()
-		elif self.workflow_state == "Applicant Signed and Uploaded" and not self.employee:
-			frappe.throw(_("No Employee created for {employee_name}. Please create employee from Onboard Employee.".format(employee_name=self.employee_name)))
 
 		self.set_progress()
 		self.update_salary_details_from_job_offer()
+
+	def validate_workflow(self):
+		if self.workflow_state == "Applicant Signed and Uploaded" and not self.employee:
+			msg = """
+				No Employee created for {employee_name}. Please create employee from Onboard Employee
+				<a href='{url}'>{onboard_employee}</a>.
+			"""
+			from frappe.utils.data import get_absolute_url
+			frappe.msgprint(_(msg.format(
+				employee_name = self.employee_name,
+				url = get_absolute_url('Onboard Employee', self.onboard_employee),
+				onboard_employee = self.onboard_employee
+				)
+			))
 
 	def update_salary_details_from_job_offer(self):
 		if not self.salary_details and self.job_offer:
@@ -59,17 +62,18 @@ class DutyCommencement(Document):
 
 	def after_insert(self):
 		update_onboarding_doc(self)
+		update_onboarding_doc_workflow_sate(self)
 
 	def on_update(self):
 		self.set_progress()
 		self.validate_submit()
+		self.validate_workflow()
 		update_onboarding_doc(self)
 
 	def validate_submit(self):
 		if self.workflow_state == 'Applicant Signed and Uploaded':
 			if not self.attach_duty_commencement:
 				frappe.throw(_("Attach Signed Duty Commencement!"))
-			update_onboarding_doc_workflow_sate(self)
 
 	def auto_checkin_candidate(self):
 		"""This method creates a Shift Assignment and auto checks-in the employee if current time is past shift start time."""
@@ -95,7 +99,7 @@ class DutyCommencement(Document):
 					shift_start_time = frappe.db.get_value("Operations Shift", {'name': self.operations_shift}, ["start_time"]) # => hh:mm:ss
 					if not shift_start_time:
 						frappe.throw(_("Could not auto checkin employee. No start time set for duty commencement shift"))
-					
+
 					# Convert "hh:mm:ss" to "hhmmss"
 					current_time_str_list = cstr(current_time).split(":")
 					shift_start_time_str_list = cstr(shift_start_time).split(":")
@@ -124,15 +128,15 @@ class DutyCommencement(Document):
 						frappe.msgprint(_("Please inform employee to check in at shift start time."), alert=True, indicator='orange')
 
 					frappe.db.commit()
-				
+
 				else:
 					frappe.msgprint(_("Shift Assignment already created for this employee on Duty Commencement start date."), alert=True, indicator='orange')
-			
+
 			else:
 				frappe.msgprint(_("Make sure to roster employee before Duty Commencement start date."), alert=True, indicator='orange')
-		
+
 		except Exception as e:
-			frappe.log_error(e)			
+			frappe.log_error(e)
 
 	def on_cancel(self):
 		if self.workflow_state == 'Cancelled':

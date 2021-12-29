@@ -7,22 +7,24 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_field
 from frappe.model import core_doctypes_list
 from frappe.model.document import Document
 from frappe.utils import cstr
+from one_fm.hiring.utils import update_onboarding_doc_workflow_sate
 
 class ElectronicSignatureDeclaration(Document):
-	pass
+	def after_insert(self):
+		self.update_onboarding_doc()
+		update_onboarding_doc_workflow_sate(self)
 
-@frappe.whitelist()
-def check_signature_status(declaration_of_electronic_signature):
-	"""This function is to check if the signature exist in the Electronic Signature Declaration doctype
+	def on_update_after_submit(self):
+		self.update_onboarding_doc()
 
-	Args:
-		declaration_of_electronic_signature ([doctype]): doc ID
-
-	Returns:
-		1: [if signature exist]
-		0: [if signature doesn't exist]
-	"""
-	if frappe.db.get_value("Electronic Signature Declaration", declaration_of_electronic_signature, ['applicant_signature']):
-		return 1
-	else:
-		return 0
+	def update_onboarding_doc(self, cancel=False):
+		if self.onboard_employee:
+			onboard_employee = frappe.get_doc('Onboard Employee', self.onboard_employee)
+			if cancel:
+				onboard_employee.declaration_of_electronic_signature = ''
+				onboard_employee.electronic_signature_status = False
+			else:
+				if self.applicant_signature:
+					onboard_employee.electronic_signature_status = True
+				onboard_employee.declaration_of_electronic_signature = self.name
+			onboard_employee.save(ignore_permissions=True)

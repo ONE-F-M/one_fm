@@ -22,6 +22,16 @@ def get_performance_profile_guid():
         return get_url(file_path)
 
 def validate_job_offer(doc, method):
+    validate_job_offer_mandatory_fields(doc)
+    # Validate day off
+    if not doc.number_of_days_off:
+        frappe.throw(_("Please set the number of days off."))
+    if doc.day_off_category == "Weekly":
+        if frappe.utils.cint(doc.number_of_days_off) > 7:
+            frappe.throw(_("Number of days off cannot be more than a week."))
+    elif doc.day_off_category == "Monthly":
+        if frappe.utils.cint(doc.number_of_days_off) > 30:
+            frappe.throw(_("Number of days off cannot be more than a month."))
     salary_per_person_from_erf = 0
     if doc.one_fm_erf and not doc.one_fm_salary_structure:
         erf_salary_structure = frappe.db.get_value('ERF', doc.one_fm_erf, 'salary_structure')
@@ -60,6 +70,18 @@ def validate_job_offer(doc, method):
         doc.one_fm_job_offer_total_salary = total_amount
     if frappe.db.exists('Letter Head', 'ONE FM - Job Offer') and not doc.letter_head:
         doc.letter_head = 'ONE FM - Job Offer'
+
+def validate_job_offer_mandatory_fields(job_offer):
+    if job_offer.workflow_state == 'Submit for Candidate Response':
+        mandatory_field_required = False
+        fields = ['Reports To', 'Project', 'Operations Site', 'Operations Shift']
+        msg = "Mandatory fields required to Submit Job Offer<br/><br/><ul>"
+        for field in fields:
+            if not job_offer.get(scrub(field)):
+                mandatory_field_required = True
+                msg += '<li>' + field +'</li>'
+        if mandatory_field_required:
+            frappe.throw(msg + '</ul>')
 
 def after_insert_job_applicant(doc, method):
     website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)
@@ -143,7 +165,9 @@ def make_employee_from_job_offer(source_name, target_doc=None):
                 "applicant_name": "employee_name",
                 "name": "job_offer",
                 "one_fm_salary_structure": "job_offer_salary_structure",
-                "estimated_date_of_joining": "date_of_joining"
+                "estimated_date_of_joining": "date_of_joining",
+                "operations_site": "site",
+                "operations_shift": "shift"
             }
         }
     }, target_doc, set_missing_values)
@@ -401,6 +425,7 @@ def update_onboarding_doc(doc, is_trash=False, cancel_oe=False):
             onboard_employee.cancel()
 
 def job_offer_on_update_after_submit(doc, method):
+    validate_job_offer_mandatory_fields(doc)
     if doc.workflow_state == 'Submit to Onboarding Officer':
         if not doc.estimated_date_of_joining:
             frappe.throw(_('Please Select Estimated Date of Joining to Accept Offer'))
@@ -617,6 +642,8 @@ def update_onboarding_doc_workflow_sate(doc):
         onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_id)
         if doc.doctype == 'Work Contract':
             onboard_employee.workflow_state = 'Work Contract'
+        if doc.doctype == 'Electronic Signature Declaration':
+            onboard_employee.workflow_state = 'Declaration of Electronic Signature'
         if doc.doctype == 'Duty Commencement' and onboard_employee.workflow_state == 'Declaration of Electronic Signature':
             onboard_employee.workflow_state = 'Duty Commencement'
         if doc.doctype == 'Employee' and onboard_employee.workflow_state == 'Bank Account' and doc.enrolled:

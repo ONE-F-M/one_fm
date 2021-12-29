@@ -1151,7 +1151,8 @@ function render_roster(res, page, isOt) {
 				'Sick Leave': 'purplebox',
 				'Emergency Leave': 'purplebox',
 				'Annual Leave': 'purplebox',
-				'ASA': 'pinkboxcolor'
+				'ASA': 'pinkboxcolor',
+				'Day Off OT': 'orangeboxcolor'
 			};
 			let leavemap = {
 				'Day Off': 'DO',
@@ -1173,15 +1174,22 @@ function render_roster(res, page, isOt) {
 				'Half Day': 'HD',
 				'On Leave': 'OL'
 			};
-			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance, asa } = employees_data[employee_key][i];
+			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot } = employees_data[employee_key][i];
 			//OT schedule view
 			if (isOt) {
-				if (post_abbrv && roster_type == 'Over-Time') {
+				if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}</div>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+					</td>`;
+				}else if(post_abbrv && roster_type == 'Over-Time' && day_off_ot==1){
+					j++;
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if (employee_availability && !post_abbrv) {
 					sch = `
@@ -1202,21 +1210,28 @@ function render_roster(res, page, isOt) {
 			} 
 			//Basic schedule view
 			else {
-				if (post_abbrv && roster_type == 'Basic' && !asa) {
+				if (post_abbrv && roster_type == 'Basic' && !asa && day_off_ot==0) {
 					j++;
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
-				}else if(post_abbrv && roster_type == 'Basic' && asa ){
+				}else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
 					j++;
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"Scheduled: <br>" + shift + "<br>" + "Assigned: <br>" + asa}</span></div>
 					</td>`;
-				}  
+				}else if(post_abbrv && roster_type == 'Basic' && day_off_ot==1){
+					j++;
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+					</td>`;
+				}
 				else if (employee_availability && !post_abbrv) {
 					sch = `
 					<td>
@@ -1898,7 +1913,7 @@ const search_staff = () => {
 function GetHeaders(IsMonthSet, element) {
 
 	var thHTML = "";
-	var thStartHTML = `<th class="sticky vertical-sticky" style="max-width: 140px !important; min-width: 140px !important;">Post Type / Days</th>`;
+	var thStartHTML = `<th class="sticky vertical-sticky" style="max-width: 238px !important; min-width: 238px !important;">Post Type / Days</th>`;
 	var thEndHTML = `<th class="vertical-sticky">Total</th>`;
 	element = get_wrapper_element(element);
 	var selectedMonth;
@@ -2863,6 +2878,7 @@ function schedule_change_post(page) {
 			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
 			{ 'label': 'Keep Days Off', 'fieldname': 'keep_days_off', 'fieldtype': 'Check' },
 			{ 'label': 'Request Employee Schedule', 'fieldname': 'request_employee_schedule', 'fieldtype': 'Check' },
+			{ 'label': 'Day Off OT', 'fieldname': 'day_off_ot', 'fieldtype': 'Check' },
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
 			{
 				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:doc.project_end_date==0', onchange: function () {
@@ -2879,7 +2895,7 @@ function schedule_change_post(page) {
 		],
 		primary_action: function () {
 
-			let { shift, site, post_type, project, start_date, project_end_date, keep_days_off, end_date, request_employee_schedule } = d.get_values();
+			let { shift, site, post_type, project, start_date, project_end_date, keep_days_off, day_off_ot, end_date, request_employee_schedule } = d.get_values();
 			$('#cover-spin').show(0);
 			let element = get_wrapper_element();
 			if (element == ".rosterOtMonth") {
@@ -2887,8 +2903,19 @@ function schedule_change_post(page) {
 			} else if (element == ".rosterMonth") {
 				otRoster = false;
 			}
+
+			// Validate day off ot while scheduling
+			if (otRoster == false && parseInt(day_off_ot) == 1){
+				$('#cover-spin').hide();
+				frappe.msgprint(
+					msg='Please select OT Roster tab to roster employees in Day Off OT.',
+					title='Error',
+					raise_exception=1
+				)
+				frappe.throw()
+			}
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-				{ employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, end_date })
+				{ employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date })
 				.then(res => {
 					d.hide();
 					$('#cover-spin').hide();
