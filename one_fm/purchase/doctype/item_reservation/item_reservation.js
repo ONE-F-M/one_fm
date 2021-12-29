@@ -3,21 +3,24 @@
 
 frappe.ui.form.on('Item Reservation', {
 	refresh: function(frm) {
-
+        // set company
+        if(!frm.doc.company){
+            frm.set_value('company', frappe.defaults.get_default('company'));
+        }
 	},
-    from: (frm)=>{
+    from_date: (frm)=>{
         // check date difference between from and to Reservation
         frm.trigger('checkDateDiff');
     },
-    to: (frm)=>{
+    to_date: (frm)=>{
         // check date difference between from and to Reservation
         frm.trigger('checkDateDiff');
     },
     checkDateDiff: (frm)=>{
         // check backdating
-        if(frm.doc.from > frm.doc.to){
-            frm.set_value('from', '');
-            frm.set_value('to', '');
+        if(frm.doc.from_date > frm.doc.to_date){
+            frm.set_value('from_date', '');
+            frm.set_value('to_date', '');
             frappe.throw(__(
                 {
                     title:'Invalid',

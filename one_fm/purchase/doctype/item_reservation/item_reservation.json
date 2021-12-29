@@ -12,12 +12,13 @@
   "item_name",
   "uom",
   "column_break_5",
-  "total_reservation",
-  "issued",
-  "from",
-  "to",
+  "qty",
+  "issued_qty",
+  "from_date",
+  "to_date",
   "section_break_10",
   "comment",
+  "company",
   "amended_from"
  ],
  "fields": [
@@ -58,33 +59,6 @@
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "total_reservation",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Total Reservation",
-   "reqd": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "issued",
-   "fieldtype": "Int",
-   "label": "Issued",
-   "read_only": 1
-  },
-  {
-   "fieldname": "from",
-   "fieldtype": "Date",
-   "label": "Reserve From",
-   "reqd": 1
-  },
-  {
-   "fieldname": "to",
-   "fieldtype": "Date",
-   "label": "Reserve To",
-   "reqd": 1
-  },
-  {
    "fieldname": "comment",
    "fieldtype": "Text",
    "label": "Comment"
@@ -105,11 +79,45 @@
   {
    "fieldname": "column_break_5",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "Reserve From",
+   "reqd": 1
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "Reserve To",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "qty",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Reservation QTY",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "issued_qty",
+   "fieldtype": "Int",
+   "label": "Issued QTY",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-29 14:49:58.916522",
+ "modified": "2021-12-29 15:58:32.354317",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Item Reservation",
