@@ -96,10 +96,8 @@ class RequestforMaterial(BuyingController):
 					frappe.throw(_("No quantity set for {item}".format(item=d.item_name)))
 				if d.actual_qty:
 					if int(d.qty) > d.actual_qty:
-						print("helloooo")
 						d.pur_qty = int(d.qty) - d.actual_qty
 				elif d.actual_qty == 0:
-					print("helloooo")
 					d.pur_qty = d.qty
 				
 				if d.actual_qty:
