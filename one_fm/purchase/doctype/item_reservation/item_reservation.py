@@ -43,20 +43,22 @@ class ItemReservation(Document):
 	def validate_reservation_date(self):
 		# validate no reservation within selected date range
 		reservations = frappe.db.sql(f"""
-			SELECT name, from_date, to_date, item_code
+			SELECT name, from_date, to_date, item_code, status
 			FROM `tabItem Reservation`
 			WHERE item_code="{self.item_code}"
 			AND docstatus=1 AND status='Active' AND
-			'{self.from_date}' BETWEEN from_date AND to_date
-			OR '{self.to_date}' BETWEEN from_date AND to_date
+			('{self.from_date}' BETWEEN from_date AND to_date
+			OR '{self.to_date}' BETWEEN from_date AND to_date)
 		;""", as_dict=1)
 		if(reservations):
+			print(reservations)
 			doc = frappe.get_doc(self.doctype, reservations[0].name)
-			frappe.throw(_(f"""
-				A reservation for <b>{self.item_code}</b> already book between<br>
-				<b>{reservations[0].from_date}</b> and <b>{reservations[0].to_date}</b>
-				<br> <a href="{doc.get_url()}"><b>{doc.name}</b></a>
-			"""))
+			if(doc.name!=self.name):
+				frappe.throw(_(f"""
+					A reservation for <b>{self.item_code}</b> already book between<br>
+					<b>{reservations[0].from_date}</b> and <b>{reservations[0].to_date}</b>
+					<br> <a href="{doc.get_url()}"><b>{doc.name}</b></a>
+				"""))
 
 	@frappe.whitelist()
 	def close_reservation(self):
@@ -70,7 +72,7 @@ class ItemReservation(Document):
 			self.db_set(field, self.get(field)-qty)
 		elif(type=='increase' and field=='qty'):
 			self.db_set(field, self.get(field)+qty)
-		elif(type=='issue' and field=='issued'):
+		elif(type=='issue' and field=='issued_qty'):
 			self.db_set(field, self.get(field)-qty)
 			self.reload()
 			if(self.issued==self.qty):

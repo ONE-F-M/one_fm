@@ -37,6 +37,7 @@
    "fieldname": "item_code",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Item Code",
    "options": "Item",
    "reqd": 1
@@ -86,12 +87,14 @@
   {
    "fieldname": "from_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Reserve From",
    "reqd": 1
   },
   {
    "fieldname": "to_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Reserve To",
    "reqd": 1
   },
@@ -113,13 +116,14 @@
    "default": "0",
    "fieldname": "issued_qty",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "Issued QTY",
    "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-30 08:21:43.896500",
+ "modified": "2021-12-30 11:42:29.824639",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Item Reservation",
