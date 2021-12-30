@@ -31,29 +31,54 @@ class ItemReservation(Document):
 
 	def check_balance(self):
 		# check item balance against reservation qty
-		item_balance = get_item_balance(self.item_code)
+		item_balance = get_item_balance(self.item_code).get('total', 0)
 		if(item_balance < self.qty):
 			frappe.throw(
-				f"""
+				_(f"""
 					Reservation QTY <b>{self.qty}</b> is greater than available QTY <b>{item_balance}</b>
 					<br>for item <b>{self.item_code}</b>.
-				"""
+				""")
 			)
 
 	def validate_reservation_date(self):
 		# validate no reservation within selected date range
-		if(frappe.db.exists(
-				{
-					'doctype':self.doctype,
-					'item_code':self.item_code,
-					'docstatus':1,
-					'from_date': [">=", self.from_date],
-					'to_date': ["<=", self.to_date]
-				}
-			)):
-			print(True)
-		else:
-			print(False)
+		reservations = frappe.db.sql(f"""
+			SELECT name, from_date, to_date, item_code
+			FROM `tabItem Reservation`
+			WHERE item_code="{self.item_code}"
+			AND docstatus=1 AND status='Active' AND
+			'{self.from_date}' BETWEEN from_date AND to_date
+			OR '{self.to_date}' BETWEEN from_date AND to_date
+		;""", as_dict=1)
+		if(reservations):
+			doc = frappe.get_doc(self.doctype, reservations[0].name)
+			frappe.throw(_(f"""
+				A reservation for <b>{self.item_code}</b> already book between<br>
+				<b>{reservations[0].from_date}</b> and <b>{reservations[0].to_date}</b>
+				<br> <a href="{doc.get_url()}"><b>{doc.name}</b></a>
+			"""))
+
+	@frappe.whitelist()
+	def close_reservation(self):
+		self.db_set('status', 'Completed')
+		return True
+
+	@frappe.whitelist()
+	def update_reservation(self, qty, field, type):
+		print(qty, field, type, '\n', self.get(field))
+		if(type=='reduce' and field=='qty'):
+			self.db_set(field, self.get(field)-qty)
+		elif(type=='increase' and field=='qty'):
+			self.db_set(field, self.get(field)+qty)
+		elif(type=='issue' and field=='issued'):
+			self.db_set(field, self.get(field)-qty)
+			self.reload()
+			if(self.issued==self.qty):
+				self.db_set('status', 'Completed')
+		self.reload()
+		return True
+
+
 
 
 
@@ -69,5 +94,4 @@ def get_item_balance(item_code):
 			warehouse, today(),
 			item=item_code, barcode=None
 		)['qty']
-	print(total)
-	return total
+	return {'total':total}

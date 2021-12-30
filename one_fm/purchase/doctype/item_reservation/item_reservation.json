@@ -3,7 +3,7 @@
  "autoname": "OFM-RES-.YYYY.-.#####",
  "creation": "2021-12-29 13:37:59.151283",
  "doctype": "DocType",
- "document_type": "Setup",
+ "document_type": "Document",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -33,8 +33,10 @@
    "reqd": 1
   },
   {
+   "allow_in_quick_entry": 1,
    "fieldname": "item_code",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Item Code",
    "options": "Item",
    "reqd": 1
@@ -54,6 +56,7 @@
    "fetch_if_empty": 1,
    "fieldname": "uom",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "UOM",
    "options": "UOM",
    "read_only": 1
@@ -100,7 +103,6 @@
    "reqd": 1
   },
   {
-   "allow_on_submit": 1,
    "fieldname": "qty",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -117,7 +119,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-29 15:58:32.354317",
+ "modified": "2021-12-30 08:21:43.896500",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Item Reservation",
