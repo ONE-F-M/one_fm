@@ -530,7 +530,7 @@ var set_item_field_property = function(frm) {
 
 var set_warehouse_filters = function(frm) {
 	var wh_filters = {'is_group': 0};
-	if(frm.doc.type == 'Individual' || frm.doc.type == 'Department'){
+	if(frm.doc.type == 'Department'){
 		wh_filters = {'is_group': 0, 'department': frm.doc.department};
 	}
 	if(frm.doc.type == 'Project'){
