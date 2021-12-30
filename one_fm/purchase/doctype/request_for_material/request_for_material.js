@@ -124,8 +124,6 @@ frappe.ui.form.on('Request for Material', {
 
 							}
 						});
-						frm.add_custom_button(__("Sales Invoice"),
-							() => frm.events.make_sales_invoice(frm), __('Create'));
 						if(purchase_item_exist){
 							frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, ['name','docstatus'],function(r) {
 								if(r && r.name && r.docstatus != 2){
