@@ -6,6 +6,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "workflow",
   "naming_series",
   "type",
   "onboard_employee",
@@ -254,10 +255,18 @@
    "hidden": 1,
    "label": "Authorized Signatory User ID",
    "read_only": 1
+  },
+  {
+   "fieldname": "workflow",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow",
+   "options": "Workflow",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2021-12-30 09:38:56.249745",
+ "modified": "2021-12-30 09:50:21.177601",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
