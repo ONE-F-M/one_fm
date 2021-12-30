@@ -6,6 +6,8 @@ frappe.ui.form.on('Work Contract', {
         // if reference_type and reference_name are set,
         // add a custom button to go to the reference form
         populate_autorized_signatory(frm)
+		//frm.set_df_property('posting_date', 'read_only', 0);
+
     },
 	employee: function(frm) {
 		set_employee_details(frm);
