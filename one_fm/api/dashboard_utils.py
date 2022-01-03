@@ -109,10 +109,6 @@ def get_employee_shift(employee_id, date_type='month'):
 			# get leav balance filters
 			filters=frappe._dict({'from_date':_start, 'to_date':_end, 'employee':employee.name})
 			leave_balance = sum([i.closing_balance for i in get_leave_balance(filters)])
-			response(
-				code=201, title='Result found!',
-				msg="Successful"
-			)
 			return {
 				'message': f"Employee shift record retrieved from {_start} to {_end}",
 				'data':{
@@ -133,10 +129,6 @@ def get_employee_shift(employee_id, date_type='month'):
 			}
 		else:
 			# return no shift found
-			response(
-				code=201, title='No shift found',
-				msg=f"No shift found for {employee.name}"
-			)
 			return {
 				'message':f"No shift found for {employee.name}",
 				'data':{},
@@ -146,10 +138,6 @@ def get_employee_shift(employee_id, date_type='month'):
 
 	except Exception as e:
 		# an error occured
-		response(
-			code=404, title='Employee Shift Summary',
-			msg=str(e)
-		)
 		return {
 			'message':str(e),
 			'data':{},
