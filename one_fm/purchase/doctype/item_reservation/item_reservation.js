@@ -40,11 +40,17 @@ frappe.ui.form.on('Item Reservation', {
             });
 			frm.change_custom_button_type(__('Update QTY'), null, 'primary');
 
+			// Issue
+			frm.add_custom_button(__('Issue QTY'), () => {
+				frm.trigger('issue_qty');
+            });
+			frm.change_custom_button_type(__('Issue QTY'), null, 'warning');
+
 			// close reservation
 			frm.add_custom_button(__('Close Reservation'), () => {
 				frm.trigger('close_reservation');
             });
-			frm.change_custom_button_type(__('Close Reservation'), null, 'warning');
+			frm.change_custom_button_type(__('Close Reservation'), null, 'secondary');
 		}
 	},
 	update_qty: (frm)=>{
@@ -125,6 +131,87 @@ frappe.ui.form.on('Item Reservation', {
 						frappe.throw(__('An error occurred'))
 					}
 				});
+			}
+	    }
+	});
+		// show Dialog
+		d.show();
+	},
+	issue_qty: (frm)=>{
+		// issue out qty from reservation
+		let d = new frappe.ui.Dialog({
+	    title: __('Update Issued Quantity'),
+	    fields: [
+	        {
+	            label: __('Issue Type'),
+	            fieldname: 'type',
+	            fieldtype: 'Select',
+				options: [__('Increase by'), __('Reduce by')],
+				reqd:1,
+				default: __('Reduce by')
+	        },
+	        {
+	            label: __('Quantity'),
+	            fieldname: 'qty',
+	            fieldtype: 'Int',
+				reqd:1,
+				default:1
+	        }
+	    ],
+	    primary_action_label: __('Submit'),
+	    primary_action(values) {
+			// validate values
+			if(values.qty<=0){
+				frappe.throw(__('Quantity must be greater than 0'))
+			} else {
+				// check quantities
+					d.hide(); // hide modal
+					if(values.type==__('Increase by')){
+						// increase block
+						if(frm.doc.qty<values.qty || ((values.qty+frm.doc.issued_qty) > frm.doc.qty)){
+							frappe.throw(__(`
+								QTY to be issued <b>${values.qty}</b> must be less or equal to
+								reserved QTY <b>${frm.doc.qty}</> or your value may have exceed issued QTY.
+							`))
+						} else {
+							// update qty
+							frm.call('update_issue', {
+								field:'issued_qty', type:'increase', qty:values.qty
+							}).then(r => {
+						        if (r.message) {
+									frm.refresh();
+						            frappe.msgprint(__(`
+										Issued QTY updated to <b>${r.docs[0].issued_qty}</b> successfully.
+									`))
+						        }
+						    })
+						}
+						// end increase block
+					} else if(values.type==__('Reduce by')){
+						// reduce block
+						if(values.qty>=frm.doc.qty || values.qty<=0 ||
+								((values.qty-frm.doc.issued_qty)>frm.doc.issued_qty)){
+							frappe.throw(__(`
+								QTY to be reduced cannot be greater than reserved QTY nor <br>
+								greater than issued QTY.
+							`))
+						} else if(frm.doc.qty>=values.qty){
+							frm.call('update_issue', {
+								field:'issued_qty', type:'reduce', qty:values.qty
+							}).then(r => {
+						        if (r.message) {
+									frm.refresh();
+									console.log(r)
+						            frappe.msgprint(__(`
+										Issued QTY updated to <b>${r.docs[0].issued_qty}</b> successfully.
+									`))
+						        }
+						    })
+
+						}
+					}
+						// end reduce block
+					// }
 			}
 	    }
 	});
