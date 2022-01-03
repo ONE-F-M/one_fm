@@ -243,14 +243,19 @@ frappe.ui.form.on('Request for Material', {
 		if(status != 'Approved'){
 			msg_status = status == 'Accepted' ? 'Accept': 'Reject'
 		}
-		frappe.confirm(
-			__('Do You Want to {0} this Request for Material', [msg_status]),
-			function(){
-				// Yes
-				frm.events.accept_approve_reject_request_for_material(frm, status, false);
-			},
-			function(){} // No
-		);
+		if(frm.doc.authority_signature != undefined){
+			frappe.confirm(
+				__('Do You Want to {0} this Request for Material', [msg_status]),
+				function(){
+					// Yes
+					frm.events.accept_approve_reject_request_for_material(frm, status, false);
+				},
+				function(){} // No
+			);
+		}
+		else{
+			frappe.throw(__('Please Sign the form to Accept the Request'))
+		}
 	},
 	accept_approve_reject_request_for_material: function(frm, status, reason_for_rejection) {
 		frappe.call({
