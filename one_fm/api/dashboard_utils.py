@@ -125,7 +125,7 @@ def get_employee_shift(employee_id, date_type='month'):
 					}
 				},
 				'status': 201,
-				'succuess': True
+				'success': True
 			}
 		else:
 			# return no shift found
@@ -133,7 +133,7 @@ def get_employee_shift(employee_id, date_type='month'):
 				'message':f"No shift found for {employee.name}",
 				'data':{},
 				'status': 201,
-				'succuess': False
+				'success': False
 			}
 
 	except Exception as e:
@@ -142,5 +142,5 @@ def get_employee_shift(employee_id, date_type='month'):
 			'message':str(e),
 			'data':{},
 			'status': 404,
-			'succuess': False
+			'success': False
 		}
