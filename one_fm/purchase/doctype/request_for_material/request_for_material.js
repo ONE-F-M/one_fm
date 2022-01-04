@@ -19,6 +19,7 @@ frappe.ui.form.on('Request for Material', {
 			var df = frappe.meta.get_docfield("Request for Material Item","reject_item", cur_frm.doc.name);
             df.hidden = 0;
 		}
+		set_item_field_property(frm);
 	},
 	onload: function(frm) {
 		erpnext.utils.add_item(frm);
@@ -33,7 +34,6 @@ frappe.ui.form.on('Request for Material', {
 				filters: {'company': doc.company}
 			};
 		};
-
 	},
 	onload_post_render: function(frm) {
 		frm.get_field("items").grid.set_multiple_add("item_code", "qty");

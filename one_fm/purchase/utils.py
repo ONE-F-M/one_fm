@@ -151,3 +151,25 @@ def get_supplier_list(doctype, txt, searchfield, start, page_len, filters):
                 'txt': "%%%s%%" % txt
             }
         )
+
+def set_quotation_attachment_in_po(doc, method):
+    if doc.one_fm_request_for_purchase:
+        quotations = frappe.get_list('Quotation From Supplier', {'request_for_purchase': doc.one_fm_request_for_purchase})
+        if len(quotations) > 0:
+            set_attachments_to_doctype('Quotation From Supplier', quotations, doc.doctype, doc.name)
+
+def set_attachments_to_doctype(source_dt, list_of_source, target_dt, target_name):
+    for source in list_of_source:
+        """Copy attachments"""
+        from frappe.desk.form.load import get_attachments
+        #loop through attachments
+        for attach_item in get_attachments(source_dt, source.name):
+            #save attachments to new doc
+            _file = frappe.get_doc({
+            "doctype": "File",
+            "file_url": attach_item.file_url,
+            "file_name": attach_item.file_name,
+            "attached_to_name": target_name,
+            "attached_to_doctype": target_dt,
+            "folder": "Home/Attachments"})
+            _file.save()

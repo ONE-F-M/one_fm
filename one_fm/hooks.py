@@ -154,7 +154,9 @@ doc_events = {
 	"Purchase Order": {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
-		"on_update_after_submit": "one_fm.purchase.utils.check_for_signature_for_purchase_order"
+		"on_update_after_submit": "one_fm.purchase.utils.check_for_signature_for_purchase_order",
+		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po"
+
 	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
