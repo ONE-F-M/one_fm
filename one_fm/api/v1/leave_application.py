@@ -144,7 +144,9 @@ def create_new_leave_application(employee: str = None, from_date: str = None, to
 
     Returns:
         dict: {
-            
+            message (str): Brief message indicating the response,
+            data (dict): Leave application that was created,
+            error (str): Any error handled.
         }
     """
     if not employee:
@@ -184,35 +186,25 @@ def create_new_leave_application(employee: str = None, from_date: str = None, to
         if not leave_approver:
             return response("Resource not found", 404, None, "No leave approver found for {employee}.".format(employee=employee))
         
-        leave_list = frappe.get_list("Leave Application", filters={'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]})
-
-        if leave_list and len(leave_list) > 0:
-            return response()
+        if frappe.db.exists("Leave Application", filters={'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
+            return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee))
         
+        
+        # Approve leave application for "Sick Leave"
+        if leave_type == "Sick Leave":
+            doc = new_leave_application(employee, from_date, to_date, leave_type, "Approved", reason, leave_approver)
+            doc.submit()
+            frappe.db.commit()
+            return response("Success", 201, doc)
+
         else:
-            if leave_approver:
-                try:
-                    #if sick leave, automatically accept the leave application
-                    if leave_type == "Sick Leave":
-                        doc = new_leave_application(employee,from_date,to_date,leave_type,"Approved",reason,leave_approver)
-                        doc.submit()
-                        frappe.db.commit()
-                    #else keep it open and that sends the approval notification to the 'leave approver'.
-                    else:
-                        doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,leave_approver)
-                    return response('Success',doc, 201)
-                except Exception as e:
-                    frappe.log_error(frappe.get_traceback())
-                    return response(e,[], 500)
-            else:
-                return response("You don't have a leave approver.",[], 400)
+            doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver)
+            return response("Success", 201, doc)
     
     except Exception as error:
         return response("Internal server error", 500, None, error)
 
-#create new leave application doctype
-frappe.whitelist()
-def new_leave_application(employee,from_date,to_date,leave_type,status,reason,leave_approver):
+def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str) -> dict:
     leave = frappe.new_doc("Leave Application")
     leave.employee=employee
     leave.leave_type=leave_type
@@ -224,34 +216,33 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,le
     leave.leave_approver = leave_approver
     leave.save()
     frappe.db.commit()
-    return leave     
+    return leave.as_dict()
 
-@frappe.whitelist()
+
 def get_leave_approver(employee):
-    """
-    This function fetches the leave approver for a given employee.
+    """This function fetches the leave approver for a given employee.
     The leave approver is fetched  either Report_to or Leave Approver. 
     But, if both don't exist, Operation manager is the Leave Approver.
 
-    Params: ERP Employee ID
+    Args:
+        employee (str): The employee record name
 
-    Return: User ID of Leave Approver
-
+    Returns:
+        str: user id of leave approver
     """
-    approver = None
-    #check if employee has leave approver or report to assigned in the employee doctype
-    leave_approver, report_to = frappe.db.get_value("Employee", employee, ["leave_approver", "reports_to"])
+
+    leave_approver, reports_to = frappe.db.get_value("Employee", employee, ["leave_approver", "reports_to"])
     if not leave_approver:
-        if report_to:
-            approver = frappe.db.get_value('Employee', {'name': report_to}, ['user_id'])
+        if reports_to:
+            return frappe.db.get_value('Employee', {'name': reports_to}, ['user_id'])
         else:
             #if not, return the 'Operational Manager' as the leave approver. But, check if employee himself is not a leave manager.
-            operation_manager = frappe.db.get_value('Employee', {'Designation': "Operation Manager"}, ['name','user_id'])
-            if operation_manager[0]!= employee:
-                approver = operation_manager[1]
-    else:
-        approver = leave_approver
-    return approver
+            operation_manager_name, operation_manager_user_id = frappe.db.get_value('Employee', {'Designation': "Operation Manager"}, ['name','user_id'])
+            if operation_manager_name != employee:
+                return operation_manager_user_id
+    
+    return leave_approver
+    
 
 def notify_leave_approver(doc):
     """
