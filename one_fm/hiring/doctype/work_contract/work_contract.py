@@ -41,12 +41,14 @@ class WorkContract(Document):
 		if self.workflow_state == 'Send to Authorised Signatory':
 			self.validate_attachments()
 			self.validate_authorized_signatory()
-			email_authority_for_signature(self)
+			#email_authority_for_signature(self)
 		if self.workflow_state == 'Submitted for Applicant Review':
 			#if applicant sign the contract, the workflow changes to "Applicant Signed",
 			if self.check_for_applicant_signature():
 				self.workflow_state = "Applicant Signed"
 				self.save()
+		if self.workflow_state == 'Completed':
+			fetch_authority_signature(self)
 
 	def validate_attachments(self):
 		document_required = ["Civil ID Front","Civil ID Back","Passport Front","Passport Back"]
@@ -96,23 +98,6 @@ class WorkContract(Document):
 			return user_id
 
 
-
-@frappe.whitelist()
-def autorized_signatory_approve(docname):
-	doc = frappe.get_doc("Work Contract", docname)
-	doc.authority_signature = fetch_authority_signature(doc)
-	doc.workflow_state = "Completed"
-	doc.save(ignore_permissions=True)
-	frappe.db.commit()
-
-@frappe.whitelist()
-def autorized_signatory_reject(docname):
-	doc = frappe.get_doc("Work Contract", docname)
-	doc.workflow_state = "Cancelled"
-	doc.save(ignore_permissions=True)
-	frappe.db.commit()
-	print(doc.workflow_state)
-
 def	fetch_authority_signature(doc):
 		if doc.select_authorised_signatory_signed_work_contract and doc.pam_file_number:
 			pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':doc.pam_file_number},["authorized_signatory"],as_dict = True)
@@ -120,8 +105,7 @@ def	fetch_authority_signature(doc):
 			for auth_sign in pam_auth_sign["authorized_signatory"]:
 				if doc.select_authorised_signatory_signed_work_contract == auth_sign["authorized_signatory_name_english"]:
 					signature = auth_sign["signature"]
-		print(signature)
-		return signature
+		doc.authority_signature = signature
 
 @frappe.whitelist()
 def get_employee_details_for_wc(type, employee=False, onboard_employee=False):
