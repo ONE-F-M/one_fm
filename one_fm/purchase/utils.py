@@ -124,3 +124,30 @@ def check_for_signature_for_purchase_receipt(doc, method):
 def check_for_signature_for_purchase_order(doc, method):
     if doc.workflow_state == "Approved" and not doc.authority_signature:
         frappe.throw(__('Please Sign the form to Accept the Request'))
+
+def get_supplier_list(doctype, txt, searchfield, start, page_len, filters):
+    if filters.get('request_for_quotation'):
+        query = """
+            select
+                s.supplier
+            from
+                `tabRequest for Supplier Quotation` rfq, `tabRequest for Supplier Quotation Supplier` s
+            where
+                s.parent=rfq.name and rfq.name=%(request_for_quotation)s and s.supplier like %(txt)s
+        """
+        return frappe.db.sql(query,
+            {
+                'request_for_quotation': filters.get("request_for_quotation"),
+                'start': start,
+                'page_len': page_len,
+                'txt': "%%%s%%" % txt
+            }
+        )
+    else:
+        return frappe.db.sql("""select name from `tabSupplier` where name like %(txt)s""",
+            {
+                'start': start,
+                'page_len': page_len,
+                'txt': "%%%s%%" % txt
+            }
+        )
