@@ -1,0 +1,24 @@
+<table class="table">
+  <thead class="thead-dark">
+    <tr>
+      <th scope="col">Item</th>
+      <th scope="col">Resd.</th>
+      <th scope="col">Issued.</th>
+      <th scope="col">Rqd.</th>
+      <th scope="col">Avail.</th>
+      <th scope="col">Period</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in added_items %}
+        <tr>
+          <th scope="row"><a href="{{i.url}}">{{i.item_name}}</a></th>
+          <td>{{i.reserved}}</td>
+          <td>{{i.issued}}</td>
+          <td>{{i.reqd}}</td>
+          <td>{{i.available}}</td>
+          <td>{{i.from_date}} - {{i.to_date}}</td>
+        </tr>
+    {% endfor %}
+  </tbody>
+</table>
