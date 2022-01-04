@@ -88,6 +88,7 @@ class RequestforMaterial(BuyingController):
 		self.set_item_fields()
 		self.set_title()
 		self.check_for_signature()
+		self.validate_item_qty()
     #in process
 	def validate_item_qty(self):
 		if self.items:
