@@ -218,7 +218,7 @@ class RequestforMaterial(BuyingController):
 
 	def check_for_signature(self):
 		if self.status == "Approved" and not self.authority_signature:
-			frappe.throw(__('Please Sign the form to Accept the Request'))
+			frappe.throw(_('Please Sign the form to Accept the Request'))
 
 	def update_status(self, status):
 		self.check_modified_date()
