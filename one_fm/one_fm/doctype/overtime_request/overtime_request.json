@@ -88,10 +88,11 @@
    "reqd": 1
   },
   {
+   "default": "Head Office",
    "fieldname": "request_type",
    "fieldtype": "Select",
    "label": "Request Type",
-   "options": "\nOperations\nHead Office",
+   "options": "Head Office\nOperations",
    "reqd": 1
   },
   {
@@ -127,7 +128,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-11-12 12:40:34.775950",
+ "modified": "2022-01-04 11:01:44.694748",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Overtime Request",
