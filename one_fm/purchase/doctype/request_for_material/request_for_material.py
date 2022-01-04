@@ -176,9 +176,8 @@ class RequestforMaterial(BuyingController):
 			frappe.throw(_("{0} {1} has been modified. Please refresh.").format(_(self.doctype), self.name))
 
 	def check_for_signature(self):
-		if self.status == "Approved":
-			if not self.authority_signature:
-				frappe.throw(__('Please Sign the form to Accept the Request'))
+		if self.status == "Approved" and not self.authority_signature:
+			frappe.throw(__('Please Sign the form to Accept the Request'))
 
 	def update_status(self, status):
 		self.check_modified_date()
