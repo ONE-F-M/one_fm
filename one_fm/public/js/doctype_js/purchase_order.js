@@ -47,6 +47,7 @@ var set_signed_letter_head = function(frm) {
 		frm.set_value('letter_head', 'Authorization Signature');
 	}
 };
+
 var set_field_property_for_other_documents = function(frm) {
 	if(frm.doc.one_fm_other_documents_required && frm.doc.one_fm_other_documents_required == 'Yes'){
 		frm.set_df_property('one_fm_details_of_other_documents', 'reqd', true);
