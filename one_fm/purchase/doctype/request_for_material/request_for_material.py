@@ -11,6 +11,7 @@ from frappe import _
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from erpnext.controllers.buying_controller import BuyingController
+from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_balance
 
 class RequestforMaterial(BuyingController):
 	def on_submit(self):
@@ -32,7 +33,7 @@ class RequestforMaterial(BuyingController):
 			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
 			send_email(self, [self.request_for_material_approver], message, subject)
 			create_notification_log(subject, message, [self.request_for_material_approver], self)
-			
+
 	@frappe.whitelist()
 	def accept_approve_reject_request_for_material(self, status, reason_for_rejection=None):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
@@ -88,6 +89,46 @@ class RequestforMaterial(BuyingController):
 		self.set_item_fields()
 		self.set_title()
 		self.validate_item_qty()
+		self.validate_item_reservation()
+
+
+	def validate_item_reservation(self):
+		# validate item reservation
+		added_items = []
+		item_reservation_dict = {}
+		for item in self.items:
+			reservation = frappe.db.sql(f"""
+				SELECT name, item_code, item_name, sum(qty) as qty, issued_qty,
+				from_date, to_date
+				FROM `tabItem Reservation`
+				WHERE item_code="{item.item_code}" AND docstatus=1 AND status in ('Active')
+				AND '{self.schedule_date}' BETWEEN from_date AND to_date
+				GROUP BY item_code
+			;""", as_dict=1)
+			if(len(reservation)>0):
+				# get_balance
+				balance = get_item_balance(item.item_code)['total']
+				if(item.qty>(balance-(reservation[0].qty-reservation[0].issued_qty))):
+					added_items.append({
+						'reserved': reservation[0].name,
+						'issued': reservation[0].issued_qty,
+						'from_date': reservation[0].from_date,
+						'to_date': reservation[0].to_date,
+						'item_code':item.item_code,
+						'item_name': reservation[0].item_name,
+						'reserved': reservation[0].qty,
+						'reqd': item.qty,
+						'available': balance-reservation[0].qty-reservation[0].issued_qty,
+						'url': frappe.get_doc('Item Reservation', reservation[0].name).get_url()
+					})
+		# check added_items
+		if(added_items):
+			template = frappe.render_template(
+				"one_fm/purchase/doctype/item_reservation/templates/reserved_rfm.html",
+				context={'added_items':added_items})
+			frappe.throw(template, title='Following items have been reserved.')
+
+
     #in process
 	def validate_item_qty(self):
 		if self.items:
@@ -99,14 +140,14 @@ class RequestforMaterial(BuyingController):
 						d.pur_qty = int(d.qty) - d.actual_qty
 				elif d.actual_qty == 0:
 					d.pur_qty = d.qty
-				
+
 				if d.actual_qty:
 					if d.warehouse and flt(d.actual_qty, d.precision("actual_qty")) < flt(d.qty, d.precision("actual_qty")):
 						frappe.msgprint(_("Row {0}: Quantity not available for {2} in warehouse {1}").format(d.idx,
 							frappe.bold(d.warehouse), frappe.bold(d.item_code))
 							+ '<br><br>' + _("Available quantity is {0}, Requested quantity is {1}. Please make a purchase request for the remaining.").format(frappe.bold(d.actual_qty),
 								frappe.bold(d.qty)), title=_('Insufficient Stock'))
-				
+
 				if d.quantity_to_transfer and d.pur_qty:
 					if (d.quantity_to_transfer+d.pur_qty)>d.qty:
 						updated_total = d.quantity_to_transfer+d.pur_qty
@@ -233,7 +274,7 @@ class RequestforMaterial(BuyingController):
 						and material_request_item = %s and docstatus = 1""",
 						(self.name, d.name))[0][0])
 					d.ordered_qty = d.ordered_qty + d.purchased_qty
-				
+
 				frappe.db.set_value(d.doctype, d.name, "purchased_qty", d.purchased_qty)
 				frappe.db.set_value(d.doctype, d.name, "ordered_qty", d.ordered_qty)
 
@@ -245,7 +286,7 @@ class RequestforMaterial(BuyingController):
 			"target_field": "ordered_qty",
 			"name": self.name,
 		}, update_modified)
-	
+
 def update_completed_and_requested_qty(stock_entry, method):
 		if stock_entry.doctype == "Stock Entry":
 			material_request_map = {}
@@ -300,7 +341,7 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		doc.document_name = reference_doc.name
 		doc.from_user = reference_doc.modified_by
 		doc.insert(ignore_permissions=True)
-		
+
 @frappe.whitelist()
 def bring_designation_items(designation):
 	designation_doc = frappe.get_doc('Designation Profile', designation)
@@ -499,7 +540,7 @@ def make_request_for_quotation(source_name, target_doc=None):
 def make_delivery_note(source_name, target_doc=None):
 	doclist = get_mapped_doc("Request for Material", source_name, 	{
 		"Request for Material": {
-			"doctype": "Delivery Note",			
+			"doctype": "Delivery Note",
 			"field_map": [
 				["name", "request_for_material"]
 			],
