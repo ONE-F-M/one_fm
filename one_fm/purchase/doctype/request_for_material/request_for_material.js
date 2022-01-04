@@ -549,6 +549,8 @@ var set_employee_or_project = function(frm) {
 		if(frm.doc.type=='Individual'){
 			frm.set_df_property('employee', 'reqd', true);
 			frm.set_df_property('project', 'reqd', false);
+			frm.set_df_property('department', 'reqd', false);
+			frm.set_df_property('department', 'read_only', false);
 			frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
 				if(r && r.name){
 					frm.set_value('employee', r.name);
@@ -573,6 +575,8 @@ var set_employee_or_project = function(frm) {
 		}
 		else if(frm.doc.type=='Project'|| frm.doc.type=='Project Mobilization'){
 			frm.set_df_property('project', 'reqd', true);
+			frm.set_df_property('department', 'reqd', false);
+			frm.set_df_property('department', 'read_only', false);
 			frm.set_df_property('customer', 'reqd', (frm.doc.type=='Project')?true:false);
 			frm.set_df_property('site', 'reqd', (frm.doc.type=='Project')?true:false);
 		}
@@ -580,6 +584,8 @@ var set_employee_or_project = function(frm) {
 			frm.set_df_property('erf', 'reqd', true);
 		}
 		else if(frm.doc.type=='Stock'){
+			frm.set_df_property('department', 'reqd', false);
+			frm.set_df_property('department', 'read_only', false);
 			frm.set_df_property('project', 'reqd', false);
 		}
 	}
