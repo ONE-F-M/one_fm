@@ -114,3 +114,13 @@ def filter_description_specific_for_item_group(doctype, txt, searchfield, start,
         return frappe.db.sql(query.format(filters.get("doctype")),
             {'start': start, 'page_len': page_len, 'txt': "%%%s%%" % txt}
         )
+
+@frappe.whitelist()
+def check_for_signature_for_purchase_receipt(doc, method):
+    if doc.status == "Completed" and not doc.authority_signature:
+        frappe.throw(__('Please Sign the form to Accept the Request'))
+
+@frappe.whitelist()
+def check_for_signature_for_purchase_order(doc, method):
+    if doc.workflow_state == "Approved" and not doc.authority_signature:
+        frappe.throw(__('Please Sign the form to Accept the Request'))
