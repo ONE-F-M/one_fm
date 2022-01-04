@@ -11,7 +11,6 @@ frappe.ui.form.on('Purchase Order', {
 		hide_tax_fields(frm);
 		set_signed_letter_head(frm);
 		hide_subscription_section(frm);
-		approve_if_signed(frm);
 		set_field_property_for_documents(frm);
 		set_field_property_for_other_documents(frm);
         console.log("All is well my bro")
@@ -48,15 +47,6 @@ var set_signed_letter_head = function(frm) {
 		frm.set_value('letter_head', 'Authorization Signature');
 	}
 };
-
-var approve_if_signed = function(frm){
-	if(frm.doc.workflow_state == "Approved"){
-		if(frm.doc.authority_signature == undefined){
-			frappe.throw(__('Please Sign the form to Accept the Request'))
-		};
-	}
-};
-
 var set_field_property_for_other_documents = function(frm) {
 	if(frm.doc.one_fm_other_documents_required && frm.doc.one_fm_other_documents_required == 'Yes'){
 		frm.set_df_property('one_fm_details_of_other_documents', 'reqd', true);
