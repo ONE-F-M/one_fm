@@ -111,8 +111,8 @@ def verify_checkin_checkout(video : str = None, log_type: str = None, skip_atten
                 return response("Bad request", 400, None, "Liveliness Detection Failed.")
             
             if recognize_face(image): 
-                create_checkin_log(log_type, skip_attendance, latitude, longitude)
-                return response("Success", 201, "Verified successfully")
+                doc = create_checkin_log(log_type, skip_attendance, latitude, longitude)
+                return response("Success", 201, doc)
             else:
                 return response("Unauthorized", 401, None, "Face not recognized.")
 
@@ -120,7 +120,7 @@ def verify_checkin_checkout(video : str = None, log_type: str = None, skip_atten
         return response("Internal server error", 500, None, error)
 
 
-def create_checkin_log(log_type: str, skip_attendance: int, latitude: float, longitude: float):
+def create_checkin_log(log_type: str, skip_attendance: int, latitude: float, longitude: float) -> dict:
     employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
     checkin = frappe.new_doc("Employee Checkin")
     checkin.employee = employee
@@ -129,6 +129,7 @@ def create_checkin_log(log_type: str, skip_attendance: int, latitude: float, lon
     checkin.skip_auto_attendance = skip_attendance
     checkin.save()
     frappe.db.commit()
+    return checkin.as_dict()
 
 @frappe.whitelist()
 def get_site_location(employee: str = None) -> dict:
