@@ -87,6 +87,7 @@ class RequestforMaterial(BuyingController):
 		self.set_request_for_material_accepter_and_approver()
 		self.set_item_fields()
 		self.set_title()
+		self.check_for_signature()
     #in process
 	def validate_item_qty(self):
 		if self.items:
@@ -162,6 +163,11 @@ class RequestforMaterial(BuyingController):
 
 		if date_diff and date_diff[0][0]:
 			frappe.throw(_("{0} {1} has been modified. Please refresh.").format(_(self.doctype), self.name))
+
+	def check_for_signature(self):
+		if doc.status == "Approved":
+			if not doc.authority_signature:
+				frappe.throw(__('Please Sign the form to Accept the Request'))
 
 	def update_status(self, status):
 		self.check_modified_date()

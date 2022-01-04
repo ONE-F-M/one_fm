@@ -153,7 +153,8 @@ doc_events = {
 	},
 	"Purchase Order": {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
-		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty"
+		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
+		"on_update_after_submit": "one_fm.purchase.utils.check_for_signature"
 	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
@@ -223,7 +224,8 @@ doc_events = {
 	},
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
-		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit"
+		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
+		"on_update_after_submit": "one_fm.purchase.utils.check_for_signature"
 	},
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
