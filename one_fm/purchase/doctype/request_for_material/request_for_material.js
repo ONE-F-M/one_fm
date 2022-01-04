@@ -163,8 +163,8 @@ frappe.ui.form.on('Request for Material', {
 				}
 				else {
 					//Needs further dicussion with Jamsheer
-					frm.add_custom_button(__("Sales Invoice"),
-					    () => frm.events.make_sales_invoice(frm), __('Create'));
+					// frm.add_custom_button(__("Sales Invoice"),
+					//     () => frm.events.make_sales_invoice(frm), __('Create'));
 					frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, ['name','docstatus'],function(r) {
 						if(r && r.name && r.docstatus != 2){
 							frappe.show_alert({
