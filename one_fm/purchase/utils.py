@@ -114,3 +114,63 @@ def filter_description_specific_for_item_group(doctype, txt, searchfield, start,
         return frappe.db.sql(query.format(filters.get("doctype")),
             {'start': start, 'page_len': page_len, 'txt': "%%%s%%" % txt}
         )
+
+@frappe.whitelist()
+def check_for_signature_for_purchase_receipt(doc, method):
+    if doc.status == "Completed" and not doc.authority_signature:
+        frappe.throw(__('Please Sign the form to Accept the Request'))
+
+@frappe.whitelist()
+def check_for_signature_for_purchase_order(doc, method):
+    if doc.workflow_state == "Approved" and not doc.authority_signature:
+        frappe.throw(__('Please Sign the form to Accept the Request'))
+
+@frappe.whitelist()
+def get_supplier_list(doctype, txt, searchfield, start, page_len, filters):
+    if filters.get('request_for_quotation'):
+        query = """
+            select
+                s.supplier
+            from
+                `tabRequest for Supplier Quotation` rfq, `tabRequest for Supplier Quotation Supplier` s
+            where
+                s.parent=rfq.name and rfq.name=%(request_for_quotation)s and s.supplier like %(txt)s
+        """
+        return frappe.db.sql(query,
+            {
+                'request_for_quotation': filters.get("request_for_quotation"),
+                'start': start,
+                'page_len': page_len,
+                'txt': "%%%s%%" % txt
+            }
+        )
+    else:
+        return frappe.db.sql("""select name from `tabSupplier` where name like %(txt)s""",
+            {
+                'start': start,
+                'page_len': page_len,
+                'txt': "%%%s%%" % txt
+            }
+        )
+
+def set_quotation_attachment_in_po(doc, method):
+    if doc.one_fm_request_for_purchase:
+        quotations = frappe.get_list('Quotation From Supplier', {'request_for_purchase': doc.one_fm_request_for_purchase})
+        if len(quotations) > 0:
+            set_attachments_to_doctype('Quotation From Supplier', quotations, doc.doctype, doc.name)
+
+def set_attachments_to_doctype(source_dt, list_of_source, target_dt, target_name):
+    for source in list_of_source:
+        """Copy attachments"""
+        from frappe.desk.form.load import get_attachments
+        #loop through attachments
+        for attach_item in get_attachments(source_dt, source.name):
+            #save attachments to new doc
+            _file = frappe.get_doc({
+            "doctype": "File",
+            "file_url": attach_item.file_url,
+            "file_name": attach_item.file_name,
+            "attached_to_name": target_name,
+            "attached_to_doctype": target_dt,
+            "folder": "Home/Attachments"})
+            _file.save()
