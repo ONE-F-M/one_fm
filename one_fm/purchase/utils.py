@@ -125,6 +125,7 @@ def check_for_signature_for_purchase_order(doc, method):
     if doc.workflow_state == "Approved" and not doc.authority_signature:
         frappe.throw(__('Please Sign the form to Accept the Request'))
 
+@frappe.whitelist()
 def get_supplier_list(doctype, txt, searchfield, start, page_len, filters):
     if filters.get('request_for_quotation'):
         query = """
