@@ -4,14 +4,17 @@
 import frappe
 import json
 from datetime import datetime
+from frappe import msgprint, _
 
 def execute(filters=None):
-	
+
 	#List of Doctypes that need to be in the report
 	doctypes = ['Request for Material', 'Request for Purchase', 'Purchase Order']
 	
 	columns = get_columns()
 	data = get_data(doctypes)
+	if not data:
+		msgprint(_("No record found"), alert=True, indicator="orange")
 	return columns, data
 
 def get_columns():
@@ -76,7 +79,6 @@ def get_doc_list(doctypes):
 		doc list: List of Version Doc that has the required Changes
 	"""
 	doc_list = []
-
 	#list of doc modified/created by user and is taken place in required Doctype
 	data_list = frappe.db.get_list("Version",{'modified_by':frappe.session.user,'ref_doctype':('in',doctypes)},["*"])
 	for data in data_list:
@@ -87,6 +89,6 @@ def get_doc_list(doctypes):
 		if changes:
 			for change in changes:
 				#if the doc had changes in status from Draft to Approved.
-				if change[0] == "Status" and change[2] == "Approved":
+				if change[0] == "status" and change[2] == "Approved":
 					doc_list.append(data.name)
 	return doc_list
