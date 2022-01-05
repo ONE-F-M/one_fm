@@ -242,10 +242,55 @@ frappe.ui.form.on('Request for Material', {
 			msg_status = status == 'Accepted' ? 'Accept': 'Reject'
 		}
 		frappe.confirm(
-			__('Do You Want to {0} this Request for Material', [msg_status]),
+			__('A one time code will be sent to you for verification. Do You Want to {0} this Request for Material?', [msg_status]),
 			function(){
 				// Yes
-				frm.events.accept_approve_reject_request_for_material(frm, status, false);
+				var doctype = "Request For Material"
+				var document_name = frm.doc.name
+				frappe.xcall('one_fm.purchase.utils.send_verification_code', {doctype, document_name})
+					.then(res => {
+						console.log(res);
+					}).catch(e => {
+						console.log(e);
+					})
+				var d = new frappe.ui.Dialog({
+					title : __("Approval verification"),
+					fields : [
+						{
+							fieldtype: "Int",
+							label: "Enter verification code sent to your email address",
+							fieldname: "verification_code",
+							reqd: 1
+						},
+						{
+							fieldtype: "Button", 
+							label: "Resend code", 
+							fieldname: "resend_verification_code"
+						},
+					],
+					primary_action_label: __("Submit"),
+					primary_action: function(){
+						var verification_code = d.get_value('verification_code');
+						frappe.xcall('one_fm.purchase.utils.verify_verification_code', {doctype, document_name, verification_code})
+							.then(res => {
+								if (res){
+									d.hide()
+									frm.events.accept_approve_reject_request_for_material(frm, status, false);
+								} else{
+									frappe.msgprint(__("Invalid verification code. Please try again."))
+								}
+							})
+					},
+				});
+				d.fields_dict.resend_verification_code.input.onclick = function() {
+					frappe.xcall('one_fm.purchase.utils.send_verification_code', {doctype, document_name})
+					.then(res => {
+						console.log(res);
+					}).catch(e => {
+						console.log(e);
+					})
+				}
+				d.show();
 			},
 			function(){} // No
 		);
