@@ -481,14 +481,15 @@
    "fieldtype": "Signature",
    "label": "Authority Signature",
    "read_only": 1,
-   "read_only_depends_on": "eval: doc.status == \"Approved\";"
+   "read_only_depends_on": "eval: doc.status == \"Approved\";",
+   "set_only_once": 1
   }
  ],
  "icon": "fa fa-ticket",
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-01-03 09:08:52.683323",
+ "modified": "2022-01-05 14:03:52.805530",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
