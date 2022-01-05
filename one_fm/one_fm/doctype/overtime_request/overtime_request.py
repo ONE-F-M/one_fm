@@ -135,6 +135,11 @@ class OvertimeRequest(Document):
 				mandatory_fields.append('Post Type')
 			self.set_mendatory_fields(mandatory_fields)
 
+		# FILTER OUT OPERATIONS REQUEST TYPE
+		if(self.request_type=='Operations'):
+			frappe.throw("""Request type <b>Operations</b> not allowed.
+				Only <b>Head Office</b> is permitted.""")
+
 	# This Method throw the mandatory fields message to the user
 	def set_mendatory_fields(self, mandatory_fields):
 		if len(mandatory_fields) > 0:

@@ -2,6 +2,14 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Quotation From Supplier', {
+	refresh: function(frm) {
+		frm.set_query("supplier", function() {
+			return {
+				query: "one_fm.purchase.utils.get_supplier_list",
+				filters: {'request_for_quotation': frm.doc.request_for_quotation}
+			}
+		});
+	},
 	request_for_quotation: function(frm) {
 		set_items(frm);
 	}

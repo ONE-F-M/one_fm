@@ -76,9 +76,14 @@ def get_data(filters):
 				acc.full_name,
 				acc.civil_id,
 				acc.checkin_checkout_date_time,
-				acc.name,
-				checkout_date,
-				checkout,
+				acc.name
+			]
+			if not current_list_only:
+				row +=[
+					checkout_date,
+					checkout
+				]
+			row +=[
 				acc.tenant_category,
 				designation,
 				project,
