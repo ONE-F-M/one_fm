@@ -11,7 +11,7 @@ frappe.ui.form.on('Operations Site', {
 				]
 			}
 		});
-		
+
 		// Remove and change it
 		let {changes_log} = frm.doc;
 		let changes = ``;
@@ -44,8 +44,8 @@ frappe.ui.form.on('Operations Site', {
 						}
 					)
 				}
-			).addClass('btn-primary');		
-		}			
+			).addClass('btn-primary');
+		}
 	},
 })
 
@@ -57,9 +57,9 @@ function quick_entry_shifts_and_posts(frm){
 				let post_dialog = new frappe.ui.Dialog({
 					'fields': [
 						{
-							'label': 'Select Shifts', 
-							'fieldname': 'shifts', 
-							'fieldtype': 'Table', 
+							'label': 'Select Shifts',
+							'fieldname': 'shifts',
+							'fieldtype': 'Table',
 							'fields': [
 								{
 									fieldtype:'Link',
@@ -87,9 +87,9 @@ function quick_entry_shifts_and_posts(frm){
 						{'fieldname': 'cb2', 'fieldtype': 'Column Break'},
 						{'label': 'Number of Posts', 'fieldname': 'qty', 'fieldtype': 'Int'},
 						{
-							'label': 'Post Names', 
-							'fieldname': 'post_names', 
-							'fieldtype': 'Table', 
+							'label': 'Post Names',
+							'fieldname': 'post_names',
+							'fieldtype': 'Table',
 							'fields': [
 								{
 									fieldtype:'Data',
@@ -104,7 +104,7 @@ function quick_entry_shifts_and_posts(frm){
 								return this.data;
 							},
 							data: [],
-						},	
+						},
 						{'label': 'Post Type', 'fieldname': 'post_template', 'fieldtype': 'Link', 'options': 'Post Type', onchange: function(){
 							let post_type = this.value;
 							if(post_type !== undefined){
@@ -122,13 +122,13 @@ function quick_entry_shifts_and_posts(frm){
 											post_dialog.fields_dict["designations"].grid.remove_all();
 
 											skills.forEach((skill) => {
-												post_dialog.fields_dict["skills"].grid.df.data.push(skill);	
+												post_dialog.fields_dict["skills"].grid.df.data.push(skill);
 											});
 											post_dialog.fields_dict["skills"].grid.refresh();
 
 											designations.forEach((designation) => {
-												post_dialog.fields_dict["designations"].grid.df.data.push(designation);	
-											});										
+												post_dialog.fields_dict["designations"].grid.df.data.push(designation);
+											});
 											post_dialog.fields_dict["designations"].grid.refresh();
 
 										}
@@ -139,9 +139,9 @@ function quick_entry_shifts_and_posts(frm){
 						{'label': 'Sale Item', 'fieldname': 'sale_item', 'fieldtype': 'Link', 'options':'Item'},
 						{'fieldname': 'sb', 'fieldtype': 'Section Break'},
 						{
-							'label': 'Skills', 
-							'fieldname': 'skills', 
-							'fieldtype': 'Table', 
+							'label': 'Skills',
+							'fieldname': 'skills',
+							'fieldtype': 'Table',
 							'fields': [
 								{
 									fieldtype:'Link',
@@ -174,9 +174,9 @@ function quick_entry_shifts_and_posts(frm){
 							},
 						},
 						{
-							'label': 'Designations', 
-							'fieldname': 'designations', 
-							'fieldtype': 'Table', 
+							'label': 'Designations',
+							'fieldname': 'designations',
+							'fieldtype': 'Table',
 							'fields': [
 								{
 									fieldtype:'Link',
@@ -225,7 +225,7 @@ function quick_entry_shifts_and_posts(frm){
 							},
 							callback: function(r) {
 								if(!r.exc) {
-									post_dialog.hide();						
+									post_dialog.hide();
 								}
 							}
 						});
@@ -296,4 +296,3 @@ function set_contact(doc){
 	console.log(contact_details);
 	$('div[data-fieldname="contact_html"]').empty().append(`<div class="address-box">${contact_details}</div>`);
 }
-

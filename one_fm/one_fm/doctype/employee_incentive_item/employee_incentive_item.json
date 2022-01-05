@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "creation": "2021-11-15 05:44:59.579823",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "wage",
+  "wage_factor",
+  "incentive_amount",
+  "column_break_5",
+  "salary_component",
+  "payroll_date"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "wage",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Wage"
+  },
+  {
+   "fieldname": "wage_factor",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Wage Factor"
+  },
+  {
+   "fieldname": "incentive_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Incentive Amount",
+   "options": "currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "salary_component",
+   "fieldtype": "Link",
+   "label": "Salary Component",
+   "options": "Salary Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payroll_date",
+   "fieldtype": "Date",
+   "label": "Payroll Date",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-12-27 13:38:20.539976",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Employee Incentive Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "employee_name"
+}

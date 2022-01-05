@@ -52,6 +52,7 @@ class RequestforSupplierQuotation(Document):
                 item.description = rfq_item.description
                 item.qty = rfq_item.qty
                 item.uom = rfq_item.uom
+                item.stock_uom = rfq_item.uom
         return quotation.as_dict()
 
     def get_supplier_group_list(self,supplier_group):

@@ -109,9 +109,9 @@ class AccommodationCheckinCheckout(Document):
 	def onboard_employee_update(self, on_trash=False):
 		if self.type == 'IN':
 			if on_trash:
-				oe_name = frappe.db.exists('Onboard Employee', {'employee': self.employee, 'accommodation_provided': True, 'checkin_reference': self.name})
+				oe_name = frappe.db.exists('Onboard Employee', {'employee': self.employee, 'accommodation_provided': True, 'checkin_reference': self.name, 'docstatus': 1})
 			else:
-				oe_name = frappe.db.exists('Onboard Employee', {'employee': self.employee, 'accommodation_provided': False})
+				oe_name = frappe.db.exists('Onboard Employee', {'employee': self.employee, 'accommodation_provided': False, 'docstatus': 1})
 			if oe_name:
 				oe = frappe.get_doc('Onboard Employee', oe_name)
 				oe.accommodation_provided = False if on_trash else True
