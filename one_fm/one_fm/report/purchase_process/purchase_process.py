@@ -5,6 +5,7 @@ import frappe
 import json
 from datetime import datetime
 from frappe import msgprint, _
+from operator import itemgetter
 
 def execute(filters=None):
 
@@ -67,7 +68,7 @@ def get_data(doctypes):
 		status = frappe.get_value(ref_doctype, ref_docname,["status"] )
 		row = [ref_doctype,ref_docname, status, approved_at.strftime("%d-%m-%Y %H:%M:%S")]
 		data.append(row)
-	return data
+	return sorted(data, key=itemgetter(3))
 
 def get_doc_list(doctypes):
 	"""This Function fetches the doc list that list the changes of Doc from "Draft" to "Approved".
