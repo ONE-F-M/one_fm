@@ -260,7 +260,11 @@ frappe.ui.form.on('Request for Material', {
 							fieldtype: "Int",
 							label: "Enter verification code sent to your email address",
 							fieldname: "verification_code",
-							reqd: 1
+							reqd: 1,
+							onchange: function(){
+								let code = d.get_value('verification_code')
+								if (!is_valid_verification_code(code)){frappe.throw(__("Invalid verification code."))}
+							}
 						},
 						{
 							fieldtype: "Button", 
@@ -277,7 +281,7 @@ frappe.ui.form.on('Request for Material', {
 									d.hide()
 									frm.events.accept_approve_reject_request_for_material(frm, status, false);
 								} else{
-									frappe.msgprint(__("Unkown error occurred. Please try again."))
+									frappe.msgprint(__("Incorrect verification code. Please try again."));
 								}
 							})
 					},
@@ -783,3 +787,10 @@ function set_t_warehouse(frm){
 		erpnext.utils.copy_value_in_all_rows(frm.doc, frm.doc.doctype, frm.doc.name, "items", "t_warehouse");
 	}
 };
+
+function is_valid_verification_code(code){
+	const code_expression = /^\d{6}(\s*,\s*\d{6})*$/;
+	if (code_expression.test(code))  return true;
+
+	return false;
+}
