@@ -5,9 +5,12 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 	refresh: function(frm) {
 		set_filter_for_quotation_in_item(frm);
 		set_filter_for_quotation_item_in_item(frm);
+		set_custom_buttons(frm);
 	},
 	request_for_quotation: function(frm) {
 		set_quotation_against_rfq(frm);
+		set_custom_buttons(frm)
+		frm.clear_table('items');
 	},
 	request_for_purchase: function(frm){
 		set_rfq(frm);
@@ -139,3 +142,124 @@ var set_quotation_item_details = function(frm, item, quotation) {
 	qtn_item.rate = item.rate
 	qtn_item.amount = item.amount
 };
+
+
+
+// SET BUTTONS FOR QUOTATION COMPARISON
+let set_custom_buttons = (frm)=>{
+	// Custom buttons in groups
+	frm.add_custom_button('Best Price/One Supplier', () => {
+	    best_price_same_supplier(frm);
+	}, 'Analyse');
+
+	// best_price_many_suppliers
+	frm.add_custom_button('Best Price/Many Supplier', () => {
+	    best_price_many_supplier(frm);
+	}, 'Analyse');
+
+	// best_price_many_suppliers
+	frm.add_custom_button('Earliest Delivery', () => {
+	    earliest_delivery(frm);
+	}, 'Analyse');
+}
+
+
+//  filter for best price by same supplier
+let best_price_same_supplier = (frm)=>{
+	// select best price
+	let ordered_quotations = frm.doc.quotations.sort((a, b) => {
+	    return a.grand_total - b.grand_total;
+	})[0];
+	// filter all items for selected quotation
+	let best_quotation_items = frm.doc.quotation_items.filter(
+		item => item.quotation === ordered_quotations.quotation
+	);
+	// append to selected filtered table
+	complete_filters_table(frm, best_quotation_items, 'Best Price/One Supplier');
+}
+
+
+//  filter for best price by many supplier
+let best_price_many_supplier = (frm)=>{
+	// select best items price
+	let items = []
+	frm.doc.quotation_items.forEach((item, i) => {
+		if (!items.includes(item.item_name)){
+			items.push(item.item_name)
+		}
+	});
+
+	let best_quotation_items = []
+	items.forEach((item, i) => {
+		best_quotation_items.push(
+			frm.doc.quotation_items.filter((a, b) => {
+			    return a.item_name===item
+			}).sort((x, y)=> {
+			    return x.rate - y.rate
+			})[0]
+		)
+	});
+
+	// // append to selected filtered table
+	complete_filters_table(frm, best_quotation_items, 'Best Price/Many Supplier');
+}
+
+
+//  filter based on earliest delivery
+let earliest_delivery = (frm)=>{
+	// select earliest delivery
+	let ordered_quotations = frm.doc.quotations.sort((a, b) => {
+	    return new Date(a.estimated_delivery_date) - new Date(b.estimated_delivery_date);
+	})[0];
+	// filter all items for selected quotation
+	let best_quotation_items = frm.doc.quotation_items.filter(
+		item => item.quotation === ordered_quotations.quotation
+	);
+	// append to selected filtered table
+	complete_filters_table(frm, best_quotation_items, 'Earliest Delivery');
+}
+
+// complete filters table
+let complete_filters_table = (frm, data, selected_by)=>{
+	frm.clear_table('items');
+	let suppliers_dict = {};
+	frm.doc.quotations.forEach((item, i) => {
+		suppliers_dict[item.quotation] = {supplier:item.supplier, name:item.supplier_name}
+	});
+
+	// get RFSQ
+	frappe.db.get_doc(
+		'Request for Supplier Quotation',
+		frm.doc.request_for_quotation
+	).then(res=>{
+		let items_obj = {}
+		res.items.forEach((item, i) => {
+			items_obj[item.item_name] = item.schedule_date;
+		});
+		// process table
+		let grand_total = 0;
+		data.forEach((item, i) => {
+			frm.add_child('items', {
+				quotation_item: item.quotation_item,
+				quotation: item.quotation,
+				item_name: item.item_name,
+				description: item.description,
+				qty: item.quantity,
+				uom: item.uom,
+				rate: item.rate,
+				amount: item.amount,
+				schedule_date: items_obj[item.item_name],
+				estimated_delivery_date: item.estimated_delivery_date,
+				supplier: suppliers_dict[item.quotation].supplier,
+				supplier_name: suppliers_dict[item.quotation].name
+			})
+			grand_total = grand_total + item.amount;
+		});
+		frm.refresh_field('items');
+		frm.set_value('selected_by', selected_by);
+		frm.set_value('grand_total', grand_total);
+		frappe.show_alert(`Quotation selected by <b>${selected_by}</b>`, 5);
+
+	})
+
+}
