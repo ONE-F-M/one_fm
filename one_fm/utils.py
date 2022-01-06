@@ -2218,3 +2218,90 @@ def response(message, data, success, status_code):
      frappe.local.response["data_obj"] = data
      frappe.local.response["http_status_code"] = status_code
      return
+
+import hashlib
+import math, random 
+
+@frappe.whitelist()
+def send_verification_code(doctype, document_name):
+    """ This method sends a one time verification code to the user's email address.
+        Upon sending the code to the user, it saves this data in cache.
+        Data stored in cache is of key-value pair with a timeout of 300s set to it.
+        Cache data is as follows:
+            key: md5 hash of user email address, doctype, document
+            value: md5 hash of user email address, doctype, document and verification code generated.
+
+    Args:
+        doctype (str): Name of the DocType.
+        document_name (str): Name of the document of the DocType.
+
+    """
+    try:
+        verification_code = generate_code()
+        employee_user_email = frappe.session.user
+        subject = _("Verification code for {doctype}.".format(doctype=doctype))
+
+        # Get expiry time by adding 5 minutes to current time
+        final_time = datetime.now() + timedelta(minutes=5)
+        expiry_time = final_time.strftime('%I:%M %p %d-%m-%Y')
+
+
+        message = """Dear user,<br><br>
+            An attempt was made to use your signature in {doctype}: {document}.<br><br>
+            To use your signature, use the verification code: <b>{verification_code}</b>.<br><br>
+            This code will expire at {expiry_time}.<br>
+            If this was not you, ignore this email.<br>
+            """.format(doctype=doctype, document=document_name, verification_code=verification_code, expiry_time=expiry_time)
+
+        frappe.sendmail([employee_user_email], subject=subject, content=message, delayed=False)
+
+        cache_key = hashlib.md5((employee_user_email + doctype + document_name).encode('utf-8')).hexdigest()
+        cache_value = hashlib.md5((employee_user_email + doctype + document_name + str(verification_code)).encode('utf-8')).hexdigest()
+
+        frappe.cache().set(cache_key, cache_value)
+        frappe.cache().expire(cache_key, 300)
+
+    except Exception as e:
+        frappe.throw(e)
+
+@frappe.whitelist()
+def verify_verification_code(doctype, document_name, verification_code):
+    """This method verfies the user verification code by fetching the originally sent code by the system from cache.
+
+    Args:
+        doctype (str): Name of the DocType.
+        document_name (str): Name of the document of the DocType.
+        verification_code (int): User verification code
+
+    Returns:
+        boolean: True/False upon verification code being verified.
+    """
+    try:
+        employee_user_email = frappe.session.user
+        cache_search_key = hashlib.md5((employee_user_email + doctype + document_name).encode('utf-8')).hexdigest()
+        verification_hash = hashlib.md5((employee_user_email + doctype + document_name + str(verification_code)).encode('utf-8')).hexdigest()
+
+        if not frappe.cache().get(cache_search_key):
+            return False
+        
+        if verification_hash != frappe.cache().get(cache_search_key).decode('utf-8'):
+            return False
+
+        frappe.cache().delete(cache_search_key)
+
+        return True
+
+    except Exception as e:
+        frappe.throw(e)
+
+def generate_code():
+    """This method generates a random non-zero 6 digit number.
+
+    Returns:
+        int: random 6 digit number.
+    """
+    digits = "123456789"
+    code = ""
+    for i in range(6) :
+        code += digits[math.floor(random.random() * 9)]
+    return code
