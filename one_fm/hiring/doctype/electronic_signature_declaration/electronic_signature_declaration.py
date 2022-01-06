@@ -12,7 +12,6 @@ from one_fm.hiring.utils import update_onboarding_doc_workflow_sate
 class ElectronicSignatureDeclaration(Document):
 	def after_insert(self):
 		self.update_onboarding_doc()
-		print("Here")
 		self.update_employee_detail()
 		self.update_declaration_statement()
 		update_onboarding_doc_workflow_sate(self)
