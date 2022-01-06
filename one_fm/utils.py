@@ -2276,10 +2276,12 @@ def verify_verification_code(doctype, document_name, verification_code):
         verification_hash = hashlib.md5((employee_user_email + doctype + document_name + str(verification_code)).encode('utf-8')).hexdigest()
 
         if not frappe.cache().get(cache_search_key):
-            frappe.throw(_("Verification code expired. Please try again."))
+            return False
         
         if verification_hash != frappe.cache().get(cache_search_key).decode('utf-8'):
-            frappe.throw(_("Incorrect verification code."))
+            return False
+
+        frappe.cache().delete(cache_search_key)
 
         return True
 
