@@ -245,7 +245,7 @@ frappe.ui.form.on('Request for Material', {
 			__('A one time code will be sent to you for verification in order to use your signature for approval. Do You Want to {0} this Request for Material?', [msg_status]),
 			function(){
 				// Yes
-				var doctype = "Request For Material"
+				var doctype = frm.doc.doctype
 				var document_name = frm.doc.name
 				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
 					.then(res => {
