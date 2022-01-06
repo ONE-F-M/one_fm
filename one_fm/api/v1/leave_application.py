@@ -219,7 +219,7 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     return leave.as_dict()
 
 
-def get_leave_approver(employee: str):
+def get_leave_approver(employee: str) -> str:
     """This function fetches the leave approver for a given employee.
     The leave approver is fetched  either Report_to or Leave Approver. 
     But, if both don't exist, Operation manager is the Leave Approver.
