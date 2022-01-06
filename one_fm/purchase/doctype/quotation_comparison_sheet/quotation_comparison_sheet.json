@@ -30,7 +30,7 @@
    "options": "QCO-.YYYY.-.######\nQCS-.YYYY.-"
   },
   {
-   "fetch_from": "request_for_quotation.request_for_material",
+   "fetch_from": "rfq.request_for_material",
    "fetch_if_empty": 1,
    "fieldname": "request_for_material",
    "fieldtype": "Link",
@@ -39,7 +39,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "request_for_quotation.request_for_purchase",
+   "fetch_from": "rfq.request_for_purchase",
    "fetch_if_empty": 1,
    "fieldname": "request_for_purchase",
    "fieldtype": "Link",
@@ -120,7 +120,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-01-05 17:00:01.405970",
+ "modified": "2021-01-31 18:42:31.880468",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Quotation Comparison Sheet",

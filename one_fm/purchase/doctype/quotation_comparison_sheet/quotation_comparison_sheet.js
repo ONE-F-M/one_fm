@@ -5,12 +5,9 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 	refresh: function(frm) {
 		set_filter_for_quotation_in_item(frm);
 		set_filter_for_quotation_item_in_item(frm);
-		set_custom_buttons(frm);
-
 	},
 	request_for_quotation: function(frm) {
 		set_quotation_against_rfq(frm);
-		set_custom_buttons(frm);
 	},
 	request_for_purchase: function(frm){
 		set_rfq(frm);
@@ -142,23 +139,3 @@ var set_quotation_item_details = function(frm, item, quotation) {
 	qtn_item.rate = item.rate
 	qtn_item.amount = item.amount
 };
-
-
-let set_custom_buttons = (frm)=>{
-	// filter quotation based on selections
-	if(frm.doc.request_for_quotation){
-		frm.add_custom_button(__('Best Rate/Same Supplier'), () => {
-			analyse_based_on_best_rate(frm);
-		}, 'Analyse');
-
-	}
-}
-
-let analyse_based_on_best_rate = (frm)=>{
-	// filter based on best rate
-	if(request.request_for_quotation){
-
-	} else {
-		frappe.throw(__('No Quotaion Selected!'))
-	}
-}
