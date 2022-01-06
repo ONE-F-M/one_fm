@@ -35,7 +35,7 @@ def get_columns():
 			"width": 150
 		},
 		{
-			"label": ("Status"),
+			"label": ("Current Status"),
 			"fieldtype": "Data",
 			"fieldname": "status",
 			"width": 150
