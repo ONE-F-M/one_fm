@@ -147,22 +147,38 @@ var set_quotation_item_details = function(frm, item, quotation) {
 
 // SET BUTTONS FOR QUOTATION COMPARISON
 let set_custom_buttons = (frm)=>{
-	// Custom buttons in groups
-	frm.add_custom_button('Best Price/One Supplier', () => {
-	    best_price_same_supplier(frm);
-	}, 'Analyse');
+	if(![2,1].includes(frm.doc.docstatus)){
+		// Custom buttons in groups
+		frm.add_custom_button('Best Rate from One Supplier', () => {
+			best_price_same_supplier(frm);
+		}, 'Analyse');
 
-	// best_price_many_suppliers
-	frm.add_custom_button('Best Price/Many Supplier', () => {
-	    best_price_many_supplier(frm);
-	}, 'Analyse');
+		// best_price_many_suppliers
+		frm.add_custom_button('Best Rate from Many Supplier', () => {
+			best_price_many_supplier(frm);
+		}, 'Analyse');
 
-	// best_price_many_suppliers
-	frm.add_custom_button('Earliest Delivery', () => {
-	    earliest_delivery(frm);
-	}, 'Analyse');
+		// best_price_many_suppliers
+		frm.add_custom_button('Earliest Delivery', () => {
+			earliest_delivery(frm);
+		}, 'Analyse');
+
+		// best_price_many_suppliers
+		frm.add_custom_button('Custom', () => {
+			customer_filter(frm);
+		}, 'Analyse');
+	}
 }
 
+let get_quotation_items = (frm) => {
+	let items = [];
+	frm.doc.quotation_items.forEach((item, i) => {
+		if (!items.includes(item.item_name)){
+			items.push(item.item_name)
+		}
+	});
+	return items
+}
 
 //  filter for best price by same supplier
 let best_price_same_supplier = (frm)=>{
@@ -175,19 +191,14 @@ let best_price_same_supplier = (frm)=>{
 		item => item.quotation === ordered_quotations.quotation
 	);
 	// append to selected filtered table
-	complete_filters_table(frm, best_quotation_items, 'Best Price/One Supplier');
+	complete_filters_table(frm, best_quotation_items, 'Best Rate from One Supplier');
 }
 
 
 //  filter for best price by many supplier
 let best_price_many_supplier = (frm)=>{
 	// select best items price
-	let items = []
-	frm.doc.quotation_items.forEach((item, i) => {
-		if (!items.includes(item.item_name)){
-			items.push(item.item_name)
-		}
-	});
+	let items = get_quotation_items(frm);
 
 	let best_quotation_items = []
 	items.forEach((item, i) => {
@@ -201,7 +212,7 @@ let best_price_many_supplier = (frm)=>{
 	});
 
 	// // append to selected filtered table
-	complete_filters_table(frm, best_quotation_items, 'Best Price/Many Supplier');
+	complete_filters_table(frm, best_quotation_items, 'Best Rate from Many Supplier');
 }
 
 
@@ -262,4 +273,118 @@ let complete_filters_table = (frm, data, selected_by)=>{
 
 	})
 
+}
+
+
+// custom filter
+let customer_filter = (frm)=>{
+	let items = get_quotation_items(frm);
+	const table_fields = [
+			{
+				fieldname: "item_name", fieldtype: "Select",
+				in_list_view: 1, label: "Quotation Item",
+				options: items, reqd: 1,
+				change: function (x) {
+					console.log(dialog.fields_dict.items_detail.df.data)
+					dialog.fields_dict.items_detail.df.data.some(d => {
+						if (d.item_name==this.doc.item_name && d.idx != this.doc.idx) {
+							console.log(this.doc)
+							this.doc.item_name = null;
+							dialog.fields_dict.items_detail.grid.refresh();
+							return frappe.utils.play_sound("error");
+							frappe.throw('You cannot repeat same item')
+							// d.opening_amount = this.value;
+							return true;
+						}
+					});
+				}
+			},
+			{
+				fieldname: "select_by", fieldtype: "Select",
+				in_list_view: 1, label: "Select by", reqd:1,
+				options: ['Best Rate', 'Earliest Delivery Date'],
+				default: null
+			}
+		];
+
+	const dialog = new frappe.ui.Dialog({
+			title: __('Custom Quotation Selection'),
+			static: false,
+			fields: [
+				// {
+				// 	fieldtype: '', label: __('Company'), default: frappe.defaults.get_default('company'),
+				// 	options: 'Company', fieldname: 'company', reqd: 1
+				// },
+				// {
+				// 	fieldtype: 'Link', label: __('POS Profile'),
+				// 	options: 'POS Profile', fieldname: 'pos_profile', reqd: 1,
+				// 	get_query: () => pos_profile_query,
+				// 	onchange: () => fetch_pos_payment_methods()
+				// },
+				{
+					fieldname: "items_detail",
+					fieldtype: "Table",
+					label: "Items",
+					cannot_add_rows: true,
+					cannot_delete_rows: true,
+					in_place_edit: true,
+					reqd: 1,
+					data: [],
+					fields: table_fields
+				}
+			],
+			primary_action: async function(values) {
+				// validate values
+				console.log(values);
+				values.items_detail.forEach((item, i) => {
+					if(!item.select_by){
+						frappe.throw(`Please select option for
+							<b>${item.item_name}</b> on row <b>${item.idx}</>`)
+					}
+				});
+				// process
+				process_custom_filter(values);
+
+
+				dialog.hide();
+			},
+			primary_action_label: __('Submit')
+		});
+		dialog.show();
+		// console.log(dialog)
+		// initialize dialog table
+		items.forEach((item, i) => {
+			dialog.fields_dict.items_detail.df.data.push(
+				{ item_name: item}
+			);
+		});
+		dialog.fields_dict.items_detail.grid.refresh();
+
+
+		// process filter
+		let process_custom_filter = (values)=>{
+			let filtered_items = []
+			values.items_detail.forEach((item, i) => {
+				if(item.select_by=='Best Rate'){
+					filtered_items.push(
+						frm.doc.quotation_items.filter(
+							x => x.item_name === item.item_name
+						).sort((a, b) => {
+						    return a.rate - b.rate;
+						})[0]
+					)
+				} else {
+					filtered_items.push(
+						frm.doc.quotation_items.filter(
+							x => x.item_name === item.item_name
+						).sort((a, b) => {
+						    return new Date(a.estimated_delivery_date) - new Date(b.estimated_delivery_date);
+						})[0]
+					)
+				}
+
+			});
+			complete_filters_table(frm, filtered_items, 'Custom');
+			
+		}
 }
