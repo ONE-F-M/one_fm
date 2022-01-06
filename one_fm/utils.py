@@ -2220,7 +2220,7 @@ def response(message, data, success, status_code):
      return
 
 import hashlib
-import math, random
+import math, random 
 
 @frappe.whitelist()
 def send_verification_code(doctype, document_name):
@@ -2240,12 +2240,18 @@ def send_verification_code(doctype, document_name):
         verification_code = generate_code()
         employee_user_email = frappe.session.user
         subject = _("Verification code for {doctype}.".format(doctype=doctype))
+
+        # Get expiry time by adding 5 minutes to current time
+        final_time = datetime.now() + timedelta(minutes=5)
+        expiry_time = final_time.strftime('%I:%M %p %d-%m-%Y')
+
+
         message = """Dear user,<br><br>
             An attempt was made to use your signature in {doctype}: {document}.<br><br>
             To use your signature, use the verification code: <b>{verification_code}</b>.<br><br>
-            This code will expire in the next 5 minutes.<br>
+            This code will expire at {expiry_time}.<br>
             If this was not you, ignore this email.<br>
-            """.format(doctype=doctype, document=document_name, verification_code=verification_code)
+            """.format(doctype=doctype, document=document_name, verification_code=verification_code, expiry_time=expiry_time)
 
         frappe.sendmail([employee_user_email], subject=subject, content=message, delayed=False)
 
