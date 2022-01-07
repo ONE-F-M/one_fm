@@ -2,11 +2,29 @@
 // For license information, please see license.txt
 
 // store request_for_quotation and related data in here
-window.item_name = '';
-window.order_by = '';
-let rfq_dataset = {
+window.rfq_dataset = {
 	items_filter_arr: {}
 }
+
+
+let make_rfq_dataset_itemsfilter = (frm, item_name, order_by)=>{
+	// filter and sort items
+	if(order_by==='Best Rate'){
+		window.rfq_dataset.items_filter_arr[item_name] = frm.doc.quotation_items.filter((a, b) => {
+			return a.item_name===item_name
+		}).sort((x, y)=> {
+			return x.rate - y.rate
+		})
+	} else {
+		window.rfq_dataset.items_filter_arr[item_name] = frm.doc.quotation_items.filter((a, b) => {
+			return a.item_name===item_name
+		}).sort((x, y)=> {
+			return new Date(x.estimated_delivery_date) - new Date(y.estimated_delivery_date)
+		})
+	}
+}
+
+
 
 frappe.ui.form.on('Quotation Comparison Sheet', {
 	onload: (frm)=>{
@@ -15,7 +33,7 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 		}
 	},
 	refresh: function(frm) {
-		console.log(rfq_dataset);
+		console.log(window.rfq_dataset);
 		set_filter_for_quotation_in_item(frm);
 		set_filter_for_quotation_item_in_item(frm);
 		set_custom_buttons(frm);
@@ -35,31 +53,19 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 	get_rfq: (frm)=>{
 		frm.call('get_rfq', {rfq:frm.doc.request_for_quotation}).then(
 			res=>{
-				rfq_dataset.rfq = res.message;
-				rfq_dataset.items_qtyobj = {}
+				window.rfq_dataset.quotation_items = {};
+				window.rfq_dataset.items_qtyobj = {};
+				window.rfq_dataset.suppliers_dict = {};
+				window.rfq_dataset.rfq = res.message;
 				res.message.items.forEach((item, i) => {
-					rfq_dataset.items_qtyobj[item.item_name] = item.qty;
+					window.rfq_dataset.items_qtyobj[item.item_name] = item.qty;
+					window.rfq_dataset.quotation_items[item.item_name] = item
 				});
-				console.log(rfq_dataset);
+				frm.doc.quotations.forEach((item, i) => {
+					window.rfq_dataset.suppliers_dict[item.quotation] = {supplier:item.supplier, name:item.supplier_name}
+				});
 			}
 		)
-	},
-	make_rfq_dataset_itemsfilter: (frm)=>{
-		item_name = window.item_name;
-		order_by = window.order_by;
-		if(order_by==='Best Rate'){
-			rfq_dataset.items_filter_arr[item_name] = frm.doc.quotation_items.filter((a, b) => {
-			    return a.item_name===item_name
-			}).sort((x, y)=> {
-			    return x.rate - y.rate
-			})
-		} else {
-			rfq_dataset.items_filter_arr[item_name] = frm.doc.quotation_items.filter((a, b) => {
-			    return a.item_name===item_name
-			}).sort((x, y)=> {
-			    return new Date(x.estimated_delivery_date) - new Date(y.estimated_delivery_date)
-			})
-		}
 	}
 });
 
@@ -125,7 +131,7 @@ var set_quotation_against_rfq = function(frm) {
 			args: {'rfq': frm.doc.request_for_quotation},
 			callback: function(r) {
 				if(r && r.message){
-					rfq_dataset.rfsq = r.message;
+					window.rfq_dataset.rfsq = r.message;
 					var quotations = r.message;
 					quotations.forEach((quotation, i) => {
 						var qtn = frm.add_child('quotations');
@@ -227,11 +233,9 @@ let get_quotation_items = (frm) => {
 //  filter for best price by same supplier
 let best_price_same_supplier = (frm)=>{
 	// set global item filter
+	console.log(get_quotation_items(frm))
 	get_quotation_items(frm).forEach((item, i) => {
-		window.item_name = item;
-		window.order_by = 'Best Rate';
-		frm.trigger('make_rfq_dataset_itemsfilter');
-		console.log(rfq_dataset.items_filter_arr);
+		make_rfq_dataset_itemsfilter(frm, item, 'Best Rate');
 	});
 
 	// select best price
@@ -249,6 +253,9 @@ let best_price_same_supplier = (frm)=>{
 
 //  filter for best price by many supplier
 let best_price_many_supplier = (frm)=>{
+	get_quotation_items(frm).forEach((item, i) => {
+		make_rfq_dataset_itemsfilter(frm, item, 'Best Rate');
+	});
 	// select best items price
 	let items = get_quotation_items(frm);
 
@@ -270,6 +277,9 @@ let best_price_many_supplier = (frm)=>{
 
 //  filter based on earliest delivery
 let earliest_delivery = (frm)=>{
+	get_quotation_items(frm).forEach((item, i) => {
+		make_rfq_dataset_itemsfilter(frm, item, 'Earliest Delivery');
+	});
 	// select earliest delivery
 	let ordered_quotations = frm.doc.quotations.sort((a, b) => {
 	    return new Date(a.estimated_delivery_date) - new Date(b.estimated_delivery_date);
@@ -280,51 +290,6 @@ let earliest_delivery = (frm)=>{
 	);
 	// append to selected filtered table
 	complete_filters_table(frm, best_quotation_items, 'Earliest Delivery');
-}
-
-// complete filters table
-let complete_filters_table = (frm, data, selected_by)=>{
-	frm.clear_table('items');
-	let suppliers_dict = {};
-	frm.doc.quotations.forEach((item, i) => {
-		suppliers_dict[item.quotation] = {supplier:item.supplier, name:item.supplier_name}
-	});
-
-	// get RFSQ
-	frappe.db.get_doc(
-		'Request for Supplier Quotation',
-		frm.doc.request_for_quotation
-	).then(res=>{
-		let items_obj = {}
-		res.items.forEach((item, i) => {
-			items_obj[item.item_name] = item.schedule_date;
-		});
-		// process table
-		let grand_total = 0;
-		data.forEach((item, i) => {
-			frm.add_child('items', {
-				quotation_item: item.quotation_item,
-				quotation: item.quotation,
-				item_name: item.item_name,
-				description: item.description,
-				qty: item.quantity,
-				uom: item.uom,
-				rate: item.rate,
-				amount: item.amount,
-				schedule_date: items_obj[item.item_name],
-				estimated_delivery_date: item.estimated_delivery_date,
-				supplier: suppliers_dict[item.quotation].supplier,
-				supplier_name: suppliers_dict[item.quotation].name
-			})
-			grand_total = grand_total + item.amount;
-		});
-		frm.refresh_field('items');
-		frm.set_value('selected_by', selected_by);
-		frm.set_value('grand_total', grand_total);
-		frappe.show_alert(`Quotation selected by <b>${selected_by}</b>`, 5);
-
-	})
-
 }
 
 
@@ -415,6 +380,11 @@ let customer_filter = (frm)=>{
 
 		// process filter
 		let process_custom_filter = (values)=>{
+			// set items sorting and filtering
+			values.items_detail.forEach((item, i) => {
+				make_rfq_dataset_itemsfilter(frm, item.item_name, item.select_by);
+			});
+
 			let filtered_items = []
 			values.items_detail.forEach((item, i) => {
 				if(item.select_by=='Best Rate'){
@@ -439,4 +409,63 @@ let customer_filter = (frm)=>{
 			complete_filters_table(frm, filtered_items, 'Custom');
 
 		}
+}
+
+
+
+
+// complete filters table
+let complete_filters_table = (frm, data, selected_by)=>{
+	frm.clear_table('items');
+	// process table
+
+	let new_items = [];
+	let all_items = Object.keys(window.rfq_dataset.quotation_items);
+	let data_items = [];
+
+	// set missing items
+	data.forEach((item, i) => {
+		data_items.push(item.item_name);
+		// delete from supplier_quotation;
+		window.rfq_dataset.items_filter_arr[item.item_name] = window.rfq_dataset.items_filter_arr[item.item_name].filter(
+			x => x.idx !== item.idx
+		)
+	})
+	all_items.forEach((item, i) => {
+		if(data_items.includes(item)){
+
+		} else {
+			if(window.rfq_dataset.items_filter_arr[item]){
+				data.push(window.rfq_dataset.items_filter_arr[item][0]);
+				window.rfq_dataset.items_filter_arr[name] = window.rfq_dataset.items_filter_arr[item].filter(
+					x => x.idx !== item.idx
+				)
+			}
+		}
+	});
+	// end set missing items
+
+
+	let grand_total = 0;
+	data.forEach((item, i) => {
+		frm.add_child('items', {
+			quotation_item: item.quotation_item,
+			quotation: item.quotation,
+			item_name: item.item_name,
+			description: item.description,
+			qty: item.quantity,
+			uom: item.uom,
+			rate: item.rate,
+			amount: item.amount,
+			schedule_date: window.rfq_dataset.quotation_items[item.item_name].schedule_date,
+			estimated_delivery_date: item.estimated_delivery_date,
+			supplier: window.rfq_dataset.suppliers_dict[item.quotation].supplier,
+			supplier_name: window.rfq_dataset.suppliers_dict[item.quotation].name
+		})
+		grand_total = grand_total + item.amount;
+	});
+	frm.refresh_field('items');
+	frm.set_value('selected_by', selected_by);
+	frm.set_value('grand_total', grand_total);
+	frappe.show_alert(`Quotation selected by <b>${selected_by}</b>`, 5);
 }
