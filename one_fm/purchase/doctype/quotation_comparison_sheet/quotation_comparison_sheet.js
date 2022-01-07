@@ -1,13 +1,27 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
+// store request_for_quotation and related data in here
+window.item_name = '';
+window.order_by = '';
+let rfq_dataset = {
+	items_filter_arr: {}
+}
+
 frappe.ui.form.on('Quotation Comparison Sheet', {
+	onload: (frm)=>{
+		if(frm.doc.request_for_quotation){
+			frm.trigger('get_rfq');
+		}
+	},
 	refresh: function(frm) {
+		console.log(rfq_dataset);
 		set_filter_for_quotation_in_item(frm);
 		set_filter_for_quotation_item_in_item(frm);
 		set_custom_buttons(frm);
 	},
 	request_for_quotation: function(frm) {
+		frm.trigger('get_rfq');
 		set_quotation_against_rfq(frm);
 		set_custom_buttons(frm)
 		frm.clear_table('items');
@@ -17,6 +31,35 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 	},
 	compare_quotation_by: function(frm) {
 		set_quotation_against_rfq(frm);
+	},
+	get_rfq: (frm)=>{
+		frm.call('get_rfq', {rfq:frm.doc.request_for_quotation}).then(
+			res=>{
+				rfq_dataset.rfq = res.message;
+				rfq_dataset.items_qtyobj = {}
+				res.message.items.forEach((item, i) => {
+					rfq_dataset.items_qtyobj[item.item_name] = item.qty;
+				});
+				console.log(rfq_dataset);
+			}
+		)
+	},
+	make_rfq_dataset_itemsfilter: (frm)=>{
+		item_name = window.item_name;
+		order_by = window.order_by;
+		if(order_by==='Best Rate'){
+			rfq_dataset.items_filter_arr[item_name] = frm.doc.quotation_items.filter((a, b) => {
+			    return a.item_name===item_name
+			}).sort((x, y)=> {
+			    return x.rate - y.rate
+			})
+		} else {
+			rfq_dataset.items_filter_arr[item_name] = frm.doc.quotation_items.filter((a, b) => {
+			    return a.item_name===item_name
+			}).sort((x, y)=> {
+			    return new Date(x.estimated_delivery_date) - new Date(y.estimated_delivery_date)
+			})
+		}
 	}
 });
 
@@ -82,6 +125,7 @@ var set_quotation_against_rfq = function(frm) {
 			args: {'rfq': frm.doc.request_for_quotation},
 			callback: function(r) {
 				if(r && r.message){
+					rfq_dataset.rfsq = r.message;
 					var quotations = r.message;
 					quotations.forEach((quotation, i) => {
 						var qtn = frm.add_child('quotations');
@@ -182,6 +226,14 @@ let get_quotation_items = (frm) => {
 
 //  filter for best price by same supplier
 let best_price_same_supplier = (frm)=>{
+	// set global item filter
+	get_quotation_items(frm).forEach((item, i) => {
+		window.item_name = item;
+		window.order_by = 'Best Rate';
+		frm.trigger('make_rfq_dataset_itemsfilter');
+		console.log(rfq_dataset.items_filter_arr);
+	});
+
 	// select best price
 	let ordered_quotations = frm.doc.quotations.sort((a, b) => {
 	    return a.grand_total - b.grand_total;
@@ -385,6 +437,6 @@ let customer_filter = (frm)=>{
 
 			});
 			complete_filters_table(frm, filtered_items, 'Custom');
-			
+
 		}
 }

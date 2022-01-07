@@ -10,6 +10,11 @@ class QuotationComparisonSheet(Document):
 	def on_submit(self):
 		update_request_for_purchase(self)
 
+	@frappe.whitelist()
+	def get_rfq(self, rfq):
+		return frappe.get_doc('Request for Supplier Quotation', rfq)
+
+
 def update_request_for_purchase(doc):
 	if doc.items:
 		rfp = frappe.get_doc('Request for Purchase', doc.request_for_purchase)
@@ -25,11 +30,7 @@ def update_request_for_purchase(doc):
 			items_to_order.delivery_date = frappe.db.get_value('Quotation From Supplier', item.quotation, 'estimated_delivery_date')
 		rfp.save(ignore_permissions = True)
 
-	@frappe.whitelist()
-	def get_suppliers(self, suppliers):
-		# return frappe.get_doc('Request for Supplier Quotation', rfsq)
 
-		return
 @frappe.whitelist()
 def get_quotation_against_rfq(rfq):
 	quotation_list = frappe.get_list('Quotation From Supplier', {'request_for_quotation': rfq})
