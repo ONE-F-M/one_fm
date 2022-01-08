@@ -33,7 +33,6 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 		}
 	},
 	refresh: function(frm) {
-		console.log(window.rfq_dataset);
 		set_filter_for_quotation_in_item(frm);
 		set_filter_for_quotation_item_in_item(frm);
 		set_custom_buttons(frm);
@@ -233,7 +232,6 @@ let get_quotation_items = (frm) => {
 //  filter for best price by same supplier
 let best_price_same_supplier = (frm)=>{
 	// set global item filter
-	console.log(get_quotation_items(frm))
 	get_quotation_items(frm).forEach((item, i) => {
 		make_rfq_dataset_itemsfilter(frm, item, 'Best Rate');
 	});
@@ -302,10 +300,9 @@ let customer_filter = (frm)=>{
 				in_list_view: 1, label: "Quotation Item",
 				options: items, reqd: 1,
 				change: function (x) {
-					console.log(dialog.fields_dict.items_detail.df.data)
 					dialog.fields_dict.items_detail.df.data.some(d => {
 						if (d.item_name==this.doc.item_name && d.idx != this.doc.idx) {
-							console.log(this.doc)
+
 							this.doc.item_name = null;
 							dialog.fields_dict.items_detail.grid.refresh();
 							return frappe.utils.play_sound("error");
@@ -352,7 +349,6 @@ let customer_filter = (frm)=>{
 			],
 			primary_action: async function(values) {
 				// validate values
-				console.log(values);
 				values.items_detail.forEach((item, i) => {
 					if(!item.select_by){
 						frappe.throw(`Please select option for
@@ -368,7 +364,6 @@ let customer_filter = (frm)=>{
 			primary_action_label: __('Submit')
 		});
 		dialog.show();
-		// console.log(dialog)
 		// initialize dialog table
 		items.forEach((item, i) => {
 			dialog.fields_dict.items_detail.df.data.push(
@@ -437,17 +432,19 @@ let complete_filters_table = (frm, data, selected_by)=>{
 		)
 	})
 	all_items.forEach((item, i) => {
-		if(data_items.includes(item)){
 
+		if(data_items.includes(item)){
+			// pass
 		} else {
+
 			try {
-				if(window.rfq_dataset.items_filter_arr[item]){
-    				let tempitem = window.rfq_dataset.items_filter_arr[item][0];
-    				data.push(tempitem);
+				let missing_item = window.rfq_dataset.items_filter_arr[item][0];
+				if(missing_item){
+    				data.push(missing_item);
     				items_qty[item] = window.rfq_dataset.items_qtyobj[item]
-    				items_qty[item] = items_qty[item] - tempitem.quantity;
-    				window.rfq_dataset.items_filter_arr[name] = window.rfq_dataset.items_filter_arr[item].filter(
-    					x => x.idx !== tempitem.idx
+    				items_qty[item] = items_qty[item] - missing_item.quantity;
+					window.rfq_dataset.items_filter_arr[missing_item.item_name] = window.rfq_dataset.items_filter_arr[missing_item.item_name].filter(
+    					x => x.idx !== missing_item.idx
     				)
     			}
 			}
@@ -458,7 +455,6 @@ let complete_filters_table = (frm, data, selected_by)=>{
 		}
 	});
 
-	console.log(items_qty)
 	// end set missing items
 	data.forEach((item, i) => {
 		if(item.quantity>window.rfq_dataset.items_qtyobj[item.item_name]){
@@ -466,7 +462,7 @@ let complete_filters_table = (frm, data, selected_by)=>{
 		}
 		new_items.push(item);
 		while (true) {
-			if(items_qty[item.item_name]>0){
+			if(items_qty[item.item_name]>0 && window.rfq_dataset.items_filter_arr[item.item_name]){
 				if(window.rfq_dataset.items_filter_arr[item.item_name] && window.rfq_dataset.items_filter_arr[item.item_name][0]){
 					let newitem = window.rfq_dataset.items_filter_arr[item.item_name][0];
 					if(items_qty[item.item_name]>newitem.quantity){
