@@ -412,7 +412,9 @@ let customer_filter = (frm)=>{
 }
 
 
+const reassign_remaining_items = (frm) => {
 
+}
 
 // complete filters table
 let complete_filters_table = (frm, data, selected_by)=>{
@@ -422,11 +424,14 @@ let complete_filters_table = (frm, data, selected_by)=>{
 	let new_items = [];
 	let all_items = Object.keys(window.rfq_dataset.quotation_items);
 	let data_items = [];
+	let items_qty = {};
 
 	// set missing items
 	data.forEach((item, i) => {
 		data_items.push(item.item_name);
 		// delete from supplier_quotation;
+		items_qty[item.item_name] = window.rfq_dataset.items_qtyobj[item.item_name];
+		items_qty[item.item_name] = items_qty[item.item_name] - item.quantity;
 		window.rfq_dataset.items_filter_arr[item.item_name] = window.rfq_dataset.items_filter_arr[item.item_name].filter(
 			x => x.idx !== item.idx
 		)
@@ -435,19 +440,66 @@ let complete_filters_table = (frm, data, selected_by)=>{
 		if(data_items.includes(item)){
 
 		} else {
-			if(window.rfq_dataset.items_filter_arr[item]){
-				data.push(window.rfq_dataset.items_filter_arr[item][0]);
-				window.rfq_dataset.items_filter_arr[name] = window.rfq_dataset.items_filter_arr[item].filter(
-					x => x.idx !== item.idx
-				)
+			try {
+				if(window.rfq_dataset.items_filter_arr[item]){
+    				let tempitem = window.rfq_dataset.items_filter_arr[item][0];
+    				data.push(tempitem);
+    				items_qty[item] = window.rfq_dataset.items_qtyobj[item]
+    				items_qty[item] = items_qty[item] - tempitem.quantity;
+    				window.rfq_dataset.items_filter_arr[name] = window.rfq_dataset.items_filter_arr[item].filter(
+    					x => x.idx !== tempitem.idx
+    				)
+    			}
 			}
+			catch(err) {
+			  // pass
+			}
+
 		}
 	});
+
+	console.log(items_qty)
 	// end set missing items
+	data.forEach((item, i) => {
+		if(item.quantity>window.rfq_dataset.items_qtyobj[item.item_name]){
+			item.quantity = window.rfq_dataset.items_qtyobj[item.item_name];
+		}
+		new_items.push(item);
+		while (true) {
+			if(items_qty[item.item_name]>0){
+				if(window.rfq_dataset.items_filter_arr[item.item_name] && window.rfq_dataset.items_filter_arr[item.item_name][0]){
+					let newitem = window.rfq_dataset.items_filter_arr[item.item_name][0];
+					if(items_qty[item.item_name]>newitem.quantity){
+						new_items.push(newitem);
+						items_qty[item.item_name] = items_qty[item.item_name] - newitem.quantity;
+						window.rfq_dataset.items_filter_arr[item.item_name] = window.rfq_dataset.items_filter_arr[item.item_name].filter(
+							x => x.idx !== newitem.idx
+						)
+					} else {
+						newitem.quantity = items_qty[item.item_name];
+						new_items.push(newitem);
+						items_qty[item.item_name] = items_qty[item.item_name] - newitem.quantity;
+						window.rfq_dataset.items_filter_arr[item.item_name] = window.rfq_dataset.items_filter_arr[item.item_name].filter(
+							x => x.idx !== newitem.idx
+						)
+						break;
+					}
+
+				} else {
+					break;
+				}
+			} else {
+				break;
+			}
+		}
+
+	});
+
+	// check quantity
 
 
 	let grand_total = 0;
-	data.forEach((item, i) => {
+	new_items.forEach((item, i) => {
 		frm.add_child('items', {
 			quotation_item: item.quotation_item,
 			quotation: item.quotation,
