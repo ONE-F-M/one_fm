@@ -4,6 +4,7 @@
 // store request_for_quotation and related data in here
 window.rfq_dataset = {
 	items_filter_arr: {}
+
 }
 
 
@@ -50,15 +51,23 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 		set_quotation_against_rfq(frm);
 	},
 	get_rfq: (frm)=>{
-		frm.call('get_rfq', {rfq:frm.doc.request_for_quotation}).then(
+		frm.call('get_rfq', {
+				rfq:frm.doc.request_for_quotation,
+				rfm:frm.doc.request_for_material,
+				}).then(
 			res=>{
 				window.rfq_dataset.quotation_items = {};
 				window.rfq_dataset.items_qtyobj = {};
 				window.rfq_dataset.suppliers_dict = {};
-				window.rfq_dataset.rfq = res.message;
-				res.message.items.forEach((item, i) => {
+				window.rfq_dataset.items_codes = {};
+				window.rfq_dataset.rfq = res.message.rfq;
+				window.rfq_dataset.rfn = res.message.rfm;
+				res.message.rfq.items.forEach((item, i) => {
 					window.rfq_dataset.items_qtyobj[item.item_name] = item.qty;
 					window.rfq_dataset.quotation_items[item.item_name] = item
+				});
+				res.message.rfm.items.forEach((item, i) => {
+					window.rfq_dataset.items_codes[item.requested_item_name] = item.item_code;
 				});
 				frm.doc.quotations.forEach((item, i) => {
 					window.rfq_dataset.suppliers_dict[item.quotation] = {supplier:item.supplier, name:item.supplier_name}
@@ -216,6 +225,10 @@ let set_custom_buttons = (frm)=>{
 		frm.add_custom_button('Custom', () => {
 			customer_filter(frm);
 		}, 'Analyse');
+	} else if(frm.doc.docstatus==1){
+		frm.add_custom_button('Purchase Order', () => {
+			create_purchase_order(frm);
+		}, 'Create');
 	}
 }
 
@@ -516,4 +529,25 @@ let complete_filters_table = (frm, data, selected_by)=>{
 	frm.set_value('selected_by', selected_by);
 	frm.set_value('grand_total', grand_total);
 	frappe.show_alert(`Quotation selected by <b>${selected_by}</b>`, 5);
+}
+
+
+const create_purchase_order = (frm)=>{
+	console.log(window.rfq_dataset);
+	frappe.confirm('Are you sure you want to create <b>Purchase Order</b>?',
+    () => {
+        // action to perform if Yes is selected
+		frappe.msgprint(__(`
+			Creating Purchase Order.
+		`))
+		frm.call('create_purchase_order').then(res=>{
+			frappe.msgprint(__(`PO creation complete`));
+			frappe.set_route("List", "Purchase Order",
+				{'one_fm_request_for_purchase': frm.doc.request_for_purchase,
+				'status':'Draft'}
+			);
+		})
+    }, () => {
+        // action to perform if No is selected
+    })
 }
