@@ -247,7 +247,9 @@ frappe.ui.form.on('Request for Material', {
 				// Yes
 				var doctype = frm.doc.doctype
 				var document_name = frm.doc.name
-				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
+				var d = new Date();
+				var current_datetime_string = d.getUTCFullYear() +"/"+ (d.getUTCMonth()+1) +"/"+ d.getUTCDate() + " " + d.getUTCHours() + ":" + d.getUTCMinutes() + ":" + d.getUTCSeconds();
+				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
 					.then(res => {
 						console.log(res);
 					}).catch(e => {
@@ -287,7 +289,7 @@ frappe.ui.form.on('Request for Material', {
 					},
 				});
 				d.fields_dict.resend_verification_code.input.onclick = function() {
-					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
+					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
 					.then(res => {
 						console.log(res);
 					}).catch(e => {

@@ -2223,7 +2223,7 @@ import hashlib
 import math, random 
 
 @frappe.whitelist()
-def send_verification_code(doctype, document_name):
+def send_verification_code(doctype, document_name, current_datetime_string):
     """ This method sends a one time verification code to the user's email address.
         Upon sending the code to the user, it saves this data in cache.
         Data stored in cache is of key-value pair with a timeout of 300s set to it.
@@ -2242,7 +2242,9 @@ def send_verification_code(doctype, document_name):
         subject = _("Verification code for {doctype}.".format(doctype=doctype))
 
         # Get expiry time by adding 5 minutes to current time
-        final_time = datetime.now() + timedelta(minutes=5)
+        date_format_str = '%Y/%m/%d %H:%M:%S'
+        given_time = datetime.strptime(current_datetime_string, date_format_str)
+        final_time = given_time + timedelta(minutes=5)
         expiry_time = final_time.strftime('%I:%M %p %d-%m-%Y')
 
 
@@ -2305,3 +2307,7 @@ def generate_code():
     for i in range(6) :
         code += digits[math.floor(random.random() * 9)]
     return code
+
+frappe.whitelist()
+def fetch_employee_signature(user_id):
+    return frappe.get_value("Employee", {"user_id":user_id},["employee_signature"])

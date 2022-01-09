@@ -8,6 +8,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import nowdate, getdate, get_url
+from one_fm.utils import fetch_employee_signature
 
 class RequestforPurchase(Document):
 	def onload(self):
@@ -43,7 +44,8 @@ class RequestforPurchase(Document):
 				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
 					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description,
 					warehouse=self.warehouse, quotation=item.quotation)
-
+	
+	@frappe.whitelist()
 	def accept_approve_reject_request_for_purchase(self, status, approver, accepter, reason_for_rejection=None):
 		page_link = get_url("/desk#Form/Request for Purchase/" + self.name)
 		# Notify Requester
@@ -55,6 +57,15 @@ class RequestforPurchase(Document):
 			subject = '{0} Request for Purchase by {1}'.format(status, frappe.session.user)
 			send_email(self, [approver], message, subject)
 			create_notification_log(subject, message, [approver], self)
+
+		#fetch Signature from employee doc using user ID
+		if status == "Approved" and frappe.session.user == accepter:
+			signature = fetch_employee_signature(accepter)
+			if signature:
+				self.authorized_signatures = signature
+				self.save(ignore_permissions=True)
+			else:
+				frappe.msgprint(_("Your Signature is missing!"))
 
 		# Notify Accepter
 		if status in ['Approved', 'Rejected'] and frappe.session.user == approver:

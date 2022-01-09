@@ -22,6 +22,7 @@ from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_li
 import time
 import math, random
 import hashlib
+from one_fm.utils import fetch_employee_signature
 
 @frappe.whitelist()
 def get_warehouse_contact_details(warehouse):
@@ -118,14 +119,28 @@ def filter_description_specific_for_item_group(doctype, txt, searchfield, start,
         )
 
 @frappe.whitelist()
-def check_for_signature_for_purchase_receipt(doc, method):
-    if doc.status == "Completed" and not doc.authority_signature:
-        frappe.throw(__('Please Sign the form to Accept the Request'))
+def accept_approve_purchase_order(doc):
+    po = frappe.get_doc("Purchase Order", doc)
+    if po.workflow_state == "Approved":
+        #fetch Signature from employee doc using user ID
+        signature = fetch_employee_signature(frappe.session.user)
+        if signature:
+            po.authority_signature = signature
+            po.save(ignore_permissions=True)
+        else:
+            frappe.msgprint(_("Your Signature is missing!")) 
 
 @frappe.whitelist()
-def check_for_signature_for_purchase_order(doc, method):
-    if doc.workflow_state == "Approved" and not doc.authority_signature:
-        frappe.throw(__('Please Sign the form to Accept the Request'))
+def accept_approve_purchase_receipt(doc):
+    pr = frappe.get_doc("Purchase Receipt", doc)
+    if pr.status == "Completed":
+        #fetch Signature from employee doc using user ID
+        signature = fetch_employee_signature(frappe.session.user)
+        if signature:
+            pr.authority_signature = signature
+            pr.save(ignore_permissions=True)
+        else:
+            frappe.msgprint(_("Your Signature is missing!")) 
 
 @frappe.whitelist()
 def get_supplier_list(doctype, txt, searchfield, start, page_len, filters):
