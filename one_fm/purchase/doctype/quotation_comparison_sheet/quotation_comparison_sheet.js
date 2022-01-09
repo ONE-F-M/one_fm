@@ -533,7 +533,6 @@ let complete_filters_table = (frm, data, selected_by)=>{
 
 
 const create_purchase_order = (frm)=>{
-	console.log(window.rfq_dataset);
 	frappe.confirm('Are you sure you want to create <b>Purchase Order</b>?',
     () => {
         // action to perform if Yes is selected
