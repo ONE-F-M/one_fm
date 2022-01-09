@@ -2307,3 +2307,7 @@ def generate_code():
     for i in range(6) :
         code += digits[math.floor(random.random() * 9)]
     return code
+
+frappe.whitelist()
+def fetch_employee_signature(user_id):
+    return frappe.get_value("Employee", {"user_id":user_id},["employee_signature"])

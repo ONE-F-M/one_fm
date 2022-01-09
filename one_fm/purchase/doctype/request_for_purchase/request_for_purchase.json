@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2020-06-04 09:29:23.914970",
@@ -33,6 +34,8 @@
   "technical_remarks",
   "notes_section",
   "notes",
+  "signature_section",
+  "authorized_signatures",
   "amended_from"
  ],
  "fields": [
@@ -257,12 +260,26 @@
    "hidden": 1,
    "label": "Series",
    "options": "RFP-.YYYY.-"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.status == 'Approved';",
+   "fieldname": "authorized_signatures",
+   "fieldtype": "Signature",
+   "label": "Authorized Signatures",
+   "read_only": 1
+  },
+  {
+   "fieldname": "signature_section",
+   "fieldtype": "Section Break",
+   "label": "Signature"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
- "modified": "2021-05-20 01:14:09.054633",
- "modified_by": "o.asim@armor-services.com",
+ "links": [],
+ "modified": "2022-01-09 10:32:39.553821",
+ "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",
  "owner": "Administrator",
