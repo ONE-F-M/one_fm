@@ -36,6 +36,7 @@ class RequestforPurchase(Document):
 			self.save()
 			self.reload()
 
+	@frappe.whitelist()
 	def make_purchase_order_for_quotation(self):
 		if self.items_to_order:
 			for item in self.items_to_order:

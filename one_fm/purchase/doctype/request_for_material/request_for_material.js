@@ -32,6 +32,7 @@ frappe.ui.form.on('Request for Material', {
 			var df = frappe.meta.get_docfield("Request for Material Item","reject_item", cur_frm.doc.name);
             df.hidden = 0;
 		}
+		set_item_field_property(frm);
 	},
 	onload: function(frm) {
 		erpnext.utils.add_item(frm);
@@ -46,7 +47,6 @@ frappe.ui.form.on('Request for Material', {
 				filters: {'company': doc.company}
 			};
 		};
-
 	},
 	onload_post_render: function(frm) {
 		frm.get_field("items").grid.set_multiple_add("item_code", "qty");
@@ -177,8 +177,8 @@ frappe.ui.form.on('Request for Material', {
 				}
 				else {
 					//Needs further dicussion with Jamsheer
-					frm.add_custom_button(__("Sales Invoice"),
-					    () => frm.events.make_sales_invoice(frm), __('Create'));
+					// frm.add_custom_button(__("Sales Invoice"),
+					//     () => frm.events.make_sales_invoice(frm), __('Create'));
 					frappe.db.get_value('Request for Purchase', {'request_for_material': frm.doc.name}, ['name','docstatus'],function(r) {
 						if(r && r.name && r.docstatus != 2){
 							frappe.show_alert({
@@ -561,6 +561,8 @@ var set_employee_or_project = function(frm) {
 		if(frm.doc.type=='Individual'){
 			frm.set_df_property('employee', 'reqd', true);
 			frm.set_df_property('project', 'reqd', false);
+			frm.set_df_property('department', 'reqd', false);
+			frm.set_df_property('department', 'read_only', false);
 			frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
 				if(r && r.name){
 					frm.set_value('employee', r.name);
@@ -585,6 +587,8 @@ var set_employee_or_project = function(frm) {
 		}
 		else if(frm.doc.type=='Project'|| frm.doc.type=='Project Mobilization'){
 			frm.set_df_property('project', 'reqd', true);
+			frm.set_df_property('department', 'reqd', false);
+			frm.set_df_property('department', 'read_only', false);
 			frm.set_df_property('customer', 'reqd', (frm.doc.type=='Project')?true:false);
 			frm.set_df_property('site', 'reqd', (frm.doc.type=='Project')?true:false);
 		}
@@ -592,6 +596,8 @@ var set_employee_or_project = function(frm) {
 			frm.set_df_property('erf', 'reqd', true);
 		}
 		else if(frm.doc.type=='Stock'){
+			frm.set_df_property('department', 'reqd', false);
+			frm.set_df_property('department', 'read_only', false);
 			frm.set_df_property('project', 'reqd', false);
 		}
 	}
