@@ -10,7 +10,7 @@ this.frm.dashboard.add_transactions([
 ]);
 
 frappe.ui.form.on('Purchase Receipt', {
-on_submit: function() {
+	on_submit: function(frm) {
 		if(frm.doc.status == "Completed"){
 			frm.events.confirm_accept_approve_purchase_receipt(frm);
 		}

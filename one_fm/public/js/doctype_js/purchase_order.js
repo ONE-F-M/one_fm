@@ -15,7 +15,7 @@ frappe.ui.form.on('Purchase Order', {
 		set_field_property_for_other_documents(frm);
         console.log("All is well my bro")
 	},
-	on_submit: function() {
+	on_submit: function(frm) {
 		if(frm.doc.workflow_state == "Approved"){
 			frm.events.confirm_accept_approve_purchase_order(frm);
 		}
