@@ -289,7 +289,7 @@ frappe.ui.form.on('Request for Material', {
 					},
 				});
 				d.fields_dict.resend_verification_code.input.onclick = function() {
-					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
+					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
 					.then(res => {
 						console.log(res);
 					}).catch(e => {
