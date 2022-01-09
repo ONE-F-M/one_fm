@@ -2,13 +2,23 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Item Reservation', {
-	refresh: function(frm) {
+	setup: (frm)=>{
+		frm.set_query('item_code', () => {
+			return {
+
+					query: 'one_fm.purchase.doctype.item_reservation.item_reservation.get_rfm_items',
+					doctype: 'Request for Material',
+					txt: frm.doc.rfm
+			}
+		})
+	},
+	refresh: (frm)=>{
         // set company
         if(!frm.doc.company){
             frm.set_value('company', frappe.defaults.get_default('company'));
         }
 		// add custom buttons
-		frm.trigger('custom_buttons')
+		// frm.trigger('custom_buttons')
 	},
     from_date: (frm)=>{
         // check date difference between from and to Reservation
@@ -18,6 +28,24 @@ frappe.ui.form.on('Item Reservation', {
         // check date difference between from and to Reservation
         frm.trigger('checkDateDiff');
     },
+	rfm: (frm)=>{
+
+	},
+	get_rfm_items: (frm)=>{
+		if(frm.doc.rfm){
+			console.log('searching')
+			frappe.db.get_doc('Request for Material', frm.doc.rfm).then(res=>{
+				frm.set_query('item_code', () => {
+				    return {
+				        filters: {
+				            query: 'one_fm.purchase.doctype.item_reservation.item_reservation.get_rfm_items',
+
+				        }
+				    }
+				})
+			})
+		}
+	},
     checkDateDiff: (frm)=>{
         // check backdating
         if(frm.doc.from_date > frm.doc.to_date){
