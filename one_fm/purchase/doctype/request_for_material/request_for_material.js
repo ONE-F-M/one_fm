@@ -696,73 +696,90 @@ frappe.ui.form.on("Request for Material Item", {
 		let row = locals[cdt][cdn];
 		// frappe.new_doc('Item Reservation', {rfm: row.parent, item_code:row.item_code});
 		if(row.item_code && !row.item_reservation){
-			let d = new frappe.ui.Dialog({
-			    title: `Create Reservation for <b>${row.item_code}</b>`,
-			    fields: [
-			        {
-			            label: 'Item',
-			            fieldname: 'item_code',
-			            fieldtype: 'Link',
-						options: 'Item',
-						reqd:1,
-						read_only:1,
-						default: row.item_code
-			        },
-			        {
-			            label: 'Quantity',
-			            fieldname: 'qty',
-			            fieldtype: 'Float'
-			        },
-			        {
-			            label: 'From Date',
-			            fieldname: 'from_date',
-			            fieldtype: 'Date',
-						reqd:1
-			        },
-			        {
-			            label: 'To Date',
-			            fieldname: 'to_date',
-			            fieldtype: 'Date',
-						reqd:1
-			        },
-					{
-			            label: 'Comment',
-			            fieldname: 'comment',
-			            fieldtype: 'Small Text',
-			        }
-			    ],
-			    primary_action_label: 'Submit',
-			    primary_action(values) {
-					if(values.qty>row.qty){
-						frappe.throw(__('Reservation quantity cannot be greater that requested quantity'));
-					} else if(values.qty<=0){
-						frappe.throw(__('Value cannnot be 0'));
-					} else if(values.from_date > values.to_date){
-			            frappe.throw(__(
-			                {
-			                    title:__('Invalid'),
-			                    message:__('Reserve From date cannot be after Reserver To date.')
-			                }
-			            ))
-			        } else {
-						values.rfm = row.parent;
-						frm.call('create_reservation', {filters:values}).then(r => {
-							if(r.message){
-								row.item_reservation = r.message.name;
-								row.from_date = r.message.from_date;
-								row.to_date = r.message.to_date;
-								row.reserve_qty = r.message.qty;
-								// frappe.model.set_value(row.doctype, row.name, 'item_reservation', r.message.name);
-								frm.refresh_field('items');
+			frappe.db.get_value('Item Reservation', {
+				rfm: frm.doc.name,
+				item_code:row.item_code
+			}, [
+				'item_code', 'from_date', 'to_date',
+				'name', 'qty']
+			).then(r=>{
+				if(Object.keys(r.message).length){
+					row.item_reservation = r.message.name;
+					row.from_date = r.message.from_date;
+					row.to_date = r.message.to_date;
+					row.reserve_qty = r.message.qty;
+					frm.refresh_field('items');
+				}else{
+					let d = new frappe.ui.Dialog({
+					    title: `Create Reservation for <b>${row.item_code}</b>`,
+					    fields: [
+					        {
+					            label: 'Item',
+					            fieldname: 'item_code',
+					            fieldtype: 'Link',
+								options: 'Item',
+								reqd:1,
+								read_only:1,
+								default: row.item_code
+					        },
+					        {
+					            label: 'Quantity',
+					            fieldname: 'qty',
+					            fieldtype: 'Float'
+					        },
+					        {
+					            label: 'From Date',
+					            fieldname: 'from_date',
+					            fieldtype: 'Date',
+								reqd:1
+					        },
+					        {
+					            label: 'To Date',
+					            fieldname: 'to_date',
+					            fieldtype: 'Date',
+								reqd:1
+					        },
+							{
+					            label: 'Comment',
+					            fieldname: 'comment',
+					            fieldtype: 'Small Text',
+					        }
+					    ],
+					    primary_action_label: 'Submit',
+					    primary_action(values) {
+							if(values.qty>row.qty){
+								frappe.throw(__('Reservation quantity cannot be greater that requested quantity'));
+							} else if(values.qty<=0){
+								frappe.throw(__('Value cannnot be 0'));
+							} else if(values.from_date > values.to_date){
+					            frappe.throw(__(
+					                {
+					                    title:__('Invalid'),
+					                    message:__('Reserve From date cannot be after Reserver To date.')
+					                }
+					            ))
+					        } else {
+								values.rfm = row.parent;
+								frm.call('create_reservation', {filters:values}).then(r => {
+									if(r.message){
+										row.item_reservation = r.message.name;
+										row.from_date = r.message.from_date;
+										row.to_date = r.message.to_date;
+										row.reserve_qty = r.message.qty;
+										// frappe.model.set_value(row.doctype, row.name, 'item_reservation', r.message.name);
+										frm.refresh_field('items');
 
+									}
+							    })
 							}
-					    })
-					}
-			        d.hide();
-			    }
-			});
+					        d.hide();
+					    }
+					});
+					d.show();
+				}
 
-			d.show();
+			})
+
 		}
 
 	},
