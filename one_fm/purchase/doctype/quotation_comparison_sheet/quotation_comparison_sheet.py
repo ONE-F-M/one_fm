@@ -49,7 +49,7 @@ class QuotationComparisonSheet(Document):
 				'supplier':supplier,
 				'one_fm_request_for_purchase':self.request_for_purchase,
 				'request_for_material':self.request_for_material,
-				'schedule_date':'2022-02-23',
+				'schedule_date': rfm.schedule_date,
 				'set_warehouse': rfm.t_warehouse,
 				'items': po_items
 			}).insert()
