@@ -84,7 +84,7 @@ var hide_subscription_section = function(frm) {
 	frm.set_df_property('subscription_section', 'hidden', true);
 };
 var confirm_accept_approve_purchase_order= function(frm) {
-	if(frm.doc.status == "Completed"){
+	if(frm.doc.workflow_state == "Approved"){
 		console.log("All is well my bro")
 		frappe.confirm(
 			__('A one time code will be sent to you for verification in order to use your signature for approval. Do You Want to {0} this Request for Material?', [msg_status]),
