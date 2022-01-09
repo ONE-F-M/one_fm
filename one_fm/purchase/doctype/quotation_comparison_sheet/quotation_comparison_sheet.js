@@ -34,6 +34,7 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 		}
 	},
 	refresh: function(frm) {
+		frm.trigger('set_query');
 		set_filter_for_quotation_in_item(frm);
 		set_filter_for_quotation_item_in_item(frm);
 		set_custom_buttons(frm);
@@ -49,6 +50,18 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 	},
 	compare_quotation_by: function(frm) {
 		set_quotation_against_rfq(frm);
+	},
+	set_query: (frm)=>{
+		// filter submitted rfq
+		frm.set_query('request_for_quotation', () => {
+		    return {
+		        filters: {
+		            docstatus: 1
+		        }
+		    }
+		})
+		// end filter submitted rfq
+
 	},
 	get_rfq: (frm)=>{
 		frm.call('get_rfq', {
