@@ -16,7 +16,7 @@ def install_face_predictor():
         print('Downloading Landmark facial recognition')
         r = requests.get(url, stream=True)
         if r.ok:
-            print("saving 'Landmark facial recogintion to' ", path)
+            print("saving 'Landmark facial recognition to' ", path)
             with open(f"{path}{filename}", 'wb') as f:
                 for chunk in r.iter_content(chunk_size=1024 * 8):
                     if chunk:
