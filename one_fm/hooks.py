@@ -113,7 +113,7 @@ home_page = "landing_page"
 # Installation
 # ------------
 
-# before_install = "one_fm.install.before_install"
+before_install = "one_fm.install.before_install.execute"
 # after_install = "one_fm.install.after_install"
 
 # Desk Notifications
@@ -517,3 +517,6 @@ fixtures = [
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
 ShiftType.process_auto_attendance = process_auto_attendance
+
+# Required apps before installation
+required_apps = ['frappe', 'erpnext']
