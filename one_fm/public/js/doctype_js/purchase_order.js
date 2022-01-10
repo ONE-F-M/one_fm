@@ -24,7 +24,7 @@ frappe.ui.form.on('Purchase Order', {
 	},
 	confirm_accept_approve_purchase_order: function(frm) {
 		frappe.confirm(
-			__('A one time code will be sent to you for verification in order to use your signature for approval. Do You Want to {0} this Request for Material?', [msg_status]),
+			__('A one time code will be sent to you for verification in order to use your signature for approval. Do You Want to {0} this Purchase Order?', [msg_status]),
 			function(){
 				// Yes
 				var doctype = frm.doc.doctype
