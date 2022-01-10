@@ -112,70 +112,113 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 
 	
 @frappe.whitelist()
-def get_penalties(employee: str = None, role: str = None):
-    try:
-        if role == "Issuance":
-            result = frappe.get_list("Penalty", filters={"issuer_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
-            return response("Success", 200, result)
-        else:
-            result = frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
-            return response("Success", 200, result)
-    except Exception as error:
-        return response("Internal server error", 500, None, error)
+def get_penalties(employee: str = None, role: str = None) -> dict:
 
-@frappe.whitelist()
-def get_penalty():
-	user = frappe.session.user
-	user_roles = frappe.get_roles(user)
-	if user == "Administrator" or "Legal Manager" in user_roles:
-		List = frappe.get_list("Penalty")
-	else:
-		employee = frappe.get_value("Employee", {"user_id": user}, ["name"])
-		if "Penalty Recipient" in user_roles and "Penalty Issuer" in user_roles:
-			penalty_issuer = frappe.get_list("Penalty", {"issuer_employee": employee})
-			penalty_Recip = frappe.get_list("Penalty", {"recipient_employee": employee})
-			penalty_issuer.append(penalty_Recip)
-			List = penalty_issuer	
-		elif "Penalty Issuer" in user_roles:
-			List = frappe.get_list("Penalty", {"issuer_employee": employee})
+	if not employee:
+		return response("Bad request", 400, None, "employee required.")
+
+	if not isinstance(employee, str):
+		return response("Bad request", 400, None, "employee must be of type str.")
+
+	if role:
+		if not isinstance(role, str):
+			return response("Bad request", 400, None ,"role must be of type str.")
+	try:
+		if role and role == "Issuance":
+			result = frappe.get_list("Penalty", filters={"issuer_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+			if len(result) > 0:
+				return response("Success", 200, result)
+			else:
+				return response("Resource not found", 404, None, "No penalties found for {employee} with role as {role}".format(employee=employee, role=role))
 		else:
-			print(employee)
-			List = frappe.get_list("Penalty", {"recipient_employee": employee})
-	return List
+			result = frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+			if len(result) > 0:
+				return response("Success", 200, result)
+			else:
+				return response("Resource not found", 404, None, "No penalties found for {employee}".format(employee=employee))
+	
+	except Exception as error:
+		return response("Internal server error", 500, None, error)
 
 @frappe.whitelist()
-def get_penalty_details(penalty_name):
-	return frappe.get_doc("Penalty", {"name": penalty_name})
+def get_penalty_details(penalty_name: str = None) -> dict:
+	"""This method gets the details of a specific penalty provided the name of the penalty document.
 
-@frappe.whitelist()
-def accept_penalty(file, retries, docname):
+	Args:
+		penalty_name (str): Name of the penalty document.
+
+	Returns:
+		dict: {
+            message (str): Brief message indicating the response,
+			status_code (int): Status code of response.
+            data (dict): Penalty deatils.
+            error (str): Any error handled.
+		}
 	"""
-	This is an API to accept penalty. To Accept Penalty, one needs to pass the face recognition test.
-	Image file in base64 format is passed through face regonition test. And, employee is given 3 tries.
-	If face recognition is true, the penalty gets accepted. 
-	If Face recognition fails even after 3 tries, the image is sent to legal mangager for investigation. 
+	if not penalty_name:
+		return response("Bad request", 400, None, "penalty_name required.")
 
-	Params:
-	File: Base64 url of captured image.
-	Retries: number of tries left out of three
-	Docname: Name of the penalty doctype
+	if not isinstance(penalty_name, str):
+		return response("Bad request", 400, None, "penalty_name must be of type str.")
+
+	try:
+		penalty_doc = frappe.get_doc("Penalty", {"name": penalty_name})
+		if not penalty_doc:
+			return response("Resource not found", 404, None, "No penalty of name {penalty_doc} found.".format(penalty_doc=penalty_doc))
+
+		return response("Success", 200, penalty_doc.as_dict())
+	
+	except Exception as error:
+		return response("Internal server error", 500, None, error)
+
+@frappe.whitelist()
+def accept_penalty(file: str = None, docname: str = None) -> dict:
+	"""	This is an API to accept penalty. To Accept Penalty, one needs to pass the face recognition test.
+		Image file in base64 format is passed through face regonition test. And, employee is given 3 tries.
+		If face recognition is true, the penalty gets accepted. 
+		If Face recognition fails even after 3 tries, the image is sent to legal mangager for investigation. 
+
+	Args:
+		file (str): Base64 url of captured image.
+		docname (str): Name of the penalty doctype
 
 	Returns: 
-		'success' message upon verification || updated retries and 'error' message || Exception. 
+		dict: {
+			message (str): Brief message indicating the response,
+			status_code (int): Status code of response.
+            data (dict): penalty accepted document as dictionary,
+            error (str): Any error handled.
+		}
 	"""
+	if not file:
+		return response("Bad request", 400, None, "base64 encoded file required.")
+
+	if not docname:
+		return response("Bad request", 400, None, "docname required.")
+
+	if not isinstance(file, str):
+		return response("Bad request", 400, None, "file must be base64 encoded type str.")
+
+	if not isinstance(docname, str):
+		return response("Bad request", 400, None, "docname must be of type str.")
+	
 	try:
-		retries_left = cint(retries) - 1
 		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
-		penalty = frappe.get_doc("Penalty", docname)
+		penalty_doc = frappe.get_doc("Penalty", docname)
+
+		if not penalty_doc:
+			return response("Resource not found", 404, None, "No penalty of name {penalty_doc} found.".format(penalty_doc=penalty_doc))
+
+		penalty_doc.retries = cint(penalty_doc.retries) - 1
 		image = upload_image(file, OUTPUT_IMAGE_PATH)
-		if recognize_face(image) or retries_left == 0:
-			if retries_left == 0:
-				penalty.verified = 0
-				send_email_to_legal(penalty)
+		if recognize_face(image):
+			if cint(penalty_doc.retries) == 0:
+				penalty_doc.verified = 0
+				send_email_to_legal(penalty_doc)
 			else:
-				penalty.verified = 1		
-				penalty.workflow_state = "Penalty Accepted"
-			penalty.save(ignore_permissions=True)
+				penalty_doc.verified = 1		
+				penalty_doc.workflow_state = "Penalty Accepted"
+			penalty_doc.save(ignore_permissions=True)
 			
 			file_doc = frappe.get_doc({
 				"doctype": "File",
@@ -191,36 +234,57 @@ def accept_penalty(file, retries, docname):
 
 			frappe.db.commit()
 
-			return response("Face Recognition Successfull.", {}, True ,200)
+			return response("Success", 201, penalty_doc.as_dict())
+		
 		else:
-			return response("Face Recognition Failed. You have "+str(retries_left)+" retries left." ,{"retries_left":retries_left},False,401)
-			penalty.db_set("retries", retries_left)
-			frappe.throw(_("Face could not be recognized. You have {0} retries left.").format(frappe.bold(retries_left)), title='Validation Error')
+			return response("Unauthorized", 401, None, "Face not recognized.")
 
-	except Exception as exc:
-		frappe.log_error(frappe.get_traceback())
-		return response(exc,{},False, 500)
+	except Exception as error:
+		return response("Internal server error", 500, None, error)
 
 @frappe.whitelist()
-def reject_penalty(rejection_reason, docname):
-	"""
-	Params:
-	Reason for rejection: Basis and/or reasoning due to which the employee is rejecting the issuance of penalty.
-	Docname: Name of the penalty doctype
+def reject_penalty(rejection_reason: str = None, docname: str = None):
+	""" This method rejects a penalty given a reason and penalty document name.
+	Args:
+		rejection_reason (str): Basis and/or reasoning due to which the employee is rejecting the issuance of penalty.
+		docname (str): Name of the penalty doctype.
 
 	Returns: 
-		'success' message upon successful rejection of the penalty || 'No penalty found' if the penalty doesnt exist || Exception. 
+		dict: {
+			message (str): Brief message indicating the response,
+			status_code (int): Status code of response.
+			data (dict): penalty rejected document as dictionary,
+			error (str): Any error handled.
+		}
 	"""
+
+	if not rejection_reason:
+		return response("Bad request", 400, None, "rejection_reason required.")
+
+	if not docname:
+		return response("Bad request", 400, None, "docname required.")
+
+	if not isinstance(rejection_reason, str):
+		return response("Bad request", 400, None, "rejection_reason must be of type str.")
+
+	if not isinstance(docname, str):
+		return response("Bad request", 400, None, "docname must be of type str.")
+
 	try:
-		penalty = frappe.get_doc("Penalty", docname)
-		if penalty.workflow_state == 'Penalty Issued':
-			penalty.reason_for_rejection = rejection_reason
-			penalty.workflow_state = "Penalty Rejected"
-			penalty.save(ignore_permissions=True)
+		penalty_doc = frappe.get_doc("Penalty", docname)
+
+		if not penalty_doc:
+			return response("Resource not found", 404, None, "No penalty of name {penalty_doc} found.".format(penalty_doc=penalty_doc))
+
+		if penalty_doc.workflow_state == 'Penalty Issued':
+			penalty_doc.reason_for_rejection = rejection_reason
+			penalty_doc.workflow_state = "Penalty Rejected"
+			penalty_doc.save(ignore_permissions=True)
 			frappe.db.commit()
-			return response("Penalty Rejected", {}, True, 200)
+			
+			return response("Success", 201, penalty_doc.as_dict())
 		else:
-			return response("No penalty {docname} found." , {}, False, 401)
-	except Exception as exc:
-		frappe.log_error(frappe.get_traceback())
-		return response(exc,{},False, 500)
+			return response("Bad request", 400, None, "Penalty has not yet reached workflow state of 'Penalty Issued'.")
+	
+	except Exception as error:
+		return response("Internal server error", 500, None, error)
