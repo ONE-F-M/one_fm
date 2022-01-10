@@ -256,10 +256,61 @@ frappe.ui.form.on('Request for Material', {
 			msg_status = status == 'Accepted' ? 'Accept': 'Reject'
 		}
 		frappe.confirm(
-			__('Do You Want to {0} this Request for Material', [msg_status]),
+			__('A one time code will be sent to you for verification in order to use your signature for approval. Do You Want to {0} this Request for Material?', [msg_status]),
 			function(){
 				// Yes
-				frm.events.accept_approve_reject_request_for_material(frm, status, false);
+				var doctype = frm.doc.doctype
+				var document_name = frm.doc.name
+				var d = new Date();
+				var current_datetime_string = d.getUTCFullYear() +"/"+ (d.getUTCMonth()+1) +"/"+ d.getUTCDate() + " " + d.getUTCHours() + ":" + d.getUTCMinutes() + ":" + d.getUTCSeconds();
+				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
+					.then(res => {
+						console.log(res);
+					}).catch(e => {
+						console.log(e);
+					})
+				var d = new frappe.ui.Dialog({
+					title : __("Approval verification"),
+					fields : [
+						{
+							fieldtype: "Int",
+							label: "Enter verification code sent to your email address",
+							fieldname: "verification_code",
+							reqd: 1,
+							onchange: function(){
+								let code = d.get_value('verification_code')
+								if (!is_valid_verification_code(code)){frappe.throw(__("Invalid verification code."))}
+							}
+						},
+						{
+							fieldtype: "Button", 
+							label: "Resend code", 
+							fieldname: "resend_verification_code"
+						},
+					],
+					primary_action_label: __("Submit"),
+					primary_action: function(){
+						var verification_code = d.get_value('verification_code');
+						frappe.xcall('one_fm.utils.verify_verification_code', {doctype, document_name, verification_code})
+							.then(res => {
+								if (res){
+									d.hide()
+									frm.events.accept_approve_reject_request_for_material(frm, status, false);
+								} else{
+									frappe.msgprint(__("Incorrect verification code. Please try again."));
+								}
+							})
+					},
+				});
+				d.fields_dict.resend_verification_code.input.onclick = function() {
+					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
+					.then(res => {
+						console.log(res);
+					}).catch(e => {
+						console.log(e);
+					})
+				}
+				d.show();
 			},
 			function(){} // No
 		);
@@ -859,3 +910,10 @@ function set_t_warehouse(frm){
 		erpnext.utils.copy_value_in_all_rows(frm.doc, frm.doc.doctype, frm.doc.name, "items", "t_warehouse");
 	}
 };
+
+function is_valid_verification_code(code){
+	const code_expression = /^\d{6}(\s*,\s*\d{6})*$/;
+	if (code_expression.test(code))  return true;
+
+	return false;
+}

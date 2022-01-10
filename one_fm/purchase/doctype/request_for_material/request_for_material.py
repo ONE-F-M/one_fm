@@ -12,6 +12,7 @@ from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from erpnext.controllers.buying_controller import BuyingController
 from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_balance
+from one_fm.utils import fetch_employee_signature
 
 class RequestforMaterial(BuyingController):
 	def on_submit(self):
@@ -47,14 +48,24 @@ class RequestforMaterial(BuyingController):
 				subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
 				send_email(self, [self.request_for_material_approver], message, subject)
 				create_notification_log(subject, message, [self.request_for_material_approver], self)
-
+				
 			# Notify Accepter and requester
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
 				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
 				self.notify_material_requester(status, page_link)
-
+				
 			self.status = status
+			
 			if status == "Approved":
+				#fetch Signature from employee doc using user ID
+				signature = fetch_employee_signature(self.request_for_material_accepter)
+				if signature:
+					self.authority_signature = signature
+					self.save(ignore_permissions=True)
+				else:
+					frappe.msgprint(_("Your Signature is missing!"))
+
+
 				# Notify Stock Manager - Stock Manger Check If Item Available
 				# If Item Available then Create SE Issue and Transfer and update qty issued in the RFMItem
 				# If Qty - qty Issued > 0 then Create RFP button appear
@@ -88,7 +99,6 @@ class RequestforMaterial(BuyingController):
 		self.set_request_for_material_accepter_and_approver()
 		self.set_item_fields()
 		self.set_title()
-		self.check_for_signature()
 		self.validate_item_qty()
 		# self.validate_item_reservation()
 
@@ -215,10 +225,6 @@ class RequestforMaterial(BuyingController):
 
 		if date_diff and date_diff[0][0]:
 			frappe.throw(_("{0} {1} has been modified. Please refresh.").format(_(self.doctype), self.name))
-
-	def check_for_signature(self):
-		if self.status == "Approved" and not self.authority_signature:
-			frappe.throw(_('Please Sign the form to Accept the Request'))
 
 	def update_status(self, status):
 		self.check_modified_date()
