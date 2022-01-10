@@ -65,7 +65,7 @@ class RequestforPurchase(Document):
 				self.authorized_signatures = signature
 				self.save(ignore_permissions=True)
 			else:
-				frappe.msgprint(_("Your Signature is missing!"))
+				frappe.throw(_("Your Signature is missing!"))
 
 		# Notify Accepter
 		if status in ['Approved', 'Rejected'] and frappe.session.user == approver:
