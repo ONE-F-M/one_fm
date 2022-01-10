@@ -40,7 +40,7 @@
    "label": "Employee Name"
   },
   {
-   "fetch_from": "employee.one_fm_nationality || onboard_employee.nationality",
+   "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
    "label": "Nationality"
