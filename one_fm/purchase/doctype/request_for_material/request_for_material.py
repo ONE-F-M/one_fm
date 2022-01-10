@@ -63,7 +63,7 @@ class RequestforMaterial(BuyingController):
 					self.authority_signature = signature
 					self.save(ignore_permissions=True)
 				else:
-					frappe.msgprint(_("Your Signature is missing!"))
+					frappe.throw(_("Your Signature is missing!"))
 
 
 				# Notify Stock Manager - Stock Manger Check If Item Available

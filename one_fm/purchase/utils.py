@@ -128,7 +128,7 @@ def accept_approve_purchase_order(doc):
             po.authority_signature = signature
             po.save(ignore_permissions=True)
         else:
-            frappe.msgprint(_("Your Signature is missing!")) 
+            frappe.throw(_("Your Signature is missing!")) 
 
 @frappe.whitelist()
 def accept_approve_purchase_receipt(doc):
@@ -140,7 +140,7 @@ def accept_approve_purchase_receipt(doc):
             pr.authority_signature = signature
             pr.save(ignore_permissions=True)
         else:
-            frappe.msgprint(_("Your Signature is missing!")) 
+            frappe.throw(_("Your Signature is missing!")) 
 
 @frappe.whitelist()
 def get_supplier_list(doctype, txt, searchfield, start, page_len, filters):
