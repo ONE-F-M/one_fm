@@ -10,12 +10,12 @@ this.frm.dashboard.add_transactions([
 ]);
 
 frappe.ui.form.on('Purchase Receipt', {
-	status: function(frm){
-		confirm_accept_approve_purchase_receipt(frm);
-	}
-});
-var confirm_accept_approve_purchase_receipt = function(frm) {
-	if(frm.doc.status == "Completed"){
+on_submit: function() {
+		if(frm.doc.status == "Completed"){
+			frm.events.confirm_accept_approve_purchase_receipt(frm);
+		}
+	},
+	confirm_accept_approve_purchase_receipt: function(frm) {
 		frappe.confirm(
 			__('A one time code will be sent to you for verification in order to use your signature for approval. Do You Want to {0} this Request for Material?', [msg_status]),
 			function(){
@@ -56,7 +56,7 @@ var confirm_accept_approve_purchase_receipt = function(frm) {
 							.then(res => {
 								if (res){
 									d.hide()
-									accept_approve_purchase_order(frm);
+									frm.events.accept_approve_purchase_order(frm, status, false);
 								} else{
 									frappe.msgprint(__("Incorrect verification code. Please try again."));
 								}
@@ -75,22 +75,23 @@ var confirm_accept_approve_purchase_receipt = function(frm) {
 			},
 			function(){} // No
 		);
+	},
+	accept_approve_purchase_order: function(frm, status, reason_for_rejection) {
+		frappe.call({
+			doc: frm.doc,
+			method: 'one_fm.purchase.utils.accept_approve_purchase_receipt',
+            args: {doc: frm.doc},
+			callback(r) {
+				if (!r.exc) {
+					frm.reload_doc();
+				}
+			},
+			freeze: true,
+			freeze_message: __('Updating the Request..!')
+		});
 	}
-};
-var accept_approve_purchase_order = function(frm) {
-	frappe.call({
-		doc: frm.doc,
-		method: 'one_fm.purchase.utils.accept_approve_purchase_receipt',
-		args: {doc: frm.doc},
-		callback(r) {
-			if (!r.exc) {
-				frm.reload_doc();
-			}
-		},
-		freeze: true,
-		freeze_message: __('Updating the Request..!')
-	});
-};
+});
+
 function is_valid_verification_code(code){
 	const code_expression = /^\d{6}(\s*,\s*\d{6})*$/;
 	if (code_expression.test(code))  return true;
