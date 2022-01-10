@@ -14,9 +14,10 @@ def enroll(video: str = None) -> dict:
 
     Returns:
         response (dict): {
-            message (str): Brief message indicating the response.
-			data (str): Enrollment status.
-			error (str)[Optional]: Any error response provided by server.
+            message (str): Brief message indicating the response,
+			status_code (int): Status code of response.
+            data (dict): Enrollment status,
+            error (str): Any error handled.
         }
     """
 
@@ -57,7 +58,8 @@ def verify_checkin_checkout(video : str = None, log_type: str = None, skip_atten
     Returns:
         dict: {
             message (str): Brief message indicating the response,
-            data (str): Verification status,
+			status_code (int): Status code of response.
+            data (dict): checkin log created.
             error (str): Any error handled.
         }
     """
