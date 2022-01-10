@@ -15,11 +15,8 @@ frappe.ui.form.on('Purchase Order', {
 		set_field_property_for_other_documents(frm);
 	},
 	status: function(frm){
-		confirm_accept_approve_purchase_order(frm);
-	},
-	on_submit: function() {
-		if(frm.doc.workflow_state == "Approved"){
-			frm.events.confirm_accept_approve_purchase_order(frm);
+		if(frm.doc.status == "Completed"){
+			confirm_accept_approve_purchase_order(frm);
 		}
 	},
 	confirm_accept_approve_purchase_order: function(frm) {
