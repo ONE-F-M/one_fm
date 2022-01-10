@@ -18,7 +18,8 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
     Returns:
         dict: {
             message (str): Brief message indicating the response,
-            data (List[dict]/dict): Leave details,
+			status_code (int): Status code of response.
+            data (dict): Leave data,
             error (str): Any error handled.
         }
     """
@@ -65,7 +66,8 @@ def get_leave_balance(employee: str = None, leave_type: str = None) -> dict:
     Returns:
         dict: {
             message (str): Brief message indicating the response,
-            data : Leave details,
+			status_code (int): Status code of response.
+            data (dict): Leave balances.
             error (str): Any error handled.
         }
     """
@@ -97,7 +99,7 @@ def get_leave_balance(employee: str = None, leave_type: str = None) -> dict:
 
 @frappe.whitelist()
 def get_leave_types(employee: str = None) -> dict:
-    """This method gets the leave types from the leave allocated to a spcific employee.
+    """This method gets the leave types from the leave allocated to a specific employee.
 
     Args:
         employee (str): employee record name.
@@ -105,7 +107,8 @@ def get_leave_types(employee: str = None) -> dict:
     Returns:
         dict: {
             message (str): Brief message indicating the response,
-            data (List): list of leave types,
+			status_code (int): Status code of response.
+            data (List): List of leave types,
             error (str): Any error handled.
         }
     """
@@ -145,6 +148,7 @@ def create_new_leave_application(employee: str = None, from_date: str = None, to
     Returns:
         dict: {
             message (str): Brief message indicating the response,
+			status_code (int): Status code of response.
             data (dict): Leave application that was created,
             error (str): Any error handled.
         }
