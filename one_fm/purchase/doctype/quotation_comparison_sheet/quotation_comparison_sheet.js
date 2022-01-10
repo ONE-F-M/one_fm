@@ -1,4 +1,4 @@
-// Copyright (c) 2020, omar jaber and contributors
+// Copyright (c) 2020, omar jaber, Anthony Emmanuel and contributors
 // For license information, please see license.txt
 
 // store request_for_quotation and related data in here
@@ -236,7 +236,7 @@ let set_custom_buttons = (frm)=>{
 
 		// best_price_many_suppliers
 		frm.add_custom_button('Custom', () => {
-			customer_filter(frm);
+			custom_filter(frm);
 		}, 'Analyse');
 	} else if(frm.doc.docstatus==1){
 		frm.add_custom_button('Purchase Order', () => {
@@ -318,7 +318,7 @@ let earliest_delivery = (frm)=>{
 
 
 // custom filter
-let customer_filter = (frm)=>{
+let custom_filter = (frm)=>{
 	let items = get_quotation_items(frm);
 	const table_fields = [
 			{
@@ -351,16 +351,6 @@ let customer_filter = (frm)=>{
 			title: __('Custom Quotation Selection'),
 			static: false,
 			fields: [
-				// {
-				// 	fieldtype: '', label: __('Company'), default: frappe.defaults.get_default('company'),
-				// 	options: 'Company', fieldname: 'company', reqd: 1
-				// },
-				// {
-				// 	fieldtype: 'Link', label: __('POS Profile'),
-				// 	options: 'POS Profile', fieldname: 'pos_profile', reqd: 1,
-				// 	get_query: () => pos_profile_query,
-				// 	onchange: () => fetch_pos_payment_methods()
-				// },
 				{
 					fieldname: "items_detail",
 					fieldtype: "Table",
