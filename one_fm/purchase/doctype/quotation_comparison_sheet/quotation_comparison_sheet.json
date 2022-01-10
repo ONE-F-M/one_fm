@@ -19,6 +19,10 @@
   "quotation_items",
   "choose_quotation_and_supplier_for_item_section",
   "items",
+  "section_break_14",
+  "selected_by",
+  "column_break_16",
+  "grand_total",
   "amended_from"
  ],
  "fields": [
@@ -30,7 +34,7 @@
    "options": "QCO-.YYYY.-.######\nQCS-.YYYY.-"
   },
   {
-   "fetch_from": "rfq.request_for_material",
+   "fetch_from": "request_for_quotation.request_for_material",
    "fetch_if_empty": 1,
    "fieldname": "request_for_material",
    "fieldtype": "Link",
@@ -39,7 +43,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "rfq.request_for_purchase",
+   "fetch_from": "request_for_quotation.request_for_purchase",
    "fetch_if_empty": 1,
    "fieldname": "request_for_purchase",
    "fieldtype": "Link",
@@ -116,11 +120,31 @@
    "fieldtype": "Table",
    "label": "Quotation Items",
    "options": "Comparison Sheet Quotation Item"
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "selected_by",
+   "fieldtype": "Data",
+   "label": "Selected By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "label": "Grand Total",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-01-31 18:42:31.880468",
+ "modified": "2022-01-06 11:11:58.393235",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Quotation Comparison Sheet",

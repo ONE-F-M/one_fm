@@ -12,8 +12,8 @@ class ItemReservation(Document):
 	def validate(self):
 		self.check_date()
 		self.check_qty()
-		self.check_balance()
-		self.validate_reservation_date()
+		# self.check_balance()
+		# self.validate_reservation_date()
 
 	def before_submit(self):
 		self.status = 'Active'
@@ -126,3 +126,15 @@ def get_item_balance(item_code):
 			item=item_code, barcode=None
 		)['qty']
 	return {'total':total}
+
+
+@frappe.whitelist()
+def get_rfm_items(doctype, txt, searchfield, start, page_len, filters):
+	# your logic
+	res = [[i.item_code, i.item_name]
+			for i in frappe.get_doc(doctype, txt).items]
+	if not res:
+		res = frappe.db.sql("""
+			SELECT name, item_name FROM tabItem;
+		""")
+	return res

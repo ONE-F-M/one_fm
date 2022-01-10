@@ -1,14 +1,61 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2020, omar jaber and contributors
+# Copyright (c) 2020, omar jaber, Anthony Emmanuel and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 class QuotationComparisonSheet(Document):
 	def on_submit(self):
 		update_request_for_purchase(self)
+
+	@frappe.whitelist()
+	def get_rfq(self, rfq, rfm):
+		return {
+			'rfq': frappe.get_doc('Request for Supplier Quotation', rfq),
+			'rfm': frappe.get_doc('Request for Material', rfm)
+		}
+
+	@frappe.whitelist()
+	def create_purchase_order(self, **kwargs):
+		# create purchase receipt
+		rfm = frappe.get_doc('Request for Material', self.request_for_material)
+		item_codes = {}
+		for i in rfm.items:
+			item_codes[i.requested_item_name] = i.item_code;
+		# sort suppliers
+		suppliers = {}
+		for i in self.items:
+			if(suppliers.get(i.supplier)):
+				suppliers[i.supplier].append(i)
+			else:
+				suppliers[i.supplier] = [i]
+
+		# create purchase order
+		for supplier, items in suppliers.items():
+			po_items = []
+			for i in items:
+				po_items.append({
+					'item_code': item_codes[i.item_name],
+					'schedule_date': i.schedule_date,
+					'qty': i.qty,
+					'rate': i.rate,
+					'schedule_date':'2022-02-23',
+				})
+			doc = frappe.get_doc({
+				'doctype':'Purchase Order',
+				'supplier':supplier,
+				'one_fm_request_for_purchase':self.request_for_purchase,
+				'request_for_material':self.request_for_material,
+				'schedule_date': rfm.schedule_date,
+				'set_warehouse': rfm.t_warehouse,
+				'items': po_items
+			}).insert()
+		frappe.msgprint(_('PO creation complete'));
+		return
+
 
 def update_request_for_purchase(doc):
 	if doc.items:
