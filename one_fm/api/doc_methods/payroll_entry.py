@@ -110,7 +110,7 @@ def set_bank_details(employee_details):
 		)
 		frappe.msgprint(_(message))
 		# send and log missing payment detail
-		# frappe.enqueue(method=email_missing_payment_information, queue='short', timeout=300, **{'message':message})
+		frappe.enqueue(method=email_missing_payment_information, queue='short', timeout=300, **{'message':message})
 	return employee_details
 
 def get_count_employee_attendance(self, employee):
