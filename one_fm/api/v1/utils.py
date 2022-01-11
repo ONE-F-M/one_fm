@@ -33,3 +33,79 @@ def setup_directories():
 	Path(frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/").mkdir(parents=True, exist_ok=True)
 	Path(frappe.utils.cstr(frappe.local.site)+"/private/files/face_rec_temp/").mkdir(parents=True, exist_ok=True)
 	Path(frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/").mkdir(parents=True, exist_ok=True)
+
+def validate_date(date: str) -> bool:
+    """This method validates a date to be in yyyy-mm-dd format.
+
+    Args:
+        date (str): date string
+
+    Returns:
+        bool: True/False based on valid date string
+    """
+    if "-" not in date:
+        return False
+    
+    date_elements = date.split("-")
+
+    if len(date_elements) != 3:
+        return False
+
+    year = date_elements[0]
+    month = date_elements[1]
+    day = date_elements[2]
+
+    if len(year) != 4:
+        return False
+    
+    if len(month) > 2:
+        return False
+    
+    if int(month) > 12 or int(month) < 1:
+        return False
+
+    if len(day) > 2:
+        return False
+    
+    if int(day) > 31 or int(day) < 1:
+        return False
+
+    return True
+
+
+def validate_time(time: str) -> bool:
+    """This method validates time to be in format hh:mm:ss
+
+    Args:
+        time (str): time string.
+
+    Returns:
+        bool: True/False based on valid time string
+    """
+    if ":" not in time:
+        return False
+
+    time_elements = time.split(":")
+
+    if len(time_elements) != 3:
+        return False
+
+    hour = time_elements[0]
+    minutes = time_elements[1]
+    seconds = time_elements[2]
+
+    if len(hour) != 2 or len(minutes) != 2 or len(minutes) != 2 or len(seconds) != 2:
+        return False
+
+    if int(hour) > 23 or int(hour) < 0:
+        return False
+
+    if int(minutes) > 59 or int(minutes) < 0:
+        return False
+
+    if int(seconds) > 59 or int(seconds) < 0:
+        return False
+
+    return True
+
+    
