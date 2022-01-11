@@ -283,8 +283,8 @@ frappe.ui.form.on('Request for Material', {
 							}
 						},
 						{
-							fieldtype: "Button", 
-							label: "Resend code", 
+							fieldtype: "Button",
+							label: "Resend code",
 							fieldname: "resend_verification_code"
 						},
 					],
@@ -570,25 +570,35 @@ var fetch_erf_items = function(frm){
 };
 
 var set_item_field_property = function(frm) {
-	if((frm.doc.docstatus == 1 && frappe.session.user == frm.doc.request_for_material_accepter) || frm.doc.type == 'Stock'){
-		var df = frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name);
-		df.read_only = false;
-	}
-	else if((frm.doc.docstatus == 1 && frm.doc.status == 'Approved') || frm.doc.type == 'Stock'){
+	var fields_dict = [];
+	if((frm.doc.docstatus == 1 && (frappe.session.user == frm.doc.request_for_material_accepter || frm.doc.status == 'Approved')) || frm.doc.type == 'Stock'){
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
 	}
 	if(frm.doc.type == 'Stock'){
-		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).read_only = true;
+		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = false;
-		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).read_only = true;
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = false;
 	}
+	else if((frm.doc.docstatus == 1 && frm.doc.status == 'Approved')){
+		var fields = ['requested_item_name', 'requested_description', 'qty', 'uom', 'stock_uom', 't_warehouse'];
+		fields.forEach((field, i) => {
+			fields_dict[i] = {'fieldname': field, 'read_only': true}
+		});
+	}
 	else{
-		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).read_only = false;
+		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': false}, {'fieldname': 'requested_description', 'read_only': false}];
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = true;
-		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).read_only = false;
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = true;
 	}
+	if (fields_dict.length > 0){
+		set_item_field_read_only(frm, fields_dict);
+	}
+};
+
+var set_item_field_read_only = function(frm, fields) {
+	fields.forEach((field, i) => {
+		frappe.meta.get_docfield("Request for Material Item", field.fieldname, frm.doc.name).read_only = field.read_only;
+	});
 };
 
 var set_warehouse_filters = function(frm) {
