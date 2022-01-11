@@ -53,6 +53,9 @@ def send_checkin_hourly_reminder():
 			send_notification(title, subject, message, category, recipients)
 
 def checkin_checkout_final_reminder():
+	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
+		return
+
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
 	date = getdate()
@@ -183,6 +186,9 @@ def insert_Contact():
 
 
 def checkin_checkout_supervisor_reminder():
+	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_supervisor_checkin_checkout'):
+		return
+
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	today_datetime = today()
 	shifts_list = get_active_shifts(now_time)
