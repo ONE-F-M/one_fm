@@ -5,7 +5,7 @@ from datetime import date
 import datetime
 import collections
 from one_fm.api.tasks import get_action_user,get_notification_user
-from one_fm.api.v1.utils import response
+from one_fm.api.v1.utils import response, validate_date
 
 @frappe.whitelist()
 def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
@@ -173,6 +173,12 @@ def create_new_leave_application(employee: str = None, from_date: str = None, to
 
     if not isinstance(from_date, str):
         return response("Bad request", 400, None, "from_date must be of type str.")
+
+    if not validate_date(from_date):
+        return response("Bad request", 400, None, "from_date must be of format yyyy-mm-dd.")
+
+    if not validate_date(to_date):
+        return response("Bad request", 400, None, "to_date must be of format yyyy-mm-dd.")
 
     if not isinstance(to_date, str):
         return response("Bad request", 400, None, "to_date must be of type str.")
