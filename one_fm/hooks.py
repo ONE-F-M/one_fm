@@ -364,8 +364,8 @@ scheduler_events = {
 			'one_fm.api.tasks.process_attendance'
 		],
 		"0/5 * * * *": [
-			"one_fm.api.tasks.supervisor_reminder",
-			"one_fm.api.tasks.final_reminder",
+			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
+			"one_fm.api.tasks.checkin_checkout_final_reminder",
 			"one_fm.api.tasks.checkin_deadline"
 			#"one_fm.api.tasks.automatic_checkout"
 		],
