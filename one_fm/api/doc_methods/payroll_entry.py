@@ -91,11 +91,10 @@ def set_bank_details(employee_details):
 			else:
 				iban, bank, bank_account_no = None, None, None
 
-			if(salary_mode=='Bank' and not bank):
+			if(salary_mode.lower()=='bank' and bank is None):
 				employee_missing_detail.append({'employee':employee, 'salary_mode':salary_mode, 'issue':'No bank account'})
 			if not salary_mode:
 				employee_missing_detail.append({'employee':employee, 'salary_mode':'', 'issue':'No salary mode'})
-
 			employee.salary_mode = salary_mode
 			employee.iban_number = iban or bank_account_no
 			bank_code = frappe.db.get_value("Bank", {'name': bank}, ["bank_code"])
@@ -104,8 +103,14 @@ def set_bank_details(employee_details):
 			frappe.log_error(str(e), 'Payroll Entry')
 			frappe.throw(str(e))
 	# print(employee_missing_detail)
-	# print('\n\n\n', employee_details)
-	# frappe.throw('')
+	if(len(employee_missing_detail)):
+		message = frappe.render_template(
+			'one_fm/api/doc_methods/templates/payroll/bank_issue.html',
+			context={'employees':employee_missing_detail}
+		)
+		frappe.msgprint(_(message))
+		# send and log missing payment detail
+		frappe.enqueue(method=email_missing_payment_information, queue='short', timeout=300, **{'message':message})
 	return employee_details
 
 def get_count_employee_attendance(self, employee):
@@ -396,3 +401,43 @@ def export_cash_payroll(cash_payroll_employees, doc_name):
 
 	except Exception as e:
 		frappe.log_error(e)
+
+def email_missing_payment_information(message):
+	"""
+		send list of employees with missing payment method
+		to hr and issue doctype.
+	"""
+	# send mail
+	recipients = [i.parent for i in frappe.db.sql(f"""
+		SELECT hr.parent, hr.role, u.name, e.department
+		FROM `tabHas Role` hr INNER JOIN `tabUser`
+		u ON  hr.parent=u.name JOIN `tabEmployee`
+		e ON e.user_id=u.name WHERE role IN ('HR Manager', 'HR User')
+		AND hr.parent LIKE '%@%' GROUP BY hr.parent
+	;""", as_dict=True)]
+
+	email_args = {
+        "recipients": recipients,
+        "message": message,
+        "subject": 'Missing payroll payment information',
+        # "attachments": [frappe.attach_print(doc.doctype, doc.name, file_name=doc.name)]
+    }
+	frappe.enqueue(method=frappe.sendmail, queue='short', timeout=300, **email_args)
+
+	# create issue doctype
+	if not (frappe.db.exists({
+		'doctype':'Issue Type',
+		'name': 'Payroll'
+	})):
+		frappe.get_doc({
+			'doctype':'Issue Type',
+			'name': 'Payroll'
+		}).insert(ignore_permissions=True)
+
+	issue = frappe.get_doc({
+		'doctype':'Issue',
+		'subject': 'Payroll Missing Payment Detail',
+		'issue_type': 'Payroll',
+		'priority': 'High',
+		'description': message,
+	}).insert()
