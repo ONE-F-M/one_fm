@@ -236,7 +236,7 @@ def create_leave_policy_assignment(doc):
 @frappe.whitelist()
 def grant_leave_alloc_for_employee(doc):
     if not doc.leaves_allocated:
-        from erpnext.hr.doctype.leave_policy_assignment.leave_policy_assignment import get_leave_details
+        from erpnext.hr.doctype.leave_policy_assignment.leave_policy_assignment import get_leave_type_details
         leave_allocations = {}
         leave_type_details = get_leave_type_details()
 
