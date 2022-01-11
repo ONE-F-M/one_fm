@@ -62,8 +62,15 @@ def fill_employee_details(self):
 			error_msg += "<br>" + _("End date: {0}").format(frappe.bold(self.end_date))
 		frappe.throw(error_msg, title=_("No employees found"))
 
+	accepted_employee = []
 	for d in employees:
-		self.append('employees', d)
+		if (d.salary_mode and d.bank):
+			accepted_employee.append(d)
+			self.append('employees', d)
+
+	if len(accepted_employee)==0:
+		frappe.msgprint('No employee was added to payroll.')
+
 
 	self.number_of_employees = len(self.employees)
 	if self.validate_attendance:
@@ -79,7 +86,6 @@ def set_bank_details(employee_details):
 	Returns:
 		employee_details ([dict): Sets the bank account IBAN code and Bank Code.
 	"""
-
 	employee_missing_detail = []
 	for employee in employee_details:
 		try:
@@ -91,10 +97,11 @@ def set_bank_details(employee_details):
 			else:
 				iban, bank, bank_account_no = None, None, None
 
-			if(salary_mode.lower()=='bank' and bank is None):
+			if(bank is None):
 				employee_missing_detail.append({'employee':employee, 'salary_mode':salary_mode, 'issue':'No bank account'})
-			if not salary_mode:
+			elif not salary_mode:
 				employee_missing_detail.append({'employee':employee, 'salary_mode':'', 'issue':'No salary mode'})
+			# else:
 			employee.salary_mode = salary_mode
 			employee.iban_number = iban or bank_account_no
 			bank_code = frappe.db.get_value("Bank", {'name': bank}, ["bank_code"])
@@ -110,7 +117,7 @@ def set_bank_details(employee_details):
 		)
 		frappe.msgprint(_(message))
 		# send and log missing payment detail
-		frappe.enqueue(method=email_missing_payment_information, queue='short', timeout=300, **{'message':message})
+		# frappe.enqueue(method=email_missing_payment_information, queue='short', timeout=300, **{'message':message})
 	return employee_details
 
 def get_count_employee_attendance(self, employee):
