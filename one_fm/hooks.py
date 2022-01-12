@@ -113,7 +113,7 @@ home_page = "landing_page"
 # Installation
 # ------------
 
-# before_install = "one_fm.install.before_install"
+before_install = "one_fm.install.before_install.execute"
 # after_install = "one_fm.install.after_install"
 
 # Desk Notifications
@@ -154,7 +154,6 @@ doc_events = {
 	"Purchase Order": {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
-		"on_update_after_submit": "one_fm.purchase.utils.check_for_signature_for_purchase_order",
 		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po"
 
 	},
@@ -227,7 +226,6 @@ doc_events = {
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
 		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
-		"on_update_after_submit": "one_fm.purchase.utils.check_for_signature_for_purchase_receipt"
 	},
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
@@ -366,8 +364,8 @@ scheduler_events = {
 			'one_fm.api.tasks.process_attendance'
 		],
 		"0/5 * * * *": [
-			"one_fm.api.tasks.supervisor_reminder",
-			"one_fm.api.tasks.final_reminder",
+			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
+			"one_fm.api.tasks.checkin_checkout_final_reminder",
 			"one_fm.api.tasks.checkin_deadline"
 			#"one_fm.api.tasks.automatic_checkout"
 		],
@@ -519,3 +517,6 @@ fixtures = [
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
 ShiftType.process_auto_attendance = process_auto_attendance
+
+# Required apps before installation
+required_apps = ['frappe', 'erpnext']

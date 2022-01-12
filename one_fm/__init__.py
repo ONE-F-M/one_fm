@@ -14,7 +14,7 @@ from one_fm.api.mobile.Leave_application import notify_leave_approver
 from one_fm.hiring.utils import grant_leave_alloc_for_employee
 
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 ShiftRequest.on_submit = shift_request_submit
