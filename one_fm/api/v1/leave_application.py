@@ -67,7 +67,7 @@ def get_leave_balance(employee: str = None, leave_type: str = None) -> dict:
         dict: {
             message (str): Brief message indicating the response,
 			status_code (int): Status code of response.
-            data (dict): Leave balances.
+            data (dict): Leave balance.
             error (str): Any error handled.
         }
     """
@@ -90,7 +90,7 @@ def get_leave_balance(employee: str = None, leave_type: str = None) -> dict:
         leave_balance = allocation_records['leave_allocation'][leave_type]
         
         if leave_balance:
-            return response("Success", 200, leave_balance)
+            return response("Success", 200, int(leave_balance))
         else:
             return response("Resource not found", 404, None, "No leave allocated to {employee}".format(employee=employee))
             
