@@ -117,13 +117,13 @@ frappe.ui.form.on('Contracts', {
 				}
 			};
 		});
-		frm.refresh_field("bank_account");			
+		frm.refresh_field("bank_account");
 		frm.set_query("project", function() {
 			return {
 				filters:{
 					project_type: 'External',
 					customer: frm.doc.client
-										
+
 				}
 			};
 		});
@@ -147,7 +147,7 @@ frappe.ui.form.on('Contracts', {
 		});
 		frm.refresh_field("price_list");
 		frm.fields_dict['items'].grid.get_field('item_code').get_query = function() {
-            return {    
+            return {
                 filters:{
 					is_stock_item: 0,
 					is_sales_item: 1,
@@ -157,10 +157,10 @@ frappe.ui.form.on('Contracts', {
         }
 		frm.fields_dict['items'].grid.get_field('item_price').get_query = function(frm, cdt, cdn) {
             let d = locals[cdt][cdn];
-            return {    
+            return {
                 filters:{
 					price_list: cur_frm.doc.price_list,
-                    customer: cur_frm.doc.client, 
+                    customer: cur_frm.doc.client,
 					selling: 1,
                     item_code: d.item_code
                 }
@@ -168,7 +168,7 @@ frappe.ui.form.on('Contracts', {
         }
         frm.refresh_field("items");
 		frm.fields_dict['assets'].grid.get_field('item_code').get_query = function() {
-            return {    
+            return {
                 filters:{
 					is_stock_item: 1,
 					is_sales_item: 1,
@@ -177,7 +177,7 @@ frappe.ui.form.on('Contracts', {
             }
 		}
 		frm.fields_dict['assets'].grid.get_field('site').get_query = function() {
-            return {    
+            return {
                 filters:{
 					project: frm.doc.project
                 }
@@ -240,6 +240,16 @@ frappe.ui.form.on('Contracts', {
 		else{
 			management_fee_percentage.hidden = 0;
 			management_fee.hidden = 0;
+		}
+	},
+	engagement_type: (frm)=>{
+		// disable is auto renewal if engagement type is one-off
+		if(frm.doc.engagement_type=='One-off'){
+			frm.toggle_enable('is_auto_renewal', 0);
+			frm.toggle_display('is_auto_renewal', 0);
+		} else {
+			frm.toggle_enable('is_auto_renewal', 1);
+			frm.toggle_display('is_auto_renewal', 1);
 		}
 	}
 });
@@ -389,7 +399,7 @@ frappe.ui.form.on('Contract Asset', {
 						}
 						else{
 							frappe.model.set_value(d.doctype, d.name, "unit_rate", 0);
-							frappe.msgprint("Rate not found for item" + d.item_code) 
+							frappe.msgprint("Rate not found for item" + d.item_code)
 						}
 					}
 				}

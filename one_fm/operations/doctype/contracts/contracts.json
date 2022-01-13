@@ -30,6 +30,7 @@
   "column_break_24",
   "contract",
   "section_break_20",
+  "engagement_type",
   "start_date",
   "end_date",
   "due_date",
@@ -441,10 +442,18 @@
    "label": "Amended From",
    "options": "Contracts",
    "read_only": 1
+  },
+  {
+   "description": "Type of engagement",
+   "fieldname": "engagement_type",
+   "fieldtype": "Select",
+   "label": "Engagement Type",
+   "options": "\nOne-off\nPeriodic",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2022-01-13 16:59:31.405721",
+ "modified": "2022-01-12 16:21:11.836393",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
