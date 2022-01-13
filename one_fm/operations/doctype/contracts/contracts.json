@@ -437,13 +437,14 @@
   },
   {
    "fieldname": "amended_from",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Amended From",
+   "options": "Contracts",
    "read_only": 1
   }
  ],
  "links": [],
- "modified": "2022-01-13 03:38:44.429017",
+ "modified": "2022-01-13 16:59:31.405721",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
