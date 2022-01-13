@@ -7,9 +7,9 @@ function open_form(frm, doctype, child_doctype, parentfield) {
 	frappe.model.with_doctype(doctype, () => {
         let new_doc = frappe.model.get_new_doc(doctype);
         new_doc.type  = 'Contracts';
-		new_doc.customer = frm.doc.client;
+		new_doc.client = frm.doc.client;
 		new_doc.project = frm.doc.project;
-
+		new_doc.price_list = frm.doc.price_list;
 		frappe.ui.form.make_quick_entry(doctype, null, null, new_doc);
 	});
 
@@ -87,6 +87,11 @@ frappe.ui.form.on('Contracts', {
 		}
 	},
 	refresh:function(frm){
+		if (frm.doc.workflow_state == "Inactive"){
+			frm.add_custom_button(__("Ammend Contract"), function() {
+				open_form(frm, "Contracts", null, null)
+			});
+		}
 		var days,management_fee_percentage,management_fee;
 		frm.set_query("bank_account", function() {
 			return {
