@@ -209,7 +209,7 @@ def append_invoice_parent_details(sales_invoice, contracts):
 
 #Get contracts list
 def get_contracts_list(due_date, start_date, end_date,is_invoice_for_airport = 0):
-    filters = {'due_date': due_date, 'start_date': start_date, 'end_date': end_date}
+    filters = {'due_date': due_date, 'start_date': start_date, 'end_date': end_date, 'workflow_state': 'Active'}
     conditions = "due_date = %(due_date)s and start_date <= %(start_date)s and end_date >= %(end_date)s"
     if is_invoice_for_airport != 0:
         filters['is_invoice_for_airport'] = True
