@@ -7,6 +7,7 @@ function open_form(frm, doctype, child_doctype, parentfield) {
 	frappe.model.with_doctype(doctype, () => {
         let new_doc = frappe.model.get_new_doc(doctype);
         new_doc.type  = 'Contracts';
+		new_doc.amended_from = frm.doc.name;
 		new_doc.client = frm.doc.client;
 		new_doc.project = frm.doc.project;
 		new_doc.price_list = frm.doc.price_list;
@@ -87,11 +88,26 @@ frappe.ui.form.on('Contracts', {
 		}
 	},
 	refresh:function(frm){
-		if (frm.doc.workflow_state == "Inactive"){
-			frm.add_custom_button(__("Ammend Contract"), function() {
-				open_form(frm, "Contracts", null, null)
-			});
-		}
+		frm.add_custom_button(__("Amend Contract"), function() {
+			if (frm.doc.workflow_state == "Active"){
+				frappe.confirm(__("Are you sure you want to set this contract as 'Inactive' and amend it?"),
+				function(){
+					var docname = frm.doc.name;
+					frappe.xcall('one_fm.operations.doctype.contracts.contracts.set_inactive', {docname})
+						.then(res => {
+							if (res){
+								open_form(frm, "Contracts", null, null);
+							}
+						}).catch(e => {
+							console.log(e);
+						})
+				},
+				function(){}
+				);
+			} else if (frm.doc.workflow_state == "Inactive"){
+				open_form(frm, "Contracts", null, null);
+			}
+		});
 		var days,management_fee_percentage,management_fee;
 		frm.set_query("bank_account", function() {
 			return {
