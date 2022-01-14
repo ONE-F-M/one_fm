@@ -98,9 +98,7 @@ frappe.ui.form.on('Request for Purchase', {
 				// Yes
 				var doctype = frm.doc.doctype
 				var document_name = frm.doc.name
-				var d = new Date();
-				var current_datetime_string = d.getUTCFullYear() +"/"+ (d.getUTCMonth()+1) +"/"+ d.getUTCDate() + " " + d.getUTCHours() + ":" + d.getUTCMinutes() + ":" + d.getUTCSeconds();
-				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
+				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
 					.then(res => {
 						console.log(res);
 					}).catch(e => {
@@ -140,13 +138,15 @@ frappe.ui.form.on('Request for Purchase', {
 					},
 				});
 				d.fields_dict.resend_verification_code.input.onclick = function() {
-					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
+					reset_timer();
+					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
 					.then(res => {
 						console.log(res);
 					}).catch(e => {
 						console.log(e);
 					})
 				}
+				start_timer(60*5, d);
 				d.show();
 			},
 			function(){} // No
@@ -267,6 +267,30 @@ var set_supplier_to_items_to_order = function(frm){
 		frm.refresh_field('items_to_order');
 	}
 };
+
+var timer;
+function start_timer(duration, d) {
+    timer = duration;
+    var minutes, seconds;
+    setInterval(function () {
+        minutes = parseInt(timer / 60, 10)
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        d.set_value('timer', "Verification code expires in: " + minutes + ":" + seconds);
+
+        if (--timer < 0) {
+            timer = duration;
+        }
+    }, 1000);
+}
+
+function reset_timer() {
+  timer = 60 * 5;
+}
+
 function is_valid_verification_code(code){
 	const code_expression = /^\d{6}(\s*,\s*\d{6})*$/;
 	if (code_expression.test(code))  return true;
