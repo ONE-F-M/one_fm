@@ -117,6 +117,11 @@ var confirm_accept_approve_purchase_order= function(frm) {
 							label: "Resend code", 
 							fieldname: "resend_verification_code"
 						},
+						{
+							fieldtype: "HTML",
+							label: "Time remaining",
+							fieldname: "timer"
+						}
 					],
 					primary_action_label: __("Submit"),
 					primary_action: function(){

@@ -122,6 +122,11 @@ frappe.ui.form.on('Request for Purchase', {
 							label: "Resend code", 
 							fieldname: "resend_verification_code"
 						},
+						{
+							fieldtype: "HTML",
+							label: "Time remaining",
+							fieldname: "timer"
+						}
 					],
 					primary_action_label: __("Submit"),
 					primary_action: function(){
