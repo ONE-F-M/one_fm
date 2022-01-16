@@ -995,3 +995,12 @@ def add_admin_manpower(sales_invoice,project,journal_entry_start_date,journal_en
             'cost_center': cost_center
         })
     return sales_invoice
+
+def set_print_settings_from_contracts(doc, method):
+    if doc.contracts:
+        contracts_print_settings = frappe.db.get_values('Contracts', doc.contracts, ['sales_invoice_print_format', 'sales_invoice_letter_head'], as_dict=True)
+        if contracts_print_settings and len(contracts_print_settings) > 0:
+            if contracts_print_settings[0].sales_invoice_print_format:
+                doc.format = contracts_print_settings[0].sales_invoice_print_format
+            if contracts_print_settings[0].sales_invoice_letter_head:
+                doc.letter_head = contracts_print_settings[0].sales_invoice_letter_head
