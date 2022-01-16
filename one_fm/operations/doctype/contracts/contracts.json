@@ -72,7 +72,10 @@
   "section_break_4",
   "addendums",
   "section_break_55",
-  "password_management"
+  "password_management",
+  "sales_invoice_print_settings_section",
+  "sales_invoice_print_format",
+  "sales_invoice_letter_head"
  ],
  "fields": [
   {
@@ -451,6 +454,24 @@
    "label": "Engagement Type",
    "options": "\nOne-off\nPeriodic",
    "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "sales_invoice_print_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Sales Invoice Print Settings"
+  },
+  {
+   "fieldname": "sales_invoice_print_format",
+   "fieldtype": "Link",
+   "label": "Sales Invoice Print Format",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "sales_invoice_letter_head",
+   "fieldtype": "Link",
+   "label": "Sales Invoice Letter Head",
+   "options": "Letter Head"
   }
  ],
  "links": [],
