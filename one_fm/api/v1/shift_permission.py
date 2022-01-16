@@ -123,29 +123,6 @@ def get_shift_details(employee, date):
         shift_assignment = frappe.db.get_value('Shift Assignment', {'employee': employee, 'start_date': date}, ['name'])
         
     return shift, shift_type, shift_assignment, shift_supervisor
-        
-@frappe.whitelist()
-def get_employee_roles(employee_id: str = None):
-    """This method fetches roles for a given user.
-
-    Args:
-        employee_id (str): employee id of user.
-
-    Returns:
-        dict: {
-            message (str): Brief message indicating the response,
-			status_code (int): Status code of response.
-            data (List[str]): List of user roles.
-            error (str): Any error handled.
-        }
-    """
-    user_id = frappe.db.get_value('Employee',{'name': employee_id}, ['user_id'])
-    if not user_id:
-        return response("Resource not found", 404, None, "No user id found for {employee_id}".format(employee_id=employee_id))
-    
-    user_roles = frappe.get_roles(user_id)
-    
-    return response("Success", 200, user_roles)
 
 @frappe.whitelist()
 def list_shift_permission(employee_id: str = None):
