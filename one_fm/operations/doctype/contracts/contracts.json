@@ -7,6 +7,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "amended_from",
   "client",
   "project",
   "monthly_working_days",
@@ -434,6 +435,13 @@
    "fieldtype": "Select",
    "label": "Billing Type",
    "options": "\nActual Hours\nShift Hours"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Contracts",
+   "read_only": 1
   },
   {
    "description": "Type of engagement",

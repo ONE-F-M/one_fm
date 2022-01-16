@@ -24,6 +24,9 @@ class Contracts(Document):
 		if(years < 1 and months > 0):
 			self.duration = cstr(months) + ' month'
 
+	def on_cancel(self):
+		frappe.throw("Contracts cannot be cancelled. Please try to ammend the existing record.")
+
 @frappe.whitelist()
 def get_contracts_asset_items(contracts):
 	contracts_item_list = frappe.db.sql("""
@@ -77,3 +80,16 @@ def auto_renew_contracts():
 		contract_doc.end_date = add_years(contract_doc.end_date, 1)
 		contract_doc.save()
 		frappe.db.commit()
+
+@frappe.whitelist()
+def set_inactive(docname):
+	try:
+		doc = frappe.get_doc("Contracts", docname)
+		doc.workflow_state = "Inactive"
+		doc.save()
+		doc.submit()
+		frappe.db.commit()
+		return True
+	
+	except Exception as error:
+		frappe.throw(error)
