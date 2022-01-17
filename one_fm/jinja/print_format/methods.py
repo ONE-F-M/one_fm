@@ -35,7 +35,7 @@ def sic_attendance_absent_present(doc):
     try:
         if(doc.contracts):
             contracts = frappe.get_doc('Contracts', doc.contracts)
-            posting_date = datetime.strptime(doc.posting_date, '%Y-%M-%d')
+            posting_date = datetime.strptime(str(doc.posting_date), '%Y-%M-%d')
             first_day = frappe.utils.get_first_day(doc.posting_date).day
             last_day = frappe.utils.get_last_day(doc.posting_date).day
             sale_items = "('',"
@@ -58,6 +58,7 @@ def sic_attendance_absent_present(doc):
                 GROUP BY pt.name
             ;""", as_dict=1)
 
+
             # filter post types
             post_types = "('',"
             if(len(post_types_query)==0):
@@ -65,10 +66,11 @@ def sic_attendance_absent_present(doc):
             else:
                 for c, i in enumerate(post_types_query):
                     if(len(post_types_query)==c+1):
-                        post_types+=f" {i.name}"
+                        post_types+=f" '{i.name}'"
                     else:
-                        post_types+=f" {i.name},"
+                        post_types+=f" '{i.name}',"
                 post_types += ")"
+
 
             attendances = frappe.db.sql(f"""
                 SELECT at.employee, em.employee_id, em.employee_name,
@@ -100,7 +102,7 @@ def sic_attendance_absent_present(doc):
             count_loop = 1
             for k, v in employee_dict.items():
                 days_worked = []
-                due_date = contracts.due_date or 28
+                due_date = int(contracts.due_date) or 28
                 for month_day in range(first_day, last_day+1):
                     if((month_day>=due_date) and (not employee_dict[k]['days_worked'].get(month_day))):
                         days_worked.append('p')
@@ -125,6 +127,7 @@ def sic_attendance_absent_present(doc):
         else:
             return '', context
     except Exception as e:
+        print(str(e))
         frappe.log_error(str(e), 'Print Format')
         context = {}
         return '', context
