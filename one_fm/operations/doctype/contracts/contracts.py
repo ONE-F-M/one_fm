@@ -80,16 +80,3 @@ def auto_renew_contracts():
 		contract_doc.end_date = add_years(contract_doc.end_date, 1)
 		contract_doc.save()
 		frappe.db.commit()
-
-@frappe.whitelist()
-def set_inactive(docname):
-	try:
-		doc = frappe.get_doc("Contracts", docname)
-		doc.workflow_state = "Inactive"
-		doc.save()
-		doc.submit()
-		frappe.db.commit()
-		return True
-	
-	except Exception as error:
-		frappe.throw(error)

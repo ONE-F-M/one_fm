@@ -88,30 +88,11 @@ frappe.ui.form.on('Contracts', {
 		}
 	},
 	refresh:function(frm){
-		frm.add_custom_button(__("Amend Contract"), function() {
-			if (frappe.user_roles.includes("Finance Manager")){
-				if (frm.doc.workflow_state == "Active"){
-					frappe.confirm(__("Are you sure you want to set this contract as 'Inactive' and amend it?"),
-						function(){
-							var docname = frm.doc.name;
-							frappe.xcall('one_fm.operations.doctype.contracts.contracts.set_inactive', {docname})
-								.then(res => {
-									if (res){
-										open_form(frm, "Contracts", null, null);
-									}
-								}).catch(e => {
-									console.log(e);
-								})
-						},
-						function(){}
-						);
-				} else if (frm.doc.workflow_state == "Inactive"){
-					open_form(frm, "Contracts", null, null);
-				}
-			} else{
-				frappe.msgprint(__("Unauthorized. Only a Finance Manager can amend contracts."))
-			}
-		});
+		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
+			frm.add_custom_button(__("Amend Contract"), function() {
+				open_form(frm, "Contracts", null, null);
+			});
+		}
 		var days,management_fee_percentage,management_fee;
 		frm.set_query("bank_account", function() {
 			return {
