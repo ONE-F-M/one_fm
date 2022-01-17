@@ -33,7 +33,12 @@ def get_salary_slip_list(employee_id: str = None) -> dict:
         return response("Bad request", 400, None, "employee_id must be of type str.")
     
     try:
-        salary_list = frappe.get_all("Salary Slip", filters={'employee': employee_id}, fields=["name", "start_date", "end_date", "status", "total_working_days"])
+        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+
+        if not employee:
+            return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        
+        salary_list = frappe.get_all("Salary Slip", filters={'employee': employee}, fields=["name", "start_date", "end_date", "status", "total_working_days"])
         
         if not salary_list or len(salary_list) == 0:
             return response("Resource not found", 404, None, "No salary slips found for user {employee_id}".format(employee_id=employee_id))
