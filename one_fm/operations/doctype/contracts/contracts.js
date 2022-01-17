@@ -89,23 +89,27 @@ frappe.ui.form.on('Contracts', {
 	},
 	refresh:function(frm){
 		frm.add_custom_button(__("Amend Contract"), function() {
-			if (frm.doc.workflow_state == "Active"){
-				frappe.confirm(__("Are you sure you want to set this contract as 'Inactive' and amend it?"),
-				function(){
-					var docname = frm.doc.name;
-					frappe.xcall('one_fm.operations.doctype.contracts.contracts.set_inactive', {docname})
-						.then(res => {
-							if (res){
-								open_form(frm, "Contracts", null, null);
-							}
-						}).catch(e => {
-							console.log(e);
-						})
-				},
-				function(){}
-				);
-			} else if (frm.doc.workflow_state == "Inactive"){
-				open_form(frm, "Contracts", null, null);
+			if (frappe.user.has_role("Finance Manager")){
+				if (frm.doc.workflow_state == "Active"){
+					frappe.confirm(__("Are you sure you want to set this contract as 'Inactive' and amend it?"),
+						function(){
+							var docname = frm.doc.name;
+							frappe.xcall('one_fm.operations.doctype.contracts.contracts.set_inactive', {docname})
+								.then(res => {
+									if (res){
+										open_form(frm, "Contracts", null, null);
+									}
+								}).catch(e => {
+									console.log(e);
+								})
+						},
+						function(){}
+						);
+				} else if (frm.doc.workflow_state == "Inactive"){
+					open_form(frm, "Contracts", null, null);
+				}
+			} else{
+				frappe.msgprint(__("Unauthorized. Only a Finance Manager can amend contracts."))
 			}
 		});
 		var days,management_fee_percentage,management_fee;
