@@ -112,18 +112,23 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 
 	
 @frappe.whitelist()
-def get_penalties(employee: str = None, role: str = None) -> dict:
+def get_penalties(employee_id: str = None, role: str = None) -> dict:
 
-	if not employee:
-		return response("Bad request", 400, None, "employee required.")
+	if not employee_id:
+		return response("Bad request", 400, None, "employee_id required.")
 
-	if not isinstance(employee, str):
-		return response("Bad request", 400, None, "employee must be of type str.")
+	if not isinstance(employee_id, str):
+		return response("Bad request", 400, None, "employee_id must be of type str.")
 
 	if role:
 		if not isinstance(role, str):
 			return response("Bad request", 400, None ,"role must be of type str.")
 	try:
+		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+
+		if not employee:
+			return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+
 		if role and role == "Issuance":
 			result = frappe.get_list("Penalty", filters={"issuer_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
 			if len(result) > 0:
@@ -172,7 +177,7 @@ def get_penalty_details(penalty_name: str = None) -> dict:
 		return response("Internal server error", 500, None, error)
 
 @frappe.whitelist()
-def accept_penalty(file: str = None, docname: str = None) -> dict:
+def accept_penalty(employee_id: str = None, file: str = None, docname: str = None) -> dict:
 	"""	This is an API to accept penalty. To Accept Penalty, one needs to pass the face recognition test.
 		Image file in base64 format is passed through face regonition test. And, employee is given 3 tries.
 		If face recognition is true, the penalty gets accepted. 
@@ -203,7 +208,7 @@ def accept_penalty(file: str = None, docname: str = None) -> dict:
 		return response("Bad request", 400, None, "docname must be of type str.")
 	
 	try:
-		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
+		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+employee_id+".png"
 		penalty_doc = frappe.get_doc("Penalty", docname)
 
 		if not penalty_doc:
@@ -222,8 +227,8 @@ def accept_penalty(file: str = None, docname: str = None) -> dict:
 			
 			file_doc = frappe.get_doc({
 				"doctype": "File",
-				"file_url": "/private/files/"+frappe.session.user+".png",
-				"file_name": frappe.session.user+".png",
+				"file_url": "/private/files/"+employee_id+".png",
+				"file_name": employee_id+".png",
 				"attached_to_doctype": "Penalty",
 				"attached_to_name": docname,
 				"folder": "Home/Attachments",
