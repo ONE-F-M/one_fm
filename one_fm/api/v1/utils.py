@@ -1,4 +1,6 @@
 import frappe
+from frappe.utils import getdate, cint, cstr, random_string, now_datetime
+import datetime
 
 def response(message, status_code, data=None, error=None):
     """This method generates a response for an API call with appropriate data and status code. 
@@ -108,4 +110,30 @@ def validate_time(time: str) -> bool:
 
     return True
 
-    
+@frappe.whitelist()
+def get_current_shift(employee):
+	try:
+		current_datetime = now_datetime().strftime("%Y-%m-%d %H:%M:%S")
+		date, time = current_datetime.split(" ")
+		shifts = frappe.get_list("Shift Assignment", {"employee":employee, 'start_date': ['>=', date]}, ["shift", "shift_type"])
+		if len(shifts) > 0:
+			for shift in shifts:
+				time = time.split(":")
+				time = datetime.timedelta(hours=cint(time[0]), minutes=cint(time[1]), seconds=cint(time[2]))
+				shift_type, start_time, end_time ,before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["shift_type","start_time", "end_time","begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
+				#include early entry and late exit time
+				start_time = start_time - datetime.timedelta(minutes=before_time)
+				end_time = end_time + datetime.timedelta(minutes=after_time)
+				if shift_type == "Night":
+					if start_time <= time >= end_time or start_time >= time <= end_time:
+						return shift
+				else:
+					if start_time <= time <= end_time:
+						return shift
+		elif len(shifts)==0:
+			return shifts		
+		else:
+			return shifts[0].shift
+	except Exception as e:
+		print(frappe.get_traceback())
+		return frappe.utils.response.report_error(e.http_status_code)
