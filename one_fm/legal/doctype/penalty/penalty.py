@@ -249,8 +249,8 @@ def notify_employee_autoreject(doc):
 	create_notification_log(subject, message, [doc.recipient_user], doc)
 
 def automatic_reject():
-	time = add_to_date(now_datetime(), hours=-1, as_datetime=True).strftime("%Y-%m-%d %H:%M")
-	time_range = add_to_date(now_datetime(), hours=-0, as_datetime=True).strftime("%Y-%m-%d %H:%M")
+	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
+	time_range = add_to_date(now_datetime(), hours=-47, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	docs = frappe.get_all("Penalty", {"penalty_issuance_time": ["between", [time, time_range]], "workflow_state": "Penalty Issued"})
     #"2021-05-11 11:07:09"
 	for doc in docs:
