@@ -2220,7 +2220,7 @@ def response(message, data, success, status_code):
      return
 
 import hashlib
-import math, random 
+import math, random
 
 @frappe.whitelist()
 def send_verification_code(doctype, document_name):
@@ -2278,7 +2278,7 @@ def verify_verification_code(doctype, document_name, verification_code):
 
         if not frappe.cache().get(cache_search_key):
             return False
-        
+
         if verification_hash != frappe.cache().get(cache_search_key).decode('utf-8'):
             return False
 
