@@ -142,7 +142,7 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 	if not isinstance(otp_source, str):
 		return response("Bad request", 400, None, "OTP source must be of type str.")
 
-	if otp_source not in ["sms", "email", "whatsapp"]:
+	if otp_source.lower() not in ["sms", "email", "whatsapp"]:
 		return response("Bad request", 400, None, "Invalid OTP source. OTP source must be either 'sms', 'email' or 'whatsapp'.")
 	
 	try:
@@ -156,13 +156,13 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		tmp_id = frappe.generate_hash(length=8)
 		cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
 		
-		if otp_source == "sms":
+		if otp_source.lower() == "sms":
 			verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
 			
-		elif otp_source == "email":
+		elif otp_source.lower() == "email":
 			verification_obj = process_2fa_for_email(employee_user_id, token, otp_secret)
 			
-		elif otp_source == "whatsapp":
+		elif otp_source.lower() == "whatsapp":
 			verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
 		
 		return response("Success", 201, "Password reset instructions sent via {otp_source}".format(otp_source=otp_source))
