@@ -1,15 +1,16 @@
 import frappe, ast, base64, time
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import setup_directories, create_dataset, verify_face, recognize_face, check_in
-from one_fm.api.mobile.roster import get_current_shift
+from one_fm.api.v1.utils import get_current_shift
 from one_fm.api.v1.utils import response
 
 
 @frappe.whitelist()
-def enroll(video: str = None) -> dict:
+def enroll(employee_id: str = None, video: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
 
     Args:
+        employee_id (str): employee_id of user
         video (str): Base64 encoded string of the video captured of user's face.
 
     Returns:
@@ -20,6 +21,8 @@ def enroll(video: str = None) -> dict:
             error (str): Any error handled.
         }
     """
+    if not employee_id:
+        return response("Bad request", 400, None, "employee_id required.")
 
     if not video:
         return response("Bad request", 400, None, "Base64 encoded video content required.")
@@ -28,9 +31,14 @@ def enroll(video: str = None) -> dict:
         return response("Bad request", 400, None, "video type must be str.")
 
     try:
+        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+
+        if not employee:
+            return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        
         setup_directories()
         content = base64.b64decode(video)
-        filename = frappe.session.user+".mp4"	
+        filename = employee_id + ".mp4"
         OUTPUT_VIDEO_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
         with open(OUTPUT_VIDEO_PATH, "wb") as fh:
             start = time.time() * 1000
@@ -45,10 +53,11 @@ def enroll(video: str = None) -> dict:
 
 
 @frappe.whitelist()
-def verify_checkin_checkout(video : str = None, log_type: str = None, skip_attendance: int = None, latitude: float = None, longitude: float = None):
+def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None, skip_attendance: int = None, latitude: float = None, longitude: float = None):
     """This method verifies user checking in/checking out.
 
     Args:
+        employee_id (srt): employee_id of user
         video (str, optional): base64 encoded video of user checking in/checking out.
         log_type (str, optional): IN/OUT
         skip_attendance (int, optional): 0/1.
@@ -63,6 +72,9 @@ def verify_checkin_checkout(video : str = None, log_type: str = None, skip_atten
             error (str): Any error handled.
         }
     """
+
+    if not employee_id:
+        return response("Bad request", 400, None, "employee_id required.")
 
     if not video:
         return response("Bad request", 400, None, "video required.")
@@ -101,9 +113,14 @@ def verify_checkin_checkout(video : str = None, log_type: str = None, skip_atten
         return response("Bad request", 400, None, "longitude must be of type float.")
 
     try:
+        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+
+        if not employee:
+            return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        
         setup_directories()
         content = base64.b64decode(video)
-        filename = frappe.session.user+".mp4"	
+        filename = employee_id + ".mp4"	
         OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
 
         with open(OUTPUT_IMAGE_PATH, "wb") as fh:
@@ -113,7 +130,7 @@ def verify_checkin_checkout(video : str = None, log_type: str = None, skip_atten
                 return response("Bad request", 400, None, "Liveliness Detection Failed.")
             
             if recognize_face(image): 
-                doc = create_checkin_log(log_type, skip_attendance, latitude, longitude)
+                doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
                 return response("Success", 201, doc)
             else:
                 return response("Unauthorized", 401, None, "Face not recognized.")
@@ -122,8 +139,7 @@ def verify_checkin_checkout(video : str = None, log_type: str = None, skip_atten
         return response("Internal server error", 500, None, error)
 
 
-def create_checkin_log(log_type: str, skip_attendance: int, latitude: float, longitude: float) -> dict:
-    employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float) -> dict:
     checkin = frappe.new_doc("Employee Checkin")
     checkin.employee = employee
     checkin.log_type = log_type
@@ -134,15 +150,20 @@ def create_checkin_log(log_type: str, skip_attendance: int, latitude: float, lon
     return checkin.as_dict()
 
 @frappe.whitelist()
-def get_site_location(employee: str = None) -> dict:
+def get_site_location(employee_id: str = None) -> dict:
 
-    if not employee:
-        return response("Bad request", 400, None, "employee required.")
+    if not employee_id:
+        return response("Bad request", 400, None, "employee_id required.")
 
-    if not isinstance(employee, str):
+    if not isinstance(employee_id, str):
         return response("Bad request", 400, None, "employee must be of type str.")
 	
     try:
+        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+
+        if not employee:
+            return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        
         shift = get_current_shift(employee)
         if not shift or len(shift) == 0:
             return response("Resource not found", 404, None, "User not assigned to a shift.")
