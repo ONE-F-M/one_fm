@@ -89,7 +89,7 @@ frappe.ui.form.on('Contracts', {
 	},
 	refresh:function(frm){
 		frm.add_custom_button(__("Amend Contract"), function() {
-			if (frappe.user.has_role("Finance Manager")){
+			if (frappe.user_roles.includes("Finance Manager")){
 				if (frm.doc.workflow_state == "Active"){
 					frappe.confirm(__("Are you sure you want to set this contract as 'Inactive' and amend it?"),
 						function(){
