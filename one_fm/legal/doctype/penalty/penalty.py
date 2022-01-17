@@ -9,6 +9,8 @@ import cv2
 import base64
 from frappe import _
 import pickle, face_recognition
+from one_fm.api.notification import create_notification_log
+
 from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datetime
 from one_fm.one_fm.page.face_recognition.face_recognition import recognize_face
 
@@ -24,7 +26,7 @@ class Penalty(Document):
 			Please take necessary action within 48 hours.<br>
 			<b>Note: Penalty will be automatically rejected after 48 hours and commence a legal investigation into the matter.</b><br>
 			Link: {link}""".format(link=link))
-		frappe.sendmail([self.recipient_user], subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
+		create_notification_log(subject, message, [self.recipient_user], self)
 
 	def on_update(self):
 		doc_before_update = self.get_doc_before_save()
@@ -143,6 +145,7 @@ def send_email_to_legal(penalty, message=None):
 	link = get_link_to_form(penalty.doctype, penalty.name)
 	subject = _("Review Penalty: {penalty}".format(penalty=penalty.name))
 	message = _("Face verification did not match while accepting the penalty.<br> Please review and take necessary action.<br> Link: {link}".format(link=link)) if not message else message
+	create_notification_log(subject, message, [legal], penalty)
 	frappe.sendmail([legal], subject=subject, message=message, reference_doctype=penalty.doctype, reference_name=penalty.name)
 
 
@@ -231,24 +234,23 @@ def get_permission_query_conditions(user):
 def has_permission():
 	user_roles = frappe.get_roles(frappe.session.user)
 	if frappe.session.user == "Administrator" or "Legal Manager" in user_roles or "Penalty Recipient" in user_roles or "Penalty Issuer" in user_roles:
-		print("True")
 		# dont allow non Administrator user to view / edit Administrator user
 		return True
 
 
 def notify_employee_autoreject(doc):
 	link = get_link_to_form(doc.doctype, doc.name)
-	subject = _("Penalty Issued by {issuer_name}.".format(issuer_name=doc.issuer_name))
+	subject = _("Penalty has been rejected automatically after 48 hours of no action.".format(issuer_name=doc.issuer_name))
 	message = _("""
 		Automatic Rejection.<br>
 		Penalty has been rejected automatically after 48 hours of no action.<br>
 		<b>Note: A legal investigation will now commence looking into the matter.</b><br>
 		Link: {link}""".format(link=link))
-	frappe.sendmail([doc.recipient_user], subject=subject, message=message, reference_doctype=doc.doctype, reference_name=doc.name)
+	create_notification_log(subject, message, [doc.recipient_user], doc)
 
 def automatic_reject():
-	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
-	time_range = add_to_date(now_datetime(), hours=-47, as_datetime=True).strftime("%Y-%m-%d %H:%M")
+	time = add_to_date(now_datetime(), hours=-1, as_datetime=True).strftime("%Y-%m-%d %H:%M")
+	time_range = add_to_date(now_datetime(), hours=-0, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	docs = frappe.get_all("Penalty", {"penalty_issuance_time": ["between", [time, time_range]], "workflow_state": "Penalty Issued"})
     #"2021-05-11 11:07:09"
 	for doc in docs:
