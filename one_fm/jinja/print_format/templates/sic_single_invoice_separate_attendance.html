@@ -5,7 +5,12 @@
 </style>
 
 
-{% if results %}
+{% if sites %}
+<hr>
+<b class="text-justify">Attendance</b>
+<hr>
+{% for key, value in sites.items() %}
+<h3>Site: <b>{{key}}</b></h3>
 <table class="table table-bordered table-dark table-responsive-xl">
   <thead class="thead-dark">
       <!-- <tr>
@@ -15,27 +20,27 @@
 
   </thead>
   <tbody>
-    {%for i in results %}
+    {% for i in header %}
+        <th>{{loop.index}}</th>
+        <th>{{i.employee_id}}</th>
+        <th style="width:25%">{{i.employee_name}}</th>
+        {% for day in i.days_worked %}
+            {% for k, v in day.items() %}
+              <th>{{v}}</th>
+            {% endfor %}
+        {% endfor %}
+        <th>Signature</th>
+    {% endfor %}
+    {% for i in value.employees %}
     <tr>
-      <th scope="">{{i.sn}}</th>
-      {% if loop.index==1 %}
-          <th>{{i.employee_id}}</th>
-          <th style="width:25%">{{i.employee_name}}</th>
-          {% for day in i.days_worked %}
-              {% for k, v in day.items() %}
-                <th>{{v}}</th>
-              {% endfor %}
-          {% endfor %}
-          <th>Signature</th>
-      {% else %}
+      <th scope="">{{loop.index}}</th>
+
           <td>{{i.employee_id}}</td>
           <td style="width:25%">{{i.employee_name}}</td>
           {% for day in i.days_worked %}
             <td>{{day}}</td>
           {% endfor %}
           <td></td>
-      {% endif %}
-
     </tr>
     {% endfor %}
   </tbody>
@@ -43,9 +48,11 @@
 <p>
     <br>
         <span class="pull-left">Site Supervisor Signature</span>
-        <span class="pull-left">Site in Charge Signature</span>
+        <span class="pull-right">Site in Charge Signature</span>
 
 </p>
+<hr>
+{% endfor %}
 {% else %}
 <h1 class="text-center"></h1>
 {% endif %}
