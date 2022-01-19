@@ -434,7 +434,8 @@
    "fieldname": "billing_type",
    "fieldtype": "Select",
    "label": "Billing Type",
-   "options": "\nActual Hours\nShift Hours"
+   "options": "\nHourly\nDaily\nMonthly",
+   "reqd": 1
   },
   {
    "fieldname": "amended_from",
@@ -453,7 +454,7 @@
   }
  ],
  "links": [],
- "modified": "2022-01-12 16:21:11.836393",
+ "modified": "2022-01-19 13:57:03.242593",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
