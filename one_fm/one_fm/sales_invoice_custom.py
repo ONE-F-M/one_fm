@@ -9,7 +9,7 @@ from one_fm.one_fm.timesheet_custom import timesheet_automation,calculate_hourly
 def create_sales_invoice():
     today = date.today()
     day = today.day
-    d = today   
+    d = today
     #Get the first day of the month
     first_day = get_first_day(today)
     #Get the last day of the month
@@ -84,7 +84,7 @@ def create_invoice_for_t4_contracts(sales_invoice, contracts, first_day, last_da
     contract_asset_from_delivery_list = get_asset_items_from_delivery_note(contracts.name, contracts.client, delivery_note_start_date, delivery_note_end_date)
     sales_invoice = append_delivery_note_items(sales_invoice, contract_asset_from_delivery_list, income_account, cost_center)
     add_into_sales_invoice(sales_invoice)
-        
+
 
 #Create invoice for each site
 def create_seperate_invoice_for_site(sales_invoice, contracts, today, first_day, last_day, from_date):
@@ -96,7 +96,7 @@ def create_seperate_invoice_for_site(sales_invoice, contracts, today, first_day,
             site = key
             sales_invoice = frappe.new_doc('Sales Invoice')
             sales_invoice = append_invoice_parent_details(sales_invoice, contracts)
-            sales_invoice = append_seperate_item_for_each_site(sales_invoice, group, today, from_date, last_day, first_day, site, income_account, cost_center)            
+            sales_invoice = append_seperate_item_for_each_site(sales_invoice, group, today, from_date, last_day, first_day, site, income_account, cost_center)
             journal_entry_start_date = add_months(today, -1)
             delivery_note_end_date = journal_entry_end_date = add_days(today, -1)
             if contracts.invoice_frequency == 'Monthly':
@@ -209,18 +209,18 @@ def append_invoice_parent_details(sales_invoice, contracts):
 
 #Get contracts list
 def get_contracts_list(due_date, start_date, end_date,is_invoice_for_airport = 0):
-    filters = {'due_date': due_date, 'start_date': start_date, 'end_date': end_date}
+    filters = {'due_date': due_date, 'start_date': start_date, 'end_date': end_date, 'workflow_state': 'Active'}
     conditions = "due_date = %(due_date)s and start_date <= %(start_date)s and end_date >= %(end_date)s"
     if is_invoice_for_airport != 0:
         filters['is_invoice_for_airport'] = True
         conditions += " and is_invoice_for_airport = %(is_invoice_for_airport)s"
     contract_list = frappe.db.sql("""
-        SELECT 
-            name, client, project, price_list, 
-            invoice_frequency, due_date, frequency, 
-            start_date, is_invoice_for_site, is_seperate_invoice_for_site, 
+        SELECT
+            name, client, project, price_list,
+            invoice_frequency, due_date, frequency,
+            start_date, is_invoice_for_site, is_seperate_invoice_for_site,
             is_invoice_for_full_amount, is_invoice_for_day_by_post
-        FROM tabContracts 
+        FROM tabContracts
         WHERE {conditions}
     """.format(conditions=conditions), values=filters, as_dict = 1)
     return contract_list
@@ -234,9 +234,9 @@ def get_contract_item_list(contracts = None, project = None, item_code = None):
     # else:
     #     conditions += " and c.project = %(project)s and ci.item_code = %(item_code)s"
     # contract_item_list = frappe.db.sql("""
-    #     SELECT 
-    #         ci.name, ci.item_code, ci.head_count as qty, 
-    #         ci.shift_hours, ci.uom, ci.rate, 
+    #     SELECT
+    #         ci.name, ci.item_code, ci.head_count as qty,
+    #         ci.shift_hours, ci.uom, ci.rate,
     #         ci.gender,
     #         ci.unit_rate, ci.type, ci.monthly_rate
     #     FROM `tabContract Item` ci, `tabContracts` c
@@ -244,9 +244,9 @@ def get_contract_item_list(contracts = None, project = None, item_code = None):
     # """.format(conditions=conditions), values=filters, as_dict=1)
     if contracts != None:
         contract_item_list = frappe.db.sql("""
-            SELECT 
-                ci.name, ci.item_code, ci.head_count as qty, 
-                ci.shift_hours, ci.uom, ci.rate, 
+            SELECT
+                ci.name, ci.item_code, ci.head_count as qty,
+                ci.shift_hours, ci.uom, ci.rate,
                 ci.gender,
                 ci.unit_rate, ci.type, ci.monthly_rate
             FROM `tabContract Item` ci, `tabContracts` c
@@ -255,17 +255,17 @@ def get_contract_item_list(contracts = None, project = None, item_code = None):
         """, (contracts), as_dict=1)
     else:
         contract_item_list = frappe.db.sql("""
-            SELECT 
-                ci.name, ci.item_code, ci.head_count as qty, 
-                ci.shift_hours, ci.uom, ci.rate, 
+            SELECT
+                ci.name, ci.item_code, ci.head_count as qty,
+                ci.shift_hours, ci.uom, ci.rate,
                 ci.gender,
                 ci.unit_rate, ci.type, ci.monthly_rate
-            FROM `tabContract Item` ci,`tabContracts` c 
-            WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
+            FROM `tabContract Item` ci,`tabContracts` c
+            WHERE c.name = ci.parent and ci.parenttype = 'Contracts'
                 and c.project = %s and ci.item_code = %s
         """, (project,item_code), as_dict = 1)[0]
     return contract_item_list
-   
+
 #Get asset items from contracts
 def get_asset_items_from_contracts(parent, site = None):
     filters = {'parent': parent, 'site': site}
@@ -274,8 +274,8 @@ def get_asset_items_from_contracts(parent, site = None):
     if site != None:
         conditions += " and site = %(site)s"
     return frappe.db.sql("""
-            SELECT  
-                ca.item_code, ca.count as qty, ca.uom, ca.unit_rate as rate, ca.site 
+            SELECT
+                ca.item_code, ca.count as qty, ca.uom, ca.unit_rate as rate, ca.site
             FROM `tabContract Asset` ca, `tabContracts` c
             WHERE {conditions} order by ca.idx asc
             """.format(conditions=conditions), values=filters, as_dict=1)
@@ -289,9 +289,9 @@ def get_asset_items_from_delivery_note(contract, client, start_date, end_date, s
         filters['site'] = site
         conditions += " and di.site = %(site)s"
     return frappe.db.sql("""
-            SELECT 
-                di.parent as delivery_note, di.name as dn_detail, 
-                di.against_sales_order,di.so_detail, di.item_code, 
+            SELECT
+                di.parent as delivery_note, di.name as dn_detail,
+                di.against_sales_order,di.so_detail, di.item_code,
                 di.qty, di.uom, di.rate, di.site, d.delivery_based_on as category
             FROM `tabDelivery Note Item` di, `tabDelivery Note` d
             WHERE d.name = di.parent and di.parenttype = 'Delivery Note'
@@ -400,7 +400,7 @@ def add_site_wise_contracts_item_details_into_invoice(sales_invoice, site_group,
                             'hours_worked' : item['days'] * contract_item.shift_hours,
                             'income_account': income_account,
                             'cost_center': cost_center
-                        })                     
+                        })
     return sales_invoice
 
 def add_timesheet_details_into_invoice(sales_invoice, timesheet_details, item_code):
@@ -473,7 +473,7 @@ def add_contracts_item_details_for_day_by_post(sales_invoice, timesheet_details,
                         'hours_worked' : item['timesheet_count'] * contract_item.shift_hours,
                         'income_account': income_account,
                         'cost_center': cost_center
-                    })               
+                    })
         else:
             sales_invoice.append('items',{
                 'item_code': item['item_code'],
@@ -504,21 +504,21 @@ def add_contracts_item_details_post_wise(sales_invoice, contract_item, today, st
         FROM `tabOperations Post`
         WHERE post_template = %(post_type)s and project = %(project)s
             and gender = %(gender)s
-            and (select duration from `tabOperations Shift` 
+            and (select duration from `tabOperations Shift`
             where name = `tabOperations Post`.site_shift) = %(shift_hours)s
     """,values = filters,as_dict = 1)
     for post in post_list:
         actual_service_list = []
         filters['operations_post'] = post.name
         timesheet = frappe.db.sql("""
-            SELECT 
-                count(t.operations_post) as count, 
+            SELECT
+                count(t.operations_post) as count,
                 sum(billing_amount) as billing_amount
-	 		FROM `tabTimesheet Detail` t 
-            WHERE t.parenttype = 'Timesheet' and t.docstatus=1 
+	 		FROM `tabTimesheet Detail` t
+            WHERE t.parenttype = 'Timesheet' and t.docstatus=1
                 and t.project = %(project)s and t.billable = 1
-	 		    and t.sales_invoice is null and t.operations_post = %(operations_post)s 
-                and t.from_time >= %(from_time)s and t.to_time < %(to_time)s 
+	 		    and t.sales_invoice is null and t.operations_post = %(operations_post)s
+                and t.from_time >= %(from_time)s and t.to_time < %(to_time)s
                 and t.Activity_type in (select post_name from `tabPost Type` where sale_item
                 = %(item_code)s ) order by t.from_time asc
         """, values=filters, as_dict=1)[0]
@@ -569,8 +569,8 @@ def add_contracts_item_details_post_wise(sales_invoice, contract_item, today, st
                         'hours_worked' : item['days'] * contract_item.shift_hours,
                         'income_account': income_account,
                         'cost_center': cost_center
-                    })   
-                                     
+                    })
+
     return sales_invoice
 
 def advance_service_list_of_post(operations_post, contract_item, project, start_date, end_date, actual_service_list, first_day, site = None):
@@ -585,9 +585,9 @@ def advance_service_list_of_post(operations_post, contract_item, project, start_
     if contract_item.uom == 'Hours':
         hourly_rate = contract_item.rate
     billing_amount = (flt(hourly_rate) * flt(contract_item.shift_hours)) * flt(post_scheduled_days)
-    actual_service_list[0]['days'] +=  post_scheduled_days  
+    actual_service_list[0]['days'] +=  post_scheduled_days
     actual_service_list[0]['billing_amount'] +=  billing_amount
-    return actual_service_list 
+    return actual_service_list
 
 def get_actual_service_list(day_list, project, item_code):
     actual_service_list = []
@@ -614,9 +614,9 @@ def get_advance_service_list(day_list, project, item_code, hourly_rate, shift_ho
 
 def get_workdays_and_amount(project, item_code, from_time, to_time, site=None, post=None):
     filters = {
-        'project': project, 
-        'from_time': from_time, 
-        'to_time': to_time, 
+        'project': project,
+        'from_time': from_time,
+        'to_time': to_time,
         'item_code': item_code,
         'site': site,
         'post': post
@@ -628,30 +628,30 @@ def get_workdays_and_amount(project, item_code, from_time, to_time, site=None, p
     if post !=None:
         conditions += " and operations_post = %(post)s"
     return frappe.db.sql("""
-            SELECT 
+            SELECT
                 count(operations_post) as count,
                 sum(billing_amount) as billing_amount
             FROM `tabTimesheet Detail`
-            WHERE {conditions} 
+            WHERE {conditions}
                 and parenttype = 'Timesheet' and docstatus=1 and billable = 1
                 and sales_invoice is null order by from_time asc
             """.format(conditions=conditions), values=filters, as_dict=1)[0]
 
 def get_post_schedule_count_for_day(project, post_type, date):
-    return frappe.db.get_value('Post Schedule', 
+    return frappe.db.get_value('Post Schedule',
                 {'post_status': 'Planned','project': project,
-                'post_type': post_type,'date': date}, 
+                'post_type': post_type,'date': date},
                 ['count(name) as post_schedule_count'])
 
 def get_timesheet_for_day(project, item_code, date):
     return frappe.db.sql("""
-            SELECT 
+            SELECT
                 count(operations_post) as count,
                 sum(billing_amount) as billing_amount
 	 		FROM `tabTimesheet Detail`
-            WHERE parenttype = 'Timesheet' and docstatus=1 
+            WHERE parenttype = 'Timesheet' and docstatus=1
                 and project = %s and billable = 1
-	 		    and sales_invoice is null and convert(from_time,date) = %s 
+	 		    and sales_invoice is null and convert(from_time,date) = %s
                 and activity_type in (select post_name from `tabPost Type` where sale_item
                 = %s ) order by from_time asc
             """, (project, date, item_code), as_dict=1)[0]
@@ -738,27 +738,27 @@ def append_delivery_note_items(sales_invoice, contract_asset_list, income_accoun
 @frappe.whitelist()
 def get_projectwise_timesheet_data(project, item_code, start_date = None, end_date = None, shift_hours = None, gender = None,  posting_date = None):
     filters = {
-        'project': project, 'start_date': start_date, 
+        'project': project, 'start_date': start_date,
         'end_date': end_date, 'item_code': item_code,
-        'shift_hours': shift_hours, 'gender': gender 
+        'shift_hours': shift_hours, 'gender': gender
     }
     if posting_date != None:
         posting_date = datetime.strptime(posting_date, '%Y-%m-%d')
         filters['start_date'] = date(posting_date.year, posting_date.month, 1)
         filters['end_date'] = posting_date
     return frappe.db.sql("""
-            SELECT 
-                t.name, t.parent, t.from_time, 
+            SELECT
+                t.name, t.parent, t.from_time,
                 t.billing_hours, t.billing_amount as billing_amt
 	 		FROM `tabTimesheet Detail` t, `tabOperations Shift` s
-            WHERE t.parenttype = 'Timesheet' 
+            WHERE t.parenttype = 'Timesheet'
                 and s.name = t.shift and s.duration = %(shift_hours)s
-                and t.docstatus=1 and t.project = %(project)s 
-                and t.billable = 1 and t.sales_invoice is null and t.from_time >= %(start_date)s 
-                and t.to_time < %(end_date)s 
+                and t.docstatus=1 and t.project = %(project)s
+                and t.billable = 1 and t.sales_invoice is null and t.from_time >= %(start_date)s
+                and t.to_time < %(end_date)s
                 and t.Activity_type in (select post_name from `tabPost Type` where sale_item
                 = %(item_code)s )
-                and (select gender from `tabOperations Post` where name = t.operations_post) = %(gender)s 
+                and (select gender from `tabOperations Post` where name = t.operations_post) = %(gender)s
                 order by t.from_time asc
             """, values = filters, as_dict=1)
 
@@ -770,21 +770,21 @@ def get_sitewise_timesheet_data(project, item_code=None, start_date = None, end_
             start_date = date(posting_date.year, posting_date.month, 1)
             end_date = posting_date
     filters = {'project': project, 'item_code': item_code, 'from_time': start_date, 'to_time': end_date }
-    conditions = "project = %(project)s and from_time >= %(from_time)s and to_time < %(to_time)s" 
+    conditions = "project = %(project)s and from_time >= %(from_time)s and to_time < %(to_time)s"
     if item_code != None:
         conditions += " and activity_type in (select post_name from `tabPost Type` where sale_item = %(item_code)s)" \
             " order by site,from_time asc"
     else:
         conditions += " order by site,activity_type asc"
     return frappe.db.sql("""
-            SELECT 
-                name, parent, site, 
-                from_time, billing_hours, 
+            SELECT
+                name, parent, site,
+                from_time, billing_hours,
                 billing_amount as billing_amt,
                 activity_type
-            FROM `tabTimesheet Detail` 
-            WHERE parenttype = 'Timesheet' and docstatus=1 
-                and billable = 1 and sales_invoice is null 
+            FROM `tabTimesheet Detail`
+            WHERE parenttype = 'Timesheet' and docstatus=1
+                and billable = 1 and sales_invoice is null
                 and {conditions}
             """.format(conditions=conditions), values=filters, as_dict=1)
 
@@ -792,20 +792,21 @@ def calculate_monthly_rate(project = None, item_code = None, hourly_rate = None,
     if first_day != None:
         last_day = get_last_day(first_day)
     days_off_week = frappe.db.sql("""
-        SELECT 
-            days_off 
-        FROM `tabContract Item` ci,`tabContracts` c 
-        WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
+        SELECT
+            days_off
+        FROM `tabContract Item` ci,`tabContracts` c
+        WHERE c.name = ci.parent and ci.parenttype = 'Contracts'
             and c.project = %s and ci.item_code = %s
     """, (project, item_code), as_dict=0)[0][0]
     total_days = days_of_month(first_day, last_day)
     days_off_month = flt(days_off_week) * 4
     total_working_day = len(total_days) - days_off_month
     rate_per_day = hourly_rate * flt(shift_hour)
-    monthly_rate = flt(rate_per_day * total_working_day)   
+    monthly_rate = flt(rate_per_day * total_working_day)
     return monthly_rate
 
 def get_monthly_and_hourly_rate(project, contract_item, first_day):
+    print(project, contract_item, first_day, '\n\n\n')
     if contract_item.uom == 'month':
         monthly_rate = contract_item.rate
         hourly_rate = calculate_hourly_rate(project, contract_item.item_code, monthly_rate, contract_item.shift_hours, first_day)
@@ -819,17 +820,17 @@ def calculate_total_working_days(project = None, item_code = None, first_day =No
     if first_day != None:
         last_day = get_last_day(first_day)
     days_off_week = frappe.db.sql("""
-        SELECT 
-            days_off 
-        FROM `tabContract Item` ci,`tabContracts` c 
-        WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
+        SELECT
+            days_off
+        FROM `tabContract Item` ci,`tabContracts` c
+        WHERE c.name = ci.parent and ci.parenttype = 'Contracts'
             and c.project = %s and ci.item_code = %s
     """, (project, item_code), as_dict=0)[0][0]
     total_days = days_of_month(first_day, last_day)
     days_off_month = flt(days_off_week) * 4
-    total_working_day = len(total_days) - days_off_month  
+    total_working_day = len(total_days) - days_off_month
     return total_working_day
-    
+
 def before_submit_sales_invoice(doc, method):
     if doc.contracts:
         is_po_for_invoice = frappe.db.get_value('Contracts', doc.contracts, 'is_po_for_invoice')
@@ -841,7 +842,7 @@ def add_contracts_item_details_for_t4(sales_invoice, contract_item, first_day, l
     total_working_days = calculate_total_working_days(sales_invoice.project, contract_item.item_code, first_day)
     inputted_qty = 0
     post_type = frappe.db.get_value('Post Type', {'sale_item':contract_item.item_code}, 'name')
-    post_list = frappe.db.get_list('Operations Post', fields="name", filters={'post_template':post_type,'project':sales_invoice.project}, order_by="name")  
+    post_list = frappe.db.get_list('Operations Post', fields="name", filters={'post_template':post_type,'project':sales_invoice.project}, order_by="name")
     for post in post_list:
         actual_service_list = []
         timesheet = frappe.db.sql("""select count(t.operations_post) as count, sum(billing_amount) as billing_amount
@@ -892,7 +893,7 @@ def add_contracts_item_details_for_t4(sales_invoice, contract_item, first_day, l
                         'inputted_qty': inputted_qty,
                         'income_account': income_account,
                         'cost_center': cost_center
-                    })                    
+                    })
     return sales_invoice
 
 def create_sales_invoice_for_emergency_deployments(contracts = None):
@@ -901,9 +902,9 @@ def create_sales_invoice_for_emergency_deployments(contracts = None):
 	last_day = get_last_day(today)
 	emergency_deployment_list = frappe.db.sql("""select ci.item_code, ci.head_count as qty, ci.days, ci.shift_hours,
 		ci.type, ci.unit_rate, ci.monthly_rate
-		from `tabContract Item` ci,`tabAdditional Deployment` e 
+		from `tabContract Item` ci,`tabAdditional Deployment` e
 		where e.name = ci.parent and ci.parenttype = 'Additional Deployment'
-		and e.contracts = %s and date between %s and %s 
+		and e.contracts = %s and date between %s and %s
 		order by e.date asc,ci.head_count desc""", (contracts, first_day, last_day), as_dict = 1)
 	if emergency_deployment_list:
 		customer, project, price_list = frappe.db.get_value('Contracts', contracts, ['client','project','price_list'])
@@ -931,12 +932,12 @@ def create_sales_invoice_for_emergency_deployments(contracts = None):
 				'income_account': income_account,
 				'cost_center': cost_center
 			})
-		add_into_sales_invoice(sales_invoice)	
+		add_into_sales_invoice(sales_invoice)
 
 #currently it is work for monthly based contracts
 def add_expense_details(sales_invoice,project,journal_entry_start_date,journal_entry_end_date,income_account,cost_center,site = None):
     filters = {
-        'project': project, 
+        'project': project,
         'start_date': journal_entry_start_date,
         'end_date': journal_entry_end_date,
         'site': site
@@ -945,14 +946,14 @@ def add_expense_details(sales_invoice,project,journal_entry_start_date,journal_e
     if site != None:
         conditions += " and ga.site = %(site)s"
     expense_list = frappe.db.sql("""
-            SELECT 
+            SELECT
                 ga.account, ga.debit,
                 ga.site, ga.item_code
             FROM `tabJournal Entry` g, `tabJournal Entry Account` ga
             WHERE g.name = ga.parent and ga.parenttype = 'Journal Entry'
-                and g.docstatus = 1 and {conditions} 
+                and g.docstatus = 1 and {conditions}
                 and ga.journal_entry_for not in('Leave','Indemnity','Visa and Residency')
-                and ga.include_amount_in_sales_invoice = 1 
+                and ga.include_amount_in_sales_invoice = 1
                 order by g.posting_date asc
     """.format(conditions=conditions), values=filters, as_dict=1)
     for expense in expense_list:
@@ -970,13 +971,13 @@ def add_expense_details(sales_invoice,project,journal_entry_start_date,journal_e
 
 def add_admin_manpower(sales_invoice,project,journal_entry_start_date,journal_entry_end_date,income_account,cost_center):
     expense_list = frappe.db.sql("""
-            SELECT 
-                g.name as journal_entry, ga.name as je_detail, 
-                ga.account, ga.debit, ga.site, 
+            SELECT
+                g.name as journal_entry, ga.name as je_detail,
+                ga.account, ga.debit, ga.site,
                 ga.item_code,ga.journal_entry_for
             FROM `tabJournal Entry` g, `tabJournal Entry Account` ga
             WHERE g.name = ga.parent and ga.parenttype = 'Journal Entry'
-                and g.docstatus = 1 and ga.project = %s 
+                and g.docstatus = 1 and ga.project = %s
                 and ga.journal_entry_for in('Leave','Indemnity','Visa and Residency')
                 and ga.include_amount_in_sales_invoice = 1 and g.posting_date between %s and %s
                 order by g.posting_date asc

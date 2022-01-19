@@ -7,9 +7,10 @@ function open_form(frm, doctype, child_doctype, parentfield) {
 	frappe.model.with_doctype(doctype, () => {
         let new_doc = frappe.model.get_new_doc(doctype);
         new_doc.type  = 'Contracts';
-		new_doc.customer = frm.doc.client;
+		new_doc.amended_from = frm.doc.name;
+		new_doc.client = frm.doc.client;
 		new_doc.project = frm.doc.project;
-
+		new_doc.price_list = frm.doc.price_list;
 		frappe.ui.form.make_quick_entry(doctype, null, null, new_doc);
 	});
 
@@ -87,6 +88,11 @@ frappe.ui.form.on('Contracts', {
 		}
 	},
 	refresh:function(frm){
+		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
+			frm.add_custom_button(__("Amend Contract"), function() {
+				open_form(frm, "Contracts", null, null);
+			});
+		}
 		var days,management_fee_percentage,management_fee;
 		frm.set_query("bank_account", function() {
 			return {
@@ -96,13 +102,13 @@ frappe.ui.form.on('Contracts', {
 				}
 			};
 		});
-		frm.refresh_field("bank_account");			
+		frm.refresh_field("bank_account");
 		frm.set_query("project", function() {
 			return {
 				filters:{
 					project_type: 'External',
 					customer: frm.doc.client
-										
+
 				}
 			};
 		});
@@ -126,7 +132,7 @@ frappe.ui.form.on('Contracts', {
 		});
 		frm.refresh_field("price_list");
 		frm.fields_dict['items'].grid.get_field('item_code').get_query = function() {
-            return {    
+            return {
                 filters:{
 					is_stock_item: 0,
 					is_sales_item: 1,
@@ -136,10 +142,10 @@ frappe.ui.form.on('Contracts', {
         }
 		frm.fields_dict['items'].grid.get_field('item_price').get_query = function(frm, cdt, cdn) {
             let d = locals[cdt][cdn];
-            return {    
+            return {
                 filters:{
 					price_list: cur_frm.doc.price_list,
-                    customer: cur_frm.doc.client, 
+                    customer: cur_frm.doc.client,
 					selling: 1,
                     item_code: d.item_code
                 }
@@ -147,7 +153,7 @@ frappe.ui.form.on('Contracts', {
         }
         frm.refresh_field("items");
 		frm.fields_dict['assets'].grid.get_field('item_code').get_query = function() {
-            return {    
+            return {
                 filters:{
 					is_stock_item: 1,
 					is_sales_item: 1,
@@ -156,7 +162,7 @@ frappe.ui.form.on('Contracts', {
             }
 		}
 		frm.fields_dict['assets'].grid.get_field('site').get_query = function() {
-            return {    
+            return {
                 filters:{
 					project: frm.doc.project
                 }
@@ -219,6 +225,16 @@ frappe.ui.form.on('Contracts', {
 		else{
 			management_fee_percentage.hidden = 0;
 			management_fee.hidden = 0;
+		}
+	},
+	engagement_type: (frm)=>{
+		// disable is auto renewal if engagement type is one-off
+		if(frm.doc.engagement_type=='One-off'){
+			frm.toggle_enable('is_auto_renewal', 0);
+			frm.toggle_display('is_auto_renewal', 0);
+		} else {
+			frm.toggle_enable('is_auto_renewal', 1);
+			frm.toggle_display('is_auto_renewal', 1);
 		}
 	}
 });
@@ -368,7 +384,7 @@ frappe.ui.form.on('Contract Asset', {
 						}
 						else{
 							frappe.model.set_value(d.doctype, d.name, "unit_rate", 0);
-							frappe.msgprint("Rate not found for item" + d.item_code) 
+							frappe.msgprint("Rate not found for item" + d.item_code)
 						}
 					}
 				}

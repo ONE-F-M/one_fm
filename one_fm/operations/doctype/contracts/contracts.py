@@ -24,6 +24,9 @@ class Contracts(Document):
 		if(years < 1 and months > 0):
 			self.duration = cstr(months) + ' month'
 
+	def on_cancel(self):
+		frappe.throw("Contracts cannot be cancelled. Please try to ammend the existing record.")
+
 @frappe.whitelist()
 def get_contracts_asset_items(contracts):
 	contracts_item_list = frappe.db.sql("""

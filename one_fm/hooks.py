@@ -520,3 +520,13 @@ ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation
 required_apps = ['frappe', 'erpnext']
+
+# jinja env
+jenv = {
+    "methods": [
+        "pf:one_fm.jinja.print_format.methods.pf"
+    ],
+    "filters": [
+        # "xmul:one_fm.jinja.methods.xmultiply"
+    ]
+}
