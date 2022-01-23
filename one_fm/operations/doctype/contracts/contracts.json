@@ -72,7 +72,8 @@
   "section_break_4",
   "addendums",
   "section_break_55",
-  "password_management"
+  "password_management",
+  "overtime_rate"
  ],
  "fields": [
   {
@@ -451,10 +452,16 @@
    "label": "Engagement Type",
    "options": "\nOne-off\nPeriodic",
    "reqd": 1
+  },
+  {
+   "fieldname": "overtime_rate",
+   "fieldtype": "Float",
+   "label": "Overtime Rate",
+   "precision": "3"
   }
  ],
  "links": [],
- "modified": "2022-01-19 13:57:03.242593",
+ "modified": "2022-01-23 15:51:31.758217",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
