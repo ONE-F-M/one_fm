@@ -1,4 +1,4 @@
-# Copyright (c) 2022, omar jaber and contributors
+# Copyright (c) 2022, omar jaber, Anthony Emmanuel and contributors
 # For license information, please see license.txt
 
 import frappe
