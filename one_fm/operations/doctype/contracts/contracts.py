@@ -6,10 +6,13 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.utils import cstr,month_diff,today,getdate,date_diff,add_years
+from frappe import _
 
 class Contracts(Document):
 	def validate(self):
 		self.calculate_contract_duration()
+		if self.overtime_rate == 0:
+			frappe.msgprint(_("Overtime rate not set."), alert=True, indicator='orange')
 
 	def calculate_contract_duration(self):
 		duration_in_days = date_diff(self.end_date, self.start_date)
