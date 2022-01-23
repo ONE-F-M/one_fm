@@ -70,7 +70,8 @@
   "password_management",
   "sales_invoice_print_settings_section",
   "sales_invoice_print_format",
-  "sales_invoice_letter_head"
+  "sales_invoice_letter_head",
+  "overtime_rate"
  ],
  "fields": [
   {
@@ -415,6 +416,12 @@
    "reqd": 1
   },
   {
+   "fieldname": "overtime_rate",
+   "fieldtype": "Float",
+   "label": "Overtime Rate",
+   "precision": "3"
+  },
+  {
    "collapsible": 1,
    "fieldname": "sales_invoice_print_settings_section",
    "fieldtype": "Section Break",
@@ -441,7 +448,7 @@
   }
  ],
  "links": [],
- "modified": "2022-01-26 15:39:59.100405",
+ "modified": "2022-01-27 15:39:59.100405",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
