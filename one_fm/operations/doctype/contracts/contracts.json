@@ -35,6 +35,7 @@
   "end_date",
   "due_date",
   "billing_type",
+  "overtime_rate",
   "column_break_27",
   "invoice_output_format",
   "invoice_frequency",
@@ -72,8 +73,7 @@
   "section_break_4",
   "addendums",
   "section_break_55",
-  "password_management",
-  "overtime_rate"
+  "password_management"
  ],
  "fields": [
   {
@@ -456,12 +456,12 @@
   {
    "fieldname": "overtime_rate",
    "fieldtype": "Float",
-   "label": "Overtime Rate",
+   "label": "Overtime rate",
    "precision": "3"
   }
  ],
  "links": [],
- "modified": "2022-01-23 15:51:31.758217",
+ "modified": "2022-01-23 18:14:25.847464",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
