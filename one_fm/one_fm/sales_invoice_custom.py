@@ -14,8 +14,8 @@ def create_sales_invoice():
     first_day = get_first_day(today)
     #Get the last day of the month
     last_day = get_last_day(first_day)
-    contacts_list = get_contracts_list(day, today, today)
-    for contracts in contacts_list:
+    contracts_list = get_contracts_list(day, today, today)
+    for contracts in contracts_list:
         sales_invoice = frappe._dict()
         if contracts.invoice_frequency == 'Monthly':
             from_date = first_day
@@ -42,11 +42,11 @@ def create_sales_invoice():
 def create_sales_invoice_for_t4():
     today = date.today()
     day = today.day
-    contacts_list = get_contracts_list(day, today, today , 1)
+    contracts_list = get_contracts_list(day, today, today , True)
     from_date = add_months(today, -1)
     from_date = get_first_day(from_date)
     to_date = get_last_day(from_date)
-    for contracts in contacts_list:
+    for contracts in contracts_list:
         sales_invoice = frappe._dict()
         if contracts.invoice_frequency == 'Monthly':
             #run timesheet automation for the project
@@ -123,7 +123,7 @@ def create_invoice_for_contracts(sales_invoice, contracts, today, first_day, las
         delivery_note_start_date = journal_entry_start_date = add_months(today, -3)
     if contracts.invoice_frequency == 'Monthly':
         delivery_note_start_date = journal_entry_start_date = add_months(today, -1)
-    if contracts.is_seperate_invoice_for_site:
+    if contracts.create_sales_invoice_as == 'Separate Invoice for Each Site':
         create_seperate_invoice_for_site(sales_invoice, contracts, today, first_day, last_day, from_date)
     else:
         sales_invoice = frappe.new_doc('Sales Invoice')
@@ -131,18 +131,18 @@ def create_invoice_for_contracts(sales_invoice, contracts, today, first_day, las
         cost_center, income_account = frappe.db.get_value('Project', contracts.project, ['cost_center', 'income_account'])
         contract_item_list = get_contract_item_list(contracts.name)
         if contract_item_list:
-            if contracts.is_invoice_for_site:
+            if contracts.create_sales_invoice_as == 'Separate Item Line for Each Site':
                 for contract_item in contract_item_list:
                     sitewise_timesheet_details = get_sitewise_timesheet_data(contracts.project, contract_item.item_code, from_date, today)
                     if sitewise_timesheet_details:
                         for key, group in itertools.groupby(sitewise_timesheet_details, key=lambda x: (x['site'])):
                             sales_invoice = add_site_wise_contracts_item_details_into_invoice(sales_invoice, group, key, contract_item, today, from_date, last_day, first_day, income_account, cost_center)
-            elif contracts.is_invoice_for_full_amount:
+            elif contracts.create_sales_invoice_as == 'Invoice for Full Amount in the Contract':
                 for contract_item in contract_item_list:
                     timesheet_details = get_projectwise_timesheet_data(contracts.project, contract_item.item_code, from_date, today, contract_item.shift_hours, contract_item.gender)
                     sales_invoice = add_timesheet_details_into_invoice(sales_invoice, timesheet_details, contract_item.item_code)
                     sales_invoice = add_contracts_item_details_into_invoice(sales_invoice, contract_item, first_day, income_account, cost_center)
-            elif contracts.is_invoice_for_day_by_post:
+            elif contracts.create_sales_invoice_as == 'Separate Item Line for Days of Work and Service Item':
                 for contract_item in contract_item_list:
                     timesheet_details = get_projectwise_timesheet_data(contracts.project, contract_item.item_code, from_date, today, contract_item.shift_hours, contract_item.gender)
                     sales_invoice = add_timesheet_details_into_invoice(sales_invoice, timesheet_details, contract_item.item_code)
@@ -208,18 +208,17 @@ def append_invoice_parent_details(sales_invoice, contracts):
     return sales_invoice
 
 #Get contracts list
-def get_contracts_list(due_date, start_date, end_date,is_invoice_for_airport = 0):
+def get_contracts_list(due_date, start_date, end_date, invoice_for_airport=False):
     filters = {'due_date': due_date, 'start_date': start_date, 'end_date': end_date, 'workflow_state': 'Active'}
     conditions = "due_date = %(due_date)s and start_date <= %(start_date)s and end_date >= %(end_date)s"
-    if is_invoice_for_airport != 0:
-        filters['is_invoice_for_airport'] = True
-        conditions += " and is_invoice_for_airport = %(is_invoice_for_airport)s"
+    if invoice_for_airport:
+        filters['create_sales_invoice_as'] = 'Invoice for Airport'
+        conditions += " and create_sales_invoice_as = %(create_sales_invoice_as)s"
     contract_list = frappe.db.sql("""
         SELECT
             name, client, project, price_list,
             invoice_frequency, due_date, frequency,
-            start_date, is_invoice_for_site, is_seperate_invoice_for_site,
-            is_invoice_for_full_amount, is_invoice_for_day_by_post
+            start_date, create_sales_invoice_as
         FROM tabContracts
         WHERE {conditions}
     """.format(conditions=conditions), values=filters, as_dict = 1)
