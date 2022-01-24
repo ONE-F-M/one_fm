@@ -266,6 +266,9 @@ doc_events = {
 	"Payroll Entry": {
 		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
 	},
+	"Expense Claim": {
+		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
