@@ -121,6 +121,13 @@ frappe.ui.form.on('Contracts', {
 				}
 			};
 		});
+		frm.set_query("sales_invoice_print_format", function() {
+			return {
+				filters: {
+					"doc_type": 'Sales Invoice'
+				}
+			};
+		});
 		frm.refresh_field("customer_address");
 		frm.set_query("price_list", function() {
 			return {
