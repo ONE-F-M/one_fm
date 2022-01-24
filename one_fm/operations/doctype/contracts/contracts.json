@@ -53,12 +53,8 @@
   "frequency",
   "assets",
   "section_break_30",
-  "is_invoice_for_site",
+  "create_sales_invoice_as",
   "site_wise_option",
-  "is_seperate_invoice_for_site",
-  "is_invoice_for_full_amount",
-  "is_invoice_for_day_by_post",
-  "is_invoice_for_airport",
   "column_break_38",
   "is_attendance_for_invoice",
   "is_po_for_invoice",
@@ -72,7 +68,10 @@
   "section_break_4",
   "addendums",
   "section_break_55",
-  "password_management"
+  "password_management",
+  "sales_invoice_print_settings_section",
+  "sales_invoice_print_format",
+  "sales_invoice_letter_head"
  ],
  "fields": [
   {
@@ -222,12 +221,6 @@
   },
   {
    "default": "0",
-   "fieldname": "is_invoice_for_site",
-   "fieldtype": "Check",
-   "label": "Is Require Invoice For Each Site"
-  },
-  {
-   "default": "0",
    "fieldname": "is_po_for_invoice",
    "fieldtype": "Check",
    "label": "Is Require PO For Each Invoice Submission"
@@ -368,31 +361,13 @@
    "reqd": 1
   },
   {
-   "default": "0",
-   "fieldname": "is_seperate_invoice_for_site",
-   "fieldtype": "Check",
-   "label": "Is Require Seperate Invoice For Site"
-  },
-  {
    "fieldname": "holiday_list",
    "fieldtype": "Link",
    "label": "Holiday List",
    "options": "Holiday List"
   },
   {
-   "default": "0",
-   "fieldname": "is_invoice_for_full_amount",
-   "fieldtype": "Check",
-   "label": "Is Require Invoice For Full Amount"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_invoice_for_day_by_post",
-   "fieldtype": "Check",
-   "label": "Is require Invoice For Day By Post"
-  },
-  {
-   "depends_on": "is_invoice_for_site",
+   "depends_on": "eval: doc.create_sales_invoice_as == 'Separate Item Line for Each Site'",
    "fieldname": "site_wise_option",
    "fieldtype": "Select",
    "label": "Site Wise Option",
@@ -425,12 +400,6 @@
    "label": "Duration In Days"
   },
   {
-   "default": "0",
-   "fieldname": "is_invoice_for_airport",
-   "fieldtype": "Check",
-   "label": "Is Invoice For Airport"
-  },
-  {
    "fieldname": "billing_type",
    "fieldtype": "Select",
    "label": "Billing Type",
@@ -451,10 +420,35 @@
    "label": "Engagement Type",
    "options": "\nOne-off\nPeriodic",
    "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "sales_invoice_print_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Sales Invoice Print Settings"
+  },
+  {
+   "fieldname": "sales_invoice_print_format",
+   "fieldtype": "Link",
+   "label": "Sales Invoice Print Format",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "sales_invoice_letter_head",
+   "fieldtype": "Link",
+   "label": "Sales Invoice Letter Head",
+   "options": "Letter Head"
+  },
+  {
+   "description": "<b>1. Separate Item Line for Each Site:</b>\n  If two or more site in the same project (against a contract), then while selecting this, the Invoice will be created with item lines having multiple item line for same service item for each site.\n<br>\n<b>2. Separate Invoice for Each Site:</b>\n  If two or more site in the same project (against a contract), then while selecting this, the Invoice will be created for each site Separately. \n<br>\n<b>3. Separate Item Line for Days of Work and Service Item:</b>\n  While selecting this, the Invoice will be created with item lines having multiple item line for same service item for same number of days.\n<br>\n<b>4. Invoice for Full Amount in the Contract:</b>\n  While selecting this, the Invoice will be created with full amount mentioned in the contract without checking the Service (Eg: Without checking the attendance of Security Guards)\n<br>\n<b>5. Invoice for Airport:</b>\n  Select this Option if this contract is related to Airport Services",
+   "fieldname": "create_sales_invoice_as",
+   "fieldtype": "Select",
+   "label": "Create Auto Sales Invoice as",
+   "options": "\nSeparate Item Line for Each Site\nSeparate Invoice for Each Site\nSeparate Item Line for Days of Work and Service Item\nInvoice for Full Amount in the Contract\nInvoice for Airport"
   }
  ],
  "links": [],
- "modified": "2022-01-19 13:57:03.242593",
+ "modified": "2022-01-24 13:48:14.181204",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
