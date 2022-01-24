@@ -2305,7 +2305,7 @@ frappe.whitelist()
 def fetch_employee_signature(user_id):
     return frappe.get_value("Employee", {"user_id":user_id},["employee_signature"])
 
-
+@frappe.whitelist()
 def create_sales_invoice():
     
     today_date = cstr(getdate()).split("-")[2]
