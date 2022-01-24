@@ -6,10 +6,10 @@ def execute():
 
 def install_face_predictor():
     # download facial predictor
-    path =  f"{frappe.utils.get_bench_path()}/sites{frappe.utils.get_site_path().replace('.', '')}/private/files/"
+    path =  f"{frappe.get_site_path()}/private/files/"
     filename = "shape_predictor_68_face_landmarks.dat"
     url = 'https://github.com/italojs/facial-landmarks-recognition/raw/master/shape_predictor_68_face_landmarks.dat'
-    print("Checking if Landmark facial recogintion exists...")
+    print("Checking if Landmark facial recogintion exists...", path)
     if(os.path.exists(path+filename)):
         print("Facial recognition found!.")
     else:
