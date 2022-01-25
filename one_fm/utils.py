@@ -2312,7 +2312,7 @@ def create_sales_invoice():
     active_contracts = frappe.db.get_list("Contracts", pluck='name', filters={'workflow_state': 'Active', 'due_date': today_date, 'end_date': ['>', cstr(getdate())]})
     
     if len(active_contracts) == 0:
-        frappe.throw(_("No active contracts found with due date as {today_date} and contract end date later than today."))
+        frappe.throw(_("No active contracts found with due date as {today_date} and contract end date later than today.".format(today_date=today_date)))
 
     
     for contract in active_contracts:
