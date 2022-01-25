@@ -2307,7 +2307,7 @@ def fetch_employee_signature(user_id):
 
 @frappe.whitelist()
 def create_sales_invoice():
-    
+    """This method can be used for automatic sales invoice generation based on invoice due date of contracts."""
     today_date = cstr(getdate()).split("-")[2]
     active_contracts = frappe.db.get_list("Contracts", pluck='name', filters={'workflow_state': 'Active', 'due_date': today_date, 'end_date': ['>', cstr(getdate())]})
     
@@ -2332,12 +2332,17 @@ def create_sales_invoice():
 
         elif billing_type.lower() == "monthly":
             print("Monthly billing type invoice calculation")
-            
-            
+
 
 def get_service_items_hourly_invoice_amounts(contract):
     first_day_of_month = cstr(get_first_day(getdate()))
     last_day_of_month = cstr(get_last_day(getdate()))
+
+    temp_invoice_year = first_day_of_month.split("-")[0]
+    temp_invoice_month = first_day_of_month.split("-")[1]
+
+    final_invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(contract.due_date)
+
     project = contract.project
     contract_overtime_rate = contract.overtime_rate
     master_data = []
@@ -2374,7 +2379,7 @@ def get_service_items_hourly_invoice_amounts(contract):
             # Get attendances in date range and post type
             attendances = frappe.db.get_list("Attendance", 
                 {
-                    'attendance_date': ['between', (first_day_of_month, add_to_date(cstr(getdate()), days=-1))], 
+                    'attendance_date': ['between', (first_day_of_month, final_invoice_date)], 
                     'post_type': ['in', post_type_list], 
                     'project': project,
                     'status': "Present"
@@ -2393,25 +2398,25 @@ def get_service_items_hourly_invoice_amounts(contract):
 
                 # Use working hours as duration of shift if no in-out time available in attendance
                 elif attendance.operations_shift:
-                    hours += frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"])
+                    hours += float(frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"]))
             
                 item_hours += hours
                     
             # Get employee schedules for remaining days of the month from the invoice due date if due date is before last day
-            if cstr(getdate()) < last_day_of_month:
+            if final_invoice_date < last_day_of_month:
                 employee_schedules = frappe.db.get_list("Employee Schedule", 
                     {
                         'project': project,
                         'post_type': ['in', post_type_list],
                         'employee_availability': 'Working',
-                        'date': ['between', (cstr(getdate()), last_day_of_month)],
+                        'date': ['between', (final_invoice_date, last_day_of_month)],
                     },
                     ["shift"]
                 )
 
                 # Use item hours as duration of shift
                 for es in employee_schedules:
-                    item_hours += frappe.db.get_value("Operations Shift", {'name': es.shift}, ["duration"])
+                    item_hours += float(frappe.db.get_value("Operations Shift", {'name': es.shift}, ["duration"]))
 
             # If total item hours exceed expected hours, apply overtime rate on extra hours
             if item_hours > expected_item_hours:
