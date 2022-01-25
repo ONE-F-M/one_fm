@@ -2343,7 +2343,7 @@ def get_service_items_hourly_invoice_amounts(contract):
     master_data = []
     for item in contract.items:
         item_code = item.item_code
-        item_group = str(frappe.db.get_value("Item", {'name': item_code}, ["group"]))
+        item_group = str(frappe.db.get_value("Item", {'name': item_code}, ["subitem_group"]))
 
         if item_group.lower() == "service":
             item_price = item.item_price
@@ -2376,26 +2376,26 @@ def get_service_items_hourly_invoice_amounts(contract):
                 {
                     'attendance_date': ['between', (first_day_of_month, add_to_date(cstr(getdate()), days=-1))], 
                     'post_type': ['in', post_type_list], 
-                    'project': project
+                    'project': project,
+                    'status': "Present"
                 }, 
-                ["status", "operations_shift", "in_time", "out_time", "working_hours"]
+                ["operations_shift", "in_time", "out_time", "working_hours"]
             )
 
             # Compute working hours
             for attendance in attendances:
                 hours = 0
-                if attendance.status == "Present":
-                    if attendance.working_hours:
-                        hours += attendance.working_hour
-                    
-                    elif attendance.in_time and attendance.out_time:
-                        hours += round((get_datetime(attendance.in_time) - get_datetime(attendance.out_time)).total_seconds() / 3600, 1)
-
-                    # Use working hours as duration of shift if no in-out time available in attendance
-                    elif attendance.operations_shift:
-                        hours += frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"])
+                if attendance.working_hours:
+                    hours += attendance.working_hours
                 
-                    item_hours += hours
+                elif attendance.in_time and attendance.out_time:
+                    hours += round((get_datetime(attendance.in_time) - get_datetime(attendance.out_time)).total_seconds() / 3600, 1)
+
+                # Use working hours as duration of shift if no in-out time available in attendance
+                elif attendance.operations_shift:
+                    hours += frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"])
+            
+                item_hours += hours
                     
             # Get employee schedules for remaining days of the month from the invoice due date if due date is before last day
             if cstr(getdate()) < last_day_of_month:
