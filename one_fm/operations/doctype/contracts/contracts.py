@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import cstr,month_diff,today,getdate,date_diff,add_years
 from frappe import _
+from one_fm.utils import get_service_items_hourly_invoice_amounts
 
 class Contracts(Document):
 	def validate(self):
@@ -26,6 +27,14 @@ class Contracts(Document):
 			self.duration += ' and ' + cstr(months) + ' month'
 		if(years < 1 and months > 0):
 			self.duration = cstr(months) + ' month'
+
+	@frappe.whitelist()
+	def generate_sales_invoice(self):
+		billing_type = str(self.billing_type)
+
+		if billing_type.lower() == "hourly":
+			items_amounts = get_service_items_hourly_invoice_amounts(self)
+			print(items_amounts)
 
 	def on_cancel(self):
 		frappe.throw("Contracts cannot be cancelled. Please try to ammend the existing record.")
