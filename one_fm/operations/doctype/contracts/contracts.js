@@ -93,6 +93,20 @@ frappe.ui.form.on('Contracts', {
 				open_form(frm, "Contracts", null, null);
 			});
 		}
+
+		frm.add_custom_button(__("Generate Invoice"), function() {
+			frappe.call({
+				doc: frm.doc,
+				method: 'generate_sales_invoice',
+				callback: function(r) {
+					if(!r.exc){
+						frm.reload_doc();
+					}
+				},
+				freeze: true,
+				freeze_message: (__('Creating Sales Invoice'))
+			});
+		}).addClass("btn-primary");
 		var days,management_fee_percentage,management_fee;
 		frm.set_query("bank_account", function() {
 			return {
