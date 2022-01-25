@@ -7,9 +7,11 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "new_employee",
   "onboard_employee",
   "posting_date",
   "section_break_2",
+  "employee",
   "employee_name",
   "nationality",
   "company",
@@ -31,16 +33,20 @@
    "label": "Employee Details"
   },
   {
+   "fetch_from": "employee.employee_name",
+   "fetch_if_empty": 1,
    "fieldname": "employee_name",
    "fieldtype": "Data",
    "label": "Employee Name"
   },
   {
+   "fetch_from": "employee.one_fm_nationality",
    "fieldname": "nationality",
    "fieldtype": "Data",
    "label": "Nationality"
   },
   {
+   "fetch_from": "employee.company",
    "fieldname": "company",
    "fieldtype": "Data",
    "label": "Company"
@@ -50,11 +56,13 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "employee.employee_name_in_arabic",
    "fieldname": "employee_name_in_arabic",
    "fieldtype": "Data",
    "label": "Employee Name in Arabic"
   },
   {
+   "fetch_from": "employee.one_fm_civil_id",
    "fieldname": "civil_id",
    "fieldtype": "Data",
    "label": "Civil ID"
@@ -86,9 +94,12 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval: doc.docstatus== 1 ;",
    "fieldname": "applicant_signature",
    "fieldtype": "Signature",
-   "label": "Applicant Signature"
+   "label": "Applicant Signature",
+   "read_only": 1,
+   "read_only_depends_on": "eval: doc.applicant_signature != undefined ;"
   },
   {
    "fieldname": "amended_from",
@@ -107,16 +118,30 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval: doc.new_employee == 1;",
    "fieldname": "onboard_employee",
    "fieldtype": "Link",
    "label": "Onboard Employee",
    "options": "Onboard Employee"
+  },
+  {
+   "default": "0",
+   "fieldname": "new_employee",
+   "fieldtype": "Check",
+   "label": "New Employee"
+  },
+  {
+   "depends_on": "eval: doc.new_employee == 0;",
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-28 10:25:26.544433",
+ "modified": "2022-01-06 11:24:25.250235",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Electronic Signature Declaration",

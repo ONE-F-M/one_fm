@@ -1,0 +1,51 @@
+<style type="text/css" media="print">
+    /* @page {
+        size: landscape;
+    } */
+</style>
+
+
+{% if results %}
+<table class="table table-bordered table-dark table-responsive-xl">
+  <thead class="thead-dark">
+      <!-- <tr>
+        <td colspan="">Month</td>
+        <td colspan="">Project</td>
+      </tr> -->
+
+  </thead>
+  <tbody>
+    {%for i in results %}
+    <tr>
+      <th scope="">{{i.sn}}</th>
+      {% if loop.index==1 %}
+          <th>{{i.employee_id}}</th>
+          <th style="width:25%">{{i.employee_name}}</th>
+          {% for day in i.days_worked %}
+              {% for k, v in day.items() %}
+                <th>{{v}}</th>
+              {% endfor %}
+          {% endfor %}
+          <th>Signature</th>
+      {% else %}
+          <td>{{i.employee_id}}</td>
+          <td style="width:25%">{{i.employee_name}}</td>
+          {% for day in i.days_worked %}
+            <td>{{day}}</td>
+          {% endfor %}
+          <td></td>
+      {% endif %}
+
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p>
+    <br>
+        <span class="pull-left">Site Supervisor Signature</span>
+        <span class="pull-right">Site in Charge Signature</span>
+
+</p>
+{% else %}
+<h1 class="text-center"></h1>
+{% endif %}

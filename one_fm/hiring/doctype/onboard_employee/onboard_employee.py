@@ -123,6 +123,7 @@ class OnboardEmployee(Document):
 		"""
 		if not frappe.db.exists('Electronic Signature Declaration', {'onboard_employee': self.name}):
 			doc = frappe.new_doc('Electronic Signature Declaration')
+			doc.new_employee = 1
 			doc.onboard_employee = self.name
 			doc.employee_name = self.employee_name
 			doc.employee_name_in_arabic = self.employee_name_in_arabic

@@ -17,6 +17,7 @@ frappe.ui.form.on('Purchase Order', {
 	status: function(frm){
 		confirm_accept_approve_purchase_order(frm);
 	},
+	
 	set_warehouse: function(frm){
 		if(frm.doc.set_warehouse){
 			frappe.call({
@@ -87,14 +88,12 @@ var confirm_accept_approve_purchase_order= function(frm) {
 	if(frm.doc.workflow_state == "Approved"){
 		console.log("All is well my bro")
 		frappe.confirm(
-			__('A one time code will be sent to you for verification in order to use your signature for approval. Do You Want to {0} this Request for Material?', [msg_status]),
+			__('A one time code will be sent to you for verification in order to use your signature for approval. Do You Want to {0} this Purchase Order?', [msg_status]),
 			function(){
 				// Yes
 				var doctype = frm.doc.doctype
 				var document_name = frm.doc.name
-				var d = new Date();
-				var current_datetime_string = d.getUTCFullYear() +"/"+ (d.getUTCMonth()+1) +"/"+ d.getUTCDate() + " " + d.getUTCHours() + ":" + d.getUTCMinutes() + ":" + d.getUTCSeconds();
-				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
+				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
 					.then(res => {
 						console.log(res);
 					}).catch(e => {
@@ -118,6 +117,11 @@ var confirm_accept_approve_purchase_order= function(frm) {
 							label: "Resend code", 
 							fieldname: "resend_verification_code"
 						},
+						{
+							fieldtype: "HTML",
+							label: "Time remaining",
+							fieldname: "timer"
+						}
 					],
 					primary_action_label: __("Submit"),
 					primary_action: function(){
@@ -134,19 +138,44 @@ var confirm_accept_approve_purchase_order= function(frm) {
 					},
 				});
 				d.fields_dict.resend_verification_code.input.onclick = function() {
-					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
+					reset_timer();
+					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
 					.then(res => {
 						console.log(res);
 					}).catch(e => {
 						console.log(e);
 					})
 				}
+				start_timer(60*5, d);
 				d.show();
 			},
 			function(){} // No
 		);
 	}
 };
+
+var timer;
+function start_timer(duration, d) {
+    timer = duration;
+    var minutes, seconds;
+    setInterval(function () {
+        minutes = parseInt(timer / 60, 10)
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        d.set_value('timer', "Verification code expires in: " + minutes + ":" + seconds);
+
+        if (--timer < 0) {
+            timer = duration;
+        }
+    }, 1000);
+}
+
+function reset_timer() {
+  timer = 60 * 5;
+}
 var accept_approve_purchase_order = function(frm) {
 	frappe.call({
 		doc: frm.doc,

@@ -15,6 +15,19 @@ frappe.ui.form.on('Request for Material', {
 				query: "erpnext.controllers.queries.item_query"
 			};
 		});
+
+		// set item reservation in child table
+		frm.set_query('item_reservation', 'items', (frm, cdt, cdn) => {
+			let row = locals[cdt][cdn];
+		    return {
+		        filters: {
+		            item_code: ['=', row.item_code],
+					rfm: ['=', row.parent]
+		        }
+		    }
+		})
+		//  end set item reservation
+
 		if(frm.doc.docstatus==1 && frappe.session.user==frm.doc.request_for_material_approver && frm.doc.status!='Approved'){
 			var df = frappe.meta.get_docfield("Request for Material Item","reject_item", cur_frm.doc.name);
             df.hidden = 0;
@@ -65,6 +78,7 @@ frappe.ui.form.on('Request for Material', {
 		}
 		set_filters(frm);
 		set_warehouse_filters(frm);
+
 	},
 	// after_save: function(frm){
 	// 	let item_changes =
@@ -247,9 +261,7 @@ frappe.ui.form.on('Request for Material', {
 				// Yes
 				var doctype = frm.doc.doctype
 				var document_name = frm.doc.name
-				var d = new Date();
-				var current_datetime_string = d.getUTCFullYear() +"/"+ (d.getUTCMonth()+1) +"/"+ d.getUTCDate() + " " + d.getUTCHours() + ":" + d.getUTCMinutes() + ":" + d.getUTCSeconds();
-				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
+				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
 					.then(res => {
 						console.log(res);
 					}).catch(e => {
@@ -269,10 +281,15 @@ frappe.ui.form.on('Request for Material', {
 							}
 						},
 						{
-							fieldtype: "Button", 
-							label: "Resend code", 
+							fieldtype: "Button",
+							label: "Resend code",
 							fieldname: "resend_verification_code"
 						},
+						{
+							fieldtype: "HTML",
+							label: "Time remaining",
+							fieldname: "timer"
+						}
 					],
 					primary_action_label: __("Submit"),
 					primary_action: function(){
@@ -289,13 +306,15 @@ frappe.ui.form.on('Request for Material', {
 					},
 				});
 				d.fields_dict.resend_verification_code.input.onclick = function() {
-					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name, current_datetime_string})
+					reset_timer();
+					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
 					.then(res => {
 						console.log(res);
 					}).catch(e => {
 						console.log(e);
 					})
 				}
+				start_timer(60 * 5, d);
 				d.show();
 			},
 			function(){} // No
@@ -556,25 +575,35 @@ var fetch_erf_items = function(frm){
 };
 
 var set_item_field_property = function(frm) {
-	if((frm.doc.docstatus == 1 && frappe.session.user == frm.doc.request_for_material_accepter) || frm.doc.type == 'Stock'){
-		var df = frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name);
-		df.read_only = false;
-	}
-	else if((frm.doc.docstatus == 1 && frm.doc.status == 'Approved') || frm.doc.type == 'Stock'){
+	var fields_dict = [];
+	if((frm.doc.docstatus == 1 && (frappe.session.user == frm.doc.request_for_material_accepter || frm.doc.status == 'Approved')) || frm.doc.type == 'Stock'){
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
 	}
 	if(frm.doc.type == 'Stock'){
-		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).read_only = true;
+		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = false;
-		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).read_only = true;
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = false;
 	}
+	else if((frm.doc.docstatus == 1 && frm.doc.status == 'Approved')){
+		var fields = ['requested_item_name', 'requested_description', 'qty', 'uom', 'stock_uom', 't_warehouse'];
+		fields.forEach((field, i) => {
+			fields_dict[i] = {'fieldname': field, 'read_only': true}
+		});
+	}
 	else{
-		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).read_only = false;
+		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': false}, {'fieldname': 'requested_description', 'read_only': false}];
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = true;
-		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).read_only = false;
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = true;
 	}
+	if (fields_dict.length > 0){
+		set_item_field_read_only(frm, fields_dict);
+	}
+};
+
+var set_item_field_read_only = function(frm, fields) {
+	fields.forEach((field, i) => {
+		frappe.meta.get_docfield("Request for Material Item", field.fieldname, frm.doc.name).read_only = field.read_only;
+	});
 };
 
 var set_warehouse_filters = function(frm) {
@@ -668,6 +697,10 @@ var set_employee_or_project = function(frm) {
 
 
 frappe.ui.form.on("Request for Material Item", {
+	setup: (frm)=>{
+		// filter Item Reservation
+
+	},
 	// refresh: function (frm){
 	// 	if(frm.doc.docstatus == 1 && frm.doc.status == 'Approved'){
 	// 		frm.set_df_property('item_code', 'read_only', false);
@@ -710,6 +743,18 @@ frappe.ui.form.on("Request for Material Item", {
 
 	item_code: function(frm, doctype, name) {
 		const item = locals[doctype][name];
+		// set childtable button color
+		if(!item.item_reservation){
+			document.querySelectorAll("[data-fieldname='create_reservation']").forEach((e)=>{
+				if(e.classList.contains('btn-default')){
+					e.classList.replace('btn-default', 'btn-primary');
+				} else {
+					e.classList.add('btn-primary');
+				}
+			})
+		}
+
+
 		item.rate = 0;
 		set_schedule_date(frm);
 		if(!item.item_code){
@@ -717,8 +762,99 @@ frappe.ui.form.on("Request for Material Item", {
 		}
 		frm.events.get_item_data(frm, item);
 		// if(item.qty>item.actual_qty){}
-	},
 
+	},
+	create_reservation: (frm, cdt, cdn)=>{
+		let row = locals[cdt][cdn];
+		// frappe.new_doc('Item Reservation', {rfm: row.parent, item_code:row.item_code});
+		if(row.item_code && !row.item_reservation){
+			frappe.db.get_value('Item Reservation', {
+				rfm: frm.doc.name,
+				item_code:row.item_code
+			}, [
+				'item_code', 'from_date', 'to_date',
+				'name', 'qty']
+			).then(r=>{
+				if(Object.keys(r.message).length){
+					row.item_reservation = r.message.name;
+					row.from_date = r.message.from_date;
+					row.to_date = r.message.to_date;
+					row.reserve_qty = r.message.qty;
+					frm.refresh_field('items');
+				}else{
+					let d = new frappe.ui.Dialog({
+					    title: `Create Reservation for <b>${row.item_code}</b>`,
+					    fields: [
+					        {
+					            label: 'Item',
+					            fieldname: 'item_code',
+					            fieldtype: 'Link',
+								options: 'Item',
+								reqd:1,
+								read_only:1,
+								default: row.item_code
+					        },
+					        {
+					            label: 'Quantity',
+					            fieldname: 'qty',
+					            fieldtype: 'Float'
+					        },
+					        {
+					            label: 'From Date',
+					            fieldname: 'from_date',
+					            fieldtype: 'Date',
+								reqd:1
+					        },
+					        {
+					            label: 'To Date',
+					            fieldname: 'to_date',
+					            fieldtype: 'Date',
+								reqd:1
+					        },
+							{
+					            label: 'Comment',
+					            fieldname: 'comment',
+					            fieldtype: 'Small Text',
+					        }
+					    ],
+					    primary_action_label: 'Submit',
+					    primary_action(values) {
+							if(values.qty>row.qty){
+								frappe.throw(__('Reservation quantity cannot be greater that requested quantity'));
+							} else if(values.qty<=0){
+								frappe.throw(__('Value cannnot be 0'));
+							} else if(values.from_date > values.to_date){
+					            frappe.throw(__(
+					                {
+					                    title:__('Invalid'),
+					                    message:__('Reserve From date cannot be after Reserver To date.')
+					                }
+					            ))
+					        } else {
+								values.rfm = row.parent;
+								frm.call('create_reservation', {filters:values}).then(r => {
+									if(r.message){
+										row.item_reservation = r.message.name;
+										row.from_date = r.message.from_date;
+										row.to_date = r.message.to_date;
+										row.reserve_qty = r.message.qty;
+										// frappe.model.set_value(row.doctype, row.name, 'item_reservation', r.message.name);
+										frm.refresh_field('items');
+
+									}
+							    })
+							}
+					        d.hide();
+					    }
+					});
+					d.show();
+				}
+
+			})
+
+		}
+
+	},
 	schedule_date: function(frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 		if (row.schedule_date) {
@@ -789,6 +925,29 @@ function set_t_warehouse(frm){
 		erpnext.utils.copy_value_in_all_rows(frm.doc, frm.doc.doctype, frm.doc.name, "items", "t_warehouse");
 	}
 };
+
+var timer;
+function start_timer(duration, d) {
+    timer = duration;
+    var minutes, seconds;
+    setInterval(function () {
+        minutes = parseInt(timer / 60, 10)
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        d.set_value('timer', "Verification code expires in: " + minutes + ":" + seconds);
+
+        if (--timer < 0) {
+            timer = duration;
+        }
+    }, 1000);
+}
+
+function reset_timer() {
+  timer = 60 * 5;
+}
 
 function is_valid_verification_code(code){
 	const code_expression = /^\d{6}(\s*,\s*\d{6})*$/;

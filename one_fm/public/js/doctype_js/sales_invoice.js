@@ -138,14 +138,16 @@ frappe.ui.form.on('Sales Invoice', {
                 callback:function(s){
                     if (!s.exc) {
                         //console.log(s.message);
-                        if(s.message){
-                            var selling_price_list = s.message.name;
-                            frm.set_value("selling_price_list",selling_price_list);
-                            frm.refresh_field("selling_price_list");
-                        }
-                        else{
-                            frm.set_value("selling_price_list",null);
-                            frm.refresh_field("selling_price_list");
+                        if(frm.doc.selling_price_list == null){
+                            if(s.message){
+                                var selling_price_list = s.message.name;
+                                frm.set_value("selling_price_list",selling_price_list);
+                                frm.refresh_field("selling_price_list");
+                            }
+                            else{
+                                frm.set_value("selling_price_list",null);
+                                frm.refresh_field("selling_price_list");
+                            }
                         }
                     }
                 }
@@ -184,37 +186,37 @@ frappe.ui.form.on('Sales Invoice', {
             get_contracts_asset_items(frm);
         }
     },
-    add_timesheet_amount: function(frm){
-        add_timesheet_rate(frm);
-    }
+    // add_timesheet_amount: function(frm){
+    //     add_timesheet_rate(frm);
+    // }
 });
-frappe.ui.form.on('Sales Invoice Item', {
-    item_code:function(frm,cdt,cdn){
-        var d = locals[cdt][cdn];
-        frappe.call({
-            method: 'frappe.client.get_value',
-            args:{
-                'doctype':'Item',
-                'filters':{
-                    'item_code': d.item_code,
-                },
-                'fieldname':[
-                    'is_stock_item'
-                ]
-            },
-            callback:function(s){
-                if (!s.exc) {
-                    if(s.message != undefined){
-                        if(s.message.is_stock_item == 0){
-                            get_timesheet_details(frm,d.item_code);
-                        }
-                    }
-                }
-            }
-        });  
-        frappe.model.set_value(d.doctype, d.name,"test_item",d.item_code);
-    }
-});
+// frappe.ui.form.on('Sales Invoice Item', {
+//     item_code:function(frm,cdt,cdn){
+//         var d = locals[cdt][cdn];
+//         frappe.call({
+//             method: 'frappe.client.get_value',
+//             args:{
+//                 'doctype':'Item',
+//                 'filters':{
+//                     'item_code': d.item_code,
+//                 },
+//                 'fieldname':[
+//                     'is_stock_item'
+//                 ]
+//             },
+//             callback:function(s){
+//                 if (!s.exc) {
+//                     if(s.message != undefined){
+//                         if(s.message.is_stock_item == 0){
+//                             get_timesheet_details(frm,d.item_code);
+//                         }
+//                     }
+//                 }
+//             }
+//         });  
+//         //frappe.model.set_value(d.doctype, d.name,"test_item",d.item_code);
+//     }
+// });
 var set_income_account_and_cost_center = function(frm){
     console.log('set_income_account_and_cost_center');
     frappe.call({
@@ -327,15 +329,51 @@ var get_contracts_items = function(frm){
                 if(s.message != undefined){
                     console.log(s.message);
                     for (var i=0; i<s.message.length; i++){
-                        var d = frm.add_child("items");
                         var item = s.message[i];
-                        frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
-                        frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
-                        //frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
-                        frm.refresh_field("items");
+                        if(item.uom == "Daily"){
+                            frm.set_value("ignore_pricing_rule",1);
+                            calculate_invoice_for_daily(frm);
+                        }
+                        else{
+                            frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
+                            frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
+                            frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
+                            //frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
+                            frm.refresh_field("items");
+                        }
                     }
                 }                      
             }
         }
     })
 };
+var calculate_invoice_for_daily = function(frm){
+    frappe.call({
+        method: "one_fm.one_fm.sales_invoice_custom.calculate_daily_rate",
+        args:{
+            'contracts': frm.doc.contracts
+        },
+        callback:function(s){
+            if(!s.exc){
+                if(s.message != undefined){
+                    //console.log(Object.values(s.message))
+                    var items = Object.values(s.message)
+                    for (var i in items){
+                        var d = frm.add_child("items");
+                        console.log(items[i])
+                        var item = items[i]
+                        frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
+                        frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
+                        frappe.model.set_value(d.doctype, d.name, "item_name", item.item_name);
+                        frappe.model.set_value(d.doctype, d.name, "description", item.description);
+                        frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
+                        frappe.model.set_value(d.doctype, d.name, "rate", item.rate);
+                        frappe.model.set_value(d.doctype, d.name, "days", item.days);
+                        frappe.model.set_value(d.doctype, d.name, "daily_rate", item.daily_rate);
+                        frm.refresh_field("items");
+                    }
+                }                      
+            }
+        }
+    })
+}

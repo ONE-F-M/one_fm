@@ -113,7 +113,7 @@ home_page = "landing_page"
 # Installation
 # ------------
 
-# before_install = "one_fm.install.before_install"
+before_install = "one_fm.install.before_install.execute"
 # after_install = "one_fm.install.after_install"
 
 # Desk Notifications
@@ -364,8 +364,8 @@ scheduler_events = {
 			'one_fm.api.tasks.process_attendance'
 		],
 		"0/5 * * * *": [
-			"one_fm.api.tasks.supervisor_reminder",
-			"one_fm.api.tasks.final_reminder",
+			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
+			"one_fm.api.tasks.checkin_checkout_final_reminder",
 			"one_fm.api.tasks.checkin_deadline"
 			#"one_fm.api.tasks.automatic_checkout"
 		],
@@ -517,3 +517,16 @@ fixtures = [
 # 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 # }
 ShiftType.process_auto_attendance = process_auto_attendance
+
+# Required apps before installation
+required_apps = ['frappe', 'erpnext']
+
+# jinja env
+jenv = {
+    "methods": [
+        "pf:one_fm.jinja.print_format.methods.pf"
+    ],
+    "filters": [
+        # "xmul:one_fm.jinja.methods.xmultiply"
+    ]
+}

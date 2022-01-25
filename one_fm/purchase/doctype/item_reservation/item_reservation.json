@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "status",
+  "rfm",
   "item_code",
   "item_name",
   "uom",
@@ -119,11 +120,17 @@
    "in_list_view": 1,
    "label": "Issued QTY",
    "read_only": 1
+  },
+  {
+   "fieldname": "rfm",
+   "fieldtype": "Link",
+   "label": "RFM",
+   "options": "Request for Material"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-30 11:42:29.824639",
+ "modified": "2022-01-05 11:03:01.422789",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Item Reservation",
@@ -143,7 +150,9 @@
    "write": 1
   }
  ],
+ "search_fields": "item_name,item_code",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "item_name",
  "track_changes": 1
 }

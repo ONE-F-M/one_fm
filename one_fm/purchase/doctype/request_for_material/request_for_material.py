@@ -63,7 +63,7 @@ class RequestforMaterial(BuyingController):
 					self.authority_signature = signature
 					self.save(ignore_permissions=True)
 				else:
-					frappe.msgprint(_("Your Signature is missing!"))
+					frappe.throw(_("Your Signature is missing!"))
 
 
 				# Notify Stock Manager - Stock Manger Check If Item Available
@@ -100,7 +100,7 @@ class RequestforMaterial(BuyingController):
 		self.set_item_fields()
 		self.set_title()
 		self.validate_item_qty()
-		self.validate_item_reservation()
+		# self.validate_item_reservation()
 
 
 	def validate_item_reservation(self):
@@ -297,6 +297,26 @@ class RequestforMaterial(BuyingController):
 			"target_field": "ordered_qty",
 			"name": self.name,
 		}, update_modified)
+
+	@frappe.whitelist()
+	def create_reservation(self, filters):
+		# create item reservation
+		try:
+			filters = frappe._dict(filters)
+			reservation = frappe.get_doc({
+				'doctype': 'Item Reservation',
+				'item_code': filters.item_code,
+				'qty':filters.qty,
+				'rfm':filters.rfm,
+				'from_date':filters.from_date,
+				'to_date':filters.to_date,
+				'comment': filters.comment
+			})
+			# reservation.flags.ignore = True
+			reservation.submit()
+			return reservation
+		except Exception as e:
+			frappe.throw(str(e))
 
 def update_completed_and_requested_qty(stock_entry, method):
 		if stock_entry.doctype == "Stock Entry":

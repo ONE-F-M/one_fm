@@ -16,7 +16,7 @@ def validate(self):
     #if is_service_item != None:
     if is_service_item == 0 and item_group == 'Service':
         self.check_duplicates()
-        self.name = self.item_code +"-"+ self.gender +"-"+ self.uom +"-"+ cstr(self.shift_hours) +"hr"+ "-"+ cstr(self.days_off) +"day off " +"-"+ self.customer
+        self.name = f"{self.item_code} - {self.gender} - {self.uom} - {cstr(self.shift_hours)}hr - {cstr(self.days_off)} day off- {self.customer}"
     else:
         self.validate_dates()
         self.update_price_list_details()
@@ -45,8 +45,3 @@ def check_duplicates(self):
 
     if price_list_rate :
         frappe.throw(_(error_description), ItemPriceDuplicateItem)
-    
-    
-
-
-
