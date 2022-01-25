@@ -5,6 +5,7 @@ from datetime import date,timedelta,datetime
 from frappe.utils import getdate,cstr,get_first_day,get_last_day,add_days,add_months,flt, add_to_date
 from one_fm.one_fm.timesheet_custom import timesheet_automation,calculate_hourly_rate,days_of_month
 from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
+from one_fm.operations.doctype.contracts.contracts import get_contracts_items
 
 #from frappe import _
 
@@ -207,7 +208,7 @@ def append_invoice_parent_details(sales_invoice, contracts):
     sales_invoice.selling_price_list = contracts.price_list
     #overriding erpnext standard functionality
     sales_invoice.timesheets = []
-    sales_invoice.items = []
+    #sales_invoice.items = []
     return sales_invoice
 
 #Get contracts list
@@ -1009,11 +1010,10 @@ def calculate_daily_rate():
     #Get the last day
     end_date = datetime.strptime("2021-12-31", "%Y-%m-%d")#datetime.strptime(get_end_date(start_date, 'monthly')['end_date'],"%Y-%m-%d")
     
-
-    contract_id = "aaa - 1-PROJ-0006-2021-12-01" #hard coded
+    contract_id = "aaa - 1-PROJ-0006-2021-12-01"
     contracts = frappe.get_doc("Contracts", contract_id,["*"]) #get contract doc
     day_in_month = abs((end_date-start_date).days) #get days between start and end date
-
+    contract_item_list = get_contracts_items(contract_id)
     #get employee details along with count if attendance with status="Present"
     employee_detail = frappe.db.sql("""
                     SELECT employee, count(*)  FROM `tabAttendance`
@@ -1023,18 +1023,15 @@ def calculate_daily_rate():
                     And status = "Present"
                     GROUP BY employee
                 """.format(project=contracts.project,start_date = cstr(start_date), end_date = cstr(end_date)), as_list=1)
-    print(employee_detail)
 
     #Group the employee details according to No. of working days
     data = {}
     for e in employee_detail:
         data[e[1]] = sum(x.count(e[1]) for x in employee_detail)
 
-    #create new Sales Invoice and fetch required data from contracts
-    sales_invoice = frappe.new_doc('Sales Invoice')
-    sales_invoice = append_invoice_parent_details(sales_invoice, contracts)
-    cost_center, income_account = frappe.db.get_value('Project', contracts.project, ['cost_center', 'income_account'])
-    contract_item_list = contracts.items
+    
+    sales_invoice_items = {}
+    index = 0
 
     #append Sales Item List with given calculation.
     if contract_item_list:
@@ -1043,12 +1040,13 @@ def calculate_daily_rate():
             days_off = contract_item.days_off
             monthly_working_days = day_in_month - int(days_off) #no. of expected working days
             for d in data:
+                
                 #if overtime
                 if d > monthly_working_days:
-                    rate = int(data[d])*int(d)* item_price * 1.5 #1.5 is current overtime rate
+                    rate = int(d)* item_price * 1.5 #1.5 is current overtime rate
                 else:
-                    rate = int(data[d])*int(d)* item_price
-                sales_invoice.append('items',{
+                    rate = int(d)* item_price
+                item = {
                     'item_name': frappe.get_value("Item",contract_item.item_code, ["item_group"]),
                     'description':frappe.get_value("Item",contract_item.item_code, ["item_group"]),
                     'uom':"Daily",
@@ -1057,9 +1055,7 @@ def calculate_daily_rate():
                     'rate': rate,
                     'days': d,
                     'daily_rate': item_price,
-                    'income_account': income_account,
-                    'cost_center': cost_center
-                })
-    sales_invoice.save(ignore_permissions=True)
-    sales_invoice.submit()
-    frappe.db.commit()
+                }
+                sales_invoice_items[index]= item
+                index = index+1
+    return sales_invoice_items
