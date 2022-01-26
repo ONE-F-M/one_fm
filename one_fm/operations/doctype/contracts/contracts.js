@@ -87,7 +87,14 @@ frappe.ui.form.on('Contracts', {
 			}
 		}
 	},
+	items_on_form_rendered: (frm)=>{
+		// set tiems properties
+		frm.doc.items.forEach((item, i) => {
+			change_items_table_properties(frm, item);
+		})
+	},
 	refresh:function(frm){
+
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
 			frm.add_custom_button(__("Amend Contract"), function() {
 				open_form(frm, "Contracts", null, null);
@@ -141,7 +148,7 @@ frappe.ui.form.on('Contracts', {
 		frm.fields_dict['items'].grid.get_field('item_code').get_query = function() {
             return {
                 filters:{
-					is_stock_item: 0,
+					// is_stock_item: 0,
 					is_sales_item: 1,
                     disabled: 0
                 }
@@ -287,6 +294,26 @@ function set_contact(doc){
 }
 
 frappe.ui.form.on('Contract Item', {
+	refresh: (frm, cdt, cdn)=>{
+		let row = locals[cdt][cdn];
+		change_items_table_properties(frm, row);
+	},
+	subitem_group: (frm, cdt, cdn)=> {
+		let row = locals[cdt][cdn];
+		// change properties for (site, )
+		change_items_table_properties(frm, row);
+		// end change properties
+	},
+	uom: (frm, cdt, cdn)=>{
+		// check uom agains Service item
+		let row = locals[cdt][cdn];
+		if(row.subitem_group=='Service' &&
+			!['Hourly', 'Daily', 'Monthly'].includes(row.uom)){
+				row.uom = null;
+				frm.refresh_field('items');
+				frappe.throw("Item of subgroup 'Service' UOM must be <b>Hourly, Daily or Month'</b>.");
+			}
+	},
 	item_code: function(frm, cdt, cdn) {
 		let d = locals[cdt][cdn];
 		if(d.item_code){
@@ -312,12 +339,14 @@ frappe.ui.form.on('Contract Item', {
 				}
 			});
 			frappe.model.set_value(d.doctype, d.name, "item_price", null);
-			frappe.model.set_value(d.doctype, d.name, "uom", null);
-			frappe.model.set_value(d.doctype, d.name, "gender", null);
-			frappe.model.set_value(d.doctype, d.name, "shift_hours", 0);
-			frappe.model.set_value(d.doctype, d.name, "days_off", 0);
+			// frappe.model.set_value(d.doctype, d.name, "uom", null);
 			frappe.model.set_value(d.doctype, d.name, "price_list_rate", 0);
 			frappe.model.set_value(d.doctype, d.name, "rate", 0);
+			if(d.subitem_group=="Service"){
+				frappe.model.set_value(d.doctype, d.name, "gender", null);
+				frappe.model.set_value(d.doctype, d.name, "shift_hours", 0);
+				frappe.model.set_value(d.doctype, d.name, "days_off", 0);
+			}
 		}
 
 	},
@@ -441,3 +470,28 @@ frappe.ui.form.on('Contract Addendum', {
 		}
 	}
 })
+
+
+let change_items_table_properties = (frm, row) => {
+	// change Items Table field properties
+	// set Site
+	console.log(row.idx);
+	let idx = $(`[data-idx=${row.idx}]`)[0];
+	if(row.subitem_group=='Service'){
+		idx.querySelector('[data-fieldname="site"]').hidden = true;
+		idx.querySelector('[data-fieldname="management_fee_percentage"]').hidden = false;
+		idx.querySelector('[data-fieldname="management_fee"]').hidden = false;
+		idx.querySelector('[data-fieldname="shift_hours"]').hidden = false;
+		idx.querySelector('[data-fieldname="gender"]').hidden = false;
+		idx.querySelector('[data-fieldname="days_off"]').hidden = false;
+		idx.querySelector('[data-fieldname="days"]').hidden = false;
+	} else {
+		idx.querySelector('[data-fieldname="site"]').hidden = false;
+		idx.querySelector('[data-fieldname="management_fee_percentage"]').hidden = true;
+		idx.querySelector('[data-fieldname="management_fee"]').hidden = true;
+		idx.querySelector('[data-fieldname="shift_hours"]').hidden = true;
+		idx.querySelector('[data-fieldname="gender"]').hidden = true;
+		idx.querySelector('[data-fieldname="days_off"]').hidden = true;
+		idx.querySelector('[data-fieldname="days"]').hidden = true;
+	}
+}
