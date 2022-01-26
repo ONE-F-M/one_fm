@@ -121,6 +121,13 @@ frappe.ui.form.on('Contracts', {
 				}
 			};
 		});
+		frm.set_query("sales_invoice_print_format", function() {
+			return {
+				filters: {
+					"doc_type": 'Sales Invoice'
+				}
+			};
+		});
 		frm.refresh_field("customer_address");
 		frm.set_query("price_list", function() {
 			return {
@@ -171,17 +178,7 @@ frappe.ui.form.on('Contracts', {
         frm.refresh_field("assets");
 		days = frappe.meta.get_docfield("Contract Item","days", frm.doc.name);
 		days.hidden = 1;
-		management_fee_percentage = frappe.meta.get_docfield("Contract Item","management_fee_percentage", frm.doc.name);
-		management_fee = frappe.meta.get_docfield("Contract Item","management_fee", frm.doc.name);
-		if(!frm.doc.is_invoice_for_airport){
-			management_fee_percentage.hidden = 1;
-			management_fee.hidden = 1;
-		}
-		if(frm.doc.is_invoice_for_airport){
-			management_fee_percentage.hidden = 0;
-			management_fee.hidden = 0;
-		}
-		frm.refresh_field("items");
+		set_hide_management_fee_fields(frm);
 
 	},
 	customer_address:function(frm){
@@ -214,18 +211,8 @@ frappe.ui.form.on('Contracts', {
 			});
 		}
 	},
-	is_invoice_for_airport: function(frm){
-		var management_fee_percentage,management_fee;
-		management_fee_percentage = frappe.meta.get_docfield("Contract Item","management_fee_percentage", frm.doc.name);
-		management_fee = frappe.meta.get_docfield("Contract Item","management_fee", frm.doc.name);
-		if(!frm.doc.is_invoice_for_airport){
-			management_fee_percentage.hidden = 1;
-			management_fee.hidden = 1;
-		}
-		else{
-			management_fee_percentage.hidden = 0;
-			management_fee.hidden = 0;
-		}
+	create_sales_invoice_as: function(frm){
+		set_hide_management_fee_fields(frm);
 	},
 	engagement_type: (frm)=>{
 		// disable is auto renewal if engagement type is one-off
@@ -238,6 +225,20 @@ frappe.ui.form.on('Contracts', {
 		}
 	}
 });
+
+var set_hide_management_fee_fields = function(frm) {
+	var management_fee_percentage = frappe.meta.get_docfield("Contract Item", "management_fee_percentage", frm.doc.name);
+	var management_fee = frappe.meta.get_docfield("Contract Item", "management_fee", frm.doc.name);
+	if(frm.doc.create_sales_invoice_as == 'Invoice for Airport'){
+		management_fee_percentage.hidden = 0;
+		management_fee.hidden = 0;
+	}
+	else{
+		management_fee_percentage.hidden = 1;
+		management_fee.hidden = 1;
+	}
+	frm.refresh_field("items");
+};
 
 frappe.ui.form.on('POC', {
 	form_render: function(frm, cdt, cdn) {

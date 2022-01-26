@@ -247,7 +247,8 @@ doc_events = {
 		"on_submit": "one_fm.one_fm.asset_custom.on_asset_submit"
 	},
 	"Sales Invoice":{
-		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice"
+		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice",
+		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts"
 	},
 	"Salary Slip": {
 		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
@@ -265,6 +266,9 @@ doc_events = {
 	},
 	"Payroll Entry": {
 		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
+	},
+	"Expense Claim": {
+		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
