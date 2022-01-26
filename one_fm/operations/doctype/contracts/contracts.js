@@ -87,8 +87,14 @@ frappe.ui.form.on('Contracts', {
 			}
 		}
 	},
+	items_on_form_rendered: (frm)=>{
+		// set tiems properties
+		frm.doc.items.forEach((item, i) => {
+			change_items_table_properties(frm, item);
+		})
+	},
 	refresh:function(frm){
-		
+
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
 			frm.add_custom_button(__("Amend Contract"), function() {
 				open_form(frm, "Contracts", null, null);
@@ -469,6 +475,7 @@ frappe.ui.form.on('Contract Addendum', {
 let change_items_table_properties = (frm, row) => {
 	// change Items Table field properties
 	// set Site
+	console.log(row.idx);
 	let idx = $(`[data-idx=${row.idx}]`)[0];
 	if(row.subitem_group=='Service'){
 		idx.querySelector('[data-fieldname="site"]').hidden = true;
