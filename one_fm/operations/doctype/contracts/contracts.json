@@ -51,7 +51,6 @@
   "items",
   "section_break_28",
   "frequency",
-  "assets",
   "section_break_30",
   "create_sales_invoice_as",
   "site_wise_option",
@@ -201,12 +200,6 @@
    "fieldname": "section_break_28",
    "fieldtype": "Section Break",
    "label": "Contract Assets"
-  },
-  {
-   "fieldname": "assets",
-   "fieldtype": "Table",
-   "label": "Assets",
-   "options": "Contract Asset"
   },
   {
    "fieldname": "section_break_30",
@@ -448,7 +441,7 @@
   }
  ],
  "links": [],
- "modified": "2022-01-24 13:48:14.181204",
+ "modified": "2022-01-26 15:39:59.100405",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
