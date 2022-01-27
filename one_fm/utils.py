@@ -2379,8 +2379,8 @@ def get_service_items_hourly_invoice_amounts(contract):
             # Get attendances in date range and post type
             attendances = frappe.db.get_list("Attendance", 
                 {
-                    'attendance_date': ['between', (first_day_of_month, final_invoice_date)], 
-                    'post_type': ['in', post_type_list], 
+                    'attendance_date': ['between', (first_day_of_month, add_to_date(final_invoice_date, days=-1))],
+                    'post_type': ['in', post_type_list],
                     'project': project,
                     'status': "Present"
                 }, 
@@ -2427,7 +2427,6 @@ def get_service_items_hourly_invoice_amounts(contract):
 
             else:
                 amount = item_hours * item_rate
-
 
             master_data.append({
                 'item_code': item_code,
