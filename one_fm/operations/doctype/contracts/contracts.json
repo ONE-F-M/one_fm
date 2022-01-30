@@ -34,7 +34,6 @@
   "start_date",
   "end_date",
   "due_date",
-  "billing_type",
   "overtime_rate",
   "column_break_27",
   "invoice_output_format",
@@ -71,8 +70,7 @@
   "password_management",
   "sales_invoice_print_settings_section",
   "sales_invoice_print_format",
-  "sales_invoice_letter_head",
-  "overtime_rate"
+  "sales_invoice_letter_head"
  ],
  "fields": [
   {
@@ -395,13 +393,6 @@
    "label": "Duration In Days"
   },
   {
-   "fieldname": "billing_type",
-   "fieldtype": "Select",
-   "label": "Billing Type",
-   "options": "\nHourly\nDaily\nMonthly",
-   "reqd": 1
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -449,7 +440,7 @@
   }
  ],
  "links": [],
- "modified": "2022-01-23 18:14:25.847464",
+ "modified": "2022-01-30 13:06:52.398902",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
