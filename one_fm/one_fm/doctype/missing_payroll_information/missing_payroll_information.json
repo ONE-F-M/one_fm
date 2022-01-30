@@ -1,0 +1,61 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:MPI-{YYYY}-{MM}-{##}",
+ "creation": "2022-01-30 16:18:55.137880",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "payroll_entry",
+  "posting_date",
+  "missing_payroll_information_detail"
+ ],
+ "fields": [
+  {
+   "fieldname": "payroll_entry",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Payroll Entry",
+   "options": "Payroll Entry",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "payroll_entry.posting_date",
+   "fetch_if_empty": 1,
+   "fieldname": "posting_date",
+   "fieldtype": "Data",
+   "label": "Posting Date"
+  },
+  {
+   "fieldname": "missing_payroll_information_detail",
+   "fieldtype": "Table",
+   "label": "Missing Payroll Information Detail",
+   "options": "Missing Payroll Information Detail",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-01-30 16:43:40.037505",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Missing Payroll Information",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

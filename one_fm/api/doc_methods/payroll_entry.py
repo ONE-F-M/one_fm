@@ -1,7 +1,8 @@
-import frappe, erpnext
+import frappe, erpnext, json
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff
 from frappe import _
+from frappe.utils.pdf import get_pdf
 import openpyxl as xl
 import time
 from copy import copy
@@ -40,13 +41,13 @@ def fill_employee_details(self):
 	Returns:
 		list of active employees based on selected criteria
 		and for which salary structure exists.
-	"""	
+	"""
 	self.set('employees', [])
 	employees = self.get_emp_list()
-	
-	#Fetch Bank Details and update employee list 
-	set_bank_details(employees)
-	
+
+	#Fetch Bank Details and update employee list
+	set_bank_details(self, employees)
+
 	if not employees:
 		error_msg = _("No employees found for the mentioned criteria:<br>Company: {0}<br> Currency: {1}<br>Payroll Payable Account: {2}").format(
 			frappe.bold(self.company), frappe.bold(self.currency), frappe.bold(self.payroll_payable_account))
@@ -70,7 +71,7 @@ def fill_employee_details(self):
 		return self.validate_employee_attendance()
 
 @frappe.whitelist()
-def set_bank_details(employee_details):
+def set_bank_details(self, employee_details):
 	"""This Funtion Sets the bank Details of an employee. The data is fetched from Bank Account Doctype.
 
 	Args:
@@ -79,25 +80,74 @@ def set_bank_details(employee_details):
 	Returns:
 		employee_details ([dict): Sets the bank account IBAN code and Bank Code.
 	"""
+	employee_missing_detail = []
 	for employee in employee_details:
-		iban, bank, bank_account_no = frappe.db.get_value("Bank Account",{"party":employee.employee},["iban","bank", "bank_account_no"])
-		salary_mode = frappe.db.get_value("Employee", {'name': employee.employee}, ["salary_mode"])
-		if not salary_mode:
-			frappe.throw(_("No salary mode set for {employee}".format(employee=employee.employee)))
-		if not bank:
-			frappe.throw(_("Bank Details for {0} does not exists").format(employee.employee))
-		
-		employee.salary_mode = salary_mode
-		employee.iban_number = iban or bank_account_no
-		bank_code = frappe.db.get_value("Bank", {'name': bank}, ["bank_code"])
-		employee.bank_code = bank_code
+		try:
+			bank_account = frappe.db.get_value("Bank Account",{"party":employee.employee},["iban","bank", "bank_account_no"])
+			salary_mode = frappe.db.get_value("Employee", {'name': employee.employee}, ["salary_mode"])
+			if bank_account:
+				iban, bank, bank_account_no = bank_account
+			else:
+				iban, bank, bank_account_no = None, None, None
+
+			if not salary_mode:
+				employee_missing_detail.append(frappe._dict(
+				{'employee':employee, 'salary_mode':'', 'issue':'No salary mode'}))
+			elif(salary_mode=='Bank' and bank is None):
+				employee_missing_detail.append(frappe._dict(
+					{'employee':employee, 'salary_mode':salary_mode, 'issue':'No bank account'}))
+			elif(salary_mode=="Bank" and bank_account_no is None):
+				employee_missing_detail.append(frappe._dict(
+					{'employee':employee, 'salary_mode':salary_mode, 'issue':'No account no.'}))
+			employee.salary_mode = salary_mode
+			employee.iban_number = iban or bank_account_no
+			bank_code = frappe.db.get_value("Bank", {'name': bank}, ["bank_code"])
+			employee.bank_code = bank_code
+		except Exception as e:
+			frappe.log_error(str(e), 'Payroll Entry')
+			frappe.throw(str(e))
+
+	if(len(employee_missing_detail)):
+		header_txt = """
+
+		"""
+		message = frappe.render_template(
+			'one_fm/api/doc_methods/templates/payroll/bank_issue.html',
+			context={'employees':employee_missing_detail}
+		)
+		# add employees to cache for emailing
+		missing_detail = [
+			{
+				'employee':employee.employee,
+				'salary_mode':i.salary_mode,
+				'issue': i.Issue
+			}
+			for i in employee_missing_detail]
+
+		if(frappe.db.exists({
+			'doctype':"Missing Payroll Information",
+			'payroll_entry': self.name
+			})):
+			pass
+		else:
+			print(missing_detail)
+			mpi = frappe.get_doc({
+				'doctype':"Missing Payroll Information",
+				'payroll_entry': self.name,
+				'missing_payroll_information_detail':employee_missing_detail
+			}).insert(ignore_permissions=True)
+
+		# pdf_print = get_pdf(message)
+		frappe.throw(_(f"<br>{message}"))
+		# send and log missing payment detail
+		# frappe.enqueue(method=email_missing_payment_information, queue='short', timeout=300, **{'message':message})
 	return employee_details
 
 def get_count_employee_attendance(self, employee):
 	scheduled_days = 0
-	marked_days = 0 
-	roster = frappe.db.sql("""select count(*) from `tabEmployee Schedule` where 
-		employee=%s and date between %s and %s and employee_availability="Working" """, 
+	marked_days = 0
+	roster = frappe.db.sql("""select count(*) from `tabEmployee Schedule` where
+		employee=%s and date between %s and %s and employee_availability="Working" """,
 		(employee, self.start_date, self.end_date))
 	if roster and roster[0][0]:
 		scheduled_days = roster[0][0]
@@ -148,13 +198,13 @@ def get_basic_salary(employee):
 	if salary_structure:
 		basic_salary = frappe.db.sql("""
 			SELECT amount FROM `tabSalary Detail`
-			WHERE parenttype="Salary Structure" 
-			AND parent=%s 
+			WHERE parenttype="Salary Structure"
+			AND parent=%s
 			AND salary_component="Basic"
 		""",(salary_structure), as_dict=1)
 
 		return basic_salary[0].amount if len(basic_salary) > 0 else 0.00
-	else: 
+	else:
 		frappe.throw(_("No Assigned Salary Structure found for the selected employee."))
 
 @frappe.whitelist()
@@ -195,11 +245,11 @@ def export_payroll(doc, method):
 			export_cash_payroll(cash_salary_employees, doc.name)
 	else:
 		frappe.msgprint(_("No employees with salary mode as Cash."))
-	
+
 
 
 def export_nbk(doc, template_path):
-	"""This method fetches the bank template from the provided directory, copies the template style and data into a new workbook, writes payroll entry data 
+	"""This method fetches the bank template from the provided directory, copies the template style and data into a new workbook, writes payroll entry data
 		into the new workbook and saves it in the public files directory of the current site.
 
 	Args:
@@ -210,7 +260,7 @@ def export_nbk(doc, template_path):
 	start = time.time()
 
 	employees = doc.employees
-  
+
 	if len(employees) == 0:
 		frappe.throw(_("No employees added to payroll entry."))
 
@@ -218,7 +268,7 @@ def export_nbk(doc, template_path):
 		frappe.throw(_("No bank account set in payroll entry."))
 
 	iban, bank_account_no = frappe.db.get_value("Bank Account", {'name': doc.bank_account}, ["iban", "bank_account_no"])
-	
+
 	if not iban and not bank_account_no:
 		frappe.throw(_("No IBAN or bank account number set for Bank Account: {bank_account}".format(bank_account=doc.bank_account)))
 
@@ -237,13 +287,13 @@ def export_nbk(doc, template_path):
 		mr = 12
 		# Max column number with template data as per NBK template
 		mc = 7
-		
+
 		# copying the cell values from source excel file to destination excel file
 		for i in range (1, mr + 1):
 			for j in range (1, mc + 1):
 				# reading cell value from source excel file
 				c = template_ws.cell(row = i, column = j)
-		
+
 				d = destination_ws.cell(row = i, column = j)
 				# writing the read value to destination excel file
 				d.value = c.value
@@ -256,7 +306,7 @@ def export_nbk(doc, template_path):
 					d.protection = copy(c.protection)
 					d.alignment = copy(c.alignment)
 		#---------------------- End copy template data to destination worksheet ------------------#
-  
+
 		# Currency map as per NBK bank template
 		currency_map = {
 			'KWD': 'KWD - Kuwaiti Dinar',
@@ -266,7 +316,7 @@ def export_nbk(doc, template_path):
 			'CAD': 'CAD - Canadian Dollar',
 			'AUD': 'AUD - Australian Dollar'
 		}
-  
+
   		# Set column numbers based on NBK bank template
 		source_ws_emp_column_map = {
 			'Employee Number': 1,
@@ -298,7 +348,7 @@ def export_nbk(doc, template_path):
 
 		total_hash = 0
 		total_amount = 0
-		
+
 		# Set employee payroll details
 		for employee in employees:
 			if employee.salary_mode == "Bank":
@@ -324,7 +374,7 @@ def export_nbk(doc, template_path):
 		# Setup destination file directory with payroll entry name as filename
 		Path("/home/frappe/frappe-bench/sites/{0}/public/files/payroll-entry/".format(frappe.local.site)).mkdir(parents=True, exist_ok=True)
 		destination_file = cstr(frappe.local.site) + "/public/files/payroll-entry/{payroll_entry}.xlsx".format(payroll_entry=doc.name)
-		
+
 		# Save updated template in same source directory
 		destination_wb.save(filename=destination_file)
 
@@ -350,7 +400,7 @@ def export_cash_payroll(cash_payroll_employees, doc_name):
 		destination_file = cstr(frappe.local.site) + "/public/files/payroll-entry/Cash-{payroll_entry}.xlsx".format(payroll_entry=doc_name)
 		destination_wb = xl.Workbook()
 		destination_ws = destination_wb.active
-		
+
 		# Fill color in first row
 		color_fill = xl.styles.PatternFill(start_color='FFFF00',
                    end_color='FFFF00',
@@ -367,7 +417,7 @@ def export_cash_payroll(cash_payroll_employees, doc_name):
 		destination_ws.cell(row=1, column=4).value = "Mosal ID"
 
 		row_number = 2
-		
+
 		# Fill employees in rows
 		for employee in cash_payroll_employees:
 			destination_ws.cell(row=row_number, column=1).value = employee.employee_name
@@ -381,3 +431,12 @@ def export_cash_payroll(cash_payroll_employees, doc_name):
 
 	except Exception as e:
 		frappe.log_error(e)
+
+@frappe.whitelist()
+def email_missing_payment_information(recipients):
+	"""
+		Send missing salary payment information
+		as an email.
+	"""
+	print(frappe.session.data)
+	print(recipients, '\n\n\n')

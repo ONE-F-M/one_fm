@@ -1,0 +1,47 @@
+<hr>
+<div class="row">
+    <span id="data-span" style="display:none;">{{employees}}</span>
+    <span class="pull-right">
+        <button onclick="var myWindow = window.open('', 'PRINT');
+            myWindow.document.write('<html><head><title></title>');
+            myWindow.document.write('</head><body >');
+            myWindow.document.write(`${$('#print-missing-account').html()}`);
+            myWindow.document.write('</body></html>');
+            myWindow.print();
+            myWindow.close();
+        "
+        class="btn btn-primary">Print</button>
+        <button type="button"
+            onclick="cur_frm.trigger('email_missing_payment_information');
+            $('.close-alt').click();"
+        >Email</button>
+    </span>
+</div>
+
+<div id="print-missing-account">
+    <hr>
+    <h3>Missing payment information.</h3>
+    <table class="table table-striped">
+      <thead class="thead-dark">
+        <tr>
+          <th>#</th>
+          <th>Employee</th>
+          <th>Name</th>
+          <th>Department</th>
+          <th>Issue</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in employees %}
+            <tr>
+              <th>{{loop.index}}</th>
+              <td>{{i.employee.employee}}</td>
+              <td>{{i.employee.employee_name}}</td>
+              <td>{{i.employee.department}}</td>
+              <td>{{i.issue}}</td>
+            </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+</div>
