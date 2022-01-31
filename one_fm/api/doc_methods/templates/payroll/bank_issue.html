@@ -1,20 +1,9 @@
 <hr>
 <div class="row">
-    <span id="data-span" style="display:none;">{{employees}}</span>
-    <span class="pull-right">
-        <button onclick="var myWindow = window.open('', 'PRINT');
-            myWindow.document.write('<html><head><title></title>');
-            myWindow.document.write('</head><body >');
-            myWindow.document.write(`${$('#print-missing-account').html()}`);
-            myWindow.document.write('</body></html>');
-            myWindow.print();
-            myWindow.close();
-        "
-        class="btn btn-primary">Print</button>
-        <button type="button"
-            onclick="cur_frm.trigger('email_missing_payment_information');
-            $('.close-alt').click();"
-        >Email</button>
+    <span class="float-right">
+        view document =>
+        <a class="btn btn-primary float-right"
+        href="{{mpi.get_url()}}">{{mpi.name}}</a>
     </span>
 </div>
 

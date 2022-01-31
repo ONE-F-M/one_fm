@@ -108,19 +108,11 @@ def set_bank_details(self, employee_details):
 			frappe.throw(str(e))
 
 	if(len(employee_missing_detail)):
-		header_txt = """
-
-		"""
-		message = frappe.render_template(
-			'one_fm/api/doc_methods/templates/payroll/bank_issue.html',
-			context={'employees':employee_missing_detail}
-		)
-		# add employees to cache for emailing
 		missing_detail = [
 			{
-				'employee':employee.employee,
+				'employee':i.employee.employee,
 				'salary_mode':i.salary_mode,
-				'issue': i.Issue
+				'issue': i.issue
 			}
 			for i in employee_missing_detail]
 
@@ -128,19 +120,37 @@ def set_bank_details(self, employee_details):
 			'doctype':"Missing Payroll Information",
 			'payroll_entry': self.name
 			})):
-			pass
+			fetch_mpi = frappe.db.sql(f"""
+				SELECT name FROM `tabMissing Payroll Information`
+				WHERE payroll_entry="{self.name}"
+				ORDER BY modified DESC
+				LIMIT 1
+			;""", as_dict=1)
+			mpi = frappe.get_doc('Missing Payroll Information', fetch_mpi[0].name)
+			# delete previous table data
+			frappe.db.sql(f"""
+				DELETE FROM `tabMissing Payroll Information Detail`
+				WHERE parent="{mpi.name}"
+			;""")
+			mpi.reload()
+			for i in missing_detail:
+				mpi.append('missing_payroll_information_detail', i)
+			mpi.save(ignore_permissions=True)
+			frappe.db.commit()
 		else:
-			print(missing_detail)
 			mpi = frappe.get_doc({
 				'doctype':"Missing Payroll Information",
 				'payroll_entry': self.name,
-				'missing_payroll_information_detail':employee_missing_detail
+				'missing_payroll_information_detail':missing_detail
 			}).insert(ignore_permissions=True)
+			frappe.db.commit()
 
-		# pdf_print = get_pdf(message)
-		frappe.throw(_(f"<br>{message}"))
-		# send and log missing payment detail
-		# frappe.enqueue(method=email_missing_payment_information, queue='short', timeout=300, **{'message':message})
+		# generate html template to show to user screen
+		message = frappe.render_template(
+			'one_fm/api/doc_methods/templates/payroll/bank_issue.html',
+			context={'employees':employee_missing_detail, 'mpi':mpi}
+		)
+		frappe.throw(_(message))
 	return employee_details
 
 def get_count_employee_attendance(self, employee):

@@ -28,17 +28,6 @@ class PrintFormat:
             template, context
         )
 
-    def payroll_missing_payment_information(self, employees):
-        """
-        Get print format information for missing bank information
-        in payroll entry for employees whose payment mode is bank.
-        """
-
-        template, context = payroll_missing_payment_information(employees)
-        return frappe.render_template(
-            template, context
-        )
-
 pf = PrintFormat()
 
 
@@ -255,21 +244,6 @@ def sic_single_invoice_separate_attendance(doc):
             return 'one_fm/jinja/print_format/templates/sic_single_invoice_separate_attendance.html', context
         else:
             return '', context
-    except Exception as e:
-        print(str(e))
-        frappe.log_error(str(e), 'Print Format')
-        context = {}
-        return '', context
-
-
-
-def payroll_missing_payment_information(employees):
-    context = {}
-    try:
-        print(employees+"}}]")
-        context['employees'] = json.loads(employees+"}}]")
-        return 'one_fm/jinja/print_format/templates/payroll_missing_payment_information.html', context
-        return '', context
     except Exception as e:
         print(str(e))
         frappe.log_error(str(e), 'Print Format')

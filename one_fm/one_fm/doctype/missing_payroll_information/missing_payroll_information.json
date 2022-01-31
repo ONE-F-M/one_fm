@@ -18,6 +18,7 @@
    "in_list_view": 1,
    "label": "Payroll Entry",
    "options": "Payroll Entry",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -25,7 +26,8 @@
    "fetch_if_empty": 1,
    "fieldname": "posting_date",
    "fieldtype": "Data",
-   "label": "Posting Date"
+   "label": "Posting Date",
+   "read_only": 1
   },
   {
    "fieldname": "missing_payroll_information_detail",
@@ -37,7 +39,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-01-30 16:43:40.037505",
+ "modified": "2022-01-31 11:14:15.607823",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Missing Payroll Information",
