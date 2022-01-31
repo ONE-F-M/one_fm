@@ -440,8 +440,9 @@
    "options": "\nSeparate Item Line for Each Site\nSeparate Invoice for Each Site\nSeparate Item Line for Days of Work and Service Item\nInvoice for Full Amount in the Contract\nInvoice for Airport"
   }
  ],
+ "is_submittable": 1,
  "links": [],
- "modified": "2022-01-26 15:39:59.100405",
+ "modified": "2022-01-31 13:42:27.433612",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

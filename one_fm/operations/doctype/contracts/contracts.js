@@ -94,8 +94,14 @@ frappe.ui.form.on('Contracts', {
 		})
 	},
 	refresh:function(frm){
-
+		frm.add_custom_button(__("Create Delivery Note"), function() {
+			frappe.model.open_mapped_doc({
+					method: "one_fm.operations.doctype.contracts.api.make_sales_invoice",
+					frm: frm,
+			})
+		}).addClass('btn btn-primary');
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
+
 			frm.add_custom_button(__("Amend Contract"), function() {
 				open_form(frm, "Contracts", null, null);
 			});
