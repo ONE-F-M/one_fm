@@ -94,12 +94,16 @@ frappe.ui.form.on('Contracts', {
 		})
 	},
 	refresh:function(frm){
+		// create delivery note and reroute to the form in draft mode
 		frm.add_custom_button(__("Create Delivery Note"), function() {
-			frappe.model.open_mapped_doc({
-					method: "one_fm.operations.doctype.contracts.api.make_sales_invoice",
-					frm: frm,
+			frm.call('make_delivery_note').then(res=>{
+				console.log(res)
+				if(res.message){
+					frappe.set_route('Form', res.message.doctype, res.message.name);
+				}
 			})
 		}).addClass('btn btn-primary');
+
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
 
 			frm.add_custom_button(__("Amend Contract"), function() {

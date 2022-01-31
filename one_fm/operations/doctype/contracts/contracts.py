@@ -27,6 +27,32 @@ class Contracts(Document):
 	def on_cancel(self):
 		frappe.throw("Contracts cannot be cancelled. Please try to ammend the existing record.")
 
+	@frappe.whitelist()
+	def make_delivery_note(self):
+		"""
+			Create delivery note from contracts
+		"""
+		try:
+			items = [{
+				'item_code':i.item_code,
+				'qty':i.count,
+				'rate':i.rate
+			} for i in self.items if i.subitem_group!='Service']
+			dn = frappe.get_doc({
+				'doctype':'Delivery Note',
+				'customer':self.client,
+				'contracts':self.name,
+				'projects':self.project,
+				'set_warehouse':'WRH-1023-0003',
+				'delivery_based_on':'Monthly',
+				'items':items
+			}).insert(ignore_permissions=True)
+			return dn
+		except Exception as e:
+			frappe.throw(str(e))
+
+
+
 @frappe.whitelist()
 def get_contracts_asset_items(contracts):
 	contracts_item_list = frappe.db.sql("""
@@ -34,8 +60,8 @@ def get_contracts_asset_items(contracts):
 		FROM `tabContract Asset` ca , `tabContracts` c
 		WHERE c.name = ca.parent and ca.parenttype = 'Contracts'
 		and c.frequency = 'Monthly'
-		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc 
-	""", (contracts), as_dict=1)	
+		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc
+	""", (contracts), as_dict=1)
 	return contracts_item_list
 
 @frappe.whitelist()
@@ -44,8 +70,8 @@ def get_contracts_items(contracts):
 		SELECT ca.item_code,ca.head_count as qty
 		FROM `tabContract Item` ca , `tabContracts` c
 		WHERE c.name = ca.parent and ca.parenttype = 'Contracts'
-		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc 
-	""", (contracts), as_dict=1)	
+		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc
+	""", (contracts), as_dict=1)
 	return contracts_item_list
 
 @frappe.whitelist()
