@@ -1,0 +1,36 @@
+<hr>
+<div class="row">
+    <span class="float-right">
+        view document =>
+        <a class="btn btn-primary float-right"
+        href="{{mpi.get_url()}}">{{mpi.name}}</a>
+    </span>
+</div>
+
+<div id="print-missing-account">
+    <hr>
+    <h3>Missing payment information.</h3>
+    <table class="table table-striped">
+      <thead class="thead-dark">
+        <tr>
+          <th>#</th>
+          <th>Employee</th>
+          <th>Name</th>
+          <th>Department</th>
+          <th>Issue</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in employees %}
+            <tr>
+              <th>{{loop.index}}</th>
+              <td>{{i.employee.employee}}</td>
+              <td>{{i.employee.employee_name}}</td>
+              <td>{{i.employee.department}}</td>
+              <td>{{i.issue}}</td>
+            </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+</div>
