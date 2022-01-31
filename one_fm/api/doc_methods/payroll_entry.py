@@ -107,6 +107,7 @@ def set_bank_details(self, employee_details):
 			frappe.log_error(str(e), 'Payroll Entry')
 			frappe.throw(str(e))
 
+	# check for missing details, log and report
 	if(len(employee_missing_detail)):
 		missing_detail = [
 			{
