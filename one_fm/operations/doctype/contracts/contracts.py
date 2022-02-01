@@ -36,7 +36,8 @@ class Contracts(Document):
 			items = [{
 				'item_code':i.item_code,
 				'qty':i.count,
-				'rate':i.rate
+				'rate':i.rate,
+				'site':i.site
 			} for i in self.items if i.subitem_group!='Service']
 			dn = frappe.get_doc({
 				'doctype':'Delivery Note',
