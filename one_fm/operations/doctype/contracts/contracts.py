@@ -43,6 +43,7 @@ class Contracts(Document):
 
 			sales_invoice_doc.due_date = invoice_date
 			sales_invoice_doc.project = self.project
+			sales_invoice_doc.contracts = self.name
 
 			income_account = frappe.db.get_value("Project", self.project, ["income_account"])
 
