@@ -87,12 +87,33 @@ frappe.ui.form.on('Contracts', {
 			}
 		}
 	},
+	items_on_form_rendered: (frm)=>{
+		// set tiems properties
+		frm.doc.items.forEach((item, i) => {
+			change_items_table_properties(frm, item);
+		})
+	},
 	refresh:function(frm){
+
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
 			frm.add_custom_button(__("Amend Contract"), function() {
 				open_form(frm, "Contracts", null, null);
 			});
 		}
+
+		frm.add_custom_button(__("Generate Invoice"), function() {
+			frappe.call({
+				doc: frm.doc,
+				method: 'generate_sales_invoice',
+				callback: function(r) {
+					if(!r.exc){
+						frm.reload_doc();
+					}
+				},
+				freeze: true,
+				freeze_message: (__('Creating Sales Invoice'))
+			});
+		}).addClass("btn-primary");
 		var days,management_fee_percentage,management_fee;
 		frm.set_query("bank_account", function() {
 			return {
@@ -121,6 +142,13 @@ frappe.ui.form.on('Contracts', {
 				}
 			};
 		});
+		frm.set_query("sales_invoice_print_format", function() {
+			return {
+				filters: {
+					"doc_type": 'Sales Invoice'
+				}
+			};
+		});
 		frm.refresh_field("customer_address");
 		frm.set_query("price_list", function() {
 			return {
@@ -134,7 +162,7 @@ frappe.ui.form.on('Contracts', {
 		frm.fields_dict['items'].grid.get_field('item_code').get_query = function() {
             return {
                 filters:{
-					is_stock_item: 0,
+					// is_stock_item: 0,
 					is_sales_item: 1,
                     disabled: 0
                 }
@@ -171,17 +199,7 @@ frappe.ui.form.on('Contracts', {
         frm.refresh_field("assets");
 		days = frappe.meta.get_docfield("Contract Item","days", frm.doc.name);
 		days.hidden = 1;
-		management_fee_percentage = frappe.meta.get_docfield("Contract Item","management_fee_percentage", frm.doc.name);
-		management_fee = frappe.meta.get_docfield("Contract Item","management_fee", frm.doc.name);
-		if(!frm.doc.is_invoice_for_airport){
-			management_fee_percentage.hidden = 1;
-			management_fee.hidden = 1;
-		}
-		if(frm.doc.is_invoice_for_airport){
-			management_fee_percentage.hidden = 0;
-			management_fee.hidden = 0;
-		}
-		frm.refresh_field("items");
+		set_hide_management_fee_fields(frm);
 
 	},
 	customer_address:function(frm){
@@ -214,18 +232,8 @@ frappe.ui.form.on('Contracts', {
 			});
 		}
 	},
-	is_invoice_for_airport: function(frm){
-		var management_fee_percentage,management_fee;
-		management_fee_percentage = frappe.meta.get_docfield("Contract Item","management_fee_percentage", frm.doc.name);
-		management_fee = frappe.meta.get_docfield("Contract Item","management_fee", frm.doc.name);
-		if(!frm.doc.is_invoice_for_airport){
-			management_fee_percentage.hidden = 1;
-			management_fee.hidden = 1;
-		}
-		else{
-			management_fee_percentage.hidden = 0;
-			management_fee.hidden = 0;
-		}
+	create_sales_invoice_as: function(frm){
+		set_hide_management_fee_fields(frm);
 	},
 	engagement_type: (frm)=>{
 		// disable is auto renewal if engagement type is one-off
@@ -238,6 +246,20 @@ frappe.ui.form.on('Contracts', {
 		}
 	}
 });
+
+var set_hide_management_fee_fields = function(frm) {
+	var management_fee_percentage = frappe.meta.get_docfield("Contract Item", "management_fee_percentage", frm.doc.name);
+	var management_fee = frappe.meta.get_docfield("Contract Item", "management_fee", frm.doc.name);
+	if(frm.doc.create_sales_invoice_as == 'Invoice for Airport'){
+		management_fee_percentage.hidden = 0;
+		management_fee.hidden = 0;
+	}
+	else{
+		management_fee_percentage.hidden = 1;
+		management_fee.hidden = 1;
+	}
+	frm.refresh_field("items");
+};
 
 frappe.ui.form.on('POC', {
 	form_render: function(frm, cdt, cdn) {
@@ -286,6 +308,26 @@ function set_contact(doc){
 }
 
 frappe.ui.form.on('Contract Item', {
+	refresh: (frm, cdt, cdn)=>{
+		let row = locals[cdt][cdn];
+		change_items_table_properties(frm, row);
+	},
+	subitem_group: (frm, cdt, cdn)=> {
+		let row = locals[cdt][cdn];
+		// change properties for (site, )
+		change_items_table_properties(frm, row);
+		// end change properties
+	},
+	uom: (frm, cdt, cdn)=>{
+		// check uom agains Service item
+		let row = locals[cdt][cdn];
+		if(row.subitem_group=='Service' &&
+			!['Hourly', 'Daily', 'Monthly'].includes(row.uom)){
+				row.uom = null;
+				frm.refresh_field('items');
+				frappe.throw("Item of subgroup 'Service' UOM must be <b>Hourly, Daily or Month'</b>.");
+			}
+	},
 	item_code: function(frm, cdt, cdn) {
 		let d = locals[cdt][cdn];
 		if(d.item_code){
@@ -311,12 +353,14 @@ frappe.ui.form.on('Contract Item', {
 				}
 			});
 			frappe.model.set_value(d.doctype, d.name, "item_price", null);
-			frappe.model.set_value(d.doctype, d.name, "uom", null);
-			frappe.model.set_value(d.doctype, d.name, "gender", null);
-			frappe.model.set_value(d.doctype, d.name, "shift_hours", 0);
-			frappe.model.set_value(d.doctype, d.name, "days_off", 0);
+			// frappe.model.set_value(d.doctype, d.name, "uom", null);
 			frappe.model.set_value(d.doctype, d.name, "price_list_rate", 0);
 			frappe.model.set_value(d.doctype, d.name, "rate", 0);
+			if(d.subitem_group=="Service"){
+				frappe.model.set_value(d.doctype, d.name, "gender", null);
+				frappe.model.set_value(d.doctype, d.name, "shift_hours", 0);
+				frappe.model.set_value(d.doctype, d.name, "days_off", 0);
+			}
 		}
 
 	},
@@ -440,3 +484,28 @@ frappe.ui.form.on('Contract Addendum', {
 		}
 	}
 })
+
+
+let change_items_table_properties = (frm, row) => {
+	// change Items Table field properties
+	// set Site
+	console.log(row.idx);
+	let idx = $(`[data-idx=${row.idx}]`)[0];
+	if(row.subitem_group=='Service'){
+		idx.querySelector('[data-fieldname="site"]').hidden = true;
+		idx.querySelector('[data-fieldname="management_fee_percentage"]').hidden = false;
+		idx.querySelector('[data-fieldname="management_fee"]').hidden = false;
+		idx.querySelector('[data-fieldname="shift_hours"]').hidden = false;
+		idx.querySelector('[data-fieldname="gender"]').hidden = false;
+		idx.querySelector('[data-fieldname="days_off"]').hidden = false;
+		idx.querySelector('[data-fieldname="days"]').hidden = false;
+	} else {
+		idx.querySelector('[data-fieldname="site"]').hidden = false;
+		idx.querySelector('[data-fieldname="management_fee_percentage"]').hidden = true;
+		idx.querySelector('[data-fieldname="management_fee"]').hidden = true;
+		idx.querySelector('[data-fieldname="shift_hours"]').hidden = true;
+		idx.querySelector('[data-fieldname="gender"]').hidden = true;
+		idx.querySelector('[data-fieldname="days_off"]').hidden = true;
+		idx.querySelector('[data-fieldname="days"]').hidden = true;
+	}
+}
