@@ -86,7 +86,7 @@ def get_contracts_asset_items(contracts):
 @frappe.whitelist()
 def get_contracts_items(contracts):
 	contracts_item_list = frappe.db.sql("""
-		SELECT ca.item_code,ca.head_count as qty, uom, price_list_rate, days_off
+		SELECT ca.item_code,ca.count as qty, uom, price_list_rate, days_off
 		FROM `tabContract Item` ca , `tabContracts` c
 		WHERE c.name = ca.parent and ca.parenttype = 'Contracts'
 		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc 
