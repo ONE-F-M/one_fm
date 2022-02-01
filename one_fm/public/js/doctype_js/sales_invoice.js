@@ -330,50 +330,15 @@ var get_contracts_items = function(frm){
                     console.log(s.message);
                     for (var i=0; i<s.message.length; i++){
                         var item = s.message[i];
-                        if(item.uom == "Daily"){
-                            frm.set_value("ignore_pricing_rule",1);
-                            calculate_invoice_for_daily(frm);
-                        }
-                        else{
-                            frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
-                            frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
-                            frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
-                            //frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
-                            frm.refresh_field("items");
-                        }
+                        frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
+                        frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
+                        frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
+                        //frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
+                        frm.refresh_field("items");
+                        
                     }
                 }                      
             }
         }
     })
 };
-var calculate_invoice_for_daily = function(frm){
-    frappe.call({
-        method: "one_fm.one_fm.sales_invoice_custom.calculate_daily_rate",
-        args:{
-            'contracts': frm.doc.contracts
-        },
-        callback:function(s){
-            if(!s.exc){
-                if(s.message != undefined){
-                    //console.log(Object.values(s.message))
-                    var items = Object.values(s.message)
-                    for (var i in items){
-                        var d = frm.add_child("items");
-                        console.log(items[i])
-                        var item = items[i]
-                        frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
-                        frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
-                        frappe.model.set_value(d.doctype, d.name, "item_name", item.item_name);
-                        frappe.model.set_value(d.doctype, d.name, "description", item.description);
-                        frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
-                        frappe.model.set_value(d.doctype, d.name, "rate", item.rate);
-                        frappe.model.set_value(d.doctype, d.name, "days", item.days);
-                        frappe.model.set_value(d.doctype, d.name, "daily_rate", item.daily_rate);
-                        frm.refresh_field("items");
-                    }
-                }                      
-            }
-        }
-    })
-}
