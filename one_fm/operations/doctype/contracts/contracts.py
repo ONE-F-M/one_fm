@@ -32,7 +32,6 @@ class Contracts(Document):
 
 		items_amounts = get_service_items_invoice_amounts(self)
 		try:
-			print("creating sales invoice...")
 			sales_invoice_doc = frappe.new_doc("Sales Invoice")
 			sales_invoice_doc.customer = self.client
 			
@@ -49,7 +48,6 @@ class Contracts(Document):
 			income_account = frappe.db.get_value("Project", self.project, ["income_account"])
 
 			for item in items_amounts:
-				print('appending item: ', item)
 				sales_invoice_doc.append('items', {
 					'item_code': item["item_code"],
 					'item_name': item["item_code"],
@@ -60,9 +58,7 @@ class Contracts(Document):
 					'amount': item["amount"],
 					'income_account': income_account
 				})
-				print('added item: ', item)
 
-			print('saving sales invoice...')
 			sales_invoice_doc.save()
 			frappe.db.commit()
 			
