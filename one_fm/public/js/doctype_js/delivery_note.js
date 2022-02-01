@@ -1,6 +1,6 @@
 frappe.ui.form.on('Delivery Note', {
 	refresh(frm) {
-        frm.set_df_property('contracts', 'read_only', 1);
+        // frm.set_df_property('contracts', 'read_only', 1);
         if(frm.doc.customer){
             frm.set_query("project", function() {
                 return {
@@ -12,7 +12,7 @@ frappe.ui.form.on('Delivery Note', {
             frm.refresh_field("project");
         }
         frm.fields_dict['items'].grid.get_field('site').get_query = function() {
-            return {    
+            return {
                 filters:{
 					project: frm.doc.project
                 }
