@@ -34,7 +34,7 @@
   "start_date",
   "end_date",
   "due_date",
-  "billing_type",
+  "overtime_rate",
   "column_break_27",
   "invoice_output_format",
   "invoice_frequency",
@@ -393,13 +393,6 @@
    "label": "Duration In Days"
   },
   {
-   "fieldname": "billing_type",
-   "fieldtype": "Select",
-   "label": "Billing Type",
-   "options": "\nHourly\nDaily\nMonthly",
-   "reqd": 1
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -413,6 +406,12 @@
    "label": "Engagement Type",
    "options": "\nOne-off\nPeriodic",
    "reqd": 1
+  },
+  {
+   "fieldname": "overtime_rate",
+   "fieldtype": "Float",
+   "label": "Overtime rate",
+   "precision": "3"
   },
   {
    "collapsible": 1,
@@ -441,7 +440,7 @@
   }
  ],
  "links": [],
- "modified": "2022-01-26 15:39:59.100405",
+ "modified": "2022-01-30 13:06:52.398902",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
