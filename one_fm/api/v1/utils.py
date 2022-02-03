@@ -12,6 +12,7 @@ def response(message, status_code, data=None, error=None):
     """
     frappe.local.response["message"] = message
     frappe.local.response["http_status_code"] = status_code
+    frappe.local.response["status_code"] = status_code
     if data:
         frappe.local.response["data"] = data
     elif error:
