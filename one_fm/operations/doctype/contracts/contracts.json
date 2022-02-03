@@ -436,11 +436,11 @@
    "fieldname": "create_sales_invoice_as",
    "fieldtype": "Select",
    "label": "Create Auto Sales Invoice as",
-   "options": "\nSeparate Item Line for Each Site\nSeparate Invoice for Each Site\nSeparate Item Line for Days of Work and Service Item\nInvoice for Full Amount in the Contract\nInvoice for Airport"
+   "options": "Single Invoice\nSeparate Item Line for Each Site\nSeparate Invoice for Each Site\nSeparate Item Line for Days of Work and Service Item\nInvoice for Full Amount in the Contract\nInvoice for Airport"
   }
  ],
  "links": [],
- "modified": "2022-01-30 13:06:52.398902",
+ "modified": "2022-02-03 11:04:07.179200",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
