@@ -332,16 +332,35 @@ def sic_single_invoice_separate_attendance(doc):
     try:
         if(doc.contracts):
             contracts = frappe.get_doc('Contracts', doc.contracts)
-            posting_date = datetime.strptime(str(doc.posting_date), '%Y-%M-%d')
-            first_day = frappe.utils.get_first_day(doc.posting_date).day
-            last_day = frappe.utils.get_last_day(doc.posting_date).day
-            sale_items = "('',"
+            posting_date = date(2021,11,28) #datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
+            first_day = frappe.utils.get_first_day(posting_date).day
+            last_day = frappe.utils.get_last_day(posting_date).day
+            actual_last_date = frappe.utils.get_last_day(posting_date)
+
+            # get sites
+            sites_list = []
+            for i in doc.items:
+                if(i.site and not i.site in sites_list):sites_list.append(i.site)
+
+            post_sites = "("
+            for c, i in enumerate(sites_list):
+                    if(len(sites_list)==c+1):
+                        post_sites+=f"'{i}'"
+                    else:
+                        post_sites+=f"'{i}',"
+            post_sites += ")"
+            post_sites = post_sites.replace(',)', ')')
+
+            # get sale_item
+            sale_items = "("
             for c, i in enumerate(contracts.items):
-                if(len(contracts.items)==c+1):
-                    sale_items+=f" '{i.item_code}'"
-                else:
-                    sale_items+=f" '{i.item_code}',"
+                if(i.subitem_group=='Service'):
+                    if(len(contracts.items)==c+1):
+                        sale_items+=f"'{i.item_code}'"
+                    else:
+                        sale_items+=f"'{i.item_code}',"
             sale_items += ")"
+            sale_items = sale_items.replace(',)', ')')
 
             # get post_type in attendance
             post_types_query = frappe.db.sql(f"""
@@ -350,14 +369,14 @@ def sic_single_invoice_separate_attendance(doc):
                 ON pt.name=at.post_type
                 WHERE at.attendance_date BETWEEN '{posting_date.year}-{posting_date.month}-0{first_day}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
-                AND at.project="{contracts.project}"
+                AND at.project="{contracts.project}" AND at.site in {post_sites}
                 AND at.docstatus=1 AND pt.sale_item IN {sale_items}
                 GROUP BY pt.name
             ;""", as_dict=1)
 
 
             # filter post types
-            post_types = "('',"
+            post_types = "("
             if(len(post_types_query)==0):
                 post_types=f"('')"
             else:
@@ -367,6 +386,7 @@ def sic_single_invoice_separate_attendance(doc):
                     else:
                         post_types+=f" '{i.name}',"
                 post_types += ")"
+                post_types = post_types.replace(',)', ')')
 
 
             attendances = frappe.db.sql(f"""
@@ -376,7 +396,7 @@ def sic_single_invoice_separate_attendance(doc):
                 ON at.employee=em.name WHERE at.attendance_date
                 BETWEEN '{posting_date.year}-{posting_date.month}-0{first_day}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
-                AND at.project="{contracts.project}"
+                AND at.project="{contracts.project}" AND at.site in {post_sites}
                 AND at.docstatus=1 AND at.post_type IN {post_types}
                 ORDER BY at.employee ASC
                 ;
@@ -429,7 +449,7 @@ def sic_single_invoice_separate_attendance(doc):
         else:
             return '', context
     except Exception as e:
-        print(str(e))
+        print(str(e), 'ERRPRROO\n\n\n')
         frappe.log_error(str(e), 'Print Format')
         context = {}
         return '', context
