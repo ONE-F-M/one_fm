@@ -45,16 +45,20 @@ def sic_attendance_absent_present(doc):
     try:
         if(doc.contracts):
             contracts = frappe.get_doc('Contracts', doc.contracts)
-            posting_date = datetime.strptime(str(doc.posting_date), '%Y-%M-%d')
-            first_day = frappe.utils.get_first_day(doc.posting_date).day
-            last_day = frappe.utils.get_last_day(doc.posting_date).day
-            sale_items = "('',"
+            posting_date = datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
+            first_day = frappe.utils.get_first_day(posting_date).day
+            last_day = frappe.utils.get_last_day(posting_date).day
+            actual_last_date = frappe.utils.get_last_day(posting_date)
+
+            sale_items = "("
             for c, i in enumerate(contracts.items):
-                if(len(contracts.items)==c+1):
-                    sale_items+=f" '{i.item_code}'"
-                else:
-                    sale_items+=f" '{i.item_code}',"
+                if(i.subitem_group=='Service'):
+                    if(len(contracts.items)==c+1):
+                        sale_items+=f"'{i.item_code}'"
+                    else:
+                        sale_items+=f"'{i.item_code}',"
             sale_items += ")"
+            sale_items = sale_items.replace(',)', ')')
 
             # get post_type in attendance
             post_types_query = frappe.db.sql(f"""
@@ -70,7 +74,7 @@ def sic_attendance_absent_present(doc):
 
 
             # filter post types
-            post_types = "('',"
+            post_types = "("
             if(len(post_types_query)==0):
                 post_types=f"('')"
             else:
@@ -80,6 +84,7 @@ def sic_attendance_absent_present(doc):
                     else:
                         post_types+=f" '{i.name}',"
                 post_types += ")"
+                post_types = post_types.replace(',)', ')')
 
 
             attendances = frappe.db.sql(f"""
@@ -110,12 +115,38 @@ def sic_attendance_absent_present(doc):
 
             # fill attendance
             count_loop = 1
+            due_date = int(contracts.due_date) or 28
+
+            # get schedule
+            remaining_schedule = frappe.db.sql(f"""
+                SELECT es.employee, pt.name, pt.post_name, pt.sale_item, es.post_type, es.date
+                FROM `tabPost Type` pt JOIN `tabEmployee Schedule` es
+                ON pt.name=es.post_type
+                WHERE es.date BETWEEN '{posting_date.year}-{posting_date.month}-{due_date}'
+                AND '{posting_date.year}-{posting_date.month}-{last_day}'
+                AND es.project="{contracts.project}"
+                AND pt.sale_item IN {sale_items}
+                ORDER BY es.employee
+            """, as_dict=1)
+            # filter and rearrange schdule
+            sorted_schedule = {}
+            for i in remaining_schedule:
+                if(sorted_schedule.get(i.employee)):
+                    sorted_schedule[i.employee][i.date.day] = 'p'
+                else:
+                    sorted_schedule[i.employee] = {i.date.day:'p'}
+
+            # filter and set attendance table ready for template
             for k, v in employee_dict.items():
                 days_worked = []
-                due_date = int(contracts.due_date) or 28
                 for month_day in range(first_day, last_day+1):
-                    if((month_day>=due_date) and (not employee_dict[k]['days_worked'].get(month_day))):
-                        days_worked.append('p')
+                    if False: #((month_day>=due_date) and (datetime.today().date()>actual_last_date)):
+                        days_worked.append(employee_dict[k]['days_worked'].get(month_day))
+                    elif((month_day>=due_date) and (not employee_dict[k]['days_worked'].get(month_day))):
+                        if(sorted_schedule.get(k).get(month_day)):
+                            days_worked.append('p')
+                        else:
+                            days_worked.append('')
                     elif(not employee_dict[k]['days_worked'].get(month_day)):
                         days_worked.append('')
                     else:
