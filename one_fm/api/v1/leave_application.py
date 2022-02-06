@@ -24,36 +24,36 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
         }
     """
     if not employee_id:
-        return response("Bad request", 400, None, "employee_id required.")
+        return response("Bad Request", 400, None, "employee_id required.")
 
     if not isinstance(employee_id, str):
-        return response("Bad request", 400, None, "employee_id must be of type str.")
+        return response("Bad Request", 400, None, "employee_id must be of type str.")
 
     if leave_id and not isinstance(leave_id, str):
-            return response("Bad request", 400, None, "leave_id must be of type str.")
+            return response("Bad Request", 400, None, "leave_id must be of type str.")
     
     try:
         employee = frappe.db.get_value("Employee", {'employee_id':employee_id})
         
         if not employee:
-            return response("Resource not found", 404, None, "No employee record found for {employee_id}".format(employee_id=employee_id))
+            return response("Resource Not Found", 404, None, "No employee record found for {employee_id}".format(employee_id=employee_id))
         
         if not leave_id:
             leave_list = frappe.get_all("Leave Application", {'employee':employee}, ["name","leave_type", "status","from_date", "total_leave_days"])
             if leave_list and len(leave_list) > 0:
                 return response("Success", 200, leave_list)
             else:
-                return response("Resource not found", 404, None, "No leaves found for {employee_id}".format(employee_id=employee_id))
+                return response("Resource Not Found", 404, None, "No leaves found for {employee_id}".format(employee_id=employee_id))
         
         elif leave_id:
             leave_data = frappe.db.get_value("Leave Application",{'name': leave_id}, ["*"] )
             if leave_data:
                 return response("Success", 200, leave_data)
             else:
-                return response("Resource not found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
+                return response("Resource Not Found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
     
     except Exception as error:
-       return response("Internal server error", 500, None, error)
+       return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
@@ -72,16 +72,16 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
         }
     """
     if not employee_id:
-        return response("Bad request", 400, None, "employee_id required.")
+        return response("Bad Request", 400, None, "employee_id required.")
 
     if not leave_type:
-        return response("Bad request", 400, None, "leave_type required.")
+        return response("Bad Request", 400, None, "leave_type required.")
     
     if not isinstance(employee_id, str):
-        return response("Bad request", 400, None, "employee_id must be of type str.")
+        return response("Bad Request", 400, None, "employee_id must be of type str.")
 
     if not isinstance(leave_type, str):
-        return response("Bad request", 400, None, "leave_type must be of type str.")
+        return response("Bad Request", 400, None, "leave_type must be of type str.")
 
     today=date.today()
     
@@ -89,7 +89,7 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
-            return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
         allocation_records = get_leave_details(employee, today)
         leave_balance = allocation_records['leave_allocation'][leave_type]
@@ -97,10 +97,10 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
         if leave_balance:
             return response("Success", 200, int(leave_balance))
         else:
-            return response("Resource not found", 404, None, "No leave allocated to {employee}".format(employee=employee_id))
+            return response("Resource Not Found", 404, None, "No leave allocated to {employee}".format(employee=employee_id))
             
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def get_leave_types(employee_id: str = None) -> dict:
@@ -119,22 +119,22 @@ def get_leave_types(employee_id: str = None) -> dict:
     """
 
     if not employee_id:
-        return response("Bad request", 400, None, "employee_id required.")
+        return response("Bad Request", 400, None, "employee_id required.")
 
     if not isinstance(employee_id, str):
-        return response("Bad request", 400, None, "employee_id must be of type str")
+        return response("Bad Request", 400, None, "employee_id must be of type str")
     
     try:
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
-            return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
         leave_types_set = {}
         leave_type_list = frappe.get_list("Leave Allocation", {"employee": employee}, 'leave_type')
         
         if not leave_type_list or len(leave_type_list) == 0:
-            return response("Resource not found", 404, None, "No leave allocated to {employee}".format(employee=employee_id))
+            return response("Resource Not Found", 404, None, "No leave allocated to {employee}".format(employee=employee_id))
         
         for leave_type in leave_type_list:
             leave_types_set.add(leave_type.leave_type)
@@ -142,7 +142,7 @@ def get_leave_types(employee_id: str = None) -> dict:
         return response("Success", 200, list(leave_types_set))
         
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def create_new_leave_application(employee_id: str = None, from_date: str = None, to_date: str = None, leave_type: str = None, reason: str = None) -> dict:
@@ -164,52 +164,52 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         }
     """
     if not employee_id:
-        return response("Bad request", 400, None, "employee_id required.")
+        return response("Bad Request", 400, None, "employee_id required.")
 
     if not from_date:
-        return response("Bad request", 400, None, "from_date required.")
+        return response("Bad Request", 400, None, "from_date required.")
 
     if not to_date:
-        return response("Bad request", 400, None, "to_date required.")
+        return response("Bad Request", 400, None, "to_date required.")
 
     if not leave_type:
-        return response("Bad request", 400, None, "leave_type required.")
+        return response("Bad Request", 400, None, "leave_type required.")
 
     if not reason:
-        return response("Bad request", 400, None, "reason required.")
+        return response("Bad Request", 400, None, "reason required.")
 
     if not isinstance(employee_id, str):
-        return response("Bad request", 400, None, "employee_id must be of type str")
+        return response("Bad Request", 400, None, "employee_id must be of type str")
 
     if not isinstance(from_date, str):
-        return response("Bad request", 400, None, "from_date must be of type str.")
+        return response("Bad Request", 400, None, "from_date must be of type str.")
 
     if not validate_date(from_date):
-        return response("Bad request", 400, None, "from_date must be of format yyyy-mm-dd.")
+        return response("Bad Request", 400, None, "from_date must be of format yyyy-mm-dd.")
 
     if not validate_date(to_date):
-        return response("Bad request", 400, None, "to_date must be of format yyyy-mm-dd.")
+        return response("Bad Request", 400, None, "to_date must be of format yyyy-mm-dd.")
 
     if not isinstance(to_date, str):
-        return response("Bad request", 400, None, "to_date must be of type str.")
+        return response("Bad Request", 400, None, "to_date must be of type str.")
 
     if not isinstance(leave_type, str):
-        return response("Bad request", 400, None, "leave_type must be of type str.")
+        return response("Bad Request", 400, None, "leave_type must be of type str.")
 
     if not isinstance(reason, str):
-        return response("Bad request", 400, None, "reason must be of type str.")
+        return response("Bad Request", 400, None, "reason must be of type str.")
 
     
     try:
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
-            return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
         leave_approver = get_leave_approver(employee)
         
         if not leave_approver:
-            return response("Resource not found", 404, None, "No leave approver found for {employee}.".format(employee=employee_id))
+            return response("Resource Not Found", 404, None, "No leave approver found for {employee}.".format(employee=employee_id))
         
         if frappe.db.exists("Leave Application", filters={'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
             return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
@@ -227,7 +227,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             return response("Success", 201, doc)
     
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str) -> dict:
     leave = frappe.new_doc("Leave Application")

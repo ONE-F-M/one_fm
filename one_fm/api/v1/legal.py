@@ -12,22 +12,22 @@ from one_fm.api.v1.utils import response
 def get_employee_list(shift: str = None, penalty_occurence_time: str = None) -> dict:
 
     if not shift:
-        return response("Bad request", 400, None, "shift required.")
+        return response("Bad Request", 400, None, "shift required.")
 
     if not penalty_occurence_time:
-        return response("Bad request", 400, None, "penalty_ocurrence_time required.")
+        return response("Bad Request", 400, None, "penalty_ocurrence_time required.")
 
     if not isinstance(shift, str):
-        return response("Bad request", 400, None, "shift must be of type str.")
+        return response("Bad Request", 400, None, "shift must be of type str.")
 
     if not isinstance(penalty_occurence_time, str):
-        return response("Bad request", 400, None, "penalty_ocurrence_time must be of type str.")
+        return response("Bad Request", 400, None, "penalty_ocurrence_time must be of type str.")
 
     try:
         result = get_filtered_employees(shift, penalty_occurence_time, as_dict=1)
         return response("Success", 200, result)
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 
 @frappe.whitelist()
@@ -37,7 +37,7 @@ def get_penalty_types():
         result = frappe.db.sql("""SELECT name, penalty_name_arabic FROM `tabPenalty Type` """, as_dict=1)
         return response("Success", 200, result)
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 
 @frappe.whitelist()
@@ -50,7 +50,7 @@ def get_all_shifts():
 
         return response("Success", 200, result)
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 
 @frappe.whitelist()
@@ -108,21 +108,21 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		return response("Success", 201, penalty_issuance)
 
 	except Exception as error:
-		return response("Internal server error", 500, None, error)
+		return response("Internal Server Error", 500, None, error)
 
 	
 @frappe.whitelist()
 def get_penalties(employee_id: str = None, role: str = None) -> dict:
 
 	if not employee_id:
-		return response("Bad request", 400, None, "employee_id required.")
+		return response("Bad Request", 400, None, "employee_id required.")
 
 	if not isinstance(employee_id, str):
-		return response("Bad request", 400, None, "employee_id must be of type str.")
+		return response("Bad Request", 400, None, "employee_id must be of type str.")
 
 	if role:
 		if not isinstance(role, str):
-			return response("Bad request", 400, None ,"role must be of type str.")
+			return response("Bad Request", 400, None ,"role must be of type str.")
 	try:
 		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
@@ -143,7 +143,7 @@ def get_penalties(employee_id: str = None, role: str = None) -> dict:
 				return response("Resource not found", 404, None, "No penalties found for {employee}".format(employee=employee))
 	
 	except Exception as error:
-		return response("Internal server error", 500, None, error)
+		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def get_penalty_details(penalty_name: str = None) -> dict:
@@ -161,10 +161,10 @@ def get_penalty_details(penalty_name: str = None) -> dict:
 		}
 	"""
 	if not penalty_name:
-		return response("Bad request", 400, None, "penalty_name required.")
+		return response("Bad Request", 400, None, "penalty_name required.")
 
 	if not isinstance(penalty_name, str):
-		return response("Bad request", 400, None, "penalty_name must be of type str.")
+		return response("Bad Request", 400, None, "penalty_name must be of type str.")
 
 	try:
 		penalty_doc = frappe.get_doc("Penalty", {"name": penalty_name})
@@ -174,7 +174,7 @@ def get_penalty_details(penalty_name: str = None) -> dict:
 		return response("Success", 200, penalty_doc.as_dict())
 	
 	except Exception as error:
-		return response("Internal server error", 500, None, error)
+		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def accept_penalty(employee_id: str = None, file: str = None, docname: str = None) -> dict:
@@ -196,16 +196,16 @@ def accept_penalty(employee_id: str = None, file: str = None, docname: str = Non
 		}
 	"""
 	if not file:
-		return response("Bad request", 400, None, "base64 encoded file required.")
+		return response("Bad Request", 400, None, "base64 encoded file required.")
 
 	if not docname:
-		return response("Bad request", 400, None, "docname required.")
+		return response("Bad Request", 400, None, "docname required.")
 
 	if not isinstance(file, str):
-		return response("Bad request", 400, None, "file must be base64 encoded type str.")
+		return response("Bad Request", 400, None, "file must be base64 encoded type str.")
 
 	if not isinstance(docname, str):
-		return response("Bad request", 400, None, "docname must be of type str.")
+		return response("Bad Request", 400, None, "docname must be of type str.")
 	
 	try:
 		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+employee_id+".png"
@@ -245,7 +245,7 @@ def accept_penalty(employee_id: str = None, file: str = None, docname: str = Non
 			return response("Unauthorized", 401, None, "Face not recognized.")
 
 	except Exception as error:
-		return response("Internal server error", 500, None, error)
+		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def reject_penalty(rejection_reason: str = None, docname: str = None):
@@ -264,16 +264,16 @@ def reject_penalty(rejection_reason: str = None, docname: str = None):
 	"""
 
 	if not rejection_reason:
-		return response("Bad request", 400, None, "rejection_reason required.")
+		return response("Bad Request", 400, None, "rejection_reason required.")
 
 	if not docname:
-		return response("Bad request", 400, None, "docname required.")
+		return response("Bad Request", 400, None, "docname required.")
 
 	if not isinstance(rejection_reason, str):
-		return response("Bad request", 400, None, "rejection_reason must be of type str.")
+		return response("Bad Request", 400, None, "rejection_reason must be of type str.")
 
 	if not isinstance(docname, str):
-		return response("Bad request", 400, None, "docname must be of type str.")
+		return response("Bad Request", 400, None, "docname must be of type str.")
 
 	try:
 		penalty_doc = frappe.get_doc("Penalty", docname)
@@ -289,7 +289,7 @@ def reject_penalty(rejection_reason: str = None, docname: str = None):
 			
 			return response("Success", 201, penalty_doc.as_dict())
 		else:
-			return response("Bad request", 400, None, "Penalty has not yet reached workflow state of 'Penalty Issued'.")
+			return response("Bad Request", 400, None, "Penalty has not yet reached workflow state of 'Penalty Issued'.")
 	
 	except Exception as error:
-		return response("Internal server error", 500, None, error)
+		return response("Internal Server Error", 500, None, error)

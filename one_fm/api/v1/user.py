@@ -6,10 +6,10 @@ from one_fm.api.v1.utils import response
 def get_user_details(employee_id: str = None):
 
     if not employee_id:
-        return response("Bad request", 400, None, "employee_id required.")
+        return response("Bad Request", 400, None, "employee_id required.")
 
     if not isinstance(employee_id, str):
-        return response("Bad request", 400, None, "employee_id must be of type str.")
+        return response("Bad Request", 400, None, "employee_id must be of type str.")
 
     try:
         user = frappe.get_value("User", employee_id, ["*"])
@@ -17,7 +17,7 @@ def get_user_details(employee_id: str = None):
         employee, designation = frappe.get_value("Employee", { "employee_id": employee_id }, ["name", "designation"])
 
         if not employee:
-            return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         user_details = {}
         if user:
@@ -31,22 +31,22 @@ def get_user_details(employee_id: str = None):
         return response("Success", 200, user_details)
     
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def change_user_profile_image(employee_id: str = None, image: str = None):
 
     if not employee_id:
-        return response("Bad request", 400, None, "user_id required.")
+        return response("Bad Request", 400, None, "user_id required.")
 
     if not isinstance(employee_id, str):
-        return response("Bad request", 400, None, "user_id must be of type str.")
+        return response("Bad Request", 400, None, "user_id must be of type str.")
 
     if not image:
-        return response("Bad request", 400, None, "image required.")
+        return response("Bad Request", 400, None, "image required.")
 
     if not isinstance(image, str):
-        return response("Bad request", 400, None, "image must be of type str.")
+        return response("Bad Request", 400, None, "image must be of type str.")
     
     content = base64.b64decode(image)
     filename = employee_id + ".png"
@@ -62,12 +62,12 @@ def change_user_profile_image(employee_id: str = None, image: str = None):
         employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
 
         if not employee_user:
-            return response("Resource not found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
+            return response("Resource Not Found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
 
         user = frappe.get_doc("User", employee_user)
 
         if not user:
-            return response("Resource not found", 404, None, "No user found with {user_id}".format(user_id = employee_id))
+            return response("Resource Not Found", 404, None, "No user found with {user_id}".format(user_id = employee_id))
 
         user.user_image = image_file
         user.save()
@@ -76,7 +76,7 @@ def change_user_profile_image(employee_id: str = None, image: str = None):
         return response("Success", 201, user.as_dict())
     
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def get_user_roles(employee_id: str = None):
@@ -96,7 +96,7 @@ def get_user_roles(employee_id: str = None):
     employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
 
     if not employee_user:
-        return response("Resource not found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
+        return response("Resource Not Found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
     
     user_roles = frappe.get_roles(employee_user)
     
@@ -105,22 +105,22 @@ def get_user_roles(employee_id: str = None):
 @frappe.whitelist()
 def store_fcm_token(employee_id: str = None , fcm_token: str = None, device_os: str = None):
     if not employee_id:
-        return response("Bad request", 400, None, "employee_id required.")
+        return response("Bad Request", 400, None, "employee_id required.")
 
     if not fcm_token:
-        return response("Bad request", 400, None, "fcm_token required.")
+        return response("Bad Request", 400, None, "fcm_token required.")
 
     if not device_os:
-        return response("Bad request", 400, None, "device_os required.")
+        return response("Bad Request", 400, None, "device_os required.")
 
     if not isinstance(employee_id, str):
-        return response("Bad request", 400, None, "employee_id must be of type str.")
+        return response("Bad Request", 400, None, "employee_id must be of type str.")
     
     try:
         employee = frappe.get_doc("Employee", {"employee_id": employee_id})
     
         if not employee:
-            return response("Resource not found", 404, None, "No resource found with {employee_id}".format(employee_id = employee_id))
+            return response("Resource Not Found", 404, None, "No resource found with {employee_id}".format(employee_id = employee_id))
         
         employee.fcm_token = fcm_token
         employee.device_os = device_os
@@ -129,4 +129,4 @@ def store_fcm_token(employee_id: str = None , fcm_token: str = None, device_os: 
         return response("Success", 201, employee.as_dict())
 
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)

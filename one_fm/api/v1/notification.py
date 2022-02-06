@@ -26,10 +26,10 @@ def get_notification_list(employee_id: str = None) -> dict:
     """
 
     if not employee_id:
-        return response("Bad request", 400, None, "employee_id required.")
+        return response("Bad Request", 400, None, "employee_id required.")
 
     if not isinstance(employee_id, str):
-        return response("Bad request", 400, None, "employee_id must be of type str.")
+        return response("Bad Request", 400, None, "employee_id must be of type str.")
 
     try:
         site = frappe.local.conf.app_url
@@ -61,4 +61,4 @@ def get_notification_list(employee_id: str = None) -> dict:
         return response("Success", 200, result)
 
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)

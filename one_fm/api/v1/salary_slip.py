@@ -27,10 +27,10 @@ def get_salary_slip_list(employee_id: str = None) -> dict:
         }
     """
     if not employee_id:
-        return response("Bad request", 400, None, "employee_id required.")
+        return response("Bad Request", 400, None, "employee_id required.")
 
     if not isinstance(employee_id, str):
-        return response("Bad request", 400, None, "employee_id must be of type str.")
+        return response("Bad Request", 400, None, "employee_id must be of type str.")
     
     try:
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
@@ -46,7 +46,7 @@ def get_salary_slip_list(employee_id: str = None) -> dict:
         return response("Success", 200, salary_list)
     
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def salary_slip_details(salary_slip_id: str = None) -> dict:
@@ -64,10 +64,10 @@ def salary_slip_details(salary_slip_id: str = None) -> dict:
         }
     """
     if not salary_slip_id:
-        return response("Bad request", 400, None, "salary_slip_id required.")
+        return response("Bad Request", 400, None, "salary_slip_id required.")
 
     if not isinstance(salary_slip_id, str):
-        return response("Bad request", 400, None, "salary_slip_id must be of type str.")
+        return response("Bad Request", 400, None, "salary_slip_id must be of type str.")
     
     try:
         salary_slip_doc = frappe.get_doc("Salary Slip", salary_slip_id)
@@ -78,4 +78,4 @@ def salary_slip_details(salary_slip_id: str = None) -> dict:
         return response("Success", 200, salary_slip_doc.as_dict())
     
     except Exception as error:
-        return response("Internal server error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)

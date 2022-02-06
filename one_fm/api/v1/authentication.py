@@ -44,28 +44,28 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 		}
 	"""
 	if not client_id:
-		return response("Bad request", 400, None, "client_id is required!.")
+		return response("Bad Request", 400, None, "client_id is required!.")
 	
 	if not grant_type:
-		return response("Bad request", 400, None, "grant_type is required!")
+		return response("Bad Request", 400, None, "grant_type is required!")
 	
 	if not employee_id:
-		return response("Bad request", 400, None, "Employee ID is required!")
+		return response("Bad Request", 400, None, "Employee ID is required!")
 	
 	if not password:
-		return response("Bad request", 400, None, "Password is required!")
+		return response("Bad Request", 400, None, "Password is required!")
 
 	if not isinstance(client_id, str):
-		return response("Bad request", 400, None, "client_id must be of type str!")
+		return response("Bad Request", 400, None, "client_id must be of type str!")
 	
 	if not isinstance(grant_type, str):
-		return response("Bad request", 400, None, "grant_type must be of type str!")
+		return response("Bad Request", 400, None, "grant_type must be of type str!")
 	
 	if not isinstance(employee_id, str):
-		return response("Bad request", 400, None, "employee_id must be of type str!")
+		return response("Bad Request", 400, None, "employee_id must be of type str!")
 
 	if not isinstance(password, str):
-		return response("Bad request", 400, None, "password must be of type str!")
+		return response("Bad Request", 400, None, "password must be of type str!")
 	
 	try:
 		site = frappe.utils.cstr(frappe.local.conf.app_url)
@@ -112,7 +112,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 			return response("Bad Request", auth_api_response.status_code, None, json.loads(auth_api_response.content))
 
 	except Exception as error:
-		return response("Internal server error", 500, None, error)
+		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist(allow_guest=True)
 def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
@@ -131,25 +131,25 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 	"""
 
 	if not employee_id:
-		return response("Bad request", 400, None, "Employee ID required.")
+		return response("Bad Request", 400, None, "Employee ID required.")
 
 	if not otp_source:
-		return response("Bad request", 400, None, "OTP source required.")
+		return response("Bad Request", 400, None, "OTP source required.")
 
 	if not isinstance(employee_id, str):
-		return response("Bad request", 400, None, "Employee ID must be of type str.")
+		return response("Bad Request", 400, None, "Employee ID must be of type str.")
 
 	if not isinstance(otp_source, str):
-		return response("Bad request", 400, None, "OTP source must be of type str.")
+		return response("Bad Request", 400, None, "OTP source must be of type str.")
 
 	if otp_source.lower() not in ["sms", "email", "whatsapp"]:
-		return response("Bad request", 400, None, "Invalid OTP source. OTP source must be either 'sms', 'email' or 'whatsapp'.")
+		return response("Bad Request", 400, None, "Invalid OTP source. OTP source must be either 'sms', 'email' or 'whatsapp'.")
 	
 	try:
 		employee_user_id =  frappe.get_value("Employee", {'employee_id': employee_id}, 'user_id')
 		
 		if not employee_user_id:
-			return response("Bad request", 404, None, "No user ID found for employee ID {employee_id}.".format(employee_id=employee_id))
+			return response("Bad Request", 404, None, "No user ID found for employee ID {employee_id}.".format(employee_id=employee_id))
 		
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
@@ -168,7 +168,7 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		return response("Success", 201, "Password reset instructions sent via {otp_source}".format(otp_source=otp_source))
 	
 	except Exception as error:
-		return response("Internal server error", 500, None, error)
+		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist(allow_guest=True)
 def update_password(otp, id, employee_id, new_password):
