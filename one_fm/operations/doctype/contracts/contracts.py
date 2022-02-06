@@ -31,11 +31,11 @@ class Contracts(Document):
 	def generate_sales_invoice(self):
 
 		try:
-			if self.create_sales_invoice_as == "Single Invoice":
+			if self.create_sales_invoice_as == "":
 				items_amounts = get_service_items_invoice_amounts(self)
 				sales_invoice_doc = frappe.new_doc("Sales Invoice")
 				sales_invoice_doc.customer = self.client
-				
+
 				date = cstr(getdate())
 				temp_invoice_year = date.split("-")[0]
 				temp_invoice_month = date.split("-")[1]
@@ -45,6 +45,7 @@ class Contracts(Document):
 				sales_invoice_doc.project = self.project
 				sales_invoice_doc.contracts = self.name
 				sales_invoice_doc.ignore_pricing_rule = 1
+				sales_invoice_doc.title = self.client + ' - ' + 'Single Invoice'
 
 				income_account = frappe.db.get_value("Project", self.project, ["income_account"])
 
@@ -62,7 +63,7 @@ class Contracts(Document):
 
 				sales_invoice_doc.save()
 				frappe.db.commit()
-				
+
 				return sales_invoice_doc
 
 			if self.create_sales_invoice_as == "Separate Invoice for Each Site":
@@ -71,7 +72,8 @@ class Contracts(Document):
 				for site, items_amounts in site_invoices.items():
 					sales_invoice_doc = frappe.new_doc("Sales Invoice")
 					sales_invoice_doc.customer = self.client
-					
+					sales_invoice_doc.title = self.client + ' - ' + site
+
 					date = cstr(getdate())
 					temp_invoice_year = date.split("-")[0]
 					temp_invoice_month = date.split("-")[1]
@@ -113,8 +115,8 @@ def get_contracts_asset_items(contracts):
 		FROM `tabContract Asset` ca , `tabContracts` c
 		WHERE c.name = ca.parent and ca.parenttype = 'Contracts'
 		and c.frequency = 'Monthly'
-		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc 
-	""", (contracts), as_dict=1)	
+		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc
+	""", (contracts), as_dict=1)
 	return contracts_item_list
 
 @frappe.whitelist()
@@ -123,8 +125,8 @@ def get_contracts_items(contracts):
 		SELECT ca.item_code,ca.head_count as qty
 		FROM `tabContract Item` ca , `tabContracts` c
 		WHERE c.name = ca.parent and ca.parenttype = 'Contracts'
-		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc 
-	""", (contracts), as_dict=1)	
+		and ca.docstatus = 0 and ca.parent = %s order by ca.idx asc
+	""", (contracts), as_dict=1)
 	return contracts_item_list
 
 @frappe.whitelist()
@@ -173,7 +175,7 @@ def get_service_items_invoice_amounts(contract):
 	contract_overtime_rate = contract.overtime_rate
 
 	master_data = []
-    
+
 	for item in contract.items:
 		item_group = str(item.subitem_group)
 
@@ -196,7 +198,7 @@ def get_service_items_invoice_amounts(contract):
 
 def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site=None):
 	""" This method computes the total number of hours worked by employees for a particular service item by referring to
-		the attendance for days prior to invoice due date and employee schedules ahead of the invoice due date, 
+		the attendance for days prior to invoice due date and employee schedules ahead of the invoice due date,
 		hence calculating the amount for the service amount.
 
 	Args:
@@ -211,7 +213,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 		dict: item amount and item data
 	"""
 	item_code = item.item_code
-	
+
 	days_in_month = int(last_day_of_month.split("-")[2])
 
 	item_price = item.item_price
@@ -245,14 +247,14 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 		hours = 0
 		if attendance.working_hours:
 			hours += attendance.working_hours
-		
+
 		elif attendance.in_time and attendance.out_time:
 			hours += round((get_datetime(attendance.in_time) - get_datetime(attendance.out_time)).total_seconds() / 3600, 1)
 
 		# Use working hours as duration of shift if no in-out time available in attendance
 		elif attendance.operations_shift:
 			hours += float(frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"]))
-	
+
 		item_hours += hours
 
 	# Get employee schedules for remaining days of the month from the invoice due date if due date is before last day
@@ -266,7 +268,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 
 		if site:
 			es_filters.update({'site': site})
-		
+
 		employee_schedules = frappe.db.get_list("Employee Schedule", es_filters, ["shift"])
 
 		# Use item hours as duration of shift
@@ -294,7 +296,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 
 def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site=None):
 	""" This method computes the total number of days worked by employees for a particular service item by referring to
-		the attendance for days prior to invoice due date and employee schedules ahead of the invoice due date, 
+		the attendance for days prior to invoice due date and employee schedules ahead of the invoice due date,
 		hence calculating the amount for the service amount.
 
 	Args:
@@ -349,7 +351,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 
 		if site:
 			es_filters.update({'site': site})
-		
+
 		employee_schedules = len(frappe.db.get_list("Employee Schedule", pluck='name', filters=es_filters))
 
 		item_days += employee_schedules
@@ -357,7 +359,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 	# If total item days exceed expected days, apply overtime rate on extra days
 	if item_days > expected_item_days:
 		normal_amount = item_rate * expected_item_days
-		
+
 		overtime_days = item_days - expected_item_days
 		overtime_amount = contract_overtime_rate * shift_hours * overtime_days
 
@@ -422,7 +424,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 	attendances = len(frappe.db.get_list("Attendance", pluck='name', filters=attendance_filters))
 
 	item_days += attendances
-			
+
 	# Get employee schedules for remaining days of the month from the invoice due date if due date is before last day
 	if invoice_date < last_day_of_month:
 		es_filters = {
@@ -433,7 +435,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 		}
 		if site:
 			es_filters.update({'site': site})
-		
+
 		employee_schedules = len(frappe.db.get_list("Employee Schedule", pluck='name', filters=es_filters))
 
 		item_days += employee_schedules
@@ -448,7 +450,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 	elif item_days < expected_item_days:
 		daily_rate = item_rate / working_days_in_month
 		missing_days = expected_item_days - item_days
-		
+
 		amount = round(cint(item.count) * item_rate - (daily_rate * missing_days), 3)
 
 	elif item_days == expected_item_days:
@@ -501,11 +503,11 @@ def get_separate_invoice_for_sites(contract):
 				item_group = str(item.subitem_group)
 
 				if item_group.lower() == "service":
-					
+
 					if item.uom == "Hourly":
 						item_data = get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
 						site_item_amounts.append(item_data)
-					
+
 					if item.uom == "Daily":
 						item_data = get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
 						site_item_amounts.append(item_data)
@@ -515,7 +517,7 @@ def get_separate_invoice_for_sites(contract):
 						site_item_amounts.append(item_data)
 
 			invoices[site.site] = site_item_amounts
-	
+
 	return invoices
 
 def calculate_item_values(doc):
