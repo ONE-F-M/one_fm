@@ -96,22 +96,7 @@ frappe.ui.form.on('Contracts', {
 	refresh:function(frm){
 		// create delivery note and reroute to the form in draft mode
 		frm.add_custom_button(__("Create Delivery Note"), function() {
-			frappe.confirm('Are you sure you want to proceed?',
-		    () => {
-		        // action to perform if Yes is selected
-				frappe.show_progress('Creating Delivery Note..', 40, 100, 'Please wait');
-				frm.call('make_delivery_note').then(res=>{
-					console.log(res)
-					frappe.show_progress('Creating Delivery Note..', 60, 100, 'Please wait');
-					if(res.message){
-						frappe.show_progress('Creating Delivery Note..', 90, 100, 'Please wait');
-						frappe.msgprint('Complete')
-						frappe.set_route('Form', res.message.doctype, res.message.name);
-					}
-				})
-		    }, () => {
-		        // action to perform if No is selected
-		    })
+			create_delivery_note(frm);
 		}).addClass('btn btn-primary');
 
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
@@ -528,4 +513,180 @@ let change_items_table_properties = (frm, row) => {
 		idx.querySelector('[data-fieldname="days_off"]').hidden = true;
 		idx.querySelector('[data-fieldname="days"]').hidden = true;
 	}
+}
+
+
+// create delivery note
+let create_delivery_note = frm => {
+	if(frm.doc.create_sales_invoice_as==''){
+		// Create general delivery note on single invoice
+
+			let table_fields = dn_table_field(frm);
+
+			const dialog = new frappe.ui.Dialog({
+					title: __('Create Delivery Note'),
+					static: false,
+					fields: dn_fields(frm, table_fields),
+					primary_action: async function(values) {
+						// validate values
+						validate_dn_rows(frm, values);
+						// // process
+						process_delivery_note(frm, values);
+
+						dialog.hide();
+					},
+					primary_action_label: __('Submit')
+				});
+				dialog.show();
+				// initialize dialog table
+				update_dn_table(frm, dialog);
+
+
+
+	} else if(frm.doc.create_sales_invoice_as=="Separate Item Line for Each Site" ||
+		frm.doc.create_sales_invoice_as=="Separate Invoice for Each Site"){
+		frm.call('get_contract_sites').then(res=>{
+			if(res.message.length>0){
+				let sites = res.message;
+				// create dialog
+				let table_fields = dn_table_field(frm);
+				table_fields.push({
+					fieldname: "site", fieldtype: "Link",
+					in_list_view: 1, label: "Site", reqd:1,
+
+				})
+
+				const dialog = new frappe.ui.Dialog({
+						title: __('Create Delivery Note'),
+						static: false,
+						fields: dn_fields(frm, table_fields),
+						primary_action: async function(values) {
+							// validate values
+							validate_dn_rows(frm, values);
+							// // process
+							// process delivery note for item line per site
+							process_delivery_note(frm, values);
+
+							dialog.hide();
+						},
+						primary_action_label: __('Submit')
+				});
+				dialog.show();
+				// end create dialog
+				sites.forEach((site, i) => {
+					frm.doc.items.forEach((item, i) => {
+						if(item.subitem_group!='Service'){
+							dialog.fields_dict.items.df.data.push(
+								{
+									item_code: item.item_code, qty: item.count,
+									rate: item.rate, site: site}
+							);
+						}
+					});
+				});
+				dialog.fields_dict.items.grid.refresh();
+			}
+		})
+	} else if(false){
+
+	}
+}
+
+
+let dn_table_field = frm => {
+	// delivery note items table
+	return [
+			{
+				fieldname: "item_code", fieldtype: "Link",
+				in_list_view: 1, label: "Item",
+				options: "Item", reqd: 1,
+				get_query: () => {
+					return {
+						filters: {
+							'subitem_group': ['!=', 'Service']
+						}
+					}
+				}
+			},
+			{
+				fieldname: "qty", fieldtype: "Int",
+				in_list_view: 1, label: "QTY", reqd:1,
+				default: 1
+			},
+			{
+				fieldname: "rate", fieldtype: "Currency",
+				in_list_view: 1, label: "Rate", reqd:1,
+				default: 1
+			}
+
+		];
+}
+
+let dn_fields = (frm, table_fields) => {
+	// return dialog fields
+	return [
+		{
+			fieldname: "items",
+			fieldtype: "Table",
+			label: "Items",
+			cannot_add_rows: false,
+			cannot_delete_rows: false,
+			in_place_edit: true,
+			reqd: 1,
+			data: [],
+			fields: table_fields
+		}
+	]
+}
+
+let validate_dn_rows = (frm, values) => {
+	// validate delivery note rows if empty
+	values.items.forEach((item, i) => {
+		if(!item.item_code || !item.qty){
+			frappe.throw(`Please select option for
+				<b>${item.idx}</b>`)
+		}
+	});
+}
+
+
+let update_dn_table = (frm, dialog) => {
+	// auto file delivery note table fields
+	frm.doc.items.forEach((item, i) => {
+		if(item.subitem_group!='Service'){
+			dialog.fields_dict.items.df.data.push(
+				{ item_code: item.item_code, qty: item.count, rate: item.rate}
+			);
+		}
+	});
+	dialog.fields_dict.items.grid.refresh();
+}
+
+
+// process filter
+let process_delivery_note = (frm, values)=>{
+	// set items sorting and filtering
+	frappe.call({
+		doc: frm.doc,
+		args: {dn_items:values},
+		method: 'make_delivery_note',
+		callback: function(r) {
+			if(!r.exc){
+				if(r.message){
+					frappe.show_alert({
+					    message:__('Delivery Note created successfully'),
+					    indicator:'green'
+					}, 5);
+					frappe.msgprint(__('Delivery Note created successfully'))
+					// reload_doc
+					frm.reload_doc();
+					frappe.set_route('List', 'Delivery Note', {
+						contracts: frm.doc.name
+					})
+				}
+			}
+		},
+		freeze: true,
+		freeze_message: (__('Creating Delivery Note'))
+	});
 }
