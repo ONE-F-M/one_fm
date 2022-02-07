@@ -525,12 +525,10 @@ def get_separate_invoice_for_sites(contract):
 	for item in contract.items:
 		items.append(item.item_code)
 
-	contract_post_types = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': ['in', items]})
-
-	unique_post_types = list(set(contract_post_types))
+	contract_post_types = list(set(frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': ['in', items]})))
 
 	filters.update({'date': ['between', (first_day_of_month, last_day_of_month)]})
-	filters.update({'post_type': ['in', unique_post_types]})
+	filters.update({'post_type': ['in', contract_post_types]})
 	filters.update({'employee_availability': 'Working'})
 	filters.update({'project': project})
 
