@@ -1,5 +1,6 @@
 frappe.ui.form.on('Project', {
     refresh: function(frm) {
+        frm.set_df_property('project_type', 'reqd', true);
         if(!frm.doc.__islocal && frm.doc.project_type === "External"){
             remove_existing();
             let data_onefm = "Project Structure";
