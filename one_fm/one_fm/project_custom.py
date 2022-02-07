@@ -33,3 +33,8 @@ def on_project_save(doc, handler=""):
                 'countries': price_list_doc.countries
             }).insert()
             return 	price_list_doc
+
+def validate_poc_list(doc, method):
+    project_type = str(doc.project_type)
+    if project_type.lower() == "external" and len(doc.poc) == 0:
+        frappe.throw('POC list is mandatory for project type <b>External</b>')

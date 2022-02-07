@@ -234,6 +234,7 @@ doc_events = {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	"Project": {
+		"validate": "one_fm.one_fm.project_custom.validate_poc_list",
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
