@@ -4,12 +4,12 @@ from one_fm.utils import round_up
 
 def fetch_salary_component(doc, method):
     """This Function Fetches the Salary Components from a given Salary Structure.
-    It further calculates the amount of each component if the component amount is based on formula. 
-    In that case, it checks if the base amout exists. If noty, it throws error.
-
-    If amount of component is not based on formula, the item just fetches the given amount.
-
-    This action is taken before saving the file.
+        It further calculates the amount of each component if the component amount is based on 
+        a formula. In that case, it checks if the base amount exists. If notify it throws an error.
+        
+        If the amount of components is not based on a formula, the item just fetches the given amount.
+        
+        This action is taken before saving the file.
     Args:
         doc ([doctype]): Salary Structure Assignment.
     
