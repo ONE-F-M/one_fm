@@ -121,11 +121,11 @@ class Contracts(Document):
 				sales_invoice_doc.project = self.project
 				sales_invoice_doc.contracts = self.name
 				sales_invoice_doc.ignore_pricing_rule = 1
-				sales_invoice_doc.title = self.client + ' - ' + 'Single Invoice'
+				sales_invoice_doc.title = self.client + ' - ' + 'Item Lines'
 
 				income_account = frappe.db.get_value("Project", self.project, ["income_account"])
 
-				for item in separate_site_items:
+				for site, item in separate_site_items.items(): #explode dictionary
 					sales_invoice_doc.append('items', {
 						'item_code': item["item_code"],
 						'item_name': item["item_code"],
@@ -134,7 +134,8 @@ class Contracts(Document):
 						'uom': item["uom"],
 						'rate': item["rate"],
 						'amount': item["amount"],
-						'income_account': income_account
+						'income_account': income_account,
+						'site': site, #add site to item
 					})
 
 				sales_invoice_doc.save()
