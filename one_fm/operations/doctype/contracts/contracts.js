@@ -94,8 +94,28 @@ frappe.ui.form.on('Contracts', {
 		})
 	},
 	refresh:function(frm){
+		// create delivery note and reroute to the form in draft mode
+		frm.add_custom_button(__("Create Delivery Note"), function() {
+			frappe.confirm('Are you sure you want to proceed?',
+		    () => {
+		        // action to perform if Yes is selected
+				frappe.show_progress('Creating Delivery Note..', 40, 100, 'Please wait');
+				frm.call('make_delivery_note').then(res=>{
+					console.log(res)
+					frappe.show_progress('Creating Delivery Note..', 60, 100, 'Please wait');
+					if(res.message){
+						frappe.show_progress('Creating Delivery Note..', 90, 100, 'Please wait');
+						frappe.msgprint('Complete')
+						frappe.set_route('Form', res.message.doctype, res.message.name);
+					}
+				})
+		    }, () => {
+		        // action to perform if No is selected
+		    })
+		}).addClass('btn btn-primary');
 
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
+
 			frm.add_custom_button(__("Amend Contract"), function() {
 				open_form(frm, "Contracts", null, null);
 			});

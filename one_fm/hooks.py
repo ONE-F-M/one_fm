@@ -56,6 +56,9 @@ doctype_js = {
 	"Notification Log": "public/js/doctype_js/notification_log.js",
 	"Sales Invoice": "public/js/doctype_js/sales_invoice.js",
 	"Delivery Note": "public/js/doctype_js/delivery_note.js",
+	"Expense Claim": "public/js/doctype_js/expense_claim.js",
+	"Employee Advance": "public/js/doctype_js/employee_advance.js",
+	"Travel Request": "public/js/doctype_js/travel_request.js",
 	"Job Applicant": "public/js/doctype_js/job_applicant.js",
 	"Job Offer": "public/js/doctype_js/job_offer.js",
 	"Price List": "public/js/doctype_js/price_list.js",
@@ -231,6 +234,7 @@ doc_events = {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	"Project": {
+		"validate": "one_fm.one_fm.project_custom.validate_poc_list",
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},

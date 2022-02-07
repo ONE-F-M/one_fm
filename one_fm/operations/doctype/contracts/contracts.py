@@ -149,6 +149,33 @@ class Contracts(Document):
 	def on_cancel(self):
 		frappe.throw("Contracts cannot be cancelled. Please try to ammend the existing record.")
 
+	@frappe.whitelist()
+	def make_delivery_note(self):
+		"""
+			Create delivery note from contracts
+		"""
+		try:
+			items = [{
+				'item_code':i.item_code,
+				'qty':i.count,
+				'rate':i.rate,
+				'site':i.site
+			} for i in self.items if i.subitem_group!='Service']
+			dn = frappe.get_doc({
+				'doctype':'Delivery Note',
+				'customer':self.client,
+				'contracts':self.name,
+				'projects':self.project,
+				'set_warehouse':'WRH-1023-0003',
+				'delivery_based_on':'Monthly',
+				'items':items
+			}).insert(ignore_permissions=True)
+			return dn
+		except Exception as e:
+			frappe.throw(str(e))
+
+
+
 @frappe.whitelist()
 def get_contracts_asset_items(contracts):
 	contracts_item_list = frappe.db.sql("""
