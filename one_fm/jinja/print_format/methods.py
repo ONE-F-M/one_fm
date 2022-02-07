@@ -153,7 +153,7 @@ def sic_attendance_absent_present(doc):
             for k, v in employee_dict.items():
                 days_worked = []
                 for month_day in range(first_day, last_day+1):
-                    if False: #((month_day>=due_date) and (datetime.today().date()>actual_last_date)):
+                    if ((month_day>=due_date) and (datetime.today().date()>actual_last_date)):
                         days_worked.append(employee_dict[k]['days_worked'].get(month_day))
                     elif((month_day>=due_date) and (not employee_dict[k]['days_worked'].get(month_day))):
                         if(sorted_schedule.get(k).get(month_day)):
@@ -293,7 +293,7 @@ def sic_separate_invoice_attendance(doc):
             for k, v in employee_dict.items():
                 days_worked = []
                 for month_day in range(first_day, last_day+1):
-                    if False: #((month_day>=due_date) and (datetime.today().date()>actual_last_date)):
+                    if ((month_day>=due_date) and (datetime.today().date()>actual_last_date)):
                         days_worked.append(employee_dict[k]['days_worked'].get(month_day))
                     elif((month_day>=due_date) and (not employee_dict[k]['days_worked'].get(month_day))):
                         if(sorted_schedule.get(k).get(month_day)):
@@ -327,12 +327,13 @@ def sic_separate_invoice_attendance(doc):
         return '', context
 
 
+
 def sic_single_invoice_separate_attendance(doc):
     context = {}
     try:
         if(doc.contracts):
             contracts = frappe.get_doc('Contracts', doc.contracts)
-            posting_date = date(2021,11,28) #datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
+            posting_date = datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
             first_day = frappe.utils.get_first_day(posting_date).day
             last_day = frappe.utils.get_last_day(posting_date).day
             actual_last_date = frappe.utils.get_last_day(posting_date)
@@ -351,7 +352,7 @@ def sic_single_invoice_separate_attendance(doc):
             post_sites += ")"
             post_sites = post_sites.replace(',)', ')')
 
-            # get sale_item
+            # get sale item
             sale_items = "("
             for c, i in enumerate(contracts.items):
                 if(i.subitem_group=='Service'):
@@ -364,7 +365,7 @@ def sic_single_invoice_separate_attendance(doc):
 
             # get post_type in attendance
             post_types_query = frappe.db.sql(f"""
-                SELECT pt.name, pt.post_name, pt.sale_item, at.post_type
+                SELECT pt.name, pt.post_name, pt.sale_item, at.post_type, at.site
                 FROM `tabPost Type` pt JOIN `tabAttendance` at
                 ON pt.name=at.post_type
                 WHERE at.attendance_date BETWEEN '{posting_date.year}-{posting_date.month}-0{first_day}'
@@ -374,7 +375,6 @@ def sic_single_invoice_separate_attendance(doc):
                 GROUP BY pt.name
             ;""", as_dict=1)
 
-
             # filter post types
             post_types = "("
             if(len(post_types_query)==0):
@@ -382,7 +382,7 @@ def sic_single_invoice_separate_attendance(doc):
             else:
                 for c, i in enumerate(post_types_query):
                     if(len(post_types_query)==c+1):
-                        post_types+=f" '{i.name}'"
+                        post_types+=f"'{i.name}'"
                     else:
                         post_types+=f" '{i.name}',"
                 post_types += ")"
@@ -411,6 +411,8 @@ def sic_single_invoice_separate_attendance(doc):
             employee_dict = {}
             sites = {}
             # sort attendance by employee
+
+            print(attendances, post_sites)
             for i in attendances:
                 if not (sites.get(i.site)):
                     sites[i.site] = {'employees': [], 'sitename': i.site}
@@ -421,16 +423,43 @@ def sic_single_invoice_separate_attendance(doc):
 
             # fill attendance
             count_loop = 1
+            due_date = int(contracts.due_date) or 28
+
+            # get schedule
+            remaining_schedule = frappe.db.sql(f"""
+                SELECT es.employee, pt.name, pt.post_name, pt.sale_item, es.post_type, es.date
+                FROM `tabPost Type` pt JOIN `tabEmployee Schedule` es
+                ON pt.name=es.post_type
+                WHERE es.date BETWEEN '{posting_date.year}-{posting_date.month}-{due_date}'
+                AND '{posting_date.year}-{posting_date.month}-{last_day}'
+                AND es.project="{contracts.project}" AND es.site in {post_sites}
+                AND pt.sale_item IN {sale_items}
+                ORDER BY es.employee
+            """, as_dict=1)
+            # filter and rearrange schdule
+            sorted_schedule = {}
+            for i in remaining_schedule:
+                if(sorted_schedule.get(i.employee)):
+                    sorted_schedule[i.employee][i.date.day] = 'p'
+                else:
+                    sorted_schedule[i.employee] = {i.date.day:'p'}
+
+            # filter and set attendance table ready for template
             for k, v in employee_dict.items():
                 days_worked = []
-                due_date = int(contracts.due_date) or 28
                 for month_day in range(first_day, last_day+1):
-                    if((month_day>=due_date) and (not employee_dict[k]['days_worked'].get(month_day))):
-                        days_worked.append('p')
+                    if ((month_day>=due_date) and (datetime.today().date()>actual_last_date)):
+                        days_worked.append(employee_dict[k]['days_worked'].get(month_day))
+                    elif((month_day>=due_date) and (not employee_dict[k]['days_worked'].get(month_day))):
+                        if(sorted_schedule.get(k).get(month_day)):
+                            days_worked.append('p')
+                        else:
+                            days_worked.append('')
                     elif(not employee_dict[k]['days_worked'].get(month_day)):
                         days_worked.append('')
                     else:
                         days_worked.append(employee_dict[k]['days_worked'].get(month_day))
+
                 # push ready employee data
                 sites[v.get('site')]['employees'].append({
                 'sn':count_loop, 'employee_id':v.get('employee_id'),
@@ -439,6 +468,7 @@ def sic_single_invoice_separate_attendance(doc):
                 'days_worked':days_worked
                 })
                 count_loop += 1
+
 
             # check for result before posting to template
             if employee_dict:
