@@ -147,7 +147,7 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
         for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
             result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
 
-        result["Arabic_Name"] = result["Arabic_Name"][::-1]
+        result["Arabic_Name"] = result["Arabic_Name"]
 
     return result
 
@@ -197,7 +197,7 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
             for i in range(find_index(assemble,")")+1,find_index(assemble,"العنوان:")):
                 result["Sponsor_Name"] = result["Sponsor_Name"] + texts[i].description + " "
 
-            result["Sponsor_Name"] = result["Sponsor_Name"][::-1]
+            result["Sponsor_Name"] = result["Sponsor_Name"]
 
     return result
 

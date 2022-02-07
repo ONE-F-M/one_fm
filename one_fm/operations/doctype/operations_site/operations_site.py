@@ -14,6 +14,9 @@ class OperationsSite(Document):
 	def validate(self):
 		self.validate_user_role()
 
+		if len(self.poc) == 0:
+			frappe.throw("POC list is mandatory.")
+
 	def validate_user_role(self):
 		site_supervisor = self.get_employee_user_id(self.account_supervisor)
 		# project_manager = self.get_project_manager()		
