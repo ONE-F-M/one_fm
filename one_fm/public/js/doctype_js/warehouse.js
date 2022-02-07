@@ -1,17 +1,14 @@
 frappe.ui.form.on('Warehouse', {
   refresh: function(frm){
     frm.toggle_enable(['is_group'], true);
-		frm.set_query('one_fm_main_warehouse', function () {
+		frm.set_query('one_fm_site', function () {
 			return {
 				filters: {
-					'is_group': 0,
-					'one_fm_is_project_warehouse': 1,
-					'one_fm_is_main_warehouse': 1,
-					'one_fm_project': frm.doc.one_fm_project
+					'project': frm.doc.one_fm_project
 				}
 			};
 		});
-		frm.set_query('one_fm_site', function () {
+		frm.set_query('one_fm_location', function () {
 			return {
 				filters: {
 					'project': frm.doc.one_fm_project
