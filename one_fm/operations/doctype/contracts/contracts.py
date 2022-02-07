@@ -67,6 +67,7 @@ class Contracts(Document):
 				return sales_invoice_doc
 
 			if self.create_sales_invoice_as == "Separate Invoice for Each Site":
+				sales_invoice_docs = []
 				site_invoices = get_separate_invoice_for_sites(self)
 				print(site_invoices)
 				for site, items_amounts in site_invoices.items():
@@ -101,6 +102,45 @@ class Contracts(Document):
 
 					sales_invoice_doc.save()
 					frappe.db.commit()
+
+					sales_invoice_docs.append(sales_invoice_doc)
+
+				return sales_invoice_docs
+
+			if self.create_sales_invoice_as == "Separate Item Line for Each Site":
+				separate_site_items = get_single_invoice_for_separate_sites(self)
+				sales_invoice_doc = frappe.new_doc("Sales Invoice")
+				sales_invoice_doc.customer = self.client
+
+				date = cstr(getdate())
+				temp_invoice_year = date.split("-")[0]
+				temp_invoice_month = date.split("-")[1]
+				invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
+
+				sales_invoice_doc.due_date = invoice_date
+				sales_invoice_doc.project = self.project
+				sales_invoice_doc.contracts = self.name
+				sales_invoice_doc.ignore_pricing_rule = 1
+				sales_invoice_doc.title = self.client + ' - ' + 'Single Invoice'
+
+				income_account = frappe.db.get_value("Project", self.project, ["income_account"])
+
+				for item in separate_site_items:
+					sales_invoice_doc.append('items', {
+						'item_code': item["item_code"],
+						'item_name': item["item_code"],
+						'description': item["item_description"],
+						'qty': item["qty"],
+						'uom': item["uom"],
+						'rate': item["rate"],
+						'amount': item["amount"],
+						'income_account': income_account
+					})
+
+				sales_invoice_doc.save()
+				frappe.db.commit()
+
+				return sales_invoice_doc
 
 		except Exception as error:
 			frappe.throw(_(error))
@@ -519,6 +559,54 @@ def get_separate_invoice_for_sites(contract):
 			invoices[site.site] = site_item_amounts
 
 	return invoices
+
+def get_single_invoice_for_separate_sites(contract):
+	first_day_of_month = cstr(get_first_day(getdate()))
+	last_day_of_month = cstr(get_last_day(getdate()))
+
+	temp_invoice_year = first_day_of_month.split("-")[0]
+	temp_invoice_month = first_day_of_month.split("-")[1]
+
+	invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + contract.due_date
+
+	project = contract.project
+	contract_overtime_rate = contract.overtime_rate
+
+	items = []
+	for item in contract.items:
+		items.append(item.item_code)
+
+	contract_post_types = list(set(frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': ['in', items]})))
+
+	site_items = {}
+
+	filters = {}
+	filters.update({'date': ['between', (first_day_of_month, last_day_of_month)]})
+	filters.update({'post_type': ['in', contract_post_types]})
+	filters.update({'employee_availability': 'Working'})
+	filters.update({'project': project})
+
+	site_list = frappe.db.get_list("Employee Schedule", filters, ["distinct site"])
+
+	for site in site_list:
+		if site.site:
+			for item in contract.items:
+				item_group = str(item.subitem_group)
+
+				if item_group.lower() == "service":
+
+					if item.uom == "Hourly":
+						item_data = get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
+						site_items[site.site] = item_data
+
+					if item.uom == "Daily":
+						item_data = get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
+						site_items[site.site] = item_data
+
+					if item.uom == "Monthly":
+						item_data = get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
+						site_items[site.site] = item_data
+	return site_items
 
 def calculate_item_values(doc):
 	if not doc.discount_amount_applied:
