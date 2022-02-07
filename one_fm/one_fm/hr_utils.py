@@ -8,13 +8,14 @@ from frappe.model.document import Document
 
 def daily_indemnity_allocation_builder():
     query = """
-        select emp.name, emp.date_of_joining, emp.indemnity_policy
+        select emp.name, emp.date_of_joining
         from `tabEmployee` emp
         left join `tabIndemnity Allocation` ia on emp.name = ia.employee and ia.docstatus = 1 and emp.status = 'Active'
         where ia.employee is NULL
     """
     employee_list = frappe.db.sql(query, as_dict=True)
-    frappe.enqueue(indemnity_allocation_builder, timeout=600, employee_list=employee_list)
+    print(employee_list)
+    # frappe.enqueue(indemnity_allocation_builder, timeout=600, employee_list=employee_list)
 
 def indemnity_allocation_builder(employee_list):
     for employee in employee_list:
@@ -23,10 +24,15 @@ def indemnity_allocation_builder(employee_list):
 def create_indemnity_allocation(employee):
     indemnity_allcn = frappe.new_doc('Indemnity Allocation')
     indemnity_allcn.employee = employee.name
-    indemnity_allcn.from_date = employee.date_of_joining
-    indemnity_allcn.new_indemnity_allocated = 30/365
-    indemnity_allcn.total_indemnity_allocated = 30/365
-    indemnity_allcn.submit()
+    salary = get_reference_salary(employee)
+    # indemnity_allcn.from_date = employee.date_of_joining
+    # indemnity_allcn.new_indemnity_allocated = 30/365
+    # indemnity_allcn.total_indemnity_allocated = 30/365
+    # indemnity_allcn.submit()
+
+def get_reference_salary(employee):
+    print(employee.project)
+
 
 def allocate_daily_indemnity():
     # Get List of Indemnity Allocation for today

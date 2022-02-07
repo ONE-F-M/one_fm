@@ -8,7 +8,10 @@
  "field_order": [
   "salary_component",
   "include_in_indemnity",
+<<<<<<< HEAD
   "include_in_leave_allocation",
+=======
+>>>>>>> 0e4be0b4 (Modify Salary Structure Assignment to inculde Salary Component details)
   "amount"
  ],
  "fields": [

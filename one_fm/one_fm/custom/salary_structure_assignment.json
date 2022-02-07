@@ -13,7 +13,11 @@
    "columns": 0,
    "creation": "2022-02-03 11:00:53.259158",
    "default": null,
+<<<<<<< HEAD
    "depends_on": "",
+=======
+   "depends_on": "eval:doc.salary_structure",
+>>>>>>> 0e4be0b4 (Modify Salary Structure Assignment to inculde Salary Component details)
    "description": null,
    "docstatus": 0,
    "dt": "Salary Structure Assignment",
