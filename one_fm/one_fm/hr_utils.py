@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+# encoding: utf-8
+from __future__ import unicode_literals
+from frappe import _
+import frappe
+from frappe.utils import getdate, nowdate
+from frappe.model.document import Document
+
 def daily_indemnity_allocation_builder():
     query = """
         select emp.name, emp.date_of_joining, emp.indemnity_policy
