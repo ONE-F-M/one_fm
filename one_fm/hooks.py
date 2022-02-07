@@ -254,6 +254,13 @@ doc_events = {
 		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
 		"validate": "one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip"
 	},
+	"Salary Structure Assignment": {
+		"before_save": "one_fm.api.doc_methods.salary_structure_assignment.fetch_salary_component",
+		"before_submit": [
+			"one_fm.api.doc_methods.salary_structure_assignment.calculate_indemnity_amount",
+			"one_fm.api.doc_methods.salary_structure_assignment.calculate_leave_allocation_amount",
+		]
+	},
 	"Training Event":{
 		"on_submit": "one_fm.api.doc_events.update_training_event_data"
 	},
