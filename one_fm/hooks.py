@@ -76,7 +76,6 @@ doctype_js = {
 	"Employee Incentive": "public/js/doctype_js/employee_incentive.js",
 	"Employee": "public/js/doctype_js/employee.js",
 	"Salary Slip": "public/js/doctype_js/salary_slip.js",
-	"Salary Structure Assignment": "public/js/doctype_js/salary_structure_assignment.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 }
 doctype_list_js = {
