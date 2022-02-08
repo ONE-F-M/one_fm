@@ -4,7 +4,9 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import getdate, date_diff, add_days, month_diff, formatdate, add_months
+from frappe.utils import getdate, date_diff, add_days, month_diff, formatdate, add_months, get_last_day
+from one_fm.one_fm.hr_utils import get_total_indemnity, get_per_day_indemnity_amount
+from calendar import monthrange
 
 def execute(filters=None):
 	columns = get_columns(filters)
@@ -13,21 +15,18 @@ def execute(filters=None):
 	return columns, data
 
 def get_columns(filters):
-	formated_date = formatdate(getdate(filters.to_date))
-	date_after_a_month_formated = formatdate(add_months(getdate(filters.to_date), 1))
+	formated_date = getdate(filters.to_date)
+	date_after_a_month_formated = get_last_day(formated_date)
 	columns = [
 		_("Employee") + ":Link.Employee:120",
 		_("Employee ID") + "::120",
 		_("Employee Name") + "::180",
 		_("DOJ") + ":Date:100",
 		_("Department") +"::150",
-		_("Salary") +":Currency:100",
+		_("Indemnity Amount") +":Currency:100",
 		_("Accumulated Indemnity as on {0}").format(formated_date) + ":Float:280",
-		_("Accumulated Amount as on {0}").format(formated_date) + ":Currency:260",
 		_("Provision Indemnity as on {0}").format(date_after_a_month_formated) + ":Float:260",
-		_("Provision Amount as on {0}").format(date_after_a_month_formated) + ":Currency:260",
-		_("Total Indemnity")+ ":Float:160",
-		_("Total Amount")+ ":Currency:160",
+		_("Total Indemnity")+ ":Currency:160",
 		_("Total Period Till Date")+ ":Data:160"
 	]
 
@@ -56,16 +55,16 @@ def get_data(filters):
 	data = []
 	for employee in active_employees:
 		to_date = getdate(filters.to_date)
+		provision_date = get_last_day(to_date) #last date of a given month
 		if to_date >= getdate(employee.date_of_joining):
 			indemnity_allcn = frappe.db.exists('Indemnity Allocation', {'employee': employee.name, 'expired': False})
 			if indemnity_allcn:
 				if (user in ["Administrator", employee.user_id]) or ("HR Manager" in frappe.get_roles(user)):
 					indemnity_amount = frappe.get_value("Salary Structure Assignment",{"employee":employee.name},["indemnity_amount"])
-					row = [employee.name, employee.employee_id, employee.employee_name, employee.date_of_joining, employee.department, employee.one_fm_basic_salary]
+					row = [employee.name, employee.employee_id, employee.employee_name, employee.date_of_joining, employee.department, indemnity_amount]
 					salary_per_day = indemnity_amount/26
-					indemnity_as_on = frappe.db.get_value('Indemnity Allocation', indemnity_allcn, 'total_indemnity_allocated')
-					amount_as_on = indemnity_as_on * salary_per_day
-					provision_indemnity = (30/365)*30
+					indemnity_as_on = get_total_indemnity(employee.date_of_joining, to_date, indemnity_amount)
+					provision_indemnity = get_per_day_indemnity_amount(employee.date_of_joining, provision_date, indemnity_amount) * monthrange(to_date.year, to_date.month)[1]
 
 					total_period_till_date = date_diff(to_date, employee.date_of_joining)
 					if employee.relieving_date:
@@ -74,18 +73,16 @@ def get_data(filters):
 						if month_diff_factor > 0 and relieving_date < add_days(to_date, 30):
 							day_diff = date_diff(add_days(to_date, 30), getdate(employee.relieving_date))
 							total_period_till_date = date_diff(employee.relieving_date, employee.date_of_joining)
-							provision_indemnity = (30/365)*day_diff
+							provision_indemnity = get_per_day_indemnity_amount(employee.date_of_joining, employee.relieving_date, indemnity_amount) * day_diff
 						elif month_diff_factor <=0 :
 							provision_indemnity = 0
-					provision_amount = provision_indemnity * salary_per_day
 
-					total_indemnity = indemnity_as_on+provision_indemnity
-					total_amount = amount_as_on+provision_amount
+					total_indemnity = get_total_indemnity(employee.date_of_joining, provision_date, indemnity_amount)
 					if total_period_till_date > 0:
 						year_from_no_of_days = find_year_from_no_of_days(total_period_till_date)
 					else:
 						year_from_no_of_days = "0 Years 0 Months 0 Days"
-					row += [indemnity_as_on, amount_as_on, provision_indemnity, provision_amount, total_indemnity, total_amount, year_from_no_of_days]
+					row += [indemnity_as_on, provision_indemnity, total_indemnity, year_from_no_of_days]
 
 
 				data.append(row)

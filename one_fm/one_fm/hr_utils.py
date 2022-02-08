@@ -40,15 +40,24 @@ def get_total_indemnity(from_date, to_date, indemnity_amount):
     total_working_year = relativedelta(to_date, from_date ).years
     total_working_days = (to_date - from_date).days
     five_year_in_days = 5*365
-
+    per_day_amount = indemnity_amount/26
     if total_working_year < 5:
-        total_amount = 15 * indemnity_amount / 365 * total_working_days
-    elif total_working_year == 5 and total_working_days > 5*365:
-        amount_1 = 15 * indemnity_amount / 365 * five_year_in_days
-        amount_2 = 30 * indemnity_amount / 365 * (total_working_days-five_year_in_days)
+        total_amount = 15 * per_day_amount / 365 * total_working_days
+    elif total_working_year >= 5 and total_working_days > 5*365:
+        amount_1 = 15 * per_day_amount / 365 * five_year_in_days
+        amount_2 = 30 * per_day_amount / 365 * (total_working_days-five_year_in_days)
         total_amount = amount_1+amount_2
     return total_amount
 
+def get_per_day_indemnity_amount(date_of_joining, to_date, indemnity_amount):
+    total_working_year = relativedelta(to_date, date_of_joining).years
+    total_working_days = (to_date - date_of_joining).days
+    per_day_amount = indemnity_amount/26
+
+    if total_working_year < 5:
+        return 15 * per_day_amount / 365
+    elif total_working_year >= 5 and total_working_days > (5*365):
+        return 30 * per_day_amount / 365 
 
 def allocate_daily_indemnity():
     # Get List of Indemnity Allocation for today
@@ -56,6 +65,9 @@ def allocate_daily_indemnity():
     for alloc in allocation_list:
         allow_allocation = True
         allocation = frappe.get_doc('Indemnity Allocation', alloc.name)
+        date_of_joining = frappe.get_value("Employee",{"name":allocation.employee},["date_of_joining"])
+        indemnity_amount = frappe.get_value("Salary Structure Assignment",{"employee":allocation.employee},["indemnity_amount"])
+
         # Check if employee absent today then not allow allocation for today
         is_absent = frappe.db.sql("""select name, status from `tabAttendance` where employee = %s and
             attendance_date = %s and docstatus = 1 and status = 'Absent' """,
@@ -72,7 +84,7 @@ def allocate_daily_indemnity():
 
         if allow_allocation:
             # Set Daily Allocation
-            allocation.new_indemnity_allocated = 30/365
+            allocation.new_indemnity_allocated = get_per_day_indemnity_amount(date_of_joining, getdate(nowdate()) , indemnity_amount)
             allocation.total_indemnity_allocated = allocation.total_indemnity_allocated+allocation.new_indemnity_allocated
             allocation.save()
 
