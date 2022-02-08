@@ -1104,7 +1104,7 @@ def warehouse_naming_series(doc, method):
             project_code = create_new_project_code(doc.one_fm_project)
         if project_code:
             name += '-'+project_code
-        doc.name = name +'-'+doc.warehouse_code # +'-'+doc.warehouse_name
+        doc.name = name +'-'+doc.warehouse_code+'-'+doc.warehouse_name
 
 def create_new_project_code(project_id):
     project_code = frappe.db.sql("select one_fm_project_code+1 from `tabProject` order by one_fm_project_code desc limit 1")
