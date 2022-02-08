@@ -1,6 +1,5 @@
 import frappe
 from frappe import _
-from one_fm.utils import round_up
 
 def fetch_salary_component(doc, method):
     """This Function Fetches the Salary Components from a given Salary Structure.
@@ -48,7 +47,7 @@ def calculate_indemnity_amount(doc, method):
     for component in components:
         if component.include_in_indemnity == 1 :
             indemnity_amount = component.amount + indemnity_amount
-    doc.indemnity_amount= round_up(indemnity_amount/26.000, 3)
+    doc.indemnity_amount = indemnity_amount
     frappe.db.commit()
 
 def calculate_leave_allocation_amount(doc, method):
@@ -65,5 +64,5 @@ def calculate_leave_allocation_amount(doc, method):
     for component in components:
         if component.include_in_leave_allocation == 1 :
             leave_allocation_amount = component.amount + leave_allocation_amount
-    doc.leave_allocation_amount= round_up(leave_allocation_amount/26.000,3)
+    doc.leave_allocation_amount = leave_allocation_amount
     frappe.db.commit()
