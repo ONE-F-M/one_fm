@@ -412,7 +412,6 @@ def sic_single_invoice_separate_attendance(doc):
             sites = {}
             # sort attendance by employee
 
-            print(attendances, post_sites)
             for i in attendances:
                 if not (sites.get(i.site)):
                     sites[i.site] = {'employees': [], 'sitename': i.site}

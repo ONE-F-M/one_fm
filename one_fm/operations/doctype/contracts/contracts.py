@@ -3,7 +3,8 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-import frappe
+import frappe, json
+from datetime import datetime
 from frappe.model.document import Document
 from frappe.utils import cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day, get_last_day, get_datetime, flt
 from frappe import _
@@ -61,6 +62,20 @@ class Contracts(Document):
 						'income_account': income_account
 					})
 
+				# get delivery note
+				delivery_note = get_delivery_note(self)
+				for item in delivery_note:
+					sales_invoice_doc.append('items', {
+						'item_code': item.item_code,
+						'item_name': item.item_name,
+						'qty': item.qty,
+						'uom': item.uom,
+						'rate': item.rate,
+						'amount': item.amount,
+						'description': f'{item.description}\nPosted on {item.posting_date}',
+						'income_account': income_account
+					})
+
 				sales_invoice_doc.save()
 				frappe.db.commit()
 
@@ -69,7 +84,9 @@ class Contracts(Document):
 			if self.create_sales_invoice_as == "Separate Invoice for Each Site":
 				sales_invoice_docs = []
 				site_invoices = get_separate_invoice_for_sites(self)
-				print(site_invoices)
+				# get delivery note
+				delivery_note = get_delivery_note(self)
+
 				for site, items_amounts in site_invoices.items():
 					sales_invoice_doc = frappe.new_doc("Sales Invoice")
 					sales_invoice_doc.customer = self.client
@@ -100,6 +117,21 @@ class Contracts(Document):
 							'income_account': income_account
 						})
 
+					# add delivery Note
+					for item in delivery_note:
+						if(item.site==site):
+							sales_invoice_doc.append('items', {
+								'item_code': item.item_code,
+								'item_name': item.item_name,
+								'qty': item.qty,
+								'uom': item.uom,
+								'rate': item.rate,
+								'amount': item.amount,
+								'site': item.site,
+								'description': f'{item.description}\nPosted on {item.posting_date}',
+								'income_account': income_account
+							})
+
 					sales_invoice_doc.save()
 					frappe.db.commit()
 
@@ -109,6 +141,8 @@ class Contracts(Document):
 
 			if self.create_sales_invoice_as == "Separate Item Line for Each Site":
 				separate_site_items = get_single_invoice_for_separate_sites(self)
+				# get delivery note
+				delivery_note = get_delivery_note(self)
 				sales_invoice_doc = frappe.new_doc("Sales Invoice")
 				sales_invoice_doc.customer = self.client
 
@@ -138,6 +172,22 @@ class Contracts(Document):
 						'site': site, #add site to item
 					})
 
+				# add delivery Note
+				for item in delivery_note:
+					if(item.site):
+						sales_invoice_doc.append('items', {
+							'item_code': item.item_code,
+							'item_name': item.item_name,
+							'qty': item.qty,
+							'uom': item.uom,
+							'rate': item.rate,
+							'amount': item.amount,
+							'site': item.site,
+							'description': f'{item.description}\nPosted on {item.posting_date}',
+							'income_account': income_account
+						})
+
+
 				sales_invoice_doc.save()
 				frappe.db.commit()
 
@@ -155,24 +205,143 @@ class Contracts(Document):
 			Create delivery note from contracts
 		"""
 		try:
-			items = [{
-				'item_code':i.item_code,
-				'qty':i.count,
-				'rate':i.rate,
-				'site':i.site
-			} for i in self.items if i.subitem_group!='Service']
-			dn = frappe.get_doc({
-				'doctype':'Delivery Note',
-				'customer':self.client,
-				'contracts':self.name,
-				'projects':self.project,
-				'set_warehouse':'WRH-1023-0003',
-				'delivery_based_on':'Monthly',
-				'items':items
-			}).insert(ignore_permissions=True)
-			return dn
+			delivery_note_list = []
+			dn_items = json.loads(frappe.form_dict.dn_items)['items']
+			if(self.create_sales_invoice_as==''):
+				# create general Delivery Note
+				items = []
+				for i in dn_items:
+					i = frappe._dict(i)
+					if(i.rate):
+						items.append({'item_code':i.item_code, 'qty':i.qty,
+								'rate':i.rate, 'amount':i.rate*i.qty})
+					else:
+						items.append({'item_code':i.item_code,'qty':i.qty,})
+
+				dn = frappe.get_doc({
+					'title': self.client + ' - ' + 'Single DN',
+					'doctype':'Delivery Note',
+					'customer':self.client,
+					'contracts':self.name,
+					'projects':self.project,
+					'set_warehouse':'WRH-1018-0003',
+					'delivery_based_on':'Monthly',
+					'items':items
+				})
+				if(self.price_list):
+					dn.selling_price_list = self.price_list
+				dn.insert(ignore_permissions=True)
+				# dn.run_method('validate')
+				for i in dn.items:
+					i.amount = i.rate*i.qty
+				dn.save()
+				delivery_note_list.append(dn)
+				return {'dn_name_list': [dn.name], 'delivery_note_list':delivery_note_list}
+
+			elif(self.create_sales_invoice_as=='Separate Item Line for Each Site'):
+				# create Item Line Delivery Note
+				items = []
+				for i in dn_items:
+					i = frappe._dict(i)
+					if(i.rate):
+						items.append({
+								'item_code':i.item_code, 'qty':i.qty,
+								'rate':i.rate, 'amount':i.rate*i.qty, 'site':i.site
+							})
+					else:
+						items.append({
+								'item_code':i.item_code, 'qty':i.qty, 'site':i.site
+							})
+
+				dn = frappe.get_doc({
+					'title': self.client + ' - ' + 'Item Line',
+					'doctype':'Delivery Note',
+					'customer':self.client,
+					'contracts':self.name,
+					'projects':self.project,
+					'set_warehouse':'WRH-1018-0003',
+					'delivery_based_on':'Monthly',
+					'items':items
+				})
+				if(self.price_list):
+					dn.selling_price_list = self.price_list
+				dn.insert(ignore_permissions=True)
+				# dn.run_method('validate')
+				for i in dn.items:
+					i.amount = i.rate*i.qty
+				dn.save()
+				delivery_note_list.append(dn)
+				return {'dn_name_list': [dn.name], 'delivery_note_list':delivery_note_list}
+
+			elif(self.create_sales_invoice_as=='Separate Invoice for Each Site'):
+				# create Separate Delivery Note for each site
+
+				sites_dict = {}
+				# sort items baed on site
+				for i in dn_items:
+					i = frappe._dict(i)
+					if(sites_dict.get(i.site)):
+						sites_dict.get(i.site).append(i)
+					else:
+						sites_dict[i.site] = [i]
+
+				# prepare items
+
+				for site, _items in sites_dict.items():
+					items = []
+					for i in _items:
+						if(i.rate):
+							items.append({
+							'item_code':i.item_code, 'qty':i.qty,
+							'rate':i.rate, 'amount':i.rate*i.qty, 'site':site
+							})
+						else:
+							items.append({
+									'item_code':i.item_code, 'qty':i.qty, 'site':i.site
+								})
+
+					dn = frappe.get_doc({
+						'title': self.client + ' - ' + site,
+						'doctype':'Delivery Note',
+						'customer':self.client,
+						'contracts':self.name,
+						'projects':self.project,
+						'set_warehouse':'WRH-1018-0003',
+						'delivery_based_on':'Monthly',
+						'items':items
+					})
+					if(self.price_list):
+						dn.selling_price_list = self.price_list
+					dn.insert(ignore_permissions=True)
+					# dn.run_method('validate')
+					for i in dn.items:
+						i.amount = i.rate*i.qty
+					dn.save()
+					delivery_note_list.append(dn)
+				return {'dn_name_list': [dn.name for dn in delivery_note_list], 'delivery_note_list':delivery_note_list}
+
 		except Exception as e:
 			frappe.throw(str(e))
+
+
+	@frappe.whitelist()
+	def get_contract_sites(self):
+		# GET SITES FOR THE CONTRACT
+		posting_date = datetime.today().date()
+		first_day = frappe.utils.get_first_day(posting_date).day
+		last_day = frappe.utils.get_last_day(posting_date).day
+
+		query = frappe.db.sql(f"""
+			SELECT site FROM `tabEmployee Schedule`
+			WHERE project="{self.project}" AND
+			date BETWEEN '{posting_date.replace(day=1)}' AND
+			'{posting_date.replace(day=last_day)}'
+			GROUP BY site
+		;""", as_dict=1)
+		if query:
+			return [i.site for i in query if i.site]
+		else:
+			frappe.throw(f"No contracts site for {self.project} between {posting_date.replace(day=1)} AND {posting_date.replace(day=last_day)}")
 
 
 
@@ -676,3 +845,21 @@ def calculate_item_values(doc):
 			doc._set_in_company_currency(item, ["price_list_rate", "rate", "net_rate", "amount", "net_amount"])
 
 			item.item_tax_amount = 0.0
+
+
+# GET DELIVERY NOTE FOR CONTRACTS
+def get_delivery_note(contracts):
+	# retrieve delivery note for requesting contracts.
+	posting_date = getdate() #date(2021,11,28)
+	first_day = frappe.utils.get_first_day(posting_date).day
+	last_day = frappe.utils.get_last_day(posting_date).day
+	actual_last_date = frappe.utils.get_last_day(posting_date)
+	return frappe.db.sql(f"""
+		SELECT dni.item_code, dni.item_name, dni.rate, dni.amount, dn.name,
+			dn.posting_date, dni.site, dni.project, dni.qty, dni.uom, dni.description
+		FROM `tabDelivery Note` dn JOIN `tabDelivery Note Item` dni
+		ON dni.parent=dn.name
+		WHERE dn.contracts="{contracts.name}" AND dn.project="{contracts.project}"
+		AND dn.customer="{contracts.client}" AND posting_date
+		BETWEEN '{posting_date.replace(day=1)}' AND '{actual_last_date}' AND dn.status='To Bill';
+	;""", as_dict=1)
