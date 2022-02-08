@@ -5,11 +5,11 @@
 frappe.query_reports["Employee Indemnity Calculation"] = {
 	"filters": [
 		{
-			"fieldname":"from_date",
-			"label": __("From Date"),
+			"fieldname":"to_date",
+			"label": __("To Date"),
 			"fieldtype": "Date",
 			"reqd": 1,
-			"default": frappe.defaults.get_default("year_start_date")
+			"default": frappe.utils.nowdate()
 		},
 		{
 			"fieldname":"department",

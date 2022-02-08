@@ -13,8 +13,8 @@ def execute(filters=None):
 	return columns, data
 
 def get_columns(filters):
-	formated_date = formatdate(getdate(filters.from_date))
-	date_after_a_month_formated = formatdate(add_months(getdate(filters.from_date), 1))
+	formated_date = formatdate(getdate(filters.to_date))
+	date_after_a_month_formated = formatdate(add_months(getdate(filters.to_date), 1))
 	columns = [
 		_("Employee") + ":Link.Employee:120",
 		_("Employee ID") + "::120",
@@ -55,23 +55,24 @@ def get_data(filters):
 
 	data = []
 	for employee in active_employees:
-		from_date = getdate(filters.from_date)
-		if from_date >= getdate(employee.date_of_joining):
+		to_date = getdate(filters.to_date)
+		if to_date >= getdate(employee.date_of_joining):
 			indemnity_allcn = frappe.db.exists('Indemnity Allocation', {'employee': employee.name, 'expired': False})
 			if indemnity_allcn:
 				if (user in ["Administrator", employee.user_id]) or ("HR Manager" in frappe.get_roles(user)):
+					indemnity_amount = frappe.get_value("Salary Structure Assignment",{"employee":employee.name},["indemnity_amount"])
 					row = [employee.name, employee.employee_id, employee.employee_name, employee.date_of_joining, employee.department, employee.one_fm_basic_salary]
-					salary_per_day = employee.one_fm_basic_salary/30
+					salary_per_day = indemnity_amount/26
 					indemnity_as_on = frappe.db.get_value('Indemnity Allocation', indemnity_allcn, 'total_indemnity_allocated')
 					amount_as_on = indemnity_as_on * salary_per_day
 					provision_indemnity = (30/365)*30
 
-					total_period_till_date = date_diff(from_date, employee.date_of_joining)
+					total_period_till_date = date_diff(to_date, employee.date_of_joining)
 					if employee.relieving_date:
 						relieving_date = getdate(employee.relieving_date)
-						month_diff_factor = month_diff(relieving_date, from_date)
-						if month_diff_factor > 0 and relieving_date < add_days(from_date, 30):
-							day_diff = date_diff(add_days(from_date, 30), getdate(employee.relieving_date))
+						month_diff_factor = month_diff(relieving_date, to_date)
+						if month_diff_factor > 0 and relieving_date < add_days(to_date, 30):
+							day_diff = date_diff(add_days(to_date, 30), getdate(employee.relieving_date))
 							total_period_till_date = date_diff(employee.relieving_date, employee.date_of_joining)
 							provision_indemnity = (30/365)*day_diff
 						elif month_diff_factor <=0 :

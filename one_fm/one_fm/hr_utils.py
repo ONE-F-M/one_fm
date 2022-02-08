@@ -39,12 +39,13 @@ def create_indemnity_allocation(employee):
 def get_total_indemnity(from_date, to_date, indemnity_amount):
     total_working_year = relativedelta(to_date, from_date ).years
     total_working_days = (to_date - from_date).days
+    five_year_in_days = 5*365
 
     if total_working_year < 5:
         total_amount = 15 * indemnity_amount / 365 * total_working_days
     elif total_working_year == 5 and total_working_days > 5*365:
-        amount_1 = 15 * indemnity_amount / 365 * total_working_days
-        amount_2 = 30 * indemnity_amount / 365 * (total_working_days-5*365)
+        amount_1 = 15 * indemnity_amount / 365 * five_year_in_days
+        amount_2 = 30 * indemnity_amount / 365 * (total_working_days-five_year_in_days)
         total_amount = amount_1+amount_2
     return total_amount
 
