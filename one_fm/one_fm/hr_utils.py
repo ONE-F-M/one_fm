@@ -26,20 +26,19 @@ def indemnity_allocation_builder(employee_list):
 
 def create_indemnity_allocation(employee):
     indemnity_amount = frappe.get_value("Salary Structure Assignment",{"employee":employee.name},["indemnity_amount"])
-
+    to_date = date.today()
     if indemnity_amount:
-        total_indemnity_allocated = get_total_indemnity(employee.date_of_joining,indemnity_amount)
         indemnity_allcn = frappe.new_doc('Indemnity Allocation')
         indemnity_allcn.employee = employee.name
-        total_indemnity_allocated = get_total_indemnity(employee.date_of_joining,indemnity_amount)
+        total_indemnity_allocated = get_total_indemnity(employee.date_of_joining, to_date , indemnity_amount)
         indemnity_allcn.from_date = employee.date_of_joining
         indemnity_allcn.new_indemnity_allocated = total_indemnity_allocated
         indemnity_allcn.total_indemnity_allocated = total_indemnity_allocated
         indemnity_allcn.submit()
 
-def get_total_indemnity(date_of_joining, indemnity_amount):
-    total_working_year = relativedelta(date.today(), date_of_joining).years
-    total_working_days = (date.today() - date_of_joining).days
+def get_total_indemnity(from_date, to_date, indemnity_amount):
+    total_working_year = relativedelta(to_date, from_date ).years
+    total_working_days = (to_date - from_date).days
 
     if total_working_year < 5:
         total_amount = 15 * indemnity_amount / 365 * total_working_days
