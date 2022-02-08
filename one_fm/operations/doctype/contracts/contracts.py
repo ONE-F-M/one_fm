@@ -164,10 +164,10 @@ class Contracts(Document):
 						'item_code': item["item_code"],
 						'item_name': item["item_code"],
 						'description': item["item_description"],
-						'qty': 4, #item["qty"],
+						'qty': item["qty"],
 						'uom': item["uom"],
-						'rate': 2, #item["rate"],
-						'amount': 8, #item["amount"],
+						'rate': item["rate"],
+						'amount': item["amount"],
 						'income_account': income_account,
 						'site': site, #add site to item
 					})
