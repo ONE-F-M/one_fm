@@ -97,7 +97,7 @@ frappe.ui.form.on('Contracts', {
 		// create delivery note and reroute to the form in draft mode
 		frm.add_custom_button(__("Create Delivery Note"), function() {
 			create_delivery_note(frm);
-		}).addClass('btn btn-primary');
+		}).addClass('btn btn-danger');
 
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
 
@@ -112,6 +112,11 @@ frappe.ui.form.on('Contracts', {
 				method: 'generate_sales_invoice',
 				callback: function(r) {
 					if(!r.exc){
+						frappe.show_alert({
+						    message:__('Sales Invoice created successfully'),
+						    indicator:'green'
+						}, 5);
+						frappe.msgprint(__('Sales Invoice created successfully'))
 						frm.reload_doc();
 					}
 				},

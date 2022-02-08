@@ -62,6 +62,20 @@ class Contracts(Document):
 						'income_account': income_account
 					})
 
+				# get delivery note
+				delivery_note = get_delivery_note(self)
+				for item in delivery_note:
+					sales_invoice_doc.append('items', {
+						'item_code': item.item_code,
+						'item_name': item.item_name,
+						'qty': item.qty,
+						'uom': item.uom,
+						'rate': item.rate,
+						'amount': item.amount,
+						'description': f'{item.description}\nPosted on {item.posting_date}',
+						'income_account': income_account
+					})
+
 				sales_invoice_doc.save()
 				frappe.db.commit()
 
@@ -70,7 +84,9 @@ class Contracts(Document):
 			if self.create_sales_invoice_as == "Separate Invoice for Each Site":
 				sales_invoice_docs = []
 				site_invoices = get_separate_invoice_for_sites(self)
-				print(site_invoices)
+				# get delivery note
+				delivery_note = get_delivery_note(self)
+
 				for site, items_amounts in site_invoices.items():
 					sales_invoice_doc = frappe.new_doc("Sales Invoice")
 					sales_invoice_doc.customer = self.client
@@ -101,6 +117,21 @@ class Contracts(Document):
 							'income_account': income_account
 						})
 
+					# add delivery Note
+					for item in delivery_note:
+						if(item.site==site):
+							sales_invoice_doc.append('items', {
+								'item_code': item.item_code,
+								'item_name': item.item_name,
+								'qty': item.qty,
+								'uom': item.uom,
+								'rate': item.rate,
+								'amount': item.amount,
+								'site': item.site,
+								'description': f'{item.description}\nPosted on {item.posting_date}',
+								'income_account': income_account
+							})
+
 					sales_invoice_doc.save()
 					frappe.db.commit()
 
@@ -110,6 +141,8 @@ class Contracts(Document):
 
 			if self.create_sales_invoice_as == "Separate Item Line for Each Site":
 				separate_site_items = get_single_invoice_for_separate_sites(self)
+				# get delivery note
+				delivery_note = get_delivery_note(self)
 				sales_invoice_doc = frappe.new_doc("Sales Invoice")
 				sales_invoice_doc.customer = self.client
 
@@ -131,13 +164,29 @@ class Contracts(Document):
 						'item_code': item["item_code"],
 						'item_name': item["item_code"],
 						'description': item["item_description"],
-						'qty': item["qty"],
+						'qty': 4, #item["qty"],
 						'uom': item["uom"],
-						'rate': item["rate"],
-						'amount': item["amount"],
+						'rate': 2, #item["rate"],
+						'amount': 8, #item["amount"],
 						'income_account': income_account,
 						'site': site, #add site to item
 					})
+
+				# add delivery Note
+				for item in delivery_note:
+					if(item.site):
+						sales_invoice_doc.append('items', {
+							'item_code': item.item_code,
+							'item_name': item.item_name,
+							'qty': item.qty,
+							'uom': item.uom,
+							'rate': item.rate,
+							'amount': item.amount,
+							'site': item.site,
+							'description': f'{item.description}\nPosted on {item.posting_date}',
+							'income_account': income_account
+						})
+
 
 				sales_invoice_doc.save()
 				frappe.db.commit()
@@ -175,7 +224,7 @@ class Contracts(Document):
 					'customer':self.client,
 					'contracts':self.name,
 					'projects':self.project,
-					'set_warehouse':'WRH-1018-0001',
+					'set_warehouse':'WRH-1018-0003',
 					'delivery_based_on':'Monthly',
 					'items':items
 				})
@@ -210,7 +259,7 @@ class Contracts(Document):
 					'customer':self.client,
 					'contracts':self.name,
 					'projects':self.project,
-					'set_warehouse':'WRH-1018-0001',
+					'set_warehouse':'WRH-1018-0003',
 					'delivery_based_on':'Monthly',
 					'items':items
 				})
@@ -257,7 +306,7 @@ class Contracts(Document):
 						'customer':self.client,
 						'contracts':self.name,
 						'projects':self.project,
-						'set_warehouse':'WRH-1018-0001',
+						'set_warehouse':'WRH-1018-0003',
 						'delivery_based_on':'Monthly',
 						'items':items
 					})
@@ -281,12 +330,7 @@ class Contracts(Document):
 		posting_date = datetime.today().date()
 		first_day = frappe.utils.get_first_day(posting_date).day
 		last_day = frappe.utils.get_last_day(posting_date).day
-		print(f"""SELECT site FROM `tabEmployee Schedule`
-		WHERE project="{self.project}" AND
-		date BETWEEN '{posting_date.replace(day=1)}' AND
-		'{posting_date.replace(day=last_day)}'
-		GROUP BY site
-		;""")
+
 		query = frappe.db.sql(f"""
 			SELECT site FROM `tabEmployee Schedule`
 			WHERE project="{self.project}" AND
@@ -801,3 +845,21 @@ def calculate_item_values(doc):
 			doc._set_in_company_currency(item, ["price_list_rate", "rate", "net_rate", "amount", "net_amount"])
 
 			item.item_tax_amount = 0.0
+
+
+# GET DELIVERY NOTE FOR CONTRACTS
+def get_delivery_note(contracts):
+	# retrieve delivery note for requesting contracts.
+	posting_date = getdate() #date(2021,11,28)
+	first_day = frappe.utils.get_first_day(posting_date).day
+	last_day = frappe.utils.get_last_day(posting_date).day
+	actual_last_date = frappe.utils.get_last_day(posting_date)
+	return frappe.db.sql(f"""
+		SELECT dni.item_code, dni.item_name, dni.rate, dni.amount, dn.name,
+			dn.posting_date, dni.site, dni.project, dni.qty, dni.uom, dni.description
+		FROM `tabDelivery Note` dn JOIN `tabDelivery Note Item` dni
+		ON dni.parent=dn.name
+		WHERE dn.contracts="{contracts.name}" AND dn.project="{contracts.project}"
+		AND dn.customer="{contracts.client}" AND posting_date
+		BETWEEN '{posting_date.replace(day=1)}' AND '{actual_last_date}' AND dn.status='To Bill';
+	;""", as_dict=1)
