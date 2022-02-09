@@ -414,32 +414,32 @@ def match_encodings(encodings, face_data):
 
 @frappe.whitelist()
 def check_existing():
+	"""API to determine the applicable Log type. 
+	The api checks employee's last lcheckin log type. and determine what next log type needs to be
+
+	Returns:
+		True: The log in was "IN", so his next Log Type should be "OUT".
+		False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
+	"""	
 	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+	
+	# get current and previous day date.
 	todate = nowdate()
 	prev_date = (datetime.datetime.today() - datetime.timedelta(days=1)).strftime ('%Y-%m-%d')
+
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
-	shift_assignment=get_current_shift(employee)
-	#check if employee is been assigned with Shift. If not, take default date.
-	if shift_assignment and len(shift_assignment) != 0:
-		shift_type = frappe.get_value("Shift Type", shift_assignment.shift_type, ["shift_type"])
-		#if shift type is a night shift, It should check previous days check-in log.
-		if shift_type == 'Night':
-			logs = frappe.db.sql("""
-			select name, log_type from `tabEmployee Checkin` where date(time) >= '{date1}' and date(time) <= '{date2}' and skip_auto_attendance=0 and employee="{employee}"
+
+	#get checkin log previous days and current date.
+	logs = frappe.db.sql("""
+			select log_type from `tabEmployee Checkin` where date(time) BETWEEN '{date1}' and '{date2}' and skip_auto_attendance=0 and employee="{employee}"
 			""".format(date1=prev_date, date2=todate, employee=employee), as_dict=1)
-		else:
-			logs = frappe.db.sql("""
-			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}"
-			""".format(date=todate, employee=employee), as_dict=1)
-	else:
-		logs = frappe.db.sql("""
-			select name, log_type from `tabEmployee Checkin` where date(time)=date("{date}") and skip_auto_attendance=0 and employee="{employee}"
-			""".format(date=todate, employee=employee), as_dict=1)
 
 	val = [log.log_type for log in logs]
-	print(logs, val)
+
+	#For Check IN
 	if not val or (val and val[-1] == "OUT"):
 		return False
+	#For Check OUT
 	else:
 		return True
