@@ -1,0 +1,49 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-02-03 10:59:56.134818",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "salary_component",
+  "include_in_indemnity",
+  "include_in_leave_allocation",
+  "amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "salary_component",
+   "fieldtype": "Data",
+   "label": "Salary Component"
+  },
+  {
+   "default": "0",
+   "fieldname": "include_in_indemnity",
+   "fieldtype": "Check",
+   "label": "Include in Indemnity"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  },
+  {
+   "default": "0",
+   "fieldname": "include_in_leave_allocation",
+   "fieldtype": "Check",
+   "label": "Include in Leave Allocation"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-02-06 11:11:30.305064",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Salary Component Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

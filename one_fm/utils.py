@@ -6,6 +6,7 @@ from one_fm.api.notification import create_notification_log
 from frappe import _
 import frappe, os, erpnext
 import json
+import math
 from frappe.model.document import Document
 from frappe.utils import get_site_base_path
 from erpnext.hr.doctype.employee.employee import get_holiday_list_for_employee
@@ -1025,7 +1026,18 @@ def get_approved_leaves_for_period(employee, leave_type, from_date, to_date):
 
     return leave_days
 
+def round_up(n, decimals=0):
+    """Round Up the Number
 
+    Args:
+        n : Number
+        decimals (int, optional): Round up to.
+
+    Returns:
+        [type]: [description]
+    """
+    multiplier = 10 ** decimals
+    return math.ceil(n * multiplier) / multiplier
 
 @frappe.whitelist()
 def get_item_code(subitem_group = None ,item_group = None ,cur_item_id = None):
@@ -1104,7 +1116,7 @@ def warehouse_naming_series(doc, method):
             project_code = create_new_project_code(doc.one_fm_project)
         if project_code:
             name += '-'+project_code
-        doc.name = name +'-'+doc.warehouse_code # +'-'+doc.warehouse_name
+        doc.name = name +'-'+doc.warehouse_code+'-'+doc.warehouse_name
 
 def create_new_project_code(project_id):
     project_code = frappe.db.sql("select one_fm_project_code+1 from `tabProject` order by one_fm_project_code desc limit 1")

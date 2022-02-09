@@ -34,7 +34,7 @@
   "start_date",
   "end_date",
   "due_date",
-  "billing_type",
+  "overtime_rate",
   "column_break_27",
   "invoice_output_format",
   "invoice_frequency",
@@ -51,7 +51,6 @@
   "items",
   "section_break_28",
   "frequency",
-  "assets",
   "section_break_30",
   "create_sales_invoice_as",
   "site_wise_option",
@@ -201,12 +200,6 @@
    "fieldname": "section_break_28",
    "fieldtype": "Section Break",
    "label": "Contract Assets"
-  },
-  {
-   "fieldname": "assets",
-   "fieldtype": "Table",
-   "label": "Assets",
-   "options": "Contract Asset"
   },
   {
    "fieldname": "section_break_30",
@@ -400,13 +393,6 @@
    "label": "Duration In Days"
   },
   {
-   "fieldname": "billing_type",
-   "fieldtype": "Select",
-   "label": "Billing Type",
-   "options": "\nHourly\nDaily\nMonthly",
-   "reqd": 1
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -420,6 +406,12 @@
    "label": "Engagement Type",
    "options": "\nOne-off\nPeriodic",
    "reqd": 1
+  },
+  {
+   "fieldname": "overtime_rate",
+   "fieldtype": "Float",
+   "label": "Overtime rate",
+   "precision": "3"
   },
   {
    "collapsible": 1,
@@ -444,11 +436,12 @@
    "fieldname": "create_sales_invoice_as",
    "fieldtype": "Select",
    "label": "Create Auto Sales Invoice as",
-   "options": "\nSeparate Item Line for Each Site\nSeparate Invoice for Each Site\nSeparate Item Line for Days of Work and Service Item\nInvoice for Full Amount in the Contract\nInvoice for Airport"
+   "options": "Single Invoice\nSeparate Item Line for Each Site\nSeparate Invoice for Each Site\nSeparate Item Line for Days of Work and Service Item\nInvoice for Full Amount in the Contract\nInvoice for Airport"
   }
  ],
+ "is_submittable": 1,
  "links": [],
- "modified": "2022-01-24 13:48:14.181204",
+ "modified": "2022-02-03 11:04:07.179200",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
