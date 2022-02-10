@@ -340,14 +340,12 @@ def sic_separate_invoice_attendance(doc):
         context = {}
         return '', context
 
-
-
 def sic_single_invoice_separate_attendance(doc):
     context = {}
     try:
         if(doc.contracts):
             contracts = frappe.get_doc('Contracts', doc.contracts)
-            posting_date = datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
+            posting_date = date(2021,11,28) #datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
             first_day = frappe.utils.get_first_day(posting_date).day
             last_day = frappe.utils.get_last_day(posting_date).day
             actual_last_date = frappe.utils.get_last_day(posting_date)
@@ -497,17 +495,95 @@ def sic_single_invoice_separate_attendance(doc):
         context = {}
         return '', context
 
-
 def sic_checkin_checkout_attendance(doc):
     """
     Print format Sales Invoice with attendance for Checkin/Checkout
     """
     if(doc.contracts):
+
         contracts = frappe.get_doc('Contracts', doc.contracts)
-        data = get_separate_invoice_for_sites(contracts)
+        posting_date = date(2021,11,28) #datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
+        first_day = frappe.utils.get_first_day(posting_date).day
+        last_day = frappe.utils.get_last_day(posting_date).day
+        actual_last_date = frappe.utils.get_last_day(posting_date)
+        date_range = frappe._dict({'start_date':posting_date.replace(day=1), 'end_date':posting_date.replace(day=last_day)})
 
-        return data
+        contract_sites = get_sites(contracts, date_range)
+        contract_items_tuple = get_sale_items(contracts) #return as string tuple
+        contract_items_list = get_sale_items_as_list(contract_items_tuple) # return as list
 
+        # process
+        day_name_map = {}
+        for i in range(first_day, last_day+1):
+            # dict of month day with name
+            day_name_map[i] = posting_date.replace(day=i).strftime("%A")
+
+        sites_results = {}
+        items_map = get_item_map(contracts, contract_items_list, date_range)
+        print(items_map)
+
+        for site in contract_sites:
+            for item in contract_items_list:
+                attendances = get_attendance_by_site(site, item, date_range)
+                if sites_results.get(site):
+                    sites_results[site][item] = attendances
+                else:
+                    sites_results[site] = {
+                        item: attendances
+                    }
+        return [] #sites_results
+
+
+def get_attendance_by_site(site, item, date_range):
+    return frappe.db.sql(f"""
+        SELECT a.employee, a.employee_name, a.attendance_date, a.working_hours,
+        a.status, a.site, a.project, os.start_time, os.end_time, os.duration,
+        os.shift_classification, pt.name as post_type, pt.sale_item
+        FROM `tabAttendance` a JOIN `tabOperations Shift` os
+        ON a.operations_shift=os.name JOIN `tabPost Type` pt
+        ON a.post_type=pt.name WHERE a.attendance_date
+        BETWEEN '{date_range.start_date}' AND '{date_range.end_date}' AND a.project='Head Office'
+        AND a.site="{site}" AND pt.sale_item="{item}"
+        AND a.status='Present' ORDER BY a.attendance_date ASC;
+    ;""", as_dict=1)
+
+
+def get_sites(contracts, date_range):
+
+    return [i.site for i in frappe.db.sql(f"""
+        SELECT es.site, es.name FROM `tabEmployee Schedule` es
+        JOIN `tabPost Type` pt ON es.post_type=pt.name
+        WHERE pt.sale_item IN {get_sale_items(contracts)} AND project="{contracts.project}"
+        AND date BETWEEN '{date_range.start_date}' AND '{date_range.end_date}'
+        GROUP BY es.site
+    ;""", as_dict=1)]
+
+
+def get_sale_items(contracts):
+    return str(tuple([i.item_code for i in contracts.items if i.subitem_group=='Service'])).replace(',)', ')')
+
+def get_sale_items_as_list(contract_items):
+    """
+        convert "('SRV-SRV-000001-26D-9H-A')"
+        to ['SRV-SRV-000001-26D-9H-A']
+    """
+    contract_items = '['+contract_items[1:] #replace ( with [
+    contract_items = contract_items[:-1]+']' #replace ) with ]
+    return eval(contract_items)
+
+def get_item_map(contracts, item_list, date_range):
+    items_map = {}
+    query = frappe.db.sql(f"""
+        SELECT es.site, pt.name, pt.sale_item FROM `tabEmployee Schedule` es
+        JOIN `tabPost Type` pt ON es.post_type=pt.name
+        WHERE pt.sale_item IN {get_sale_items(contracts)} AND project="{contracts.project}"
+        AND date BETWEEN '{date_range.start_date}' AND '{date_range.end_date}'
+        GROUP BY pt.sale_item
+        ;""", as_dict=1)
+    for item in query:
+        items_map[item.sale_item] = item.name
+
+    return items_map
 
 def get_separate_invoice_for_sites(contract):
 	first_day_of_month = cstr(frappe.utils.get_first_day(date(2021,11,30)))
