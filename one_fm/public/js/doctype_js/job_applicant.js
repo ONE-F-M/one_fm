@@ -37,49 +37,67 @@ frappe.ui.form.on('Job Applicant', {
 
 
 		// if(frm.doc.one_fm_document_verification == 'Verified' || frm.doc.one_fm_document_verification == 'Verified - With Exception'){
-		// 	frm.set_df_property('one_fm_interview_schedules', 'hidden', false);
+			frm.set_df_property('one_fm_interview_schedules', 'hidden', false);
 		// }
 		// else{
-		frm.set_df_property('one_fm_interview_schedules_section', 'hidden', true);
-		frm.set_df_property('one_fm_interview_schedules', 'hidden', true);
+		//frm.set_df_property('one_fm_interview_schedules_section', 'hidden', true);
+		//frm.set_df_property('one_fm_interview_schedules', 'hidden', true);
 		// }
 		if(!frm.doc.__islocal){
+			frm.remove_custom_button("Create Interview")
 			frm.set_df_property('one_fm_erf', 'read_only', true);
-			frm.add_custom_button(__('Create'), function() {
-				create_career_history(frm);
-			}, __('Career History'));
-			frm.add_custom_button(__('Career History'), function() {
-				send_magic_link(frm, 'one_fm.templates.pages.career_history.send_career_history_magic_link');
-			}, __('Send Magic Link'));
-			frm.add_custom_button(__('Applicant More Details'), function() {
+			// add a standard menu item
+			frm.add_custom_button(__('Send Career History'), function() {
+					send_magic_link(frm, 'one_fm.templates.pages.career_history.send_career_history_magic_link');
+					},'Action');
+			frm.add_custom_button(__('Send Applicant Doc'), function() {
 				send_magic_link(frm, 'one_fm.templates.pages.applicant_docs.send_applicant_doc_magic_link');
-			}, __('Send Magic Link'));
-			frm.add_custom_button(__('View'), function() {
-        view_career_history(frm);
-      }, __('Career History'));
-			frm.add_custom_button(__('View'), function() {
-        view_interview(frm);
-      }, __('Interview'));
-			frm.add_custom_button(__('Create'), function() {
-				create_interview(frm);
-			}, __('Interview'));
+				},'Action');
+			frm.add_custom_button(__(''), function() {
+				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
+			frm.add_custom_button(__('View Career History'), function() {
+				view_career_history(frm);
+				},'Action');
+			frm.add_custom_button(__('Create Career History'), function() {
+				create_career_history(frm);
+				},'Action');
+			frm.add_custom_button(__(''), function() {
+			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
+			//if(frm.doc.one_fm_interview_schedules.length != 0){
+				frm.add_custom_button(__('View Interview'), function() {
+					view_interview(frm);
+				},'Action');
+			// }
+			// else{
+				frm.add_custom_button(__('Create An Interview'), function() {
+					view_interview(frm);
+				},'Action');
+			//}
+			frm.add_custom_button(__(''), function() {
+			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			frm.add_custom_button(__('Best Reference'), function() {
-        view_best_reference(frm);
-      });
+				    view_best_reference(frm);
+				  },'Action');
+			frm.add_custom_button(__(''), function() {
+			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
+		
 			if (frm.doc.__onload && frm.doc.__onload.job_offer) {
 				if(frm.doc.status != 'Accepted' && frm.doc.status != 'Rejected'){
 					frm.add_custom_button(__('Accept Offer'), function() {
 						update_job_offer_from_applicant(frm, 'Accepted');
-		      }).addClass('btn-primary');
+		      		},"Action").css("background-color", "red");
 					frm.add_custom_button(__('Reject Offer'), function() {
 						update_job_offer_from_applicant(frm, 'Rejected');
-		      }).addClass('btn-danger');
+		      		},"Action").addClass('btn-danger');
 				}
+				frm.add_custom_button(__(''), function() {
+				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			}
+			
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
 				frm.add_custom_button(__('Select Applicant'), function() {
 					change_applicant_status(frm, 'one_fm_applicant_status', 'Selected');
-				}).addClass('btn-primary');
+				},"Action");
 				frm.add_custom_button(__('Reject Applicant'), function() {
 					if (frm.doc.__onload && frm.doc.__onload.job_offer) {
 						update_job_offer_from_applicant(frm, 'Rejected');
@@ -87,17 +105,19 @@ frappe.ui.form.on('Job Applicant', {
 					else{
 						change_applicant_status(frm, 'status', 'Rejected');
 					}
-				}).addClass('btn-danger');
+				},'Action');
 			}
+			frm.add_custom_button(__(''), function() {
+			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
 				if (frappe.user.has_role("Hiring Manager")){
 					frm.add_custom_button(__('Change ERF'), function() {
 						change_applicant_erf(frm);
-					});
+					},"Action");
 				}
 			}
-    }
-		if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')) {
+    // }
+		// if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')) {
 // 			frappe.db.get_value("Employee", {"job_applicant": frm.doc.name}, "name", function(r) {
 // 				if(!r || !r.name){
 // 					frm.add_custom_button(__('Create Employee'),
@@ -110,8 +130,8 @@ frappe.ui.form.on('Job Applicant', {
 // 					);
 // 				}
 // 			});
-		}
-
+				}
+		
 	},
 	one_fm_change_pam_file_number: function(frm){
 		// on the change of pam desigantion change the button color and set the flag value
@@ -739,18 +759,19 @@ var validate_min_age = function(frm) {
 };
 
 var create_interview = function(frm) {
-  frappe.route_options = {"job_applicant": frm.doc.name};
-	frappe.new_doc("Interview Result");
+	frappe.new_doc("Interview Result", {"job_applicant": frm.doc.name});
 };
-
+var check_doc_exist = function(frm, docname){
+	doc = frappe.get_doc(docname,{"job_applicant":frm.doc.name})
+	console.log(doc)
+}
 var view_interview = function(frm) {
 	frappe.route_options = {"job_applicant": frm.doc.name};
 	frappe.set_route("List", "Interview Result");
 };
 
 var create_career_history = function(frm) {
-  frappe.route_options = {"job_applicant": frm.doc.name};
-	frappe.new_doc("Career History");
+	frappe.new_doc("Career History", {"job_applicant":frm.doc.name});
 };
 
 var send_magic_link = function(frm, method) {
