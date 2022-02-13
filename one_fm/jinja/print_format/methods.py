@@ -507,6 +507,7 @@ def sic_checkin_checkout_attendance(doc):
         last_day = frappe.utils.get_last_day(posting_date).day
         actual_last_date = frappe.utils.get_last_day(posting_date)
         date_range = frappe._dict({'start_date':posting_date.replace(day=1), 'end_date':posting_date.replace(day=last_day)})
+        date_format = posting_date.strftime('%b-%y')
 
         contract_sites = get_sites(contracts, date_range)
         contract_items_tuple = get_sale_items(contracts) #return as string tuple
@@ -522,16 +523,32 @@ def sic_checkin_checkout_attendance(doc):
         items_map = get_item_map(contracts, contract_items_list, date_range)
         print(items_map)
 
+        # loop through the sites abd retrieve the atendance
         for site in contract_sites:
             for item in contract_items_list:
                 attendances = get_attendance_by_site(site, item, date_range)
                 if sites_results.get(site):
-                    sites_results[site][item] = attendances
+                    sites_results[site][item] = {
+                        'attendances':attendances,
+                        'shift_classification': get_shift_types(site, item, attendances, day_name_map, date_format)
+                    }
                 else:
                     sites_results[site] = {
-                        item: attendances
+                        item: {
+                            'attendances':attendances,
+                            'shift_classification': get_shift_types(site, item, attendances, day_name_map, date_format)
+                        }
                     }
-        return [] #sites_results
+
+        # check for result before posting to template
+        if sites_results:
+            context={
+                , 'sites':sites_results
+            }
+        return 'one_fm/jinja/print_format/templates/sic_checkin_checkout_attendance.html', context
+    else:
+        return '', context
+
 
 
 def get_attendance_by_site(site, item, date_range):
@@ -584,6 +601,48 @@ def get_item_map(contracts, item_list, date_range):
         items_map[item.sale_item] = item.name
 
     return items_map
+
+
+def get_shift_types(site, item, attandances, day_name_map, date_format):
+    # classify and return shift by type
+    classification = {
+        'Morning': {'atts': [], 'sheets':{'location':site,'table':{}}},
+        'Afternoon': {'atts': [], 'sheets':{'location':site,'table':{}}},
+        'Evening': {'atts': [], 'sheets':{'location':site,'table':{}}},
+        'Night': {'atts': [], 'sheets':{'location':site,'table':{}}},
+        'Day': {'atts': [], 'sheets':{'location':site,'table':{}}},
+    }
+
+    for i in attandances:
+        try:
+            classification[i.shift_classification]['atts'].append(i)
+        except Exception as e:
+            pass
+
+    # update classififcation attendance table
+    for key, value in classification.items():
+        if(site=='Kuwait City') and value['atts']:
+            # add day to attendance sheet
+            for i in range(len(day_name_map)):
+                value['sheets']['table'][i+1] = {
+                    'sn':i+1, 'Day':day_name_map[i+1], 'Date':f"{i+1}-{date_format}", 'Time In':'', 'Time Out':'',
+                    'No. of E.':0, 'Hours':0, 'Total Hours':0, 'Misc.':''}
+
+
+            for i in value['atts']:
+                # set the attendance table
+                value['sheets']['position'] = i.post_type
+                value['sheets']['shift_type'] = i.shift_classification
+                _day = value['sheets']['table'][i.attendance_date.day]
+                _day['Time In'] = str(i.start_time)
+                _day['Time Out'] = str(i.end_time)
+                _day['No. of E.'] += 1
+                _day['Hours'] = i.duration
+                _day['Total Hours'] = _day['No. of E.'] * i.duration
+
+
+    return classification
+
 
 def get_separate_invoice_for_sites(contract):
 	first_day_of_month = cstr(frappe.utils.get_first_day(date(2021,11,30)))
