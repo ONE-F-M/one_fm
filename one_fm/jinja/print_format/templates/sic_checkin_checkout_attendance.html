@@ -1,7 +1,7 @@
 <style type="text/css" media="print">
-    /* @page {
-        size: landscape;
-    } */
+    @page {
+        /* size: landscape; */
+    }
 </style>
 
 
@@ -9,49 +9,119 @@
 <hr>
 <b class="text-justify">Attendance</b>
 <hr>
-{% for key, value in sites.items() %}
-<h3>Site: <b>{{key}}</b></h3>
-<table class="table table-bordered table-dark table-responsive-xl">
-  <thead class="thead-dark">
-      <!-- <tr>
-        <td colspan="">Month</td>
-        <td colspan="">Project</td>
-      </tr> -->
+{% for site, results in sites.items() %}
 
-  </thead>
-  <tbody>
-    {% for i in header %}
-        <th>{{loop.index}}</th>
-        <th>{{i.employee_id}}</th>
-        <th style="width:25%">{{i.employee_name}}</th>
-        {% for day in i.days_worked %}
-            {% for k, v in day.items() %}
-              <th>{{v}}</th>
-            {% endfor %}
+    {% for item, attendances_list in results.items() %}
+        <hr>
+
+        {% for shift, at_sheet in attendances_list.shift_classification.items() %}
+        <!-- <br>{{site}} - {{at_sheet.attr}} -->
+
+
+
+            {% if at_sheet.atts %}
+            <div class="" style="border: 2px solid black; padding: 50px; margin: 20px orientation: landscape
+              font-size: 10px;">
+                <div class="row">
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            Location: {{site}}
+                        </span>
+                        <span class="pull-right">
+                            Month: {{month}}
+                        </span>
+                    </div>
+                </div>
+                <div class="row"><br>
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            Number of Operatives: {{at_sheet.sheets.shift_type}}
+                        </span>
+                        <span class="pull-right">
+                            Position: {{at_sheet.sheets.position}}
+                        </span>
+                    </div>
+                </div>
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th scope="col">#</th>
+                      <th scope="col">Day</th>
+                      <th scope="col">Date</th>
+                      <th scope="col">Time In</th>
+                      <th scope="col">Time Out</th>
+                      <th scope="col">No. of E.</th>
+                      <th scope="col">Hours</th>
+                      <th scope="col">Total Hours</th>
+                      <th scope="col">Misc.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                {% for sheet, days in at_sheet.sheets.table.items() %}
+                    <tr>
+                        <!-- attendance table ready to display -->
+                        <td>{{days.sn}}</td>
+                        <td>{{days.day}}</td>
+                        <td>{{days.date}}</td>
+                        <td>{{days.time_in}}</td>
+                        <td>{{days.time_out}}</td>
+                        <td>{% if days.no_of_e %}{{days.no_of_e}}{% endif %}</td>
+                        <td>{% if days.hours %}{{days.hours}}{% endif %}</td>
+                        <td>{% if days.total_hours %}{{days.total_hours}}{% endif %}</td>
+                        <td></td>
+
+                        <!-- End attendance table display -->
+
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="row"><br>
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            Approved By:_____________
+                        </span>
+                        <span class="pull-right">
+                            _______________
+                        </span>
+                        <span class="pull-right">
+                            Prepared By:
+                        </span>
+
+                    </div>
+                </div>
+                <div class="row"><br>
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            LP Supervisor Name:____________
+                        </span>
+                        <span class="pull-right">
+                            _______________
+                        </span>
+                        <span class="pull-right">
+                            Site Supervisor Name:
+                        </span>
+                    </div>
+                </div>
+                <div class="row"><br>
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            Signature:_____________
+                        </span>
+                        <span class="pull-right">
+                            _______________
+                        </span>
+                        <span class="pull-right">
+                            Signature:
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         {% endfor %}
-        <th>Signature</th>
     {% endfor %}
-    {% for i in value.employees %}
-    <tr>
-      <th scope="">{{loop.index}}</th>
 
-          <td>{{i.employee_id}}</td>
-          <td style="width:25%">{{i.employee_name}}</td>
-          {% for day in i.days_worked %}
-            <td>{{day}}</td>
-          {% endfor %}
-          <td></td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-<p>
-    <br>
-        <span class="pull-left">Site Supervisor Signature</span>
-        <span class="pull-right">Site in Charge Signature</span>
-
-</p>
-<hr>
+<!--  -->
 {% endfor %}
 {% else %}
 <h1 class="text-center"></h1>

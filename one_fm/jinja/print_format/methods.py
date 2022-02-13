@@ -506,7 +506,7 @@ def sic_checkin_checkout_attendance(doc):
         first_day = frappe.utils.get_first_day(posting_date).day
         last_day = frappe.utils.get_last_day(posting_date).day
         actual_last_date = frappe.utils.get_last_day(posting_date)
-        date_range = frappe._dict({'start_date':posting_date.replace(day=1), 'end_date':posting_date.replace(day=last_day)})
+        date_range = frappe._dict({'start_date':posting_date.replace(day=1), 'end_date':posting_date.replace(day=posting_date.day)})
         date_format = posting_date.strftime('%b-%y')
 
         contract_sites = get_sites(contracts, date_range)
@@ -524,9 +524,20 @@ def sic_checkin_checkout_attendance(doc):
         print(items_map)
 
         # loop through the sites abd retrieve the atendance
+        # remaining_schedule = False
+        # # check for remianing days
+        # if (datetime.today().date()>posting_date.replace(day=last_day)):
+        #     date_range.end_date = posting_date.replace(day=last_day)
+        # else:
+        remaining_schedule = True
+
         for site in contract_sites:
             for item in contract_items_list:
-                attendances = get_attendance_by_site(site, item, date_range)
+                attendances = get_attendance_by_site(contracts, site, item, date_range)
+                if(remaining_schedule):
+                    attendances += get_remaining_checkin_checkout_schedule(contracts,site, item, date_range=frappe._dict(
+                        {'start_date':posting_date.replace(day=int(contracts.due_date)),'end_date':posting_date.replace(day=last_day)}))
+                    
                 if sites_results.get(site):
                     sites_results[site][item] = {
                         'attendances':attendances,
@@ -543,7 +554,8 @@ def sic_checkin_checkout_attendance(doc):
         # check for result before posting to template
         if sites_results:
             context={
-                , 'sites':sites_results
+                'sites':sites_results,
+                'month': f"{posting_date.strftime('%B, %Y')}"
             }
         return 'one_fm/jinja/print_format/templates/sic_checkin_checkout_attendance.html', context
     else:
@@ -551,7 +563,7 @@ def sic_checkin_checkout_attendance(doc):
 
 
 
-def get_attendance_by_site(site, item, date_range):
+def get_attendance_by_site(contracts, site, item, date_range):
     return frappe.db.sql(f"""
         SELECT a.employee, a.employee_name, a.attendance_date, a.working_hours,
         a.status, a.site, a.project, os.start_time, os.end_time, os.duration,
@@ -559,10 +571,26 @@ def get_attendance_by_site(site, item, date_range):
         FROM `tabAttendance` a JOIN `tabOperations Shift` os
         ON a.operations_shift=os.name JOIN `tabPost Type` pt
         ON a.post_type=pt.name WHERE a.attendance_date
-        BETWEEN '{date_range.start_date}' AND '{date_range.end_date}' AND a.project='Head Office'
+        BETWEEN '{date_range.start_date}' AND '{date_range.end_date}' AND a.project="{contracts.project}"
         AND a.site="{site}" AND pt.sale_item="{item}"
         AND a.status='Present' ORDER BY a.attendance_date ASC;
     ;""", as_dict=1)
+
+
+
+def get_remaining_checkin_checkout_schedule(contracts, site, item, date_range):
+
+    return frappe.db.sql(f"""
+        SELECT es.employee, es.employee_name, es.date as attendance_date, os.duration as working_hours,
+        'Present' as status, es.site, es.project, os.start_time, os.end_time, os.duration,
+        os.shift_classification, pt.name as post_type, pt.sale_item
+        FROM `tabEmployee Schedule` es JOIN `tabOperations Shift` os
+        ON es.shift=os.name JOIN `tabPost Type` pt
+        ON es.post_type=pt.name WHERE es.date
+        BETWEEN '{date_range.start_date}' AND '{date_range.end_date}' AND es.project="{contracts.project}"
+        AND es.site="{site}" AND pt.sale_item="{item}"
+        ORDER BY es.date ASC;
+    """, as_dict=1)
 
 
 def get_sites(contracts, date_range):
@@ -621,12 +649,12 @@ def get_shift_types(site, item, attandances, day_name_map, date_format):
 
     # update classififcation attendance table
     for key, value in classification.items():
-        if(site=='Kuwait City') and value['atts']:
+        if value.get('atts'):
             # add day to attendance sheet
             for i in range(len(day_name_map)):
                 value['sheets']['table'][i+1] = {
-                    'sn':i+1, 'Day':day_name_map[i+1], 'Date':f"{i+1}-{date_format}", 'Time In':'', 'Time Out':'',
-                    'No. of E.':0, 'Hours':0, 'Total Hours':0, 'Misc.':''}
+                    'sn':i+1, 'day':day_name_map[i+1], 'date':f"{i+1}-{date_format}", 'time_in':'', 'time_out':'',
+                    'no_of_e':0, 'hours':0, 'total_hours':0, 'misc':''}
 
 
             for i in value['atts']:
@@ -634,11 +662,11 @@ def get_shift_types(site, item, attandances, day_name_map, date_format):
                 value['sheets']['position'] = i.post_type
                 value['sheets']['shift_type'] = i.shift_classification
                 _day = value['sheets']['table'][i.attendance_date.day]
-                _day['Time In'] = str(i.start_time)
-                _day['Time Out'] = str(i.end_time)
-                _day['No. of E.'] += 1
-                _day['Hours'] = i.duration
-                _day['Total Hours'] = _day['No. of E.'] * i.duration
+                _day['time_in'] = str(i.start_time)
+                _day['time_out'] = str(i.end_time)
+                _day['no_of_e'] += 1
+                _day['hours'] = i.duration
+                _day['total_hours'] = _day['no_of_e'] * i.duration
 
 
     return classification
