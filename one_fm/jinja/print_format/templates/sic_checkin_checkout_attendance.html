@@ -1,0 +1,221 @@
+<style type="text/css" media="print">
+    @page {
+        /* size: landscape; */
+    }
+</style>
+
+<div class="row" style="border: 0px solid black; padding: 25px; margin: 20px orientation: landscape
+  font-size: 10px;">
+
+    <table class="table">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col"></th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b class="text-dark">Date</b>: &nbsp;{{posting_date.strftime('%d-%b-%y')}}</td>
+          <td class="pull-right"><b class="text-dark">Invoice No: </b> {{doc.name}}</td>
+        </tr>
+        <tr>
+          <td><b class="text-dark">Address</b>: &nbsp;{{doc.customer_address}}</td>
+          <!-- <td class="pull-right"><b class="text-dark pull-right">Invoice Date: </b> &nbsp;{{posting_date.strftime('%d-%b-%y')}}</td> -->
+        </tr>
+      </tbody>
+    </table>
+
+
+
+    <span class=""><b class="text-dark ">Description: </b> &nbsp;Invoice for the month of {{posting_date.strftime('%B %Y')}} for {{doc.customer_name}}</span>
+
+    <hr>
+</div>
+
+<div class="row">
+    <table class="table table-striped">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Brand</th>
+          <th scope="col">Location</th>
+          <th scope="col">Particulars</th>
+          <th scope="col">Basic Hours</th>
+          <th scope="col">Days</th>
+          <th scope="col">Total Hours</th>
+          <th scope="col">Total Hours Worked</th>
+          <th scope="col">Less Hours Worked</th>
+          <th scope="col">Monthly Rate if applicable</th>
+          <th scope="col">Hourly Rate if applicable</th>
+          <th scope="col">Invoice Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in invoice.invoice_list %}
+        <tr>
+          <th scope="row">{{loop.index}}</th>
+          <td>{{i.brand.title()}}</td>
+          <td>{{i.location}}</td>
+          <td>{{i.particulars}}</td>
+          <td>{{i.basic_hours}}</td>
+          <td>{{i.days}}</td>
+          <td>{{i.total_hours}}</td>
+          <td>{{i.total_hours_worked}}</td>
+          <td>{{i.less_hours_worked}}</td>
+          <td>{% if i.monthly_rate %}
+              {{frappe.utils.fmt_money(i.monthly_rate, currency=doc.currency)}}
+              {% endif %}
+          </td>
+          <td>{% if i.hourly_rate %}
+              {{frappe.utils.fmt_money(i.hourly_rate, currency=doc.currency)}}
+              {% endif %}
+          </td>
+          <td>{{frappe.utils.fmt_money(i.invoiced_amount, currency=doc.currency)}}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <th scope="row"></th>
+          <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td>
+        </tr>
+        <tr>
+            <td colspan="8"><span class="pull-right">Invoice Total Amount</span></td><td>{{frappe.utils.fmt_money(invoice.total_amount, currency=doc.currency)}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <div class="">
+        <p>Prepared by:_______________________</p><br>
+        <p>Approved by: _______________________</p>
+        <p><b><br>{{frappe.utils.money_in_words(invoice.total_amount).split(doc.currency+ ' ')[1]}}</b></p>
+        <p style="alight:justify; font-family: 'Times New Roman', Times, serif;"><br>KINDLY ISSUE WIRE TRANSFER OR CHEQUE TO THE FOLLOWING ACCOUNT <br>
+            <b>ONE Facilities Management W.L.L</b> <br>
+            A/C: <b>1001-883-141- NBK</b> <br>
+            IBAN: <b>KW89NBOK0000000000001001883141</b>
+        </p>
+    </div>
+</div>
+
+
+{% if sites %}
+<hr>
+<b class="text-justify">Attendance</b>
+<hr>
+{% for site, results in sites.items() %}
+
+    {% for item, attendances_list in results.items() %}
+        <hr>
+
+        {% for shift, at_sheet in attendances_list.shift_classification.items() %}
+        <!-- <br>{{site}} - {{at_sheet.attr}} -->
+
+
+
+            {% if at_sheet.atts %}
+            <div class="" style="border: 2px solid black; padding: 50px; margin: 20px orientation: landscape
+              font-size: 10px;">
+                <div class="row">
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            Location: {{site}}
+                        </span>
+                        <span class="pull-right">
+                            Month: {{month}}
+                        </span>
+                    </div>
+                </div>
+                <div class="row"><br>
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            Number of Operatives: {{at_sheet.sheets.shift_type}}
+                        </span>
+                        <span class="pull-right">
+                            Position: {{at_sheet.sheets.position}}
+                        </span>
+                    </div>
+                </div>
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th scope="col">#</th>
+                      <th scope="col">Day</th>
+                      <th scope="col">Date</th>
+                      <th scope="col">Time In</th>
+                      <th scope="col">Time Out</th>
+                      <th scope="col">No. of E.</th>
+                      <th scope="col">Hours</th>
+                      <th scope="col">Total Hours</th>
+                      <th scope="col">Misc.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                {% for sheet, days in at_sheet.sheets.table.items() %}
+                    <tr>
+                        <!-- attendance table ready to display -->
+                        <td>{{days.sn}}</td>
+                        <td>{{days.day}}</td>
+                        <td>{{days.date}}</td>
+                        <td>{{days.time_in}}</td>
+                        <td>{{days.time_out}}</td>
+                        <td>{% if days.no_of_e %}{{days.no_of_e}}{% endif %}</td>
+                        <td>{% if days.hours %}{{days.hours}}{% endif %}</td>
+                        <td>{% if days.total_hours %}{{days.total_hours}}{% endif %}</td>
+                        <td></td>
+
+                        <!-- End attendance table display -->
+
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="row"><br>
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            Approved By:_____________
+                        </span>
+                        <span class="pull-right">
+                            _______________
+                        </span>
+                        <span class="pull-right">
+                            Prepared By:
+                        </span>
+
+                    </div>
+                </div>
+                <div class="row"><br>
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            LP Supervisor Name:____________
+                        </span>
+                        <span class="pull-right">
+                            _______________
+                        </span>
+                        <span class="pull-right">
+                            Site Supervisor Name:
+                        </span>
+                    </div>
+                </div>
+                <div class="row"><br>
+                    <div class="col-md-12 text-black">
+                        <span class="pull-left">
+                            Signature:_____________
+                        </span>
+                        <span class="pull-right">
+                            _______________
+                        </span>
+                        <span class="pull-right">
+                            Signature:
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+
+<!--  -->
+{% endfor %}
+{% else %}
+<h1 class="text-center"></h1>
+{% endif %}
