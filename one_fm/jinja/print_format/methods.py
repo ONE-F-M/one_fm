@@ -512,7 +512,7 @@ def sic_checkin_checkout_attendance(doc):
         contract_sites = get_sites(contracts, date_range)
         contract_items_tuple = get_sale_items(contracts) #return as string tuple
         contract_items_list = get_sale_items_as_list(contract_items_tuple) # return as list
-
+        sales_invoice = []
         # process
         day_name_map = {}
         for i in range(first_day, last_day+1):
@@ -521,41 +521,50 @@ def sic_checkin_checkout_attendance(doc):
 
         sites_results = {}
         items_map = get_item_map(contracts, contract_items_list, date_range)
-        print(items_map)
 
         # loop through the sites abd retrieve the atendance
-        # remaining_schedule = False
-        # # check for remianing days
-        # if (datetime.today().date()>posting_date.replace(day=last_day)):
-        #     date_range.end_date = posting_date.replace(day=last_day)
-        # else:
-        remaining_schedule = True
+        remaining_schedule = False
+        # check for remianing days
+        if (datetime.today().date()>posting_date.replace(day=last_day)):
+            date_range.end_date = posting_date.replace(day=last_day)
+        else:
+            remaining_schedule = True
 
         for site in contract_sites:
             for item in contract_items_list:
+
                 attendances = get_attendance_by_site(contracts, site, item, date_range)
                 if(remaining_schedule):
                     attendances += get_remaining_checkin_checkout_schedule(contracts,site, item, date_range=frappe._dict(
                         {'start_date':posting_date.replace(day=int(contracts.due_date)),'end_date':posting_date.replace(day=last_day)}))
-                    
+
+
+                # get shift types and valuues
+                shift_types_values = get_shift_types(contracts, site, item, attendances, day_name_map, date_format)
+                sales_invoice += shift_types_values.invoice_list
+
+                shift_results = {
+                    'attendances':attendances,
+                    'shift_classification': shift_types_values.classification
+                }
                 if sites_results.get(site):
-                    sites_results[site][item] = {
-                        'attendances':attendances,
-                        'shift_classification': get_shift_types(site, item, attendances, day_name_map, date_format)
-                    }
+                    sites_results[site][item] = shift_results
                 else:
                     sites_results[site] = {
-                        item: {
-                            'attendances':attendances,
-                            'shift_classification': get_shift_types(site, item, attendances, day_name_map, date_format)
-                        }
+                        item: shift_results
                     }
 
         # check for result before posting to template
+        # update sales items
+        sales_invoice_items = update_invoice_items(doc, contracts, sales_invoice)
+
         if sites_results:
             context={
+                'doc':doc,
                 'sites':sites_results,
-                'month': f"{posting_date.strftime('%B, %Y')}"
+                'month': f"{posting_date.strftime('%B, %Y')}",
+                'invoice':sales_invoice_items,
+                'posting_date':posting_date
             }
         return 'one_fm/jinja/print_format/templates/sic_checkin_checkout_attendance.html', context
     else:
@@ -617,6 +626,9 @@ def get_sale_items_as_list(contract_items):
     return eval(contract_items)
 
 def get_item_map(contracts, item_list, date_range):
+    """
+    Map item to name
+    """
     items_map = {}
     query = frappe.db.sql(f"""
         SELECT es.site, pt.name, pt.sale_item FROM `tabEmployee Schedule` es
@@ -631,8 +643,14 @@ def get_item_map(contracts, item_list, date_range):
     return items_map
 
 
-def get_shift_types(site, item, attandances, day_name_map, date_format):
+def get_shift_types(contracts, site, item, attandances, day_name_map, date_format):
     # classify and return shift by type
+    sale_items_dict = {}
+    for i in contracts.items:
+        sale_items_dict[i.item_code] = i
+
+    invoice_dict = {'Morning':{}, 'Afternoon':{}, 'Evening':{}, 'Night':{}, 'Day':{}}
+    invoice_list = []
     classification = {
         'Morning': {'atts': [], 'sheets':{'location':site,'table':{}}},
         'Afternoon': {'atts': [], 'sheets':{'location':site,'table':{}}},
@@ -656,9 +674,36 @@ def get_shift_types(site, item, attandances, day_name_map, date_format):
                     'sn':i+1, 'day':day_name_map[i+1], 'date':f"{i+1}-{date_format}", 'time_in':'', 'time_out':'',
                     'no_of_e':0, 'hours':0, 'total_hours':0, 'misc':''}
 
-
             for i in value['atts']:
                 # set the attendance table
+                if invoice_dict[i.shift_classification].get('particulars'):
+                    particular = invoice_dict[i.shift_classification]
+
+                    particular.total_hours += i.duration
+                    particular.total_hours_worked += i.working_hours
+                    if not (i.employee in particular.employee_list):
+                        particular.employee_list.append(i.employee)
+                        particular.qty +=1
+
+                        #
+                    # particular.qty += 1
+                    # particular.qty +=1
+
+                else:
+                    s_item = sale_items_dict[i.sale_item] #sales item
+                    invoice_dict[i.shift_classification] = frappe._dict({
+                        'brand':'warehouse', 'location':site, 'particulars': f"{item} - {i.shift_classification} Shift",
+                        'basic_hours':i.duration, 'qty':1, 'days': list(day_name_map.keys())[-1],
+                        'total_hours': i.duration, 'total_hours_worked':i.working_hours,
+                        'less_hours_worked': 0, 'invoiced_amount':0,
+                        'hourly_rate': s_item.rate if s_item.uom=='Hourly' else 0,
+                        'monthly_rate': s_item.rate if s_item.uom=='Monthly' else 0,
+                        'weekly_days_off': int(s_item.days_off), 'employee_list':[i.employee]
+                    })
+
+                # attache to invoice
+
+
                 value['sheets']['position'] = i.post_type
                 value['sheets']['shift_type'] = i.shift_classification
                 _day = value['sheets']['table'][i.attendance_date.day]
@@ -668,158 +713,55 @@ def get_shift_types(site, item, attandances, day_name_map, date_format):
                 _day['hours'] = i.duration
                 _day['total_hours'] = _day['no_of_e'] * i.duration
 
+            # update invoices
+    # append to list if shift in Morning, Afternoon, ....Day
+    invoice_list = [party for period, party in invoice_dict.items() if party]
+    return frappe._dict({'classification':classification, 'invoice_list':invoice_list})
 
-    return classification
+def update_invoice_items(invoice, contracts, invoice_list):
+    """
+        Update filter invoice based on print format
+    """
+    contracts_item_map = {}
+    days = 0
+    total_amount = 0
 
+    for i in contracts.items:
+        if i.subitem_group == 'Service':
+            contracts_item_map[i.item_code]=i
+    # calculate total hours, hours worked, invoice in filtered contract items
+    for inv in invoice_list:
+        days = inv.days
+        hours_off = round(inv.qty*inv.weekly_days_off*4*inv.basic_hours, 2)
+        inv.total_hours = round(inv.qty*inv.days*inv.basic_hours, 2)
+        inv.total_hours_worked += hours_off
+        inv.total_hours_worked = round(inv.total_hours_worked, 2)
+        inv.less_hours_worked = round(inv.total_hours - inv.total_hours_worked, 2)
+        if(inv.total_hours>inv.total_hours_worked):
+            inv.invoiced_amount = inv.total_hours_worked * inv.hourly_rate
+        elif(inv.total_hours<inv.total_hours_worked):
+            total_hours_amount = inv.total_hours * inv.hourly_rate
+            if contracts.overtime_rate > 0:
+                overtime_rate = (inv.less_hours_worked*-1) * contracts.overtime_rate
+            else:
+                overtime_rate = (inv.less_hours_worked*-1) * 1.5
+            inv.invoiced_amount = total_hours_amount + overtime_rate
+        else:
+            inv.invoiced_amount = inv.total_hours * inv.hourly_rate
+        inv.invoiced_amount = round(inv.invoiced_amount, 2)
+        total_amount += inv.invoiced_amount
+    # append sales assets
+    for i in invoice.items:
+        if not contracts_item_map.get(i.item_code):
+            invoice_list.append({
+                'brand':'warehouse', 'location':i.site, 'particulars': i.item_code,
+                'basic_hours':'', 'qty':i.qty, 'days': days,
+                'total_hours': '', 'total_hours_worked': '',
+                'less_hours_worked': '', 'invoiced_amount': i.amount,
+                'hourly_rate': '',
+                'monthly_rate': i.rate,
+                'weekly_days_off': '',
+            })
+            total_amount+=i.amount
 
-def get_separate_invoice_for_sites(contract):
-	first_day_of_month = cstr(frappe.utils.get_first_day(date(2021,11,30)))
-	last_day_of_month = cstr(frappe.utils.get_last_day(date(2021,11,30)))
-
-	temp_invoice_year = first_day_of_month.split("-")[0]
-	temp_invoice_month = first_day_of_month.split("-")[1]
-
-	invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + contract.due_date
-
-	project = contract.project
-	contract_overtime_rate = contract.overtime_rate
-
-	invoices = {}
-
-	filters = {}
-
-	items = []
-	for item in contract.items:
-		items.append(item.item_code)
-
-	contract_post_types = list(set(frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': ['in', items]})))
-
-	filters.update({'date': ['between', (first_day_of_month, last_day_of_month)]})
-	filters.update({'post_type': ['in', contract_post_types]})
-	filters.update({'employee_availability': 'Working'})
-	filters.update({'project': project})
-
-	site_list = frappe.db.get_list("Employee Schedule", filters, ["distinct site"])
-
-	for site in site_list:
-		if site.site:
-			site_item_amounts = []
-			for item in contract.items:
-				item_group = str(item.subitem_group)
-
-				if item_group.lower() == "service":
-
-					if item.uom == "Hourly":
-						item_data = get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
-						site_item_amounts.append(item_data)
-                    #
-					# if item.uom == "Daily":
-					# 	item_data = get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
-					# 	site_item_amounts.append(item_data)
-                    #
-					# if item.uom == "Monthly":
-					# 	item_data = get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
-					# 	site_item_amounts.append(item_data)
-
-			invoices[site.site] = site_item_amounts
-
-	return invoices
-
-
-def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site=None):
-	""" This method computes the total number of hours worked by employees for a particular service item by referring to
-		the attendance for days prior to invoice due date and employee schedules ahead of the invoice due date,
-		hence calculating the amount for the service amount.
-
-	Args:
-		item: item object
-		project: project linked with contract
-		first_day_of_month: date of first day of the month
-		last_day_of_month: date of last day of the month
-		invoice_date: date of invoice due
-		contract_overtime_rate: hourly overtime rate specified for the contract
-
-	Returns:
-		dict: item amount and item data
-	"""
-	item_code = item.item_code
-
-	days_in_month = int(last_day_of_month.split("-")[2])
-
-	item_price = item.item_price
-	item_rate = item.rate
-
-	shift_hours = item.shift_hours
-	working_days_in_month = days_in_month - (int(item.days_off) * 4)
-
-	item_hours = 0
-	expected_item_hours = working_days_in_month * shift_hours * cint(item.count)
-	amount = 0
-
-	# Get post types with sale item as item code
-	post_type_list = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
-
-	attendance_filters = {
-		'attendance_date': ['between', (first_day_of_month, add_to_date(invoice_date, days=-1))],
-		'post_type': ['in', post_type_list],
-		'project': project,
-		'status': "Present"
-	}
-
-	if site:
-		attendance_filters.update({'site': site})
-
-	# Get attendances in date range and post type
-	attendances = frappe.db.get_list("Attendance", attendance_filters, ["operations_shift", "in_time", "out_time", "working_hours"])
-
-	# Compute working hours
-	for attendance in attendances:
-		hours = 0
-		if attendance.working_hours:
-			hours += attendance.working_hours
-
-		elif attendance.in_time and attendance.out_time:
-			hours += round((get_datetime(attendance.in_time) - get_datetime(attendance.out_time)).total_seconds() / 3600, 1)
-
-		# Use working hours as duration of shift if no in-out time available in attendance
-		elif attendance.operations_shift:
-			hours += float(frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"]))
-
-		item_hours += hours
-
-	# Get employee schedules for remaining days of the month from the invoice due date if due date is before last day
-	if invoice_date < last_day_of_month:
-		es_filters = {
-			'project': project,
-			'post_type': ['in', post_type_list],
-			'employee_availability': 'Working',
-			'date': ['between', (invoice_date, last_day_of_month)]
-		}
-
-		if site:
-			es_filters.update({'site': site})
-
-		employee_schedules = frappe.db.get_list("Employee Schedule", es_filters, ["shift"])
-
-		# Use item hours as duration of shift
-		for es in employee_schedules:
-			item_hours += float(frappe.db.get_value("Operations Shift", {'name': es.shift}, ["duration"]))
-
-	# If total item hours exceed expected hours, apply overtime rate on extra hours
-	if item_hours > expected_item_hours:
-		normal_amount = item_rate * expected_item_hours
-		overtime_amount = contract_overtime_rate * (item_hours - expected_item_hours)
-
-		amount = round(normal_amount + overtime_amount, 3)
-
-	else:
-		amount = round(item_hours * item_rate, 3)
-
-	return {
-		'item_code': item_code,
-		'item_description': item_price,
-		'qty': item_hours,
-		'uom': item.uom,
-		'rate': item_rate,
-		'amount': amount,
-	}
+    return frappe._dict({'invoice_list':invoice_list, 'total_amount':total_amount})
