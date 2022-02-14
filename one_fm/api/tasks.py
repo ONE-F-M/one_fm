@@ -47,7 +47,7 @@ def send_checkin_hourly_reminder():
 				AND tSA.docstatus=1
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			recipients = [recipient[0] for recipient in recipients if recipient[0]]
-			print(recipients)
+
 			subject = _("Hourly Reminder: Please checkin")
 			message = _('<a class="btn btn-warning" href="/desk#face-recognition">Hourly Check In</a>')
 			send_notification(title, subject, message, category, recipients)
@@ -167,23 +167,6 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 	elif log_type == "OUT":
 		send_notification(title, checkout_subject, checkout_message, notification_category, user_id_list)
 
-def insert_Contact():
-	Us = frappe.db.get_list('Employee', ["user_id","cell_number"])
-	for i in Us:
-		if frappe.db.exists("User", i.user_id):
-			uid = i.user_id
-			mob = i.cell_number
-			if len(str(mob))==8:
-				new_Mob= int(str("965") + str(mob))
-				frappe.db.set_value('User', {"email":uid}, 'mobile_no', new_Mob)
-				print(new_Mob)
-			elif len(str(mob))==10:
-				new_Mob= int(str("91") + str(mob))
-				frappe.db.set_value('User', {"email":uid}, 'mobile_no', new_Mob)
-				print(new_Mob)
-			else:
-				print("Not valid")
-
 
 def checkin_checkout_supervisor_reminder():
 	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_supervisor_checkin_checkout'):
@@ -201,7 +184,6 @@ def checkin_checkout_supervisor_reminder():
 		# Send notification to supervisor of those who haven't checked in and don't have accepted Arrive Late shift permission
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-			print(date)
 			checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.name, emp.employee_id, emp.employee_name, emp.reports_to, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
@@ -361,7 +343,6 @@ def get_action_user(employee, shift):
 		return action_user, Role
 
 def get_notification_user(employee, shift, Role):
-	print(Role)
 	"""
 			Shift > Site > Project > Reports to
 	"""
@@ -390,9 +371,7 @@ def get_notification_user(employee, shift, Role):
 	return notify_user
 
 def get_location(shift):
-	print(shift)
 	site = frappe.get_value("Operations Shift", {"shift_type":shift}, "site")
-	print(site)
 	location= frappe.db.sql("""
 			SELECT loc.latitude, loc.longitude, loc.geofence_radius
 			FROM `tabLocation` as loc
@@ -415,7 +394,6 @@ def checkin_deadline():
 		else:
 			penalty_location ="0,0"
 		# shift_start is equal to now time + deadline
-		#print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
 		if shift.deadline!=0 and strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.deadline))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			recipients = frappe.db.sql("""
@@ -445,7 +423,6 @@ def checkin_deadline():
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
 
 				for employee in employees:
-					print(shift)
 					op_shift =  frappe.get_doc("Operations Shift", {"shift_type":shift.name})
 					issuing_user = get_notification_user(op_shift) if get_notification_user(op_shift) else get_employee_user_id(employee.reports_to)
 
@@ -460,7 +437,6 @@ def automatic_checkout():
 	shifts_list = get_active_shifts(now_time)
 	for shift in shifts_list:
 		# shift_end is equal to now time - notification reminder in mins
-		#print(shift.name, strfdelta(shift.end_time, '%H:%M:%S') , cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()))
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.allow_check_out_after_shift_end_time))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			recipients = frappe.db.sql("""
@@ -480,7 +456,6 @@ def automatic_checkout():
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:
 				recipients = [recipient[0] for recipient in recipients if recipient[0]]
-				# print(recipients)
 				for recipient in recipients:
 					checkin = frappe.new_doc("Employee Checkin")
 					checkin.employee = recipient
@@ -568,7 +543,6 @@ def update_shift_type():
 		now_time = today_datetime.strftime("%H:45:00")
 	else:
 		now_time = today_datetime.strftime("%H:00:00")
-	print(now_time)
 	shift_types = frappe.get_all("Shift Type", {"end_time": now_time},["name", "allow_check_out_after_shift_end_time"])
 	for shift_type in shift_types:
 		last_sync_of_checkin = add_to_date(today_datetime, minutes=cint(shift_type.allow_check_out_after_shift_end_time)+15, as_datetime=True)
@@ -582,7 +556,6 @@ def process_attendance():
 	now_time = now_datetime().strftime("%y-%m-%d %H:%M:00")
 	shift_types = frappe.get_all("Shift Type", {"last_sync_of_checkin": now_time})
 	for shift_type in shift_types:
-		print(shift_type)
 		frappe.enqueue(mark_auto_attendance, shift_type, worker='long')
 
 def mark_auto_attendance(shift_type):
@@ -608,21 +581,7 @@ def generate_payroll():
 	try:
 			create_payroll_entry(start_date, end_date)
 	except Exception:
-			print(frappe.get_traceback())
 			frappe.log_error(frappe.get_traceback())
-
-"""
-	departments = frappe.get_all("Department", {"company": erpnext.get_default_company()})
-	for department in departments:
-		try:
-			# If condition for testing.
-			if department.name != "IT - ONEFM":
-				create_payroll_entry(department.name, start_date, end_date)
-		except Exception:
-			print(frappe.get_traceback())
-			frappe.log_error(frappe.get_traceback())
-"""
-
 
 def generate_penalties():
 	start_date = add_to_date(getdate(), months=-1)
@@ -684,7 +643,6 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		FROM `tabPenalty` as py
 		WHERE py.name in ({refs})
 	""".format(refs=references), as_dict=1)
-	# print(damages_amount)
 
 	days_deduction = frappe.db.sql("""
 		SELECT sum(pd.deduction) as days_deduction, pd.name
