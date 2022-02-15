@@ -552,7 +552,7 @@ let change_items_table_properties = (frm, row) => {
 
 // create delivery note
 let create_delivery_note = frm => {
-	if(frm.doc.create_sales_invoice_as==''){
+	if(frm.doc.create_sales_invoice_as=="Single Invoice"){
 		// Create general delivery note on single invoice
 
 			let table_fields = dn_table_field(frm);

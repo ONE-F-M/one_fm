@@ -36,25 +36,25 @@ class Contracts(Document):
 		temp_invoice_year = date.split("-")[0]
 		temp_invoice_month = date.split("-")[1]
 		invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
-		print(temp_invoice_year, temp_invoice_month, invoice_date, 'INVOICE NOTE,\n\n\n')
+		sys_invoice_date = datetime.fromisoformat(invoice_date).date()
+		last_day = get_last_day(date)
+		if datetime.today().date() < last_day:
+			contract_invoice_date = invoice_date
+		else:
+			contract_invoice_date = datetime.fromisoformat(date).date()
+		# create invoice variable
+		sales_invoice_doc = frappe.new_doc("Sales Invoice")
+		sales_invoice_doc.customer = self.client
+		sales_invoice_doc.due_date = add_to_date(getdate(), days=1) #invoice_date
+		sales_invoice_doc.project = self.project
+		sales_invoice_doc.contracts = self.name
+		sales_invoice_doc.ignore_pricing_rule = 1
+		sales_invoice_doc.set_posting_time = 1
+		sales_invoice_doc.posting_date = contract_invoice_date
 
 		try:
 			if self.create_sales_invoice_as == "Single Invoice":
 				items_amounts = get_service_items_invoice_amounts(self, date)
-				sales_invoice_doc = frappe.new_doc("Sales Invoice")
-				sales_invoice_doc.customer = self.client
-
-				# check if period or now()
-				# date = period if period else cstr(getdate())
-				# date = cstr(getdate())
-				# temp_invoice_year = date.split("-")[0]
-				# temp_invoice_month = date.split("-")[1]
-				# invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
-
-				sales_invoice_doc.due_date = invoice_date
-				sales_invoice_doc.project = self.project
-				sales_invoice_doc.contracts = self.name
-				sales_invoice_doc.ignore_pricing_rule = 1
 				sales_invoice_doc.title = self.client + ' - ' + 'Single Invoice'
 
 				income_account = frappe.db.get_value("Project", self.project, ["income_account"])
@@ -72,7 +72,7 @@ class Contracts(Document):
 					})
 
 				# get delivery note
-				delivery_note = get_delivery_note(self)
+				delivery_note = get_delivery_note(self, date)
 				for item in delivery_note:
 					sales_invoice_doc.append('items', {
 						'item_code': item.item_code,
@@ -94,22 +94,18 @@ class Contracts(Document):
 				sales_invoice_docs = []
 				site_invoices = get_separate_invoice_for_sites(self, date)
 				# get delivery note
-				delivery_note = get_delivery_note(self)
+				delivery_note = get_delivery_note(self, date)
 
 				for site, items_amounts in site_invoices.items():
 					sales_invoice_doc = frappe.new_doc("Sales Invoice")
 					sales_invoice_doc.customer = self.client
 					sales_invoice_doc.title = self.client + ' - ' + site
-
-					# date = cstr(getdate())
-					# temp_invoice_year = date.split("-")[0]
-					# temp_invoice_month = date.split("-")[1]
-					# invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
-
-					sales_invoice_doc.due_date = invoice_date
+					sales_invoice_doc.due_date = add_to_date(getdate(), days=1)
 					sales_invoice_doc.project = self.project
 					sales_invoice_doc.contracts = self.name
 					sales_invoice_doc.ignore_pricing_rule = 1
+					sales_invoice_doc.set_posting_time = 1
+					sales_invoice_doc.posting_date = date
 
 					income_account = frappe.db.get_value("Project", self.project, ["income_account"])
 
@@ -151,19 +147,7 @@ class Contracts(Document):
 			if self.create_sales_invoice_as == "Separate Item Line for Each Site":
 				separate_site_items = get_single_invoice_for_separate_sites(self, date)
 				# get delivery note
-				delivery_note = get_delivery_note(self)
-				sales_invoice_doc = frappe.new_doc("Sales Invoice")
-				sales_invoice_doc.customer = self.client
-
-				# date = cstr(getdate())
-				# temp_invoice_year = date.split("-")[0]
-				# temp_invoice_month = date.split("-")[1]
-				# invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
-
-				sales_invoice_doc.due_date = invoice_date
-				sales_invoice_doc.project = self.project
-				sales_invoice_doc.contracts = self.name
-				sales_invoice_doc.ignore_pricing_rule = 1
+				delivery_note = get_delivery_note(self, date)
 				sales_invoice_doc.title = self.client + ' - ' + 'Item Lines'
 
 				income_account = frappe.db.get_value("Project", self.project, ["income_account"])
@@ -217,7 +201,7 @@ class Contracts(Document):
 		try:
 			delivery_note_list = []
 			dn_items = json.loads(frappe.form_dict.dn_items)['items']
-			if(self.create_sales_invoice_as==''):
+			if(self.create_sales_invoice_as=="Single Invoice"):
 				# create general Delivery Note
 				items = []
 				for i in dn_items:
@@ -861,11 +845,11 @@ def calculate_item_values(doc):
 
 
 # GET DELIVERY NOTE FOR CONTRACTS
-def get_delivery_note(contracts):
+def get_delivery_note(contracts, date):
 	# retrieve delivery note for requesting contracts.
-	posting_date = getdate() #date(2021,11,28)
-	first_day = frappe.utils.get_first_day(posting_date).day
-	last_day = frappe.utils.get_last_day(posting_date).day
+	posting_date = date
+	first_day = frappe.utils.get_first_day(posting_date)
+	last_day = frappe.utils.get_last_day(posting_date)
 	actual_last_date = frappe.utils.get_last_day(posting_date)
 	return frappe.db.sql(f"""
 		SELECT dni.item_code, dni.item_name, dni.rate, dni.amount, dn.name,
@@ -874,5 +858,5 @@ def get_delivery_note(contracts):
 		ON dni.parent=dn.name
 		WHERE dn.contracts="{contracts.name}" AND dn.project="{contracts.project}"
 		AND dn.customer="{contracts.client}" AND posting_date
-		BETWEEN '{posting_date.replace(day=1)}' AND '{actual_last_date}' AND dn.status='To Bill';
+		BETWEEN '{first_day}' AND '{last_day}' AND dn.status='To Bill';
 	;""", as_dict=1)
