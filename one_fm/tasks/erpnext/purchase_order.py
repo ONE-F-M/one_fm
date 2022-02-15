@@ -13,7 +13,7 @@ def due_purchase_order_payment_terms():
             SELECT po.name as doc, po.supplier, po.supplier_name, pt.name, pt.payment_term,
             pt.due_date, pt.invoice_portion, pt.payment_amount, pt.outstanding
             FROM `tabPurchase Order` po JOIN `tabPayment Schedule` pt ON pt.parent=po.name
-            WHERE pt.due_date BETWEEN '2022-02-02' AND '2022-03-30' AND
+            WHERE pt.due_date='{datetime.today().date()}' AND
             po.docstatus=1 AND pt.parenttype='Purchase Order'
             ORDER BY po.name
         ;""", as_dict=1)
@@ -28,14 +28,12 @@ def due_purchase_order_payment_terms():
                     'company': frappe.utils.get_defaults('company')
                 }
             )
-            # print(content)
             # get recipients
             recipients = [i.name for i in frappe.db.sql("""
                 SELECT hr.parent, hr.role, u.name from `tabHas Role` hr INNER JOIN
                 `tabUser` u ON hr.parent=u.name WHERE role LIKE 'Finance%'
                 AND hr.parent LIKE '%@%' GROUP BY u.name;
             """, as_dict=1)]
-            print(recipients)
             # send mail
             frappe.sendmail(
                 recipients=recipients,
