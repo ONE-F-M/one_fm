@@ -39,7 +39,7 @@ class Contracts(Document):
 		print(temp_invoice_year, temp_invoice_month, invoice_date, 'INVOICE NOTE,\n\n\n')
 
 		try:
-			if self.create_sales_invoice_as == "":
+			if self.create_sales_invoice_as == "Single Invoice":
 				items_amounts = get_service_items_invoice_amounts(self, date)
 				sales_invoice_doc = frappe.new_doc("Sales Invoice")
 				sales_invoice_doc.customer = self.client
