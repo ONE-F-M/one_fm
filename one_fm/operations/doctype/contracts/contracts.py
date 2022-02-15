@@ -30,17 +30,26 @@ class Contracts(Document):
 
 	@frappe.whitelist()
 	def generate_sales_invoice(self):
+		# if period, contract came from frontend else scheduler (use dnow())
+		period = frappe.form_dict.period
+		date = period if period else cstr(getdate())
+		temp_invoice_year = date.split("-")[0]
+		temp_invoice_month = date.split("-")[1]
+		invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
+		print(temp_invoice_year, temp_invoice_month, invoice_date, 'INVOICE NOTE,\n\n\n')
 
 		try:
 			if self.create_sales_invoice_as == "":
-				items_amounts = get_service_items_invoice_amounts(self)
+				items_amounts = get_service_items_invoice_amounts(self, date)
 				sales_invoice_doc = frappe.new_doc("Sales Invoice")
 				sales_invoice_doc.customer = self.client
 
-				date = cstr(getdate())
-				temp_invoice_year = date.split("-")[0]
-				temp_invoice_month = date.split("-")[1]
-				invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
+				# check if period or now()
+				# date = period if period else cstr(getdate())
+				# date = cstr(getdate())
+				# temp_invoice_year = date.split("-")[0]
+				# temp_invoice_month = date.split("-")[1]
+				# invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
 
 				sales_invoice_doc.due_date = invoice_date
 				sales_invoice_doc.project = self.project
@@ -83,7 +92,7 @@ class Contracts(Document):
 
 			if self.create_sales_invoice_as == "Separate Invoice for Each Site":
 				sales_invoice_docs = []
-				site_invoices = get_separate_invoice_for_sites(self)
+				site_invoices = get_separate_invoice_for_sites(self, date)
 				# get delivery note
 				delivery_note = get_delivery_note(self)
 
@@ -92,10 +101,10 @@ class Contracts(Document):
 					sales_invoice_doc.customer = self.client
 					sales_invoice_doc.title = self.client + ' - ' + site
 
-					date = cstr(getdate())
-					temp_invoice_year = date.split("-")[0]
-					temp_invoice_month = date.split("-")[1]
-					invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
+					# date = cstr(getdate())
+					# temp_invoice_year = date.split("-")[0]
+					# temp_invoice_month = date.split("-")[1]
+					# invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
 
 					sales_invoice_doc.due_date = invoice_date
 					sales_invoice_doc.project = self.project
@@ -140,16 +149,16 @@ class Contracts(Document):
 				return sales_invoice_docs
 
 			if self.create_sales_invoice_as == "Separate Item Line for Each Site":
-				separate_site_items = get_single_invoice_for_separate_sites(self)
+				separate_site_items = get_single_invoice_for_separate_sites(self, date)
 				# get delivery note
 				delivery_note = get_delivery_note(self)
 				sales_invoice_doc = frappe.new_doc("Sales Invoice")
 				sales_invoice_doc.customer = self.client
 
-				date = cstr(getdate())
-				temp_invoice_year = date.split("-")[0]
-				temp_invoice_month = date.split("-")[1]
-				invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
+				# date = cstr(getdate())
+				# temp_invoice_year = date.split("-")[0]
+				# temp_invoice_month = date.split("-")[1]
+				# invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
 
 				sales_invoice_doc.due_date = invoice_date
 				sales_invoice_doc.project = self.project
@@ -195,6 +204,7 @@ class Contracts(Document):
 
 		except Exception as error:
 			frappe.throw(_(error))
+
 
 	def on_cancel(self):
 		frappe.throw("Contracts cannot be cancelled. Please try to ammend the existing record.")
@@ -399,9 +409,10 @@ def auto_renew_contracts():
 		contract_doc.save()
 		frappe.db.commit()
 
-def get_service_items_invoice_amounts(contract):
-	first_day_of_month = cstr(get_first_day(getdate()))
-	last_day_of_month = cstr(get_last_day(getdate()))
+def get_service_items_invoice_amounts(contract, date):
+	# use date args instead of system date
+	first_day_of_month = cstr(get_first_day(date))
+	last_day_of_month = cstr(get_last_day(date))
 
 	temp_invoice_year = first_day_of_month.split("-")[0]
 	temp_invoice_month = first_day_of_month.split("-")[1]
@@ -702,9 +713,10 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 		'amount': amount,
 	}
 
-def get_separate_invoice_for_sites(contract):
-	first_day_of_month = cstr(get_first_day(getdate()))
-	last_day_of_month = cstr(get_last_day(getdate()))
+def get_separate_invoice_for_sites(contract, date):
+	# use date args instead of system date
+	first_day_of_month = cstr(get_first_day(date))
+	last_day_of_month = cstr(get_last_day(date))
 
 	temp_invoice_year = first_day_of_month.split("-")[0]
 	temp_invoice_month = first_day_of_month.split("-")[1]
@@ -755,9 +767,10 @@ def get_separate_invoice_for_sites(contract):
 
 	return invoices
 
-def get_single_invoice_for_separate_sites(contract):
-	first_day_of_month = cstr(get_first_day(getdate()))
-	last_day_of_month = cstr(get_last_day(getdate()))
+def get_single_invoice_for_separate_sites(contract, date):
+	# use date args instead of system date
+	first_day_of_month = cstr(get_first_day(date))
+	last_day_of_month = cstr(get_last_day(date))
 
 	temp_invoice_year = first_day_of_month.split("-")[0]
 	temp_invoice_month = first_day_of_month.split("-")[1]
