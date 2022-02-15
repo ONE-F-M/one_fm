@@ -11,19 +11,19 @@ frappe.ui.form.on('Job Applicant', {
 	},
 	refresh(frm) {
 		// Changes the buttons for `PAM File Number` and `PAM Desigantion` once operator wants to changethe data of any
-		if(frm.doc.pam_number_button == 0 || frm.is_new()){
-			document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#3789ff";
-		}if(frm.doc.pam_designation_button == 0 || frm.is_new()){
-			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#3789ff";
-			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
-		}if(frm.doc.pam_number_button == 1 || !frm.is_new()){
-			document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#ec645e";
-		}if(frm.doc.pam_designation_button == 1 || !frm.is_new()){
-			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#ec645e";
-			document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
-		}
-		document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1.6em';
-		document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
+		// if(frm.doc.pam_number_button == 0 || frm.is_new()){
+		// 	document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#3789ff";
+		// }if(frm.doc.pam_designation_button == 0 || frm.is_new()){
+		// 	document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#3789ff";
+		// 	document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
+		// }if(frm.doc.pam_number_button == 1 || !frm.is_new()){
+		// 	document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.backgroundColor ="#ec645e";
+		// }if(frm.doc.pam_designation_button == 1 || !frm.is_new()){
+		// 	document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.backgroundColor ="#ec645e";
+		// 	document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
+		// }
+		// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1.6em';
+		// document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
 		frm.set_df_property('status', 'label', 'Final Status');
 		frm.remove_custom_button("Job Offer");
 		set_country_field_empty_on_load(frm);
@@ -55,24 +55,26 @@ frappe.ui.form.on('Job Applicant', {
 				},'Action');
 			frm.add_custom_button(__(''), function() {
 				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
+			if(frm.doc.one_fm_job_applicant_score.find(i => i.reference_dt == "Career History")){
 			frm.add_custom_button(__('View Career History'), function() {
 				view_career_history(frm);
 				},'Action');
+			} else {
 			frm.add_custom_button(__('Create Career History'), function() {
 				create_career_history(frm);
 				},'Action');
+			}
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-			//if(frm.doc.one_fm_interview_schedules.length != 0){
+			if(frm.doc.one_fm_job_applicant_score.find(i => i.reference_dt == "Interview Result")){
 				frm.add_custom_button(__('View Interview'), function() {
 					view_interview(frm);
 				},'Action');
-			// }
-			// else{
+			}
 				frm.add_custom_button(__('Create An Interview'), function() {
 					view_interview(frm);
 				},'Action');
-			//}
+			
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			frm.add_custom_button(__('Best Reference'), function() {
