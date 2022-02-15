@@ -767,10 +767,7 @@ var validate_min_age = function(frm) {
 var create_interview = function(frm) {
 	frappe.new_doc("Interview Result", {"job_applicant": frm.doc.name});
 };
-var check_doc_exist = function(frm, docname){
-	doc = frappe.get_doc(docname,{"job_applicant":frm.doc.name})
-	console.log(doc)
-}
+
 var view_interview = function(frm) {
 	frappe.route_options = {"job_applicant": frm.doc.name};
 	frappe.set_route("List", "Interview Result");
