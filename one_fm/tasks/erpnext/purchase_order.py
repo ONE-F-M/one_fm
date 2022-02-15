@@ -38,7 +38,7 @@ def due_purchase_order_payment_terms():
             print(recipients)
             # send mail
             frappe.sendmail(
-                recipients=['e.anthony@one-fm.com'],
+                recipients=recipients,
                 subject="Due Purchase Order Payment",
                 message=content)
             pass
