@@ -14,7 +14,7 @@ def due_purchase_order_payment_terms():
             pt.due_date, pt.invoice_portion, pt.payment_amount, pt.outstanding
             FROM `tabPurchase Order` po JOIN `tabPayment Schedule` pt ON pt.parent=po.name
             WHERE pt.due_date='{datetime.today().date()}' AND
-            po.docstatus=1 AND pt.parenttype='Purchase Order'
+            po.docstatus=1 AND po.status!='Completed' AND pt.parenttype='Purchase Order'
             ORDER BY po.name
         ;""", as_dict=1)
 
