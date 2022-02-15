@@ -39,6 +39,5 @@ def due_purchase_order_payment_terms():
                 recipients=recipients,
                 subject="Due Purchase Order Payment",
                 message=content)
-            pass
     except Exception as e:
         frappe.log_error(str(e), 'Purchase Order payment schedule')
