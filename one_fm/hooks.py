@@ -336,7 +336,8 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
-		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today'
+		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
+		'one_fm.tasks.execute.hourly'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
