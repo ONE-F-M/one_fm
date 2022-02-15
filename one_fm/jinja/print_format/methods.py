@@ -345,7 +345,7 @@ def sic_single_invoice_separate_attendance(doc):
     try:
         if(doc.contracts):
             contracts = frappe.get_doc('Contracts', doc.contracts)
-            posting_date = date(2021,11,28) #datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
+            posting_date = datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
             first_day = frappe.utils.get_first_day(posting_date).day
             last_day = frappe.utils.get_last_day(posting_date).day
             actual_last_date = frappe.utils.get_last_day(posting_date)
@@ -502,7 +502,7 @@ def sic_checkin_checkout_attendance(doc):
     if(doc.contracts):
 
         contracts = frappe.get_doc('Contracts', doc.contracts)
-        posting_date = date(2021,11,28) #datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
+        posting_date = datetime.strptime(str(doc.posting_date), '%Y-%M-%d') #date(2021,11,28)
         first_day = frappe.utils.get_first_day(posting_date).day
         last_day = frappe.utils.get_last_day(posting_date).day
         actual_last_date = frappe.utils.get_last_day(posting_date)
