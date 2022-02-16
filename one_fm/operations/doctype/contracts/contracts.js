@@ -107,23 +107,52 @@ frappe.ui.form.on('Contracts', {
 		}
 
 		frm.add_custom_button(__("Generate Invoice"), function() {
-			frappe.call({
-				doc: frm.doc,
-				method: 'generate_sales_invoice',
-				callback: function(r) {
-					if(!r.exc){
-						frappe.show_alert({
-						    message:__('Sales Invoice created successfully'),
-						    indicator:'green'
-						}, 5);
-						frappe.msgprint(__('Sales Invoice created successfully'))
-						frm.reload_doc();
-					}
-				},
-				freeze: true,
-				freeze_message: (__('Creating Sales Invoice'))
-			});
+			// ask for invoice date, then use it for the rest of the activity
+			let d = new frappe.ui.Dialog({
+		    title: 'Select Contracts Period',
+		    fields: [
+		        {
+		            label: 'Contract Period',
+		            fieldname: 'period',
+		            fieldtype: 'Date',
+					reqd:1
+		        }
+		    ],
+		    primary_action_label: 'Generate',
+		    primary_action(values) {
+				// process generate invoice
+				frappe.call({
+					doc: frm.doc,
+					method: 'generate_sales_invoice',
+					args: values,
+					callback: function(r) {
+						if(!r.exc){
+							frappe.show_alert({
+							    message:__('Sales Invoice created successfully'),
+							    indicator:'green'
+							}, 5);
+							frappe.msgprint(__('Sales Invoice created successfully'))
+							frm.reload_doc();
+						}
+					},
+					freeze: true,
+					freeze_message: (__('Creating Sales Invoice'))
+				})
+				// end process generate invoice
+		        d.hide();
+		    }
+		});
+
+		d.show();
+
+
+
+
+			// ;
+			//
+			//
 		}).addClass("btn-primary");
+
 		var days,management_fee_percentage,management_fee;
 		frm.set_query("bank_account", function() {
 			return {
@@ -523,7 +552,7 @@ let change_items_table_properties = (frm, row) => {
 
 // create delivery note
 let create_delivery_note = frm => {
-	if(frm.doc.create_sales_invoice_as==''){
+	if(frm.doc.create_sales_invoice_as=="Single Invoice"){
 		// Create general delivery note on single invoice
 
 			let table_fields = dn_table_field(frm);
