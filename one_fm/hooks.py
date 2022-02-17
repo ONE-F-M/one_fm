@@ -164,7 +164,7 @@ doc_events = {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
 		"validate": [
 			"one_fm.utils.validate_hajj_leave",
-			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
+			"one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.daily_indemnity_allocation_builder.validate_leave_proof_document_requirement",
 		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
 	},
@@ -316,7 +316,7 @@ website_route_rules = [
 # }
 
 # Scheduled Tasks
-# ---------------
+# --------------- 
 
 scheduler_events = {
 	"daily": [
@@ -324,8 +324,8 @@ scheduler_events = {
 		'one_fm.utils.pam_authorized_signatory',
 		'one_fm.utils.hooked_leave_allocation_builder',
 		'one_fm.utils.increase_daily_leave_balance',
-		'one_fm.one_fm.hr_utils.daily_indemnity_allocation_builder',
-		'one_fm.one_fm.hr_utils.allocate_daily_indemnity',
+		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.daily_indemnity_allocation_builder',
+		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.allocate_daily_indemnity',
 		'one_fm.utils.check_grp_operator_submission_daily',
 		'one_fm.utils.check_grp_supervisor_submission_daily',
 		'one_fm.utils.check_pam_visa_approval_submission_daily',
