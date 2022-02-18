@@ -388,3 +388,12 @@ def cancel_compensatory_leave_request_from_attendance(attendance):
     })
     if exist_compensatory_leave_request:
         frappe.get_doc('Compensatory Leave Request', exist_compensatory_leave_request).cancel()
+
+def get_workflow_sates(doctype):
+    workflow_states = []
+    exists_workflow = frappe.db.exists('Workflow', {'is_active': True, 'document_type': doctype})
+    if exists_workflow:
+        workflow = frappe.get_doc('Workflow', exists_workflow)
+        for state in workflow.states:
+            workflow_states.append(state)
+    return workflow_states
