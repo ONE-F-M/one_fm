@@ -8,7 +8,8 @@
  "field_order": [
   "collection_settings_section",
   "assign_collection_officer_to_sales_invoice_on_workflow_state",
-  "sales_invoice_workflow_sate_to_assign_collection_officer"
+  "sales_invoice_workflow_sate_to_assign_collection_officer",
+  "create_collection_officer_role"
  ],
  "fields": [
   {
@@ -29,12 +30,18 @@
    "fieldtype": "Select",
    "label": "Sales Invoice Workflow Sate to Assign Collection Officer",
    "mandatory_depends_on": "assign_collection_officer_to_sales_invoice_on_workflow_state"
+  },
+  {
+   "fieldname": "create_collection_officer_role",
+   "fieldtype": "Button",
+   "hidden": 1,
+   "label": "Create Collection Officer Role"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-02-18 09:40:57.107250",
+ "modified": "2022-02-18 13:01:57.246390",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Accounts Additional Settings",
