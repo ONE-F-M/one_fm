@@ -2,18 +2,22 @@ import frappe,calendar
 import itertools
 from dateutil.relativedelta import relativedelta
 from datetime import date,timedelta,datetime
-from frappe.utils import getdate,get_first_day,get_last_day,add_days,add_months,flt
+from frappe.utils import getdate,cstr,get_first_day,get_last_day,add_days,add_months,flt, add_to_date
 from one_fm.one_fm.timesheet_custom import timesheet_automation,calculate_hourly_rate,days_of_month
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
-from frappe import _
+
+from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
+from one_fm.operations.doctype.contracts.contracts import get_contracts_items
+
 
 def create_sales_invoice():
     today = date.today()
     day = today.day
+
     d = today
     #Get the first day of the month
-    first_day = get_first_day(today)
+    first_day = datetime.strptime("2021-12-01","%Y-%m-%d") #get_first_day(today)
     #Get the last day of the month
     last_day = get_last_day(first_day)
     contracts_list = get_contracts_list(day, today, today)
@@ -206,7 +210,7 @@ def append_invoice_parent_details(sales_invoice, contracts):
     sales_invoice.selling_price_list = contracts.price_list
     #overriding erpnext standard functionality
     sales_invoice.timesheets = []
-    sales_invoice.items = []
+    #sales_invoice.items = []
     return sales_invoice
 
 #Get contracts list
@@ -755,7 +759,7 @@ def get_projectwise_timesheet_data(project, item_code, start_date = None, end_da
             WHERE t.parenttype = 'Timesheet'
                 and s.name = t.shift and s.duration = %(shift_hours)s
                 and t.docstatus=1 and t.project = %(project)s
-                and t.billable = 1 and t.sales_invoice is null and t.from_time >= %(start_date)s
+                and t.is_billable = 1 and t.sales_invoice is null and t.from_time >= %(start_date)s
                 and t.to_time < %(end_date)s
                 and t.Activity_type in (select post_name from `tabPost Type` where sale_item
                 = %(item_code)s )
@@ -807,14 +811,14 @@ def calculate_monthly_rate(project = None, item_code = None, hourly_rate = None,
     return monthly_rate
 
 def get_monthly_and_hourly_rate(project, contract_item, first_day):
-    print(project, contract_item, first_day, '\n\n\n')
     if contract_item.uom == 'month':
         monthly_rate = contract_item.rate
         hourly_rate = calculate_hourly_rate(project, contract_item.item_code, monthly_rate, contract_item.shift_hours, first_day)
+        return monthly_rate, hourly_rate
     if contract_item.uom == 'Hours':
         hourly_rate = contract_item.rate
         monthly_rate = calculate_monthly_rate(project, contract_item.item_code, hourly_rate, contract_item.shift_hours, first_day)
-    return monthly_rate, hourly_rate
+        return monthly_rate, hourly_rate
 
 #calculate total working day
 def calculate_total_working_days(project = None, item_code = None, first_day =None):
