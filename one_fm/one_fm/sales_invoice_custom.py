@@ -1015,8 +1015,8 @@ def assign_collection_officer_to_sales_invoice_on_workflow_state(doc, method):
         if it is ture,
         grab the Collection Office user to make an assignment to the Sales Invoice with that user.
     '''
-    sales_invoice_workflow_sate_to_assign_collection_officer = frappe.db.get_single_value('Accounts Settings', 'sales_invoice_workflow_sate_to_assign_collection_officer')
-    if frappe.get_meta(doc.doctype).has_field("workflow_state") and doc.workflow_state == sales_invoice_workflow_sate_to_assign_collection_officer:
+    assign_collection_officer = frappe.db.get_single_value('Accounts Additional Settings', 'assign_collection_officer_to_sales_invoice_on_workflow_state')
+    if assign_collection_officer and frappe.get_meta(doc.doctype).has_field("workflow_state") and doc.workflow_state == frappe.db.get_single_value('Accounts Additional Settings', 'sales_invoice_workflow_sate_to_assign_collection_officer'):
         try:
             collection_officer = get_user_list_by_role('Collection Officer')
             if len(collection_officer) > 0 and collection_officer[0]:
@@ -1026,6 +1026,10 @@ def assign_collection_officer_to_sales_invoice_on_workflow_state(doc, method):
                     'assign_to': collection_officer[0],
                     'description': (_('The Sales Invoice {0} is ready for Delivery.\n Please attach the delivered invoice copy to the Sales Invoice').format(doc.name))
                 })
+            else:
+                from one_fm.one_fm.utils import create_role_if_not_exists
+                create_role_if_not_exists('Collection Officer')
+                frappe.msgprint(_('Please Assing a User for Collection Officer Role!'))
         except DuplicateToDoError:
             frappe.message_log.pop()
             pass
