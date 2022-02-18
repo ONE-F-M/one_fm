@@ -12,6 +12,7 @@ from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.operations.doctype.contracts.contracts import get_contracts_items
 
+
 def create_sales_invoice():
     today = date.today()
     day = today.day
@@ -1025,17 +1026,11 @@ def assign_collection_officer_to_sales_invoice_on_workflow_state(doc, method):
         try:
             collection_officer = get_user_list_by_role('Collection Officer')
             if len(collection_officer) > 0 and collection_officer[0]:
-                # add_assignment({
-                #     'doctype': doc.doctype,
-                #     'name': doc.name,
-                #     'assign_to': collection_officer[0],
-                #     'description': _('The Sales Invoice {0} is ready for Delivery. Please attach the delivered invoice copy to the Sales Invoice'.format(doc.name))
-                # })
                 add_assignment({
                     'doctype': doc.doctype,
                     'name': doc.name,
-                    'assign_to': 'j.poil@armor-services.com',
-                    'description': 'The Sales Invoice is ready for Delivery. Please attach the delivered invoice copy to the Sales Invoice'
+                    'assign_to': [collection_officer[0]],
+                    'description': (_('The Sales Invoice {0} is ready for Delivery.\n Please attach the delivered invoice copy to the Sales Invoice').format(doc.name))
                 })
             else:
                 frappe.msgprint(_('Please Assing a User for Collection Officer Role!'))
