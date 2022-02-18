@@ -6,7 +6,7 @@ from frappe.utils import getdate,get_first_day,get_last_day,add_days,add_months,
 from one_fm.one_fm.timesheet_custom import timesheet_automation,calculate_hourly_rate,days_of_month
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
-from frappe import _
+# from frappe import _
 
 def create_sales_invoice():
     today = date.today()
@@ -1024,10 +1024,11 @@ def assign_collection_officer_to_sales_invoice_on_workflow_state(doc, method):
                     'doctype': doc.doctype,
                     'name': doc.name,
                     'assign_to': collection_officer[0],
-                    'description': (_('The Sales Invoice {0} is ready for Delivery.\n Please attach the delivered invoice copy to the Sales Invoice').format(doc.name))
+                    'description': (('The Sales Invoice {0} is ready for Delivery.\n Please attach the delivered invoice copy to the Sales Invoice').format(doc.name))
                 })
             else:
-                frappe.msgprint(_('Please Assing a User for Collection Officer Role!'))
+                # frappe.msgprint(_('Please Assing a User for Collection Officer Role!'))
+                frappe.msgprint(('Please Assing a User for Collection Officer Role!'))
         except DuplicateToDoError:
             frappe.message_log.pop()
             pass
