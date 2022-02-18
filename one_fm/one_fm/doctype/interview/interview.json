@@ -109,7 +109,7 @@
    "fieldname": "language",
    "fieldtype": "Link",
    "label": "Language",
-   "options": "Interview"
+   "options": "Language"
   },
   {
    "fieldname": "experience",
@@ -177,7 +177,7 @@
   }
  ],
  "links": [],
- "modified": "2020-11-02 12:49:49.058944",
+ "modified": "2022-02-10 16:57:32.848536",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Interview",

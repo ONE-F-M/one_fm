@@ -14,13 +14,13 @@ $.extend(frappe.meta, {
                 print_format_list.push(d.name);
             }
         });
-   
+
         if(default_print_format && default_print_format != "Standard") {
             var index = print_format_list.indexOf(default_print_format);
             print_format_list.splice(index, 1).sort();
             print_format_list.unshift(default_print_format);
         }
-   
+
         if(cur_frm.doc.format){ //newly added if condition
             var index = print_format_list.indexOf(cur_frm.doc.format);
             print_format_list.splice(index, 1).sort();
@@ -34,40 +34,41 @@ frappe.ui.form.on('Sales Invoice', {
     validate: function(frm){
         if(frm.doc.__islocal || frm.doc.docstatus==0){
             if(frm.doc.project){
-                set_income_account_and_cost_center(frm);
+                // set_income_account_and_cost_center(frm);
             }
-        }     
+        }
     },
 	refresh(frm) {
         frm.set_df_property('contracts', 'read_only', 1);
-        frm.cscript.delivery_note_btn = function() {
-            var me = this;
-            this.$delivery_note_btn = this.frm.add_custom_button(__('Delivery Note'),
-                function() {
-                    erpnext.utils.map_current_doc({
-                        method: "erpnext.stock.doctype.delivery_note.delivery_note.make_sales_invoice",
-                        source_doctype: "Delivery Note",
-                        target: me.frm,
-                        date_field: "posting_date",
-                        setters: {
-                            customer: me.frm.doc.customer || undefined,
-                            project: me.frm.doc.project || undefined
-                        },
-                        get_query: function() {
-                            var filters = {
-                                docstatus: 1,
-                                company: me.frm.doc.company,
-                                is_return: 0
-                            };
-                            if(me.frm.doc.customer) filters["customer"] = me.frm.doc.customer;
-                            return {
-                                query: "one_fm.one_fm.delivery_note_custom.get_delivery_notes_to_be_billed",
-                                filters: filters
-                            };
-                        }
-                    });
-                }, __("Get items from"));
-        }
+        // frm.cscript.delivery_note_btn = function() {
+        //     var me = this;
+        //     this.$delivery_note_btn = this.frm.add_custom_button(__('Delivery Note'),
+        //         function() {
+        //             erpnext.utils.map_current_doc({
+        //                 method: "erpnext.stock.doctype.delivery_note.delivery_note.make_sales_invoice",
+        //                 source_doctype: "Delivery Note",
+        //                 target: me.frm,
+        //                 date_field: "posting_date",
+        //                 setters: {
+        //                     customer: me.frm.doc.customer || undefined,
+        //                     project: me.frm.doc.project || undefined
+        //                 },
+        //                 get_query: function() {
+        //                     var filters = {
+        //                         docstatus: 1,
+        //                         company: me.frm.doc.company,
+        //                         is_return: 0
+        //                     };
+        //                     if(me.frm.doc.customer) filters["customer"] = me.frm.doc.customer;
+        //                     return {
+        //                         query: "one_fm.one_fm.delivery_note_custom.get_delivery_notes_to_be_billed",
+        //                         filters: filters
+        //                     };
+        //                 }
+        //             });
+        //         }, __("Get items from"));
+        // }
+
         if(frm.doc.customer){
             frm.set_query("project", function() {
                 return {
@@ -78,15 +79,15 @@ frappe.ui.form.on('Sales Invoice', {
             });
             frm.refresh_field("project");
         }
-        frm.fields_dict['items'].grid.get_field('income_account').get_query = function() {
-            return {    
-                filters:{
-                    root_type:'Income',
-                    is_group: 0
-                }
-            }
-        }
-        frm.refresh_field("items");
+        // frm.fields_dict['items'].grid.get_field('income_account').get_query = function() {
+        //     return {
+        //         filters:{
+        //             root_type:'Income',
+        //             is_group: 0
+        //         }
+        //     }
+        // }
+        // frm.refresh_field("items");
     },
     customer: function(frm){
         if(frm.doc.project){
@@ -176,6 +177,7 @@ frappe.ui.form.on('Sales Invoice', {
             });
         }
     },
+
     contracts: function(frm){
         if(frm.doc.contracts){
             frm.clear_table("items");

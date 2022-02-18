@@ -1,0 +1,56 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-02-13 18:56:42.837561",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "collection_settings_section",
+  "assign_collection_officer_to_sales_invoice_on_workflow_state",
+  "sales_invoice_workflow_sate_to_assign_collection_officer"
+ ],
+ "fields": [
+  {
+   "fieldname": "collection_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Collection Settings"
+  },
+  {
+   "default": "0",
+   "description": "Automatically Assign the Sales Invoice to the Collection Officer upon Workflow State Update",
+   "fieldname": "assign_collection_officer_to_sales_invoice_on_workflow_state",
+   "fieldtype": "Check",
+   "label": "Assign Collection Officer to Sales Invoice on Workflow State"
+  },
+  {
+   "depends_on": "assign_collection_officer_to_sales_invoice_on_workflow_state",
+   "fieldname": "sales_invoice_workflow_sate_to_assign_collection_officer",
+   "fieldtype": "Select",
+   "label": "Sales Invoice Workflow Sate to Assign Collection Officer",
+   "mandatory_depends_on": "assign_collection_officer_to_sales_invoice_on_workflow_state"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2022-02-18 09:40:57.107250",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Accounts Additional Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
