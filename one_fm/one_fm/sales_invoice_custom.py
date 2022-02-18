@@ -1027,8 +1027,6 @@ def assign_collection_officer_to_sales_invoice_on_workflow_state(doc, method):
                     'description': (_('The Sales Invoice {0} is ready for Delivery.\n Please attach the delivered invoice copy to the Sales Invoice').format(doc.name))
                 })
             else:
-                from one_fm.one_fm.utils import create_role_if_not_exists
-                create_role_if_not_exists('Collection Officer')
                 frappe.msgprint(_('Please Assing a User for Collection Officer Role!'))
         except DuplicateToDoError:
             frappe.message_log.pop()
