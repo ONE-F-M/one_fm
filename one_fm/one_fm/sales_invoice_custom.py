@@ -10,7 +10,6 @@ from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.operations.doctype.contracts.contracts import get_contracts_items
 
-#from frappe import _
 
 def create_sales_invoice():
     today = date.today()
