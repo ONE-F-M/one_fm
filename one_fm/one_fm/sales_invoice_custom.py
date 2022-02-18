@@ -6,7 +6,7 @@ from frappe.utils import getdate,get_first_day,get_last_day,add_days,add_months,
 from one_fm.one_fm.timesheet_custom import timesheet_automation,calculate_hourly_rate,days_of_month
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
-#from frappe import _
+from frappe import _
 
 def create_sales_invoice():
     today = date.today()
