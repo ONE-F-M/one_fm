@@ -5,7 +5,8 @@ import frappe
 from frappe.model.document import Document
 
 class AccountsAdditionalSettings(Document):
-	pass
+	def onload(self):
+		self.set_onload('collection_officer_role_exists', frappe.db.exists("Role", {"role_name": 'Collection Officer'}))
 
 @frappe.whitelist()
 def get_options_for_assign_collection_officer_on_workflow_sate():
