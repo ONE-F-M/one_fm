@@ -1029,7 +1029,7 @@ def assign_collection_officer_to_sales_invoice_on_workflow_state(doc, method):
                     'doctype': doc.doctype,
                     'name': doc.name,
                     'assign_to': collection_officer[0],
-                    'description': (_('The Sales Invoice {0} is ready for Delivery. Please attach the delivered invoice copy to the Sales Invoice'.format(doc.name)))
+                    'description': _('The Sales Invoice {0} is ready for Delivery. Please attach the delivered invoice copy to the Sales Invoice'.format(doc.name))
                 })
             else:
                 frappe.msgprint(_('Please Assing a User for Collection Officer Role!'))
