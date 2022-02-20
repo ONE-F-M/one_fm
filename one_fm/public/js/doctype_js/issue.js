@@ -41,7 +41,7 @@ let add_pivotal_section = frm => {
   if(frm.doc.status=='Open' && frappe.user.has_role('System Manager')
     && frm.doc.pivotal_tracker && !document.querySelector('#pivotal_tracker_span')){
     let el = `
-    <span id="pivotal_tracker_span">Issue has been logged to Pivotal tracker</span><br>
+    <span id="pivotal_tracker_span">Issue have been logged to Pivotal tracker</span><br>
     <a href="${frm.doc.pivotal_tracker}" class="btn btn-primary" target="_blank">Pivotal Tracker</a>
     `;
     frm.dashboard.add_section(el, __("Pivotal Tracker"))

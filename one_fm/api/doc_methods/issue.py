@@ -38,7 +38,7 @@ def log_pivotal_tracker():
             doc.db_set('pivotal_tracker', f"https://www.pivotaltracker.com/n/projects/{project_id}/stories/{response_data.id}")
             return {'status':'success'}
         else:
-            frappe.throw(f"Pivotal Tracker could not be created:\n {req.json()}")
+            frappe.throw(f"Pivotal Tracker story could not be created:\n {req.json()}")
     except Exception as e:
-        frappe.throw(f"Pivotal Tracker could not be created:\n {str(e)}")
+        frappe.throw(f"Pivotal Tracker story could not be created:\n {str(e)}")
         frappe.log_error(str(e), 'Issue Pivotal Tracker')
