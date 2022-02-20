@@ -80,6 +80,7 @@ doctype_js = {
 	"Employee": "public/js/doctype_js/employee.js",
 	"Salary Slip": "public/js/doctype_js/salary_slip.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
+	"Issue": "public/js/doctype_js/issue.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
