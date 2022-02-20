@@ -1410,6 +1410,7 @@ def validate_job_applicant(doc, method):
     set_job_applicant_status(doc, method)
     set_average_score(doc, method)
     if doc.is_new():
+        set_erf_days_off_details(doc)
         set_childs_for_application_web_form(doc, method)
     elif not doc.one_fm_documents_required:
         set_required_documents(doc, method)
@@ -1421,6 +1422,13 @@ def validate_job_applicant(doc, method):
         """This part is comparing the number of children with the listed children details in the table and ask user to add all childrens"""
         if doc.one_fm_number_of_kids != len(doc.one_fm_kids_details):
             frappe.throw("Please List All Children in the Table.")
+
+def set_erf_days_off_details(doc):
+    if doc.one_fm_erf:
+        off_days = frappe.db.get_value('ERF', doc.one_fm_erf, 'off_days')
+        if off_days and off_days > 0:
+            doc.number_of_days_off = off_days
+            doc.day_off_category = 'Monthly'
 
 def validate_pam_file_number_and_pam_designation(doc, method):
     if doc.one_fm_erf:

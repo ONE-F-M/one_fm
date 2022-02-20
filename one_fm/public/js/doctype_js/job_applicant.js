@@ -1143,6 +1143,10 @@ var set_work_details_section = function(frm, erf) {
 
 var set_erf_basic_details = function(frm, erf) {
 	frm.set_value('one_fm_hiring_method', erf.hiring_method);
+	if(erf.working_days && erf.off_days && erf.off_days > 0){
+		frm.set_value('day_off_category', 'Monthly');
+		frm.set_value('number_of_days_off', erf.off_days);
+	}
 };
 
 var set_job_opening_to_applicant = function(frm) {
