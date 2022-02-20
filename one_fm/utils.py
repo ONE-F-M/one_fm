@@ -1623,13 +1623,13 @@ def set_job_applicant_status(doc, method):
 
 def create_job_offer_from_job_applicant(job_applicant):
     if not frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
-        if not job_applicant.number_of_days_off:
-            frappe.throw(_("Please set the number of days off."))
-        if job_applicant.day_off_category == "Weekly" and frappe.utils.cint(job_applicant.number_of_days_off) > 7:
-            frappe.throw(_("Number of days off cannot be more than a Week!"))
-        elif job_applicant.day_off_category == "Monthly" and frappe.utils.cint(job_applicant.number_of_days_off) > 30:
-            frappe.throw(_("Number of days off cannot be more than a Month!"))
         job_app = frappe.get_doc('Job Applicant', job_applicant)
+        if not job_app.number_of_days_off:
+            frappe.throw(_("Please set the number of days off."))
+        if job_app.day_off_category == "Weekly" and frappe.utils.cint(job_app.number_of_days_off) > 7:
+            frappe.throw(_("Number of days off cannot be more than a Week!"))
+        elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
+            frappe.throw(_("Number of days off cannot be more than a Month!"))
         erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         job_offer = frappe.new_doc('Job Offer')
         job_offer.job_applicant = job_app.name
