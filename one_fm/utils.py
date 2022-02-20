@@ -1621,6 +1621,7 @@ def create_job_offer_from_job_applicant(job_applicant):
         job_offer.job_applicant = job_app.name
         job_offer.applicant_name = job_app.applicant_name
         job_offer.offer_date = today()
+        job_offer.number_of_days_off = erf.off_days
         set_erf_details(job_offer, erf)
         job_offer.save(ignore_permissions = True)
 
