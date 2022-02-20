@@ -1410,6 +1410,7 @@ def validate_job_applicant(doc, method):
     set_job_applicant_status(doc, method)
     set_average_score(doc, method)
     if doc.is_new():
+        set_erf_days_off_details(doc)
         set_childs_for_application_web_form(doc, method)
     elif not doc.one_fm_documents_required:
         set_required_documents(doc, method)
@@ -1421,6 +1422,13 @@ def validate_job_applicant(doc, method):
         """This part is comparing the number of children with the listed children details in the table and ask user to add all childrens"""
         if doc.one_fm_number_of_kids != len(doc.one_fm_kids_details):
             frappe.throw("Please List All Children in the Table.")
+
+def set_erf_days_off_details(doc):
+    if doc.one_fm_erf:
+        off_days = frappe.db.get_value('ERF', doc.one_fm_erf, 'off_days')
+        if off_days and off_days > 0:
+            doc.number_of_days_off = off_days
+            doc.day_off_category = 'Monthly'
 
 def validate_pam_file_number_and_pam_designation(doc, method):
     if doc.one_fm_erf:
@@ -1615,11 +1623,19 @@ def set_job_applicant_status(doc, method):
 
 def create_job_offer_from_job_applicant(job_applicant):
     if not frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
+        if not job_applicant.number_of_days_off:
+            frappe.throw(_("Please set the number of days off."))
+        if job_applicant.day_off_category == "Weekly" and frappe.utils.cint(job_applicant.number_of_days_off) > 7:
+            frappe.throw(_("Number of days off cannot be more than a Week!"))
+        elif job_applicant.day_off_category == "Monthly" and frappe.utils.cint(job_applicant.number_of_days_off) > 30:
+            frappe.throw(_("Number of days off cannot be more than a Month!"))
         job_app = frappe.get_doc('Job Applicant', job_applicant)
         erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         job_offer = frappe.new_doc('Job Offer')
         job_offer.job_applicant = job_app.name
         job_offer.applicant_name = job_app.applicant_name
+        job_offer.day_off_category = job_app.day_off_category
+        job_offer.number_of_days_off = job_app.number_of_days_off
         job_offer.offer_date = today()
         set_erf_details(job_offer, erf)
         job_offer.save(ignore_permissions = True)
