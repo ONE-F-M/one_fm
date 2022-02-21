@@ -159,7 +159,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": "employee.one_fm_basic_salary",
    "fieldname": "basic_salary",
    "fieldtype": "Currency",
    "label": "Basic Salary",
@@ -183,7 +182,7 @@
  "icon": "fa fa-ok",
  "is_submittable": 1,
  "links": [],
- "modified": "2021-05-05 02:34:14.005814",
+ "modified": "2022-02-17 11:19:47.187011",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Indemnity",
