@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 
+frappe.whitelist()
 def fetch_salary_component(doc, method):
     """This Function Fetches the Salary Components from a given Salary Structure.
         It further calculates the amount of each component if the component amount is based on 
