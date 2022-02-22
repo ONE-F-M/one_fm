@@ -219,15 +219,7 @@ frappe.ui.form.on('Contracts', {
             }
         }
         frm.refresh_field("items");
-		// frm.fields_dict['assets'].grid.get_field('item_code').get_query = function() {
-    //         return {
-    //             filters:{
-		// 			is_stock_item: 1,
-		// 			is_sales_item: 1,
-    //                 disabled: 0
-    //             }
-    //         }
-		// }
+
 		frm.fields_dict['items'].grid.get_field('site').get_query = function() {
             return {
                 filters:{
@@ -347,9 +339,6 @@ function set_contact(doc){
 }
 
 frappe.ui.form.on('Contract Item', {
-	// refresh: (frm, cdt, cdn)=>{
-	//
-	// },
 	uom: (frm, cdt, cdn)=>{
 		// check uom agains Service item
 		let row = locals[cdt][cdn];
