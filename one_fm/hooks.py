@@ -318,7 +318,7 @@ website_route_rules = [
 # }
 
 # Scheduled Tasks
-# --------------- 
+# ---------------
 
 scheduler_events = {
 	"daily": [
@@ -373,6 +373,9 @@ scheduler_events = {
 		],
 		"0 8 15 * *": [
 			'one_fm.grd.doctype.preparation.preparation.create_preparation',
+		],
+		"15 3 * * *": [
+			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
 		"0 8 1 * *": [# first day of the Month at 8 am
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
