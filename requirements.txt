@@ -7,3 +7,5 @@ datefinder
 google_trans_new
 firebase-admin
 openpyxl
+grpcio
+grpcio-tools
