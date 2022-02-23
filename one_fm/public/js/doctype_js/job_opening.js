@@ -35,7 +35,7 @@ var validate_date = function(frm) {
 };
 
 var set_my_dash_board = function(frm) {
-	dashboard_link_doctype(frm, "Note", 'one_fm_job_opening');
+	//dashboard_link_doctype(frm, "Note", 'one_fm_job_opening');
 	// dashboard_link_doctype(frm, "Job Opening Add", 'job_opening');
 
 	// Hide + button

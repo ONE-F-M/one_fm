@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-02-20 09:37:03.203235",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "app_name",
+  "setting",
+  "url"
+ ],
+ "fields": [
+  {
+   "fieldname": "app_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "App Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "setting",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Setting",
+   "options": "API Integration",
+   "reqd": 1
+  },
+  {
+   "depends_on": "setting",
+   "fetch_from": "setting.url",
+   "fetch_if_empty": 1,
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "URL"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-02-20 09:37:03.203235",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Default API Integration Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

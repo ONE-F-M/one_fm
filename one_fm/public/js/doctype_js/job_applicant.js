@@ -55,7 +55,7 @@ frappe.ui.form.on('Job Applicant', {
 				},'Action');
 			frm.add_custom_button(__(''), function() {
 				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-			
+
 			// view career history button only when career history exist.
 			if(frm.doc.one_fm_job_applicant_score.find(i => i.reference_dt == "Career History")){
 			frm.add_custom_button(__('View Career History'), function() {
@@ -78,7 +78,7 @@ frappe.ui.form.on('Job Applicant', {
 				frm.add_custom_button(__('Create An Interview'), function() {
 					view_interview(frm);
 				},'Action');
-			
+
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			frm.add_custom_button(__('Best Reference'), function() {
@@ -86,7 +86,7 @@ frappe.ui.form.on('Job Applicant', {
 				  },'Action');
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-		
+
 			if (frm.doc.__onload && frm.doc.__onload.job_offer) {
 				if(frm.doc.status != 'Accepted' && frm.doc.status != 'Rejected'){
 					frm.add_custom_button(__('Accept Offer'), function() {
@@ -99,10 +99,15 @@ frappe.ui.form.on('Job Applicant', {
 				frm.add_custom_button(__(''), function() {
 				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			}
-			
+
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
 				frm.add_custom_button(__('Select Applicant'), function() {
-					change_applicant_status(frm, 'one_fm_applicant_status', 'Selected');
+					if(frm.doc.day_off_category && frm.doc.number_of_days_off && frm.doc.number_of_days_off > 0){
+						change_applicant_status(frm, 'one_fm_applicant_status', 'Selected');
+					}
+					else{
+						frappe.throw(__("Please Update Day off Details to Proceed !!"));
+					}
 				},"Action");
 				frm.add_custom_button(__('Reject Applicant'), function() {
 					if (frm.doc.__onload && frm.doc.__onload.job_offer) {
@@ -137,7 +142,7 @@ frappe.ui.form.on('Job Applicant', {
 // 				}
 // 			});
 				}
-		
+
 	},
 	one_fm_change_pam_file_number: function(frm){
 		// on the change of pam desigantion change the button color and set the flag value
@@ -1138,6 +1143,10 @@ var set_work_details_section = function(frm, erf) {
 
 var set_erf_basic_details = function(frm, erf) {
 	frm.set_value('one_fm_hiring_method', erf.hiring_method);
+	if(erf.working_days && erf.off_days && erf.off_days > 0){
+		frm.set_value('day_off_category', 'Monthly');
+		frm.set_value('number_of_days_off', erf.off_days);
+	}
 };
 
 var set_job_opening_to_applicant = function(frm) {

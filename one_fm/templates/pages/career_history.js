@@ -143,7 +143,7 @@ career_history = Class.extend({
         <input type="text" class="form-control company_${company_no}_name" placeholder="Enter the ${stringifyNumber(company_no)} Company Name"/>
       </div>
       <div class="my-5 col-lg-6 col-md-6">
-        <label class="form-label">Where is it Located? </label> <br>
+        <label class="form-label">Select Country of Employment</label> <br>
         <select class="form-control country_of_company_${company_no}">
           <option>Select Country</option>
           {% for country in country_list %}

@@ -384,7 +384,8 @@ def insert_login_credential(url, user_name, password, client):
 def auto_renew_contracts():
 	filters = {
 		'end_date' : today(),
-		'is_auto_renewal' : 1
+		'is_auto_renewal' : 1,
+		'workflow_state': 'Active'
 	}
 	contracts_list = frappe.db.get_list('Contracts', fields="name", filters=filters, order_by="start_date")
 	for contract in contracts_list:
