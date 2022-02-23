@@ -9,10 +9,11 @@
   "api_name",
   "api_key",
   "api_secret",
-  "column_break_3",
   "api_token",
   "url",
-  "project_id"
+  "project_id",
+  "column_break_3",
+  "api_parameter"
  ],
  "fields": [
   {
@@ -51,10 +52,16 @@
    "fieldname": "project_id",
    "fieldtype": "Password",
    "label": "Project ID"
+  },
+  {
+   "fieldname": "api_parameter",
+   "fieldtype": "Table",
+   "label": "API Parameter",
+   "options": "API Parameter"
   }
  ],
  "links": [],
- "modified": "2022-02-20 09:56:08.761115",
+ "modified": "2022-02-23 13:29:22.970891",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "API Integration",
