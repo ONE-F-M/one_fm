@@ -15,6 +15,7 @@ from one_fm.hiring.utils import grant_leave_alloc_for_employee
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 from one_fm.operations.doctype.contracts.contracts import calculate_item_values
 
+
 __version__ = '0.12.2'
 
 
