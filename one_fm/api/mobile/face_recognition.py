@@ -1,7 +1,10 @@
 import frappe, ast, base64, time
 from frappe import _
-from one_fm.one_fm.page.face_recognition.face_recognition import setup_directories, create_dataset, verify_face, recognize_face, check_in
+from one_fm.one_fm.page.face_recognition.face_recognition import setup_directories, create_dataset, check_in
 from one_fm.api.mobile.roster import get_current_shift
+from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc
+import json
+import grpc
 
 
 @frappe.whitelist()
@@ -40,23 +43,37 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 	"""
 	try:
 		setup_directories()
-		content = base64.b64decode(video)
-		filename = frappe.session.user+".mp4"	
-		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
+		# Get user encoding file
+		encoding_file_path = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"+frappe.session.user+".json"
+		encoding_content_json = json.loads(open(encoding_file_path, "rb").read()) # dict
+		encoding_content_str = json.dumps(encoding_content_json) # str
+		encoding_content_bytes = encoding_content_str.encode('ascii')
+		encoding_content_base64_bytes = base64.b64encode(encoding_content_bytes)
+		user_encoding_json = encoding_content_base64_bytes.decode('ascii')
 
-		with open(OUTPUT_IMAGE_PATH, "wb") as fh:
-			fh.write(content)
-			live_start = time.time()
-			blinks, image = verify_face(OUTPUT_IMAGE_PATH)     #calling verification function for face
-			if blinks > 0:
-				if recognize_face(image):   #calling recognition function 
-					return check_in(log_type, skip_attendance, latitude, longitude)
-				else:
-					return ('Face Recognition Failed. Please try again.')
-					frappe.throw(_('Face Recognition Failed. Please try again.'))
-			else:
-				return ('Liveness Detection Failed. Please try again.')
-				frappe.throw(_('Liveness Detection Failed. Please try again.'))
+		# setup channel
+		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+		channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+		# setup stub
+		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+
+		# request body
+		req = facial_recognition_pb2.Request(
+			username = frappe.session.user,
+			user_encoded_video = video,
+			user_encoding = user_encoding_json
+		)
+		# Call service stub and get response
+		res = stub.FaceRecognition(req)
+
+		if res.verification == "FAILED":
+			msg = res.message
+			data = res.data
+
+			return ("{msg}. {data}".format(msg=msg, data=data))
+
+		return check_in(log_type, skip_attendance, latitude, longitude)
+
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		return frappe.utils.response.report_error(exc)
