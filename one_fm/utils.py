@@ -2252,15 +2252,22 @@ def send_verification_code(doctype, document_name):
         verification_code = generate_code()
         employee_user_email = frappe.session.user
         subject = _("Verification code for {doctype}.".format(doctype=doctype))
-
-
+        logo = "https://one-fm.com/files/onefmlogo.png"
+        
         message = """Dear user,<br><br>
             An attempt was made to use your signature in {doctype}: {document}.<br><br>
             To use your signature, use the verification code: <b>{verification_code}</b>.<br><br>
             If this was not you, ignore this email.<br>
             """.format(doctype=doctype, document=document_name, verification_code=verification_code)
-
-        frappe.sendmail([employee_user_email], subject=subject, content=message, delayed=False)
+        frappe.sendmail(template = "default_email",
+                        recipients=[employee_user_email],
+                        subject=subject,
+                        args=dict(
+                            subject=subject,
+                            message=message,
+                            logo=logo
+                        ),
+                        delayed=False)
 
         cache_key = hashlib.md5((employee_user_email + doctype + document_name).encode('utf-8')).hexdigest()
         cache_value = hashlib.md5((employee_user_email + doctype + document_name + str(verification_code)).encode('utf-8')).hexdigest()
