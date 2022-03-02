@@ -2255,7 +2255,7 @@ def send_verification_code(doctype, document_name):
             If this was not you, ignore this email.<br>
             """.format(doctype=doctype, document=document_name, verification_code=verification_code)
         header = [_('Verfication Code'), 'blue']
-        sendemail([employee_user_email], subject, message, reference_doctype=doctype, reference_name=document_name, header=header, delay=False)
+         sendemail([employee_user_email], subject=subject, header=header,message=message, reference_doctype=doctype, reference_name=document_name, delay=False)
 
         cache_key = hashlib.md5((employee_user_email + doctype + document_name).encode('utf-8')).hexdigest()
         cache_value = hashlib.md5((employee_user_email + doctype + document_name + str(verification_code)).encode('utf-8')).hexdigest()
@@ -2320,12 +2320,11 @@ def sendemail(recipients, subject, header=None, message=None, content=None, refe
                     recipients=recipients,
                     sender= sender,
                     cc=cc,
-                    header=header,
-                    reference_name= docname,
-                    reference_doctype = doctype,
+                    reference_name= reference_name,
+                    reference_doctype = reference_doctype,
                     subject=subject,
                     args=dict(
-                        header=header,
+                        header=header[0],
                         subject=subject,
                         message=message,
                         content=content,
