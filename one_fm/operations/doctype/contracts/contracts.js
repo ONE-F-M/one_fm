@@ -5,12 +5,13 @@ var values = '';
 
 function open_form(frm, doctype, child_doctype, parentfield) {
 	frappe.model.with_doctype(doctype, () => {
-        let new_doc = frappe.model.get_new_doc(doctype);
-        new_doc.type  = 'Contracts';
+    let new_doc = frappe.model.get_new_doc(doctype);
+    new_doc.type  = 'Contracts';
 		new_doc.amended_from = frm.doc.name;
 		new_doc.client = frm.doc.client;
 		new_doc.project = frm.doc.project;
 		new_doc.price_list = frm.doc.price_list;
+		new_doc.workflow_state = '';
 		frappe.ui.form.make_quick_entry(doctype, null, null, new_doc);
 	});
 
@@ -87,43 +88,71 @@ frappe.ui.form.on('Contracts', {
 			}
 		}
 	},
-	items_on_form_rendered: (frm)=>{
-		// set tiems properties
-		frm.doc.items.forEach((item, i) => {
-			change_items_table_properties(frm, item);
-		})
+	before_insert: (frm)=>{
+		if(frm.is_new()){
+			frm.doc.workflow_state=null;
+		}
 	},
 	refresh:function(frm){
 		// create delivery note and reroute to the form in draft mode
-		frm.add_custom_button(__("Create Delivery Note"), function() {
-			create_delivery_note(frm);
-		}).addClass('btn btn-danger');
+
 
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
 
+			//  Amend contract
 			frm.add_custom_button(__("Amend Contract"), function() {
 				open_form(frm, "Contracts", null, null);
 			});
+
+		} else if(frm.doc.workflow_state=='Active' && frappe.user_roles.includes("Finance Manager")){
+			// create Delivery Note
+			frm.add_custom_button(__("Create Delivery Note"), function() {
+				create_delivery_note(frm);
+			}).addClass('btn btn-danger');
+			// Generate Invoice
+			frm.add_custom_button(__("Generate Invoice"), function() {
+				// ask for invoice date, then use it for the rest of the activity
+				let d = new frappe.ui.Dialog({
+					title: 'Select Contracts Period',
+					fields: [
+							{
+									label: 'Contract Period',
+									fieldname: 'period',
+									fieldtype: 'Date',
+						reqd:1
+							}
+					],
+					primary_action_label: 'Generate',
+					primary_action(values) {
+					// process generate invoice
+					frappe.call({
+						doc: frm.doc,
+						method: 'generate_sales_invoice',
+						args: values,
+						callback: function(r) {
+							if(!r.exc){
+								frappe.show_alert({
+										message:__('Sales Invoice created successfully'),
+										indicator:'green'
+								}, 5);
+								frappe.msgprint(__('Sales Invoice created successfully'))
+								frm.reload_doc();
+							}
+						},
+						freeze: true,
+						freeze_message: (__('Creating Sales Invoice'))
+					})
+					// end process generate invoice
+							d.hide();
+					}
+			});
+
+			d.show();
+			}).addClass("btn-primary");
 		}
 
-		frm.add_custom_button(__("Generate Invoice"), function() {
-			frappe.call({
-				doc: frm.doc,
-				method: 'generate_sales_invoice',
-				callback: function(r) {
-					if(!r.exc){
-						frappe.show_alert({
-						    message:__('Sales Invoice created successfully'),
-						    indicator:'green'
-						}, 5);
-						frappe.msgprint(__('Sales Invoice created successfully'))
-						frm.reload_doc();
-					}
-				},
-				freeze: true,
-				freeze_message: (__('Creating Sales Invoice'))
-			});
-		}).addClass("btn-primary");
+
+
 		var days,management_fee_percentage,management_fee;
 		frm.set_query("bank_account", function() {
 			return {
@@ -190,16 +219,8 @@ frappe.ui.form.on('Contracts', {
             }
         }
         frm.refresh_field("items");
-		frm.fields_dict['assets'].grid.get_field('item_code').get_query = function() {
-            return {
-                filters:{
-					is_stock_item: 1,
-					is_sales_item: 1,
-                    disabled: 0
-                }
-            }
-		}
-		frm.fields_dict['assets'].grid.get_field('site').get_query = function() {
+
+		frm.fields_dict['items'].grid.get_field('site').get_query = function() {
             return {
                 filters:{
 					project: frm.doc.project
@@ -318,16 +339,6 @@ function set_contact(doc){
 }
 
 frappe.ui.form.on('Contract Item', {
-	refresh: (frm, cdt, cdn)=>{
-		let row = locals[cdt][cdn];
-		change_items_table_properties(frm, row);
-	},
-	subitem_group: (frm, cdt, cdn)=> {
-		let row = locals[cdt][cdn];
-		// change properties for (site, )
-		change_items_table_properties(frm, row);
-		// end change properties
-	},
 	uom: (frm, cdt, cdn)=>{
 		// check uom agains Service item
 		let row = locals[cdt][cdn];
@@ -496,34 +507,9 @@ frappe.ui.form.on('Contract Addendum', {
 })
 
 
-let change_items_table_properties = (frm, row) => {
-	// change Items Table field properties
-	// set Site
-	console.log(row.idx);
-	let idx = $(`[data-idx=${row.idx}]`)[0];
-	if(row.subitem_group=='Service'){
-		idx.querySelector('[data-fieldname="site"]').hidden = true;
-		idx.querySelector('[data-fieldname="management_fee_percentage"]').hidden = false;
-		idx.querySelector('[data-fieldname="management_fee"]').hidden = false;
-		idx.querySelector('[data-fieldname="shift_hours"]').hidden = false;
-		idx.querySelector('[data-fieldname="gender"]').hidden = false;
-		idx.querySelector('[data-fieldname="days_off"]').hidden = false;
-		idx.querySelector('[data-fieldname="days"]').hidden = false;
-	} else {
-		idx.querySelector('[data-fieldname="site"]').hidden = false;
-		idx.querySelector('[data-fieldname="management_fee_percentage"]').hidden = true;
-		idx.querySelector('[data-fieldname="management_fee"]').hidden = true;
-		idx.querySelector('[data-fieldname="shift_hours"]').hidden = true;
-		idx.querySelector('[data-fieldname="gender"]').hidden = true;
-		idx.querySelector('[data-fieldname="days_off"]').hidden = true;
-		idx.querySelector('[data-fieldname="days"]').hidden = true;
-	}
-}
-
-
 // create delivery note
 let create_delivery_note = frm => {
-	if(frm.doc.create_sales_invoice_as==''){
+	if(frm.doc.create_sales_invoice_as=="Single Invoice"){
 		// Create general delivery note on single invoice
 
 			let table_fields = dn_table_field(frm);

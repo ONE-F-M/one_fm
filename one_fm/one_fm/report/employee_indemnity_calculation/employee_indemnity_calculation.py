@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.utils import getdate, date_diff, add_days, month_diff, formatdate, add_months, get_last_day
-from one_fm.one_fm.hr_utils import get_total_indemnity, get_per_day_indemnity_amount
+from one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation import get_total_indemnity, get_per_day_indemnity_amount
 from calendar import monthrange
 
 def execute(filters=None):
@@ -58,17 +58,19 @@ def get_data(filters):
 		late_day = get_last_day(to_date) #last date of a given month
 		if to_date >= getdate(employee.date_of_joining):
 			indemnity_allcn = frappe.db.exists('Indemnity Allocation', {'employee': employee.name, 'expired': False})
-			if indemnity_allcn:
+			indemnity_amount = frappe.get_value("Salary Structure Assignment",{"employee":employee.name},["indemnity_amount"])
+
+			if indemnity_allcn and indemnity_amount:
 				if (user in ["Administrator", employee.user_id]) or ("HR Manager" in frappe.get_roles(user)):
-					#get indemnity Amount from Salary Structure Assignment
-					indemnity_amount = frappe.get_value("Salary Structure Assignment",{"employee":employee.name},["indemnity_amount"])
 					row = [employee.name, employee.employee_id, employee.employee_name, employee.date_of_joining, employee.department, indemnity_amount]
 					
+					per_day_amount = indemnity_amount/26
+					
 					#get Indemnity from joining date up intil "To_date"
-					indemnity_as_on = get_total_indemnity(employee.date_of_joining, to_date, indemnity_amount)
+					indemnity_as_on = get_total_indemnity(employee.date_of_joining, to_date) * per_day_amount
 					
 					#get per day allocation * no. of days's in the month.
-					provision_indemnity = get_per_day_indemnity_amount(employee.date_of_joining, late_day, indemnity_amount) * monthrange(to_date.year, to_date.month)[1]
+					provision_indemnity = get_per_day_indemnity_amount(employee.date_of_joining, late_day) * monthrange(to_date.year, to_date.month)[1] * per_day_amount
 
 					# get empoloyee's working period
 					total_period_till_date = date_diff(to_date, employee.date_of_joining)
@@ -87,7 +89,7 @@ def get_data(filters):
 							provision_indemnity = 0
 
 					#getting indemnity up untill end of the given month. 
-					total_indemnity = get_total_indemnity(employee.date_of_joining, late_day, indemnity_amount)
+					total_indemnity = get_total_indemnity(employee.date_of_joining, late_day) * per_day_amount
 
 					#find working duration in terms of year, month and days
 					if total_period_till_date > 0:

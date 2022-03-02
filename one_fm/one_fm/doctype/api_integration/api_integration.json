@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "autoname": "field:api_name",
+ "creation": "2022-02-20 09:29:44.936866",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "api_name",
+  "api_key",
+  "api_secret",
+  "api_token",
+  "url",
+  "project_id",
+  "column_break_3",
+  "api_parameter"
+ ],
+ "fields": [
+  {
+   "fieldname": "api_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "API Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "API Key"
+  },
+  {
+   "fieldname": "api_secret",
+   "fieldtype": "Password",
+   "label": "API Secret"
+  },
+  {
+   "fieldname": "api_token",
+   "fieldtype": "Password",
+   "label": "API Token"
+  },
+  {
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "label": "URL"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project_id",
+   "fieldtype": "Password",
+   "label": "Project ID"
+  },
+  {
+   "fieldname": "api_parameter",
+   "fieldtype": "Table",
+   "label": "API Parameter",
+   "options": "API Parameter"
+  }
+ ],
+ "links": [],
+ "modified": "2022-02-23 13:29:22.970891",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "API Integration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

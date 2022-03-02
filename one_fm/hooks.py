@@ -80,6 +80,7 @@ doctype_js = {
 	"Employee": "public/js/doctype_js/employee.js",
 	"Salary Slip": "public/js/doctype_js/salary_slip.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
+	"Issue": "public/js/doctype_js/issue.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -252,7 +253,8 @@ doc_events = {
 	},
 	"Sales Invoice":{
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice",
-		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts"
+		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
+		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
 	"Salary Slip": {
 		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
@@ -324,8 +326,8 @@ scheduler_events = {
 		'one_fm.utils.pam_authorized_signatory',
 		'one_fm.utils.hooked_leave_allocation_builder',
 		'one_fm.utils.increase_daily_leave_balance',
-		'one_fm.one_fm.hr_utils.daily_indemnity_allocation_builder',
-		'one_fm.one_fm.hr_utils.allocate_daily_indemnity',
+		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.daily_indemnity_allocation_builder',
+		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.allocate_daily_indemnity',
 		'one_fm.utils.check_grp_operator_submission_daily',
 		'one_fm.utils.check_grp_supervisor_submission_daily',
 		'one_fm.utils.check_pam_visa_approval_submission_daily',
@@ -336,7 +338,8 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
-		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today'
+		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
+		'one_fm.tasks.execute.hourly'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -370,6 +373,9 @@ scheduler_events = {
 		],
 		"0 8 15 * *": [
 			'one_fm.grd.doctype.preparation.preparation.create_preparation',
+		],
+		"15 3 * * *": [
+			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
 		"0 8 1 * *": [# first day of the Month at 8 am
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
