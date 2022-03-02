@@ -2,43 +2,58 @@
     .facebook_logo, .twitter_logo, .linkedin_logo, .instagram_logo{
         width:4vw;
         height:auto;
-        margin: 1vw;
+        margin: 0 1vw;
+    }
+    .brand_logo{
+        width: 15vw;
     }
 </style>
-<div style="background-color: #f9fafa;border-radius: 2vw;padding: 1vh 3vw 4vh 3vw;">
-	<div style="text-align: center;padding: 5px 10px"> <img src={{logo}}/></div>
+<div style="background-color: #f9fafa;border-radius: 2vw;padding: 1vh 10vw 4vh 10vw;">
+	<div style="text-align: center;padding: 5px 10px"> 
+        <img class="brand_logo" src={{logo}}/>
+    </div>
     <div style="background-color:white;padding: 3vw;border-radius: 8px;">
-        <div style="padding: 2vh 5vw;;">  
-            <p>{{message}}</p>
+        <div style="padding: 2vh 5vw;;"> 
+             
+            {% if header is not none %}   
+            <h5> {{header}}</h5>
+            {% endif %} 
+
+            {% if message is not none %}   
+                {{message}}
+            {% endif %}
+        
+            {% if content is not none %}   
+                {{ content }}
+            {% endif %}
         </div>
        
         <div class="email-signature">
             <h5 style="margin-bottom: 0px;">Yours, One Facility Management</h5>
             <a href="mailto:support@one-fm.com">support@one-fm.com</a>
         </div>
+        <hr>
+        <div >
+            
+            <div style="display:block;text-align: center;">
+                <div style="color: #454a4a;  ">
+                    <h4 style="margin: 0;">Address: 
+                        <a style="text-decoration: none;" href="https://www.google.com/maps/place/Hamoud+tower/@29.3658012,47.9636465,17z/data=!3m1!4b1!4m5!3m4!1s0x3fcf8510944c639d:0xfc7b06c6ef4bbb2b!8m2!3d29.3657948!4d47.9658511?hl=en&shorturl=1">
+                            9th Floor, Humoud Tower, Qibla, Kuwait City, Kuwait</a> 
+                    </h4>
+                </div>
+                <div style="display:flex;padding-left: 15vw;">
+                    <a href="https://www.facebook.com/ONEFacilitiesManagementCompany/" ><img class="facebook_logo" src="https://one-fm.com/files/facebook.png"/></a>
+                    <a href="https://twitter.com/facilitiesone" ><img class="twitter_logo" src="https://one-fm.com/files/twitter.png"/></a>
+                    <a href="https://kw.linkedin.com/company/one-facilities-management-kuwait" ><img class="linkedin_logo" src="https://one-fm.com/files/linkedin.png"/></a>
+                    <a href="https://www.instagram.com/onefmkuwait" ><img class="instagram_logo" src="https://one-fm.com/files/instagram.png"/></a>
+                </div>
+            </div>                                                                   
+            <p style="color:#a8b0b0 ;">The content of this email is confidential and intended for the recipient
+            specified in the message only. It is strictly forbidden to share any part of this message 
+            with any third party, without the written consent of the sender. If you received this message by 
+            mistake, please reply to this message and follow with its deletion, so that we can ensure such 
+            a mistake does not occur in the future.</p>
+        </div>
 	</div>
-</div>
-<div>
-    <div style="color: #454a4a; ">
-        <h4 >Address: 
-            <a style="text-decoration: none;" href="https://www.google.com/maps/place/Hamoud+tower/@29.3658012,47.9636465,17z/data=!3m1!4b1!4m5!3m4!1s0x3fcf8510944c639d:0xfc7b06c6ef4bbb2b!8m2!3d29.3657948!4d47.9658511?hl=en&shorturl=1">
-                9th Floor, Humoud Tower, Qibla, Kuwait City, Kuwait</a> 
-        </h4>
-    </div>
-    <div style="display: flex;">
-        <div>
-            <img src={{logo}}/>
-        </div>
-        <div style="display:flex;padding-left: 42%;">
-            <a href="https://www.facebook.com/ONEFacilitiesManagementCompany/" ><img class="facebook_logo" src="https://one-fm.com/files/facebook.png"/></a>
-            <a href="https://twitter.com/facilitiesone" ><img class="twitter_logo" src="https://one-fm.com/files/twitter.png"/></a>
-            <a href="https://kw.linkedin.com/company/one-facilities-management-kuwait" ><img class="linkedin_logo" src="https://one-fm.com/files/linkedin.png"/></a>
-            <a href="https://www.instagram.com/onefmkuwait" ><img class="instagram_logo" src="https://one-fm.com/files/instagram.png"/></a>
-        </div>
-    </div>                                                                   
-    <p style="color:#a8b0b0 ;">The content of this email is confidential and intended for the recipient
-    specified in the message only. It is strictly forbidden to share any part of this message 
-    with any third party, without the written consent of the sender. If you received this message by 
-    mistake, please reply to this message and follow with its deletion, so that we can ensure such 
-    a mistake does not occur in the future.</p>
 </div>
