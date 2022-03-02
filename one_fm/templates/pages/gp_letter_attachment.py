@@ -9,6 +9,7 @@ import requests
 import json
 from frappe.utils.file_manager import save_file
 import hashlib
+from one_fm.utils import sendemail
 
 
 def get_context(context):
@@ -74,7 +75,7 @@ def get_attachment_details(data, qp_letter):
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                 recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
 
-                frappe.sendmail(sender=sender, recipients= recipient,
+                sendemail(sender=sender, recipients= recipient,
                     content=msg, subject="PAM Visa", delayed=False)
 
 

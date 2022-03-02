@@ -12,6 +12,7 @@ from frappe.core.doctype.communication.email import make
 from frappe.utils import now_datetime
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
 from one_fm.grd.doctype.moi_residency_jawazat import moi_residency_jawazat
+from one_fm.utils import sendemail
 
 class MedicalInsurance(Document):
     
@@ -156,7 +157,7 @@ def email_notification_reminder(grd_user,medical_insurance_list,reminder_number,
         )
 
 def send_email(doc, recipients, message, subject):
-    frappe.sendmail(
+    sendemail(
         recipients= recipients,
         subject=subject,
         message=message,

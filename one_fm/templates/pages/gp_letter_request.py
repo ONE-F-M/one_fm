@@ -10,7 +10,7 @@ import json
 from frappe.utils.file_manager import save_file
 import hashlib
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime
-
+from one_fm.utils import sendemail
 
 def get_context(context):
     if frappe.local.request.method == "GET" and "pid" not in frappe.form_dict:
@@ -96,7 +96,7 @@ def update_gp_letter_request_status(pid, gp_status):
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                 recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
 
-                frappe.sendmail(sender=sender, recipients= recipient,
+                sendemail(sender=sender, recipients= recipient,
                     content=msg, subject="GP Letter Attachment", delayed=False)
 
                 gp_letter_doc.save(ignore_permissions=True)
@@ -112,7 +112,7 @@ def update_gp_letter_request_status(pid, gp_status):
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 
                 recipient = frappe.db.get_single_value('GP Letter Request Setting', 'travel_agent_email')
-                frappe.sendmail(sender=sender, recipients= recipient,
+                sendemail(sender=sender, recipients= recipient,
                     content=msg, subject="GP Letter Request Rejected", delayed=False)
 
 

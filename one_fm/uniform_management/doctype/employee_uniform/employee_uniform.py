@@ -9,6 +9,7 @@ from frappe.utils import today, month_diff, add_days, getdate
 from frappe import _
 from erpnext.stock.get_item_details import get_item_details
 from frappe.model.mapper import get_mapped_doc
+from one_fm.utils import sendemail
 
 class EmployeeUniform(Document):
 	def before_insert(self):
@@ -325,14 +326,14 @@ def notify_gsd_and_employee_before_uniform_expiry():
 
 			message += "</tbody></table></p><br/>"
 			message_to_gsd += message
-			frappe.sendmail(
+			sendemail(
 				recipients=[recipient],
 				subject=_('Expiring Uniforms in seven days'),
 				message=message,
 				header=['Expiring Uniforms in seven days', 'yellow'],
 			)
 		if message_to_gsd:
-			frappe.sendmail(
+			sendemail(
 				recipients=['georges@armor-services.com'],
 				subject=_('Expiring Uniforms in seven days'),
 				message=message_to_gsd,

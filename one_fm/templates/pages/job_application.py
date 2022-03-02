@@ -3,6 +3,7 @@ import frappe, json
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url
+from one_fm.utils import sendemail
 
 def get_context(context):
     context.parents = [{'route': 'jobs', 'title': _('All Jobs') }]
@@ -38,12 +39,12 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
     try:
         # Notify the HR User
         hr_user_to_get_notified = frappe.db.get_single_value('Hiring Settings', 'easy_apply_to') or 'hr@one-fm.com'
-        frappe.sendmail(sender=sender, recipients=[hr_user_to_get_notified], content=message_details, subject=subject)
+        sendemail(sender=sender, recipients=[hr_user_to_get_notified], content=message_details, subject=subject)
 
         # Email back to the Applicant
         applied_subject = "Thanks for applying for {0}".format(job.designation)
         applied_msg = "<b>We have received your email and our HR team will be responding to you soon.</b>"
-        frappe.sendmail(sender=sender, recipients=[applicant_email], content=applied_msg, subject=applied_subject)
+        sendemail(sender=sender, recipients=[applicant_email], content=applied_msg, subject=applied_subject)
         return 1
     except:
         return 0

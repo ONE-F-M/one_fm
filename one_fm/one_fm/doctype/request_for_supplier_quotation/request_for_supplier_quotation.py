@@ -10,6 +10,7 @@ from frappe.utils import get_url, cint
 from frappe.core.doctype.communication.email import make
 from erpnext.accounts.party import get_party_account_currency, get_party_details
 from six import string_types
+from one_fm.utils import sendemail
 
 
 class RequestforSupplierQuotation(Document):
@@ -81,7 +82,7 @@ class RequestforSupplierQuotation(Document):
 
             if rec != None and supplier.send_email:
                 try:
-                    frappe.sendmail(sender=sender, recipients= rec, cc= rec_cc,
+                    sendemail(sender=sender, recipients= rec, cc= rec_cc,
                         content=msg, subject="Request for Quotation - {0}".format(self.name))
                     supplier.email_sent = 1
                     self.save()

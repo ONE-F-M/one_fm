@@ -8,6 +8,8 @@ from frappe.model.document import Document
 from one_fm.hiring.utils import update_onboarding_doc, update_onboarding_doc_workflow_sate
 from frappe.utils import today
 from frappe import _
+from one_fm.utils import sendemail
+
 
 class WorkContract(Document):
 	def validate(self):
@@ -172,7 +174,7 @@ def email_authority_for_signature(doc):
 		print(recipient)
 		#send Email notification
 		try:
-			frappe.sendmail(
+			sendemail(
 				recipients = recipient,
 				sender = frappe.get_doc('User', frappe.session.user).email,
 				subject = subject,

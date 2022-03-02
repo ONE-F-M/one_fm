@@ -12,6 +12,8 @@ from frappe.utils import today, add_days, get_url, date_diff, getdate
 from frappe.model.document import Document
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
+from one_fm.utils import sendemail
+
 
 class FingerprintAppointment(Document):
 
@@ -129,7 +131,7 @@ class FingerprintAppointment(Document):
         """Notify transportation with the employee's appointment"""
         user_email = "I.ANWARE@one-fm.com"
         content="<h4>Dear "+ user_email +",</h4><p> This email to inform you that Fingerprint Appointment for employee Name: {0} - {1} Required Transportation at {2}.</p>".format(self.full_name,self.employee_id,self.date_and_time_confirmation)  
-        frappe.sendmail(recipients=[user_email],
+        sendemail(recipients=[user_email],
             sender=self.grd_supervisor,
             subject="Transportation Required For Fingerprint Appointment", content=content)
 
@@ -190,7 +192,7 @@ def to_do_to_grd_users(subject, description, user):
 def send_email_notification(doc, recipients):
 	page_link = get_url("/desk#Form/Fingerprint Appointment/" + doc.name)
 	message = "<p>Please Review the Fingerprint Appointment for employee: {0} at {1}<a href='{2}'>{3}</a>.</p>".format(doc.employee_id,doc.date_and_time_confirmation,page_link, doc.name)
-	frappe.sendmail(
+	sendemail(
 		recipients= recipients,
 		subject='{0} Fingerprint Appointment for employee Name:{1} - {2}'.format(doc.workflow_state, doc.full_name,doc.employee_id),
 		message=message,
@@ -199,7 +201,7 @@ def send_email_notification(doc, recipients):
 	)
 
 def send_email(doc, recipients, message, subject):
-	frappe.sendmail(
+	sendemail(
 		recipients= recipients,
 		subject=subject,
 		message=message,
