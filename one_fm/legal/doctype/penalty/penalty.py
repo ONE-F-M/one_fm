@@ -10,7 +10,7 @@ import base64
 from frappe import _
 import pickle, face_recognition
 from one_fm.api.notification import create_notification_log
-
+from one_fm.utils import sendemail
 from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datetime
 from one_fm.one_fm.page.face_recognition.face_recognition import recognize_face
 
@@ -146,7 +146,7 @@ def send_email_to_legal(penalty, message=None):
 	subject = _("Review Penalty: {penalty}".format(penalty=penalty.name))
 	message = _("Face verification did not match while accepting the penalty.<br> Please review and take necessary action.<br> Link: {link}".format(link=link)) if not message else message
 	create_notification_log(subject, message, [legal], penalty)
-	frappe.sendmail([legal], subject=subject, message=message, reference_doctype=penalty.doctype, reference_name=penalty.name)
+	sendemail([legal], subject=subject, message=message, reference_doctype=penalty.doctype, reference_name=penalty.name)
 
 
 """

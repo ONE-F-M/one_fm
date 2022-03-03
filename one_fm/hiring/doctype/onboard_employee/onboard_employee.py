@@ -12,6 +12,8 @@ from one_fm.hiring.doctype.work_contract.work_contract import employee_details_f
 from one_fm.hiring.utils import make_employee_from_job_offer
 from frappe.utils import now, today, getdate
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
+from one_fm.utils import sendemail
+
 
 class OnboardEmployee(Document):
 
@@ -86,7 +88,7 @@ class OnboardEmployee(Document):
 			subject = "<p>Dear {0} You Orientation Program is scheduled at {1} on {2}</p>".format(self.employee_name, self.orientation_on, self.orientation_location)
 			message = subject + "<p>Please be there in time and documents requested</p>"
 			if self.email_id:
-				frappe.sendmail(recipients= [self.email_id], subject=subject, message=message,
+				sendemail(recipients= [self.email_id], subject=subject, message=message,
 					reference_doctype=self.doctype, reference_name=self.name)
 			self.informed_applicant = True
 			self.save(ignore_permissions=True)

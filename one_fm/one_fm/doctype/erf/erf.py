@@ -11,6 +11,7 @@ from frappe.utils.user import get_user_fullname
 from frappe import _
 from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
 from one_fm.api.notification import create_notification_log
+from one_fm.utils import sendemail
 
 class ERF(Document):
 	def onload(self):
@@ -177,7 +178,7 @@ class ERF(Document):
 					applicant is selected and offered.
 				</p>
 			""".format(self.designation)
-			frappe.sendmail(
+			sendemail(
 				recipients= [fin_department],
 				subject='{0} ERF for {1}'.format(self.status, self.designation),
 				message=message,
@@ -241,7 +242,7 @@ class ERF(Document):
 				message += "<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>".format(item.gender, item.nationality,
 					item.number)
 			message += "</tbody></table></p>"
-			frappe.sendmail(
+			sendemail(
 				recipients= [gsd_department],
 				subject='{0} ERF for {1}'.format(self.status, self.designation),
 				message=message,
@@ -355,7 +356,7 @@ def send_email(doc, recipients):
 	message = "<p>Please Review the ERF <a href='{0}'>{1}</a> and take action.</p>".format(page_link, doc.name)
 	if doc.status == 'Declined' and doc.reason_for_decline:
 		message = "<p>ERF <a href='{0}'>{1}</a> is Declined due to {2}</p>".format(page_link, doc.name, doc.reason_for_decline)
-	frappe.sendmail(
+	sendemail(
 		recipients= recipients,
 		subject='{0} ERF for {1}'.format(doc.status, doc.designation),
 		message=message,
@@ -424,7 +425,7 @@ def set_event_for_okr_workshop(doc):
 		Email: {2}
 	""".format(doc.erf_requested_by_name, doc.schedule_for_okr_workshop_with_recruiter, doc.erf_requested_by)
 
-	frappe.sendmail(
+	sendemail(
 		recipients = doc.okr_workshop_with,
 		sender = frappe.db.get_value('User', frappe.session.user, 'email'),
 		subject = _("For a Quick Workshop to Create Performance Profile"),

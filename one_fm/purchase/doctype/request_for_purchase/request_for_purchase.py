@@ -9,6 +9,7 @@ from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import nowdate, getdate, get_url
 from one_fm.utils import fetch_employee_signature
+from one_fm.utils import sendemail
 
 class RequestforPurchase(Document):
 	def onload(self):
@@ -88,7 +89,7 @@ def send_email(doc, recipients, message, subject):
 	if 'Administrator' in recipients:
 		recipients.remove('Administrator')
 	if recipients and len(recipients) > 0:
-		frappe.sendmail(
+		sendemail(
 			recipients= recipients,
 			subject=subject,
 			message=message,

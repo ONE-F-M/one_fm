@@ -8,6 +8,7 @@ from one_fm.api.notification import create_notification_log
 from frappe.modules import scrub
 from frappe import _
 from frappe.desk.form import assign_to
+from one_fm.utils import sendemail
 
 @frappe.whitelist()
 def get_performance_profile_resource():
@@ -123,7 +124,7 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
         message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
 
         if recipients:
-            frappe.sendmail(
+            sendemail(
                 recipients= recipients,
                 subject='Job Application created for {0}'.format(designation),
                 message=message,
@@ -352,7 +353,7 @@ def notify_finance_job_offer_salary_advance(job_offer_id=None, job_offer_list=No
             message += "<li><a href='{0}'>{1}</a>: {2}</li>".format(page_link, job_offer.name,
                 fmt_money(abs(job_offer.one_fm_salary_advance_amount), 3, 'KWD'))
         message += "<ol>"
-        frappe.sendmail(
+        sendemail(
             recipients=[recipient],
             subject=_('Advance Salary for Job Offer'),
             message=message,

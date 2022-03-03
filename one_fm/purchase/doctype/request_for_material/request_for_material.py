@@ -13,6 +13,7 @@ from frappe.permissions import has_permission
 from erpnext.controllers.buying_controller import BuyingController
 from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_balance
 from one_fm.utils import fetch_employee_signature
+from one_fm.utils import sendemail
 
 class RequestforMaterial(BuyingController):
 	def on_submit(self):
@@ -354,7 +355,7 @@ def update_completed_purchase_qty(purchase_order, method):
 
 					mr_obj.update_purchased_qty(mr_item_rows)
 def send_email(doc, recipients, message, subject):
-	frappe.sendmail(
+	sendemail(
 		recipients= recipients,
 		subject=subject,
 		message=message,

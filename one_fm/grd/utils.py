@@ -11,6 +11,8 @@ from datetime import date
 from frappe.model.mapper import get_mapped_doc
 from dateutil.relativedelta import relativedelta
 from one_fm.api.notification import create_notification_log
+from one_fm.utils import sendemail
+
 
 def sendmail_reminder_to_book_appointment_for_pifss(): #before 1 week of the new month
     today = date.today()
@@ -22,7 +24,7 @@ def sendmail_reminder_to_book_appointment_for_pifss(): #before 1 week of the new
             email_name = operator.split('@')[0]
         content = "<h4>Dear "+ email_name +",</h4><p>This month will end soon. Please make sure to book an apointment now for collecting PIFSS documents.</p>"       
         content = content
-        frappe.sendmail(recipients=[operator],
+        sendemail(recipients=[operator],
             sender=supervisor,
             subject="Book Apointment For PIFSS", content=content)
 
@@ -36,7 +38,7 @@ def sendmail_reminder_to_collect_pifss_documents(): # before 1 day of the new mo
             email_name = operator.split('@')[0]
         content = "<h4>Dear "+ email_name +",</h4><p> This email is reminder for you to collect PIFSS documents.</p>"       
         content = content
-        frappe.sendmail(recipients=[operator],
+        sendemail(recipients=[operator],
             sender=supervisor,
             subject="Collect PIFSS Documents", content=content)
 

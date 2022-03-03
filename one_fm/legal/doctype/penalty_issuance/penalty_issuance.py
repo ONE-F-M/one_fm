@@ -9,6 +9,7 @@ from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date,get_link
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from frappe.desk.form.assign_to import add as assign_to
+from one_fm.utils import sendemail
 
 class PenaltyIssuance(Document):
 	def after_insert(self):
@@ -26,7 +27,7 @@ class PenaltyIssuance(Document):
 			link = get_link_to_form(self.doctype, self.name)
 			message = _("Please review the penalty issuance. The penalty location details were added manually by the supervisor.<br> Link: {link}".format(link=link))
 			recipient = [frappe.get_value("Legal Settings", "Legal Settings", "legal_department_email")]
-			frappe.sendmail(recipient, subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
+			sendemail(recipient, subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
 
 	def open_legal_investigation(self):
 		if frappe.db.exists("Legal Investigation", {"reference_doctype": self.doctype, "reference_name": self.name}):

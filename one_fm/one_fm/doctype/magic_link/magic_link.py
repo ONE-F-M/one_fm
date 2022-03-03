@@ -6,6 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils.password import decrypt, encrypt
 from frappe.utils import get_url
+from one_fm.utils import sendemail
 
 class MagicLink(Document):
 	pass
@@ -108,5 +109,5 @@ def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subjec
 		sender = frappe.get_value("Email Account", filters={"default_outgoing": 1}, fieldname="email_id") or None
 		magic_link_url = get_url(url_prefix) + encrypted_magic_link
 		msg += "<br/><a href='{0}'>Magic Link</a>".format(magic_link_url)
-		frappe.sendmail(sender=sender, recipients=recipients, content=msg, subject=subject)
+		sendemail(sender=sender, recipients=recipients, content=msg, subject=subject)
 		frappe.msgprint(("Email Send to the {0} with the magic link <br/><b><a href='{1}' target='_blank'>Click here to see the maigc link for {2}</a></b>".format(doctype, magic_link_url, link_for)), alert=True)

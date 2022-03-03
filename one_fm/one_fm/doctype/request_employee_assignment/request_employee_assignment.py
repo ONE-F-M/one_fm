@@ -5,6 +5,7 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, get_link_to_form
+from one_fm.utils import sendemail
 
 class RequestEmployeeAssignment(Document):
 
@@ -29,7 +30,7 @@ class RequestEmployeeAssignment(Document):
 			You have been requested an employee assignment change.<br>
 			Please take necessary action.<br>
 			Link: {link}""".format(link=link))
-		frappe.sendmail([approver_user], subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
+		sendemail([approver_user], subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
 
 
 @frappe.whitelist()
@@ -47,7 +48,7 @@ def approve_assignment_request(doctype, docname):
 			Your request for change in employe assignment has been approved.<br>
 			Employee assignment will be updated in the employee record.<br>
 			Link: {link}""".format(link=link))
-		frappe.sendmail([requestor_user], subject=subject, message=message, reference_doctype=doctype, reference_name=docname)
+		sendemail([requestor_user], subject=subject, message=message, reference_doctype=doctype, reference_name=docname)
 		doc.save(ignore_permissions=True)
 		return True
 	else:
@@ -66,7 +67,7 @@ def reject_assignment_request(doctype, docname):
 		message = _("""
 			Your request for change in employe assignment has been rejected.<br>
 			Link: {link}""".format(link=link))
-		frappe.sendmail([requestor_user], subject=subject, message=message, reference_doctype=doctype, reference_name=docname)
+		sendemail([requestor_user], subject=subject, message=message, reference_doctype=doctype, reference_name=docname)
 		doc.save(ignore_permissions=True)
 		return True
 	else:
