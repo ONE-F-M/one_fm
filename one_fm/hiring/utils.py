@@ -2,13 +2,16 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 import frappe, json
-from frappe.utils import get_url, fmt_money, month_diff, add_days, add_years, getdate
+from frappe.utils import (
+    get_url, fmt_money, month_diff, add_days, add_years, getdate
+)
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
 from frappe.modules import scrub
 from frappe import _
 from frappe.desk.form import assign_to
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
+
 
 @frappe.whitelist()
 def get_performance_profile_resource():

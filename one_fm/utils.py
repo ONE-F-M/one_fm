@@ -4,28 +4,36 @@ from __future__ import unicode_literals
 import itertools
 from one_fm.api.notification import create_notification_log
 from frappe import _
-import frappe, os, erpnext
-import json
-import math
+import frappe, os, erpnext, json, math
 from frappe.model.document import Document
 from frappe.utils import get_site_base_path
 from erpnext.hr.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils.csvutils import read_csv_content
-from frappe.utils import cint, cstr, flt, rounded,  nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime, add_to_date, time_diff, get_time, time_diff_in_hours
+from frappe.utils import (
+    cint, cstr, flt, rounded,  nowdate, comma_and, date_diff, getdate,
+    formatdate ,get_url, get_datetime, add_to_date, time_diff, get_time,
+    time_diff_in_hours
+)
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
 from frappe.model.naming import set_name_by_naming_series
-from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import expire_allocation, create_leave_ledger_entry
+from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
+    expire_allocation, create_leave_ledger_entry
+)
 from dateutil.relativedelta import relativedelta
-from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form, \
-    comma_or, get_fullname, add_years, add_months, add_days, nowdate,get_first_day,get_last_day, today
+from frappe.utils import (
+    cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
+    comma_or, get_fullname, add_years, add_months, add_days,
+    nowdate,get_first_day,get_last_day, today
+)
 import datetime
 from datetime import datetime, time
 from frappe import utils
 import pandas as pd
 from erpnext.hr.utils import get_holidays_for_employee
+from one_fm.processor import sendemail
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -2264,7 +2272,7 @@ def send_verification_code(doctype, document_name):
         verification_code = generate_code()
         employee_user_email = frappe.session.user
         subject = _("Verification code for {doctype}.".format(doctype=doctype))
-        
+
         message = """Dear user,<br><br>
             An attempt was made to use your signature in {doctype}: {document}.<br><br>
             To use your signature, use the verification code: <b>{verification_code}</b>.<br><br>
@@ -2327,24 +2335,3 @@ def generate_code():
 @frappe.whitelist()
 def fetch_employee_signature(user_id):
     return frappe.get_value("Employee", {"user_id":user_id},["employee_signature"])
-
-@frappe.whitelist()
-def sendemail(recipients, subject, header=None, message=None, content=None, reference_name=None, reference_doctype=None , sender=None, cc=None , attachments=None, delay=None):
-    logo = "https://one-fm.com/files/ONEFM_Identity.png"
-    
-    frappe.sendmail(template = "default_email",
-                    recipients=recipients,
-                    sender= sender,
-                    cc=cc,
-                    reference_name= reference_name,
-                    reference_doctype = reference_doctype,
-                    subject=subject,
-                    args=dict(
-                        header=header[0],
-                        subject=subject,
-                        message=message,
-                        content=content,
-                        logo=logo
-                    ),
-                    attachments = attachments,
-                    delayed=delay)
