@@ -10,7 +10,7 @@ import json
 from frappe.utils.file_manager import save_file
 import hashlib
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 def get_context(context):
     if frappe.local.request.method == "GET" and "pid" not in frappe.form_dict:

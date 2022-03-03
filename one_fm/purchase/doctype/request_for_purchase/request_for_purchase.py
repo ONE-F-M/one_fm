@@ -9,7 +9,7 @@ from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import nowdate, getdate, get_url
 from one_fm.utils import fetch_employee_signature
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class RequestforPurchase(Document):
 	def onload(self):

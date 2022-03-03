@@ -10,7 +10,7 @@ from one_fm.api.notification import create_notification_log
 from frappe.utils import today, add_days, get_url, date_diff
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from frappe.core.doctype.communication.email import make
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class PACI(Document):
     def validate(self):

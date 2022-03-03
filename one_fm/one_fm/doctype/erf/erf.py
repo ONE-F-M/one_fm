@@ -11,7 +11,7 @@ from frappe.utils.user import get_user_fullname
 from frappe import _
 from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
 from one_fm.api.notification import create_notification_log
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class ERF(Document):
 	def onload(self):

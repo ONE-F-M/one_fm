@@ -11,7 +11,7 @@ from datetime import date
 from frappe.model.mapper import get_mapped_doc
 from dateutil.relativedelta import relativedelta
 from one_fm.api.notification import create_notification_log
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 
 def sendmail_reminder_to_book_appointment_for_pifss(): #before 1 week of the new month

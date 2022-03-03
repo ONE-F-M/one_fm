@@ -10,7 +10,7 @@ from frappe.utils import get_url, cint
 from frappe.core.doctype.communication.email import make
 from erpnext.accounts.party import get_party_account_currency, get_party_details
 from six import string_types
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 
 class RequestforSupplierQuotation(Document):

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.utils.print_format import download_pdf, print_by_server
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 @frappe.whitelist()
 def accommodation_qr_code_live_details(docname):

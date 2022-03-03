@@ -13,7 +13,7 @@ from frappe.permissions import has_permission
 from erpnext.controllers.buying_controller import BuyingController
 from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_balance
 from one_fm.utils import fetch_employee_signature
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class RequestforMaterial(BuyingController):
 	def on_submit(self):

@@ -9,7 +9,7 @@ from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date,get_link
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from frappe.desk.form.assign_to import add as assign_to
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class PenaltyIssuance(Document):
 	def after_insert(self):

@@ -5,7 +5,7 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, get_link_to_form
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class RequestEmployeeAssignment(Document):
 

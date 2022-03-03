@@ -9,7 +9,7 @@ from frappe.utils import today, month_diff, add_days, getdate
 from frappe import _
 from erpnext.stock.get_item_details import get_item_details
 from frappe.model.mapper import get_mapped_doc
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class EmployeeUniform(Document):
 	def before_insert(self):

@@ -11,7 +11,7 @@ import requests, json
 from one_fm.api.mobile.roster import get_current_user_details
 from frappe.utils.password import update_password as _update_password
 from twilio.rest import Client 
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 @frappe.whitelist(allow_guest=True)
 def login(client_id, grant_type, employee_id, password):

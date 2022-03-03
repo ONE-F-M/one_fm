@@ -7,7 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 from frappe.utils import now_datetime, add_to_date
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class EmployeePaidHolidayTimesheet(Document):
 	def on_update(self):
