@@ -40,7 +40,7 @@ def get_data():
 				},
 				{
 					"type": "doctype",
-					"name": "Interview Result",
+					"name": "Interview Feedback",
 				},
 				{
 					"type": "doctype",
