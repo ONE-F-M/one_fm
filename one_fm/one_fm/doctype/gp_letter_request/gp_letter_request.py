@@ -7,7 +7,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 
 class GPLetterRequest(Document):

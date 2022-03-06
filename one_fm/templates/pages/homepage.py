@@ -8,7 +8,7 @@ from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate , add_days
 import frappe, json
 from frappe.utils.file_manager import save_file
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 no_cache = 1
 no_sitemap = 1

@@ -12,7 +12,7 @@ from frappe.utils import today, add_days, get_url, date_diff, getdate
 from frappe.model.document import Document
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 
 class FingerprintAppointment(Document):

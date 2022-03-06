@@ -18,7 +18,7 @@ from email import policy
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.core.doctype.communication.email import make
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 # from PyPDF2 import PdfFileReader
 

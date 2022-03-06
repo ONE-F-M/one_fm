@@ -12,7 +12,7 @@ from one_fm.hiring.doctype.work_contract.work_contract import employee_details_f
 from one_fm.hiring.utils import make_employee_from_job_offer
 from frappe.utils import now, today, getdate
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 
 class OnboardEmployee(Document):

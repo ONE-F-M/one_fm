@@ -25,7 +25,7 @@ from one_fm.grd.doctype.residency_payment_request import residency_payment_reque
 from one_fm.grd.doctype.moi_residency_jawazat import moi_residency_jawazat
 from one_fm.grd.doctype.paci import paci
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class Preparation(Document):
     def validate(self):

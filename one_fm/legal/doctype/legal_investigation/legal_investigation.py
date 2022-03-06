@@ -8,7 +8,7 @@ from frappe.model.document import Document
 from frappe import _
 from frappe.utils import get_link_to_form, nowdate, getdate, now_datetime, cstr,add_to_date
 from frappe.desk.form.assign_to import add as assign_to
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class LegalInvestigation(Document):
 	def after_insert(self):

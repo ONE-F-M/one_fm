@@ -11,7 +11,7 @@ import requests, json
 from frappe.utils.password import update_password as _update_password
 from twilio.rest import Client as TwilioClient
 from one_fm.api.v1.utils import response
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 
 @frappe.whitelist(allow_guest=True)

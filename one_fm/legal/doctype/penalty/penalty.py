@@ -10,7 +10,7 @@ import base64
 from frappe import _
 import pickle, face_recognition
 from one_fm.api.notification import create_notification_log
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datetime
 from one_fm.one_fm.page.face_recognition.face_recognition import recognize_face
 

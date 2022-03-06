@@ -9,7 +9,7 @@ import requests
 import json
 from frappe.utils.file_manager import save_file
 import hashlib
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 
 def get_context(context):

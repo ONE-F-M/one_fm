@@ -6,7 +6,7 @@ from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, get_link_to_
 from frappe import _
 import frappe
 import pandas as pd
-from one_fm.utils import sendemail
+from one_fm.processor import sendemail
 
 class RequestEmployeeSchedule(Document):
 	def autoname(self):
