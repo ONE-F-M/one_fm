@@ -526,6 +526,9 @@ fixtures = [
 	{
 		"dt": "Custom DocPerm",
 		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Email Template"
 	}
 ]
 
