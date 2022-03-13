@@ -8,16 +8,16 @@ from frappe import msgprint, _
 def execute(filters=None):
 	if not filters: filters = {}
 
-	lab_test_list = get_lab_test(filters)
+	data_list = get_data(filters)
 	columns = get_columns()
-
-	if not lab_test_list:
-		msgprint(_("No record found"))
-		return columns, lab_test_list
-
 	data = []
-	for lab_test in lab_test_list:
-		row = [ lab_test.name, lab_test.applicant_name, lab_test.one_fm_average_interview_score, lab_test.one_fm_applicant_status, lab_test.one_fm_erf, lab_test.one_fm_agency]
+
+	if not data_list:
+		msgprint(_("No record found"))
+		return columns, data
+
+	for d in data_list:
+		row = [ d.name, d.applicant_name, d.applicant_rating, d.one_fm_applicant_status, d.one_fm_erf, d.one_fm_agency]
 		data.append(row)
 
 	return columns, data
@@ -45,11 +45,11 @@ def get_conditions(filters):
 
 	return conditions
 
-def get_lab_test(filters):
+def get_data(filters):
 	conditions = get_conditions(filters)
 	query = """
 		select
-			name, applicant_name, one_fm_average_interview_score, one_fm_applicant_status, one_fm_erf, one_fm_agency
+			name, applicant_name, applicant_rating, one_fm_applicant_status, one_fm_erf, one_fm_agency
 		from
 			`tabJob Applicant`
 		where
