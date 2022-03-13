@@ -1412,7 +1412,6 @@ def validate_job_applicant(doc, method):
     if not doc.one_fm_is_easy_apply:
         validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
-    set_average_score(doc, method)
     if doc.is_new():
         set_erf_days_off_details(doc)
         set_childs_for_application_web_form(doc, method)
@@ -1596,20 +1595,6 @@ def get_mandatory_fields_current_employment(doc):
             {'Notice Period in Days': 'one_fm_notice_period_in_days'}
         ]
     return []
-
-def set_average_score(doc, method):
-    if doc.one_fm_job_applicant_score:
-        total = 0
-        no_of_interview = 0
-        for score in doc.one_fm_job_applicant_score:
-            total += score.score
-            no_of_interview += 1
-        if total > 0 and no_of_interview > 0:
-            doc.one_fm_average_interview_score = total/no_of_interview
-            if doc.one_fm_applicant_status == 'Draft':
-                doc.one_fm_applicant_status = 'Interview'
-        else:
-            doc.one_fm_average_interview_score = total
 
 def set_job_applicant_status(doc, method):
     if doc.one_fm_applicant_status != 'Selected':
