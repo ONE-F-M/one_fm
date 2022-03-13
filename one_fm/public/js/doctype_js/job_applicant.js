@@ -44,7 +44,6 @@ frappe.ui.form.on('Job Applicant', {
 		//frm.set_df_property('one_fm_interview_schedules', 'hidden', true);
 		// }
 		if(!frm.doc.__islocal){
-			frm.remove_custom_button("Create Interview")
 			frm.set_df_property('one_fm_erf', 'read_only', true);
 			// add a standard menu item
 			frm.add_custom_button(__('Send Career History'), function() {
@@ -56,16 +55,10 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__(''), function() {
 				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 
-			// view career history button only when career history exist.
-			if(frm.doc.one_fm_job_applicant_score.find(i => i.reference_dt == "Career History")){
-			frm.add_custom_button(__('View Career History'), function() {
-				view_career_history(frm);
-				},'Action');
-			} else {
 			frm.add_custom_button(__('Create Career History'), function() {
 				create_career_history(frm);
 				},'Action');
-			}
+
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 
