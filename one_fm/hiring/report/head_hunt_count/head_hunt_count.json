@@ -29,7 +29,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": "ONE FM - Job Offer",
- "modified": "2022-03-10 12:42:24.643522",
+ "modified": "2022-03-13 12:21:45.510518",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Head Hunt Count",
@@ -37,7 +37,7 @@
  "prepared_report": 0,
  "ref_doctype": "Head Hunt",
  "report_name": "Head Hunt Count",
- "report_type": "Custom Report",
+ "report_type": "Script Report",
  "roles": [
   {
    "role": "System Manager"
