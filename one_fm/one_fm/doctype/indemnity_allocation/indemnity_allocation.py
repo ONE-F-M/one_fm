@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 from frappe.model.document import Document
 from frappe import _
 import frappe
+from datetime import date
 from frappe.utils import getdate, nowdate
 from frappe.model.document import Document
 from dateutil.relativedelta import relativedelta
