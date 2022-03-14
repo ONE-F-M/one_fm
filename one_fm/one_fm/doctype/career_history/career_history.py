@@ -133,8 +133,10 @@ def update_interview_and_feedback(career_history, submit=False):
 	interview_feedback.skill_assessment = []
 	interview_feedback.append('skill_assessment', {'skill': 'Career History', 'rating': career_history.career_history_score})
 	from frappe.website.utils import get_comment_list
-	# comment_list = get_comment_list('Career History', career_history.name)
-	# interview_feedback.feedback = comment_list
+	comment_list = get_comment_list('Career History', career_history.name)
+	if comment_list and len(comment_list) > 0:
+		from frappe.utils.html_utils import clean_html
+		interview_feedback.feedback = clean_html(comment_list[0].content)
 	interview_feedback.result = get_career_history_result(career_history)
 	interview_feedback.save(ignore_permissions=True)
 
