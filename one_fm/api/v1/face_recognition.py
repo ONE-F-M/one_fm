@@ -141,8 +141,9 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
 
         # request body
         req = facial_recognition_pb2.Request(
-            username = employee_id,
-            user_encoded_video = video,
+            username = frappe.session.user,
+            media_type = "video",
+            media_content = video
         )
         # Call service stub and get response
         res = stub.FaceRecognition(req)
@@ -150,7 +151,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if res.verification == "FAILED":
             msg = res.message
             data = res.data
-            return response(msg, 200, None, data)
+            return response(msg, 400, None, data)
 
         doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
         return response("Success", 201, doc)
