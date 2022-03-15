@@ -1,11 +1,11 @@
 import frappe, ast, base64, time
 from frappe import _
-from one_fm.one_fm.page.face_recognition.face_recognition import setup_directories, create_dataset
+from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee
 from one_fm.api.v1.utils import get_current_shift
 from one_fm.api.v1.utils import response
 import grpc
 import json
-from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc
+from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 
 
 @frappe.whitelist()
@@ -39,18 +39,30 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
-        setup_directories()
-        content = base64.b64decode(video)
-        filename = frappe.session.user + ".mp4"
-        OUTPUT_VIDEO_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
-        with open(OUTPUT_VIDEO_PATH, "wb") as fh:
-            start = time.time() * 1000
-            fh.write(content)
-            create_dataset(OUTPUT_VIDEO_PATH)
-            end = time.time() * 1000
-            print(end-start)
-            return response("Success", 201, "User enrolled successfully.")
-    
+        # Setup channel
+        face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
+        channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
+        # setup stub
+        stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
+         # request body
+        req = facial_recognition_pb2.Request(
+            username = employee_id,
+            user_encoded_video = video,
+        )
+
+        res = stub.FaceRecognitionEnroll(req)
+
+        if res.enrollment == "FAILED":
+            return response(res.message, 400, None, res.data)
+            
+        doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+        doc.enrolled = 1
+        doc.save(ignore_permissions=True)
+        update_onboarding_employee(doc)
+        frappe.db.commit()
+        
+        return response("Success", 201, "User enrolled successfully.")
+
     except Exception as error:
        return response("Internal Server Error", 500, None, error)
 
@@ -121,16 +133,6 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
-        setup_directories()
-		
-		# Get user encoding file
-        encoding_file_path = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"+frappe.session.user+".json"
-        encoding_content_json = json.loads(open(encoding_file_path, "rb").read()) # dict
-        encoding_content_str = json.dumps(encoding_content_json) # str
-        encoding_content_bytes = encoding_content_str.encode('ascii')
-        encoding_content_base64_bytes = base64.b64encode(encoding_content_bytes)
-        user_encoding_json = encoding_content_base64_bytes.decode('ascii')
-
         # setup channel
         face_recognition_service_url = frappe.local.conf.face_recognition_service_url
         channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
@@ -141,7 +143,6 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         req = facial_recognition_pb2.Request(
             username = employee_id,
             user_encoded_video = video,
-            user_encoding = user_encoding_json
         )
         # Call service stub and get response
         res = stub.FaceRecognition(req)
