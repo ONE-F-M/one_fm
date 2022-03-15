@@ -63,13 +63,13 @@ job_application = Class.extend({
   show_country: function(applicant_name) {
     if(applicant_name){
       $(".applicant_country").empty();
-      $(".applicant_country").append(`<h5>Hey ${applicant_name}, whats your nationality?</h5>`)
+      $(".applicant_country").append(`<h5>Hey ${applicant_name}, what's your nationality?</h5>`)
       $(".country_list").removeClass('hide');
     }
   },
   show_applicant_contact_details: function() {
     $(".applicant_contact").empty();
-    $(".applicant_contact").append(`<h5>Please provide your email id and mobile number so we could contact you.</h5>`)
+    $(".applicant_contact").append(`<h5>Please provide your email address and mobile number so we could contact you.</h5>`)
     $(".contact_number").removeClass('hide');
     $(".contact_email").removeClass('hide');
   },
