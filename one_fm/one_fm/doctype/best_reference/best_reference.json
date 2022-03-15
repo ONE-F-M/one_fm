@@ -14,6 +14,7 @@
   "column_break_3",
   "why_he",
   "reference_feedback",
+  "interview_feedback",
   "interview",
   "referenced_by_section",
   "job_applicant",
@@ -87,11 +88,12 @@
    "options": "BR-.YYYY.-"
   },
   {
+   "fetch_from": "interview_feedback.interview",
    "fieldname": "interview",
    "fieldtype": "Link",
    "hidden": 1,
    "label": "Interview",
-   "options": "Interview Result"
+   "options": "Interview"
   },
   {
    "collapsible": 1,
@@ -138,10 +140,16 @@
    "fieldtype": "Link",
    "label": "Designation",
    "options": "Designation"
+  },
+  {
+   "fieldname": "interview_feedback",
+   "fieldtype": "Link",
+   "label": "Interview Feedback",
+   "options": "Interview Feedback"
   }
  ],
  "links": [],
- "modified": "2020-05-13 22:45:12.359376",
+ "modified": "2022-03-04 10:15:57.795759",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Best Reference",

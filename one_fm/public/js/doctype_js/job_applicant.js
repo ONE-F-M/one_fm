@@ -44,7 +44,6 @@ frappe.ui.form.on('Job Applicant', {
 		//frm.set_df_property('one_fm_interview_schedules', 'hidden', true);
 		// }
 		if(!frm.doc.__islocal){
-			frm.remove_custom_button("Create Interview")
 			frm.set_df_property('one_fm_erf', 'read_only', true);
 			// add a standard menu item
 			frm.add_custom_button(__('Send Career History'), function() {
@@ -56,28 +55,12 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__(''), function() {
 				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 
-			// view career history button only when career history exist.
-			if(frm.doc.one_fm_job_applicant_score.find(i => i.reference_dt == "Career History")){
-			frm.add_custom_button(__('View Career History'), function() {
-				view_career_history(frm);
-				},'Action');
-			} else {
 			frm.add_custom_button(__('Create Career History'), function() {
 				create_career_history(frm);
 				},'Action');
-			}
+
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-
-			// view Interview button only when career history exist.
-			if(frm.doc.one_fm_job_applicant_score.find(i => i.reference_dt == "Interview Result")){
-				frm.add_custom_button(__('View Interview'), function() {
-					view_interview(frm);
-				},'Action');
-			}
-				frm.add_custom_button(__('Create An Interview'), function() {
-					view_interview(frm);
-				},'Action');
 
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
@@ -706,24 +689,6 @@ frappe.ui.form.on('Job Applicant Required Document', {
 	}
 });
 
-frappe.ui.form.on('Job Applicant Interview Schedule', {
-	action: function(frm, cdt, cdn) {
-		if(frm.is_dirty()){
-			frappe.msgprint(__('Please Save the Document for Further Action'));
-		}
-		else{
-			var child = locals[cdt][cdn];
-			frappe.route_options = {
-				"job_applicant": frm.doc.name,
-				"interview_type": child.interview_type,
-				"interview_scheduled_date": child.scheduled_on,
-				"interview_schedule": child.name
-			};
-			frappe.new_doc("Interview Result");
-		}
-	}
-});
-
 var validate_employment_date = function(frm) {
 	if(frm.doc.one_fm_i_am_currently_working && (frm.doc.one_fm_employment_end_date < frm.doc.one_fm_employment_start_date)){
 		frm.set_value('one_fm_employment_start_date', '');
@@ -767,15 +732,6 @@ var validate_min_age = function(frm) {
 	else{
 		validate_date_of_birth(frm, minimum_age_required);
 	}
-};
-
-var create_interview = function(frm) {
-	frappe.new_doc("Interview Result", {"job_applicant": frm.doc.name});
-};
-
-var view_interview = function(frm) {
-	frappe.route_options = {"job_applicant": frm.doc.name};
-	frappe.set_route("List", "Interview Result");
 };
 
 var create_career_history = function(frm) {

@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 import frappe, json
 from frappe.utils import (
-    get_url, fmt_money, month_diff, add_days, add_years, getdate
+    get_url, fmt_money, month_diff, add_days, add_years, getdate, flt
 )
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
@@ -653,3 +653,26 @@ def update_onboarding_doc_workflow_sate(doc):
         if doc.doctype == 'Employee' and onboard_employee.workflow_state == 'Bank Account' and doc.enrolled:
             onboard_employee.workflow_state = 'Mobile App Enrolment'
         onboard_employee.save(ignore_permissions=True)
+
+@frappe.whitelist()
+def get_interview_question_set(interview_round):
+	return frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+
+def calculate_interview_feedback_average_rating(doc, method):
+    total_skill_rating = doc.average_rating if doc.average_rating else 0
+    total_score = 0
+    total_questions = 0
+    for d in doc.interview_question_assessment:
+        if d.weight > 0 and d.score:
+            total_score += get_score_out_of_five(d.score, d.weight)
+            total_questions += 1
+
+    average_score = flt(total_score / total_questions if total_questions else 0)
+    if total_score > 0:
+        if total_skill_rating > 0:
+            doc.average_rating = flt((total_skill_rating + average_score) / 2)
+        else:
+            doc.average_rating = flt(average_score)
+
+def get_score_out_of_five(score, weight):
+    return (score * 5) / weight

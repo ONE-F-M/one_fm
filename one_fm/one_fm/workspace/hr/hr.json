@@ -541,8 +541,8 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Interview Result",
-   "link_to": "Interview Result",
+   "label": "Interview Feedback",
+   "link_to": "Interview Feedback",
    "link_type": "DocType",
    "onboard": 1,
    "type": "Link"
@@ -1000,7 +1000,7 @@
    "type": "Link"
   }
  ],
- "modified": "2021-08-17 00:51:38.687770",
+ "modified": "2022-03-02 00:51:38.687770",
  "modified_by": "Administrator",
  "module": "HR",
  "name": "HR",

@@ -81,6 +81,7 @@ doctype_js = {
 	"Salary Slip": "public/js/doctype_js/salary_slip.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 	"Issue": "public/js/doctype_js/issue.js",
+	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -282,6 +283,9 @@ doc_events = {
 	},
 	"Expense Claim": {
 		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
+	},
+	"Interview Feedback": {
+		"validate": "one_fm.hiring.utils.calculate_interview_feedback_average_rating",
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
