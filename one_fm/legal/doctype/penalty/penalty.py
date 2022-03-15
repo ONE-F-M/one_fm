@@ -5,14 +5,13 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-import cv2
 import base64
 from frappe import _
-import pickle, face_recognition
 from one_fm.api.notification import create_notification_log
-
 from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datetime
-from one_fm.one_fm.page.face_recognition.face_recognition import recognize_face
+from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
+import grpc
+
 
 class Penalty(Document):
 	def after_insert(self):
@@ -96,10 +95,23 @@ def accept_penalty(file, retries, docname):
 		'success' message upon verification || updated retries and 'error' message || Exception. 
 	"""
 	retries_left = cint(retries) - 1
-	OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
 	penalty = frappe.get_doc("Penalty", docname)
-	image = upload_image(file, OUTPUT_IMAGE_PATH)
-	if recognize_face(image) or retries_left == 0:
+	
+	# setup channel
+	face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+	channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+	# setup stub
+	stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+
+	# request body
+	req = facial_recognition_pb2.Request(
+		username = frappe.session.user,
+		media_type = "image",
+		media_content = file,
+	)
+	# Call service stub and get response
+	res = stub.FaceRecognition(req)
+	if res.verification == "OK":
 		if retries_left == 0:
 			penalty.verified = 0
 			send_email_to_legal(penalty)
