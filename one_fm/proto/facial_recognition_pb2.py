@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eproto/facial_recognition.proto\"7\n\x07Request\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x1a\n\x12user_encoded_video\x18\x02 \x01(\t\"Q\n\x08Response\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\x12\x14\n\x0cverification\x18\x04 \x01(\t2@\n\x16\x46\x61\x63\x65RecognitionService\x12&\n\x0f\x46\x61\x63\x65Recognition\x12\x08.Request\x1a\t.Responseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eproto/facial_recognition.proto\"F\n\x07Request\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x15\n\rmedia_content\x18\x02 \x01(\t\x12\x12\n\nmedia_type\x18\x03 \x01(\t\"Q\n\x08Response\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\x12\x14\n\x0cverification\x18\x04 \x01(\t2@\n\x16\x46\x61\x63\x65RecognitionService\x12&\n\x0f\x46\x61\x63\x65Recognition\x12\x08.Request\x1a\t.Responseb\x06proto3')
 
 
 
@@ -39,9 +39,9 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _REQUEST._serialized_start=34
-  _REQUEST._serialized_end=89
-  _RESPONSE._serialized_start=91
-  _RESPONSE._serialized_end=172
-  _FACERECOGNITIONSERVICE._serialized_start=174
-  _FACERECOGNITIONSERVICE._serialized_end=238
+  _REQUEST._serialized_end=104
+  _RESPONSE._serialized_start=106
+  _RESPONSE._serialized_end=187
+  _FACERECOGNITIONSERVICE._serialized_start=189
+  _FACERECOGNITIONSERVICE._serialized_end=253
 # @@protoc_insertion_point(module_scope)
