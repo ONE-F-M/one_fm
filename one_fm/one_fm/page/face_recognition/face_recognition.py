@@ -95,7 +95,8 @@ def verify():
 		# request body
 		req = facial_recognition_pb2.Request(
 			username = user_name,
-			user_encoded_video = video_content,
+			media_type = "video",
+			media_content = video_content,
 		)
 		# Call service stub and get response
 		res = stub.FaceRecognition(req)
