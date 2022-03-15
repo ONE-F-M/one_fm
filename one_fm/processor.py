@@ -14,7 +14,7 @@ def sendemail(recipients, subject, header=None, message=None,
                     reference_doctype = reference_doctype,
                     subject=subject,
                     args=dict(
-                        header=header[0],
+                        header=header[0] if header else "",
                         subject=subject,
                         message=message,
                         content=content,
