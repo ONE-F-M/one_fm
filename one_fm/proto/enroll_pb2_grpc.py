@@ -2,10 +2,10 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from proto import facial_recognition_pb2 as proto_dot_facial__recognition__pb2
+from proto import enroll_pb2 as proto_dot_enroll__pb2
 
 
-class FaceRecognitionServiceStub(object):
+class FaceRecognitionEnrollmentServiceStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -14,42 +14,42 @@ class FaceRecognitionServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.FaceRecognition = channel.unary_unary(
-                '/FaceRecognitionService/FaceRecognition',
-                request_serializer=proto_dot_facial__recognition__pb2.Request.SerializeToString,
-                response_deserializer=proto_dot_facial__recognition__pb2.Response.FromString,
+        self.FaceRecognitionEnroll = channel.unary_unary(
+                '/FaceRecognitionEnrollmentService/FaceRecognitionEnroll',
+                request_serializer=proto_dot_enroll__pb2.Request.SerializeToString,
+                response_deserializer=proto_dot_enroll__pb2.Response.FromString,
                 )
 
 
-class FaceRecognitionServiceServicer(object):
+class FaceRecognitionEnrollmentServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def FaceRecognition(self, request, context):
+    def FaceRecognitionEnroll(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_FaceRecognitionServiceServicer_to_server(servicer, server):
+def add_FaceRecognitionEnrollmentServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'FaceRecognition': grpc.unary_unary_rpc_method_handler(
-                    servicer.FaceRecognition,
-                    request_deserializer=proto_dot_facial__recognition__pb2.Request.FromString,
-                    response_serializer=proto_dot_facial__recognition__pb2.Response.SerializeToString,
+            'FaceRecognitionEnroll': grpc.unary_unary_rpc_method_handler(
+                    servicer.FaceRecognitionEnroll,
+                    request_deserializer=proto_dot_enroll__pb2.Request.FromString,
+                    response_serializer=proto_dot_enroll__pb2.Response.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'FaceRecognitionService', rpc_method_handlers)
+            'FaceRecognitionEnrollmentService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class FaceRecognitionService(object):
+class FaceRecognitionEnrollmentService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def FaceRecognition(request,
+    def FaceRecognitionEnroll(request,
             target,
             options=(),
             channel_credentials=None,
@@ -59,8 +59,8 @@ class FaceRecognitionService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/FaceRecognitionService/FaceRecognition',
-            proto_dot_facial__recognition__pb2.Request.SerializeToString,
-            proto_dot_facial__recognition__pb2.Response.FromString,
+        return grpc.experimental.unary_unary(request, target, '/FaceRecognitionEnrollmentService/FaceRecognitionEnroll',
+            proto_dot_enroll__pb2.Request.SerializeToString,
+            proto_dot_enroll__pb2.Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
