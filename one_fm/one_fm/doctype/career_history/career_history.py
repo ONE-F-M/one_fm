@@ -103,16 +103,12 @@ class CareerHistory(Document):
 		cancel_interview_and_feedback(self)
 
 def cancel_interview_and_feedback(career_history):
-	interview_feedback_exisits = frappe.db.exists('Interview Feedback',
+	interview_feedback_exists = frappe.db.exists('Interview Feedback',
 		{'career_history': career_history.name, 'docstatus': ['>', 1]})
-	if interview_feedback_exisits:
-		interview_feedback = frappe.get_doc('Interview Feedback', interview_feedback_exisits)
-		data = frappe.get_all('Interview Detail',
-			filters={'parent': interview_feedback.interview}, fields=['interviewer', 'name'])
-		if len(data) == 1:
-			for d in data:
-				if frappe.session.user in d.interviewer:
-					frappe.get_doc('Interview', interview_feedback.interview).cancel()
+	if interview_feedback_exists:
+		interview = frappe.get_value('Interview Feedback', interview_feedback_exists, 'interview')
+		if interview and frappe.get_value('Interview Detail', filters={'parent': interview, 'interviewer': frappe.session.user}):
+			frappe.get_doc('Interview', interview).cancel()
 
 def update_interview_and_feedback(career_history, submit=False):
 	"""
@@ -120,10 +116,10 @@ def update_interview_and_feedback(career_history, submit=False):
 		args:
 			career_history: Object of career_history
 	"""
-	interview_feedback_exisits = frappe.db.exists('Interview Feedback',
+	interview_feedback_exists = frappe.db.exists('Interview Feedback',
 		{'career_history': career_history.name, 'docstatus': 0})
-	if interview_feedback_exisits:
-		interview_feedback = frappe.get_doc('Interview Feedback', interview_feedback_exisits)
+	if interview_feedback_exists:
+		interview_feedback = frappe.get_doc('Interview Feedback', interview_feedback_exists)
 	else:
 		interview_feedback = frappe.new_doc('Interview Feedback')
 	interview_feedback.interview = get_interview(career_history)
@@ -150,13 +146,13 @@ def update_interview_and_feedback(career_history, submit=False):
 		get_link_to_form('Interview Feedback', interview_feedback.name), 'submitted' if submit else 'saved'))
 
 def get_interview(career_history):
-	interview_exisits = frappe.db.exists('Interview',
+	interview_exists = frappe.db.exists('Interview',
 		{'career_history': career_history.name, 'docstatus': ['!=', 2]})
-	if interview_exisits:
+	if interview_exists:
 		from erpnext.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
-		applicable_interviewers = get_applicable_interviewers(interview_exisits)
+		applicable_interviewers = get_applicable_interviewers(interview_exists)
 		if frappe.session.user in applicable_interviewers:
-			return interview_exisits
+			return interview_exists
 	return create_interview(career_history)
 
 def create_interview(career_history):
