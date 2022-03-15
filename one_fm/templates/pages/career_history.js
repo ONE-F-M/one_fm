@@ -19,15 +19,15 @@ career_history = Class.extend({
       var promotion_select = $(`.promotion_select_${company_no}${promotion_no}`).val()
       var promotion_details_html = "";
       var promotion_details_next_job_title_html = `<div class="my-5 col-lg-6 col-md-6">
-          <label class="form-label">So, tell me to which position you got promoted first</label>
+          <label class="form-label">So, tell us what position you got promoted to first.</label>
           <input type="text" class="form-control position_${company_no}${promotion_no}" placeholder="Enter Your New Job Title"/>
         </div>`;
       var promotion_details_salary_html = `<div class="my-5 col-lg-6 col-md-6">
-          <label class="form-label">What is your increased salary in KWD?</label>
+          <label class="form-label">How much was your incremented salary in KWD?</label>
           <input type="text" class="form-control salary_${company_no}${promotion_no}" placeholder="Enter your increased Salary in KWD"/>
         </div>`;
       var promotion_details_promotion_date_html = `<div class="my-5 col-lg-6 col-md-6">
-          <label class="form-label">When do you got promoted?</label>
+          <label class="form-label">When did you get promoted?</label>
           <input type="date" class="form-control date_of_promotion_${company_no}${promotion_no}"/>
         </div>`;
 
@@ -35,7 +35,7 @@ career_history = Class.extend({
         Got any Promotion or Salary Increase
         value="0" if selected 'No, I did not get any promotion or salary increase'
         value="1" if selected 'Yes, I Got a Promotion with a Salary Increase'
-        value="2" if selected 'Yes, Only Got a Promotion'
+        value="2" if selected 'Yes, I only got a promotion'
         value="3" if selected 'Yes, Only Got a Salary Increase'
       */
       if(promotion_select == 1){
@@ -69,8 +69,8 @@ career_history = Class.extend({
           <select class="custom-select promotion_select_${company_no}${promotion_no}">
             <option value="0">No, I did not get any promotion or salary increase</option>
             <option value="1">Yes, I got a promotion with a salary increase</option>
-            <option value="2">Yes, only got a promotion</option>
-            <option value="3">Yes, only got a salary increase</option>
+            <option value="2">Yes, I only got a promotion</option>
+            <option value="3">Yes, I only got a salary increase</option>
           </select>
         <div class="row col-lg-12 col-md-12 my-5 promotion_details_section_${company_no}${promotion_no}" style="width: 100%; display: flex">
         </div>
@@ -137,7 +137,7 @@ career_history = Class.extend({
   },
   create_company_section_html: function(company_no) {
     var company_section_html = `<div class="row col-lg-12 col-md-12 mb-12 company_${company_no}">
-      <h3>So {{job_applicant.applicant_name}}, tell me about the ${stringifyNumber(company_no)} company you worked on?</h3>
+      <h3>So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
       <div class="my-5 col-lg-6 col-md-6">
         <label class="form-label">${stringifyNumber(company_no)} Company Name </label>
         <input type="text" class="form-control company_${company_no}_name" placeholder="Enter the ${stringifyNumber(company_no)} Company Name"/>
@@ -152,7 +152,7 @@ career_history = Class.extend({
         </select>
       </div>
       <div class="mb-3 col-lg-6 col-md-6">
-        <label class="form-label">When do you join the company?</label>
+        <label class="form-label">When did you join the company?</label>
         <input type="date" class="form-control joined_company${company_no}"/>
       </div>
       <div class="mb-3 col-lg-6 col-md-6">
@@ -161,7 +161,7 @@ career_history = Class.extend({
       </div>
 
       <div class="col-lg-12 col-md-12">
-        <label for="Responisbilities" class="form-label">What are your top 3 responsibilities?</label>
+        <label for="Responisbilities" class="form-label">What were your top three responsibilities?</label>
         <input type="text" class="form-control mb-3 responisbility_1_company${company_no}" placeholder="1"/>
         <input type="text" class="form-control mb-3 responisbility_2_company${company_no}" placeholder="2"/>
         <input type="text" class="form-control mb-3 responisbility_3_company${company_no}" placeholder="3"/>
@@ -212,7 +212,7 @@ career_history = Class.extend({
           btn: this,
           callback: function(r){
             frappe.unfreeze();
-            frappe.msgprint(frappe._("Successfully Submitted your Career History and our HR team will be responding to you soon."));
+            frappe.msgprint(frappe._("Successfully submitted your career history. Our HR team will be responding to you soon."));
             if(r.message){
               window.location.href = "/career_history";
             }
