@@ -66,11 +66,17 @@ def leave_type_list(employee):
 
 @frappe.whitelist()
 def leave_notify(docname,status):
-    doc = frappe.get_doc("Leave Application",{"name":docname})
-    doc.status=status
-    doc.save()
-    doc.submit()
-    frappe.db.commit()
+    try:
+        doc = frappe.get_doc("Leave Application",{"name":docname})
+        doc.status=status
+        doc.save()
+        doc.submit()
+        frappe.db.commit()
+        frappe.respond_as_web_page(_("Success"), _("Leave Application "+docname+" was "+status), http_status_code=201)
+        #return response('Leave Application was'+status,doc, 201) 
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback())
+        frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
 
 #This function is the api to create a new leave notification.
 #bench execute --kwargs "{'employee':'HR-EMP-00002','from_date':'2021-11-17','to_date':'2021-11-17','leave_type':'Annual Leave','reason':'fever'}"  one_fm.api.mobile.Leave_application.create_new_leave_application

@@ -22,6 +22,10 @@ frappe.ui.form.on('Career History', {
 	},
 	total_years_of_experience: function(frm) {
 		set_total_years_of_experience_str(frm, frm.doc.total_years_of_experience);
+		calculate_career_history_score(frm);
+	},
+	total_number_of_promotions_and_salary_changes: function(frm) {
+		calculate_career_history_score(frm);
 	}
 });
 
@@ -32,12 +36,7 @@ var confirm_score_action = function(frm) {
 			msg,
 			function(){
 				// Yes
-				if(frm.doc.pass_to_next_interview == 'Reject'){
-					frappe.msgprint(__('Applicant Will be Rejected on this Career History Save.'));
-				}
-				if(frm.doc.pass_to_next_interview == 'Pass'){
-					frm.save();
-				}
+				frm.save();
 			},
 			function(){
 				// No
@@ -66,7 +65,7 @@ var calculate_promotions_and_experience = function(frm) {
 	let total_years_of_experience = 0;
 	let total_number_of_promotions = 0;
 	let total_number_of_salary_changes = 0;
-	if(frm.doc.career_history_company){
+	if(frm.doc.career_history_company && frm.doc.calculate_promotions_and_experience_automatically){
 		var start_date_in_company = {};
 		var promotions = {};
 		var salary_hikes = {};
@@ -108,9 +107,11 @@ var calculate_promotions_and_experience = function(frm) {
 			}
 		}
 	}
-	frm.set_value('total_number_of_promotions_and_salary_changes', total_number_of_promotions+total_number_of_salary_changes);
-	frm.set_value('total_years_of_experience', total_years_of_experience);
-	calculate_career_history_score(frm);
+	if(frm.doc.career_history_company && frm.doc.calculate_promotions_and_experience_automatically){
+		frm.set_value('total_number_of_promotions_and_salary_changes', total_number_of_promotions+total_number_of_salary_changes);
+		frm.set_value('total_years_of_experience', total_years_of_experience);
+		calculate_career_history_score(frm);
+	}
 };
 
 var calculate_total_years_of_experience = function(start_date, end_date) {

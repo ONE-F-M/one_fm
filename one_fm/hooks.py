@@ -81,6 +81,7 @@ doctype_js = {
 	"Salary Slip": "public/js/doctype_js/salary_slip.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 	"Issue": "public/js/doctype_js/issue.js",
+	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -98,7 +99,7 @@ doctype_tree_js = {
 
 # application home page (will override Website Settings)
 # home_page = "login"
-home_page = "landing_page"
+home_page = "index"
 
 # website user home page (by Role)
 # role_home_page = {
@@ -282,6 +283,9 @@ doc_events = {
 	},
 	"Expense Claim": {
 		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
+	},
+	"Interview Feedback": {
+		"validate": "one_fm.hiring.utils.calculate_interview_feedback_average_rating",
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
@@ -526,6 +530,9 @@ fixtures = [
 	{
 		"dt": "Custom DocPerm",
 		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Email Template"
 	}
 ]
 

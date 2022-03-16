@@ -11,6 +11,8 @@ import requests, json
 from frappe.utils.password import update_password as _update_password
 from twilio.rest import Client as TwilioClient
 from one_fm.api.v1.utils import response
+from one_fm.processor import sendemail
+
 
 @frappe.whitelist(allow_guest=True)
 def login(client_id: str = None, grant_type: str = None, employee_id: str = None, password: str = None) -> dict:
@@ -275,6 +277,6 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 		'retry':3
 	}
 
-	enqueue(method=frappe.sendmail, queue='short', timeout=300, event=None,
+	enqueue(method=sendemail, queue='short', timeout=300, event=None,
 		is_async=True, job_name=None, now=False, **email_args)
 	return True
