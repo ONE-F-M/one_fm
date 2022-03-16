@@ -249,3 +249,53 @@ def check_existing():
 	#For Check OUT
 	else:
 		return True
+
+def recognize_face(image):
+	try:
+		ENCODINGS_PATH = frappe.utils.cstr(
+			frappe.local.site)+"/private/files/facial_recognition/"+frappe.session.user+".json"
+		# values should be "hog" or "cnn" . cnn is CPU and memory intensive.
+		DETECTION_METHOD = "hog"
+
+		# load the known faces and embeddings
+		face_data = json.loads(open(ENCODINGS_PATH, "rb").read())
+
+		# load the input image and convert it from BGR to RGB
+		image = cv2.imread(image)
+		rgb =  image[:, :, ::-1]
+
+		# detect the (x, y)-coordinates of the bounding boxes corresponding
+		# to each face in the input image, then compute the facial embeddings
+		# for each face
+		boxes = face_recognition.face_locations(rgb,
+												model=DETECTION_METHOD)
+		encodings = face_recognition.face_encodings(rgb, boxes)
+
+		if not encodings:
+			return False
+		return match_encodings(encodings, face_data)
+
+	except Exception as e:
+		print(frappe.get_traceback())
+
+
+def match_encodings(encodings, face_data):
+	try:
+		# loop over the facial embeddings
+		for encoding in encodings:
+			# attempt to match each face in the input image to our known
+			# encodings
+			matches = face_recognition.compare_faces(
+				face_data["encodings"], encoding)
+			# check to see if we have found a match
+			if True in matches:
+				# find the indexes of all matched faces
+				matchedIdxs = [i for (i, b) in enumerate(matches) if b]
+				print(matchedIdxs, matches)
+				return True if ((len(matchedIdxs) / len(matches)) * 100 > 80) else False
+			else:
+				return False
+		else:
+			return False
+	except Exception as identifier:
+		print(frappe.get_traceback())
