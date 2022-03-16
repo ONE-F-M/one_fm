@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe import _
 from frappe.utils import get_link_to_form, nowdate, getdate, now_datetime, cstr,add_to_date
 from frappe.desk.form.assign_to import add as assign_to
+from one_fm.processor import sendemail
 
 class LegalInvestigation(Document):
 	def after_insert(self):
@@ -37,7 +38,7 @@ class LegalInvestigation(Document):
 		supervisor_user = frappe.get_value("Employee", supervisor, "user_id")
 		link = get_link_to_form(self.doctype, self.name)
 		message = _("Please review and add the necessary details.<br> Link: {link}".format(link=link))
-		frappe.sendmail([supervisor_user], subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
+		sendemail([supervisor_user], subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
 
 
 	def on_update(self):

@@ -1,8 +1,11 @@
 import frappe, ast, base64, time
 from frappe import _
-from one_fm.one_fm.page.face_recognition.face_recognition import setup_directories, create_dataset, verify_face, recognize_face, check_in
+from one_fm.one_fm.page.face_recognition.face_recognition import setup_directories, create_dataset
 from one_fm.api.v1.utils import get_current_shift
 from one_fm.api.v1.utils import response
+import grpc
+import json
+from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc
 
 
 @frappe.whitelist()
@@ -38,7 +41,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         
         setup_directories()
         content = base64.b64decode(video)
-        filename = employee_id + ".mp4"
+        filename = frappe.session.user + ".mp4"
         OUTPUT_VIDEO_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
         with open(OUTPUT_VIDEO_PATH, "wb") as fh:
             start = time.time() * 1000
@@ -119,21 +122,37 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
         setup_directories()
-        content = base64.b64decode(video)
-        filename = employee_id + ".mp4"	
-        OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
+		
+		# Get user encoding file
+        encoding_file_path = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"+frappe.session.user+".json"
+        encoding_content_json = json.loads(open(encoding_file_path, "rb").read()) # dict
+        encoding_content_str = json.dumps(encoding_content_json) # str
+        encoding_content_bytes = encoding_content_str.encode('ascii')
+        encoding_content_base64_bytes = base64.b64encode(encoding_content_bytes)
+        user_encoding_json = encoding_content_base64_bytes.decode('ascii')
 
-        with open(OUTPUT_IMAGE_PATH, "wb") as fh:
-            fh.write(content)
-            blinks, image = verify_face(OUTPUT_IMAGE_PATH)
-            if blinks == 0:
-                return response("Bad Request", 400, None, "Liveliness Detection Failed.")
-            
-            if recognize_face(image): 
-                doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
-                return response("Success", 201, doc)
-            else:
-                return response("Unauthorized", 401, None, "Face not recognized.")
+        # setup channel
+        face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+        channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+        # setup stub
+        stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+
+        # request body
+        req = facial_recognition_pb2.Request(
+            username = employee_id,
+            user_encoded_video = video,
+            user_encoding = user_encoding_json
+        )
+        # Call service stub and get response
+        res = stub.FaceRecognition(req)
+
+        if res.verification == "FAILED":
+            msg = res.message
+            data = res.data
+            return response(msg, 200, None, data)
+
+        doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
+        return response("Success", 201, doc)
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)

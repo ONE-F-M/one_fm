@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, get_link_to_form
-
+from one_fm.processor import sendemail
 
 class RosterEmployeeActions(Document):
 	def autoname(self):
@@ -21,6 +21,4 @@ class RosterEmployeeActions(Document):
 				You have been issued a Roster Employee Action.<br>
 				Please review the employees assigned to you, take necessary actions and update the status.<br>
 				Link: {link}""".format(link=link))
-			frappe.sendmail([user_id], subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)
-
-		
+			sendemail([user_id], subject=subject, message=message, reference_doctype=self.doctype, reference_name=self.name)

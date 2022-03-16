@@ -18,6 +18,8 @@ from email import policy
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.core.doctype.communication.email import make
+from one_fm.processor import sendemail
+
 # from PyPDF2 import PdfFileReader
 
 # from pdfminer.pdfparser import PDFParser, PDFDocument  
@@ -497,7 +499,7 @@ def email_notification_reminder(grd_user,work_permit_list,reminder_number, actio
         )
 
 def send_email(doc, recipients, message, subject):
-	frappe.sendmail(
+	sendemail(
 		recipients= recipients,
 		subject=subject,
 		message=message,

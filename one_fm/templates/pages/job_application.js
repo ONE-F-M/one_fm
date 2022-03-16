@@ -63,13 +63,13 @@ job_application = Class.extend({
   show_country: function(applicant_name) {
     if(applicant_name){
       $(".applicant_country").empty();
-      $(".applicant_country").append(`<h5>Hey ${applicant_name} !, From where you are coming.</h5>`)
+      $(".applicant_country").append(`<h5>Hey ${applicant_name}, what's your nationality?</h5>`)
       $(".country_list").removeClass('hide');
     }
   },
   show_applicant_contact_details: function() {
     $(".applicant_contact").empty();
-    $(".applicant_contact").append(`<h5>May I know your mobile number and the email ID to connect you.</h5>`)
+    $(".applicant_contact").append(`<h5>Please provide your email address and mobile number so we could contact you.</h5>`)
     $(".contact_number").removeClass('hide');
     $(".contact_email").removeClass('hide');
   },
@@ -110,7 +110,7 @@ job_application = Class.extend({
   },
   show_cv_section: function(applicant_name) {
     $(".applicant_cv").empty();
-    $(".applicant_cv").append(`<h5>So ${applicant_name}, Attach your CV here to know more about you and then Submit.</h5>`)
+    $(".applicant_cv").append(`<h5>Dear ${applicant_name}, please attach your CV here so we can get to know you better.</h5>`)
     $(".cv-file").removeClass('hide');
   },
   submit_job_application: function() {
@@ -138,7 +138,7 @@ job_application = Class.extend({
           btn: this,
           callback: function(r){
             frappe.unfreeze();
-            frappe.msgprint(frappe._("Succesfully Submitted your Job Application and our HR team will be responding to you soon."));
+            frappe.msgprint(frappe._("Successfully submitted your application. Our HR team will be responding to you soon."));
             if(r.message){
               window.location.href = "/jobs";
             }
@@ -146,7 +146,7 @@ job_application = Class.extend({
         });
       }
       else{
-        frappe.msgprint(frappe._("Please fill All the details to submit the Job Application."));
+        frappe.msgprint(frappe._("Please fill all the details to submit the Job Application."));
       }
     });
   }

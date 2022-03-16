@@ -80,6 +80,8 @@ doctype_js = {
 	"Employee": "public/js/doctype_js/employee.js",
 	"Salary Slip": "public/js/doctype_js/salary_slip.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
+	"Issue": "public/js/doctype_js/issue.js",
+	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -97,7 +99,7 @@ doctype_tree_js = {
 
 # application home page (will override Website Settings)
 # home_page = "login"
-home_page = "landing_page"
+home_page = "index"
 
 # website user home page (by Role)
 # role_home_page = {
@@ -282,6 +284,9 @@ doc_events = {
 	"Expense Claim": {
 		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
 	},
+	"Interview Feedback": {
+		"validate": "one_fm.hiring.utils.calculate_interview_feedback_average_rating",
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -325,8 +330,8 @@ scheduler_events = {
 		'one_fm.utils.pam_authorized_signatory',
 		'one_fm.utils.hooked_leave_allocation_builder',
 		'one_fm.utils.increase_daily_leave_balance',
-		'one_fm.one_fm.hr_utils.daily_indemnity_allocation_builder',
-		'one_fm.one_fm.hr_utils.allocate_daily_indemnity',
+		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.daily_indemnity_allocation_builder',
+		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.allocate_daily_indemnity',
 		'one_fm.utils.check_grp_operator_submission_daily',
 		'one_fm.utils.check_grp_supervisor_submission_daily',
 		'one_fm.utils.check_pam_visa_approval_submission_daily',
@@ -372,6 +377,9 @@ scheduler_events = {
 		],
 		"0 8 15 * *": [
 			'one_fm.grd.doctype.preparation.preparation.create_preparation',
+		],
+		"15 3 * * *": [
+			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
 		"0 8 1 * *": [# first day of the Month at 8 am
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
@@ -522,6 +530,9 @@ fixtures = [
 	{
 		"dt": "Custom DocPerm",
 		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Email Template"
 	}
 ]
 

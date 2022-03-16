@@ -4,32 +4,36 @@ from __future__ import unicode_literals
 import itertools
 from one_fm.api.notification import create_notification_log
 from frappe import _
-import frappe, os, erpnext
-import json
-import math
+import frappe, os, erpnext, json, math
 from frappe.model.document import Document
 from frappe.utils import get_site_base_path
 from erpnext.hr.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils.csvutils import read_csv_content
-from frappe.utils import cint, cstr, flt, rounded,  nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime, add_to_date, time_diff, get_time, time_diff_in_hours
+from frappe.utils import (
+    cint, cstr, flt, rounded,  nowdate, comma_and, date_diff, getdate,
+    formatdate ,get_url, get_datetime, add_to_date, time_diff, get_time,
+    time_diff_in_hours
+)
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
 from frappe.model.naming import set_name_by_naming_series
-from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import expire_allocation, create_leave_ledger_entry
+from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
+    expire_allocation, create_leave_ledger_entry
+)
 from dateutil.relativedelta import relativedelta
-from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form, \
-    comma_or, get_fullname, add_years, add_months, add_days, nowdate,get_first_day,get_last_day, today
+from frappe.utils import (
+    cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
+    comma_or, get_fullname, add_years, add_months, add_days,
+    nowdate,get_first_day,get_last_day, today
+)
 import datetime
 from datetime import datetime, time
 from frappe import utils
 import pandas as pd
 from erpnext.hr.utils import get_holidays_for_employee
-
-
-
-
+from one_fm.processor import sendemail
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -48,7 +52,7 @@ def check_upload_original_visa_submission_reminder2():
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
 
-        frappe.sendmail(sender=sender, recipients= recipient,
+        sendemail(sender=sender, recipients= recipient,
             content=msg, subject="PAM Visa Reminder", delayed=False)
 
 
@@ -71,7 +75,7 @@ def check_upload_original_visa_submission_reminder1():
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
         cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
-        frappe.sendmail(sender=sender, recipients= recipient,
+        sendemail(sender=sender, recipients= recipient,
             content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
 
 
@@ -104,7 +108,7 @@ def check_pam_visa_approval_submission_seven():
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
 
-        frappe.sendmail(sender=sender, recipients= recipient,
+        sendemail(sender=sender, recipients= recipient,
             content=msg, subject="PAM Visa Reminder", delayed=False)
 
 
@@ -128,7 +132,7 @@ def check_pam_visa_approval_submission_six_half():
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
         cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
-        frappe.sendmail(sender=sender, recipients= recipient,
+        sendemail(sender=sender, recipients= recipient,
             content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
 
 
@@ -158,7 +162,7 @@ def check_upload_tasriah_reminder2():
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
 
-        frappe.sendmail(sender=sender, recipients= recipient,
+        sendemail(sender=sender, recipients= recipient,
             content=msg, subject="PAM Visa Reminder", delayed=False)
 
 
@@ -183,7 +187,7 @@ def check_upload_tasriah_reminder1():
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
         cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
-        frappe.sendmail(sender=sender, recipients= recipient,
+        sendemail(sender=sender, recipients= recipient,
             content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
 
 
@@ -222,7 +226,7 @@ def check_grp_supervisor_submission_daily():
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
-        frappe.sendmail(sender=sender, recipients= recipient,
+        sendemail(sender=sender, recipients= recipient,
             content=msg, subject="PAM Visa Reminder", delayed=False)
 
 
@@ -244,7 +248,7 @@ def check_grp_operator_submission_four_half():
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
         cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
-        frappe.sendmail(sender=sender, recipients= recipient,
+        sendemail(sender=sender, recipients= recipient,
             content=msg, subject="PAM Visa Reminder",cc=cc, delayed=False)
 
 
@@ -266,7 +270,7 @@ def check_grp_operator_submission_four():
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
 
-        frappe.sendmail(sender=sender, recipients= recipient,
+        sendemail(sender=sender, recipients= recipient,
             content=msg, subject="PAM Visa Reminder", delayed=False)
 
 
@@ -301,7 +305,7 @@ def send_gp_letter_attachment_reminder2():
                 recipient = frappe.db.get_single_value('GP Letter Request Setting', 'travel_agent_email')
                 cc = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
 
-                frappe.sendmail(sender=sender, recipients= recipient,
+                sendemail(sender=sender, recipients= recipient,
                     content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False)
 
                 gp_letter_doc.upload_reminder2 = frappe.utils.now()
@@ -327,7 +331,7 @@ def send_gp_letter_attachment_reminder3():
                 recipient = frappe.db.get_single_value('GP Letter Request Setting', 'travel_agent_email')
                 cc = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
 
-                frappe.sendmail(sender=sender, recipients= recipient,
+                sendemail(sender=sender, recipients= recipient,
                     content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False)
 
                 gp_letter_doc.upload_reminder3 = frappe.utils.now()
@@ -349,7 +353,7 @@ def send_gp_letter_attachment_no_response():
             msg = frappe.render_template('one_fm/templates/emails/gp_letter_attachment_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
             sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
             recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
-            frappe.sendmail(sender=sender, recipients= recipient,
+            sendemail(sender=sender, recipients= recipient,
                 content=msg, subject="GP Letter Upload No Response", delayed=False)
 
 def send_travel_agent_email():
@@ -383,7 +387,7 @@ def send_travel_agent_email():
             #     msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
             #     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
             #     recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
-            #     frappe.sendmail(sender=sender, recipients= recipient,
+            #     sendemail(sender=sender, recipients= recipient,
             #         content=msg, subject="GP Letter Request No Response", delayed=False)
 
 def send_gp_letter_reminder():
@@ -419,7 +423,7 @@ def send_gp_letter_reminder():
                     msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
                     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                     recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
-                    frappe.sendmail(sender=sender, recipients= recipient,
+                    sendemail(sender=sender, recipients= recipient,
                         content=msg, subject="GP Letter Request No Response", delayed=False)
 
 
@@ -447,7 +451,7 @@ def send_gp_email(pid, candidates, gp_letter_request):
         'fcontent': filedata
     }]
 
-    frappe.sendmail(sender=sender, recipients= recipient,
+    sendemail(sender=sender, recipients= recipient,
         content=msg, subject="Request for GP Letter | {0}".format(gp_letter_request), attachments=attachments ,delayed=False)
 
 
@@ -1408,7 +1412,6 @@ def validate_job_applicant(doc, method):
     if not doc.one_fm_is_easy_apply:
         validate_mandatory_fields(doc)
     set_job_applicant_status(doc, method)
-    set_average_score(doc, method)
     if doc.is_new():
         set_erf_days_off_details(doc)
         set_childs_for_application_web_form(doc, method)
@@ -1592,20 +1595,6 @@ def get_mandatory_fields_current_employment(doc):
             {'Notice Period in Days': 'one_fm_notice_period_in_days'}
         ]
     return []
-
-def set_average_score(doc, method):
-    if doc.one_fm_job_applicant_score:
-        total = 0
-        no_of_interview = 0
-        for score in doc.one_fm_job_applicant_score:
-            total += score.score
-            no_of_interview += 1
-        if total > 0 and no_of_interview > 0:
-            doc.one_fm_average_interview_score = total/no_of_interview
-            if doc.one_fm_applicant_status == 'Draft':
-                doc.one_fm_applicant_status = 'Interview'
-        else:
-            doc.one_fm_average_interview_score = total
 
 def set_job_applicant_status(doc, method):
     if doc.one_fm_applicant_status != 'Selected':
@@ -2043,11 +2032,11 @@ def generate_roster_report():
 
     # Send Roster Post report email to Operations Managers
     post_report_subject = "Roster Post Report from {start_date} to {end_date}".format(start_date=start_date, end_date=end_date)
-    frappe.sendmail(recipients= recipients, content=post_report_table, subject=post_report_subject ,delayed=False)
+    sendemail(recipients= recipients, content=post_report_table, subject=post_report_subject ,delayed=False)
 
     # Send Roster Employee report email to Operations Managers
     employee_report_subject = "Roster Employee Report from {start_date} to {end_date}".format(start_date=start_date, end_date=end_date)
-    frappe.sendmail(recipients= recipients, content=employee_report_table, subject=employee_report_subject ,delayed=False)
+    sendemail(recipients= recipients, content=employee_report_table, subject=employee_report_subject ,delayed=False)
 
 
 
@@ -2269,14 +2258,13 @@ def send_verification_code(doctype, document_name):
         employee_user_email = frappe.session.user
         subject = _("Verification code for {doctype}.".format(doctype=doctype))
 
-
         message = """Dear user,<br><br>
             An attempt was made to use your signature in {doctype}: {document}.<br><br>
             To use your signature, use the verification code: <b>{verification_code}</b>.<br><br>
             If this was not you, ignore this email.<br>
             """.format(doctype=doctype, document=document_name, verification_code=verification_code)
-
-        frappe.sendmail([employee_user_email], subject=subject, content=message, delayed=False)
+        header = [_('Verfication Code'), 'blue']
+        sendemail([employee_user_email], subject=subject, header=header,message=message, reference_doctype=doctype, reference_name=document_name, delay=False)
 
         cache_key = hashlib.md5((employee_user_email + doctype + document_name).encode('utf-8')).hexdigest()
         cache_value = hashlib.md5((employee_user_email + doctype + document_name + str(verification_code)).encode('utf-8')).hexdigest()
@@ -2329,6 +2317,6 @@ def generate_code():
         code += digits[math.floor(random.random() * 9)]
     return code
 
-frappe.whitelist()
+@frappe.whitelist()
 def fetch_employee_signature(user_id):
     return frappe.get_value("Employee", {"user_id":user_id},["employee_signature"])

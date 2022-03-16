@@ -14,6 +14,7 @@
   "hiring_method",
   "validated_by_recruiter_on",
   "section_break_8",
+  "calculate_promotions_and_experience_automatically",
   "total_years_of_experience",
   "total_number_of_promotions_and_salary_changes",
   "column_break_11",
@@ -26,7 +27,8 @@
   "shoves_and_tugs_cb_column",
   "tugs",
   "about_the_opportunity_section",
-  "about_the_opportunity"
+  "about_the_opportunity",
+  "amended_from"
  ],
  "fields": [
   {
@@ -147,16 +149,34 @@
   {
    "fieldname": "column_break_11",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "calculate_promotions_and_experience_automatically",
+   "fieldtype": "Check",
+   "label": "Calculate Promotions and Experience Automatically"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Career History",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
+ "is_submittable": 1,
  "links": [],
- "modified": "2021-12-12 23:17:33.063041",
+ "modified": "2022-03-12 13:19:49.870457",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -166,9 +186,12 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -178,9 +201,12 @@
    "report": 1,
    "role": "HR Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -190,6 +216,7 @@
    "report": 1,
    "role": "Hiring Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
