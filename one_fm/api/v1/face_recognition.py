@@ -140,7 +140,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
         # request body
-        req = facial_recognition_pb2.Request(
+        req = facial_recognition_pb2.FaceRecognitionRequest(
             username = frappe.session.user,
             media_type = "video",
             media_content = video
