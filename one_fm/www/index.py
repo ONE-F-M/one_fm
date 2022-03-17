@@ -1,3 +1,4 @@
+import random
 import frappe, html
 from frappe.www.contact import send_message
 
@@ -15,7 +16,7 @@ def get_data():
     # get recent job opening
     context.job_opening = frappe.db.sql("""
         SELECT name, description FROM `tabJob Opening`
-        WHERE status='Open'
+        WHERE status='Open' AND publish=1
         ORDER BY modified DESC
         LIMIT 4
         """, as_dict=1)
@@ -29,6 +30,16 @@ def get_data():
         'status':'Active'
     })})
     context.projects = projects
+    partners = [i.image for i in
+            frappe.db.sql("""
+                SELECT image FROM `tabCustomer`
+                WHERE image IS NOT NULL;""",
+        as_dict=1)]
+    try:
+        out_sample = random.sample(partners, 12)
+    except Exception as e:
+        out_sample = random.sample(partners, len(partners))
+    context.partners = out_sample
 
     return context
 
