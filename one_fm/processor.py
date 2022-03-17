@@ -1,4 +1,8 @@
 import frappe
+import requests
+import json
+from twilio.rest import Client as TwilioClient
+
 
 @frappe.whitelist()
 def sendemail(recipients, subject, header=None, message=None,
@@ -22,3 +26,26 @@ def sendemail(recipients, subject, header=None, message=None,
                     ),
                     attachments = attachments,
                     delayed=delay)
+
+@frappe.whitelist()
+def send_whatsapp(sender_id, body):
+	twilio = frappe.get_doc('Twilio Setting' )
+	
+	client =  TwilioClient(twilio.sid, twilio.token)
+	
+	message = client.messages.create( 
+		from_='whatsapp:' + twilio.t_number,  
+		body=body,      
+		to= 'whatsapp:+'+ sender_id
+	) 
+	return message
+
+@frappe.whitelist(allow_guest=True)
+def whatsapp():
+    request = json.loads(frappe.request.data)
+    message = request.form['Body']
+    senderId = request.form['From'].split('+')[1]
+    
+    res = send_whatsapp(senderId=senderId, message=message)
+
+    return '200'
