@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from proto import enroll_pb2 as proto_dot_enroll__pb2
+from one_fm.proto import enroll_pb2 as one__fm_dot_proto_dot_enroll__pb2
 
 
 class FaceRecognitionEnrollmentServiceStub(object):
@@ -16,8 +16,8 @@ class FaceRecognitionEnrollmentServiceStub(object):
         """
         self.FaceRecognitionEnroll = channel.unary_unary(
                 '/FaceRecognitionEnrollmentService/FaceRecognitionEnroll',
-                request_serializer=proto_dot_enroll__pb2.Request.SerializeToString,
-                response_deserializer=proto_dot_enroll__pb2.Response.FromString,
+                request_serializer=one__fm_dot_proto_dot_enroll__pb2.EnrollRequest.SerializeToString,
+                response_deserializer=one__fm_dot_proto_dot_enroll__pb2.EnrollResponse.FromString,
                 )
 
 
@@ -35,8 +35,8 @@ def add_FaceRecognitionEnrollmentServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'FaceRecognitionEnroll': grpc.unary_unary_rpc_method_handler(
                     servicer.FaceRecognitionEnroll,
-                    request_deserializer=proto_dot_enroll__pb2.Request.FromString,
-                    response_serializer=proto_dot_enroll__pb2.Response.SerializeToString,
+                    request_deserializer=one__fm_dot_proto_dot_enroll__pb2.EnrollRequest.FromString,
+                    response_serializer=one__fm_dot_proto_dot_enroll__pb2.EnrollResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -60,7 +60,7 @@ class FaceRecognitionEnrollmentService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/FaceRecognitionEnrollmentService/FaceRecognitionEnroll',
-            proto_dot_enroll__pb2.Request.SerializeToString,
-            proto_dot_enroll__pb2.Response.FromString,
+            one__fm_dot_proto_dot_enroll__pb2.EnrollRequest.SerializeToString,
+            one__fm_dot_proto_dot_enroll__pb2.EnrollResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
