@@ -1,6 +1,6 @@
 import base64
 import grpc
-from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2, enroll_pb2, enroll_pb2_grpc
+from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 import frappe
 from frappe import _
 from frappe.utils import now_datetime, cstr, nowdate, cint
@@ -43,7 +43,7 @@ def enroll():
 		# setup stub
 		stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
 			# request body
-		req = enroll_pb2.Request(
+		req = enroll_pb2.EnrollRequest(
 			username = username,
 			user_encoded_video = video_content,
 		)
@@ -93,7 +93,7 @@ def verify():
 		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 		# request body
-		req = facial_recognition_pb2.Request(
+		req = facial_recognition_pb2.FaceRecognitionRequest(
 			username = user_name,
 			media_type = "video",
 			media_content = video_content,
