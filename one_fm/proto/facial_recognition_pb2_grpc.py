@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from proto import facial_recognition_pb2 as proto_dot_facial__recognition__pb2
+from one_fm.proto import facial_recognition_pb2 as one__fm_dot_proto_dot_facial__recognition__pb2
 
 
 class FaceRecognitionServiceStub(object):
@@ -16,8 +16,8 @@ class FaceRecognitionServiceStub(object):
         """
         self.FaceRecognition = channel.unary_unary(
                 '/FaceRecognitionService/FaceRecognition',
-                request_serializer=proto_dot_facial__recognition__pb2.Request.SerializeToString,
-                response_deserializer=proto_dot_facial__recognition__pb2.Response.FromString,
+                request_serializer=one__fm_dot_proto_dot_facial__recognition__pb2.FaceRecognitionRequest.SerializeToString,
+                response_deserializer=one__fm_dot_proto_dot_facial__recognition__pb2.FaceRecognitionResponse.FromString,
                 )
 
 
@@ -35,8 +35,8 @@ def add_FaceRecognitionServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'FaceRecognition': grpc.unary_unary_rpc_method_handler(
                     servicer.FaceRecognition,
-                    request_deserializer=proto_dot_facial__recognition__pb2.Request.FromString,
-                    response_serializer=proto_dot_facial__recognition__pb2.Response.SerializeToString,
+                    request_deserializer=one__fm_dot_proto_dot_facial__recognition__pb2.FaceRecognitionRequest.FromString,
+                    response_serializer=one__fm_dot_proto_dot_facial__recognition__pb2.FaceRecognitionResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -60,7 +60,7 @@ class FaceRecognitionService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/FaceRecognitionService/FaceRecognition',
-            proto_dot_facial__recognition__pb2.Request.SerializeToString,
-            proto_dot_facial__recognition__pb2.Response.FromString,
+            one__fm_dot_proto_dot_facial__recognition__pb2.FaceRecognitionRequest.SerializeToString,
+            one__fm_dot_proto_dot_facial__recognition__pb2.FaceRecognitionResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
