@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 import frappe, json
 from frappe.utils import (
-    get_url, fmt_money, month_diff, add_days, add_years, getdate, flt
+    get_url, fmt_money, month_diff, add_days, add_years, getdate, flt, get_link_to_form
 )
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
@@ -657,6 +657,47 @@ def update_onboarding_doc_workflow_sate(doc):
 @frappe.whitelist()
 def get_interview_question_set(interview_round):
 	return frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+
+@frappe.whitelist()
+def get_interview_skill_and_question_set(interview_round):
+    question = frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+    skill = frappe.get_all('Expected Skill Set', filters ={'parent': interview_round}, fields=['skill'])
+    return question, skill
+
+@frappe.whitelist()
+def create_interview_feedback(data, interview_name, interviewer, job_applicant):
+    import json
+
+    from six import string_types
+
+    if isinstance(data, string_types):
+        data = frappe._dict(json.loads(data))
+
+    if frappe.session.user != interviewer:
+        frappe.throw(_('Only Interviewer Are allowed to submit Interview Feedback'))
+
+    interview_feedback = frappe.new_doc('Interview Feedback')
+    interview_feedback.interview = interview_name
+    interview_feedback.interviewer = interviewer
+    interview_feedback.job_applicant = job_applicant
+
+    for d in data.skill_set:
+        d = frappe._dict(d)
+        interview_feedback.append('skill_assessment', {'skill': d.skill, 'rating': d.rating})
+
+    for dq in data.questions:
+        dq = frappe._dict(dq)
+        interview_feedback.append('interview_question_assessment', {'questions': dq.questions, 'answer': dq.answer,
+            'weight': dq.weight, 'applicant_answer': dq.applicant_answer, 'score': dq.score})
+
+    interview_feedback.feedback = data.feedback
+    interview_feedback.result = data.result
+
+    interview_feedback.save()
+    interview_feedback.submit()
+
+    frappe.msgprint(_('Interview Feedback {0} submitted successfully').format(
+    get_link_to_form('Interview Feedback', interview_feedback.name)))
 
 def calculate_interview_feedback_average_rating(doc, method):
     total_skill_rating = doc.average_rating if doc.average_rating else 0
