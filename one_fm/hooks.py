@@ -82,6 +82,7 @@ doctype_js = {
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 	"Issue": "public/js/doctype_js/issue.js",
 	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
+	"Interview": "public/js/doctype_js/interview.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
