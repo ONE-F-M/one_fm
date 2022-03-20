@@ -46,10 +46,10 @@ def whatsapp():
 	possibility = " "
 	if(frappe.request.data):
 		data = frappe.request.data
-		tree = ET.fromstring(data)
-		body = tree.find('Body').text
-		from_ = tree.find('From').text.split('+')[1]
-		message = "Hello, the data is " + body + "from " +  from_
+		# tree = ET.fromstring(data)
+		# body = tree.find('Body').text
+		# from_ = tree.find('From').text.split('+')[1]
+		message = "Hello, the data is " + data
 		res = send_whatsapp(sender_id="96590042238", body=message)
 	else:
 		possibility = "False"
