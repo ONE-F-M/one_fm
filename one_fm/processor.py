@@ -44,15 +44,27 @@ def send_whatsapp(sender_id, body):
 @frappe.whitelist(allow_guest=True)
 def whatsapp():
 	if(frappe.request.data):
-		data = frappe.request.data
-		tree = ET.fromstring(data)
-		body = tree.find('Body').text
-		from_ = tree.find('From').text.split('+')[1]
-		message = "Hello, the data is " + body + "from " +  from_
-		res = send_whatsapp(sender_id="96590042238", body=message)
-	else:
-		possibility = "False"
-	# message = request.form['Body']
-	# senderId = request.form['From'].split('+')[1]
+		data = decode_data(frappe.request.data)
+		body = data["Body"]
+		from_ = data["WaId"]
+
+		res = send_whatsapp(sender_id=from_, body=body)
 
 	return '200'
+
+def decode_data(data):
+    """Fetched Data from request is in form of bytes. 
+    This function is to convert Bytes to string and then into Dictionary
+
+    Args:
+        data (bytes): the data fetched from the request made to the given method.
+
+    Returns:
+        dict_data: dictionary consisting keys and values from data
+    """
+    decode_data = data.decode("utf-8") 
+    dict_data = {}
+    lists = list(decode_data.split("&"))
+    for l in lists:
+        dict_data[l.split("=")[0]]= l.split("=")[1]
+    return dict_data
