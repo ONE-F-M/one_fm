@@ -50,6 +50,6 @@ def whatsapp():
 	# message = request.form['Body']
 	# senderId = request.form['From'].split('+')[1]
 	body = "Hello, the possibility is " + possibility 
-	res = send_whatsapp(sender_id="96590042238", body=message)
+	res = send_whatsapp(sender_id="96590042238", body=body)
 
 	return '200'
