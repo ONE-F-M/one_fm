@@ -34,6 +34,8 @@ from frappe import utils
 import pandas as pd
 from erpnext.hr.utils import get_holidays_for_employee
 from one_fm.processor import sendemail
+from frappe.desk.form import assign_to
+from one_fm.one_fm.payroll_utils import get_user_list_by_role
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -2342,3 +2344,49 @@ def get_issue_type_in_department(doctype, txt, searchfield, start, page_len, fil
             'txt': "%%%s%%" % txt
         }
     )
+
+def assign_issue(doc, method):
+    '''
+        This Method is used to assign issue.
+        args:
+            doc: object of Issue
+        called from hooks doc events
+    '''
+    if doc.department:
+        assign_issue_to_department_issue_responder(doc.name, doc.department)
+
+def assign_issue_to_department_issue_responder(issue, department):
+    '''
+        This Method is used to assign issue to the Issue Responer in mentioned in the department.
+        args:
+            issue: name valuse of Issue(Example: ISS-2021-00001)
+            department: name value of Department(Example: IT - ONEFM)
+        Method will check if `issue responder role` is mentioned in department,
+        if yes then get the users having that role and assign the issue to the users
+    '''
+    department_issue_responder = get_department_issue_responder(department)
+    if department_issue_responder and len(department_issue_responder) > 0:
+        for issue_responder in department_issue_responder:
+            try:
+                assign_to.add({
+                    'assign_to': [issue_responder],
+                    'doctype': 'Issue',
+                    'name': issue,
+                    'description': (_('The Issue {0} is assigned').format(issue)),
+                    'notify': 0
+                })
+            except assign_to.DuplicateToDoError:
+                pass
+
+def get_department_issue_responder(department):
+    '''
+        This Method is used to get all issue responder users in department.
+        args:
+            department: name value of Department(Example: IT - ONEFM)
+        Method will check if `issue responder role` is mentioned in department,
+        if yes then grab the users having that role.
+    '''
+    issue_responder_role = frappe.db.get_value('Department', department, 'issue_responder_role')
+    if issue_responder_role:
+        return get_user_list_by_role(issue_responder_role)
+    return False
