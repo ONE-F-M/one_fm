@@ -2,6 +2,7 @@ import frappe
 import requests
 import json
 from twilio.rest import Client as TwilioClient
+import xml.etree.ElementTree as ET
 
 
 @frappe.whitelist()
@@ -43,12 +44,15 @@ def send_whatsapp(sender_id, body):
 @frappe.whitelist(allow_guest=True)
 def whatsapp():
 	if(frappe.request.data):
-		possibility = "True"
+		data = frappe.request.data
+		tree = ET.fromstring(data)
+		body = tree.find('Body').text
+		from_ = tree.find('From').text.split('+')[1]
+		message = "Hello, the data is " + body + "from " +  from_
+		res = send_whatsapp(sender_id="96590042238", body=message)
 	else:
 		possibility = "False"
 	# message = request.form['Body']
 	# senderId = request.form['From'].split('+')[1]
-	message = "Hello, the possibility is " + possibility 
-	res = send_whatsapp(senderId="96590042238", message=message)
 
 	return '200'
