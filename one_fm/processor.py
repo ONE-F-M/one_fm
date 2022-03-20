@@ -42,10 +42,13 @@ def send_whatsapp(sender_id, body):
 
 @frappe.whitelist(allow_guest=True)
 def whatsapp():
-    request = json.loads(frappe.request.data)
-    message = request.form['Body']
-    senderId = request.form['From'].split('+')[1]
-    
-    res = send_whatsapp(senderId=senderId, message=message)
+	if(frappe.request.data):
+		possibility = "True"
+	else:
+		possibility = "False"
+	# message = request.form['Body']
+	# senderId = request.form['From'].split('+')[1]
+	message = "Hello, the possibility is " + possibility 
+	res = send_whatsapp(senderId="96590042238", message=message)
 
-    return '200'
+	return '200'
