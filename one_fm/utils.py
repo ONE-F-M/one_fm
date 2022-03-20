@@ -2320,3 +2320,25 @@ def generate_code():
 @frappe.whitelist()
 def fetch_employee_signature(user_id):
     return frappe.get_value("Employee", {"user_id":user_id},["employee_signature"])
+
+@frappe.whitelist()
+def get_issue_type_in_department(doctype, txt, searchfield, start, page_len, filters):
+    query = """SELECT name FROM `tabIssue Type` WHERE name LIKE %(txt)s"""
+    if filters.get('department'):
+        query = """
+            select
+                issue_types.issue_type
+            from
+                `tabDepartment` department, `tabDepartment Issue Type` issue_types
+            where
+                issue_types.parent=department.name and department.name=%(department)s
+                    and issue_types.issue_type like %(txt)s
+        """
+    return frappe.db.sql(query,
+        {
+            'department': filters.get("department"),
+            'start': start,
+            'page_len': page_len,
+            'txt': "%%%s%%" % txt
+        }
+    )
