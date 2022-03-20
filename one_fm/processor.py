@@ -49,7 +49,7 @@ def whatsapp():
 		possibility = "False"
 	# message = request.form['Body']
 	# senderId = request.form['From'].split('+')[1]
-	message = "Hello, the possibility is " + possibility 
-	res = send_whatsapp(sender_id="96590042238", message=message)
+	body = "Hello, the possibility is " + possibility 
+	res = send_whatsapp(sender_id="96590042238", body=message)
 
 	return '200'
