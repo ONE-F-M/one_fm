@@ -42,7 +42,7 @@ def send_whatsapp(sender_id, body):
 
 @frappe.whitelist(allow_guest=True)
 def whatsapp():
-    possibility = " "
+	possibility = " "
 	if(frappe.request.data):
 		possibility = "True"
 	else:
