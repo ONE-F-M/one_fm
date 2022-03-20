@@ -45,9 +45,9 @@ def whatsapp():
 	possibility = " "
 	if(frappe.request.data):
 		possibility = "True"
-        r = json.loads(frappe.request.data)
-        body = r.form['Body']
-        senderId = r.form['From'].split('+')[1]
+		r = json.loads(frappe.request.data)
+		body = r.form['Body']
+		senderId = r.form['From'].split('+')[1]
 	else:
 		possibility = "False"
 	# message = request.form['Body']
