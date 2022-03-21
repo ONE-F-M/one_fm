@@ -7,6 +7,11 @@ from frappe.utils import now_datetime, cstr, nowdate, cint
 import numpy as np
 import datetime
 from json import JSONEncoder
+import cv2, os
+import face_recognition
+import json
+from imutils import face_utils, paths
+
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -178,3 +183,76 @@ def check_existing():
 	#For Check OUT
 	else:
 		return True
+
+def create_dataset(video):
+	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"
+	count = 0 
+	
+	cap = cv2.VideoCapture(video)
+	success, img = cap.read()
+	count = 0
+	while success:
+		#Resizing the image
+		img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
+		#Limiting the number of images for training. %5 gives 10 images %5.8 -> 8 images %6.7 ->7 images
+		if count%5 == 0 :
+			cv2.imwrite(OUTPUT_DIRECTORY + "{0}.jpg".format(count+1), img)
+		count = count + 1
+		success, img = cap.read()
+
+	create_encodings(OUTPUT_DIRECTORY)
+	doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+	print(doc.as_dict())
+	doc.enrolled = 1
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+
+def create_encodings(directory, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
+	"""
+		directory : directory path containing dataset 
+	"""
+	print(directory)
+	OUTPUT_ENCODING_PATH_PREFIX = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"
+	user_id = frappe.session.user
+	# grab the paths to the input images in our dataset
+	imagePaths = list(paths.list_images(directory))
+	print(imagePaths)
+	#encodings file output path
+	encoding_path = OUTPUT_ENCODING_PATH_PREFIX + user_id +".json"
+	# initialize the list of known encodings and known names
+	knownEncodings = []
+	# knownNames = []
+
+	for (i, imagePath) in enumerate(imagePaths):
+		# extract the person name from the image path i.e User Id
+		print("[INFO] processing image {}/{}".format(i + 1, len(imagePaths)))
+		name = imagePath.split(os.path.sep)[-2]
+
+		# load the input image and convert it from BGR (OpenCV ordering)
+		# to dlib ordering (RGB)
+		image = cv2.imread(imagePath)
+		#BGR to RGB conversion
+		rgb =  image[:, :, ::-1]
+
+		# detect the (x, y)-coordinates of the bounding boxes
+		# corresponding to each face in the input image
+		boxes = face_recognition.face_locations(rgb, model=detection_method)
+
+		# compute the facial embedding for the face
+		encodings = face_recognition.face_encodings(rgb, boxes)
+
+		# loop over the encodings
+		for encoding in encodings:
+			# add each encoding + name to our set of known names and
+			# encodings
+			knownEncodings.append(encoding)
+
+	# dump the facial encodings + names to disk	
+	data = {"encodings": knownEncodings}
+	print(data)
+	if len(knownEncodings) == 0:
+		frappe.throw(_("No face found in the video. Please make sure you position your face correctly in front of the camera."))
+	data = json.dumps(data, cls=NumpyArrayEncoder)
+	with open(encoding_path,"w") as f:
+		f.write(data)
+	f.close()
