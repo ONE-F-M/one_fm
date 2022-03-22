@@ -3,9 +3,25 @@ frappe.ui.form.on('Issue', {
       // set pivotal tracker button
       pivotal_tracker_button(frm);
       add_pivotal_section(frm);
+      set_issue_type_filter(frm);
+    },
+    department: function(frm) {
+      set_issue_type_filter(frm);
     }
 });
 
+var set_issue_type_filter = frm => {
+  var filters = {};
+  if(frm.doc.department){
+    filters['department'] = frm.doc.department;
+  }
+  frm.set_query("issue_type", function() {
+    return {
+      query: "one_fm.utils.get_issue_type_in_department",
+      filters: filters
+    }
+  });
+};
 
 
 let pivotal_tracker_button = frm => {
