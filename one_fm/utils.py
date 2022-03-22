@@ -2424,25 +2424,66 @@ def set_user_filters_for_doctype_list_view(user, doctype, filter_name, filters):
 
 @frappe.whitelist()
 def get_issue_permission_query_conditions(user):
+    """
+        Method used to set the permission to get the list of docs (Example: list view query)
+        Called from the permission_query_conditions of hooks for the DocType Issue
+        args:
+            user: name of User object or current user
+        return conditions query
+    """
     if not user: user = frappe.session.user
+    # Fetch all the roles associated with the current user
     user_roles = frappe.get_roles(user)
+    # If Support Team role is in user roles or user is Administrator, then user permitted
+    if user == "Administrator" or 'Support Team' in user_roles:
+        return None
+    # Defualt query conditions: issue is raised by or assigned to the current user
+    conditions = """(`tabIssue`.raised_by = '{user}' or `tabIssue`._assign like '%{user}%')""".format(user = user)
     if frappe.db.exists('Employee', {"user_id": user}):
         department = frappe.db.get_value("Employee", {"user_id": user}, ["department"])
         if department:
+            """
+                If department exists, then fetch the department issue responder role
+                If Department Issue Responder Role is in user roles,
+                 then condition will be added with department filter
+            """
             department_issue_responder_role = frappe.db.get_value('Department', department, 'issue_responder_role')
             if department_issue_responder_role in user_roles:
-                return """(`tabIssue`.raised_by = '{user}' or `tabIssue`._assign like '%{user}%' or `tabIssue`.department = '{department}')"""\
+                # Query conditions filter will be raised by or assigned to the current user or department is same in the Issue
+                conditions = """(`tabIssue`.raised_by = '{user}' or `tabIssue`._assign like '%{user}%' or `tabIssue`.department = '{department}')"""\
                 .format(user = user, department = department)
-    if user == "Administrator" or 'Support Team' in user_roles:
-        return None
-    else:
-        return """(`tabIssue`.raised_by = '{user}' or `tabIssue`._assign like '%{user}%')""".format(user = user)
+    return conditions
 
 def has_permission_to_issue(doc, user=None):
-    user_roles = frappe.get_roles(frappe.session.user)
+    """
+        Method used to set the permission to view / edit the document
+        Called from the has_permission of hooks for the DocType Issue
+        args:
+            doc: Object of Issue
+            user: name of User object
+        return True or False with respect to the conditions
+    """
+    user = user or frappe.session.user
+    # Fetch all the roles associated with the current user
+    user_roles = frappe.get_roles(user)
+    # Fetch the department assigned to the employee linked with the ERPNext user
     department = frappe.db.get_value("Employee", {"user_id": user}, ["department"])
-    department_issue_responder_role = frappe.db.get_value('Department', department, 'issue_responder_role')
-    if frappe.session.user == "Administrator" or department_issue_responder_role in user_roles or 'Support Team' in user_roles:
-        return True
-    else:
-        return doc.owner==user or doc.raised_by==user or doc._assign==user
+    has_permission = False
+    """
+        If department exists, then fetch the department issue responder role
+        If Department Issue Responder Role is in user roles, then user permitted to the doc
+    """
+    if department:
+        department_issue_responder_role = frappe.db.get_value('Department', department, 'issue_responder_role')
+        if department_issue_responder_role in user_roles:
+            has_permission = True
+    # If Support Team role is in user roles or user is Administrator, then user permitted to the doc
+    if frappe.session.user == "Administrator" or 'Support Team' in user_roles:
+        has_permission = True
+    # If the issue is assigned to the current user, then user permitted to the doc
+    if doc._assign and user in doc._assign:
+        has_permission = True
+    # If the issue owner or the issue is raised by the current user, then user permitted to the doc
+    if doc.owner==user or doc.raised_by==user:
+        has_permission = True
+    return has_permission
