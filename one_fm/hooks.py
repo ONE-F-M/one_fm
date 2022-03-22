@@ -86,7 +86,8 @@ doctype_js = {
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
-	"Job Offer": "public/js/doctype_js/job_offer_list.js"
+	"Job Offer": "public/js/doctype_js/job_offer_list.js",
+	"Issue": "public/js/doctype_list_js/issue_list.js"
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",

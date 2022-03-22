@@ -2390,3 +2390,29 @@ def get_department_issue_responder(department):
     if issue_responder_role:
         return get_user_list_by_role(issue_responder_role)
     return False
+
+@frappe.whitelist()
+def set_my_issue_filters():
+    filters = '[["Issue","_assign","like","'+frappe.session.user+'",false],["Issue","status","=","Open"]]'
+    set_user_filters_for_doctype_list_view(frappe.session.user, 'Issue', 'Assing to Me', filters)
+    filters = '[["Issue","raised_by","=","'+frappe.session.user+'",false]]'
+    set_user_filters_for_doctype_list_view(frappe.session.user, 'Issue', 'My Issues', filters)
+
+def set_user_filters_for_doctype_list_view(user, doctype, filter_name, filters):
+    '''
+        This Method is used to save user filters for doctype list view.
+        args:
+            user: name value of User(Example: user1@abc.com)
+            doctype: name value of DocType(Example: Issue)
+            filter_name: text value
+            filters: filter value
+        Method will check if List Filter exists for `For User, Reference Doctype and Filter Name`,
+        if no then create List Filter
+    '''
+    if not frappe.db.exists('List Filter', {'for_user': user, 'reference_doctype': doctype, 'filter_name': filter_name}):
+        list_filter = frappe.new_doc('List Filter')
+        list_filter.filter_name = filter_name
+        list_filter.for_user = user
+        list_filter.reference_doctype = doctype
+        list_filter.filters = filters
+        list_filter.save(ignore_permissions=True)
