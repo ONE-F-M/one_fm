@@ -2394,9 +2394,14 @@ def get_department_issue_responder(department):
 @frappe.whitelist()
 def set_my_issue_filters():
     filters = '[["Issue","_assign","like","'+frappe.session.user+'",false],["Issue","status","=","Open"]]'
-    set_user_filters_for_doctype_list_view(frappe.session.user, 'Issue', 'Assing to Me', filters)
+    set_user_filters_for_doctype_list_view(frappe.session.user, 'Issue', 'Assign to Me', filters)
     filters = '[["Issue","raised_by","=","'+frappe.session.user+'",false]]'
     set_user_filters_for_doctype_list_view(frappe.session.user, 'Issue', 'My Issues', filters)
+    if frappe.db.exists('Employee', {"user_id": frappe.session.user}):
+        department = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["department"])
+        if department and frappe.db.get_value('Department', department, 'issue_responder_role'):
+            filters = '[["Issue","department","=","'+department+'",false]]'
+            set_user_filters_for_doctype_list_view(frappe.session.user, 'Issue', 'Department Issues', filters)
 
 def set_user_filters_for_doctype_list_view(user, doctype, filter_name, filters):
     '''
@@ -2416,3 +2421,28 @@ def set_user_filters_for_doctype_list_view(user, doctype, filter_name, filters):
         list_filter.reference_doctype = doctype
         list_filter.filters = filters
         list_filter.save(ignore_permissions=True)
+
+@frappe.whitelist()
+def get_issue_permission_query_conditions(user):
+    if not user: user = frappe.session.user
+    user_roles = frappe.get_roles(user)
+    if frappe.db.exists('Employee', {"user_id": user}):
+        department = frappe.db.get_value("Employee", {"user_id": user}, ["department"])
+        if department:
+            department_issue_responder_role = frappe.db.get_value('Department', department, 'issue_responder_role')
+            if department_issue_responder_role in user_roles:
+                return """(`tabIssue`.raised_by = '{user}' or `tabIssue`._assign like '%{user}%' or `tabIssue`.department = '{department}')"""\
+                .format(user = user, department = department)
+    if user == "Administrator" or 'Support Team' in user_roles:
+        return None
+    else:
+        return """(`tabIssue`.raised_by = '{user}' or `tabIssue`._assign like '%{user}%')""".format(user = user)
+
+def has_permission_to_issue(doc, user=None):
+    user_roles = frappe.get_roles(frappe.session.user)
+    department = frappe.db.get_value("Employee", {"user_id": user}, ["department"])
+    department_issue_responder_role = frappe.db.get_value('Department', department, 'issue_responder_role')
+    if frappe.session.user == "Administrator" or department_issue_responder_role in user_roles or 'Support Team' in user_roles:
+        return True
+    else:
+        return doc.owner==user or doc.raised_by==user or doc._assign==user
