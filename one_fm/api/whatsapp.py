@@ -2,12 +2,14 @@ import frappe
 from frappe.utils.file_manager import upload
 from .utils import response
 from datetime import datetime
+from one_fm.api.v1.utils import response
 
 @frappe.whitelist(allow_guest=True)
 def log_issue(**kwargs):
     """
         create issue log from whatsapp endpoint
     """
+
     data = frappe.form_dict.copy()
     frappe.set_user('administrator')
     if data.issue_creator_email and data.issue_desc:
@@ -33,20 +35,14 @@ def log_issue(**kwargs):
                 # add image to description
                 if 'image' in data.issue_media_type:
                     issue.db_set('description',
-                        issue.description + "<br>" + f'<img height="300px" width="300px" src="{data.issue_media}" />')
-
-            return response(
-                code=200, title='Issue logged successfully',
-                msg = f"Your issue has been logged,\nissue id: {issue.name}"
-            )
+                        issue.description + "<br>" + f'<img height="500px" width="500px" src="{data.issue_media}" />')
+            response (
+                f"Your issue has been logged,\nissue id: {issue.name}", 200)
         except Exception as e:
-            print(e)
-            response(
-                code=500, title='Error',
-                msg = f"An error occurred"
-                )
+            response (
+                "An error occurred", 500)
     else:
-        return response(
-            code=500, title='Incomplete data set',
-            msg = f"You provided an incomplete data set."
-            )
+        response (
+            "You provided an incomplete data set.", 400)
+
+    return
