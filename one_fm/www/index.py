@@ -3,7 +3,10 @@ import frappe, html
 from frappe.www.contact import send_message
 
 def get_context(context):
-
+    context.twilio_number = frappe.db.sql(f"""
+        SELECT * FROM `tabSingles` WHERE doctype='Twilio Setting' AND field='t_number';
+        """, as_dict=1)[0].value
+    print(twilio_number)
     return context
 
 @frappe.whitelist(allow_guest=True)
