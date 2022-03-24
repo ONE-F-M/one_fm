@@ -37,12 +37,16 @@ def log_issue(**kwargs):
                     issue.db_set('description',
                         issue.description + "<br>" + f'<img height="500px" width="500px" src="{data.issue_media}" />')
             response (
-                f"Your issue has been logged,\nissue id: {issue.name}", 200)
+                "success", 200, {
+                    'issue_id':issue_id,
+                    'message': 'Your issue has been logged'
+                    'status': 'Open'
+                    })
         except Exception as e:
             response (
-                "An error occurred", 500)
+                "error", 500, {'message': 'An error occurred'})
     else:
         response (
-            "You provided an incomplete data set.", 400)
+            "error", 400, {'message': 'You provided an incomplete data set.'})
 
     return
