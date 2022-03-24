@@ -64,10 +64,7 @@ def notify_issue_raiser(doc, method):
             You will be notified when a response is made by email. The details of your ticket are shown below:<br>
             <br>
             Issue ID: {issue_id}<br>
-            Issue subject: {issue_subject}<br>
-            <br>
-            Sincerely,
-            ONE FM Support Team
+            Issue subject: {issue_subject}<br><br>
             """
             
             sendemail(recipients=[doc.raised_by], subject=email_subject, header=header, message=message)
