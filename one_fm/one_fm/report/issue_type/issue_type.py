@@ -50,13 +50,3 @@ def get_data(filters=None):
 		result.append(row)
 	
 	return result
-
-@frappe.whitelist()
-def get_filtered_issue_types(doctype, txt, searchfield, start, page_len, filters):
-	res = []
-	dept = frappe.get_doc("Department", filters.get("department"))
-
-	for d in dept.issue_types:
-		res.append([d.issue_type])
-
-	return res
