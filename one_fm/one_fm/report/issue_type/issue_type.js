@@ -29,7 +29,7 @@ frappe.query_reports["Issue Type"] = {
 			"default": 'Other',
 			get_query: function() {
 				return {
-					query: "one_fm.one_fm.report.issue_type.issue_type.get_filtered_issue_types",
+					query: "one_fm.utils.get_issue_type_in_department",
 					filters: {"department": frappe.query_report.get_filter_value('department')}
 				};
 			}
