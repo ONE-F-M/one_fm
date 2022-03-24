@@ -292,7 +292,8 @@ doc_events = {
 		"validate": "one_fm.hiring.utils.calculate_interview_feedback_average_rating",
 	},
 	"Issue": {
-		"after_insert": "one_fm.utils.assign_issue"
+		"after_insert": "one_fm.utils.assign_issue",
+		"on_update": "one_fm.utils.notify_on_close"
 	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
