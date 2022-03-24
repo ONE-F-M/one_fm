@@ -2481,8 +2481,11 @@ def has_permission_to_issue(doc, user=None):
     if frappe.session.user == "Administrator" or 'Support Team' in user_roles:
         has_permission = True
     # If the issue is assigned to the current user, then user permitted to the doc
-    if doc._assign and user in doc._assign:
-        has_permission = True
+    try:
+        if doc._assign and user in doc._assign:
+            has_permission = True
+    except Exception as e:
+        pass
     # If the issue owner or the issue is raised by the current user, then user permitted to the doc
     if doc.owner==user or doc.raised_by==user:
         has_permission = True

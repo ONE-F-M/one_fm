@@ -18,7 +18,8 @@ def log_issue(**kwargs):
                 subject = data.issue_subject,
                 description = f"Name: {data.issue_creator_name}<br>"+data.issue_desc,
                 raised_by = data.issue_creator_email,
-                communication_medium = 'WhatsApp'
+                communication_medium = 'WhatsApp',
+                whatsapp_number = data.issue_phone_number
             ))
             issue.flags.ignore_mandatory = True
             issue.insert(ignore_permissions=True)
