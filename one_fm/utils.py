@@ -2354,8 +2354,8 @@ def notify_on_close(doc, method):
     if doc.contact:
         issuer_name, issuer_id = frappe.get_value("Contact", {"name":doc.contact}, ["first_name","email_id"])
     else:
-        frappe.throw(_('Kindly, fill in the contact!')
-
+        frappe.throw(_('Kindly, fill in the contact!'))
+        
     #Form Message
     msg = """Hello {name},<br><br>
     Your issue {issue_id} has been closed. If you are still experiencing 
