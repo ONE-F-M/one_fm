@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 import frappe, json
 from frappe.utils import (
-    get_url, fmt_money, month_diff, add_days, add_years, getdate, flt
+    get_url, fmt_money, month_diff, add_days, add_years, getdate, flt, get_link_to_form
 )
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
@@ -88,27 +88,7 @@ def validate_job_offer_mandatory_fields(job_offer):
             frappe.throw(msg + '</ul>')
 
 def after_insert_job_applicant(doc, method):
-    website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)
     notify_recruiter_and_requester_from_job_applicant(doc, method)
-
-def website_user_for_job_applicant(email_id, first_name, last_name='', applicant_password=False):
-    if not frappe.db.exists ("User", email_id):
-        from frappe.utils import random_string
-        user = frappe.get_doc({
-            "doctype": "User",
-            "first_name": first_name,
-            "last_name": last_name,
-            "email": email_id,
-            "user_type": "Website User",
-            "send_welcome_email": False
-        })
-        user.flags.ignore_permissions=True
-        # user.reset_password_key=random_string(32)
-        user.add_roles("Job Applicant")
-        if applicant_password:
-            from frappe.utils.password import update_password
-            update_password(user=user.name, pwd=applicant_password)
-        return user
 
 def notify_recruiter_and_requester_from_job_applicant(doc, method):
     if doc.one_fm_erf:
@@ -657,6 +637,47 @@ def update_onboarding_doc_workflow_sate(doc):
 @frappe.whitelist()
 def get_interview_question_set(interview_round):
 	return frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+
+@frappe.whitelist()
+def get_interview_skill_and_question_set(interview_round):
+    question = frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+    skill = frappe.get_all('Expected Skill Set', filters ={'parent': interview_round}, fields=['skill'])
+    return question, skill
+
+@frappe.whitelist()
+def create_interview_feedback(data, interview_name, interviewer, job_applicant):
+    import json
+
+    from six import string_types
+
+    if isinstance(data, string_types):
+        data = frappe._dict(json.loads(data))
+
+    if frappe.session.user != interviewer:
+        frappe.throw(_('Only Interviewer Are allowed to submit Interview Feedback'))
+
+    interview_feedback = frappe.new_doc('Interview Feedback')
+    interview_feedback.interview = interview_name
+    interview_feedback.interviewer = interviewer
+    interview_feedback.job_applicant = job_applicant
+
+    for d in data.skill_set:
+        d = frappe._dict(d)
+        interview_feedback.append('skill_assessment', {'skill': d.skill, 'rating': d.rating})
+
+    for dq in data.questions:
+        dq = frappe._dict(dq)
+        interview_feedback.append('interview_question_assessment', {'questions': dq.questions, 'answer': dq.answer,
+            'weight': dq.weight, 'applicant_answer': dq.applicant_answer, 'score': dq.score})
+
+    interview_feedback.feedback = data.feedback
+    interview_feedback.result = data.result
+
+    interview_feedback.save()
+    interview_feedback.submit()
+
+    frappe.msgprint(_('Interview Feedback {0} submitted successfully').format(
+    get_link_to_form('Interview Feedback', interview_feedback.name)))
 
 def calculate_interview_feedback_average_rating(doc, method):
     total_skill_rating = doc.average_rating if doc.average_rating else 0
