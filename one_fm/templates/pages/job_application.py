@@ -63,7 +63,6 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
         Return True if Job Applicant created Succesfully
         Return job_applicant if Job Applicant already exists for the job opening and applicant email_id combination
     '''
-
     # Return job_applicant if Job Applicant already exists for the job opening and applicant email_id combination
     job_applicant = frappe.db.exists("Job Applicant", {"job_title": job_opening, "email_id": applicant_email})
     if job_applicant:
