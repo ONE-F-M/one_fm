@@ -61,41 +61,35 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
             job_opening: Job Opening ID
             files: The CV attached
         Return True if Job Applicant created Succesfully
-        Return job_applicant if Job Applicant already exists for the job opening and applicant email_id combination
     '''
-    # Return job_applicant if Job Applicant already exists for the job opening and applicant email_id combination
-    job_applicant = frappe.db.exists("Job Applicant", {"job_title": job_opening, "email_id": applicant_email})
-    if job_applicant:
-        return job_applicant
-    else:
-        # Get Nationality from country given by the applicant
-        nationality = frappe.db.exists('Nationality', {'country': country})
-        # Create Job Applicant
-        job_applicant = frappe.new_doc('Job Applicant')
-        job_applicant.job_title = job_opening
-        job_applicant.applicant_name = applicant_name
-        job_applicant.one_fm_nationality = nationality if nationality else ''
-        job_applicant.one_fm_email_id = applicant_email
-        job_applicant.one_fm_contact_number = applicant_mobile
-        job_applicant.one_fm_erf = frappe.db.get_value('Job Opening', job_opening, "one_fm_erf")
-        job_applicant.one_fm_is_easy_apply = True
+    # Get Nationality from country given by the applicant
+    nationality = frappe.db.exists('Nationality', {'country': country})
+    # Create Job Applicant
+    job_applicant = frappe.new_doc('Job Applicant')
+    job_applicant.job_title = job_opening
+    job_applicant.applicant_name = applicant_name
+    job_applicant.one_fm_nationality = nationality if nationality else ''
+    job_applicant.one_fm_email_id = applicant_email
+    job_applicant.one_fm_contact_number = applicant_mobile
+    job_applicant.one_fm_erf = frappe.db.get_value('Job Opening', job_opening, "one_fm_erf")
+    job_applicant.one_fm_is_easy_apply = True
 
-        job_applicant.one_fm_first_name = applicant_name
-        job_applicant.one_fm_first_name_in_arabic = applicant_name
-        job_applicant.one_fm_last_name = applicant_name
-        job_applicant.one_fm_last_name_in_arabic = applicant_name
+    job_applicant.one_fm_first_name = applicant_name
+    job_applicant.one_fm_first_name_in_arabic = applicant_name
+    job_applicant.one_fm_last_name = applicant_name
+    job_applicant.one_fm_last_name_in_arabic = applicant_name
 
+    job_applicant.save(ignore_permissions=True)
+
+    # If files exisit, attach the file to Job Applicant created
+    if files:
+        files_json = json.loads(files)
+        files_obj = frappe._dict(files_json)
+        for file in files_obj:
+            # Attach the file to Job Applicant created
+            attach_file_to_job_applicant(files_obj[file]['files_data'], job_applicant)
         job_applicant.save(ignore_permissions=True)
-
-        # If files exisit, attach the file to Job Applicant created
-        if files:
-            files_json = json.loads(files)
-            files_obj = frappe._dict(files_json)
-            for file in files_obj:
-                # Attach the file to Job Applicant created
-                attach_file_to_job_applicant(files_obj[file]['files_data'], job_applicant)
-            job_applicant.save(ignore_permissions=True)
-        return True
+    return True
 
 @frappe.whitelist()
 def attach_file_to_job_applicant(filedata, job_applicant):

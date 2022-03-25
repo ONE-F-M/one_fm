@@ -138,9 +138,11 @@ job_application = Class.extend({
           btn: this,
           callback: function(r){
             frappe.unfreeze();
-            frappe.msgprint(frappe._("Successfully submitted your application. Our HR team will be responding to you soon."));
-            if(r.message){
+            if(!r.exc && r.message) {
+              frappe.msgprint(frappe._("Successfully submitted your application. Our HR team will be responding to you soon."));
               window.location.href = "/jobs";
+            } else {
+              frappe.msgprint(__("Application is not submitted. <br /> " + r.exc));
             }
           }
         });
