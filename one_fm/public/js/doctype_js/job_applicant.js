@@ -741,7 +741,11 @@ var create_career_history = function(frm) {
 var send_magic_link = function(frm, method) {
 	frappe.call({
 		method: method,
-		args: {'job_applicant': frm.doc.name},
+		args: {
+			'job_applicant': frm.doc.name,
+			'applicant_name': frm.doc.applicant_name,
+			'desigantion': frm.doc.desigantion
+		},
 		callback: function(r) {
 			if(r && r.message){
 				frappe.msgprint(__("Succesfully Send the Magic Link"));
