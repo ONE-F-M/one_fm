@@ -85,7 +85,7 @@ def send_career_history_magic_link(job_applicant, applicant_name, designation):
         subject = "Fill your Career History Sheet"
         url_prefix = "/career_history?magic_link="
         msg = "<b>Fill your Career History Sheet by clciking on the magic link below</b>\
-            <br/>Applicant ID: {0}<br/>Applicant Name: {1}<br/>Designation: {2}</br>".format(job_applicant, applicant_name, designations)
+            <br/>Applicant ID: {0}<br/>Applicant Name: {1}<br/>Designation: {2}</br>".format(job_applicant, applicant_name, designation)
         send_magic_link('Job Applicant', job_applicant, 'Career History', [applicant_email], url_prefix, msg, subject)
     else:
         frappe.throw(_("No Email ID found for the Job Applicant"))
