@@ -1,7 +1,6 @@
 import html, re, xml
-import requests
-import frappe
-
+import requests, frappe
+from twilio.rest import Client as TwilioClient
 
 @frappe.whitelist()
 def log_pivotal_tracker():
@@ -43,3 +42,23 @@ def log_pivotal_tracker():
     except Exception as e:
         frappe.throw(f"Pivotal Tracker story could not be created:\n {str(e)}")
         frappe.log_error(str(e), 'Issue Pivotal Tracker')
+
+
+# SEND REPLY TO WHATSAPP
+@frappe.whitelist()
+def whatsapp_reply_issue(**kwargs):
+    """
+        Reply to issues created from whatsapp
+    """
+    print(frappe.form_dict)
+    sid, t_number, auth_token = frappe.db.get_value('Twilio Setting', filters=None, fieldname=['sid','token','t_number'])
+    client = TwilioClient(sid, auth_token)
+    From = 'whatsapp:' + t_number
+    to = 'whatsapp:' + frappe.form_dict.recipient
+    body = frappe.form_dict.message
+    message = client.messages.create(
+      from_=From,
+      body=body,
+      to=to
+    )
+    return {'res': message}

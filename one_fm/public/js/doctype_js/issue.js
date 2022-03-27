@@ -112,7 +112,19 @@ let whatsappForm = (frm) => {
       ],
       primary_action_label: 'Send',
       primary_action(values) {
-          console.log(values);
+        values.doc = frm.doc
+        frappe.call({
+          method: "one_fm.api.doc_methods.issue.whatsapp_reply_issue",
+          type: "POST",
+          args: values,
+          callback: function(r) {
+            console.log(r);
+          },
+          freeze: true,
+          freeze_message: "Sending message to "+ values.recipient,
+          async: true,
+        });
+
           d.hide();
       }
   });
