@@ -2345,6 +2345,22 @@ def get_issue_type_in_department(doctype, txt, searchfield, start, page_len, fil
         }
     )
 
+def notify_on_close(doc, method):
+    '''
+        This Method is used to notify the issuer, when the issue is closed.
+    '''
+    #fetch Sender and Issuer's address
+    sender = frappe.get_value("Email Account",{"name":doc.email_account}, ["email_id"])
+        
+    #Form Message
+    msg = """Hello user,<br><br>
+    Your issue {issue_id} has been closed. If you are still experiencing 
+    the issue you may reply back to this email and we will do our best to help.
+    """.format(issue_id = doc.name)
+
+    if doc.status == "Closed":
+        sendemail(sender=sender, recipients= doc.raised_by, content=msg, subject="Your Issue has been closed!", delay=False)
+
 def assign_issue(doc, method):
     '''
         This Method is used to assign issue.

@@ -294,8 +294,9 @@ doc_events = {
 	"Issue": {
 		"after_insert": [
 			"one_fm.utils.assign_issue",
-			"one_fm.api.doc_methods.issue.notify_issue_raiser"
-		]
+			"one_fm.api.doc_methods.issue.notify_issue_raiser",
+		],
+    "on_update": "one_fm.utils.notify_on_close",
 	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
