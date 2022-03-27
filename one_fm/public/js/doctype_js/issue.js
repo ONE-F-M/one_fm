@@ -108,17 +108,22 @@ let whatsappForm = (frm) => {
               fieldname: 'message',
               fieldtype: 'Small Text',
               reqd: 1
-          }
+          },
       ],
       primary_action_label: 'Send',
       primary_action(values) {
-        values.doc = frm.doc
+        values.doc = frm.doc.name
         frappe.call({
           method: "one_fm.api.doc_methods.issue.whatsapp_reply_issue",
           type: "POST",
           args: values,
           callback: function(r) {
-            console.log(r);
+            if(r.message){
+              frappe.show_alert('WhatsApp Sent!', 5);
+            }else{
+              frappe.throw('An error occurred and have been reported!')
+            }
+            frm.reload_doc();
           },
           freeze: true,
           freeze_message: "Sending message to "+ values.recipient,

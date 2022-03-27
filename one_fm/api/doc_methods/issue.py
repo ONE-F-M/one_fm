@@ -49,16 +49,33 @@ def log_pivotal_tracker():
 def whatsapp_reply_issue(**kwargs):
     """
         Reply to issues created from whatsapp
+        Add comment to Issue
     """
-    print(frappe.form_dict)
-    sid, t_number, auth_token = frappe.db.get_value('Twilio Setting', filters=None, fieldname=['sid','token','t_number'])
-    client = TwilioClient(sid, auth_token)
-    From = 'whatsapp:' + t_number
-    to = 'whatsapp:' + frappe.form_dict.recipient
-    body = frappe.form_dict.message
-    message = client.messages.create(
-      from_=From,
-      body=body,
-      to=to
-    )
-    return {'res': message}
+    try:
+        # send WhatsApp
+        sid, t_number, auth_token = frappe.db.get_value('Twilio Setting', filters=None, fieldname=['sid','token','t_number'])
+        client = TwilioClient(sid, auth_token)
+        From = 'whatsapp:+14155238886'# + t_number
+        to = 'whatsapp:' + frappe.form_dict.recipient
+        body = frappe.form_dict.message
+
+        message = client.messages.create(
+        from_=From,
+        body=body,
+        to=to
+        )
+        # add to issue comment
+        issue_comment = frappe.get_doc(dict(
+        doctype='Comment',
+        comment_type='Comment',
+        subject='Whatsapp Reply '+frappe.form_dict.recipient,
+        content=frappe.form_dict.message,
+        reference_doctype='Issue',
+        link_doctype='Issue',
+        reference_name=frappe.form_dict.doc,
+        link_name=frappe.form_dict.doc
+        )).insert(ignore_permissions=1)
+        return True
+    except Exception as e:
+        frappe.log_error(str(e), 'Issue Whatsapp Reply')
+        return False
