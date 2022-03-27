@@ -11,6 +11,8 @@ from frappe.modules import scrub
 from frappe import _
 from frappe.desk.form import assign_to
 from one_fm.processor import sendemail
+from one_fm.templates.pages.career_history import send_career_history_magic_link
+from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 
 
 @frappe.whitelist()
@@ -294,6 +296,17 @@ def update_applicant_status(names, status_field, status, reason_for_rejection=Fa
         job_applicant.set(status_field, status)
         job_applicant.one_fm_reason_for_rejection = reason_for_rejection if reason_for_rejection else ''
         job_applicant.save()
+
+@frappe.whitelist()
+def send_magic_link_to_selected_applicants(names, magic_link):
+    names = json.loads(names)
+    for name in names:
+        applicant_data = frappe.db.get_values("Job Applicant", name, ["applicant_name", "designation"], as_dict=True)
+        if applicant_data and len(applicant_data) > 0:
+            if magic_link == 'Career History':
+                send_career_history_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
+            elif magic_link == 'Applicant Doc':
+                send_applicant_doc_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
 
 @frappe.whitelist()
 def add_remove_salary_advance(names, dialog):
