@@ -221,7 +221,7 @@ def accept_penalty(employee_id: str = None, file: str = None, docname: str = Non
 		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 		# request body
-		req = facial_recognition_pb2.Request(
+		req = facial_recognition_pb2.FaceRecognitionRequest(
 			username = frappe.session.user,
 			media_type = "image",
 			media_content = file,
