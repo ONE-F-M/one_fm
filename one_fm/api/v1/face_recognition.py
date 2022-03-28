@@ -44,8 +44,8 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
         # setup stub
         stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
-         # request body
-        req = facial_recognition_pb2.Request(
+        # request body
+        req = enroll_pb2.EnrollRequest(
             username = employee_id,
             user_encoded_video = video,
         )
