@@ -79,3 +79,32 @@ def whatsapp_reply_issue(**kwargs):
     except Exception as e:
         frappe.log_error(str(e), 'Issue Whatsapp Reply')
         return False
+
+def notify_issue_raiser(doc, method):
+    """This method notifies the issue raiser via email upon creating an issue."""
+    
+    from one_fm.processor import sendemail
+
+    try:
+        if doc.raised_by and doc.communication_medium in ["System", "Email", "Mobile App"]:
+
+            issue_id = doc.name
+            issue_subject = doc.subject
+            email_subject = f"ONE FM Support - {issue_id}"
+            
+            header = ['Support Ticket', 'blue']
+            
+            message = f"""
+            Dear user, <br><br>
+            Thank you for contacting our support team. A support ticket has now been opened for your request.<br>
+            You will be notified when a response is made by email. The details of your ticket are shown below:<br>
+            <br>
+            Issue ID: {issue_id}<br>
+            Issue subject: {issue_subject}<br><br>
+            """
+            
+            sendemail(recipients=[doc.raised_by], subject=email_subject, header=header, message=message)
+
+    except Exception as error:
+        frappe.log_error(error)
+
