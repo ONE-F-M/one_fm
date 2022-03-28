@@ -621,13 +621,10 @@ def validate_leave_type_for_one_fm_paid_leave(doc, method):
         doc.is_lwp = False
         doc.one_fm_is_paid_sick_leave = False
         doc.one_fm_is_hajj_leave = False
-        # if not doc.one_fm_annual_leave_allocation_reduction:
-        #     frappe.throw(_('Annual Leave Allocation Reduction is Mandatory'))
         if not doc.leave_allocation_matrix:
             frappe.throw(_('Leave Allocation Matrix is Mandatory'))
     elif doc.one_fm_is_hajj_leave:
         doc.one_fm_is_paid_annual_leave = False
-        doc.one_fm_is_hajj_leave = False
 
 @frappe.whitelist(allow_guest=True)
 def bereavement_leave_validation(doc, method):
