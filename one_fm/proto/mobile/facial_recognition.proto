@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+message Request {
+    string username = 1;
+    string user_encoded_video = 2;
+    string user_encoding = 3;
+}
+
+message Response {
+    string message = 1;
+    string data = 2;
+    string username = 3;
+    string verification = 4;
+}
+
+service FaceRecognitionService {
+    rpc FaceRecognition (Request) returns (Response);
+}

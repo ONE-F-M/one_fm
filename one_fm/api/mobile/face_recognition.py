@@ -2,7 +2,7 @@ import frappe, ast, base64, time
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import create_dataset, setup_directories, check_in
 from one_fm.api.mobile.roster import get_current_shift
-from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc
+from one_fm.proto.mobile import facial_recognition_pb2, facial_recognition_pb2_grpc
 import json
 import grpc
 
