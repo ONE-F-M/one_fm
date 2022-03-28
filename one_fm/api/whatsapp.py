@@ -12,7 +12,7 @@ def log_issue(**kwargs):
     frappe.set_user('administrator')
     if data.issue_creator_email and data.issue_desc:
         try:
-            if valid data create issue
+            # if valid data create issue
             issue = frappe.get_doc(dict(
                 doctype = 'Issue',
                 subject = data.issue_subject,
@@ -24,24 +24,27 @@ def log_issue(**kwargs):
             issue.flags.ignore_mandatory = True
             issue.insert(ignore_permissions=True)
             # if media available, attach it
-            if data.issue_media:
-                frappe.form_dict.doctype = 'Issue'
-                frappe.form_dict.docname = issue.name
-                frappe.form_dict.file_url = data.issue_media
-                frappe.form_dict.is_private = True
-                frappe.form_dict.filename = data.issue_creator_name+ "-" + "media-" + str(datetime.now())
-                upload()
-                # add image to description
-                if 'image' in data.issue_media_type:
-                    issue.db_set('description',
-                        issue.description + "<br>" + f'<img height="300px" width="300px" src="{data.issue_media}" />')
-
+            try:
+                # watch against issues with beautiful soup
+                if data.issue_media:
+                    frappe.form_dict.doctype = 'Issue'
+                    frappe.form_dict.docname = issue.name
+                    frappe.form_dict.file_url = data.issue_media
+                    frappe.form_dict.is_private = True
+                    frappe.form_dict.filename = data.issue_creator_name+ "-" + "media-" + str(datetime.now())
+                    upload()
+                    # add image to description
+                    if 'image' in data.issue_media_type:
+                        issue.db_set('description',
+                            issue.description + "<br>" + f'<img height="300px" width="300px" src="{data.issue_media}" />')
+            except Exception as e:
+                frappe.log_error(str(e), 'Issue WhatsApp file attach')
+                
             return response(
                 'success', 200,
-                {'message':"Your issue has been logged.",'issue_id': issue.name}
+                {'message':"Your issue has been logged.\nissue_id: "+issue.name}
             )
         except Exception as e:
-            print(e)
             response(
                 'Error', 500, {'message': 'An error occurred'}, str(e)
                 )
