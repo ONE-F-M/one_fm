@@ -1,6 +1,6 @@
 import frappe
 from frappe.utils.file_manager import upload
-from .utils import response
+from one_fm.api.v1.utils import response
 from datetime import datetime
 
 @frappe.whitelist(allow_guest=True)
@@ -12,11 +12,11 @@ def log_issue(**kwargs):
     frappe.set_user('administrator')
     if data.issue_creator_email and data.issue_desc:
         try:
-            # if valid data create issue
+            if valid data create issue
             issue = frappe.get_doc(dict(
                 doctype = 'Issue',
                 subject = data.issue_subject,
-                description = f"Name: {data.issue_creator_name}<br>"+data.issue_desc,
+                description = f"Name: {data.issue_creator_name}<br>"+data.issue_desc+data.chatlog,
                 raised_by = data.issue_creator_email,
                 communication_medium = 'WhatsApp',
                 whatsapp_number = data.issue_phone_number
@@ -43,7 +43,7 @@ def log_issue(**kwargs):
         except Exception as e:
             print(e)
             response(
-                'Error', 500, {'message': 'An error occurred'}
+                'Error', 500, {'message': 'An error occurred'}, str(e)
                 )
     else:
         return response(
