@@ -18,7 +18,8 @@ def log_issue(**kwargs):
                 subject = data.issue_subject,
                 description = f"Name: {data.issue_creator_name}<br>"+data.issue_desc,
                 raised_by = data.issue_creator_email,
-                communication_medium = 'WhatsApp'
+                communication_medium = 'WhatsApp',
+                whatsapp_number = data.issue_phone_number
             ))
             issue.flags.ignore_mandatory = True
             issue.insert(ignore_permissions=True)
@@ -36,17 +37,16 @@ def log_issue(**kwargs):
                         issue.description + "<br>" + f'<img height="300px" width="300px" src="{data.issue_media}" />')
 
             return response(
-                code=200, title='Issue logged successfully',
-                msg = f"Your issue has been logged,\nissue id: {issue.name}"
+                'success', 200,
+                {'message':"Your issue has been logged.",'issue_id': issue.name}
             )
         except Exception as e:
             print(e)
             response(
-                code=500, title='Error',
-                msg = f"An error occurred"
+                'Error', 500, {'message': 'An error occurred'}
                 )
     else:
         return response(
-            code=500, title='Incomplete data set',
-            msg = f"You provided an incomplete data set."
+            'Error', 'Incomplete data set',
+            {'message':"You provided an incomplete data set."}
             )

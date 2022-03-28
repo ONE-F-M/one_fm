@@ -1,7 +1,6 @@
 import html, re, xml
-import requests
-import frappe
-
+import requests, frappe
+from twilio.rest import Client as TwilioClient
 
 @frappe.whitelist()
 def log_pivotal_tracker():
@@ -44,6 +43,43 @@ def log_pivotal_tracker():
         frappe.throw(f"Pivotal Tracker story could not be created:\n {str(e)}")
         frappe.log_error(str(e), 'Issue Pivotal Tracker')
 
+
+# SEND REPLY TO WHATSAPP
+@frappe.whitelist()
+def whatsapp_reply_issue(**kwargs):
+    """
+        Reply to issues created from whatsapp
+        Add comment to Issue
+    """
+    try:
+        # send WhatsApp
+        sid, t_number, auth_token = frappe.db.get_value('Twilio Setting', filters=None, fieldname=['sid','token','t_number'])
+        client = TwilioClient(sid, auth_token)
+        From = 'whatsapp:+14155238886'# + t_number
+        to = 'whatsapp:' + frappe.form_dict.recipient
+        body = frappe.form_dict.message
+
+        message = client.messages.create(
+        from_=From,
+        body=body,
+        to=to
+        )
+        # add to issue comment
+        issue_comment = frappe.get_doc(dict(
+        doctype='Comment',
+        comment_type='Comment',
+        subject='Whatsapp Reply '+frappe.form_dict.recipient,
+        content=frappe.form_dict.message,
+        reference_doctype='Issue',
+        link_doctype='Issue',
+        reference_name=frappe.form_dict.doc,
+        link_name=frappe.form_dict.doc
+        )).insert(ignore_permissions=1)
+        return True
+    except Exception as e:
+        frappe.log_error(str(e), 'Issue Whatsapp Reply')
+        return False
+
 def notify_issue_raiser(doc, method):
     """This method notifies the issue raiser via email upon creating an issue."""
     
@@ -71,3 +107,4 @@ def notify_issue_raiser(doc, method):
 
     except Exception as error:
         frappe.log_error(error)
+
