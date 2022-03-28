@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 import base64
 from frappe import _
+import face_recognition
 from one_fm.api.notification import create_notification_log
 from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datetime
 from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
@@ -104,7 +105,7 @@ def accept_penalty(file, retries, docname):
 	stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 	# request body
-	req = facial_recognition_pb2.Request(
+	req = facial_recognition_pb2.FaceRecognitionRequest(
 		username = frappe.session.user,
 		media_type = "image",
 		media_content = file,
