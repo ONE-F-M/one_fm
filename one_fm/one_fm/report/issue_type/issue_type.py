@@ -63,7 +63,8 @@ def get_data(filters=None):
 			record["department"],
 			record["issue_type"]
 		]
-		row.append(record["your_issue_type"])
+		if filters.get("issue_type") == "Other" or not filters.get("issue_type"):
+			row.append(record["your_issue_type"])
 		row.append(record["count(*)"])
 		result.append(row)
 
