@@ -2350,14 +2350,15 @@ def notify_on_close(doc, method):
     #fetch Sender and Issuer's address
     sender = frappe.get_value("Email Account",{"name":doc.email_account}, ["email_id"])
         
-    #Form Message
-    msg = """Hello user,<br><br>
-    Your issue {issue_id} has been closed. If you are still experiencing 
+    #Form Subject and Message 
+    subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
+    msg = """Hello user,<br>
+        Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing 
     the issue you may reply back to this email and we will do our best to help.
-    """.format(issue_id = doc.name)
+    """.format(issue_id = doc.name, url= doc.get_url())
 
     if doc.status == "Closed":
-        sendemail(sender=sender, recipients= doc.raised_by, content=msg, subject="Your Issue has been closed!", delay=False)
+        sendemail(sender=sender, recipients= doc.raised_by, content=msg, subject=subject, delay=False)
 
 def assign_issue(doc, method):
     '''
