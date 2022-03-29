@@ -70,11 +70,13 @@ def set_expire_magic_link(job_applicant):
         frappe.db.set_value('Magic Link', magic_link, 'expired', True)
 
 @frappe.whitelist()
-def send_career_history_magic_link(job_applicant):
+def send_career_history_magic_link(job_applicant, applicant_name, designation):
     '''
         Method used to send the magic Link for Career History to the Job Applicant
         args:
             job_applicant: ID of the Job Applicant
+            applicant_name: Name of the applicant
+            designation: Designation applied
     '''
     applicant_email = frappe.db.get_value('Job Applicant', job_applicant, 'one_fm_email_id')
     # Check applicant have an email id or not
@@ -82,7 +84,8 @@ def send_career_history_magic_link(job_applicant):
         # Email Magic Link to the Applicant
         subject = "Fill your Career History Sheet"
         url_prefix = "/career_history?magic_link="
-        msg = "<b>Fill your Career History Sheet by clciking on the magic link below</b>"
+        msg = "<b>Fill your Career History Sheet by clciking on the magic link below</b>\
+            <br/>Applicant ID: {0}<br/>Applicant Name: {1}<br/>Designation: {2}</br>".format(job_applicant, applicant_name, designation)
         send_magic_link('Job Applicant', job_applicant, 'Career History', [applicant_email], url_prefix, msg, subject)
     else:
         frappe.throw(_("No Email ID found for the Job Applicant"))

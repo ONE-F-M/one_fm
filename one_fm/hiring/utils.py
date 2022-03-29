@@ -11,6 +11,8 @@ from frappe.modules import scrub
 from frappe import _
 from frappe.desk.form import assign_to
 from one_fm.processor import sendemail
+from one_fm.templates.pages.career_history import send_career_history_magic_link
+from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 
 
 @frappe.whitelist()
@@ -88,27 +90,7 @@ def validate_job_offer_mandatory_fields(job_offer):
             frappe.throw(msg + '</ul>')
 
 def after_insert_job_applicant(doc, method):
-    website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)
     notify_recruiter_and_requester_from_job_applicant(doc, method)
-
-def website_user_for_job_applicant(email_id, first_name, last_name='', applicant_password=False):
-    if not frappe.db.exists ("User", email_id):
-        from frappe.utils import random_string
-        user = frappe.get_doc({
-            "doctype": "User",
-            "first_name": first_name,
-            "last_name": last_name,
-            "email": email_id,
-            "user_type": "Website User",
-            "send_welcome_email": False
-        })
-        user.flags.ignore_permissions=True
-        # user.reset_password_key=random_string(32)
-        user.add_roles("Job Applicant")
-        if applicant_password:
-            from frappe.utils.password import update_password
-            update_password(user=user.name, pwd=applicant_password)
-        return user
 
 def notify_recruiter_and_requester_from_job_applicant(doc, method):
     if doc.one_fm_erf:
@@ -314,6 +296,17 @@ def update_applicant_status(names, status_field, status, reason_for_rejection=Fa
         job_applicant.set(status_field, status)
         job_applicant.one_fm_reason_for_rejection = reason_for_rejection if reason_for_rejection else ''
         job_applicant.save()
+
+@frappe.whitelist()
+def send_magic_link_to_selected_applicants(names, magic_link):
+    names = json.loads(names)
+    for name in names:
+        applicant_data = frappe.db.get_values("Job Applicant", name, ["applicant_name", "designation"], as_dict=True)
+        if applicant_data and len(applicant_data) > 0:
+            if magic_link == 'Career History':
+                send_career_history_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
+            elif magic_link == 'Applicant Doc':
+                send_applicant_doc_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
 
 @frappe.whitelist()
 def add_remove_salary_advance(names, dialog):

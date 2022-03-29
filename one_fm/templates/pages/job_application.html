@@ -6,10 +6,13 @@
 
 {% block script %}
   <script>{% include "templates/pages/job_application.js" %}</script>
+  <meta http-equiv="cache-control" content="no-cache" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="-1" />
 {% endblock %}
 
 {% block header %}
-  <h5 id="job_opening" data="{{ job_opening.name }}">Dear applicant, for the position {{ job_opening.designation }}, enter your full name in English.</h5>
+  <h5 id="job_opening" data="{{ frappe.form_dict.job_title }}">Dear applicant, for the position {{frappe.db.get_value('Job Opening', frappe.form_dict.job_title, 'designation')}}, enter your full name in English.</h5>
 {% endblock %}
 
 {% block page_content %}

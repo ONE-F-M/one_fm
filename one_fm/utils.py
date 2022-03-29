@@ -623,13 +623,10 @@ def validate_leave_type_for_one_fm_paid_leave(doc, method):
         doc.is_lwp = False
         doc.one_fm_is_paid_sick_leave = False
         doc.one_fm_is_hajj_leave = False
-        # if not doc.one_fm_annual_leave_allocation_reduction:
-        #     frappe.throw(_('Annual Leave Allocation Reduction is Mandatory'))
         if not doc.leave_allocation_matrix:
             frappe.throw(_('Leave Allocation Matrix is Mandatory'))
     elif doc.one_fm_is_hajj_leave:
         doc.one_fm_is_paid_annual_leave = False
-        doc.one_fm_is_hajj_leave = False
 
 @frappe.whitelist(allow_guest=True)
 def bereavement_leave_validation(doc, method):
@@ -1673,9 +1670,10 @@ def set_other_benefits_to_terms(job_offer, erf):
 
     hours = erf.shift_hours if erf.shift_hours else 9
     vacation_days = erf.vacation_days if erf.vacation_days else 30
+    off_days = erf.off_days if erf.off_days else 4
     terms = job_offer.append('offer_terms')
     terms.offer_term = 'Working Hours'
-    terms.value = str(hours)+' hours a day, (Subject to Operational Requirements) from Sunday to Thursday'
+    terms.value = str(hours)+' hours a day, (Subject to Operational Requirements), '+str(off_days)+' days off per month'
     terms = job_offer.append('offer_terms')
     terms.offer_term = 'Annual Leave'
     terms.value = '('+str(vacation_days)+') days paid leave, as per Kuwait Labor Law (Private Sector)'
