@@ -586,10 +586,6 @@ def get_current_shift(employee):
 				else:
 					if start_time <= time <= end_time:
 						return shift
-		elif len(shifts)==0:
-			return shifts		
-		else:
-			return shifts[0].shift
 	except Exception as e:
 		print(frappe.get_traceback())
 		return frappe.utils.response.report_error(e.http_status_code)

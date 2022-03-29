@@ -8,6 +8,7 @@ from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate , add_days
 import frappe, json
 from frappe.utils.file_manager import save_file
+from one_fm.processor import sendemail
 
 no_cache = 1
 no_sitemap = 1
@@ -160,10 +161,10 @@ def send_contact_email(contact_name, contact_email, contact_subject, contact_mes
     """.format(contact_name, contact_email, contact_subject, contact_message)
 
     try:
-        frappe.sendmail(sender=sender, recipients= 'omar.ja93@gmail.com',
+        sendemail(sender=sender, recipients= 'omar.ja93@gmail.com',
             content=message_details, subject=contact_subject)
 
-        frappe.sendmail(sender=sender, recipients= contact_email,
+        sendemail(sender=sender, recipients= contact_email,
             content=applied_msg, subject=applied_subject)
         return 1
     except:

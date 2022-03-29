@@ -7,7 +7,7 @@
  "docstatus": 0,
  "doctype": "Workspace",
  "extends_another_page": 0,
- "hide_custom": 1,
+ "hide_custom": 0,
  "icon": "",
  "idx": 0,
  "is_default": 0,
@@ -317,6 +317,15 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Request for Quotation",
+   "link_to": "Request for Quotation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Quotation From Supplier",
    "link_to": "Quotation From Supplier",
    "link_type": "DocType",
@@ -410,10 +419,28 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Approval",
+   "link_to": "",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Document Approval History",
+   "link_to": "Purchase Process",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2022-01-02 10:26:24.782670",
- "modified_by": "Administrator",
+ "modified": "2022-03-06 10:17:59.833222",
+ "modified_by": "e.anthony@armor-services.com",
  "module": "One Fm",
  "name": "GSD",
  "owner": "Administrator",

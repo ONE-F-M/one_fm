@@ -20,7 +20,8 @@ def log_pivotal_tracker():
         headers={"X-TrackerToken":pivotal_tracker.get_password('api_token').replace(' ', ''),
             "Content-Type": "application/json"}
         project_id = pivotal_tracker.get_password('project_id').replace(' ', '')
-        url = f"https://www.pivotaltracker.com/services/v5/projects/{project_id}/stories"
+        url = f"{pivotal_tracker.url}/services/v5/projects/{project_id}/stories"
+        print(url)
         # escape HTML in description
         TAG_RE = re.compile(r'<[^>]+>')
         description = TAG_RE.sub('', doc.description)
@@ -35,7 +36,7 @@ def log_pivotal_tracker():
         )
         if(req.status_code==200):
             response_data = frappe._dict(req.json())
-            doc.db_set('pivotal_tracker', f"https://www.pivotaltracker.com/n/projects/{project_id}/stories/{response_data.id}")
+            doc.db_set('pivotal_tracker', f"{pivotal_tracker.url}/n/projects/{project_id}/stories/{response_data.id}")
             return {'status':'success'}
         else:
             frappe.throw(f"Pivotal Tracker story could not be created:\n {req.json()}")
