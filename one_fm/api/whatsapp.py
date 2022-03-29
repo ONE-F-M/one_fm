@@ -19,7 +19,7 @@ def log_issue(**kwargs):
                 description = f"Name: {data.issue_creator_name}<br>"+data.issue_desc+data.chatlog,
                 raised_by = data.issue_creator_email,
                 communication_medium = 'WhatsApp',
-                whatsapp_number = data.issue_phone_number
+                whatsapp_number = data.issue_phone_number.replace('whatsapp:', '')
             ))
             issue.flags.ignore_mandatory = True
             issue.insert(ignore_permissions=True)
@@ -39,10 +39,10 @@ def log_issue(**kwargs):
                             issue.description + "<br>" + f'<img height="300px" width="300px" src="{data.issue_media}" />')
             except Exception as e:
                 frappe.log_error(str(e), 'Issue WhatsApp file attach')
-                
+
             return response(
                 'success', 200,
-                {'message':"Your issue has been logged.\nissue_id: "+issue.name}
+                {'message':"Your issue has been logged.\nissue ID: "+issue.name}
             )
         except Exception as e:
             response(
