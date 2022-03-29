@@ -73,7 +73,7 @@ let set_whatsapp_reply_button = frm => {
   // check for whatsapp communication channel and number
   if(frm.doc.communication_medium=='WhatsApp' && frm.doc.whatsapp_number){
     if (!document.querySelector('#whatsapp-reply-btn')){
-      let newMessageBTN = document.querySelector('.timeline-content.action-buttons');
+      let newMessageBTN = document.querySelector('.btn.btn-xs.btn-secondary-dark.action-btn');
       let el = document.createElement('button');
       el.className = `btn btn-xs btn-primary action-btn`;
       el.id = "whatsapp-reply-btn";
@@ -81,7 +81,7 @@ let set_whatsapp_reply_button = frm => {
       <i class="fa fa-whatsapp"></i>
       </svg>
       &nbsp;New WhatsApp`;
-      newMessageBTN.appendChild(el);
+      newMessageBTN.parentNode.insertBefore(el, newMessageBTN.nextSibling);
 
       // add event listener to the button
       $('#whatsapp-reply-btn').click(() => {
@@ -100,7 +100,7 @@ let whatsappForm = (frm) => {
               label: 'Recipient',
               fieldname: 'recipient',
               fieldtype: 'Data',
-              default: frm.doc.whatsapp_number,
+              default: frm.doc.whatsapp_number.replace('whatsapp:', ''),
               read_only: 1
           },
           {
