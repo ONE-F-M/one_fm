@@ -25,7 +25,7 @@ frappe.query_reports["Issue Type"] = {
 			"label": __("Issue Type"),
 			"fieldtype": "Link",
 			"options": "Issue Type",
-			"reqd": 1,
+			"reqd": 0,
 			"default": 'Other',
 			get_query: function() {
 				return {
