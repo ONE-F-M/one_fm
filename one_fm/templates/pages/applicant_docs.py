@@ -54,7 +54,7 @@ def get_civil_id_text():
 
         result = {}
 
-        #initialize google vision client library
+        # initialize google vision client library
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()
 
@@ -62,8 +62,7 @@ def get_civil_id_text():
         back_civil = frappe.local.form_dict['back_civil']
         is_kuwaiti = frappe.local.form_dict['is_kuwaiti']
 
-        # Load the Images
-
+        # Load images
         front_image_path = upload_image(front_civil, hashlib.md5(front_civil.encode('utf-8')).hexdigest())
         back_image_path = upload_image(back_civil, hashlib.md5(back_civil.encode('utf-8')).hexdigest())
 
@@ -106,48 +105,64 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
 
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
-
+    print(assemble)
     if is_kuwaiti == 1:
-        result["Civil_ID_No"] = texts[find_index(assemble,"CARD")+1].description
-        result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
-        if is_date(texts[find_index(assemble,"Birth")+2].description):
-            result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        if is_date(texts[find_index(assemble,"Birth")+3].description):
-            result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+3].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        if texts[find_index(assemble,"Sex")-1].description == "M" or texts[find_index(assemble,"Sex")-1].description == "F":
-            result["Gender"] = texts[find_index(assemble,"Sex")-1].description
-        else:
-            result["Gender"] = ""
+        if find_index(assemble,"CARD"):
+            result["Civil_ID_No"] = texts[find_index(assemble,"CARD")+1].description
+        
+        if find_index(assemble,"Nationality"):
+            result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
+        
+        if find_index(assemble,"Birth"):
+            if is_date(texts[find_index(assemble,"Birth")+2].description):
+                result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+            
+            if is_date(texts[find_index(assemble,"Birth")+3].description):
+                result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+3].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+        
+        if find_index(assemble,"Sex"):
+            if texts[find_index(assemble,"Sex")-1].description == "M" or texts[find_index(assemble,"Sex")-1].description == "F":
+                result["Gender"] = texts[find_index(assemble,"Sex")-1].description
+            else:
+                result["Gender"] = ""
 
         result["Name"] = ""
-        for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Nationality")-2):
-            result["Name"] = result["Name"] + texts[i].description + " "
+        if find_index(assemble,"Name") and find_index(assemble,"Nationality"):
+            for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Nationality")-2):
+                result["Name"] = result["Name"] + texts[i].description + " "
 
         result["Arabic_Name"]= ""
-        for i in range(find_index(assemble,"No")+1,find_index(assemble,"Name")-1):
-            result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
+        if find_index(assemble,"No") and find_index(assemble,"Name"):
+            for i in range(find_index(assemble,"No")+1,find_index(assemble,"Name")-1):
+                result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
 
     else:
-        result["Civil_ID_No"] = texts[find_index(assemble,"Civil")+3].description
-        result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
-        if is_date(texts[find_index(assemble,"Sex")+1].description):
-            result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+1].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        if is_date(texts[find_index(assemble,"Sex")+2].description):
-            result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        result["Passport_Number"] = texts[find_index(assemble,"Nationality")+2].description
-        result["Gender"] = ""
-        if texts[find_index(assemble,"Sex")+1].description == "M" or texts[find_index(assemble,"Sex")+1].description == "F":
-            result["Gender"] = texts[find_index(assemble,"Sex")+1].description
+        if find_index(assemble,"Civil"):
+            result["Civil_ID_No"] = texts[find_index(assemble,"Civil")+3].description
+
+        if find_index(assemble,"Nationality"):
+            result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
+            result["Passport_Number"] = texts[find_index(assemble,"Nationality")-4].description
+            
+        if find_index(assemble,"Sex"):
+            if is_date(texts[find_index(assemble,"Sex")+1].description):
+                result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+1].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+            if is_date(texts[find_index(assemble,"Sex")+2].description):
+                result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+            
+            result["Gender"] = ""
+            if texts[find_index(assemble,"Sex")+1].description == "M" or texts[find_index(assemble,"Sex")+1].description == "F":
+                result["Gender"] = texts[find_index(assemble,"Sex")+1].description
 
         result["Name"] = ""
-        for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport")):
-            result["Name"] = result["Name"] + texts[i].description + " "
+        if find_index(assemble,"Name") and find_index(assemble,"Passport"):
+            for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport")):
+                result["Name"] = result["Name"] + texts[i].description + " "
 
-        result["Arabic_Name"]= ""
-        for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
-            result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
-
-        result["Arabic_Name"] = result["Arabic_Name"]
+            result["Arabic_Name"]= ""
+            if find_index(assemble,"الرقه"):
+                for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
+                    result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
 
     return result
 
