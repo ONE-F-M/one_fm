@@ -19,7 +19,6 @@ class CareerHistory(Document):
 		if self.career_history_company and self.calculate_promotions_and_experience_automatically:
 			self.calculate_promotions_and_experience()
 		self.calculate_career_history_score()
-		self.career_history_score_action()
 
 	def career_history_score_action(self):
 		if self.career_history_score and self.career_history_score > 0 and self.career_history_score < 2.99:
@@ -52,7 +51,7 @@ class CareerHistory(Document):
 		if not self.name:
 			# hack! if name is null, it could cause problems with !=
 			self.name = "New "+self.doctype
-		career_history = frappe.db.exists('Career History', {'job_applicant': self.job_applicant, 'name': ['!=', self.name]})
+		career_history = frappe.db.exists('Career History', {'job_applicant': self.job_applicant, 'name': ['!=', self.name], 'docstatus': ['<', 2]})
 		if career_history:
 			frappe.throw(_("""Career History <b><a href="#Form/Career History/{0}">{0}</a></b> is exists against \
 				Job Applicant {1}.!""").format(career_history, self.applicant_name))
@@ -97,6 +96,7 @@ class CareerHistory(Document):
 			self.total_years_of_experience = total_months_of_experience/12
 
 	def	on_submit(self):
+		self.career_history_score_action()
 		update_interview_and_feedback(self, True)
 
 	def on_cancel(self):
