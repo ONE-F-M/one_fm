@@ -86,7 +86,8 @@ doctype_js = {
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
-	"Job Offer": "public/js/doctype_js/job_offer_list.js"
+	"Job Offer": "public/js/doctype_js/job_offer_list.js",
+	"Issue": "public/js/doctype_list_js/issue_list.js"
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -145,11 +146,13 @@ before_install = "one_fm.install.before_install.execute"
 # Hook on document methods and events
 permission_query_conditions = {
 	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
-	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions"
+	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
+	"Issue": "one_fm.utils.get_issue_permission_query_conditions"
 }
 has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
- 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission"
+ 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
+	"Issue": "one_fm.utils.has_permission_to_issue"
 }
 
 doc_events = {
@@ -288,6 +291,13 @@ doc_events = {
 	"Interview Feedback": {
 		"validate": "one_fm.hiring.utils.calculate_interview_feedback_average_rating",
 	},
+	"Issue": {
+		"after_insert": [
+			"one_fm.utils.assign_issue",
+			"one_fm.api.doc_methods.issue.notify_issue_raiser",
+		],
+    "on_update": "one_fm.utils.notify_on_close",
+	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -344,7 +354,7 @@ scheduler_events = {
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
-		'one_fm.tasks.execute.hourly'
+		'one_fm.tasks.execute.daily'
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",

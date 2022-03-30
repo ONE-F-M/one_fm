@@ -11,6 +11,7 @@ def execute(filters=None):
 
 def get_columns():
     return [
+		_("Head Hunt Doc") + ":Link/Head Hunt:150",
 		_("Source") + ":Data:150",
 		_("Creation Date") + ":Date:150",
 		_("Total Count") + ":Data:150",
@@ -30,9 +31,12 @@ def get_data(filters):
 	data=[]
 	conditions = get_conditions(filters)
 
-	head_hunt = frappe.db.sql("""SELECT * from `tabHead Hunt` where 1=1 {0} """.format(conditions),as_dict=1)
+    #Fetch 
+	head_hunt = frappe.db.sql("""SELECT * , 
+			(select COUNT(*) from `tabHead Hunt Item` I WHERE parenttype="Head Hunt" AND parent=H.name) as count
+			from `tabHead Hunt` H where 1=1 {0} """.format(conditions),as_dict=1)
+
 	for h in head_hunt:
-		doc = frappe.db.sql("""SELECT count(*) as count from `tabHead Hunt Item` WHERE parenttype="Head Hunt" AND parent=%s""",(h.name), as_dict=1)
-		row = [ h.lead_owner, h.creation, doc[0].count ]
+		row = [ h.name, h.lead_owner, h.creation, h.count ]
 		data.append(row)
 	return data
