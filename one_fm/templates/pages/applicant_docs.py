@@ -129,7 +129,8 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
         result["Name"] = ""
         if find_index(assemble,"Name") and find_index(assemble,"Nationality"):
             for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Nationality")-2):
-                result["Name"] = result["Name"] + texts[i].description + " "
+                result["Name"] = result["Name"] + str(texts[i].description).capitalize() + " "
+    
 
         result["Arabic_Name"]= ""
         if find_index(assemble,"No") and find_index(assemble,"Name"):
@@ -157,7 +158,7 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
         result["Name"] = ""
         if find_index(assemble,"Name") and find_index(assemble,"Passport"):
             for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport") - 1):
-                result["Name"] = result["Name"] + texts[i].description + " "
+                result["Name"] = result["Name"] + str(texts[i].description).capitalize() + " "
 
             result["Arabic_Name"]= ""
             if find_index(assemble,"الرقه"):
