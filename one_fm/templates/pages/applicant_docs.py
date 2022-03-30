@@ -105,7 +105,7 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
 
     for index in range(1,len(texts)):
         assemble[index] = texts[index].description
-    print(assemble)
+
     if is_kuwaiti == 1:
         if find_index(assemble,"CARD"):
             result["Civil_ID_No"] = texts[find_index(assemble,"CARD")+1].description
@@ -156,7 +156,7 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
 
         result["Name"] = ""
         if find_index(assemble,"Name") and find_index(assemble,"Passport"):
-            for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport")):
+            for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport") - 1):
                 result["Name"] = result["Name"] + texts[i].description + " "
 
             result["Arabic_Name"]= ""
