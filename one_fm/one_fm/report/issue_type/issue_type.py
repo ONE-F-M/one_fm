@@ -30,20 +30,23 @@ def get_conditions(filters=None):
 	return condition
 
 def get_department_children(department, department_list=[]):
-	departments = get_children('Department', parent=department)
-	for department in departments:
-		is_group = frappe.db.get_value('Department', department.value, 'is_group')
-		if is_group:
-			get_department_children(department.value, department_list)
-		else:
-			department_list.append(department.value)
+	if frappe.db.get_value('Department', department, 'is_group'):
+		departments = get_children('Department', parent=department)
+		for department in departments:
+			is_group = frappe.db.get_value('Department', department.value, 'is_group')
+			if is_group:
+				get_department_children(department.value, department_list)
+			else:
+				department_list.append(department.value)
+	else:
+		department_list.append(department)
 	return department_list
 
 def get_data(filters=None):
 	condition = get_conditions(filters)
 	result = []
-	department = [filters.get("department")]
-	if department and frappe.db.get_value('Department', department, 'is_group'):
+	department = []
+	if filters.get("department"):
 		department = get_department_children(filters.get("department"), [])
 
 	query_res = frappe.db.sql("""
@@ -54,7 +57,7 @@ def get_data(filters=None):
 		WHERE
 			docstatus<2 {condition}
 		GROUP BY
-			department, your_issue_type
+			department, issue_type, your_issue_type
 		HAVING count(*) > 0
 	""".format(condition=condition), {'issue_type': filters.get("issue_type"), 'department': department}, as_dict=1)
 
