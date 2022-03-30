@@ -20,8 +20,9 @@ window.onload = () => {
   }
   populate_nationality();
 }
-let civil_id_image = new FormData();
-let passport_image = new FormData();
+
+let civil_id_image;
+let passport_image;
 
 function extract_image(){
   extract(document.getElementById("Civil_ID_Front").files[0],"Civil_ID","front_civil")
@@ -134,6 +135,8 @@ function send_request(method, data, token, type){
 
 
 function upload(){
+  civil_id_image = new FormData();
+  passport_image = new FormData();
   extract_image();
 
   var method_map = {
@@ -198,7 +201,6 @@ function fill_form(data, type,token){
 
 function input_filepath(Data, key1, key2,token){
   if(Data[key1][key2]!= undefined){
-    console.log(key2)
     upload_image(document.getElementById(key2).files[0],Data[key1][key2],applicant_name+"_"+key2+'.png',token)
     return Data[key1][key2]
   }
@@ -268,7 +270,6 @@ function get_details_from_form() {
   get_filepath(applicant_details['applicant_doc'],back_passport_filepath, "Passport Back" )
 
   // applicant_details['paci_no'] = $('#PACI_No').val();
-  console.log(applicant_details)
   return applicant_details;
 };
 
