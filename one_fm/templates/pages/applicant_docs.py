@@ -63,8 +63,8 @@ def get_civil_id_text():
         is_kuwaiti = frappe.local.form_dict['is_kuwaiti']
 
         # Load images
-        front_image_path = upload_image(front_civil, hashlib.md5(front_civil.encode('utf-8')).hexdigest())
-        back_image_path = upload_image(back_civil, hashlib.md5(back_civil.encode('utf-8')).hexdigest())
+        front_image_path = upload_image(front_civil, hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
+        back_image_path = upload_image(back_civil, hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
 
         front_text = get_front_side_civil_id_text(front_image_path, client, is_kuwaiti)
         back_text = get_back_side_civil_id_text(back_image_path, client, is_kuwaiti)
@@ -229,8 +229,8 @@ def get_passport_text():
         front_passport = frappe.local.form_dict['front_passport']
         back_passport = frappe.local.form_dict['back_passport']
 
-        front_image_path = upload_image(front_passport,hashlib.md5(front_passport.encode('utf-8')).hexdigest())
-        back_image_path = upload_image(back_passport,hashlib.md5(back_passport.encode('utf-8')).hexdigest())
+        front_image_path = upload_image(front_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
+        back_image_path = upload_image(back_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
 
         front_text = get_passport_front_text(front_image_path, client)
         back_text = get_passport_back_text(back_image_path, client)
@@ -332,7 +332,7 @@ def upload_image(image, filename):
         str: Path to uploaded image
     """
     content = base64.b64decode(image)
-    image_path = cstr(frappe.local.site)+"/private/files/user/"+filename
+    image_path = cstr(frappe.local.site)+"/private/files/user/"+filename + ".png"
 
     with open(image_path, "wb") as fh:
         fh.write(content)
