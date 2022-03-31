@@ -8,20 +8,21 @@ window.socketio_port = {{frappe.socketio_port}};
 var is_kuwaiti = $('#Name').attr('is_kuwaiti');
 
 var applicant_name = (($('#Name').attr('data')).split(' ').slice(0, 2).join(' ')).replace(' ', '_');
-console.log(applicant_name)
+
 var front_cid_filepath = "";
 var back_cid_filepath = "";
 var front_passport_filepath = "";
 var back_passport_filepath = "";
 
-window.onload = () =>{
-if(is_kuwaiti==0){
-  document.getElementById("Sponsor").style.display = "block";
+window.onload = () => {
+  if(is_kuwaiti==0){
+    document.getElementById("Sponsor").style.display = "block";
+  }
+  populate_nationality();
 }
-populate_nationality();
-}
-let civil_id_image = new FormData();
-let passport_image = new FormData();
+
+let civil_id_image;
+let passport_image;
 
 function extract_image(){
   extract(document.getElementById("Civil_ID_Front").files[0],"Civil_ID","front_civil")
@@ -65,9 +66,6 @@ function extract(file, type, key){
       }
     };
   }
-  else{
-    console.log("File missing")
-  }
 }
 
 function populate_nationality(){
@@ -80,7 +78,7 @@ function populate_nationality(){
         var select = document.getElementById("Nationality");
         for (let i=0; i<=langArray.length;i++) {
           select.options[select.options.length] = new Option(langArray[i], langArray[i]);
-     }
+        }
       }
     }
   });
@@ -102,6 +100,8 @@ function fetchNationality(code){
     }
   });
 }
+
+
 function send_request(method, data, token, type){
   var request = new XMLHttpRequest();
   // POST to httpbin which returns the POST data as JSON
@@ -113,26 +113,30 @@ function send_request(method, data, token, type){
     request.type = type
     request.onreadystatechange = () => {
       if (request.readyState == XMLHttpRequest.DONE) {
-          if (request.status === 200) {
-        let r = null;
-        try {
-          r = JSON.parse(request.responseText);
-          fill_form(r.message,request.type, token);
-        } catch (e) {
-          r = request.responseText;
-        }
+        if (request.status === 200) {
+          let r = null;
+          try {
+            r = JSON.parse(request.responseText);
+            fill_form(r.message,request.type, token);
+          } catch (e) {
+            r = request.responseText;
+          }
         } else if (request.status === 403) {
-        let response = JSON.parse(request.responseText);
-        frappe.msgprint({
-          title: __("Not permitted"),
-          indicator: "red",
-          message: response._error_message,
-        });
+          let response = JSON.parse(request.responseText);
+          frappe.msgprint({
+            title: __("Not permitted"),
+            indicator: "red",
+            message: response._error_message,
+          });
         }
       }
-      };
+    };
 }
+
+
 function upload(){
+  civil_id_image = new FormData();
+  passport_image = new FormData();
   extract_image();
 
   var method_map = {
@@ -193,9 +197,10 @@ function fill_form(data, type,token){
     }
   }
 };
+
+
 function input_filepath(Data, key1, key2,token){
   if(Data[key1][key2]!= undefined){
-    console.log(key2)
     upload_image(document.getElementById(key2).files[0],Data[key1][key2],applicant_name+"_"+key2+'.png',token)
     return Data[key1][key2]
   }
@@ -265,7 +270,6 @@ function get_details_from_form() {
   get_filepath(applicant_details['applicant_doc'],back_passport_filepath, "Passport Back" )
 
   // applicant_details['paci_no'] = $('#PACI_No').val();
-  console.log(applicant_details)
   return applicant_details;
 };
 
