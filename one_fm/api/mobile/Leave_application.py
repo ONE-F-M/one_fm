@@ -5,6 +5,7 @@ from datetime import date
 import datetime
 import collections
 from one_fm.api.tasks import get_action_user,get_notification_user
+import base64, json
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -81,7 +82,7 @@ def leave_notify(docname,status):
 #This function is the api to create a new leave notification.
 #bench execute --kwargs "{'employee':'HR-EMP-00002','from_date':'2021-11-17','to_date':'2021-11-17','leave_type':'Annual Leave','reason':'fever'}"  one_fm.api.mobile.Leave_application.create_new_leave_application
 @frappe.whitelist()
-def create_new_leave_application(employee,from_date,to_date,leave_type,reason):
+def create_new_leave_application(employee,from_date,to_date,leave_type,reason, proof_document = {}):
     """
     Params:
         employee: erp id
@@ -93,34 +94,58 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason):
 		Bad request, 400: When Leave already Exists or when employee doesn't have a leave approver.
 		server error, 500: Failed to create new leave application
     """
+    from pathlib import Path
+    import hashlib
     #get Leave Approver of the employee.
     leave_approver = get_leave_approver(employee)
     #check if leave exist and overlaps with the given date (StartDate1 <= EndDate2) and (StartDate2 <= EndDate1)
-    leave_exist = frappe.get_list("Leave Application", filters={"employee": employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]})
+    leave_exist = frappe.get_list("Leave Application", filters={"employee": employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}, ignore_permissions=True)
     # Return response status 400, if the leave exists.
     if leave_exist:
         return response('You have already applied leave for this date.',[], 400)
+    
+    if proof_document_required_for_leave_type(leave_type) and not proof_document:
+        return response('Leave type requires a proof_document.', {}, 400) 
+    
+    if leave_approver:
+        try:
+            attachment_path = None
+            if proof_document_required_for_leave_type(leave_type):
+                proof_doc_json = json.loads(proof_document)
+                attachment = proof_doc_json['attachment']
+                attachment_name = proof_doc_json['attachment_name']
+
+                if not attachment or not attachment_name:
+                    return response('proof_document key requires attachment and attachment_name', {}, 400)
+
+                file_ext = "." + attachment_name.split(".")[-1]
+                content = base64.b64decode(attachment)
+                filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
+                
+                Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}").mkdir(parents=True, exist_ok=True)
+                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}/{filename}"
+                with open(OUTPUT_FILE_PATH, "wb") as fh:
+                    fh.write(content)
+
+                attachment_path = f"/files/leave-application/{frappe.session.user}/{filename}"
+            
+            #if sick leave, automatically accept the leave application
+            if leave_type == "Sick Leave":
+                doc = new_leave_application(employee,from_date,to_date,leave_type,"Approved",reason,leave_approver, attachment_path)
+                doc.submit()
+                frappe.db.commit()
+            #else keep it open and that sends the approval notification to the 'leave approver'.
+            else:
+                doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,leave_approver, attachment_path)
+            return response('Success',doc, 201)
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback())
+            return response(e,[], 500)
     else:
-        if leave_approver:
-            try:
-                #if sick leave, automatically accept the leave application
-                if leave_type == "Sick Leave":
-                    doc = new_leave_application(employee,from_date,to_date,leave_type,"Approved",reason,leave_approver)
-                    doc.submit()
-                    frappe.db.commit()
-                #else keep it open and that sends the approval notification to the 'leave approver'.
-                else:
-                    doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,leave_approver)
-                return response('Success',doc, 201)
-            except Exception as e:
-                frappe.log_error(frappe.get_traceback())
-                return response(e,[], 500)
-        else:
-            return response("You don't have a leave approver.",[], 400)
+        return response("You don't have a leave approver.",[], 400)
 
 #create new leave application doctype
-frappe.whitelist()
-def new_leave_application(employee,from_date,to_date,leave_type,status,reason,leave_approver):
+def new_leave_application(employee,from_date,to_date,leave_type,status,reason,leave_approver, attachment_path = None):
     leave = frappe.new_doc("Leave Application")
     leave.employee=employee
     leave.leave_type=leave_type
@@ -130,6 +155,8 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,le
     leave.follow_via_email=1
     leave.status=status
     leave.leave_approver = leave_approver
+    if attachment_path:
+        leave.proof_document = attachment_path
     leave.save()
     frappe.db.commit()
     return leave     
@@ -198,3 +225,9 @@ def notify_leave_approver(doc):
             # for email
             "subject": email_template.subject
         })
+
+def proof_document_required_for_leave_type(leave_type):
+    if int(frappe.db.get_value("Leave Type", {'name': leave_type}, "is_proof_document_required")):
+        return True
+
+    return False
