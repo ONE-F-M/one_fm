@@ -161,13 +161,6 @@ career_history = Class.extend({
       </div>
 
       <div class="col-lg-12 col-md-12">
-        <label for="Responisbilities" class="form-label">What were your top three responsibilities?</label>
-        <input type="text" class="form-control mb-3 responisbility_1_company${company_no}" placeholder="1"/>
-        <input type="text" class="form-control mb-3 responisbility_2_company${company_no}" placeholder="2"/>
-        <input type="text" class="form-control mb-3 responisbility_3_company${company_no}" placeholder="3"/>
-      </div>
-
-      <div class="col-lg-12 col-md-12">
         <hr class="my-5"/>
       </div>
 
