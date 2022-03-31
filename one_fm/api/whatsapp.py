@@ -42,7 +42,7 @@ def log_issue(**kwargs):
 
             return response(
                 'success', 200,
-                {'message':"Your issue has been logged.\nissue ID: "+issue.name}
+                {'message':"Your issue has been logged.\nIssue ID: "+issue.name}
             )
         except Exception as e:
             response(
