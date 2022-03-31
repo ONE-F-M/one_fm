@@ -15,8 +15,9 @@ var front_passport_filepath = "";
 var back_passport_filepath = "";
 
 window.onload = () => {
-  if(is_kuwaiti==0){
-    document.getElementById("Sponsor").style.display = "block";
+  $("#Sponsor").hide();
+  if(is_kuwaiti == 0){
+    $("#Sponsor").show();
   }
   populate_nationality();
 }
