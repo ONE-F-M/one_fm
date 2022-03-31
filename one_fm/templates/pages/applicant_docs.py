@@ -21,8 +21,11 @@ def get_context(context):
         job_applicant = frappe.get_doc('Job Applicant', frappe.db.get_value('Magic Link', magic_link, 'reference_docname'))
         context.job_applicant = job_applicant
         context.is_kuwaiti = 0
-        if job_applicant.nationality == 'Kuwaiti':
+        if job_applicant.one_fm_nationality == 'Kuwaiti':
             context.is_kuwaiti = 1
+        context.applicant_name = str(job_applicant.name).split("-")[0]
+        context.applicant_designation = job_applicant.designation
+        context.email_id = job_applicant.one_fm_email_id
 
 @frappe.whitelist(allow_guest=True)
 def populate_nationality():

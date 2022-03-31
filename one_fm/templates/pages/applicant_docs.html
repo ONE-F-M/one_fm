@@ -29,7 +29,6 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
         integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="/assets/one_fm/assets/css/applicant_docs.css" rel="stylesheet" >
 </head>
 {% endblock %}
 
@@ -40,18 +39,18 @@
     <main>
         <article class="main-container m-auto p-auto">
             <div >
-
-                <!-- Contenido del lado izquierdo -->
                 <section class="form-wrapper">
                     <div class="message-block-head d-flex">
-                        <div class="message-block-icon rounded-circle border border-secondary p-4 m-1 h2"><i class="uil uil-user text-info h1"></i></div>
                         <div class="message-block-info p-1 m-1">
-                            <h2>Welcome! Upload Your Civil ID and Passport</h2>
+                            <h2>Greetings! Please attach the requested documents and fill out the form below.</h2>
+                                <h5>This form is intended for:</h5>
+                                <h6>Applicant: {{applicant_name}}</h6>
+                                <h6>Email: {{email_id}}</h6>
+                                <h6>Role: {{applicant_designation}}</h6>
+                            
                             <span>Kindly, attach your civil ID below. Note: attach image file only!</span>
                         </div>
                     </div>
-
-                    <!-- Header con links y botón de back -->
 
                     <!-- Contenedor del formulario y sus mensajes -->
                     <div class="form-container border border-secondary bg-light p-4 m-2 rounded">
@@ -177,7 +176,7 @@
                                         <input class="form-control input" type="text" id="PACI_No" name="paci_no" size="50" ></label><br>  <br>
                                     </div>
 
-                                    <div class="form-group col-md-6" id="Sponsor" style="display: none;">
+                                    <div class="form-group col-md-6" id="Sponsor">
                                         <label  for="Sponsor_Name">Sponsor
                                         <input class="form-control input"  type="text" id="Sponsor_Name" name="sponsor" size="50"></label><br><br>
                                     </div>
