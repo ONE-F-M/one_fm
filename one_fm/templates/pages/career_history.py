@@ -84,7 +84,7 @@ def send_career_history_magic_link(job_applicant, applicant_name, designation):
         # Email Magic Link to the Applicant
         subject = "Fill your Career History Sheet"
         url_prefix = "/career_history?magic_link="
-        msg = "<b>Fill your Career History Sheet by clciking on the magic link below</b>\
+        msg = "<b>Fill your Career History Sheet by visiting the magic link below</b>\
             <br/>Applicant ID: {0}<br/>Applicant Name: {1}<br/>Designation: {2}</br>".format(job_applicant, applicant_name, designation)
         send_magic_link('Job Applicant', job_applicant, 'Career History', [applicant_email], url_prefix, msg, subject)
     else:
