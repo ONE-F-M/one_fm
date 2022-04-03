@@ -23,7 +23,7 @@ def get_context(context):
         context.is_kuwaiti = 0
         if job_applicant.one_fm_nationality == 'Kuwaiti':
             context.is_kuwaiti = 1
-        context.applicant_name = str(job_applicant.name).split("-")[0]
+        context.applicant_name = str(job_applicant.name).split("-")[0].strip()
         context.applicant_designation = job_applicant.designation
         context.email_id = job_applicant.one_fm_email_id
 
