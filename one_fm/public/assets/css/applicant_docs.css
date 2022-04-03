@@ -1,14 +1,10 @@
 .main-container{
-    width: 63vw;
+    width: 100%;
     height: auto;
     display: block;
 }
 .form-container{
-    width: 60vw;
-    background: #f7f8fd;
-    padding: 2rem;
-    border-radius: 9px;
-    border: 1px solid #e8e8e8;
+    width: 100%;
 }
 .message-block-icon {
 	width: 50px;
@@ -38,19 +34,4 @@
 }
 .message-block-head{
     display: flex;
-}
-label {
-    font-size: 0.785em;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #bebfca;
-}
-.form-wrapper{
-    padding: 2px 10px;
-}
-.input{
-    width:25vw;
-}
-.input2{
-    width:15.5vw;
 }
