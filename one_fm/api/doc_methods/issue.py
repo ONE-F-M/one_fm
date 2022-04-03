@@ -1,14 +1,25 @@
-import html, re, xml
+import html, re, xml, json
 import requests, frappe
 from twilio.rest import Client as TwilioClient
 
 @frappe.whitelist()
-def log_pivotal_tracker():
+def log_pivotal_tracker(**kwargs):
     """
         Update Issue Doctype with payload from Pivotal Tracker
     """
     try:
+        TAG_RE = re.compile(r'<[^>]+>')
         doc = frappe.get_doc("Issue", frappe.form_dict.name)
+        if frappe.form_dict.comments:
+            comments = json.loads(frappe.form_dict.comments)
+            description = """"""
+            for i in comments:
+                i['comment'].replace('ql-editor read-mode', '')
+                description += f"""<br><br>{i['comment']}"""
+            description = TAG_RE.sub('', description)
+        else:
+            description = TAG_RE.sub('', doc.description)
+
         doc_link = frappe.utils.get_url()+doc.get_url()
         default_api_integration = frappe.get_doc("Default API Integration")
 
@@ -22,8 +33,7 @@ def log_pivotal_tracker():
         url = f"{pivotal_tracker.url}/services/v5/projects/{project_id}/stories"
         print(url)
         # escape HTML in description
-        TAG_RE = re.compile(r'<[^>]+>')
-        description = TAG_RE.sub('', doc.description)
+
         req = requests.post(
             url=url,
             headers=headers,
@@ -82,7 +92,7 @@ def whatsapp_reply_issue(**kwargs):
 
 def notify_issue_raiser(doc, method):
     """This method notifies the issue raiser via email upon creating an issue."""
-    
+
     from one_fm.processor import sendemail
 
     try:
@@ -91,9 +101,9 @@ def notify_issue_raiser(doc, method):
             issue_id = doc.name
             issue_subject = doc.subject
             email_subject = f"ONE FM Support - {issue_id}"
-            
+
             header = ['Support Ticket', 'blue']
-            
+
             message = f"""
             Dear user, <br><br>
             Thank you for contacting our support team. A support ticket has now been opened for your request.<br>
@@ -102,9 +112,8 @@ def notify_issue_raiser(doc, method):
             Issue ID: {issue_id}<br>
             Issue subject: {issue_subject}<br><br>
             """
-            
+
             sendemail(recipients=[doc.raised_by], subject=email_subject, header=header, message=message)
 
     except Exception as error:
         frappe.log_error(error)
-
