@@ -40,11 +40,6 @@
    "label": "API Token"
   },
   {
-   "fieldname": "url",
-   "fieldtype": "Data",
-   "label": "URL"
-  },
-  {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
   },
@@ -58,10 +53,15 @@
    "fieldtype": "Table",
    "label": "API Parameter",
    "options": "API Parameter"
+  },
+  {
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "label": "URL"
   }
  ],
  "links": [],
- "modified": "2022-02-23 13:29:22.970891",
+ "modified": "2022-03-31 16:20:02.595882",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "API Integration",
