@@ -38,17 +38,7 @@ let pivotal_tracker_button = frm => {
               const table_fields = [
           			{
           				fieldname: "comment", fieldtype: "Text Editor",
-          				in_list_view: 1, label: "Commment",
-          				// options: "company:company_currency",
-          				// change: function () {
-          				// 	dialog.fields_dict.balance_details.df.data.some(d => {
-          				// 		if (d.idx == this.doc.idx) {
-          				// 			d.opening_amount = this.value;
-          				// 			dialog.fields_dict.balance_details.grid.refresh();
-          				// 			return true;
-          				// 		}
-          				// 	});
-          				// }
+          				in_list_view: 1, label: "Commment"
           			}
           		];
               let d = new frappe.ui.Dialog({
