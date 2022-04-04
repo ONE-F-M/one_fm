@@ -2348,10 +2348,10 @@ def notify_on_close(doc, method):
         This Method is used to notify the issuer, when the issue is closed.
     '''
 
-    #Form Subject and Message 
+    #Form Subject and Message
     subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
     msg = """Hello user,<br>
-        Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing 
+        Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing
     the issue you may reply back to this email and we will do our best to help.
     """.format(issue_id = doc.name, url= doc.get_url())
 
@@ -2503,3 +2503,25 @@ def has_permission_to_issue(doc, user=None):
     if doc.owner==user or doc.raised_by==user:
         has_permission = True
     return has_permission
+
+def notify_issue_responder_or_assignee_on_comment_in_issue(doc, method):
+    """
+        Method used to notify issue responder on comment in issue
+        args:
+            doc: Object of Comment
+    """
+    if doc.reference_doctype == "Issue" and doc.reference_name:
+        issue = frappe.get_doc(doc.reference_doctype, doc.reference_name)
+        subject = _("New comment on issue {0}".format(issue.name))
+        message = _("Issue {0} have new comment".format(issue.name))
+        department_issue_responder = False
+        if issue.department:
+            department_issue_responder = get_department_issue_responder(issue.department)
+        if department_issue_responder and len(department_issue_responder) > 0:
+            create_notification_log(subject, message, department_issue_responder, issue)
+        else:
+            try:
+                if issue._assign:
+                    create_notification_log(subject, message, json.loads(issue._assign), issue)
+            except Exception as e:
+                pass
