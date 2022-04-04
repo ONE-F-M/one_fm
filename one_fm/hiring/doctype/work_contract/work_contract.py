@@ -31,13 +31,13 @@ class WorkContract(Document):
 	def after_insert(self):
 		update_onboarding_doc_workflow_sate(self)
 		update_onboarding_doc(self)
-		
+
 	def on_update(self):
 		self.set_progress()
 		self.update_on_workflow_state()
 		update_onboarding_doc(self)
 		self.authorized_signatory_user_id = self.fetch_authorized_signatory_user_id()
-		
+
 
 	def update_on_workflow_state(self):
 		if self.workflow_state == 'Send to Authorised Signatory':
@@ -55,7 +55,8 @@ class WorkContract(Document):
 	def validate_attachments(self):
 		document_required = ["Civil ID Front","Civil ID Back","Passport Front","Passport Back"]
 		for applicant_docs in self.documents:
-			document_required.remove(applicant_docs.document_required)
+			if applicant_docs.document_required in document_required:
+				document_required.remove(applicant_docs.document_required)
 		if len(document_required) > 0:
 			frappe.throw(_("Please Attach "+ ' '.join(str(x) for x in document_required)+" !"))
 
@@ -72,13 +73,13 @@ class WorkContract(Document):
 	def on_trash(self):
 		if self.docstatus == 0:
 			update_onboarding_doc(self, True)
-	
+
 	def check_for_applicant_signature(self):
 		if self.employee_signature:
 			return True
 		else:
 			return False
-	
+
 	@frappe.whitelist()
 	def get_authorized_signatory(self):
 		authorize_signatory = []
@@ -153,7 +154,7 @@ def employee_details_for_wc(employee_or_oe):
 
 def email_authority_for_signature(doc):
 	"""
-	This function is to notify the Authorized Signatory and request his action. 
+	This function is to notify the Authorized Signatory and request his action.
 	The Message sent through mail consist of 2 action: Approve and Reject.
 
 	Param: doc -> Work Contract Doc
