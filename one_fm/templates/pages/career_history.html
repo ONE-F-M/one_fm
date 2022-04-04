@@ -5,23 +5,42 @@
 {% endblock %}
 
 {% block script %}
-  <script>{% include "templates/pages/career_history.js" %}</script>
+  	<script>
+  		{% include 'templates/pages/career_history.js' %}
+	</script>
 {% endblock %}
-
 {% block header %}
-  <h5 id="job_applicant" data="{{ job_applicant.name }}">Hey {{job_applicant.applicant_name}},
-		you’re applying for the {{job_applicant.designation}} position.</h5>
-	<h5>Enter all the details about your career in the below form and tell us how great you are!</h5>
+<head>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Facilities Management | Career History</title>
+	<link rel="stylesheet" href="assets/one_fm/assets/css/career_history.css">
+</head>
 {% endblock %}
 
 {% block page_content %}
-	<br/>
-	<div class="row col-lg-12 col-md-12 mb-12 main_section">
+<!DOCTYPE html>
+<html lang="en">
+<body>
+<div class="intro_section">
+		<img class="back_illustration" src="assets/one_fm/assets/img/career-history/clip-career-boost.png"/>
+<div class="intro">
 
+</div>
+<button class="btn btn-primary btn-lg btn-intro-next" type="button">Okay!</button>
+</div>
+
+	<br/>
+	<div class=" d-flex justify-content-center col-lg-12 col-md-12 main_section" >
+		
+	</div>
+	<br/>
+	<div class="next-btn col-sm-12 float-right">
+		<button class="btn btn-primary btn-lg float-right btn-next-career-history" type="button">{{ _("Next") }}</button>
+	</div>
+	<div class="submit-btn col-sm-12 ">
+		<button class="btn btn-primary btn-lg float-right btn-submit-career-history" type="button">{{ _("Submit") }}</button>
 	</div>
 
-	<br/>
-	<div class="col-sm-12">
-	<button class="btn btn-primary btn-sm btn-submit-career-history" type="button">{{ _("Submit") }}</button>
-	</div>
+</body>
 {% endblock %}
