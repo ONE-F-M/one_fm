@@ -1,0 +1,21 @@
+.back_illustration{
+    position: absolute;
+    right:0; 
+    bottom:6vh;
+    width: 50vw;
+}
+.intro_section{   
+    text-align: center !important;
+    padding: 12vw;
+}
+@media (max-width: 960px) {
+    .back_illustration{ 
+        bottom: 0;
+        top: 60vh;
+        left: 5vw;
+        width: 100vw;
+    } 
+    .intro_section{   
+        padding: 12vw 2vw 20vh 2vh;
+    }
+}
