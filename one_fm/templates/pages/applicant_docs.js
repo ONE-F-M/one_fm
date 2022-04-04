@@ -135,6 +135,14 @@ function send_request(method, data, token, type){
             indicator: "red",
             message: response._error_message,
           });
+        } else {
+          $("#cover-spin").hide();
+          $('#finalForm').css('display', 'block');
+          frappe.msgprint({
+            title: __("Error extracting text"),
+            indicator: "orange",
+            message: __("Please fill out the below form manually."),
+          });
         }
       }
     };
@@ -144,7 +152,6 @@ function send_request(method, data, token, type){
 function upload(){
   civil_id_image = new FormData();
   passport_image = new FormData();
-  $("#cover-spin").show(0);
   extract_image();
 
   var method_map = {
@@ -158,9 +165,11 @@ function upload(){
       var token = r.message
        if (!!civil_id_image.entries().next().value){
         civil_id_image.append("is_kuwaiti",is_kuwaiti)
+        $("#cover-spin").show(0);
         send_request(method_map['civil_id'], civil_id_image, token,"Civil ID")
       };
       if (!!passport_image.entries().next().value){
+        $("#cover-spin").show(0);
         send_request(method_map['passport'], passport_image, token,"Passport")
       };
     }
