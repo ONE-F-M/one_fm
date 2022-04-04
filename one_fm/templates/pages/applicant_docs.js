@@ -118,11 +118,17 @@ function send_request(method, data, token, type){
           let r = null;
           try {
             r = JSON.parse(request.responseText);
+            $("#cover-spin").hide();
+            $('#finalForm').css('display', 'block');
             fill_form(r.message,request.type, token);
           } catch (e) {
+            $("#cover-spin").hide();
+            $('#finalForm').css('display', 'block');
             r = request.responseText;
           }
         } else if (request.status === 403) {
+          $("#cover-spin").hide();
+          $('#finalForm').css('display', 'block');
           let response = JSON.parse(request.responseText);
           frappe.msgprint({
             title: __("Not permitted"),
@@ -138,6 +144,7 @@ function send_request(method, data, token, type){
 function upload(){
   civil_id_image = new FormData();
   passport_image = new FormData();
+  $("#cover-spin").show(0);
   extract_image();
 
   var method_map = {
