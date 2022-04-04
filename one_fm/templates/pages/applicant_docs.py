@@ -29,12 +29,12 @@ def get_context(context):
 
 @frappe.whitelist(allow_guest=True)
 def populate_nationality():
-    return frappe.get_list('Nationality', pluck='name')
+    return frappe.get_list('Nationality', pluck='name', ignore_permissions=True)
 
 @frappe.whitelist(allow_guest=True)
 def fetch_nationality(code):
-    country = frappe.get_value('Country', {'code_alpha3':code},["country_name"])
-    return frappe.get_value('Nationality', {'country':country},["name"])
+    country = frappe.get_value('Country', {'code_alpha3':code},["country_name"], ignore_permissions=True)
+    return frappe.get_value('Nationality', {'country':country},["name"], ignore_permissions=True)
 
 
 @frappe.whitelist(allow_guest=True)
