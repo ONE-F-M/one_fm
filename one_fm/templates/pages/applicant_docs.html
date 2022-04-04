@@ -37,6 +37,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <body>
+    <div id="cover-spin"></div>
     <main>
         <div
             class="p-5 text-center bg-image"
@@ -62,8 +63,8 @@
                     <h6>Dear {{applicant_name}}, greetings from One Facilities Management!</h6> 
                     <h6>As a part of the onboarding process for the {{applicant_designation}} role, we request you to provide us with the following documents and complete the below form.</h6>
                     <ul>
-                        <li>Passport (front and back)</li>
-                        <li>Civil ID (applicable if you are a resident of Kuwait)</li>
+                        <li><h6>Passport - front and back side</h6></li>
+                        <li><h6>Civil ID - front and back side (Applicable if you are a resident of Kuwait)</h6></li>
                     </ul>
                 </div>
                 <section class="form-wrapper">
@@ -78,11 +79,11 @@
                             <hr>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label class="form-label" for="file">Upload Front Side of your civil ID:</label>
+                                    <label class="form-label" for="file">Civil ID Front Side</label>
                                     <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg" >
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label class="form-label" for="file">Upload Back Side of your civil ID:</label>
+                                    <label class="form-label" for="file">Civil ID Back Side</label>
                                     <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg" >
                                     <br>
                                 </div>
@@ -90,11 +91,11 @@
 
                             <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label  for="file">Upload Front Side of your passport:</label>
+                                        <label  for="file">Passport Front Side</label>
                                         <input class="form-control" type="file" id="Passport_Front" placeholder="Front Passport"  name="file"  accept="image/png, image/jpeg" >
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="file">Upload Back Side of your passport:</label>
+                                        <label  for="file">Passport Back Side</label>
                                         <input class="form-control" type="file" id="Passport_Back" placeholder="Back Passport"  name="file"  accept="image/png, image/jpeg" >
                                         <br>
                                     </div>
@@ -112,10 +113,10 @@
             </div>
                 <br><br>
 
-                <div  id="finalForm  m-auto p-auto">
+                <div  class="m-auto p-auto">
 
                 <div>
-                    <section class="form-wrapper" id="finalForm">
+                    <section class="form-wrapper" id="finalForm" style="display:none;">
                         <div class="message-block-head d-flex">
                         <div class="message-block-info p-1 h2 m-1">
                                 <p id="output_message" style="font-size: 22px;"></p>
@@ -129,7 +130,7 @@
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Name">Name</label>
-                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}} id="Name" name="name">
+                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" id="Name" name="name">
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="Arabic_Name">Name(Arabic)</label>
@@ -182,7 +183,7 @@
 
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label class="form-label" for="PACI_No">PACI Noumber</label>
+                                        <label class="form-label" for="PACI_No">PACI Number</label>
                                         <input class="form-control input" type="text" id="PACI_No" name="paci_no">
                                     </div>
 
