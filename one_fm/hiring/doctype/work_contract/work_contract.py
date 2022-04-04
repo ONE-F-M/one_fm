@@ -55,10 +55,10 @@ class WorkContract(Document):
 	def validate_attachments(self):
 		document_required = ["Civil ID Front","Civil ID Back","Passport Front","Passport Back"]
 		for applicant_docs in self.documents:
-			if applicant_docs.document_required in document_required:
+			if applicant_docs.document_required in document_required and applicant_docs.attach:
 				document_required.remove(applicant_docs.document_required)
 		if len(document_required) > 0:
-			frappe.throw(_("Please Attach "+ ' '.join(str(x) for x in document_required)+" !"))
+			frappe.throw(_("Please Attach "+ ', '.join(str(x) for x in document_required)+" in Applicant Document!"))
 
 	def validate_authorized_signatory(self):
 		if not self.select_authorised_signatory_signed_work_contract:
@@ -102,13 +102,17 @@ class WorkContract(Document):
 
 
 def	fetch_authority_signature(doc):
-		if doc.select_authorised_signatory_signed_work_contract and doc.pam_file_number:
-			pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':doc.pam_file_number},["authorized_signatory"],as_dict = True)
-			pam_auth_sign = pam_authorized_signatory.as_dict()
-			for auth_sign in pam_auth_sign["authorized_signatory"]:
-				if doc.select_authorised_signatory_signed_work_contract == auth_sign["authorized_signatory_name_english"]:
-					signature = auth_sign["signature"]
+	signature = False
+	if doc.select_authorised_signatory_signed_work_contract and doc.pam_file_number:
+		pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':doc.pam_file_number},["authorized_signatory"],as_dict = True)
+		pam_auth_sign = pam_authorized_signatory.as_dict()
+		for auth_sign in pam_auth_sign["authorized_signatory"]:
+			if doc.select_authorised_signatory_signed_work_contract == auth_sign["authorized_signatory_name_english"]:
+				signature = auth_sign["signature"]
+	if signature:
 		doc.authority_signature = signature
+	else:
+		frappe.msgprint(_("Not able to fetch any Authorized Signatory!"))
 
 @frappe.whitelist()
 def get_employee_details_for_wc(type, employee=False, onboard_employee=False):
