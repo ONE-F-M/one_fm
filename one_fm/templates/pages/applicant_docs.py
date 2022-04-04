@@ -21,8 +21,11 @@ def get_context(context):
         job_applicant = frappe.get_doc('Job Applicant', frappe.db.get_value('Magic Link', magic_link, 'reference_docname'))
         context.job_applicant = job_applicant
         context.is_kuwaiti = 0
-        if job_applicant.nationality == 'Kuwaiti':
+        if job_applicant.one_fm_nationality == 'Kuwaiti':
             context.is_kuwaiti = 1
+        context.applicant_name = str(job_applicant.name).split("-")[0]
+        context.applicant_designation = job_applicant.designation
+        context.email_id = job_applicant.one_fm_email_id
 
 @frappe.whitelist(allow_guest=True)
 def populate_nationality():
@@ -54,7 +57,7 @@ def get_civil_id_text():
 
         result = {}
 
-        #initialize google vision client library
+        # initialize google vision client library
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()
 
@@ -62,10 +65,9 @@ def get_civil_id_text():
         back_civil = frappe.local.form_dict['back_civil']
         is_kuwaiti = frappe.local.form_dict['is_kuwaiti']
 
-        # Load the Images
-
-        front_image_path = upload_image(front_civil, hashlib.md5(front_civil.encode('utf-8')).hexdigest())
-        back_image_path = upload_image(back_civil, hashlib.md5(back_civil.encode('utf-8')).hexdigest())
+        # Load images
+        front_image_path = upload_image(front_civil, hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
+        back_image_path = upload_image(back_civil, hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
 
         front_text = get_front_side_civil_id_text(front_image_path, client, is_kuwaiti)
         back_text = get_back_side_civil_id_text(back_image_path, client, is_kuwaiti)
@@ -108,46 +110,63 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
         assemble[index] = texts[index].description
 
     if is_kuwaiti == 1:
-        result["Civil_ID_No"] = texts[find_index(assemble,"CARD")+1].description
-        result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
-        if is_date(texts[find_index(assemble,"Birth")+2].description):
-            result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        if is_date(texts[find_index(assemble,"Birth")+3].description):
-            result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+3].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        if texts[find_index(assemble,"Sex")-1].description == "M" or texts[find_index(assemble,"Sex")-1].description == "F":
-            result["Gender"] = texts[find_index(assemble,"Sex")-1].description
-        else:
-            result["Gender"] = ""
+        if find_index(assemble,"CARD"):
+            result["Civil_ID_No"] = texts[find_index(assemble,"CARD")+1].description
+        
+        if find_index(assemble,"Nationality"):
+            result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
+        
+        if find_index(assemble,"Birth"):
+            if is_date(texts[find_index(assemble,"Birth")+2].description):
+                result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+            
+            if is_date(texts[find_index(assemble,"Birth")+3].description):
+                result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+3].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+        
+        if find_index(assemble,"Sex"):
+            if texts[find_index(assemble,"Sex")-1].description == "M" or texts[find_index(assemble,"Sex")-1].description == "F":
+                result["Gender"] = texts[find_index(assemble,"Sex")-1].description
+            else:
+                result["Gender"] = ""
 
         result["Name"] = ""
-        for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Nationality")-2):
-            result["Name"] = result["Name"] + texts[i].description + " "
+        if find_index(assemble,"Name") and find_index(assemble,"Nationality"):
+            for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Nationality")-2):
+                result["Name"] = result["Name"] + str(texts[i].description).capitalize() + " "
+    
 
         result["Arabic_Name"]= ""
-        for i in range(find_index(assemble,"No")+1,find_index(assemble,"Name")-1):
-            result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
+        if find_index(assemble,"No") and find_index(assemble,"Name"):
+            for i in range(find_index(assemble,"No")+1,find_index(assemble,"Name")-1):
+                result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
 
     else:
-        result["Civil_ID_No"] = texts[find_index(assemble,"Civil")+3].description
-        result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
-        if is_date(texts[find_index(assemble,"Sex")+1].description):
-            result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+1].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        if is_date(texts[find_index(assemble,"Sex")+2].description):
-            result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        result["Passport_Number"] = texts[find_index(assemble,"Nationality")+2].description
-        result["Gender"] = ""
-        if texts[find_index(assemble,"Sex")+1].description == "M" or texts[find_index(assemble,"Sex")+1].description == "F":
-            result["Gender"] = texts[find_index(assemble,"Sex")+1].description
+        if find_index(assemble,"Civil"):
+            result["Civil_ID_No"] = texts[find_index(assemble,"Civil")+3].description
+
+        if find_index(assemble,"Nationality"):
+            result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
+            result["Passport_Number"] = texts[find_index(assemble,"Nationality")-4].description
+            
+        if find_index(assemble,"Sex"):
+            if is_date(texts[find_index(assemble,"Sex")+1].description):
+                result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+1].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+            if is_date(texts[find_index(assemble,"Sex")+2].description):
+                result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
+            
+            result["Gender"] = ""
+            if texts[find_index(assemble,"Sex")+1].description == "M" or texts[find_index(assemble,"Sex")+1].description == "F":
+                result["Gender"] = texts[find_index(assemble,"Sex")+1].description
 
         result["Name"] = ""
-        for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport")):
-            result["Name"] = result["Name"] + texts[i].description + " "
+        if find_index(assemble,"Name") and find_index(assemble,"Passport"):
+            for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport") - 1):
+                result["Name"] = result["Name"] + str(texts[i].description).capitalize() + " "
 
-        result["Arabic_Name"]= ""
-        for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
-            result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
-
-        result["Arabic_Name"] = result["Arabic_Name"]
+            result["Arabic_Name"]= ""
+            if find_index(assemble,"الرقه"):
+                for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
+                    result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
 
     return result
 
@@ -213,8 +232,8 @@ def get_passport_text():
         front_passport = frappe.local.form_dict['front_passport']
         back_passport = frappe.local.form_dict['back_passport']
 
-        front_image_path = upload_image(front_passport,hashlib.md5(front_passport.encode('utf-8')).hexdigest())
-        back_image_path = upload_image(back_passport,hashlib.md5(back_passport.encode('utf-8')).hexdigest())
+        front_image_path = upload_image(front_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
+        back_image_path = upload_image(back_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
 
         front_text = get_passport_front_text(front_image_path, client)
         back_text = get_passport_back_text(back_image_path, client)
@@ -316,7 +335,7 @@ def upload_image(image, filename):
         str: Path to uploaded image
     """
     content = base64.b64decode(image)
-    image_path = cstr(frappe.local.site)+"/private/files/user/"+filename
+    image_path = cstr(frappe.local.site)+"/private/files/user/"+filename + ".png"
 
     with open(image_path, "wb") as fh:
         fh.write(content)
