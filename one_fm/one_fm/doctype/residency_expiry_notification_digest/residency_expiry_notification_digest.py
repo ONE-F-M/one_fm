@@ -13,7 +13,8 @@ from frappe.utils import (
 	format_time,
 	formatdate,
 	now_datetime,
-	date_diff
+	date_diff,
+	get_url_to_form
 )
 
 class ResidencyExpiryNotificationDigest(Document):
@@ -139,7 +140,7 @@ def get_employee_list():
 	message = "<ol>"
 	for employee in employee_list:
 		if date_diff(employee.residency_expiry_date, today) == -45:
-			page_link = get_url("/desk#Form/Employee/"+employee.name)
+			page_link = get_url_to_form("Employee", employee.name)
 			message = "<li><a href='{0}'>{1}</a></li>".format(page_link, employee.name+": "+employee.employee_name)
 	message += "<ol>"
 	return message
