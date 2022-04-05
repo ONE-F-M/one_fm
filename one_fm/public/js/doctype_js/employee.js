@@ -1,7 +1,6 @@
 frappe.ui.form.on('Employee', {
 	refresh: function(frm) {
 		frm.trigger('set_queries');
-		frm.trigger('custom_buttons');
 	},
 	set_queries: frm => {
 		// set bank account query
@@ -13,26 +12,6 @@ frappe.ui.form.on('Employee', {
 				}
 			};
 		});
-	},
-	custom_buttons: frm => {
-		// add custom buttons to employee doctype
-		if (!frm.is_new()){
-			// bank account
-			let bank_account_btn = document.querySelectorAll('button.btn.btn-new.btn-secondary.btn-xs.icon-btn[data-doctype="Bank Account"]');
-			if(bank_account_btn){
-					bank_account_btn[0].remove();
-			}
-			// end modify bank account link
-			// add bank account button
-			frm.add_custom_button('Bank Account', ()=>{
-				frappe.new_doc('Bank Account', {
-					party_type:frm.doc.doctype,
-					party:frm.doc.name,
-					account_name:frm.doc.employee_name,
-				})
-			}, 'Create');
-		}
-
 	}
 });
 
