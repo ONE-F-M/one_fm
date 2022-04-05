@@ -139,7 +139,7 @@ class ResidencyExpiryNotificationDigest(Document):
 		employee_list = frappe.db.get_list('Employee', ['name', 'employee_name', 'residency_expiry_date'])
 		message = "<ol>"
 		for employee in employee_list:
-			if date_diff(employee.residency_expiry_date, today) == -(self.residency_expire_in_days)
+			if date_diff(employee.residency_expiry_date, today) == int(self.residency_expire_in_days) * -1:
 				page_link = get_url_to_form("Employee", employee.name)
 				message = "<li><a href='{0}'>{1}</a></li>".format(page_link, employee.name+": "+employee.employee_name)
 		message += "<ol>"
