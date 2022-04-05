@@ -8,10 +8,27 @@ $(document).ready(function() {
 });
 
 // Career History
+
 career_history = Class.extend({
   init: function(){
-    this.create_company_section_html(1)
+    var me = this;
+    $('.submit-btn').hide();
+    $('.next-btn').hide();
+    $('.main_section').hide();
+    
+    this.intro_btn(me);
+    this.introduction();
+    //this.next_career_history();
     this.submit_career_history();
+  },
+  introduction:function(){
+    var intro_section_html = `
+    <h4 id="job_applicant" data="{{ job_applicant.name }}">Hey {{job_applicant.applicant_name}},
+		you’re applying for the {{job_applicant.designation}} position.</h4>
+    <h4>We would like to know more about you.</h4> 
+    <h5>Give us some details about your career, and tell us how great you are!</h5>
+  `
+    $(".intro").append(intro_section_html);
   },
   on_change_promotion: function(company_no, promotion_no) {
     var me = this;
@@ -64,7 +81,7 @@ career_history = Class.extend({
     });
   },
   set_promotion_section_html: function(company_no, promotion_no) {
-    var next_promotion_details_html = `<div class="col-lg-12 col-md-12 promotion_section_${company_no}${promotion_no}">
+    var next_promotion_details_html = `<div class="mx-auto col-lg-12 col-md-12 mb-12 promotion_section_${company_no}${promotion_no}">
         <label  class="form-label">Did you get any promotion or salary increase?</label>
           <select class="custom-select promotion_select_${company_no}${promotion_no}">
             <option value="0">No, I did not get any promotion or salary increase</option>
@@ -72,7 +89,7 @@ career_history = Class.extend({
             <option value="2">Yes, I only got a promotion</option>
             <option value="3">Yes, I only got a salary increase</option>
           </select>
-        <div class="row col-lg-12 col-md-12 my-5 promotion_details_section_${company_no}${promotion_no}" style="width: 100%; display: flex">
+        <div class="row mx-auto col-lg-12 col-md-12 mb-12 promotion_details_section_${company_no}${promotion_no}" style="width: 100%; display: flex">
         </div>
       </div>`;
     $(`.promotion_section_${company_no}${promotion_no}`).remove();
@@ -88,7 +105,7 @@ career_history = Class.extend({
       $(".are_you_still_working_"+(company_no.toString())).remove();
       $(".when_did_you_left_"+(company_no.toString())).remove();
       if (still_working == 1){
-        var reason_why_leave_job_html = `<div class="col-lg-12 col-md-12 reason_why_leave_job_${company_no}">
+        var reason_why_leave_job_html = `<div class="mx-auto col-lg-12 col-md-12 mb-12 reason_why_leave_job_${company_no}">
           <label class="form-label">Why do you plan to leave the job?</label>
           <textarea rows="4" cols="50" name="comment" form="usrform" class="form-control reason_why_leave_job_${company_no}_text">
           </textarea>
@@ -102,7 +119,7 @@ career_history = Class.extend({
     });
   },
   are_you_still_working_html: function(company_no) {
-    var are_you_still_working_html = `<div class="col-lg-12 col-md-12 are_you_still_working_${company_no}">
+    var are_you_still_working_html = `<div class="mx-auto col-lg-12 col-md-12 mb-12 are_you_still_working_${company_no}">
       <label  class="form-label">Are you still working?</label>
       <select class="custom-select are_you_still_working_${company_no}_select">
         <option value="0">Choose</option>
@@ -114,7 +131,7 @@ career_history = Class.extend({
     this.on_change_are_you_still_working(company_no)
   },
   when_did_you_left_the_company: function(company_no) {
-    var when_did_you_left_the_company_html = `<div class="col-lg-12 col-md-12 when_did_you_left_${company_no}">
+    var when_did_you_left_the_company_html = `<div class="mx-auto col-lg-12 col-md-12 mb-12 when_did_you_left_${company_no}">
       <label  class="form-label">When did you leave the company?</label>
       <input type="date" class="form-control when_did_you_left_${company_no}_date"/>
     </div>`
@@ -125,74 +142,84 @@ career_history = Class.extend({
     $(`.are_you_still_working_${company_no}_select`).on("change", function(){
       var are_you_still_working = $(`.are_you_still_working_${company_no}_select`).val();
       if(are_you_still_working == 2){
-        me.create_company_section_html(company_no+1);
+        $('.submit-btn').fadeOut();
+        $('.next-btn').fadeIn();
+        me.next_career_history(company_no+1);
       }
       else if(are_you_still_working <= 1){
+        $('.next-btn').fadeOut();
+        $('.submit-btn').fadeIn();
         for (let i = company_no; i < TOTAL_COMPANY_NO; i++) {
           $(".company_"+((i+1).toString())).remove();
+          
         }
         TOTAL_COMPANY_NO = company_no;
       }
     });
   },
   create_company_section_html: function(company_no) {
-    var company_section_html = `<div class="row col-lg-12 col-md-12 mb-12 company_${company_no}">
-      <h3>So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
-      <div class="my-5 col-lg-6 col-md-6">
-        <label class="form-label">${stringifyNumber(company_no)} Company Name </label>
-        <input type="text" class="form-control company_${company_no}_name" placeholder="Enter the ${stringifyNumber(company_no)} Company Name"/>
-      </div>
-      <div class="my-5 col-lg-6 col-md-6">
-        <label class="form-label">Select country of employment</label> <br>
-        <select class="form-control country_of_company_${company_no}">
-          <option>Select Country</option>
-          {% for country in country_list %}
-          <option>{{country.name}}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="mb-3 col-lg-6 col-md-6">
-        <label class="form-label">When did you join the company?</label>
-        <input type="date" class="form-control joined_company${company_no}"/>
-      </div>
-      <div class="mb-3 col-lg-6 col-md-6">
-        <label class="form-label">What was your first salary at this company?</label>
-        <input type="text" class="form-control salary_company${company_no}" placeholder="Enter your Salary in KWD"/>
-      </div>
-
-      <div class="col-lg-12 col-md-12">
-        <label for="Responisbilities" class="form-label">What were your top three responsibilities?</label>
-        <input type="text" class="form-control mb-3 responisbility_1_company${company_no}" placeholder="1"/>
-        <input type="text" class="form-control mb-3 responisbility_2_company${company_no}" placeholder="2"/>
-        <input type="text" class="form-control mb-3 responisbility_3_company${company_no}" placeholder="3"/>
-      </div>
-
-      <div class="col-lg-12 col-md-12">
-        <hr class="my-5"/>
-      </div>
-
-      <div class="mb-3 col-lg-6 col-md-6">
-        <label  class="form-label">What was your starting job title?</label>
-        <input type="text" class="form-control starting_job_title_company_${company_no}" placeholder="Enter the Job Title"/>
-      </div>
-
-      <div class="promotion_section_${company_no}" style="width: 100%">
-
-      </div>
-
-      <div class="col-lg-12 col-md-12 mb-3">
-        <label>Are You still working for the same company?</label>
-        <select class="custom-select still_working_on_same_company_${company_no}">
-          <option value="0">Choose</option>
-          <option value="1">Yes</option>
-          <option value="2">No</option>
-        </select>
-      </div>
-      </div>`;
+    $('.main_section').delay(800).fadeIn(400);
+    var company_section_html = `
+		<div class="row col-lg-12 col-md-12 mb-12 company_${company_no}">
+		  <h3>So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
+		  <div class="row mx-auto col-lg-12 col-md-12 mb-12 border-top">
+		  	<div class="my-5 col-lg-6 col-md-6">
+				<label class="form-label">${stringifyNumber(company_no)} Company Name </label>
+				<input type="text" class="form-control company_${company_no}_name" placeholder="Enter the ${stringifyNumber(company_no)} Company Name"/>
+		  	</div>
+		  	<div class="my-5 col-lg-6 col-md-6">
+				<label class="form-label">Select country of employment</label> <br>
+					<select class="form-control country_of_company_${company_no}">
+					<option>Select Country</option>
+					{% for country in country_list %}
+					<option>{{country.name}}</option>
+					{% endfor %}
+				</select>
+		  	</div>
+		  	<div class="mb-3 col-lg-6 col-md-6">
+				<label class="form-label">When did you join the company?</label>
+				<input type="date" class="form-control joined_company${company_no}"/>
+		  	</div>
+		  	<div class="mb-3 col-lg-6 col-md-6">
+				<label class="form-label">What was your first salary at this company?</label>
+				<input type="text" class="form-control salary_company${company_no}" placeholder="Enter your Salary in KWD"/>
+		  	</div>
+	
+			<div class="col-lg-12 col-md-12">
+				<hr class="my-5"/>
+			</div>
+	
+			<div class="mb-3 col-lg-6 col-md-6">
+				<label  class="form-label">What was your starting job title?</label>
+				<input type="text" class="form-control starting_job_title_company_${company_no}" placeholder="Enter the Job Title"/>
+			</div>
+	
+		  	<div class="promotion_section_${company_no}" style="width: 100%">
+	
+		  	</div>
+	
+			<div class="col-lg-12 col-md-12 mb-3">
+				<label>Are You still working for the same company?</label>
+				<select class="custom-select still_working_on_same_company_${company_no}">
+				<option value="0">Choose</option>
+				<option value="1">Yes</option>
+				<option value="2">No</option>
+				</select>
+			</div>
+	</div>`;
     $(".main_section").append(company_section_html);
     TOTAL_COMPANY_NO += 1;
     this.set_promotion_section_html(company_no, 1);
     this.on_change_still_working_on_same_company(company_no);
+  },
+  next_career_history: function(company_no) {
+    // Move to Next Career History
+    var me = this;
+    $('.btn-next-career-history').click(function(){
+      $(`.company_${company_no-1}`).fadeOut();
+      $('.next-btn').fadeOut();
+      me.create_company_section_html(company_no);
+    });
   },
   submit_career_history: function() {
     // Submit Career History
@@ -222,6 +249,13 @@ career_history = Class.extend({
       else{
         frappe.msgprint(frappe._("Please fill all the details to submit the career history."));
       }
+    });
+  },
+  intro_btn: function(me) {
+    // Create Comapany Section 
+    $('.btn-intro-next').click(function(){
+      $('.intro_section').fadeOut();
+       me.create_company_section_html(1)
     });
   },
   get_details_from_form: function() {
