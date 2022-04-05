@@ -13,7 +13,8 @@ from frappe.utils import (
 	format_time,
 	formatdate,
 	now_datetime,
-	date_diff
+	date_diff,
+	get_url_to_form
 )
 
 class ResidencyExpiryNotificationDigest(Document):
@@ -64,20 +65,20 @@ class ResidencyExpiryNotificationDigest(Document):
 
 	def get_msg_html(self):
 		"""Build digest content"""
-		msg_content = get_employee_list()
+		msg_content = self.get_employee_list()
 		msg_header = self.set_title()
 		return msg_header+msg_content
 
 	def set_title(self):
 		"""Set digest title"""
 		title = _("Daily Reminder")
-		subtitle = _("List of residency expiry notification for today")
+		subtitle = _("Todays list of residency expiry in {0} days".format(self.residency_expire_in_days))
 		if self.frequency=="Weekly":
 			title = _("Weekly Reminder")
-			subtitle = _("List of residency expiry notification for the week")
+			subtitle = _("This Week's list of residency expiry in {0} days".format(self.residency_expire_in_days))
 		elif self.frequency=="Monthly":
 			title = _("Monthly Reminder")
-			subtitle = _("List of residency expiry notification for the month")
+			subtitle = _("This Month's list of residency expiry in {0} days".format(self.residency_expire_in_days))
 		return "<h3>{0}<h3><br/><h4>{1}</h4>".format(title, subtitle)
 
 	def get_from_to_date(self):
@@ -133,16 +134,16 @@ class ResidencyExpiryNotificationDigest(Document):
 	def onload(self):
 		self.get_next_sending()
 
-def get_employee_list():
-	today = now_datetime().date()
-	employee_list = frappe.db.get_list('Employee', ['name', 'employee_name', 'residency_expiry_date'])
-	message = "<ol>"
-	for employee in employee_list:
-		if date_diff(employee.residency_expiry_date, today) == -45:
-			page_link = get_url("/desk#Form/Employee/"+employee.name)
-			message = "<li><a href='{0}'>{1}</a></li>".format(page_link, employee.name+": "+employee.employee_name)
-	message += "<ol>"
-	return message
+	def get_employee_list(self):
+		today = now_datetime().date()
+		employee_list = frappe.db.get_list('Employee', ['name', 'employee_name', 'residency_expiry_date'])
+		message = "<ol>"
+		for employee in employee_list:
+			if date_diff(employee.residency_expiry_date, today) == -(self.residency_expire_in_days)
+				page_link = get_url_to_form("Employee", employee.name)
+				message = "<li><a href='{0}'>{1}</a></li>".format(page_link, employee.name+": "+employee.employee_name)
+		message += "<ol>"
+		return message
 
 def send():
 	now_date = now_datetime().date()
