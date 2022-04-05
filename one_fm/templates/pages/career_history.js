@@ -235,7 +235,7 @@ career_history = Class.extend({
       $(`.company_${company_no-1}`).fadeIn();
       $(`.heading_${company_no-1}`).fadeIn(); 
       $('.next-btn').fadeIn();
-      me.next_career_history(company_no+1);
+      me.next_career_history(company_no);
     });
   },
   submit_career_history: function() {
