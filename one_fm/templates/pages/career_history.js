@@ -119,7 +119,7 @@ career_history = Class.extend({
     });
   },
   are_you_still_working_html: function(company_no) {
-    var are_you_still_working_html = `<div class="mx-auto col-lg-12 col-md-12 mb-12 are_you_still_working_${company_no}">
+    var are_you_still_working_html = `<div class="row mx-auto col-lg-12 col-md-12 mb-12 are_you_still_working_${company_no}">
       <label  class="form-label">Are you still working?</label>
       <select class="custom-select are_you_still_working_${company_no}_select">
         <option value="0">Choose</option>
@@ -131,7 +131,7 @@ career_history = Class.extend({
     this.on_change_are_you_still_working(company_no)
   },
   when_did_you_left_the_company: function(company_no) {
-    var when_did_you_left_the_company_html = `<div class="mx-auto col-lg-12 col-md-12 mb-12 when_did_you_left_${company_no}">
+    var when_did_you_left_the_company_html = `<div class="row mx-auto col-lg-12 col-md-12 mt-5 mb-12 when_did_you_left_${company_no}">
       <label  class="form-label">When did you leave the company?</label>
       <input type="date" class="form-control when_did_you_left_${company_no}_date"/>
     </div>`
@@ -158,11 +158,10 @@ career_history = Class.extend({
     });
   },
   create_company_section_html: function(company_no) {
-    $('.main_section').delay(800).fadeIn(400);
+    $('.main_section').delay(400).fadeIn();
     var company_section_html = `
-		<div class="row col-lg-12 col-md-12 mb-12 company_${company_no}">
-		  <h3>So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
-		  <div class="row mx-auto col-lg-12 col-md-12 mb-12 border-top">
+    <h3 class=" mx-auto">So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
+		<div class="row mx-auto col-lg-12 col-md-12 mb-12 company_${company_no} border-top">
 		  	<div class="my-5 col-lg-6 col-md-6">
 				<label class="form-label">${stringifyNumber(company_no)} Company Name </label>
 				<input type="text" class="form-control company_${company_no}_name" placeholder="Enter the ${stringifyNumber(company_no)} Company Name"/>
@@ -194,7 +193,7 @@ career_history = Class.extend({
 				<input type="text" class="form-control starting_job_title_company_${company_no}" placeholder="Enter the Job Title"/>
 			</div>
 	
-		  	<div class="promotion_section_${company_no}" style="width: 100%">
+		  	<div class="mt-5 promotion_section_${company_no}" style="width: 100%">
 	
 		  	</div>
 	
