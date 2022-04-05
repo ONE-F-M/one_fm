@@ -11,6 +11,7 @@
   "enabled",
   "company",
   "frequency",
+  "residency_expire_in_days",
   "next_send",
   "column_break1",
   "recipients"
@@ -19,7 +20,7 @@
   {
    "fieldname": "settings",
    "fieldtype": "Section Break",
-   "label": "Email Digest Settings"
+   "label": "Digest Settings"
   },
   {
    "fieldname": "column_break0",
@@ -35,12 +36,12 @@
   {
    "fieldname": "company",
    "fieldtype": "Link",
+   "hidden": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "For Company",
    "options": "Company",
-   "remember_last_selected_value": 1,
-   "reqd": 1
+   "remember_last_selected_value": 1
   },
   {
    "fieldname": "frequency",
@@ -48,6 +49,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "How frequently?",
+   "mandatory_depends_on": "enabled",
    "options": "Daily\nWeekly\nMonthly",
    "reqd": 1
   },
@@ -67,15 +69,23 @@
    "fieldname": "recipients",
    "fieldtype": "Table MultiSelect",
    "label": "Recipients",
-   "options": "Email Digest Recipient",
-   "reqd": 1
+   "mandatory_depends_on": "enabled",
+   "options": "Email Digest Recipient"
+  },
+  {
+   "default": "45",
+   "description": "Get list of employees residency expire in days",
+   "fieldname": "residency_expire_in_days",
+   "fieldtype": "Int",
+   "label": "Residency Expire in Days",
+   "mandatory_depends_on": "enabled"
   }
  ],
  "icon": "fa fa-envelope",
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-04-05 07:23:40.874856",
+ "modified": "2022-04-05 09:24:15.093523",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Residency Expiry Notification Digest",
