@@ -4,7 +4,6 @@ from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_
 from one_fm.legal.doctype.penalty.penalty import send_email_to_legal, upload_image
 from one_fm.one_fm.page.face_recognition.face_recognition import recognize_face
 from frappe import _
-import pickle, face_recognition
 import json
 from one_fm.utils import response
 

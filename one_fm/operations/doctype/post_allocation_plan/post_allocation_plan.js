@@ -222,7 +222,10 @@ frappe.ui.form.on('Post Allocation Employee Assignment', {
 			frappe.model.set_value("Post Allocation Employee Assignment", doc.name, "match_percentage", undefined);
 		}
 		else{
-			let {employee, post, operations_shift, date} = doc;
+			let {employee, post} = doc;
+			let operations_shift = frm.doc.operations_shift;
+			let date = frm.doc.date;
+			console.log(frm.doc.operations_shift)
 			frappe.xcall('one_fm.operations.doctype.post_allocation_plan.post_allocation_plan.get_post_employee_data', {employee, post, operations_shift, date}).then(res => {
 				let {employee, post} = res;
 				let match = get_best_employee_match(post, [employee]);
