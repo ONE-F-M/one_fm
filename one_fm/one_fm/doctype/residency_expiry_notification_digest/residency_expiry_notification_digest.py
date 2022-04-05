@@ -145,6 +145,7 @@ class ResidencyExpiryNotificationDigest(Document):
 		message += "<ol>"
 		return message
 
+
 def send():
 	now_date = now_datetime().date()
 

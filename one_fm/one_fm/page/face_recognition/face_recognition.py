@@ -1,18 +1,17 @@
 import base64
 import grpc
-from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
+from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 import frappe
 from frappe import _
 from frappe.utils import now_datetime, cstr, nowdate, cint
-from scipy.spatial import distance as dist
-from imutils import face_utils, paths
 import numpy as np
-import face_recognition
 import datetime
-import time
-import cv2, os
-import json
 from json import JSONEncoder
+import cv2, os
+import face_recognition
+import json
+from imutils import face_utils, paths
+
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -34,20 +33,40 @@ def setup_directories():
 @frappe.whitelist()
 def enroll():
 	try:
-		setup_directories()
 		files = frappe.request.files
 		file = files['file']
-		content = file.stream.read()
-		filename = file.filename
-		OUTPUT_VIDEO_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
-		with open(OUTPUT_VIDEO_PATH, "wb") as fh:
-				fh.write(content)
-				start_enroll = time.time()
-				create_dataset(OUTPUT_VIDEO_PATH)
-				end_enroll = time.time()
-				print("Ënroll Time Taken = ", end_enroll-start_enroll)
-				print("Enrolling Success")
+		username = file.filename
+		
+		# Get user video
+		content_bytes = file.stream.read()
+		content_base64_bytes = base64.b64encode(content_bytes)
+		video_content = content_base64_bytes.decode('ascii')
+
+		# Setup channel
+		face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
+		channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
+		# setup stub
+		stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
+			# request body
+		req = enroll_pb2.EnrollRequest(
+			username = username,
+			user_encoded_video = video_content,
+		)
+
+		res = stub.FaceRecognitionEnroll(req)
+
+		if res.enrollment == "FAILED":
+			msg = res.message
+			data = res.data
+			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
+		
+		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+		doc.enrolled = 1
+		doc.save(ignore_permissions=True)
+		update_onboarding_employee(doc)
+		frappe.db.commit()
 		return _("Successfully Enrolled!")
+
 	except Exception as exc:
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
@@ -58,7 +77,6 @@ def enroll():
 def verify():
 	try:
 
-		setup_directories()
 		log_type = frappe.local.form_dict['log_type']
 		skip_attendance = frappe.local.form_dict['skip_attendance']
 		latitude = frappe.local.form_dict['latitude']
@@ -72,14 +90,6 @@ def verify():
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
-		
-		# Get user encoding file
-		encoding_file_path = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"+frappe.session.user+".json"
-		encoding_content_json = json.loads(open(encoding_file_path, "rb").read()) # dict
-		encoding_content_str = json.dumps(encoding_content_json) # str
-		encoding_content_bytes = encoding_content_str.encode('ascii')
-		encoding_content_base64_bytes = base64.b64encode(encoding_content_bytes)
-		user_encoding_json = encoding_content_base64_bytes.decode('ascii')
 
 		# setup channel
 		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
@@ -88,10 +98,10 @@ def verify():
 		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 		# request body
-		req = facial_recognition_pb2.Request(
+		req = facial_recognition_pb2.FaceRecognitionRequest(
 			username = user_name,
-			user_encoded_video = video_content,
-			user_encoding = user_encoding_json
+			media_type = "video",
+			media_content = video_content,
 		)
 		# Call service stub and get response
 		res = stub.FaceRecognition(req)
@@ -133,11 +143,51 @@ def forced_checkin(employee, log_type, time):
 	frappe.db.commit()
 	return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
 
+def update_onboarding_employee(employee):
+    onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
+    if onboard_employee_exist:
+        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
+        onboard_employee.enrolled = True
+        onboard_employee.enrolled_on = now_datetime()
+        onboard_employee.save(ignore_permissions=True)
+        frappe.db.commit()
+
+@frappe.whitelist()
+def check_existing():
+	"""API to determine the applicable Log type. 
+	The api checks employee's last lcheckin log type. and determine what next log type needs to be
+
+	Returns:
+		True: The log in was "IN", so his next Log Type should be "OUT".
+		False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
+	"""	
+	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+	
+	# get current and previous day date.
+	todate = nowdate()
+	prev_date = (datetime.datetime.today() - datetime.timedelta(days=1)).strftime ('%Y-%m-%d')
+
+	if not employee:
+		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
+
+	#get checkin log previous days and current date.
+	logs = frappe.db.sql("""
+			select log_type from `tabEmployee Checkin` where date(time) BETWEEN '{date1}' and '{date2}' and skip_auto_attendance=0 and employee="{employee}"
+			""".format(date1=prev_date, date2=todate, employee=employee), as_dict=1)
+
+	val = [log.log_type for log in logs]
+
+	#For Check IN
+	if not val or (val and val[-1] == "OUT"):
+		return False
+	#For Check OUT
+	else:
+		return True
 
 def create_dataset(video):
 	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"
-	count = 0
-
+	count = 0 
+	
 	cap = cv2.VideoCapture(video)
 	success, img = cap.read()
 	count = 0
@@ -155,21 +205,11 @@ def create_dataset(video):
 	print(doc.as_dict())
 	doc.enrolled = 1
 	doc.save(ignore_permissions=True)
-	update_onboarding_employee(doc)
 	frappe.db.commit()
-
-def update_onboarding_employee(employee):
-    onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
-    if onboard_employee_exist:
-        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
-        onboard_employee.enrolled = True
-        onboard_employee.enrolled_on = now_datetime()
-        onboard_employee.save(ignore_permissions=True)
-        frappe.db.commit()
 
 def create_encodings(directory, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
 	"""
-		directory : directory path containing dataset
+		directory : directory path containing dataset 
 	"""
 	print(directory)
 	OUTPUT_ENCODING_PATH_PREFIX = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"
@@ -207,7 +247,7 @@ def create_encodings(directory, detection_method="hog"):# detection_method can b
 			# encodings
 			knownEncodings.append(encoding)
 
-	# dump the facial encodings + names to disk
+	# dump the facial encodings + names to disk	
 	data = {"encodings": knownEncodings}
 	print(data)
 	if len(knownEncodings) == 0:
@@ -215,40 +255,8 @@ def create_encodings(directory, detection_method="hog"):# detection_method can b
 	data = json.dumps(data, cls=NumpyArrayEncoder)
 	with open(encoding_path,"w") as f:
 		f.write(data)
-		f.close()
+	f.close()
 
-
-@frappe.whitelist()
-def check_existing():
-	"""API to determine the applicable Log type. 
-	The api checks employee's last lcheckin log type. and determine what next log type needs to be
-
-	Returns:
-		True: The log in was "IN", so his next Log Type should be "OUT".
-		False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
-	"""	
-	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
-	
-	# get current and previous day date.
-	todate = nowdate()
-	prev_date = (datetime.datetime.today() - datetime.timedelta(days=1)).strftime ('%Y-%m-%d')
-
-	if not employee:
-		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
-
-	#get checkin log previous days and current date.
-	logs = frappe.db.sql("""
-			select log_type from `tabEmployee Checkin` where date(time) BETWEEN '{date1}' and '{date2}' and skip_auto_attendance=0 and employee="{employee}"
-			""".format(date1=prev_date, date2=todate, employee=employee), as_dict=1)
-
-	val = [log.log_type for log in logs]
-
-	#For Check IN
-	if not val or (val and val[-1] == "OUT"):
-		return False
-	#For Check OUT
-	else:
-		return True
 
 def recognize_face(image):
 	try:
