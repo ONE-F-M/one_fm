@@ -13,6 +13,9 @@ from frappe.desk.form import assign_to
 from one_fm.processor import sendemail
 from one_fm.templates.pages.career_history import send_career_history_magic_link
 from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
+from one_fm.one_fm.doctype.erf.erf import (
+    set_description_by_performance_profile, set_erf_skills_in_job_opening, set_erf_language_in_job_opening
+)
 
 
 @frappe.whitelist()
@@ -710,3 +713,23 @@ def calculate_interview_feedback_average_rating(doc, method):
 
 def get_score_out_of_five(score, weight):
     return (score * 5) / weight
+
+def set_job_opening_erf_missing_values(doc, method):
+    if doc.one_fm_erf:
+        erf = frappe.get_doc('ERF', doc.one_fm_erf)
+        doc.designation = erf.designation
+        doc.department = erf.department
+        employee = frappe.db.exists("Employee", {"user_id": erf.owner})
+        doc.one_fm_hiring_manager = employee if employee else ''
+        doc.one_fm_no_of_positions_by_erf = erf.number_of_candidates_required
+        doc.one_fm_job_opening_created = today()
+        doc.one_fm_minimum_experience_required = erf.minimum_experience_required
+        doc.one_fm_performance_profile = erf.performance_profile
+        if not doc.description:
+            description = set_description_by_performance_profile(doc, erf)
+            if description:
+                doc.description = description
+        if not doc.one_fm_designation_skill:
+            set_erf_skills_in_job_opening(doc, erf)
+        if not doc.one_fm_languages:
+            set_erf_language_in_job_opening(doc, erf)

@@ -297,6 +297,12 @@ doc_events = {
 			"one_fm.api.doc_methods.issue.notify_issue_raiser",
 		],
     "on_update": "one_fm.utils.notify_on_close",
+	},
+	"Job Opening": {
+		"after_insert": "one_fm.hiring.utils.set_job_opening_erf_missing_values"
+	},
+	"Comment": {
+		"after_insert": "one_fm.utils.notify_issue_responder_or_assignee_on_comment_in_issue"
 	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"

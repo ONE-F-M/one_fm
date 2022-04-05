@@ -118,16 +118,30 @@ function send_request(method, data, token, type){
           let r = null;
           try {
             r = JSON.parse(request.responseText);
+            $("#cover-spin").hide();
+            $('#finalForm').css('display', 'block');
             fill_form(r.message,request.type, token);
           } catch (e) {
+            $("#cover-spin").hide();
+            $('#finalForm').css('display', 'block');
             r = request.responseText;
           }
         } else if (request.status === 403) {
+          $("#cover-spin").hide();
+          $('#finalForm').css('display', 'block');
           let response = JSON.parse(request.responseText);
           frappe.msgprint({
             title: __("Not permitted"),
             indicator: "red",
             message: response._error_message,
+          });
+        } else {
+          $("#cover-spin").hide();
+          $('#finalForm').css('display', 'block');
+          frappe.msgprint({
+            title: __("Error extracting text"),
+            indicator: "orange",
+            message: __("Please fill out the below form manually."),
           });
         }
       }
@@ -151,9 +165,11 @@ function upload(){
       var token = r.message
        if (!!civil_id_image.entries().next().value){
         civil_id_image.append("is_kuwaiti",is_kuwaiti)
+        $("#cover-spin").show(0);
         send_request(method_map['civil_id'], civil_id_image, token,"Civil ID")
       };
       if (!!passport_image.entries().next().value){
+        $("#cover-spin").show(0);
         send_request(method_map['passport'], passport_image, token,"Passport")
       };
     }
