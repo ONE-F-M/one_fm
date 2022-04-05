@@ -2358,7 +2358,7 @@ def notify_on_close(doc, method):
     """.format(issue_id = doc.name, url= doc.get_url())
 
     if doc.status == "Closed":
-        sendemail(sender=sender, recipients= doc.raised_by, content=msg, subject=subject, delay=False)
+        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delay=False)
 
 def assign_issue(doc, method):
     '''
