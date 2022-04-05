@@ -27,7 +27,7 @@
           {% for i in help_article %}
             <tr>
                 <td><a href="{{i.route}}">{{i.title}}</a></td>
-                <td>{{i.category}}</td>
+                <td><a href="/kb/{{i.category.lower().replace(' ', '-')}}">{{i.category}}</a></td>
             </tr>
             {% endfor %}
 
