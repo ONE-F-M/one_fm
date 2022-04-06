@@ -145,6 +145,8 @@ def make_employee_from_job_offer(source_name, target_doc=None):
                 for earning in salary_structure.earnings:
                     if earning.salary_component == 'Basic':
                         target.one_fm_basic_salary = earning.amount
+            if source.base:
+                target.one_fm_basic_salary = source.base
             target.salary_mode = salary_structure.mode_of_payment
         set_map_job_applicant_details(target, source.job_applicant)
     doc = get_mapped_doc("Job Offer", source_name, {
@@ -283,6 +285,7 @@ def create_salary_structure_assignment(doc, method):
         assignment.salary_structure = doc.job_offer_salary_structure
         assignment.company = doc.company
         assignment.from_date = doc.date_of_joining
+        assignment.base = doc.one_fm_basic_salary
         assignment.save(ignore_permissions = True)
 
 @frappe.whitelist()
