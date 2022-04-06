@@ -165,14 +165,15 @@ career_history = Class.extend({
       this.back_career_history(company_no);
     }
     var company_section_html = `
-    <h3 class="heading_${company_no} mx-auto">So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
+    <div class="section_${company_no}">
+    <h3 class="mx-auto">So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
 		<div class="row mx-auto col-lg-12 col-md-12 mb-3 company_${company_no} border-top">
-		  	<div class="my-5 col-lg-12 col-md-12">
-				<label class="form-label">${stringifyNumber(company_no)} Company Name </label>
+		  	<div class="my-3 col-lg-12 col-md-12">
+				<label class="form-label">What was the company's name? </label>
 				<input type="text" class="form-control company_${company_no}_name" placeholder="Enter the ${stringifyNumber(company_no)} Company Name"/>
 		  	</div>
-		  	<div class="my-5 col-lg-12 col-md-12">
-				<label class="form-label">Select country of employment</label> <br>
+		  	<div class="my-3 col-lg-12 col-md-12">
+				<label class="form-label">Which country did you get employed in?</label> <br>
 					<select class="form-control country_of_company_${company_no}">
 					<option>Select Country</option>
 					{% for country in country_list %}
@@ -210,7 +211,8 @@ career_history = Class.extend({
 				<option value="2">No</option>
 				</select>
 			</div>
-	</div>`;
+	</div>
+  </div>`;
     $(".main_section").append(company_section_html);
     TOTAL_COMPANY_NO += 1;
     this.set_promotion_section_html(company_no, 1);
@@ -220,20 +222,23 @@ career_history = Class.extend({
     // Move to Next Career History
     var me = this;
     $('.btn-next-career-history').click(function(){
-      $(`.company_${company_no-1}`).fadeOut();
-      $(`.heading_${company_no-1}`).fadeOut(); 
+      $(`.section_${company_no-1}`).fadeOut();
       $('.next-btn').fadeOut();
-      me.create_company_section_html(company_no);
+      if($(`.section_${company_no}`).length){
+        $(`.section_${company_no}`).delay(400).fadeIn();
+      }
+      else{
+        me.create_company_section_html(company_no);
+      }
+      
     });
   },
   back_career_history: function(company_no) {
     // Move to Next Career History
     var me = this;
     $('.btn-back-career-history').click(function(){
-      $(`.company_${company_no}`).fadeOut();
-      $(`.heading_${company_no}`).fadeOut(); 
-      $(`.company_${company_no-1}`).fadeIn();
-      $(`.heading_${company_no-1}`).fadeIn(); 
+      $(`.section_${company_no}`).fadeOut();
+      $(`.section_${company_no-1}`).fadeIn();
       $('.next-btn').fadeIn();
       me.next_career_history(company_no);
     });
