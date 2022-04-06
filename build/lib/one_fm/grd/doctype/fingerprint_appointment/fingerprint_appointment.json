@@ -1,0 +1,505 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2021-04-26 09:10:38.654039",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company_name",
+  "employee",
+  "date_of_application",
+  "preparation",
+  "column_break_4",
+  "fingerprint_appointment_type",
+  "status",
+  "section_break_9",
+  "date_and_time_confirmation",
+  "upload_appointment_form",
+  "required_transportation",
+  "section_break_13",
+  "preparing_documents",
+  "column_break_14",
+  "preparing_documents_on",
+  "section_break_4",
+  "category",
+  "service_user",
+  "application",
+  "governorate",
+  "column_break_7",
+  "service_location",
+  "service_type",
+  "section_break_12",
+  "civil_id",
+  "full_name",
+  "first_name_arabic",
+  "second_name_arabic",
+  "third_name_arabic",
+  "last_name_arabic",
+  "moi_reference_number",
+  "column_break_18",
+  "employee_id",
+  "nationality",
+  "first_name_english",
+  "second_name_english",
+  "third_name_english",
+  "last_name_english",
+  "section_break_24",
+  "grd_operator_renewal",
+  "grd_operator_transfer",
+  "grd_supervisor",
+  "transport_user",
+  "operations_manager",
+  "reminded_grd_operator",
+  "reminded_grd_operator_again",
+  "reminded_grd_operator_documents",
+  "reminded_grd_operator_documents_again",
+  "notify_operations",
+  "notify_transport",
+  "completed_on",
+  "amended_from",
+  "website"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Fingerprint Appointment",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "FP-.YYYY.-"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Civil ID",
+   "read_only": 1
+  },
+  {
+   "default": "Organization",
+   "fieldname": "category",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Category"
+  },
+  {
+   "default": "Expat",
+   "fieldname": "service_user",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Service User"
+  },
+  {
+   "default": "Criminal Evidence",
+   "fieldname": "application",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Application"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Fingerprint for Companies",
+   "fieldname": "service_type",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Service Type"
+  },
+  {
+   "default": "Hawally",
+   "fieldname": "governorate",
+   "fieldtype": "Data",
+   "label": "Governorate"
+  },
+  {
+   "default": "Personnel Identification Dept - Um Alhayman",
+   "fieldname": "service_location",
+   "fieldtype": "Data",
+   "label": "Service Location"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "moi_reference_number",
+   "fieldtype": "Data",
+   "label": "MOI Reference Number",
+   "read_only": 1
+  },
+  {
+   "default": "One Facilities Management",
+   "fieldname": "company_name",
+   "fieldtype": "Data",
+   "label": "Company Name "
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_first_name_in_arabic",
+   "fieldname": "first_name_arabic",
+   "fieldtype": "Data",
+   "label": "First Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_second_name_in_arabic",
+   "fieldname": "second_name_arabic",
+   "fieldtype": "Data",
+   "label": "Second Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_third_name_in_arabic",
+   "fieldname": "third_name_arabic",
+   "fieldtype": "Data",
+   "label": "Third Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_last_name_in_arabic",
+   "fieldname": "last_name_arabic",
+   "fieldtype": "Data",
+   "label": "Last Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.first_name",
+   "fieldname": "first_name_english",
+   "fieldtype": "Data",
+   "label": "First Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.middle_name",
+   "fieldname": "second_name_english",
+   "fieldtype": "Data",
+   "label": "Second Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_third_name",
+   "fieldname": "third_name_english",
+   "fieldtype": "Data",
+   "label": "Third Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.last_name",
+   "fieldname": "last_name_english",
+   "fieldtype": "Data",
+   "label": "Last Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_24",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Supervisor",
+   "options": "User"
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminded GRD Operator",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator_again",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminded GRD Operator Again",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "operations_manager",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Operations Manager",
+   "no_copy": 1,
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "description": "Date and Time for the booked Appointment ",
+   "fieldname": "date_and_time_confirmation",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Date and Time Confirmation"
+  },
+  {
+   "default": "No",
+   "fieldname": "preparing_documents",
+   "fieldtype": "Select",
+   "label": "Preparing Documents",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "completed_on",
+   "fieldtype": "Data",
+   "label": "Completed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "preparing_documents_on",
+   "fieldtype": "Datetime",
+   "label": "Preparing Documents On",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_operations",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify Operations",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator_documents",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminded GRD Operator Documents",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator_documents_again",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminded GRD Operator Documents Again",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fieldname": "required_transportation",
+   "fieldtype": "Select",
+   "label": "Required Transportation",
+   "options": "\nYes\nNo"
+  },
+  {
+   "bold": 1,
+   "default": "Awaiting for Appointment",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_preview": 1,
+   "label": "Status",
+   "options": "\nAwaiting for Appointment\nBooked\nCompleted"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fingerprint_appointment_type",
+   "fieldtype": "Select",
+   "label": "Fingerprint Appointment Type",
+   "options": "\nRenewal\nLocal Transfer"
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date of Application"
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_transport",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify Transport"
+  },
+  {
+   "fieldname": "transport_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Transport user",
+   "options": "User"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Preparation",
+   "options": "Preparation"
+  },
+  {
+   "fieldname": "grd_operator_renewal",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator Renewal",
+   "options": "User"
+  },
+  {
+   "fieldname": "grd_operator_transfer",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "GRD Operator Transfer"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "https://www.moi.gov.kw/main/eservices/residence/",
+   "fieldname": "website",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "website"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break",
+   "label": "Registration Details"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.employee_name",
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_appointment_form",
+   "fieldtype": "Attach",
+   "label": "Upload Appointment Form"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-09-26 19:26:39.276865",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Fingerprint Appointment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "set_user_permissions": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "set_user_permissions": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "date_of_application",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

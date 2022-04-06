@@ -1,0 +1,35 @@
+{
+ "creation": "2020-12-06 05:34:40.995743",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "task",
+  "task_duration"
+ ],
+ "fields": [
+  {
+   "fieldname": "task",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Task"
+  },
+  {
+   "fieldname": "task_duration",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Task Duration (Minutes)"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-12-06 06:05:59.957709",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Checkpoints Form Template Child Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,274 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-10-22 22:05:34.767799",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "contract_details_section",
+  "type_of_lessor",
+  "lessor_name",
+  "lessor_area",
+  "lessor_block",
+  "lessor_avenue",
+  "lessor_phone",
+  "column_break_9",
+  "lessor_fax",
+  "lessor_email",
+  "lessor_civil_id",
+  "lessor_other_details",
+  "section_break_13",
+  "start_date",
+  "column_break_15",
+  "end_date",
+  "lessor_poc_section",
+  "lessor_poc_name",
+  "lessor_poc_mobile",
+  "lessor_poc_phone",
+  "column_break_17",
+  "lessor_poc_fax",
+  "lessor_poc_email",
+  "vehicle_details_section",
+  "vehicle_leasing_contract_item",
+  "create_vehicle",
+  "vehicles",
+  "contract_terms_section",
+  "lessor_provide_driver",
+  "lessor_provide_vehicle_maintenance",
+  "lessor_provide_fule",
+  "lessor_provide_vehicle_replacement",
+  "contract_document",
+  "column_break_37",
+  "other_conditions"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "VLC-.YYYY.-"
+  },
+  {
+   "fieldname": "lessor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Lessor Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lessor_area",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Area",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lessor_block",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Block",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lessor_avenue",
+   "fieldtype": "Data",
+   "label": "Avenue"
+  },
+  {
+   "fieldname": "lessor_phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lessor_fax",
+   "fieldtype": "Data",
+   "label": "Fax"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lessor_email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "lessor_civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "fieldname": "lessor_other_details",
+   "fieldtype": "Data",
+   "label": "Other Details"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "lessor_poc_section",
+   "fieldtype": "Section Break",
+   "label": "Lessor POC"
+  },
+  {
+   "fieldname": "lessor_poc_name",
+   "fieldtype": "Data",
+   "label": "Lessor POC Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lessor_poc_mobile",
+   "fieldtype": "Data",
+   "label": "Mobile",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lessor_poc_phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lessor_poc_fax",
+   "fieldtype": "Data",
+   "label": "Fax"
+  },
+  {
+   "fieldname": "lessor_poc_email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "contract_details_section",
+   "fieldtype": "Section Break",
+   "label": "Contract Details"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Contract Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "Contract End Date",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: !doc.__islocal",
+   "fieldname": "vehicle_details_section",
+   "fieldtype": "Section Break",
+   "label": "Vehicle Details"
+  },
+  {
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contract_terms_section",
+   "fieldtype": "Section Break",
+   "label": "Contract Terms"
+  },
+  {
+   "default": "0",
+   "fieldname": "lessor_provide_driver",
+   "fieldtype": "Check",
+   "label": "Lessor Provide Driver"
+  },
+  {
+   "default": "0",
+   "fieldname": "lessor_provide_vehicle_maintenance",
+   "fieldtype": "Check",
+   "label": "Lessor Provide Vehicle Maintenance"
+  },
+  {
+   "default": "0",
+   "fieldname": "lessor_provide_fule",
+   "fieldtype": "Check",
+   "label": "Lessor Provide Fule"
+  },
+  {
+   "default": "0",
+   "fieldname": "lessor_provide_vehicle_replacement",
+   "fieldtype": "Check",
+   "label": "Lessor Provide Vehicle Replacement"
+  },
+  {
+   "fieldname": "column_break_37",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "other_conditions",
+   "fieldtype": "Small Text",
+   "label": "Other Conditions"
+  },
+  {
+   "fieldname": "contract_document",
+   "fieldtype": "Attach",
+   "label": "Contract Document"
+  },
+  {
+   "depends_on": "eval: !doc.__islocal",
+   "fieldname": "vehicle_leasing_contract_item",
+   "fieldtype": "Table",
+   "options": "Vehicle Leasing Contract Item"
+  },
+  {
+   "fieldname": "create_vehicle",
+   "fieldtype": "Button",
+   "hidden": 1,
+   "label": "Create Vehicle"
+  },
+  {
+   "fieldname": "vehicles",
+   "fieldtype": "Table",
+   "label": "Vehicles",
+   "options": "Lease Vehicle Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "type_of_lessor",
+   "fieldtype": "Select",
+   "label": "Type of Lessor",
+   "options": "\nCompany\nIndividual",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2021-01-13 19:14:04.078540",
+ "modified_by": "Administrator",
+ "module": "Fleet Management",
+ "name": "Vehicle Leasing Contract",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

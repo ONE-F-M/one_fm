@@ -1,0 +1,222 @@
+{
+ "actions": [],
+ "creation": "2020-08-20 21:02:05.412966",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_group",
+  "subitem_group",
+  "count",
+  "uom",
+  "price_list_rate",
+  "type",
+  "unit_rate",
+  "monthly_rate_without_fee",
+  "management_fee_percentage",
+  "management_fee",
+  "monthly_rate",
+  "rate",
+  "column_break_4",
+  "item_price",
+  "item_name",
+  "shift_hours",
+  "gender",
+  "days_off",
+  "days",
+  "overtime_rate",
+  "site"
+ ],
+ "fields": [
+  {
+   "columns": 4,
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item Code",
+   "options": "Item"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.type == 'Hourly'",
+   "fieldname": "unit_rate",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "Hourly Unit Rate",
+   "options": "currency"
+  },
+  {
+   "fetch_from": "item_code.description",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.subitem_group=='Service'",
+   "fetch_from": "item_price.shift_hours",
+   "fieldname": "shift_hours",
+   "fieldtype": "Float",
+   "label": "Shift Hours",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.type == 'Monthly'",
+   "fieldname": "monthly_rate",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Monthly Rate",
+   "options": "currency"
+  },
+  {
+   "default": "Monthly",
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Type",
+   "options": "Hourly\nMonthly"
+  },
+  {
+   "depends_on": "eval:doc.subitem_group=='Service'",
+   "fetch_from": "item_price.days_off",
+   "fieldname": "days_off",
+   "fieldtype": "Select",
+   "label": "Weekly Days Off",
+   "options": "0\n1\n2\n3\n4\n5\n6",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.subitem_group=='Service'",
+   "fieldname": "days",
+   "fieldtype": "Int",
+   "label": "Days"
+  },
+  {
+   "default": "0",
+   "fieldname": "monthly_rate_without_fee",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Monthly Rate Without Fee",
+   "options": "currency"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.subitem_group=='Service'",
+   "fieldname": "management_fee_percentage",
+   "fieldtype": "Percent",
+   "label": "Management Fee Percentage"
+  },
+  {
+   "depends_on": "eval:doc.subitem_group=='Service'",
+   "fieldname": "management_fee",
+   "fieldtype": "Currency",
+   "label": "Management Fee",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_price",
+   "fieldtype": "Link",
+   "label": "Item Price",
+   "options": "Item Price"
+  },
+  {
+   "depends_on": "eval:doc.subitem_group=='Service'",
+   "fetch_from": "item_price.gender",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fetch_from": "item_code.stock_uom",
+   "fetch_if_empty": 1,
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "UOM",
+   "options": "UOM",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "item_price.price_list_rate",
+   "fieldname": "price_list_rate",
+   "fieldtype": "Currency",
+   "label": "Price List Rate",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fetch_from": "item_price.price_list_rate",
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Rate",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.item_group",
+   "fetch_if_empty": 1,
+   "fieldname": "item_group",
+   "fieldtype": "Link",
+   "label": "Item Group",
+   "options": "Item Group",
+   "read_only": 1
+  },
+  {
+   "depends_on": "item_code.item_group=='Service'",
+   "fieldname": "overtime_rate",
+   "fieldtype": "Currency",
+   "label": "Overtime Rate"
+  },
+  {
+   "depends_on": "eval:doc.subitem_group!='Service'",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "fetch_from": "item_code.subitem_group",
+   "fetch_if_empty": 1,
+   "fieldname": "subitem_group",
+   "fieldtype": "Link",
+   "label": "Subitem Group",
+   "options": "Item Group",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Count",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2022-02-21 16:35:41.885056",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Contract Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

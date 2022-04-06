@@ -1,0 +1,179 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-10-20 12:52:45.826775",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "report_date",
+  "inspection_type",
+  "column_break_4",
+  "reference_type",
+  "reference_name",
+  "specification_details",
+  "accommodation_inspection_template",
+  "readings",
+  "section_break_14",
+  "inspected_by",
+  "verified_by",
+  "remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "no_copy": 1,
+   "options": "ACC-IN-.YYYY.-",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "report_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Report Date",
+   "oldfieldname": "report_date",
+   "oldfieldtype": "Date",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "inspection_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Inspection Type",
+   "oldfieldname": "inspection_type",
+   "oldfieldtype": "Select",
+   "options": "\nCleaning\nSecurity\nCivil Work\nIncident and Accident",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reference_type",
+   "fieldtype": "Select",
+   "label": "Reference Type",
+   "options": "\nAccommodation\nAccommodation Unit\nAccommodation Space\nBed",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Reference Name",
+   "oldfieldname": "purchase_receipt_no",
+   "oldfieldtype": "Link",
+   "options": "reference_type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "user",
+   "fieldname": "inspected_by",
+   "fieldtype": "Link",
+   "label": "Inspected By",
+   "oldfieldname": "inspected_by",
+   "oldfieldtype": "Data",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "verified_by",
+   "fieldtype": "Data",
+   "label": "Verified By",
+   "oldfieldname": "verified_by",
+   "oldfieldtype": "Data"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Text",
+   "label": "Remarks",
+   "no_copy": 1,
+   "oldfieldname": "remarks",
+   "oldfieldtype": "Text"
+  },
+  {
+   "fieldname": "specification_details",
+   "fieldtype": "Section Break",
+   "oldfieldtype": "Section Break",
+   "options": "Simple"
+  },
+  {
+   "fieldname": "accommodation_inspection_template",
+   "fieldtype": "Link",
+   "label": "Accommodation Inspection Template",
+   "options": "Accommodation Inspection Template"
+  },
+  {
+   "fieldname": "readings",
+   "fieldtype": "Table",
+   "label": "Readings",
+   "oldfieldname": "qa_specification_details",
+   "oldfieldtype": "Table",
+   "options": "Accommodation Inspection Reading"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Accommodation Inspection",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "icon": "fa fa-search",
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-11-16 08:46:31.782683",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Inspection",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Quality Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "report_date, reference_name",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "ASC"
+}

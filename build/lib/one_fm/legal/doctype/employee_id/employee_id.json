@@ -1,0 +1,265 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2021-05-25 22:26:36.503626",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "employee",
+  "reason_for_request",
+  "onboard_employee",
+  "progress",
+  "status",
+  "column_break_4",
+  "apply_penalty",
+  "penalty_amount",
+  "penalty_type",
+  "employee_details_section",
+  "employee_name",
+  "employee_name_in_arabic",
+  "employee_id",
+  "designation",
+  "designation_in_arabic",
+  "column_break_6",
+  "date_of_joining",
+  "civil_id",
+  "date_of_birth",
+  "nationality",
+  "amended_from",
+  "section_break_13",
+  "employee_image_link",
+  "employee_image",
+  "column_break_15",
+  "qr_code_image_link",
+  "qr_code",
+  "more_information_section",
+  "signed_handover_form"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_first_name_in_arabic",
+   "fieldname": "employee_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Employee Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "designation.designation_in_arabic",
+   "fieldname": "designation_in_arabic",
+   "fieldtype": "Data",
+   "label": "Designation in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.date_of_joining",
+   "fieldname": "date_of_joining",
+   "fieldtype": "Date",
+   "label": "Date of Joining",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.date_of_birth",
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Employee ID",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "employee_image",
+   "fieldtype": "Image",
+   "label": "Employee Image",
+   "options": "employee_image_link"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "qr_code",
+   "fieldtype": "Image",
+   "label": "QR Code",
+   "options": "qr_code_image_link"
+  },
+  {
+   "fieldname": "qr_code_image_link",
+   "fieldtype": "Attach",
+   "label": "QR Code"
+  },
+  {
+   "fetch_from": "employee.image",
+   "fetch_if_empty": 1,
+   "fieldname": "employee_image_link",
+   "fieldtype": "Attach",
+   "label": "Employee Image"
+  },
+  {
+   "depends_on": "employee",
+   "fieldname": "employee_details_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "reason_for_request",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Reason for Request",
+   "options": "\nNew ID\nDuplicate ID\nDamage in Existing ID\nChange Existing ID",
+   "reqd": 1
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nActive\nDamaged\nExpired\nChanged",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.reason_for_request == 'Damage in Existing ID'",
+   "fieldname": "apply_penalty",
+   "fieldtype": "Check",
+   "label": "Apply Penalty"
+  },
+  {
+   "depends_on": "apply_penalty",
+   "fieldname": "penalty_amount",
+   "fieldtype": "Currency",
+   "label": "Penalty Amount"
+  },
+  {
+   "depends_on": "apply_penalty",
+   "fieldname": "penalty_type",
+   "fieldtype": "Link",
+   "label": "Penalty Type",
+   "options": "Penalty Type"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "EMPID-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "more_information_section",
+   "fieldtype": "Section Break",
+   "label": "More Information"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "signed_handover_form",
+   "fieldtype": "Attach",
+   "label": "Signed Handover Form"
+  },
+  {
+   "fieldname": "onboard_employee",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Onboard Employee",
+   "options": "Onboard Employee"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "progress",
+   "fieldtype": "Percent",
+   "hidden": 1,
+   "label": "Progress"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-07-01 10:54:09.204628",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Employee ID",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,91 @@
+{
+ "autoname": "field:object_name",
+ "creation": "2021-01-10 09:03:30.716628",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "space",
+  "object_name",
+  "object_description",
+  "object_category",
+  "object_type",
+  "object_material",
+  "size",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "space",
+   "fieldtype": "Link",
+   "label": "Space",
+   "options": "Cleaning Spaces"
+  },
+  {
+   "fieldname": "object_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Object Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "object_description",
+   "fieldtype": "Data",
+   "label": "Object Description"
+  },
+  {
+   "fieldname": "object_category",
+   "fieldtype": "Link",
+   "label": "Object Category",
+   "options": "Cleaning Object Category"
+  },
+  {
+   "fieldname": "object_type",
+   "fieldtype": "Link",
+   "label": "Object Type",
+   "options": "Cleaning Object Type"
+  },
+  {
+   "fieldname": "object_material",
+   "fieldtype": "Link",
+   "label": "Object Material",
+   "options": "Cleaning Object Material"
+  },
+  {
+   "fieldname": "size",
+   "fieldtype": "Data",
+   "label": "Size"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Data",
+   "label": "Notes"
+  }
+ ],
+ "modified": "2021-01-15 15:59:12.992620",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Cleaning Objects",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}

@@ -1,0 +1,164 @@
+{
+ "actions": [],
+ "creation": "2021-11-10 10:14:11.824807",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "hr_settings_section",
+  "holiday_compensatory_leave_type",
+  "payroll_settings_section",
+  "holiday_additional_salary_component",
+  "maximum_salary_deduction_percentage",
+  "exclude_salary_component",
+  "column_break_7",
+  "default_bank",
+  "overtime_additional_salary_section",
+  "overtime_additional_salary_component",
+  "working_day_overtime_rate",
+  "col_br_1",
+  "day_off_overtime_rate",
+  "public_holiday_overtime_rate",
+  "hr_notification_settings_section",
+  "remind_employee_checkin_checkout",
+  "column_break_17",
+  "remind_supervisor_checkin_checkout"
+ ],
+ "fields": [
+  {
+   "fieldname": "hr_settings_section",
+   "fieldtype": "Section Break",
+   "label": "HR Settings"
+  },
+  {
+   "fieldname": "holiday_compensatory_leave_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Holiday Compensatory Leave Type",
+   "options": "Leave Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payroll_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Payroll Settings"
+  },
+  {
+   "fieldname": "holiday_additional_salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Holiday Additional Salary Component",
+   "options": "Salary Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "overtime_additional_salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Overtime Additional Salary Component",
+   "options": "Salary Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_br_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "working_day_overtime_rate",
+   "fieldtype": "Float",
+   "label": "Working Day Overtime Rate",
+   "precision": "3"
+  },
+  {
+   "fieldname": "day_off_overtime_rate",
+   "fieldtype": "Float",
+   "label": "Day Off Overtime Rate",
+   "precision": "3"
+  },
+  {
+   "fieldname": "public_holiday_overtime_rate",
+   "fieldtype": "Float",
+   "label": "Public Holiday Overtime Rate",
+   "precision": "3"
+  },
+  {
+   "description": "Overtime Amount = Basic Hourly Wage * Hours Worked * Overtime Rate",
+   "fieldname": "overtime_additional_salary_section",
+   "fieldtype": "Section Break",
+   "label": "Overtime Additional Salary Settings"
+  },
+  {
+   "default": "10",
+   "description": "Percentage of Maximum Salary Deduction is used to warn the Payroll Officer about to Provide Justification to PAM for Maximum Deduction.",
+   "fieldname": "maximum_salary_deduction_percentage",
+   "fieldtype": "Percent",
+   "label": "Maximum Salary Deduction Percentage"
+  },
+  {
+   "description": "Exclude Salary Component from the Total Deduction while checking the total deduction is exceeds the above limit or not",
+   "fieldname": "exclude_salary_component",
+   "fieldtype": "Link",
+   "label": "Exclude Salary Component",
+   "options": "Salary Component"
+  },
+  {
+   "description": "Default bank used for Payroll",
+   "fieldname": "default_bank",
+   "fieldtype": "Link",
+   "label": "Default Bank",
+   "options": "Bank",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "hr_notification_settings_section",
+   "fieldtype": "Section Break",
+   "label": "HR Notification Settings"
+  },
+  {
+   "default": "0",
+   "description": "Send Final Reminder Notification to Employee for Checkin/Checkout",
+   "fieldname": "remind_employee_checkin_checkout",
+   "fieldtype": "Check",
+   "label": "Remind Employee Checkin/Checkout"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Send Reminder Notification to Supervisor about Employee Checkin/Checkout",
+   "fieldname": "remind_supervisor_checkin_checkout",
+   "fieldtype": "Check",
+   "label": "Remind Supervisor Checkin/Checkout"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2022-01-11 21:03:52.900225",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "HR and Payroll Additional Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

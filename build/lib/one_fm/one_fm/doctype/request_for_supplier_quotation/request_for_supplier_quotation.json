@@ -1,0 +1,258 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "format:RFQ-{YYYY}.{#####}",
+ "creation": "2020-04-19 14:14:35.124738",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "request_for_material",
+  "column_break1",
+  "transaction_date",
+  "request_for_purchase",
+  "suppliers_section",
+  "suppliers",
+  "get_suppliers_button",
+  "items_section",
+  "items",
+  "supplier_response_section",
+  "email_template",
+  "message_for_supplier",
+  "terms_section_break",
+  "tc_name",
+  "cc_email",
+  "terms",
+  "more_info",
+  "status",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "oldfieldname": "company",
+   "oldfieldtype": "Link",
+   "options": "Company",
+   "print_hide": 1,
+   "remember_last_selected_value": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break1",
+   "fieldtype": "Column Break",
+   "oldfieldtype": "Column Break",
+   "print_width": "50%",
+   "width": "50%"
+  },
+  {
+   "default": "Today",
+   "fieldname": "transaction_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "oldfieldname": "transaction_date",
+   "oldfieldtype": "Date",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "suppliers_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "suppliers",
+   "fieldtype": "Table",
+   "label": "Supplier Detail",
+   "options": "Request for Supplier Quotation Supplier",
+   "print_hide": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "get_suppliers_button",
+   "fieldtype": "Button",
+   "label": "Get Suppliers"
+  },
+  {
+   "fieldname": "items_section",
+   "fieldtype": "Section Break",
+   "oldfieldtype": "Section Break",
+   "options": "fa fa-shopping-cart"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "oldfieldname": "po_details",
+   "oldfieldtype": "Table",
+   "options": "Request for Supplier Quotation Item",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "supplier_response_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "RFQ",
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Template",
+   "print_hide": 1
+  },
+  {
+   "fetch_from": "email_template.response",
+   "fieldname": "message_for_supplier",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Message for Supplier",
+   "print_hide": 1,
+   "reqd": 1
+  },
+  {
+   "collapsible_depends_on": "terms",
+   "fieldname": "terms_section_break",
+   "fieldtype": "Section Break",
+   "label": "Terms and Conditions",
+   "oldfieldtype": "Section Break",
+   "options": "fa fa-legal"
+  },
+  {
+   "default": "RFQ",
+   "fieldname": "tc_name",
+   "fieldtype": "Link",
+   "label": "Terms",
+   "oldfieldname": "tc_name",
+   "oldfieldtype": "Link",
+   "options": "Terms and Conditions",
+   "print_hide": 1
+  },
+  {
+   "fetch_from": "tc_name.terms",
+   "fieldname": "terms",
+   "fieldtype": "Text Editor",
+   "label": "Terms and Conditions",
+   "oldfieldname": "terms",
+   "oldfieldtype": "Text Editor"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "more_info",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "More Information",
+   "oldfieldtype": "Section Break",
+   "options": "fa fa-file-text"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "no_copy": 1,
+   "oldfieldname": "status",
+   "oldfieldtype": "Select",
+   "options": "\nDraft\nSubmitted\nCancelled",
+   "print_hide": 1,
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Request for Supplier Quotation",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "cc_email",
+   "fieldtype": "Data",
+   "label": "CC"
+  },
+  {
+   "fieldname": "request_for_material",
+   "fieldtype": "Link",
+   "label": "Request for Material",
+   "options": "Request for Material",
+   "read_only": 1
+  },
+  {
+   "fieldname": "request_for_purchase",
+   "fieldtype": "Link",
+   "label": "Request for Purchase",
+   "options": "Request for Purchase",
+   "read_only": 1
+  }
+ ],
+ "icon": "fa fa-shopping-cart",
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-10-11 08:21:35.285799",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Request for Supplier Quotation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "write": 1
+  }
+ ],
+ "search_fields": "status, transaction_date",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

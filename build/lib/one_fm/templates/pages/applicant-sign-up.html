@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-signin-client_id"
+        content="1041117133419-qmoj32at10ucbsu1furlv05pcm1g3rts.apps.googleusercontent.com">
+    <title>One FM</title>
+    <link href="assets/one_fm/assets/css/applicant_login.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css"
+        integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog=="
+        crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+</head>
+
+<body>
+    <main>
+        <article class="main-container">
+            <div class="row login-wrapper">
+
+                <!-- Contenido del lado izquierdo -->
+                <section class="col form-wrapper">
+
+                    <!-- Header con links y botón de back -->
+
+                    <!-- Contenedor del formulario y sus mensajes -->
+                    <div class="form-container">
+
+                        <!-- Mensaje de login -->
+                        <div class="form-messages">
+                            <h2>Register</h2>
+                            <p>Welcome! Create your account to proceed with the applying process.</p>
+                        </div>
+                        <div>
+                            <a href="#" onclick="linkedInSigin()" class="lnlogin social"><i
+                                    class="fa fa-linkedin"></i><span>Register with
+                                    Linked In</span></a>
+                            <a href="#" class="gplogin social g-signin2" data-onsuccess="onSignIn"><i
+                                    class="fa fa-google"></i><span>Register with
+                                    Google</span></a>
+                            <a href="./applicant-sign-up-email" class="emaillogin social"><i
+                                    class="fa fa-envelope-square" style="padding: 0 10px;"></i><span>Register with
+                                    Email</span></a>
+                        </div>
+                        <hr/>
+                        <div class="form-messages">
+                            <p>Upload Your Documents, We'll Exctract Data from your Documents and make applying easy!</p>
+                        </div>
+                        <a href="/applicant-docs" class="emaillogin social"><i
+                                class="fa fa-upload" style="padding: 0 10px;"></i><span>Upload</span></a>
+                    </div>
+
+                </section>
+
+                <!-- Contenido del lado derecho -->
+                <section class="col image-wrapper">
+
+                    <div class="image-message">
+
+                        <div class="image-hr-container">
+                            <hr class="image-hr">
+                        </div>
+                        <div class="image-text">
+                            <h2>Start your journey now</h2>
+                            <p>Start your amazing JOB with us! Login into your account now and huwala.</p>
+                        </div>
+
+                    </div>
+
+                </section>
+            </div>
+        </article>
+    </main>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script>
+    <!-- <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script> -->
+</body>
+
+</html>

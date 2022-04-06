@@ -1,0 +1,575 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "naming_series:",
+ "creation": "2020-06-02 07:48:21.946737",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "type_section",
+  "naming_series",
+  "title",
+  "material_request_type",
+  "requested_by",
+  "type",
+  "status",
+  "reason_for_rejection",
+  "column_break_2",
+  "transaction_date",
+  "schedule_date",
+  "company",
+  "priority",
+  "material_request_attach",
+  "request_for_material_accepter",
+  "request_for_material_approver",
+  "type_details_section",
+  "customer",
+  "project",
+  "site",
+  "erf",
+  "contract_number",
+  "project_details",
+  "employee",
+  "employee_name",
+  "column_break_17",
+  "department",
+  "t_warehouse",
+  "is_refundable",
+  "items_section",
+  "scan_barcode",
+  "items",
+  "more_info",
+  "technical_verification_needed",
+  "technical_verification_from",
+  "technical_remarks",
+  "column_break_26",
+  "per_ordered",
+  "per_received",
+  "notes_section",
+  "notes",
+  "signatures_section",
+  "authority_signature",
+  "printing_details",
+  "letter_head",
+  "select_print_heading",
+  "terms_section_break",
+  "tc_name",
+  "terms",
+  "reference",
+  "job_card",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "type_section",
+   "fieldtype": "Section Break",
+   "options": "fa fa-pushpin"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "no_copy": 1,
+   "oldfieldname": "naming_series",
+   "oldfieldtype": "Select",
+   "options": "RFM-.YYYY.-.######\nRM-.YYYY.-",
+   "print_hide": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "{material_request_type}",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "no_copy": 1,
+   "print_hide": 1
+  },
+  {
+   "default": "Purchase",
+   "fieldname": "material_request_type",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_standard_filter": 1,
+   "label": "Type",
+   "options": "Purchase",
+   "print_hide": 1
+  },
+  {
+   "depends_on": "eval: doc.type== 'Project'",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "no_copy": 1,
+   "oldfieldname": "status",
+   "oldfieldtype": "Select",
+   "options": "\nDraft\nAccepted\nApproved\nRejected\nStopped\nCancelled\nPending\nPartially Ordered\nOrdered\nIssued\nTransferred\nReceived",
+   "print_hide": 1,
+   "print_width": "100px",
+   "search_index": 1,
+   "width": "100px"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.status == 'Rejected'",
+   "fieldname": "reason_for_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason For Rejection",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "transaction_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Transaction Date",
+   "no_copy": 1,
+   "oldfieldname": "transaction_date",
+   "oldfieldtype": "Date",
+   "print_width": "100px",
+   "reqd": 1,
+   "search_index": 1,
+   "width": "100px"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "schedule_date",
+   "fieldtype": "Date",
+   "label": "Required Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Company",
+   "oldfieldname": "company",
+   "oldfieldtype": "Link",
+   "options": "Company",
+   "print_hide": 1,
+   "print_width": "150px",
+   "remember_last_selected_value": 1,
+   "reqd": 1,
+   "search_index": 1,
+   "width": "150px"
+  },
+  {
+   "fieldname": "items_section",
+   "fieldtype": "Section Break",
+   "oldfieldtype": "Section Break",
+   "options": "fa fa-shopping-cart"
+  },
+  {
+   "fieldname": "scan_barcode",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Scan Barcode"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "oldfieldname": "indent_details",
+   "oldfieldtype": "Table",
+   "options": "Request for Material Item",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "more_info",
+   "fieldtype": "Section Break",
+   "label": "More Information",
+   "oldfieldtype": "Section Break",
+   "options": "fa fa-file-text"
+  },
+  {
+   "fieldname": "per_ordered",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "% Ordered",
+   "no_copy": 1,
+   "oldfieldname": "per_ordered",
+   "oldfieldtype": "Currency",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "per_received",
+   "fieldtype": "Percent",
+   "label": "% Received",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "printing_details",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Printing Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "letter_head",
+   "fieldtype": "Link",
+   "label": "Letter Head",
+   "oldfieldname": "letter_head",
+   "oldfieldtype": "Select",
+   "options": "Letter Head",
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "select_print_heading",
+   "fieldtype": "Link",
+   "label": "Print Heading",
+   "options": "Print Heading",
+   "print_hide": 1
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "terms",
+   "fieldname": "terms_section_break",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Terms and Conditions",
+   "oldfieldtype": "Section Break",
+   "options": "fa fa-legal"
+  },
+  {
+   "fieldname": "tc_name",
+   "fieldtype": "Link",
+   "label": "Terms",
+   "oldfieldname": "tc_name",
+   "oldfieldtype": "Link",
+   "options": "Terms and Conditions",
+   "print_hide": 1,
+   "report_hide": 1
+  },
+  {
+   "fieldname": "terms",
+   "fieldtype": "Text Editor",
+   "label": "Terms and Conditions",
+   "oldfieldname": "terms",
+   "oldfieldtype": "Text Editor"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "reference",
+   "fieldtype": "Section Break",
+   "label": "Reference"
+  },
+  {
+   "fieldname": "job_card",
+   "fieldtype": "Link",
+   "label": "Job Card",
+   "options": "Job Card",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Request for Material",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Type",
+   "options": "\nIndividual\nStock\nProject\nDepartment\nOnboarding",
+   "print_hide": 1,
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Department'",
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Department'",
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Department'",
+   "fetch_from": "employee.department",
+   "fetch_if_empty": 1,
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.type == 'Project'",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "depends_on": "type",
+   "fieldname": "type_details_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "No",
+   "depends_on": "eval: doc.docstatus==1",
+   "fieldname": "technical_verification_needed",
+   "fieldtype": "Select",
+   "label": "Technical Verification Needed",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "column_break_26",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.technical_verification_needed == 'Yes' && doc.docstatus==1",
+   "fieldname": "technical_verification_from",
+   "fieldtype": "Link",
+   "label": "Technical Verification From",
+   "options": "User"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.technical_verification_needed == 'Yes' && doc.docstatus==1",
+   "fieldname": "technical_remarks",
+   "fieldtype": "Small Text",
+   "label": "Technical Remarks"
+  },
+  {
+   "depends_on": "eval: doc.type=='Project Mobilization' || doc.type=='Project'",
+   "fieldname": "project_details",
+   "fieldtype": "Small Text",
+   "label": "Project Details"
+  },
+  {
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Medium",
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority",
+   "options": "\nHigh\nMedium\nLow"
+  },
+  {
+   "fieldname": "request_for_material_accepter",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Request for Material Accepter",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "request_for_material_approver",
+   "fieldtype": "Link",
+   "label": "Request for Material Approver",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.type == 'Project Mobilization'",
+   "fieldname": "contract_number",
+   "fieldtype": "Data",
+   "label": "Contract Number"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "material_request_attach",
+   "fieldtype": "Attach",
+   "label": "Material Request"
+  },
+  {
+   "fieldname": "t_warehouse",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "To Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.type=='Project Mobilization' || doc.type=='Project'",
+   "fieldname": "is_refundable",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Refundable"
+  },
+  {
+   "depends_on": "eval: doc.type== 'Project'",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "depends_on": "eval: doc.type=='Onboarding'",
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "ERF",
+   "options": "ERF"
+  },
+  {
+   "fieldname": "signatures_section",
+   "fieldtype": "Section Break",
+   "label": "Signatures"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.docstatus == 1;",
+   "fieldname": "authority_signature",
+   "fieldtype": "Signature",
+   "label": "Authority Signature",
+   "read_only": 1,
+   "read_only_depends_on": "eval: doc.status == 'Approved';"
+  }
+ ],
+ "icon": "fa fa-ticket",
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2022-01-05 15:56:01.016460",
+ "modified_by": "Administrator",
+ "module": "Purchase",
+ "name": "Request for Material",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Manager",
+   "set_user_permissions": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "status,transaction_date",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

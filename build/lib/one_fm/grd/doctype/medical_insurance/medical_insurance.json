@@ -1,0 +1,341 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-10-04 17:18:51.846231",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "date_of_application",
+  "work_permit",
+  "employee",
+  "status",
+  "preparation",
+  "moi_number",
+  "column_break_3",
+  "insurance_type",
+  "insurance_status",
+  "details_section",
+  "employee_name",
+  "gender",
+  "civil_id",
+  "passport_expiry_date",
+  "column_break_11",
+  "employee_id",
+  "nationality",
+  "no_of_years",
+  "pam_file_number",
+  "amended_from",
+  "grd_section",
+  "grd_operator",
+  "upload_medical_insurance",
+  "medical_insurance_submitted_by",
+  "column_break_23",
+  "upload_medical_insurance_date",
+  "upload_payment_invoice_on",
+  "medical_insurance_submitted_on",
+  "grd_supervisor",
+  "finance_department_section",
+  "payment_done",
+  "rpr_ref",
+  "amount",
+  "reminder_grd_operator",
+  "reminder_grd_operator_again"
+ ],
+ "fields": [
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "Civil ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "moi_number",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "MOI Number"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "insurance_type",
+   "fieldtype": "Data",
+   "label": "Insurance Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "insurance_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Insurance Status",
+   "options": "\nRenewal\nNew\nLocal Transfer"
+  },
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.gender",
+   "fieldname": "gender",
+   "fieldtype": "Data",
+   "label": "Gender",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_duration_of_work_permit",
+   "fieldname": "no_of_years",
+   "fieldtype": "Data",
+   "label": "No Of Years",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Medical Insurance",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "MI-.YYYY.-"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grd_section",
+   "fieldtype": "Section Break",
+   "label": "GRD"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Supervisor",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "payment_done",
+   "fieldtype": "Check",
+   "label": "Payment Done"
+  },
+  {
+   "fieldname": "work_permit",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Work Permit",
+   "options": "Work Permit"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_medical_insurance",
+   "fieldtype": "Attach",
+   "label": "Upload Medical Insurance"
+  },
+  {
+   "fieldname": "upload_medical_insurance_date",
+   "fieldtype": "Datetime",
+   "label": "Upload On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "medical_insurance_submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "medical_insurance_submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted on",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rpr_ref",
+   "fieldtype": "Data",
+   "label": "RPR Ref"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Preparation",
+   "options": "Preparation"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "upload_payment_invoice_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Upload Payment Invoice On"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.valid_upto",
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Data",
+   "label": "Passport Expiry Date",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "finance_department_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Finance Department"
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date of Application"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "bold": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nDraft\nSubmitted\nCanceled"
+  },
+  {
+   "fetch_from": "employee.pam_file_number",
+   "fieldname": "pam_file_number",
+   "fieldtype": "Data",
+   "label": "PAM File Number",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_grd_operator",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminder GRD Operator"
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_grd_operator_again",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminder GRD Operator Again"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-09-26 19:13:10.137312",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Medical Insurance",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "civil_id,employee_id,date_of_application",
+ "sort_field": "date_of_application",
+ "sort_order": "DESC",
+ "title_field": "civil_id"
+}

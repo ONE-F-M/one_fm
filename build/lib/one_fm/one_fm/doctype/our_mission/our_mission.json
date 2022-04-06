@@ -1,0 +1,29 @@
+{
+ "creation": "2019-12-01 20:31:57.697926",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "subject"
+ ],
+ "fields": [
+  {
+   "fieldname": "subject",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Subject",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-01-05 11:17:28.719748",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Our Mission",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

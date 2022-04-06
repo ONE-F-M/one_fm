@@ -1,0 +1,249 @@
+{% extends "templates/web.html" %}
+
+{% block breadcrumbs %}
+  {% include "templates/includes/breadcrumbs.html" %}
+{% endblock %}
+
+{% block script %}
+  <script>{% include "templates/pages/applicant_docs.js" %}</script>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+      integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"></script>
+  <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
+  <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
+{% endblock %}
+
+{% block header %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Facilities Management | Easy Job Application Portal</title>
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v3.0.0/css/line.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+    <link rel="stylesheet" href="/assets/one_fm/assets/css/applicant_docs.css">
+</head>
+{% endblock %}
+
+{% block page_content %}
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <div id="cover-spin"></div>
+    <main>
+        <div
+            class="p-5 text-center bg-image"
+            style="
+            background-image:  linear-gradient( rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) ), url('assets/one_fm/assets/img/job-application/ja-banner.png');
+            height: 300px;
+            ">
+            <div class="d-flex justify-content-center align-items-center">
+                <h1 style="color:#ffff; line-height: 100px;" class="mb-3">Applicant Documents</h1>
+            </div>
+            <hr style="width:50%;text-align:left;border-top: 1px solid #ffff;">
+            <div class="text-center mt-10">
+                <h6 style="color:#ffff"><strong>{{applicant_name}}</strong></h6>
+                <h6 style="color:#ffff"><strong>{{email_id}}</strong></h6>
+                <h6 style="color:#ffff"><strong>{{applicant_designation}}</strong></h6>
+            </div>
+        </div>
+        
+        <br><br>
+        <article class="main-container m-auto p-auto">
+            <div>
+                <div class="row col-lg-12 col-md-12 mb-12">
+                    <h6>Dear {{applicant_name}}, greetings from One Facilities Management!</h6> 
+                    <h6>As a part of the onboarding process for the {{applicant_designation}} role, we request you to provide us with the following documents and complete the below form.</h6>
+                    <ul>
+                        <li><h6>Passport - front and back side</h6></li>
+                        <li><h6>Civil ID - front and back side (Applicable if you are a resident of Kuwait)</h6></li>
+                    </ul>
+                </div>
+                <section class="form-wrapper">
+
+                    <div class="form-container">
+                        <form class="form">
+                            <h2>File Upload
+                                <small id="passwordHelpInline" class="text-muted" style="font-size: small;">
+                                    Only image files of type png/jpeg accepted*
+                                </small>
+                            </h2>
+                            <hr>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label class="form-label" for="file">Civil ID Front Side</label>
+                                    <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg" >
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label class="form-label" for="file">Civil ID Back Side</label>
+                                    <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg" >
+                                    <br>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label  for="file">Passport Front Side</label>
+                                        <input class="form-control" type="file" id="Passport_Front" placeholder="Front Passport"  name="file"  accept="image/png, image/jpeg" >
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label  for="file">Passport Back Side</label>
+                                        <input class="form-control" type="file" id="Passport_Back" placeholder="Back Passport"  name="file"  accept="image/png, image/jpeg" >
+                                        <br>
+                                    </div>
+                            </div>
+
+
+                            <div>
+                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()" >Upload</button>
+                            </div>
+                        </form>
+
+                    </div>
+
+                </section>
+            </div>
+                <br><br>
+
+                <div  class="m-auto p-auto">
+
+                <div>
+                    <section class="form-wrapper" id="finalForm" style="display:none;">
+                        <div class="message-block-head d-flex">
+                        <div class="message-block-info p-1 h2 m-1">
+                                <p id="output_message" style="font-size: 22px;"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-container">
+                            <form class="form">
+                                <h2>Personal Details</h2>
+                                <hr>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Name">Name</label>
+                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" id="Name" name="name">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label  for="Arabic_Name">Name(Arabic)</label>
+                                        <input class="form-control input" type="text" id="Arabic_Name" name="ar_name">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-md-6 w-50">
+                                        <label class="form-label" for="Gender">Gender</label>
+                                        <select class="form-control input" id="Gender" name="gender" aria-placeholder="Gender">
+                                            <option value="select" selected disabled>Select Your Gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Date_Of_Birth">Date Of Birth</label>
+                                        <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" size="50">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label for="Civil_ID_No">Civil ID Number</label>
+                                        <input class="form-control input" type="text" id="Civil_ID_No" name="civilid" size="50">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Expiry_Date">Civil ID Expiry Date</label>
+                                        <input class="form-control input" type="date" id="Expiry_Date" name="civil_expiry_date" size="50">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="form-group col-md-4 w-75">
+                                        <label class="form-label" for="Nationality">Nationality</label>
+                                        <select class="form-control input2" id="Nationality" name="nationality" aria-placeholder="Select Your Nationality">
+                                            <option value="select" selected disabled>Select Your Nationality</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="form-label" for="Country_Code">Country Code</label>
+                                        <input class="form-control input2" type="text" id="Country_Code" name="country_code" onchange="fetchNationality(this)" size="50">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="form-label" for="Birth_Place">Place of Birth</label>
+                                        <input class="form-control input2" type="text" id="Birth_Place" name="birth_place" size="50">
+                                    </div>
+
+                                </div>
+
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="PACI_No">PACI Number</label>
+                                        <input class="form-control input" type="text" id="PACI_No" name="paci_no">
+                                    </div>
+
+                                    <div class="form-group col-md-6" id="Sponsor">
+                                        <label class="form-label" for="Sponsor_Name">Sponsor</label>
+                                        <input class="form-control input"  type="text" id="Sponsor_Name" name="sponsor">
+                                    </div>
+
+                                </div>
+
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Passport_Number">Passport Number</label>
+                                        <input class="form-control input" type="text" id="Passport_Number" name="passport_no">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Passport_Type">Passport Type</label>
+                                        <select class="form-control input" id="Passport_Type" name="passport_type" aria-placeholder="Passport Type">
+                                            <option value="select" selected disabled>Passport Type</option>
+                                            <option value="Normal">Normal</option>
+                                            <option value="Diplomat">Diplomat</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="form-group col-md-4">
+                                        <label class="form-label" for="Passport_Date_of_Issue">Passport Date of Issue</label>
+                                        <input class="form-control input2" type="date" id="Passport_Date_of_Issue" name="p_date_of_issue">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="form-label" for="Passport_Date_of_Expiry">Passport Expiry Date</label>
+                                        <input class="form-control input2" type="date" id="Passport_Date_of_Expiry" name="passport_expiry_date">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="form-label" for="Passport_Place_of_Issue">Passport Place of Issue</label>
+                                        <input class="form-control input2" type="text" id="Passport_Place_of_Issue" name="p_place_of_issue">
+                                    </div>
+                                </div>
+                                <br>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="confirmData" onchange="document.getElementById('submitForm').disabled = !this.checked;">
+                                    <label class="form-check-label" for="confirmData">
+                                      </span>I hereby confirm that the above information is correct <span style="color:red">*</span>
+                                    </label>
+                                </div>
+                                <br>
+                                <div>
+                                    <button class="btn btn-dark" type="button" href="json.json" value="submit" id="submitForm" onclick="Submit()" disabled="disabled" >Submit</button>
+                                </div>
+                            </form>
+
+                        </div>
+
+                    </section>
+                </div>
+            </div>
+        </article>
+    </main>
+</body>
+
+</html>
+{% endblock %}

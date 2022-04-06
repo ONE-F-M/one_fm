@@ -1,0 +1,41 @@
+{
+ "creation": "2020-04-29 19:31:19.209914",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "skill",
+  "column_break_2",
+  "minimum_proficiency_required"
+ ],
+ "fields": [
+  {
+   "fieldname": "skill",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Skill",
+   "options": "Skill"
+  },
+  {
+   "fieldname": "minimum_proficiency_required",
+   "fieldtype": "Rating",
+   "in_list_view": 1,
+   "label": "Minimum Proficiency Required"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-04-29 19:57:01.091756",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Post Skills",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,169 @@
+{
+ "autoname": "format:{post_name}-{gender}|{site_shift}",
+ "creation": "2020-05-02 16:31:15.111264",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "handover",
+  "post_name",
+  "post_template",
+  "column_break_4",
+  "site_shift",
+  "site",
+  "project",
+  "section_break_6",
+  "priority_level",
+  "allow_staff_rotation",
+  "day_off_priority",
+  "column_break_10",
+  "post_location",
+  "gender",
+  "section_break_12",
+  "post_description",
+  "section_break_14",
+  "skills",
+  "designations"
+ ],
+ "fields": [
+  {
+   "fieldname": "post_name",
+   "fieldtype": "Data",
+   "label": "Post Name"
+  },
+  {
+   "fieldname": "skills",
+   "fieldtype": "Table",
+   "label": "Skills",
+   "options": "Post Skills"
+  },
+  {
+   "fieldname": "designations",
+   "fieldtype": "Table",
+   "label": "Designations",
+   "options": "Post Designations"
+  },
+  {
+   "fieldname": "site_shift",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Shift",
+   "options": "Operations Shift"
+  },
+  {
+   "fetch_from": "site_shift.site",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "post_location",
+   "fieldtype": "Select",
+   "label": "Post Location",
+   "options": "Internal\nExternal"
+  },
+  {
+   "default": "Both",
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Gender",
+   "options": "Both\nMale\nFemale"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "post_description",
+   "fieldtype": "Small Text",
+   "label": "Post Description"
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "post_template",
+   "fieldtype": "Link",
+   "label": "Post Type",
+   "options": "Post Type"
+  },
+  {
+   "fetch_from": "site_shift.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "handover",
+   "fieldtype": "Check",
+   "label": "Post Handover Required"
+  },
+  {
+   "description": "10 - Highest <br>\n1- Lowest\n",
+   "fieldname": "priority_level",
+   "fieldtype": "Select",
+   "label": "Priority Level",
+   "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_staff_rotation",
+   "fieldtype": "Check",
+   "label": "Rotate Staff"
+  },
+  {
+   "default": "0",
+   "description": "Employees coming from Day Off will be assigned on these posts",
+   "fieldname": "day_off_priority",
+   "fieldtype": "Check",
+   "label": "Day Off Priority"
+  }
+ ],
+ "modified": "2021-05-06 10:55:03.703840",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Operations Post",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "search_fields": "site_shift, post_template",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

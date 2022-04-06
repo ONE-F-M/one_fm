@@ -1,0 +1,73 @@
+<tr>
+    <td style="font-size:40px; line-height:40px;" valign="top" height="40" align="center">&nbsp;</td>
+</tr>
+<tr>
+    <td valign="top" align="center">&nbsp;</td>
+</tr>
+<tr>
+    <td style="font-family: 'Cairo', sans-serif; font-size:30px; color:#4b4b4c; line-height:30px; font-weight:bold;" mc:edit="tm2-04" valign="top" align="center">
+        <multiline>Request for Quotation</multiline>
+    </td>
+</tr>
+<tr>
+    <td valign="top" align="center">&nbsp;</td>
+</tr>
+<tr>
+    <td valign="top" align="center">&nbsp;</td>
+</tr>
+<tr>
+    <td style="font-family: 'Cairo', sans-serif;font-size:13px;color:#71746f;line-height:22px;padding: 0 56px;font-weight:normal;" mc:edit="tm2-05" valign="top" align="center">
+        <multiline>{{ message_for_supplier }}</multiline>
+    </td>
+</tr>
+<br><br>
+<tr>
+    <td valign="top" align="center">
+        <table style="color:#71746f;width:80%;" class="table">
+            <tr>
+                <th>Item Name</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>UOM</th>
+                <th>Required Date</th>
+            </tr>
+            {% for item in items %}
+            <tr>
+                <td>
+                    {% if item.item_name %}{{ item.item_name }}{% endif %}
+                </td>
+                <td>
+                    {% if item.description %}{{ item.description }}{% endif %}
+                </td>
+                <td>
+                    {% if item.qty %}{{ item.qty }}{% endif %}
+                </td>
+                <td>
+                    {% if item.uom %}{{ item.uom }}{% endif %}
+                </td>
+                <td>
+                    {% if item.schedule_date %}{{ item.schedule_date }}{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </td>
+</tr>
+<tr>
+    <td style="font-size:30px; line-height:30px;" valign="top" height="30" align="center">&nbsp;</td>
+</tr>
+<tr>
+    <td valign="top" align="center">&nbsp;</td>
+</tr>
+<tr>
+    <td valign="top" align="center">&nbsp;</td>
+</tr>
+{% if terms %}
+<tr>
+    <td style="font-family: 'Cairo', sans-serif;font-size:13px;color:#71746f;line-height:22px;padding: 0 56px;font-weight:normal;" mc:edit="tm2-05" valign="top" align="center">
+        <multiline>{{ terms }}</multiline>
+    </td>
+</tr>
+{% endif %}
+<p>{{_("The request for quotation can be accessed by clicking on the following link")}}:</p>
+<p><a href="{{ rfq_link }}">Submit your Quotation</a></p>

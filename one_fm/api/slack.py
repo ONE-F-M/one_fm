@@ -30,15 +30,13 @@ def send_slack_message(message):
             # attach link
         url = f'<a href="{frappe.utils.get_url()}/app/issue?status=Open">Issue List</a>'
         link_to_doc = {
-			"fallback": _("See the document list at {0}").format(
-                url
-            ),
+			"fallback": _("See the document at {0}").format(url),
 			"actions": [
 				{
 					"type": "button",
 					"text": _("Go to the document"),
 					"url": url,
-					"style": "warning",
+					"style": "primary",
 				}
 			],
 		}

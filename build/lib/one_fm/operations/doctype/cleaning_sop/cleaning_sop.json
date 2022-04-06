@@ -1,0 +1,101 @@
+{
+ "creation": "2021-02-17 06:55:02.090294",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "cleaning_sop_name",
+  "cleaning_type",
+  "object_category",
+  "object_type",
+  "object_material",
+  "tasks_table",
+  "total_time",
+  "required_manpower_table",
+  "tools_table",
+  "consumables_table",
+  "janitor_room"
+ ],
+ "fields": [
+  {
+   "fieldname": "cleaning_sop_name",
+   "fieldtype": "Data",
+   "label": "Cleaning SOP Name"
+  },
+  {
+   "fieldname": "cleaning_type",
+   "fieldtype": "Data",
+   "label": "Cleaning Type"
+  },
+  {
+   "fieldname": "object_category",
+   "fieldtype": "Data",
+   "label": "Object Category"
+  },
+  {
+   "fieldname": "object_type",
+   "fieldtype": "Data",
+   "label": "Object Type"
+  },
+  {
+   "fieldname": "object_material",
+   "fieldtype": "Data",
+   "label": "Object Material"
+  },
+  {
+   "fieldname": "tasks_table",
+   "fieldtype": "Table",
+   "label": "Tasks Table",
+   "options": "Cleaning SOP Task Child Table"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_time",
+   "fieldtype": "Time",
+   "label": "Total Time"
+  },
+  {
+   "fieldname": "required_manpower_table",
+   "fieldtype": "Data",
+   "label": "Required Manpower Table"
+  },
+  {
+   "fieldname": "consumables_table",
+   "fieldtype": "Table",
+   "label": "Consumables Table",
+   "options": "Cleaning Master List Consumable Child Table"
+  },
+  {
+   "fieldname": "janitor_room",
+   "fieldtype": "Data",
+   "label": "Janitor Room"
+  },
+  {
+   "fieldname": "tools_table",
+   "fieldtype": "Table",
+   "label": "Tools Table",
+   "options": "Cleaning SOP Tools Child Table"
+  }
+ ],
+ "modified": "2021-03-11 19:00:54.983000",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Cleaning SOP",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

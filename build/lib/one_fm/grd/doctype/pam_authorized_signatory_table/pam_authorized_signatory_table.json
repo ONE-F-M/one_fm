@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "creation": "2019-12-15 22:11:11.164977",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "authorized_signatory_name_english",
+  "authorized_signatory_name_arabic",
+  "civil_id_number",
+  "nationality_english",
+  "nationality_arabic",
+  "user",
+  "section_break_6",
+  "civil_id_copy",
+  "column_break_8",
+  "signature"
+ ],
+ "fields": [
+  {
+   "fieldname": "authorized_signatory_name_english",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Authorized Signatory Name (ENGLISH)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "authorized_signatory_name_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Authorized Signatory Name (ARABIC)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "civil_id_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Civil ID Number",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "nationality_english.nationality_arabic",
+   "fieldname": "nationality_arabic",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Nationality (ARABIC)"
+  },
+  {
+   "fieldname": "nationality_english",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Nationality (ENGLISH)",
+   "options": "Nationality",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "civil_id_copy",
+   "fieldtype": "Attach",
+   "label": "Civil Id Copy"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Attach Image",
+   "label": "Signature"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-12-27 15:48:17.935259",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PAM Authorized Signatory Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

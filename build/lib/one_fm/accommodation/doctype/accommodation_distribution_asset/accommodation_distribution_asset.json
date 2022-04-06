@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "creation": "2020-12-28 11:15:41.432575",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "asset_item",
+  "asset",
+  "asset_name",
+  "quantity",
+  "uom",
+  "expire"
+ ],
+ "fields": [
+  {
+   "fieldname": "asset_item",
+   "fieldtype": "Link",
+   "label": "Asset Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "asset",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Asset",
+   "options": "Asset"
+  },
+  {
+   "fetch_from": "asset.asset_name",
+   "fieldname": "asset_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Asset Name"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Quantity"
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "expire",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Expire"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-12-28 11:15:41.432575",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Distribution Asset",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

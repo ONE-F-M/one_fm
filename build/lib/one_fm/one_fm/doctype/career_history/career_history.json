@@ -1,0 +1,227 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-05-08 12:33:28.181529",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "job_applicant",
+  "applicant_name",
+  "erf",
+  "column_break_5",
+  "hiring_method",
+  "validated_by_recruiter_on",
+  "section_break_8",
+  "calculate_promotions_and_experience_automatically",
+  "total_years_of_experience",
+  "total_number_of_promotions_and_salary_changes",
+  "column_break_11",
+  "career_history_score",
+  "pass_to_next_interview",
+  "career_history_company_section",
+  "career_history_company",
+  "shoves_and_tugs_section",
+  "shoves",
+  "shoves_and_tugs_cb_column",
+  "tugs",
+  "about_the_opportunity_section",
+  "about_the_opportunity",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "CH-.YYYY.-"
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "fieldname": "career_history_company",
+   "fieldtype": "Table",
+   "label": "Career History",
+   "options": "Career History Company",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_erf",
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "ERF",
+   "options": "ERF",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_years_of_experience",
+   "fieldtype": "Float",
+   "label": "Total Years Of Experience"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "career_history_score",
+   "fieldtype": "Float",
+   "label": "Career History Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "career_history_company_section",
+   "fieldtype": "Section Break",
+   "label": "Career History Company"
+  },
+  {
+   "fieldname": "about_the_opportunity_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "about_the_opportunity",
+   "fieldtype": "Small Text",
+   "label": "What is it that Makes You Interested in this Opportunity"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "shoves_and_tugs_section",
+   "fieldtype": "Section Break",
+   "label": "Shoves and Tugs"
+  },
+  {
+   "fieldname": "shoves",
+   "fieldtype": "Data",
+   "label": "Shoves"
+  },
+  {
+   "fieldname": "shoves_and_tugs_cb_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tugs",
+   "fieldtype": "Data",
+   "label": "Tugs"
+  },
+  {
+   "fieldname": "validated_by_recruiter_on",
+   "fieldtype": "Date",
+   "label": "Validated By Recruiter On"
+  },
+  {
+   "fetch_from": "job_applicant.applicant_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant Name",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.career_history_score < 2.99 && doc.hiring_method != 'Bulk Recruitment' && doc.career_history_score != 0",
+   "fieldname": "pass_to_next_interview",
+   "fieldtype": "Select",
+   "label": "Pass to Next Interview or Reject Applicant",
+   "options": "\nPass\nReject"
+  },
+  {
+   "fetch_from": "erf.hiring_method",
+   "fieldname": "hiring_method",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Hiring Method"
+  },
+  {
+   "fieldname": "total_number_of_promotions_and_salary_changes",
+   "fieldtype": "Float",
+   "label": "Total Number of Promotions and Salary Changes"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "calculate_promotions_and_experience_automatically",
+   "fieldtype": "Check",
+   "label": "Calculate Promotions and Experience Automatically"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Career History",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2022-03-12 13:19:49.870457",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Career History",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "applicant_name",
+ "track_changes": 1
+}

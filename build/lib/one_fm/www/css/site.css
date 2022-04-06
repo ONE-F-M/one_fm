@@ -1,0 +1,2640 @@
+﻿/* body {background-color: #F3F5F7 !important;font-family: Roboto,sans-serif;} */
+/* .layoutSidenav_content{overflow:hidden !important} */
+body[data-route="roster"] .intro-header {
+  background: url("../Content/img/loginbg.jpg") no-repeat center center fixed;
+  background-size: cover;
+  background-color: #19386f;
+}
+body[data-route="roster"] .bg-overlay {
+  background: rgba(0, 13, 36, 0);
+  height: 100vh;
+}
+body[data-route="roster"] a {
+  cursor: pointer;
+}
+/* .form-control {font-size: 16px;color: #596f88;border: 1px solid #DFE3E7;font-size: 16px !important;height: 38px !important;box-shadow: none !important;-moz-box-shadow: none !important;-webkit-box-shadow: none !important;    } */
+body[data-route="roster"] label {
+  font-weight: 500;
+}
+body[data-route="roster"] button:focus {
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+body[data-route="roster"] .footerdiv {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+}
+body[data-route="roster"] .form-group > input,
+body[data-route="roster"] .form-group > textarea,
+body[data-route="roster"] .form-group > select {
+  padding: 5px 10px;
+  height: auto;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  border: 1px solid #dfe3e7;
+}
+body[data-route="roster"] .loginpadding {
+  padding-top: 11%;
+}
+body[data-route="roster"] input {
+  color: #596f88 !important;
+}
+body[data-route="roster"] .dropdownfont {
+  background: #fff !important;
+  border-radius: 50%;
+  padding: 5.99px 6px;
+  font-size: 14px;
+}
+body[data-route="roster"] .customizedropdown button {
+  color: #fff;
+  font-weight: 500;
+  height: 38px;
+  line-height: 1;
+  padding: 5px 28px 5px 0px !important;
+}
+body[data-route="roster"] .downarrowicon {
+  padding: 5px 28px 5px 0px !important;
+  font-size: 16px !important;
+  background: #19253d url(../../Content/img/downwhite.svg) 99% !important;
+  background-repeat: no-repeat !important;
+  -webkit-background-size: 20px 15px !important;
+  -moz-background-size: 20px 15px !important;
+  -o-background-size: 20px 15px !important;
+  background-size: 20px 15px !important;
+  outline-offset: 0px !important;
+  transition: none !important;
+  -webkit-appearance: none !important;
+}
+body[data-route="roster"] .customizedropdown .dropdown-toggle::after {
+  display: none !important;
+}
+body[data-route="roster"] .useravtar {
+  color: #ffffff !important;
+  background-color: transparent;
+  border-radius: 100%;
+  height: 26px;
+  width: 26px;
+}
+body[data-route="roster"] .customizedropdown .dropdown-menu {
+  min-width: 100% !important;
+}
+body[data-route="roster"] .dropdownbtnborder {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+}
+body[data-route="roster"] .customizedropdown button:hover,
+body[data-route="roster"] .customizedropdown button:focus {
+  color: #fff !important;
+}
+body[data-route="roster"] .dropdown-item.active,
+body[data-route="roster"] .dropdown-item:active {
+  color: #fff;
+  text-decoration: none;
+  background-color: #007bff;
+}
+body[data-route="roster"]
+  .customizedropdown
+  .dropdown-menu
+  .dropdown-item.active,
+body[data-route="roster"] .dropdown-item:active {
+  color: #000 !important;
+  text-decoration: none;
+  background-color: #eeeeee;
+}
+body[data-route="roster"] .adminpadding {
+  padding-top: 84px;
+}
+body[data-route="roster"] .cursorpointer {
+  cursor: pointer;
+}
+body[data-route="roster"] .simple-pagination {
+  padding: 0 5px 0 0 !important;
+}
+body[data-route="roster"] .form-control:focus {
+  color: #495057;
+  background-color: #fff;
+  border-color: #2c77ff;
+  outline: 0;
+  box-shadow: none;
+}
+body[data-route="roster"] .responiconfa {
+  height: 20px !important;
+  width: 19px !important;
+}
+body[data-route="roster"] .assendingicon {
+  padding: 12px 30px 12px 12px !important;
+  font-size: 16px !important;
+  color: #fff !important;
+  background: #19253d url(../../Content/img/sortingdownarrow.svg) 94% !important;
+  background-repeat: no-repeat !important;
+  -webkit-background-size: 20px 15px !important;
+  -moz-background-size: 20px 15px !important;
+  -o-background-size: 20px 15px !important;
+  background-size: 20px 15px !important;
+  outline-offset: 0px !important;
+  transition: none !important;
+  -webkit-appearance: none;
+}
+body[data-route="roster"] .assendingicon.uparrow {
+  padding: 12px 30px 12px 12px !important;
+  font-size: 16px !important;
+  color: #fff !important;
+  background: #19253d url(../../Content/img/sortinguparrow.svg) 93% !important;
+  background-repeat: no-repeat !important;
+  -webkit-background-size: 20px 15px !important;
+  -moz-background-size: 20px 15px !important;
+  -o-background-size: 20px 15px !important;
+  background-size: 20px 15px !important;
+  outline-offset: 0px !important;
+  transition: none !important;
+  -webkit-appearance: none;
+}
+body[data-route="roster"] .btngreen {
+  background: #f53c56;
+  padding: 4px 0;
+  width: 130px;
+  font-size: 15px;
+  color: #fff !important;
+  display: inline-block;
+  text-align: center;
+  border-radius: 4px;
+}
+body[data-route="roster"] .useravtar {
+  color: #ffffff !important;
+  background-color: transparent;
+  border-radius: 100%;
+  height: 28px;
+  width: 28px;
+}
+body[data-route="roster"] .useravtardrp {
+  color: #ffffff !important;
+  background-color: transparent;
+  border-radius: 100%;
+  height: 25px;
+  width: 25px;
+}
+body[data-route="roster"] .btnpink {
+  background: #00a759;
+  padding: 4px 0;
+  width: 130px !important;
+  font-size: 15px;
+  color: #fff !important;
+  display: inline-block;
+  text-align: center;
+  border-radius: 4px;
+}
+body[data-route="roster"] .borderradius4 {
+  border-radius: 4px;
+}
+body[data-route="roster"] .filterbtn {
+  padding: 1px 8px;
+  background: #2680eb;
+  border-radius: 4px;
+  color: #fff !important;
+}
+body[data-route="roster"] .modalbtn {
+  padding: 8px 10px !important;
+  width: 90px !important;
+  border-radius: 4px;
+  text-decoration: none !important;
+}
+body[data-route="roster"] .darkthemebg {
+  background: #2c77ff !important;
+  color: #fff !important;
+}
+body[data-route="roster"] .greythemebg {
+  background: #f8f9fa !important;
+  color: #212529 !important;
+  border: 1px solid #dee2e6;
+}
+body[data-route="roster"] .modalfooterborder {
+  border-top: 1px solid #efefef !important;
+}
+body[data-route="roster"] .dashboardicon {
+  height: 18px;
+  width: 16px;
+}
+body[data-route="roster"] .dashboardspan {
+  line-height: 1;
+  padding-left: 12px;
+}
+body[data-route="roster"] a:focus,
+body[data-route="roster"] a:hover {
+  color: #2c77ff;
+  outline: 0;
+}
+body[data-route="roster"] a {
+  text-decoration: none !important;
+}
+body[data-route="roster"] a:hover {
+  text-decoration: none !important;
+}
+body[data-route="roster"] .switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 19px;
+  margin-bottom: 0;
+}
+body[data-route="roster"] .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+body[data-route="roster"] .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+body[data-route="roster"] ul {
+  list-style: none;
+}
+/* Rounded sliders */
+body[data-route="roster"] .slider.round {
+  border-radius: 34px;
+}
+body[data-route="roster"] .slider.round:before {
+  border-radius: 50%;
+}
+body[data-route="roster"] .linkcolor {
+  color: #2680eb !important;
+}
+body[data-route="roster"] .userprofile {
+  color: #ffffff !important;
+  background-color: transparent;
+  border-radius: 100%;
+  height: 33px;
+  width: 33px;
+}
+body[data-route="roster"] .resdropdown .userfont a {
+  font-size: 20px;
+}
+body[data-route="roster"] .resdropdown .dropdown-toggle::after {
+  font-size: 17px;
+  margin-left: 10px !important;
+}
+body[data-route="roster"] .readmoreclass {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 95%;
+  white-space: nowrap;
+  display: inline-block;
+}
+body[data-route="roster"] .collapsecolor.collapsed {
+  color: #7b8498;
+  font-weight: 500;
+}
+body[data-route="roster"] .checkboxcontainer {
+  display: block;
+  align-items: center;
+  position: relative;
+  padding-left: 0;
+  margin-bottom: 16px;
+  cursor: pointer;
+  font-size: 16px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+body[data-route="roster"] .checkboxcontainer input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+body[data-route="roster"] .checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  background-color: #fff;
+  border: 1px solid #757575;
+  border-radius: 2px;
+}
+body[data-route="roster"] .checkboxcontainer:hover input ~ .checkmark {
+  background-color: #fff;
+}
+body[data-route="roster"] .checkboxcontainer input:checked ~ .checkmark {
+  background-color: #2c77ff;
+  border-radius: 2px;
+  border: 1px solid #007bff;
+}
+body[data-route="roster"] .checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+body[data-route="roster"] .checkboxcontainer input:checked ~ .checkmark:after {
+  display: block;
+}
+body[data-route="roster"] .checkboxcontainer .checkmark:after {
+  left: 3px;
+  top: 0px;
+  width: 7px;
+  height: 11px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+body[data-route="roster"] #userDropdown + .dropdown-menu {
+  margin-top: 0;
+  right: -27px !important;
+  top: 64px;
+  left: auto !important;
+  border-radius: 8px;
+  background: #2c77ff;
+  -moz-box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.1607843137254902);
+  -webkit-box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.1607843137254902);
+  box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.1607843137254902);
+}
+/*css for tab start*/
+body[data-route="roster"] .rostercustomtab.nav-tabs.nav-justified > li > a {
+  border-bottom: 0;
+  border-left: 5px solid #fff !important;
+  padding: 9px 0;
+  border-top: 0;
+  border-radius: 0;
+  margin-bottom: 0 !important;
+  font-size: 16px;
+  border-right: 0 !important;
+}
+body[data-route="roster"] .font12 {
+  font-size: 12px;
+}
+body[data-route="roster"] .close.modalclose {
+  float: right;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 0;
+  margin-right: -6px !important;
+  color: #000;
+  text-shadow: 0 1px 0 #fff;
+  opacity: 0.8;
+  vertical-align: middle;
+}
+body[data-route="roster"] .checkboxcontainer.simplecheckbox {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 0;
+  cursor: pointer; /* font-size: 16px; */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+body[data-route="roster"] .customfontweight {
+  font-weight: 500;
+  line-height: 1.1;
+}
+body[data-route="roster"] .rostercustomstafftab > li {
+  width: auto !important;
+}
+body[data-route="roster"] .lightmodalbg {
+  background: #efefef !important;
+}
+body[data-route="roster"] .modaltextcolor {
+  color: #e46a76;
+}
+body[data-route="roster"] .rostercustomtab.nav-tabs.nav-justified > .active > a,
+body[data-route="roster"]
+  .rostercustomtab.nav-tabs.nav-justified
+  > li
+  > a:hover,
+body[data-route="roster"]
+  .rostercustomtab.nav-tabs.nav-justified
+  > .active
+  > a:focus,
+body[data-route="roster"]
+  .rostercustomtab.nav-tabs.nav-justified
+  > .active
+  > a:hover {
+  border-left: 5px solid #0552de !important;
+  border-right: 0;
+  border-top: 0;
+  color: #fff;
+  font-size: 16px;
+  background: #2c77ff !important;
+  border-bottom: none !important;
+}
+body[data-route="roster"] .rostercustomstafftab {
+  border: 1px solid #007bff !important;
+  border-radius: 4px !important;
+}
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > li
+  > a {
+  border-bottom: 0;
+  border-left: none !important;
+  padding: 7px 22px;
+  border-top: 0;
+  border-radius: 0;
+  margin-bottom: 0 !important;
+  font-size: 16px;
+  border-right: 0 !important;
+}
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > .active
+  > a,
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > li
+  > a:hover,
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > .active
+  > a:focus,
+body[data-route="roster"]
+  .rostercustomstafftab.nav-tabs.nav-justified
+  > .active
+  > a:hover {
+  border-left: none !important;
+  border-right: 0;
+  border-top: 0;
+  color: #fff;
+  font-size: 16px;
+  background: #007bff !important;
+  border-bottom: none !important;
+}
+body[data-route="roster"] .serach-textbox,
+body[data-route="roster"] .select2-search__field {
+  padding: 5px 5px 5px 30px !important;
+  color: #010101;
+  font-size: 16px !important;
+  font-weight: 500;
+  background-image: url(../images/searchicon.svg) !important;
+  background-repeat: no-repeat !important;
+  -webkit-background-size: 17px 19px !important;
+  -moz-background-size: 17px 19px !important;
+  -o-background-size: 17px 19px !important;
+  background-size: 17px 19px !important;
+  background-position: 8px 8px !important;
+  height: 38px !important;
+  background-color: #ffffff;
+  border: 1px solid #dfe3e7 !important;
+  outline-offset: 0px !important;
+  box-shadow: none; /* margin-top: 9px !important; */
+}
+body[data-route="roster"] .serach-textbox:focus,
+body[data-route="roster"] select2-search__field:focus {
+  padding: 5px 5px 5px 30px !important;
+  color: #010101;
+  font-size: 16px !important;
+  border: none;
+  font-weight: 500;
+  background-image: url(../images/searchicon.svg) !important;
+  background-repeat: no-repeat !important;
+  -webkit-background-size: 17px 19px !important;
+  -moz-background-size: 17px 19px !important;
+  -o-background-size: 17px 19px !important;
+  background-size: 17px 19px !important;
+  background-position: 8px 8px !important;
+  height: 38px !important;
+  background-color: #ffffff;
+  border: 1px solid #dfe3e7 !important;
+  outline-offset: 0px !important;
+  box-shadow: none; /* margin-top: 9px !important; */
+}
+body[data-route="roster"] .lightbluedtbg {
+  background: #e7edfb;
+}
+body[data-route="roster"] .text-decoration-none {
+  text-decoration: none !important;
+}
+body[data-route="roster"] .customredropdown {
+  padding: 0 !important;
+}
+body[data-route="roster"] .customredropdown .dropdown-item {
+  padding: 5px 10px !important;
+  color: #000;
+  font-weight: 400;
+  font-size: 16px;
+  cursor: pointer !important;
+}
+body[data-route="roster"] .btncolor {
+  background-color: #1e90ff !important;
+  color: #fff !important;
+}
+body[data-route="roster"] .customredropdown .dropdown-item:hover,
+body[data-route="roster"] .customredropdown .dropdown-item:focus {
+  background-color: #1e90ff !important;
+  color: #fff !important;
+}
+body[data-route="roster"] .font14 {
+  font-size: 16px;
+}
+body[data-route="roster"] .lightbluecolor {
+  color: #007bff;
+  font-size: 16px;
+}
+body[data-route="roster"] .fitertext {
+  color: #002171;
+}
+body[data-route="roster"] .borderradius4 {
+  border-radius: 4px;
+}
+body[data-route="roster"] .customdrodownicon {
+  color: #63799b !important;
+  font-size: 16px !important;
+}
+body[data-route="roster"] .dropdowncustomres {
+  max-width: 80px;
+  padding-right: 0px;
+  display: inline-block;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  vertical-align: middle;
+}
+body[data-route="roster"] .customdropdownheight {
+  max-height: 200px;
+  overflow-y: auto;
+}
+body[data-route="roster"] .customdrodownicon::after {
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  content: "\f078" !important;
+  border: none;
+  padding-left: 5px !important;
+  color: #63799b;
+  vertical-align: middle !important;
+  margin: 0 !important;
+  vertical-align: middle;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+}
+body[data-route="roster"] .btn-group.open .customdrodownicon.dropdown-toggle {
+  box-shadow: none !important;
+  text-decoration: none;
+}
+body[data-route="roster"] .card.customcard {
+  position: absolute;
+  margin-bottom: 30px;
+  width: 500px;
+  box-shadow: 0px 2px 2px #00000066;
+  border: 1px solid #e6e6e6;
+}
+body[data-route="roster"] .card.customstaffcard {
+  margin-bottom: 30px;
+  border: 1px solid #e6e6e6;
+}
+body[data-route="roster"] .checkmark.rightcheckbox {
+  right: 0 !important;
+  left: auto !important;
+}
+body[data-route="roster"] .customwidthcard {
+  width: 60px !important;
+  display: inline-block;
+}
+body[data-route="roster"] .bordertopcustom {
+  border-top: 1px solid #e6e6e6;
+}
+body[data-route="roster"] .bordertopdotted {
+  border-top: 1px dashed #e6e6e6;
+}
+body[data-route="roster"] .media-body {
+  width: auto !important;
+}
+body[data-route="roster"] .grand-parent {
+  position: relative;
+}
+body[data-route="roster"] .img_block_responsive {
+  height: 100px;
+  width: 100px;
+  border-radius: 4px;
+  border: 1px solid #ebf2f9;
+  margin: 0;
+  overflow: hidden;
+  display: inline-block;
+  background: #ebf2f9;
+}
+body[data-route="roster"] .customiconhover {
+  padding: 4px 6px;
+  background: none;
+  border-radius: 4px;
+}
+body[data-route="roster"] .responiconfawdit {
+  height: 16px;
+  width: 16px !important;
+  vertical-align: text-bottom;
+}
+body[data-route="roster"] .iconfont {
+  padding: 8px 0 !important;
+  border-radius: 50%;
+  font-size: 16px;
+  text-align: center;
+  width: 38px !important;
+  height: 38px !important;
+  display: inline-block;
+  background: #fff !important;
+  border: 1px solid #ebf2f9;
+  box-shadow: -1px 0px 4px -1px #00000066;
+}
+body[data-route="roster"] .form-control[disabled],
+body[data-route="roster"] .form-control[readonly],
+body[data-route="roster"] fieldset[disabled] .form-control {
+  background: #fff !important;
+  color: #596f88 !important;
+  box-shadow: none;
+  border: 1px solid #dfe3e7;
+}
+body[data-route="roster"] .inputgroupcalendar {
+  border: 1px solid #dfe3e7;
+  background-color: #f8f9fa !important;
+}
+body[data-route="roster"] .inputgroupcalendar {
+  width: 38px !important;
+  padding: 9px 12px !important;
+  font-size: 16px;
+}
+body[data-route="roster"] .show-read-more {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 90%;
+}
+body[data-route="roster"] .customiconhover:hover {
+  padding: 4px 6px;
+  background: #d2ddf6;
+  border-radius: 4px;
+}
+body[data-route="roster"] .fa-phone-alt:before {
+  content: "\f879";
+}
+body[data-route="roster"] .alert.alert-success .notifycolor {
+  color: #00d64f !important;
+  font-size: 30px;
+}
+body[data-route="roster"] .alert.alert-success {
+  background: #00af41 !important;
+  color: #fff !important;
+  width: 150px;
+  border: 0;
+  padding: 10px 10px 30px 10px !important;
+  border-radius: 10px;
+  box-shadow: 0px 0px 6px #00000029;
+}
+body[data-route="roster"] .alertmessage {
+  white-space: normal !important;
+  font-size: 16px;
+  color: #fff !important;
+  padding-top: 12px;
+}
+body[data-route="roster"] .alert.alert-success button.close {
+  box-shadow: 0 !important;
+  top: 0px;
+  right: 20px !important;
+  color: #fff !important;
+  opacity: 1 !important;
+}
+body[data-route="roster"] span[data-notify="title"] {
+  display: block !important;
+  font-size: 18px;
+  padding-top: 20px;
+}
+body[data-route="roster"] .select2 {
+  width: 100% !important;
+}
+body[data-route="roster"]
+  .select2-container--default
+  .select2-results__option--highlighted[aria-selected] {
+  background-color: #5897fb !important;
+  color: white !important;
+}
+body[data-route="roster"]
+  .select2-container--default
+  .select2-results__option[aria-selected="true"] {
+  background-color: #5897fb !important;
+  color: #fff !important;
+}
+body[data-route="roster"]
+  .select2-container--default
+  .select2-selection--single
+  .select2-selection__arrow {
+  display: none;
+}
+body[data-route="roster"]
+  .custompageselecttype
+  .select2-container--default
+  .select2-selection--single
+  .select2-selection__rendered {
+  color: #fff;
+  line-height: 38px;
+  outline: 0 !important;
+  border-radius: 4px;
+  padding: 0.5rem 30px 0.5rem 0.75rem;
+  font-size: 16px !important;
+  background: #fff url(../images/downarrow.svg) 96% !important;
+  background-repeat: no-repeat !important;
+  -webkit-background-size: 15px 15px !important;
+  -moz-background-size: 15px 15p !important;
+  -o-background-size: 15px 15px !important;
+  background-size: 17px 10px !important;
+  outline-offset: 0px !important;
+  transition: none !important;
+  border: 1px solid #dfe3e7 !important;
+  box-shadow: none;
+}
+body[data-route="roster"]
+  .customselecttype
+  .select2-container
+  .select2-selection--single {
+  box-sizing: border-box;
+  cursor: pointer;
+  display: block;
+  height: 45px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+body[data-route="roster"]
+  .customselecttype
+  .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  display: block;
+  padding: 0.375rem 30px 0.375rem 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body[data-route="roster"]
+  .custompageselecttype
+  .select2-container--default
+  .select2-selection--single
+  .select2-selection__rendered {
+  color: #596f88;
+  font-size: 16px;
+  border-radius: 4px;
+  line-height: 26px;
+  border: 1px solid #dfe3e7;
+}
+body[data-route="roster"]
+  .custompageselecttype
+  .select2-container
+  .select2-selection--single {
+  box-sizing: border-box;
+  cursor: pointer;
+  display: block;
+  height: 38px;
+  user-select: none;
+  -webkit-user-select: none;
+  border: none !important;
+}
+body[data-route="roster"]
+  .custompageselecttype
+  .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  display: block;
+  padding: 0.5rem 30px 0.5rem 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body[data-route="roster"] .form-control {
+  color: #596f88 !important;
+}
+body[data-route="roster"] .media-body,
+body[data-route="roster"] .media-left,
+body[data-route="roster"] .media-right {
+  display: block;
+}
+body[data-route="roster"] .serach-textbox::-webkit-input-placeholder {
+  /* Edge */
+  color: #ced4da !important;
+}
+body[data-route="roster"] .panel-group .panel + .panel {
+  margin-top: 20px;
+}
+body[data-route="roster"] .customheightbtn {
+  font-size: 16px;
+  border: 1px solid #2c77ff !important;
+  width: 60px;
+  height: 38px;
+  text-align: center;
+  padding: 8px 0;
+  display: inline-block;
+  color: #2680eb !important;
+}
+body[data-route="roster"] .primarybtn {
+  font-size: 16px;
+  border: 1px solid #2c77ff !important;
+  color: #fff !important;
+  background: #2680eb;
+  height: 38px;
+  text-align: center;
+  padding: 8px 14px;
+  display: inline-block;
+}
+body[data-route="roster"] .avtarbg {
+  background: #1697c8 !important;
+}
+body[data-route="roster"] .serach-textbox:-ms-input-placeholder {
+  /* Internet Explorer 10-11 */
+  color: #ced4da !important;
+}
+body[data-route="roster"] .custommobheight {
+  height: 50px !important;
+}
+body[data-route="roster"] .serach-textbox::placeholder {
+  color: #ced4da !important;
+}
+body[data-route="roster"] .dropdown-menu-right.customselect {
+  right: -6px !important;
+}
+body[data-route="roster"] .navbar-nav .open .dropdown-menu {
+  position: absolute !important;
+}
+body[data-route="roster"] .btn.customtoggledrp {
+  font-size: 20px !important;
+  padding: 0 10px;
+  outline: 0 !important;
+  border: 1px solid #dfe3e7 !important;
+}
+body[data-route="roster"] .btn.customtoggledrp:focus {
+  font-size: 20px !important;
+  padding: 0 10px;
+  outline: 0 !important;
+  border: 1px solid #dfe3e7 !important;
+}
+body[data-route="roster"] .customtoggledrp::after {
+  display: none !important;
+}
+body[data-route="roster"] .dropdown-backdrop {
+  display: none;
+}
+body[data-route="roster"] .customdropdownmob {
+  margin: 0 !important;
+}
+body[data-route="roster"] .residenavli.active .icon path,
+body[data-route="roster"] .residenavli.active .icon rect {
+  fill: #ffffff !important;
+}
+body[data-route="roster"] .residenavli:hover .icon path,
+body[data-route="roster"] .residenavli:hover .icon rect {
+  fill: #ffffff !important;
+}
+body[data-route="roster"] .residenavli:focus .icon path,
+body[data-route="roster"] .residenavli:focus .icon rect {
+  fill: #ffffff !important;
+}
+body[data-route="roster"] .customizepanel {
+  border: 1px solid #dfe3e7;
+  background: #fff !important;
+}
+body[data-route="roster"] .customizepanel.active {
+  border: 1px solid #007bff;
+  background: #fff !important;
+}
+body[data-route="roster"] .lineheight {
+  line-height: 1.2;
+}
+body[data-route="roster"] .customizepanel > .panel-heading {
+  padding: 20px 20px 20px 20px !important;
+}
+body[data-route="roster"] .font-medium {
+  font-weight: 500 !important;
+}
+body[data-route="roster"] .tableshowclass.show {
+  display: table-row !important;
+}
+body[data-route="roster"] .toggleicon[aria-expanded="true"] i:before {
+  content: "\f077";
+}
+body[data-route="roster"] .nav.rostercustomtab > li > a:focus {
+  background-color: #fff !important;
+}
+body[data-route="roster"] .toggleicon[aria-expanded="false"] i:before {
+  content: "\f078";
+}
+body[data-route="roster"] .fontawesomeicon {
+  text-align: center;
+  border: 1px solid #63799b;
+  border-radius: 50%;
+  padding: 10px 11px;
+  font-size: 16px;
+}
+body[data-route="roster"] .togglescreenbtnimg {
+  width: 22px;
+  height: 19px;
+}
+body[data-route="roster"] .modal-header {
+  font-weight: 500 !important;
+}
+body[data-route="roster"] .responiconfont {
+  height: 16px;
+  width: 16px;
+}
+body[data-route="roster"] .customappenddiv {
+  position: relative;
+}
+body[data-route="roster"] .datepicker table {
+  width: 100%;
+}
+body[data-route="roster"] .datepicker.dropdown-menu {
+  padding: 10px !important;
+}
+body[data-route="roster"] .custommobmodal .modal-dialog {
+  min-height: 800px;
+  overflow-y: auto;
+}
+body[data-route="roster"] .responiconfont {
+  height: 14px;
+  width: 14px;
+}
+body[data-route="roster"] .rostercustomstafftab.customrosteringtab {
+  overflow: hidden;
+  border: 1px solid #63799b !important;
+  border-radius: 4px !important;
+}
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+  > .active
+  > a,
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+  > li
+  > a:hover,
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+  > .active
+  > a:focus,
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+  > .active
+  > a:hover {
+  border-left: none !important;
+  border-right: 0;
+  border-top: 0;
+  color: #fff;
+  font-size: 16px;
+  background: #63799b !important;
+  border-bottom: none !important;
+}
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.nav-tabs.nav-justified
+  > li
+  > a {
+  border-bottom: 0;
+  color: #63799b;
+  border-left: none !important;
+  padding: 6.5px 5.5px;
+  border-top: 0;
+  border-radius: 0;
+  margin-bottom: 0 !important;
+  font-size: 16px !important;
+  border-right: 0 !important;
+}
+body[data-route="roster"] .dateblock {
+  padding-bottom: 30px;
+  border-bottom: 2px solid #e9ecef;
+}
+body[data-route="roster"] .legendboxview {
+  height: 30px;
+  min-width: 30px;
+  border-radius: 4px;
+}
+body[data-route="roster"] .greenboxcolor {
+  background: #6cb233;
+}
+body[data-route="roster"] .purplebox {
+  background: #7030a0;
+}
+body[data-route="roster"] .yellowboxcolor {
+  background: #ffc000;
+}
+body[data-route="roster"] .lightgreenboxcolor {
+  background: #c1e8a2;
+}
+body[data-route="roster"] .pinkboxcolor {
+  background: #ff05d5;
+}
+body[data-route="roster"] .redboxcolor {
+  background: #ff0000;
+}
+body[data-route="roster"] .greyboxcolor {
+  background: #7f7f7f;
+}
+body[data-route="roster"] .lightblueboxcolor {
+  background: #63a8f8;
+}
+body[data-route="roster"] .orangeboxcolor {
+  background: #ff9a36;
+}
+body[data-route="roster"] .blueboxcolor {
+  background: #0070c0;
+}
+body[data-route="roster"] .lightgreenbox {
+  background: #70ad47;
+}
+body[data-route="roster"] .darkblackox {
+  background: #262626;
+}
+body[data-route="roster"] .borderbox {
+  background: #ffffff;
+  border: 3px solid #787878;
+}
+body[data-route="roster"] .darkbluefontcolor {
+  color: #007bff !important;
+}
+body[data-route="roster"]
+  #calenderviewtable
+  > thead
+  > tr
+  > th.hightlightedtable {
+  background: #2c77ff !important;
+  color: #fff !important;
+}
+
+body[data-route="roster"] #calenderviewtable > thead > tr > th:first-child {
+  z-index: 1;
+  font-weight: 600;
+  white-space: nowrap !important;
+  text-align: center;
+  vertical-align: middle;
+  border-left: 0 !important;
+  border-bottom: 0 !important;
+  max-width: 238px !important;
+  min-width: 238px !important;
+}
+body[data-route="roster"] #calenderviewtable > thead > tr > th {
+  font-weight: 400;
+  white-space: normal !important;
+  text-align: center;
+  min-height: 50px !important;
+  max-width: 50px !important;
+  min-width: 50px !important;
+  border-bottom: 0 !important;
+  background: #f5f5f5 !important;
+  padding: 25px 9px;
+}
+body[data-route="roster"] #calenderviewtable > tbody > tr > td:first-child {
+  height: 50px;
+  font-size: 16px;
+  white-space: normal !important;
+  text-align: center;
+  max-width: 238px !important;
+  min-width: 238px !important;
+  border-bottom: 0 !important;
+  text-align: left !important;
+  background: #f5f5f5 !important;
+  padding: 0 !important;
+}
+body[data-route="roster"] #calenderviewtable > tbody > tr > td {
+  font-size: 14px;
+  vertical-align: middle;
+  padding: 5px 5px;
+  white-space: normal !important;
+  text-align: center;
+  max-width: 50px !important;
+  min-width: 50px !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+}
+body[data-route="roster"] #calenderviewtable > tbody > tr > td:last-child {
+  padding: 8px 10px;
+  white-space: normal !important;
+  text-align: center;
+  max-width: 65px !important;
+  min-width: 65px !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+}
+body[data-route="roster"] .subtable > tbody > tr > td:first-child {
+  font-weight: 500;
+  font-size: 16px;
+  height: 50px;
+  padding: 10px;
+  vertical-align: middle;
+  max-width: 238px !important;
+  min-width: 238px !important;
+  border-left: 0 !important;
+  text-align: left !important;
+  background: #f5f5f5 !important;
+}
+body[data-route="roster"] .subtable > tbody > tr > td {
+  font-size: 14px;
+  padding: 5px 5px;
+  height: 50px;
+  max-width: 50px !important;
+  min-width: 50px !important;
+  border-top: 0 !important;
+}
+body[data-route="roster"] .subtable > tbody > tr > td:last-child {
+  padding: 10px 10px;
+  vertical-align: middle;
+  height: 50px;
+  max-width: 65px !important;
+  min-width: 65px !important;
+  border-left: 0 !important;
+  text-align: center !important;
+  color: #ff0000 !important;
+}
+body[data-route="roster"] #calenderviewtable > thead > tr > th:last-child {
+  vertical-align: middle;
+  white-space: normal !important;
+  color: #ffffff;
+  text-align: center;
+  min-height: 50px !important;
+  max-width: 65px !important;
+  min-width: 65px !important;
+  border-bottom: 0 !important;
+  background: #f56767 !important;
+  padding: 25px 8px;
+}
+body[data-route="roster"] .tablebox {
+  height: 40px;
+  border-radius: 4px;
+}
+body[data-route="roster"] .pt15 {
+  padding-top: 15px;
+}
+body[data-route="roster"] .pb15 {
+  padding-bottom: 15px;
+}
+body[data-route="roster"] .pl15 {
+  padding-left: 15px;
+}
+body[data-route="roster"] .pr15 {
+  padding-right: 15px;
+}
+body[data-route="roster"] .responsivebluebtn {
+  background: #2c77ff !important;
+  border-radius: 4px;
+  color: #fff !important;
+  padding: 9px 20px !important;
+  font-size: 16px;
+  display: inline-block;
+  margin: 5px 10px;
+  line-height: 1.3;
+}
+body[data-route="roster"] .bluebox {
+  background: #63a8f8;
+  color: #fff;
+}
+body[data-route="roster"] .orangebox {
+  background: #ff9a36;
+  color: #010101;
+}
+body[data-route="roster"] .greybox {
+  background: #bebebe;
+  color: #010101;
+}
+body[data-route="roster"] .yellowbox {
+  background: #fecd49;
+  color: #010101;
+}
+body[data-route="roster"] .paddingdiv {
+  padding: 15px 10px;
+}
+body[data-route="roster"] .borderleft {
+  border-left: 1px solid #ddd;
+}
+body[data-route="roster"]
+  #calenderweekviewtable
+  > thead
+  > tr
+  > th.hightlightedtable {
+  background: #2c77ff !important;
+  color: #fff !important;
+}
+body[data-route="roster"] #calenderweekviewtable > thead > tr > th:first-child {
+  z-index: 1;
+  font-weight: 600;
+  white-space: nowrap !important;
+  text-align: center;
+  vertical-align: middle;
+  border-left: 0 !important;
+  border-bottom: 0 !important;
+  max-width: 238px !important;
+  min-width: 238px !important;
+}
+body[data-route="roster"] #calenderweekviewtable > thead > tr > th {
+  font-weight: 400;
+  white-space: nowrap !important;
+  text-align: center;
+  min-height: 50px !important;
+  border-bottom: 0 !important;
+  background: #f5f5f5 !important;
+  padding: 25px 9px;
+}
+body[data-route="roster"] #calenderweekviewtable > tbody > tr > td:first-child {
+  font-size: 16px !important;
+  height: 50px;
+  white-space: normal !important;
+  text-align: center;
+  max-width: 238px !important;
+  min-width: 238px !important;
+  border-bottom: 0 !important;
+  text-align: left !important;
+  padding: 0 !important;
+  background: #f5f5f5 !important;
+}
+body[data-route="roster"] #calenderweekviewtable > tbody > tr > td {
+  font-size: 14px;
+  vertical-align: middle;
+  padding: 5px 5px;
+  white-space: normal !important;
+  text-align: center;
+  max-width: 130px !important;
+  min-width: 130px !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+}
+body[data-route="roster"] #calenderweekviewtable > tbody > tr > td:last-child {
+  padding: 8px 10px;
+  white-space: normal !important;
+  text-align: center;
+  max-width: 65px !important;
+  min-width: 65px !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+}
+body[data-route="roster"] .subcalenderweektable > tbody > tr > td:first-child {
+  font-weight: 500;
+  font-size: 16px;
+  height: 50px;
+  padding: 10px;
+  vertical-align: middle;
+  max-width: 238px !important;
+  min-width: 238px !important;
+  border-left: 0 !important;
+  text-align: left !important;
+  background: #f5f5f5 !important;
+}
+body[data-route="roster"] .subcalenderweektable > tbody > tr > td {
+  font-size: 14px;
+  padding: 5px 5px;
+  height: 50px;
+  max-width: 130px !important;
+  min-width: 130px !important;
+  border-top: 0 !important;
+}
+body[data-route="roster"] .subcalenderweektable > tbody > tr > td:last-child {
+  padding: 10px 10px;
+  vertical-align: middle;
+  height: 50px;
+  border-left: 0 !important;
+  text-align: center !important;
+  color: #ff0000 !important;
+}
+body[data-route="roster"] #calenderweekviewtable > thead > tr > th:last-child {
+  vertical-align: middle;
+  white-space: normal !important;
+  color: #ffffff;
+  text-align: center;
+  min-height: 50px !important;
+  max-width: 130px !important;
+  min-width: 130px !important;
+  border-bottom: 0 !important;
+  background: #f56767 !important;
+  padding: 25px 8px;
+}
+body[data-route="roster"] .tablebox {
+  height: 40px;
+  border-radius: 4px;
+}
+body[data-route="roster"] .responsivebluebtnright {
+  background: #2c77ff !important;
+  border-radius: 4px;
+  color: #fff !important;
+  padding: 10px !important;
+  font-size: 16px;
+  display: inline-block;
+  margin: 5px 0 5px 20px;
+  line-height: 1.3;
+  height: 38px;
+  width: 38px;
+}
+body[data-route="roster"] .customarrowtab {
+  color: #63799b !important;
+  width: 56px !important;
+}
+body[data-route="roster"] .hoverselectclass {
+  cursor: pointer !important;
+  vertical-align: middle;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 14px;
+  height: 40px !important;
+  padding: 10px 5px !important;
+}
+body[data-route="roster"] .selectclass {
+  background: #e7edfb;
+  color: #010101 !important;
+}
+body[data-route="roster"] .customarrowtab:hover {
+  color: #63799b !important;
+  width: 56px !important;
+}
+body[data-route="roster"] .bordertableft {
+  border-left: 1px solid #63799b;
+}
+body[data-route="roster"] .datepicker-inline {
+  width: 100% !important;
+}
+body[data-route="roster"] .datepicker.datepicker-inline table tr td.today,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active:active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active:hover:active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.disabled:active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.disabled:hover:active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active:hover.active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.disabled.active,
+body[data-route="roster"]
+  .datepicker.datepicker-inline
+  table
+  tr
+  td.active.disabled:hover.active {
+  background-color: #2c77ff !important;
+  background: #2c77ff !important;
+  color: #fff !important;
+}
+
+body[data-route="roster"]
+  #calenderweekviewtable
+  > thead
+  > tr
+  > th.hightlightedtable {
+  background: #2c77ff !important;
+  color: #fff !important;
+}
+body[data-route="roster"]
+  .rostercustomstafftab.customrosteringtab.rosteringheadingtab.nav-tabs.nav-justified
+  > li
+  > a {
+  width: 100px !important;
+}
+body[data-route="roster"]
+  .responsivebluebtn.customizebluebtnres
+  .customdrodownicon {
+  color: #fff !important;
+  line-height: 1;
+}
+body[data-route="roster"]
+  .responsivebluebtn.customizebluebtnres
+  .customdrodownicon
+  .dropdowncustomres {
+  white-space: nowrap;
+  padding-right: 0px;
+  display: inline-block;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  vertical-align: middle;
+}
+body[data-route="roster"]
+  .responsivebluebtn.customizebluebtnres
+  .customdrodownicon::after {
+  line-height: 1 !important;
+  color: #fff !important;
+}
+body[data-route="roster"]
+  .responsivebluebtn.customizebluebtnres
+  .dropdown-menu-right.customselect {
+  width: 100%;
+  right: 0 !important;
+}
+body[data-route="roster"] .multiselectselect .serach-textbox,
+body[data-route="roster"] .select2-search__field {
+  padding: 5px !important;
+  color: #010101;
+  font-size: 16px !important;
+  font-weight: 500;
+  background-image: none !important;
+  width: 100% !important;
+  height: auto !important;
+  background-color: #ffffff;
+  border: none !important;
+  outline-offset: 0px !important;
+  box-shadow: none; /* margin-top: 9px !important; */
+}
+body[data-route="roster"]
+  .select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice {
+  background-color: #5897fb;
+  border: 1px solid #5897fb;
+  border-radius: 4px;
+  color: #fff;
+  cursor: default;
+  float: left;
+  margin-right: 5px;
+  margin-top: 5px;
+  padding: 0 5px;
+}
+body[data-route="roster"]
+  .select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice__remove {
+  color: #fff !important;
+  cursor: pointer;
+  display: inline-block;
+  font-weight: bold;
+  margin-right: 2px;
+  font-size: 14px !important;
+}
+body[data-route="roster"]
+  .select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice__remove {
+  color: #fff !important;
+  cursor: pointer;
+  display: inline-block;
+  font-weight: bold;
+  margin-right: 2px;
+  font-size: 14px !important;
+}
+body[data-route="roster"] #calenderviewtable > thead > tr > th.greytablebg {
+  background: #c7c7c7 !important;
+}
+body[data-route="roster"] #calenderweekviewtable > thead > tr > th.greytablebg {
+  background: #c7c7c7 !important;
+}
+body[data-route="roster"] .lightgreycolorbox {
+  background: #f2f4f8 !important;
+}
+body[data-route="roster"] .customprogressbar.ui-widget.ui-widget-content {
+  border: 1px solid #2c77ff;
+  border-radius: 50px;
+}
+body[data-route="roster"]
+  .customprogressbar.ui-progressbar
+  .ui-progressbar-value {
+  margin: 0;
+  height: 100%;
+  background: #2c77ff;
+  border: 1px solid #2c77ff;
+}
+body[data-route="roster"] .minheight120 {
+  min-height: 120px;
+}
+body[data-route="roster"] .customiconbghover {
+  background: #d2ddf6 !important;
+  padding: 4px 6px;
+  background: none;
+  border-radius: 4px;
+}
+body[data-route="roster"] .pdfimg {
+  height: 30px;
+  width: 30px;
+}
+body[data-route="roster"] .datetimepicker td,
+body[data-route="roster"] .datetimepicker th {
+  text-align: center;
+  width: 20px;
+  font-size: 14px;
+  height: 20px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  border: 0;
+}
+body[data-route="roster"] .datetimepicker table tr td span {
+  display: block;
+  width: 23%; /* height: 54px; */
+  font-size: 14px;
+  font-family: roboto;
+  line-height: 54px;
+  float: left;
+  margin: 1%;
+  cursor: pointer;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+}
+body[data-route="roster"] .datetimepicker table {
+  margin: 0;
+  width: 100%;
+}
+body[data-route="roster"] .datetimepicker thead tr:first-child th:hover,
+body[data-route="roster"] .datetimepicker tfoot th:hover {
+  background: #fff !important;
+}
+/*css for tab end*/
+@media (min-width: 1920px) {
+  body[data-route="roster"] .img_block_responsive {
+    height: 100px;
+    width: 100px;
+    border-radius: 4px;
+    border: 1px solid #e6e6e6;
+    margin: 0;
+    overflow: hidden;
+    display: inline-block;
+    background: #ececec;
+  }
+  body[data-route="roster"] .dropdowncustomres {
+    max-width: 150px;
+    padding-right: 0px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+  body[data-route="roster"] .hoverselectclass:hover {
+    background: #e7edfb;
+    color: #010101 !important;
+    cursor: pointer !important;
+    vertical-align: middle;
+    border-radius: 4px;
+    text-align: center;
+    height: 40px !important;
+    padding: 10px 5px !important;
+  }
+}
+@media (min-width: 1700px) {
+  body[data-route="roster"] .footerfont {
+    font-size: 16px;
+  }
+  body[data-route="roster"] .minsectionheight {
+    height: 100vh;
+  }
+  body[data-route="roster"] .textchangeadd {
+    width: 134px;
+  }
+}
+@media only screen and (min-width: 1280px) and (max-width: 1919px) {
+  body[data-route="roster"] .footerfont {
+    font-size: 13px;
+  }
+  body[data-route="roster"] .minsectionheight {
+    height: 100vh;
+  }
+  body[data-route="roster"] .textchangeadd {
+    width: 134px;
+  }
+  body[data-route="roster"] .hoverselectclass:hover {
+    background: #e7edfb;
+    color: #010101 !important;
+    cursor: pointer !important;
+    vertical-align: middle;
+    border-radius: 4px;
+    text-align: center;
+    height: 40px !important;
+    padding: 10px 5px !important;
+  }
+}
+@media screen and (min-width: 1200px) and (max-width: 1440px) {
+  body[data-route="roster"] .footerfont {
+    font-size: 13px;
+  }
+  body[data-route="roster"] .minsectionheight {
+    height: 100vh;
+  }
+  body[data-route="roster"] .card.customcard {
+    position: absolute;
+    margin-bottom: 30px;
+    width: 400px;
+    box-shadow: 0px 2px 2px #00000066;
+    border: 1px solid #e6e6e6;
+  }
+  body[data-route="roster"] .fontawesomeicon {
+    text-align: center;
+    border: 1px solid #63799b;
+    border-radius: 50%;
+    padding: 7px 8px;
+    font-size: 16px;
+  }
+  body[data-route="roster"] .customheightbtn {
+    font-size: 16px;
+    border: 1px solid #2c77ff !important;
+    width: 60px;
+    height: 32px;
+    text-align: center;
+    padding: 5px 0;
+    display: inline-block;
+    color: #2680eb !important;
+  }
+  body[data-route="roster"] .iconfont {
+    padding: 5px 0 !important;
+    border-radius: 50%;
+    font-size: 16px;
+    text-align: center;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-block;
+    background: #fff !important;
+    border: 1px solid #ebf2f9;
+    box-shadow: -1px 0px 4px -1px #00000066;
+  }
+  body[data-route="roster"] .responiconfawdit {
+    height: 15px;
+    width: 15px !important;
+    vertical-align: text-bottom;
+  }
+}
+@media (device-width: 1280px) {
+  body[data-route="roster"] .footerfont {
+    font-size: 13px;
+  }
+  body[data-route="roster"] .minsectionheight {
+    height: 100vh;
+  }
+  body[data-route="roster"] .adminpadding {
+    padding-top: 80px;
+  }
+  body[data-route="roster"] .card.customcard {
+    position: absolute;
+    margin-bottom: 30px;
+    width: 400px;
+    box-shadow: 0px 2px 2px #00000066;
+    border: 1px solid #e6e6e6;
+  }
+  body[data-route="roster"] .fontawesomeicon {
+    text-align: center;
+    border: 1px solid #63799b;
+    border-radius: 50%;
+    padding: 7px 8px;
+    font-size: 16px;
+  }
+  body[data-route="roster"] .customheightbtn {
+    font-size: 16px;
+    border: 1px solid #2c77ff !important;
+    width: 60px;
+    height: 32px;
+    text-align: center;
+    padding: 5px 0;
+    display: inline-block;
+    color: #2680eb !important;
+  }
+  body[data-route="roster"] .iconfont {
+    padding: 5px 0 !important;
+    border-radius: 50%;
+    font-size: 16px;
+    text-align: center;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-block;
+    background: #fff !important;
+    border: 1px solid #ebf2f9;
+    box-shadow: -1px 0px 4px -1px #00000066;
+  }
+  body[data-route="roster"] .responiconfawdit {
+    height: 15px;
+    width: 15px !important;
+    vertical-align: text-bottom;
+  }
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  .footerfont {
+    font-size: 13px;
+  }
+  body[data-route="roster"] .minsectionheight {
+    height: 100vh;
+  }
+  body[data-route="roster"] .customipaspad {
+    padding: 0 6px !important;
+  }
+  body[data-route="roster"] .customiconhover {
+    background: #d2ddf6 !important;
+    padding: 6px 15px;
+  }
+  body[data-route="roster"] .customiconhover:hover {
+    padding: 6px 15px;
+  }
+  body[data-route="roster"] .ipadpadd {
+    padding-top: 15px;
+  }
+  body[data-route="roster"] .dropdown-menu-right.customselect {
+    right: -15px !important;
+  }
+  body[data-route="roster"] .card.customcard {
+    position: absolute;
+    margin-bottom: 30px;
+    width: 400px;
+    box-shadow: 0px 2px 2px #00000066;
+    border: 1px solid #e6e6e6;
+  }
+  body[data-route="roster"] .dropdowncustomres {
+    max-width: 50px;
+    padding-right: 0px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+  body[data-route="roster"] .heightipad {
+    height: 28px;
+  }
+  body[data-route="roster"] .fontawesomeicon {
+    text-align: center;
+    border: 1px solid #63799b;
+    border-radius: 50%;
+    padding: 7px 8px;
+    font-size: 16px;
+  }
+  body[data-route="roster"] .customheightbtn {
+    font-size: 16px;
+    border: 1px solid #2c77ff !important;
+    width: 60px;
+    height: 32px;
+    text-align: center;
+    padding: 5px 0;
+    display: inline-block;
+    color: #2680eb !important;
+  }
+  body[data-route="roster"] .iconfont {
+    padding: 5px 0 !important;
+    border-radius: 50%;
+    font-size: 16px;
+    text-align: center;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-block;
+    background: #fff !important;
+    border: 1px solid #ebf2f9;
+    box-shadow: -1px 0px 4px -1px #00000066;
+  }
+  body[data-route="roster"] .responiconfawdit {
+    height: 15px;
+    width: 15px !important;
+    vertical-align: text-bottom;
+  }
+  body[data-route="roster"] .textchangeadd {
+    width: 134px;
+  }
+  body[data-route="roster"] .responsivebluebtn {
+    background: #2c77ff !important;
+    border-radius: 4px;
+    color: #fff !important;
+    padding: 10px 20px !important;
+    font-size: 16px;
+    display: inline-block;
+    width: 30%;
+    margin: 10px 20px 10px 0;
+    line-height: 1.3;
+  }
+  body[data-route="roster"]
+    .responsivebluebtn.customizebluebtnres
+    .customdrodownicon
+    .dropdowncustomres {
+    max-width: 90%;
+    min-width: 90%;
+    white-space: nowrap;
+    padding-right: 0px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+}
+@media (device-width: 768px) {
+  body[data-route="roster"] .footerfont {
+    font-size: 13px;
+  }
+  body[data-route="roster"] .minsectionheight {
+    height: 100vh;
+  }
+  body[data-route="roster"] .customiconhover {
+    background: #d2ddf6 !important;
+  }
+  body[data-route="roster"] .ipadpadd {
+    padding-top: 15px;
+  }
+  body[data-route="roster"] .dropdowncustomres {
+    max-width: 60px;
+    padding-right: 0px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+  body[data-route="roster"] .card.customcard {
+    position: absolute;
+    margin-bottom: 30px;
+    width: 400px;
+    box-shadow: 0px 2px 2px #00000066;
+    border: 1px solid #e6e6e6;
+  }
+  body[data-route="roster"] .dropdowncustomres {
+    max-width: 50px;
+    padding-right: 0px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+  body[data-route="roster"] .heightipad {
+    height: 28px;
+  }
+  body[data-route="roster"] .fontawesomeicon {
+    text-align: center;
+    border: 1px solid #63799b;
+    border-radius: 50%;
+    padding: 7px 8px;
+    font-size: 16px;
+  }
+  body[data-route="roster"] .customheightbtn {
+    font-size: 16px;
+    border: 1px solid #2c77ff !important;
+    width: 60px;
+    height: 32px;
+    text-align: center;
+    padding: 5px 0;
+    display: inline-block;
+    color: #2680eb !important;
+  }
+  body[data-route="roster"] .iconfont {
+    padding: 5px 0 !important;
+    border-radius: 50%;
+    font-size: 16px;
+    text-align: center;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-block;
+    background: #fff !important;
+    border: 1px solid #ebf2f9;
+    box-shadow: -1px 0px 4px -1px #00000066;
+  }
+  body[data-route="roster"] .responiconfawdit {
+    height: 15px;
+    width: 15px !important;
+    vertical-align: text-bottom;
+  }
+  body[data-route="roster"] .responsivebluebtn {
+    background: #2c77ff !important;
+    border-radius: 4px;
+    color: #fff !important;
+    padding: 10px 20px !important;
+    font-size: 16px;
+    display: inline-block;
+    width: 30%;
+    margin: 10px 20px 10px 0;
+    line-height: 1.3;
+  }
+  body[data-route="roster"]
+    .responsivebluebtn.customizebluebtnres
+    .customdrodownicon
+    .dropdowncustomres {
+    max-width: 90%;
+    min-width: 90%;
+    white-space: nowrap;
+    padding-right: 0px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+}
+@media (max-width: 767px) {
+  body[data-route="roster"] .footerfont {
+    font-size: 12px;
+  }
+  body[data-route="roster"] .fixed-top {
+    background: #19253d;
+  }
+  body[data-route="roster"] .footerdiv {
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+  }
+  body[data-route="roster"] .landingbtn {
+    padding: 10px 29px !important;
+    border-radius: 0 !important;
+    color: #fff;
+    line-height: 1.3;
+    outline: 0;
+  }
+  body[data-route="roster"] .bg-overlay {
+    background: rgba(0, 13, 36, 0);
+    height: 100vh;
+    overflow-y: auto;
+  }
+  body[data-route="roster"] .mobpadres {
+    padding-top: 22%;
+  }
+  body[data-route="roster"] .loginpadding {
+    padding-top: 18%;
+  }
+  body[data-route="roster"] .intro-header {
+    background: url(../Content/img/loginbg.jpg) no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh !important;
+  }
+  body[data-route="roster"] .minsectionheight {
+    height: 100%;
+  }
+  body[data-route="roster"] .adminpadding {
+    padding-top: 16.5%;
+  }
+  body[data-route="roster"] .navbar-brand {
+    margin-right: 0;
+  }
+  body[data-route="roster"] .media {
+    flex-direction: column;
+  }
+  body[data-route="roster"] .media-body {
+    margin-top: 15px;
+  }
+  body[data-route="roster"] .img_block_responsive {
+    height: 80px;
+    width: 80px;
+    margin: 0 !important;
+    border-radius: 4px;
+    border: 1px solid #e6e6e6; /* margin: 0; */
+    overflow: hidden;
+    display: inline-block;
+    background: #ececec;
+  }
+  body[data-route="roster"] #sidenav-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    overflow: hidden;
+    z-index: 0;
+    display: none;
+  }
+  body[data-route="roster"] .sb-sidenav-toggled #sidenav-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    overflow: hidden;
+    z-index: 999;
+    display: block;
+  }
+  body[data-route="roster"] .btnpink {
+    background: #00a759;
+    padding: 4px 0;
+    width: 110px !important;
+    font-size: 15px;
+    color: #fff !important;
+    display: inline-block;
+    text-align: center;
+    border-radius: 4px;
+  }
+  body[data-route="roster"] .btngreen {
+    background: #f53c56;
+    padding: 4px 0;
+    width: 110px;
+    font-size: 15px;
+    color: #fff !important;
+    display: inline-block;
+    text-align: center;
+    border-radius: 4px;
+  }
+  body[data-route="roster"] .customplantable {
+    display: inline-block;
+    overflow-x: auto;
+  }
+  body[data-route="roster"] .respardatatable {
+    display: inline-block;
+    white-space: nowrap;
+  }
+  body[data-route="roster"] .custommobrescard {
+    display: flex; /* align-items: center; */
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+  }
+  body[data-route="roster"] #nav {
+    background-color: transparent;
+    position: absolute;
+    left: -22%;
+  }
+  body[data-route="roster"] #menu,
+  body[data-route="roster"] #menuclose {
+    height: 40px;
+    width: 45px;
+    background-position: 0 0;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+  }
+  body[data-route="roster"] #menu {
+    background-color: #7e88a3 !important;
+  }
+  body[data-route="roster"] #menuclose {
+    background-color: #fff !important;
+  }
+  body[data-route="roster"] #menu:hover,
+  body[data-route="roster"] #menuclose:hover {
+    background-position: 50px 0;
+    cursor: pointer;
+  }
+  body[data-route="roster"] #menuclose,
+  body[data-route="roster"] #menuclose:hover {
+    display: none;
+  }
+  body[data-route="roster"] .sidedrawer {
+    position: absolute;
+    top: 5px;
+    right: -201px;
+    bottom: 0;
+    z-index: 1;
+    background: #fff !important;
+  }
+  body[data-route="roster"] .sidebackground {
+    background: #fff !important;
+    width: 199px; /* margin-left: 25%; */
+    display: inline-block;
+  }
+  body[data-route="roster"] .drawer-backdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 0;
+    background-color: rgba(0, 0, 0, 0.46);
+    display: none;
+  }
+  body[data-route="roster"] .drawer-backdrop.show {
+    opacity: 0.26;
+    display: block;
+    z-index: 99 !important;
+  }
+  body[data-route="roster"] .iconresponsiveerrow {
+    margin: 0 auto;
+    left: 32%;
+    top: 25%;
+    position: absolute;
+    font-size: 20px;
+    color: #33439e;
+  }
+  body[data-route="roster"] .iconresponsiveerrow.sidearrowres {
+    left: 40% !important;
+  }
+  body[data-route="roster"] .sidedrawer-header {
+    height: 40px !important;
+    background: #fff !important;
+    color: #33429d;
+    font-weight: 500;
+    text-align: center;
+    padding: 7px 15px;
+    font-size: 18px;
+    vertical-align: middle;
+  }
+  body[data-route="roster"] .sidedrawer-tab {
+    border-bottom: 0.7px solid #ccc !important;
+    font-size: 17px;
+    padding: 7px 15px;
+    line-height: 26px !important;
+  }
+  .sidedrawer-tab:last-child {
+    border-bottom: none !important;
+  }
+  .sidedrawer-tab:first-child {
+    background: #fff !important;
+  }
+  .hideinmobiledevice {
+    display: none !important;
+  }
+  .sidedrawer-tab:hover {
+    background: #33439e !important;
+    color: #fff !important;
+  }
+  body[data-route="roster"] .responsiveoverflowfilter {
+    height: calc(100vh - 178px);
+    overflow-y: auto;
+  }
+  body[data-route="roster"]
+    .accordianclass[aria-expanded="true"]
+    .accordianarrow
+    i:before {
+    content: "\f106" !important;
+  }
+  body[data-route="roster"]
+    .accordianclass[aria-expanded="false"]
+    .accordianarrow
+    i:before {
+    content: "\f107" !important;
+  }
+  body[data-route="roster"] .accordiandarr {
+    font-size: 16px !important;
+  }
+  body[data-route="roster"] .backgrounmobile {
+    background: #f6f7f9 !important;
+  }
+  body[data-route="roster"] .accordiancontent:first-child {
+    padding-top: 0 !important;
+  }
+  body[data-route="roster"] .accordiancontent {
+    margin-top: 6px !important;
+  }
+  body[data-route="roster"] .backgrounmobile {
+    background: #f6f7f9 !important;
+  }
+  body[data-route="roster"] .backgrounddark {
+    background: #d7ddeb !important;
+  }
+  body[data-route="roster"] .padd6 {
+    padding: 8px 10px 5px 10px !important;
+    min-height: 39px !important;
+  }
+  body[data-route="roster"] .modalopenmobile {
+    top: auto !important;
+    bottom: 0px !important;
+    max-height: calc(100vh - 87px) !important;
+    margin: 0 !important;
+    overflow-y: auto !important;
+  }
+  body[data-route="roster"] .modalopenmobile.fade.show .modal-dialog {
+    transform: translateY(0) !important;
+    margin: 0 !important;
+  }
+  body[data-route="roster"] .modalopenmobile.fade .modal-dialog {
+    transform: translateY(25%) !important;
+    margin: 0 !important;
+  }
+  body[data-route="roster"] .margintopmobile {
+    margin-top: 20px !important;
+  }
+  body[data-route="roster"] .filtercloseclick {
+    background: #63799b !important;
+    color: #fff;
+    padding: 5.5px 10px;
+  }
+  body[data-route="roster"] .rostercustomstafftab > li {
+    width: 100% !important;
+  }
+  body[data-route="roster"] .customiconhover {
+    background: #d2ddf6 !important;
+  }
+  body[data-route="roster"] .fontawesomeicon {
+    text-align: center;
+    border: 1px solid #63799b;
+    border-radius: 50%;
+    padding: 7px;
+    font-size: 16px;
+    height: 32px;
+    width: 32px;
+  }
+  body[data-route="roster"] .customheightbtn {
+    font-size: 16px;
+    border: 1px solid #2c77ff !important;
+    width: 60px;
+    height: 32px;
+    text-align: center;
+    padding: 5px 0;
+    display: inline-block;
+    color: #2680eb !important;
+  }
+  body[data-route="roster"] body[data-route="roster"] .iconfont {
+    padding: 5px 0 !important;
+    border-radius: 50%;
+    font-size: 16px;
+    text-align: center;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-block;
+    background: #fff !important;
+    border: 1px solid #ebf2f9;
+    box-shadow: -1px 0px 4px -1px #00000066;
+  }
+  body[data-route="roster"] .responiconfawdit {
+    height: 15px;
+    width: 15px !important;
+    vertical-align: text-bottom;
+  }
+  body[data-route="roster"] #userDropdown + .dropdown-menu {
+    margin-top: 0;
+    right: -25px !important;
+    top: 60px;
+    left: auto !important;
+    border-radius: 8px;
+    background: #2c77ff;
+    -moz-box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.1607843137254902);
+    -webkit-box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.1607843137254902);
+    box-shadow: -1px 2px 3px rgba(0, 0, 0, 0.1607843137254902);
+  }
+  body[data-route="roster"] .customiconhover {
+    padding: 8px 8px;
+    background: none;
+    border-radius: 4px;
+  }
+  body[data-route="roster"] .customiconhover:hover {
+    padding: 8px 8px;
+    background: none;
+    border-radius: 4px;
+  }
+  body[data-route="roster"] .customizepanel > .panel-heading {
+    padding: 20px !important;
+  }
+  body[data-route="roster"] .custommobmodal .modal-dialog {
+    min-height: 800px;
+    overflow-y: auto;
+  }
+  body[data-route="roster"] .mobborder {
+    border-top: 1px solid #e8f3ff !important;
+  }
+  body[data-route="roster"] .responsivebluebtn {
+    background: #2c77ff !important;
+    border-radius: 4px;
+    color: #fff !important;
+    padding: 10px 20px !important;
+    font-size: 16px;
+    display: block;
+    margin: 10px 0;
+    line-height: 1.3;
+  }
+  body[data-route="roster"] .dateblock {
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+  }
+  /*.custommobmodal .modal-dialog {
+        position: absolute;
+        width:100%;
+        left:0;
+        bottom: 0;
+        margin: 0 auto;
+        transition: -webkit-transform 0.3s ease-out;
+        transition: transform 0.3s ease-out;
+        transition: transform 0.3s ease-out, -webkit-transform 0.3s ease-out;
+    }
+    
+    .custommobmodal.modal.in .modal-dialog {       
+        -webkit-transform: none;
+        transform: none;
+    }
+    .custommobmodal.modal:not(.in) .modal-dialog {
+        -webkit-transform: translate3d(0,25%,0);
+        transform: translate3d(0,25%,0);
+    }*/
+  body[data-route="roster"] .card-header.customheadermobpadd {
+    padding: 15px !important;
+  }
+  body[data-route="roster"] .customarrowtab {
+    color: #63799b !important;
+    width: 40px !important;
+  }
+  body[data-route="roster"] .customarrowtab:hover {
+    color: #63799b !important;
+    width: 40px !important;
+  }
+  body[data-route="roster"]
+    .responsivebluebtn.customizebluebtnres
+    .customdrodownicon
+    .dropdowncustomres {
+    max-width: 90%;
+    min-width: 90%;
+    white-space: nowrap;
+    padding-right: 0px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+}
+@media (max-width: 480px) {
+  body[data-route="roster"] .footerfont {
+    font-size: 12px;
+  }
+  body[data-route="roster"] .fixed-top {
+    background: #19253d;
+  }
+  body[data-route="roster"] .footerdiv {
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+  }
+  body[data-route="roster"] .landingbtn {
+    padding: 10px 25px !important;
+    border-radius: 0 !important;
+    color: #fff;
+    line-height: 1.3;
+    outline: 0;
+  }
+  body[data-route="roster"] .bg-overlay {
+    background: rgba(0, 13, 36, 0);
+    height: 100vh;
+    overflow-y: auto;
+  }
+  body[data-route="roster"] .mobpadres {
+    padding-top: 22%;
+  }
+  body[data-route="roster"] .loginpadding {
+    padding-top: 18%;
+  }
+  body[data-route="roster"] .intro-header {
+    background: url(../Content/img/loginbg.jpg) no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh !important;
+  }
+  body[data-route="roster"] .minsectionheight {
+    height: 100%;
+  }
+  body[data-route="roster"] .adminpadding {
+    padding-top: 14.9%;
+  }
+  body[data-route="roster"] .navbar-brand {
+    margin-right: 0;
+  }
+  body[data-route="roster"] .media {
+    flex-direction: column;
+  }
+  body[data-route="roster"] .media-body {
+    margin-top: 15px;
+  }
+  body[data-route="roster"] .img_block_responsive {
+    height: 80px;
+    width: 80px;
+    margin: 0 !important;
+    border-radius: 4px;
+    border: 1px solid #e6e6e6; /* margin: 0; */
+    overflow: hidden;
+    display: inline-block;
+    background: #ececec;
+  }
+  body[data-route="roster"] #sidenav-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    overflow: hidden;
+    z-index: 0;
+    display: none;
+  }
+  body[data-route="roster"] .sb-sidenav-toggled #sidenav-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    overflow: hidden;
+    z-index: 999;
+    display: block;
+  }
+  body[data-route="roster"] .btnpink {
+    background: #00a759;
+    padding: 4px 0;
+    width: 110px !important;
+    font-size: 15px;
+    color: #fff !important;
+    display: inline-block;
+    text-align: center;
+    border-radius: 4px;
+  }
+  body[data-route="roster"] .btngreen {
+    background: #f53c56;
+    padding: 4px 0;
+    width: 110px;
+    font-size: 15px;
+    color: #fff !important;
+    display: inline-block;
+    text-align: center;
+    border-radius: 4px;
+  }
+  body[data-route="roster"] .customplantable {
+    display: inline-block;
+    overflow-x: auto;
+  }
+  body[data-route="roster"] .respardatatable {
+    display: inline-block;
+    white-space: nowrap;
+  }
+  body[data-route="roster"] .customiconhover {
+    background: #d2ddf6 !important;
+  }
+  body[data-route="roster"] .dropdowncustomres {
+    max-width: 120px;
+    padding-right: 0px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+  body[data-route="roster"] .fontawesomeicon {
+    text-align: center;
+    border: 1px solid #63799b;
+    border-radius: 50%;
+    padding: 7px;
+    font-size: 16px;
+    height: 32px;
+    width: 32px;
+  }
+  body[data-route="roster"] .customheightbtn {
+    font-size: 16px;
+    border: 1px solid #2c77ff !important;
+    width: 60px;
+    height: 32px;
+    text-align: center;
+    padding: 5px 0;
+    display: inline-block;
+    color: #2680eb !important;
+  }
+  body[data-route="roster"] .iconfont {
+    padding: 5px 0 !important;
+    border-radius: 50%;
+    font-size: 16px;
+    text-align: center;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-block;
+    background: #fff !important;
+    border: 1px solid #ebf2f9;
+    box-shadow: -1px 0px 4px -1px #00000066;
+  }
+  body[data-route="roster"] .responiconfawdit {
+    height: 15px;
+    width: 15px !important;
+    vertical-align: text-bottom;
+  }
+}
+@media (max-width: 320px) {
+  body[data-route="roster"] .footerfont {
+    font-size: 12px !important;
+  }
+  body[data-route="roster"] .font50 {
+    font-size: 20px !important;
+  }
+  body[data-route="roster"] .font43 {
+    font-size: calc(43px - 25px) !important;
+  }
+  body[data-route="roster"] .font34 {
+    font-size: calc(34px - 17px) !important;
+  }
+  body[data-route="roster"] .fixed-top {
+    background: #19253d !important;
+  }
+  body[data-route="roster"] .landingbtn {
+    padding: 10px 20px !important;
+    border-radius: 0 !important;
+    color: #fff;
+    line-height: 1.3;
+    outline: 0;
+  }
+  body[data-route="roster"] .footerdiv {
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+  }
+  body[data-route="roster"] .bg-overlay {
+    background: rgba(0, 13, 36, 0);
+    height: 100vh;
+    overflow-y: auto;
+  }
+  body[data-route="roster"] .mobpadres {
+    padding-top: 22%;
+  }
+  body[data-route="roster"] .loginpadding {
+    padding-top: 18%;
+  }
+  body[data-route="roster"] .intro-header {
+    background: url(../Content/img/loginbg.jpg) no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh !important;
+  }
+  body[data-route="roster"] .minsectionheight {
+    height: 100%;
+  }
+  body[data-route="roster"] .adminpadding {
+    padding-top: 16.5%;
+  }
+  body[data-route="roster"] .navbar-brand {
+    margin-right: 0;
+  }
+  body[data-route="roster"] #sidenav-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    overflow: hidden;
+    z-index: 0;
+    display: none;
+  }
+  body[data-route="roster"] .sb-sidenav-toggled #sidenav-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    overflow: hidden;
+    z-index: 999;
+    display: block;
+  }
+  body[data-route="roster"] .media {
+    flex-direction: column;
+  }
+  body[data-route="roster"] a {
+    text-decoration: none;
+  }
+  body[data-route="roster"] .media-body {
+    margin-top: 15px;
+  }
+  body[data-route="roster"] .img_block_responsive {
+    height: 80px;
+    width: 80px;
+    margin: 0 !important;
+    border-radius: 4px;
+    border: 1px solid #e6e6e6; /* margin: 0; */
+    overflow: hidden;
+    display: inline-block;
+    background: #ececec;
+  }
+  body[data-route="roster"] .btnpink {
+    background: #00a759;
+    padding: 4px 0;
+    width: 100px !important;
+    font-size: 15px;
+    color: #fff !important;
+    display: inline-block;
+    text-align: center;
+    border-radius: 4px;
+  }
+  body[data-route="roster"] .btngreen {
+    background: #f53c56;
+    padding: 4px 0;
+    width: 100px;
+    font-size: 15px;
+    color: #fff !important;
+    display: inline-block;
+    text-align: center;
+    border-radius: 4px;
+  }
+  body[data-route="roster"] .customplantable {
+    display: inline-block;
+    overflow-x: auto;
+  }
+  body[data-route="roster"] .respardatatable {
+    display: inline-block;
+    white-space: nowrap;
+  }
+  body[data-route="roster"] .fontawesomeicon {
+    text-align: center;
+    border: 1px solid #63799b;
+    border-radius: 50%;
+    padding: 7px;
+    font-size: 16px;
+    height: 32px;
+    width: 32px;
+  }
+  body[data-route="roster"] .customheightbtn {
+    font-size: 16px;
+    border: 1px solid #2c77ff !important;
+    width: 60px;
+    height: 32px;
+    text-align: center;
+    padding: 5px 0;
+    display: inline-block;
+    color: #2680eb !important;
+  }
+  body[data-route="roster"] .iconfont {
+    padding: 5px 0 !important;
+    border-radius: 50%;
+    font-size: 16px;
+    text-align: center;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-block;
+    background: #fff !important;
+    border: 1px solid #ebf2f9;
+    box-shadow: -1px 0px 4px -1px #00000066;
+  }
+  body[data-route="roster"] .responiconfawdit {
+    height: 15px;
+    width: 15px !important;
+    vertical-align: text-bottom;
+  }
+}
+
+body[data-route="roster"] .forbidden {
+  cursor: not-allowed;
+}

@@ -1,0 +1,160 @@
+{
+ "actions": [],
+ "autoname": "CCP.###",
+ "creation": "2020-06-05 01:26:03.735490",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "job_offer",
+  "job_applicant",
+  "candidate_name",
+  "passport_number",
+  "erf",
+  "status",
+  "column_break_4",
+  "start_date",
+  "agency",
+  "agency_name",
+  "agency_country_process",
+  "current_process_id",
+  "section_break_3",
+  "agency_process_details",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fetch_from": "job_offer.agency",
+   "fieldname": "agency",
+   "fieldtype": "Link",
+   "label": "Agency",
+   "options": "Agency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "agency_process_details",
+   "fieldtype": "Table",
+   "label": "Agency Process Details",
+   "options": "Candidate Country Process Details"
+  },
+  {
+   "fetch_from": "job_offer.applicant_name",
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Name",
+   "read_only": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nApproved\nRejected\nFailes",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "agency.agency",
+   "fieldname": "agency_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Agency Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_offer.one_fm_erf",
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "label": "ERF",
+   "options": "ERF",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "agency_country_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Agency Country Process",
+   "options": "Agency Country Process",
+   "reqd": 1
+  },
+  {
+   "fieldname": "job_offer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Job Offer",
+   "options": "Job Offer"
+  },
+  {
+   "fetch_from": "job_offer.job_applicant",
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fetch_from": "job_offer.one_fm_offer_accepted_date",
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Candidate Country Process",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "current_process_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Current Process ID"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2020-08-23 13:05:46.850075",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Candidate Country Process",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

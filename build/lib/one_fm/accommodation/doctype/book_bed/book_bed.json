@@ -1,0 +1,314 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-07-13 07:36:25.992762",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "find_nearest_accommodation_section",
+  "naming_series",
+  "governorate",
+  "area",
+  "column_break_4",
+  "location",
+  "get_nearest_accommodations",
+  "nearest_accommodations_section",
+  "nearest_accommodations",
+  "availability_section",
+  "accommodation",
+  "bed_type",
+  "bed_space_type",
+  "column_break_13",
+  "gender",
+  "checkin_date",
+  "check_availability",
+  "available_beds_section",
+  "available_beds",
+  "book_bed_section",
+  "book_for",
+  "bed",
+  "no_of_employees",
+  "column_break_22",
+  "booking_status",
+  "section_break_24",
+  "local_overseas",
+  "civil_id",
+  "column_break_25",
+  "passport_number",
+  "employee",
+  "section_break_30",
+  "full_name",
+  "nationality",
+  "religion",
+  "column_break_35",
+  "contact_number",
+  "email",
+  "section_break_39",
+  "bulk_book_bed"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "BB-.YYYY.-\nTBB-.YYYY.-"
+  },
+  {
+   "fieldname": "area",
+   "fieldtype": "Link",
+   "label": "Area",
+   "options": "Governorate Area"
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "get_nearest_accommodations",
+   "fieldtype": "Button",
+   "label": "Get Nearest Accommodations "
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "nearest_accommodations_section",
+   "fieldtype": "Section Break",
+   "label": "Nearest Accommodations"
+  },
+  {
+   "fieldname": "nearest_accommodations",
+   "fieldtype": "Table",
+   "options": "Nearest Accommodation",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "availability_section",
+   "fieldtype": "Section Break",
+   "label": "Availability"
+  },
+  {
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "label": "Accommodation",
+   "options": "Accommodation"
+  },
+  {
+   "fieldname": "bed_type",
+   "fieldtype": "Select",
+   "label": "Bed Type",
+   "options": "\nSingle\nDouble"
+  },
+  {
+   "fieldname": "bed_space_type",
+   "fieldtype": "Link",
+   "label": "Bed Space Type",
+   "options": "Bed Space Type"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fieldname": "checkin_date",
+   "fieldtype": "Date",
+   "label": "Checkin Date"
+  },
+  {
+   "fieldname": "check_availability",
+   "fieldtype": "Button",
+   "label": "Check Availability"
+  },
+  {
+   "fieldname": "available_beds_section",
+   "fieldtype": "Section Break",
+   "label": "Available Beds"
+  },
+  {
+   "fieldname": "available_beds",
+   "fieldtype": "Table",
+   "options": "Available Bed"
+  },
+  {
+   "fieldname": "book_bed_section",
+   "fieldtype": "Section Break",
+   "label": "Book Bed"
+  },
+  {
+   "fieldname": "bed",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Bed",
+   "options": "Bed"
+  },
+  {
+   "depends_on": "local_overseas",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "depends_on": "eval:doc.local_overseas=='Local'",
+   "fieldname": "employee",
+   "fieldtype": "Data",
+   "label": "ONE FM ID Number"
+  },
+  {
+   "fieldname": "booking_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Booking Status",
+   "options": "\nPermanent Booking\nTemporary Booking\nCancelled",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "find_nearest_accommodation_section",
+   "fieldtype": "Section Break",
+   "label": "Find Nearest Accommodation"
+  },
+  {
+   "fieldname": "governorate",
+   "fieldtype": "Link",
+   "label": "Governorate",
+   "options": "Governorate"
+  },
+  {
+   "fieldname": "column_break_25",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "label": "Religion",
+   "read_only": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_22",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.book_for=='Single'",
+   "fieldname": "section_break_24",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "local_overseas",
+   "fieldtype": "Select",
+   "label": "Local/Overseas",
+   "options": "\nOverseas\nLocal",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.local_overseas=='Local'",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "fieldname": "section_break_30",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_35",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Single",
+   "fieldname": "book_for",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Book for",
+   "options": "\nSingle\nBulk"
+  },
+  {
+   "fieldname": "no_of_employees",
+   "fieldtype": "Int",
+   "label": "No of Employees"
+  },
+  {
+   "depends_on": "eval:doc.book_for == 'Bulk'",
+   "fieldname": "section_break_39",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.book_for=='Bulk'",
+   "fieldname": "bulk_book_bed",
+   "fieldtype": "Table",
+   "options": "Bulk Book Bed",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2020-11-16 08:47:30.735656",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Book Bed",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "full_name, passport_number, civil_id, employee",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

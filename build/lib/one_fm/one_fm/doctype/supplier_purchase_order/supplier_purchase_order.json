@@ -1,0 +1,275 @@
+{
+ "autoname": "format:PO-{YYYY}.{#####}",
+ "creation": "2020-04-24 15:57:13.958902",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "purchase_request",
+  "supplier",
+  "supplier_name",
+  "requested_by",
+  "requester_name",
+  "requested_for",
+  "supply_description",
+  "column_break_60",
+  "purchase_request_date",
+  "delivery_date",
+  "buyer",
+  "place_of_delivery",
+  "origin",
+  "project_section",
+  "code",
+  "site",
+  "column_break_6",
+  "date",
+  "address",
+  "section_break_9",
+  "items",
+  "currency",
+  "total_amount",
+  "notes_section",
+  "payment_terms",
+  "column_break_26",
+  "terms_of_shipment",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Supplier Purchase Order",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Supplier",
+   "options": "Supplier",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "supplier_name",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Supplier Name"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "project_section",
+   "fieldtype": "Section Break",
+   "label": "Project"
+  },
+  {
+   "fetch_from": "purchase_request.code",
+   "fieldname": "code",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Project Code",
+   "options": "Project"
+  },
+  {
+   "fetch_from": "purchase_request.site",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Site"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fetch_from": "purchase_request.date",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fetch_from": "purchase_request.address",
+   "fieldname": "address",
+   "fieldtype": "Link",
+   "label": "Address",
+   "options": "Address"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break",
+   "label": "Object Of Confirmation Order"
+  },
+  {
+   "fetch_from": "purchase_request.description_of_the_request",
+   "fieldname": "supply_description",
+   "fieldtype": "Small Text",
+   "label": "Supply Description"
+  },
+  {
+   "fieldname": "purchase_request",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Purchase Request",
+   "options": "Purchase Request",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "purchase_request.purchase_date",
+   "fieldname": "purchase_request_date",
+   "fieldtype": "Date",
+   "label": "Purchase Request Date",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "purchase_request.requested_by",
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "requested_by.employee_name",
+   "fieldname": "requester_name",
+   "fieldtype": "Read Only",
+   "label": "Requester Name"
+  },
+  {
+   "fetch_from": "requested_by.department",
+   "fieldname": "requested_for",
+   "fieldtype": "Link",
+   "label": "Requested For(Department)",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fieldname": "buyer",
+   "fieldtype": "Data",
+   "label": "Buyer"
+  },
+  {
+   "fieldname": "payment_terms",
+   "fieldtype": "Text",
+   "label": "Payment Terms"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "fieldname": "delivery_date",
+   "fieldtype": "Date",
+   "label": "Delivery Date"
+  },
+  {
+   "fieldname": "place_of_delivery",
+   "fieldtype": "Link",
+   "label": "Place Of Delivery",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "fieldname": "origin",
+   "fieldtype": "Data",
+   "label": "Origin"
+  },
+  {
+   "fieldname": "terms_of_shipment",
+   "fieldtype": "Text",
+   "label": "Terms Of Shipment"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Supplier Purchase Order Item",
+   "options": "Supplier Purchase Order Item"
+  },
+  {
+   "fieldname": "column_break_60",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "column_break_26",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2020-05-12 12:10:18.195642",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Supplier Purchase Order",
+ "owner": "omar.ja93@gmail.com",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -1,0 +1,80 @@
+{
+ "creation": "2020-05-07 22:49:41.652284",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "objective",
+  "type",
+  "column_break_2",
+  "from_date",
+  "to_date",
+  "time_frame",
+  "objective_linking_with",
+  "objective_link"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "\nBusiness\nStretch\nPersonal",
+   "reqd": 1
+  },
+  {
+   "fieldname": "time_frame",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Time Frame (Days)",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:parent.company_objective == '0'",
+   "fieldname": "objective_linking_with",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Objective Linking With",
+   "options": "Objective\nKey Result"
+  },
+  {
+   "columns": 4,
+   "fieldname": "objective",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Objective",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date"
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date"
+  },
+  {
+   "depends_on": "eval:parent.company_objective == '0'",
+   "fieldname": "objective_link",
+   "fieldtype": "Select",
+   "label": "Objective Link"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-12-23 18:15:42.115931",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "OKR Performance Profile Objective",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

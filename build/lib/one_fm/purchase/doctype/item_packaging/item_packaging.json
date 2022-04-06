@@ -1,0 +1,44 @@
+{
+ "actions": [],
+ "autoname": "field:item_packaging",
+ "creation": "2021-02-06 09:57:53.924056",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_packaging"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_packaging",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Packaging",
+   "reqd": 1,
+   "unique": 1
+  }
+ ],
+ "links": [],
+ "modified": "2021-02-06 09:58:02.014671",
+ "modified_by": "Administrator",
+ "module": "Purchase",
+ "name": "Item Packaging",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

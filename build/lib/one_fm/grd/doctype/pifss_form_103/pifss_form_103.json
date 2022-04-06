@@ -1,0 +1,676 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-10-21 20:18:25.036895",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "request_type",
+  "column_break_4",
+  "status",
+  "column_break_2",
+  "naming_series",
+  "section_break_6",
+  "date_of_request",
+  "column_break_8",
+  "date_of_registeration",
+  "column_break_9",
+  "date_of_acceptance",
+  "section_break_12",
+  "pifss_is_under_process_on",
+  "registration_section",
+  "attach_registration_from_pifss_website",
+  "column_break_16",
+  "attach_on_registration",
+  "end_of_service_section",
+  "work_permit_type",
+  "attach_end_of_service_from_pifss_website",
+  "column_break_63",
+  "attach_on_end_of_service",
+  "rejection_details_section",
+  "reason_of_rejection",
+  "section_break_46",
+  "reference_number",
+  "column_break_37",
+  "registered_on",
+  "pifss_authorized_signatory_section",
+  "company_name",
+  "column_break_33",
+  "signatory_name",
+  "employee_details_section",
+  "employee",
+  "employee_name",
+  "first_name",
+  "second_name",
+  "third_name",
+  "last_name",
+  "relieving_date",
+  "column_break_13",
+  "civil_id",
+  "mobile",
+  "address",
+  "date_of_birth",
+  "nationality",
+  "position",
+  "salary",
+  "nationality_details_section",
+  "nationality_no",
+  "nationality_subject",
+  "column_break_41",
+  "date_of_naturalization",
+  "registration_details_section",
+  "date_of_joining",
+  "column_break_25",
+  "subscription_start_date",
+  "column_break_29",
+  "attachments_section",
+  "attach_signed_form",
+  "employment_contract",
+  "civil_id_copy",
+  "attach_resignationtermination",
+  "reason_for_resignationtermination",
+  "column_break_44",
+  "date_of_birth_certificate",
+  "nationality_proof",
+  "social_security_clearance",
+  "section_break_4",
+  "user",
+  "signature_date",
+  "employee_signature_date",
+  "authorized_signature",
+  "notify_for_signature",
+  "grd_operator",
+  "grd_supervisor",
+  "onboarding",
+  "amended_from",
+  "notify_grd_operator",
+  "pifss_website",
+  "more_information_section",
+  "onboard_employee",
+  "progress"
+ ],
+ "fields": [
+  {
+   "fieldname": "request_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Request Type",
+   "options": "\nRegistration\nEnd of Service",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nDraft\nPrinted\nPending by GRD\nAwaiting Response by PIFSS\nRejected\nUnder Process\nAccepted\nCompleted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "bold": 1,
+   "default": "REG-.{employee}.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "no_copy": 1,
+   "options": "REG-.{employee}.-\nEND-.{employee}.-",
+   "print_hide": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_details_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_first_name_in_arabic",
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_second_name_in_arabic",
+   "fieldname": "second_name",
+   "fieldtype": "Data",
+   "label": "Second Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_third_name_in_arabic",
+   "fieldname": "third_name",
+   "fieldtype": "Data",
+   "label": "Third Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "Civil ID",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.cell_number",
+   "fieldname": "mobile",
+   "fieldtype": "Data",
+   "label": "Mobile ",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.permanent_address",
+   "fieldname": "address",
+   "fieldtype": "Data",
+   "label": "Address",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "nationality_details_section",
+   "fieldtype": "Section Break",
+   "label": "Nationality Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.nationality_no",
+   "fieldname": "nationality_no",
+   "fieldtype": "Data",
+   "label": "Nationality No",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.nationality_subject",
+   "fieldname": "nationality_subject",
+   "fieldtype": "Data",
+   "label": "Nationality Subject",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.date_of_birth",
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.date_of_naturalization",
+   "fieldname": "date_of_naturalization",
+   "fieldtype": "Date",
+   "label": "Date of naturalization",
+   "read_only": 1
+  },
+  {
+   "fieldname": "registration_details_section",
+   "fieldtype": "Section Break",
+   "label": "Registration Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.date_of_joining",
+   "fieldname": "date_of_joining",
+   "fieldtype": "Data",
+   "label": "Date of Joining",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.date_of_joining",
+   "fieldname": "subscription_start_date",
+   "fieldtype": "Data",
+   "label": "Subscription Start Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_pam_designation",
+   "fieldname": "position",
+   "fieldtype": "Data",
+   "label": "PAM Designation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_33",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_basic_salary",
+   "fieldname": "salary",
+   "fieldtype": "Data",
+   "label": "Salary",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.request_type==\"End of Service\" && doc.workflow_state == \"Completed\" || doc.workflow_state ==\"Accepted\" && doc.request_type==\"End of Service\"",
+   "fieldname": "end_of_service_section",
+   "fieldtype": "Section Break",
+   "label": " End of Service"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.request_type == \"End of Service\" && doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
+   "fieldname": "attach_resignationtermination",
+   "fieldtype": "Attach",
+   "label": "Attach Resignation/Termination"
+  },
+  {
+   "fieldname": "column_break_37",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.request_type == \"End of Service\"",
+   "fieldname": "reason_for_resignationtermination",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Reason for Resignation/Termination"
+  },
+  {
+   "depends_on": "eval:doc.request_type==\"Registration\" && doc.workflow_state == \"Completed\" || doc.workflow_state ==\"Accepted\" && doc.request_type==\"Registration\"",
+   "fieldname": "registration_section",
+   "fieldtype": "Section Break",
+   "label": "Registration"
+  },
+  {
+   "fieldname": "column_break_41",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_signed_form",
+   "fieldtype": "Attach",
+   "label": "Attach 103 Signed Form"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
+   "fieldname": "civil_id_copy",
+   "fieldtype": "Attach",
+   "label": "Civil ID Copy"
+  },
+  {
+   "fieldname": "column_break_44",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
+   "fieldname": "date_of_birth_certificate",
+   "fieldtype": "Attach",
+   "label": "Date of Birth Certificate"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
+   "fieldname": "nationality_proof",
+   "fieldtype": "Attach",
+   "label": "Nationality Proof"
+  },
+  {
+   "depends_on": "company_name",
+   "fieldname": "signatory_name",
+   "fieldtype": "Select",
+   "label": "Signatory Name"
+  },
+  {
+   "columns": 2,
+   "depends_on": "pifss_authorized_signatory",
+   "fieldname": "user",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "User"
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_for_signature",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify for Signature"
+  },
+  {
+   "fieldname": "date_of_request",
+   "fieldtype": "Date",
+   "label": "Date Of Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date_of_registeration",
+   "fieldtype": "Date",
+   "label": "Date Of Registration",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date_of_acceptance",
+   "fieldtype": "Date",
+   "label": "Date Of Acceptance",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.request_type == \"Registration\" && doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
+   "fieldname": "employment_contract",
+   "fieldtype": "Attach",
+   "label": "Employment Contract"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.request_type == \"Registration\" && doc.workflow_state != \"Draft\" && doc.workflow_state != \"Form Printed\"",
+   "fieldname": "social_security_clearance",
+   "fieldtype": "Attach",
+   "label": "Social Security Clearance"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator",
+   "options": "User"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Supervisor",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_25",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_29",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "onboarding",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Onboarding",
+   "options": "User"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PIFSS Form 103",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_grd_operator",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify GRD Operator"
+  },
+  {
+   "fieldname": "signature_date",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Signature Date"
+  },
+  {
+   "fieldname": "employee_signature_date",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Employee Signature Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1,
+   "translatable": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.relieving_date",
+   "fieldname": "relieving_date",
+   "fieldtype": "Data",
+   "label": "Relieving Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_number",
+   "fieldtype": "Data",
+   "label": "PIFSS Reference Number"
+  },
+  {
+   "fieldname": "pifss_authorized_signatory_section",
+   "fieldtype": "Section Break",
+   "label": "PIFSS Authorized Signatory"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state != \"Draft\" && doc.workflow_state != \"Rejected\" && doc.workflow_state != \"Form Printed\"",
+   "fieldname": "section_break_46",
+   "fieldtype": "Section Break",
+   "label": "Reference Data"
+  },
+  {
+   "fieldname": "registered_on",
+   "fieldtype": "Datetime",
+   "label": "Apply On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_63",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pifss_is_under_process_on",
+   "fieldtype": "Datetime",
+   "label": "PIFSS Is Under Process On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "work_permit_type",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Work Permit Type"
+  },
+  {
+   "fieldname": "company_name",
+   "fieldtype": "Link",
+   "label": "Company Name",
+   "options": "PIFSS Authorized Signatory"
+  },
+  {
+   "fieldname": "authorized_signature",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "Authorized Signature"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "https://online.pifss.gov.kw/employer/ ",
+   "fieldname": "pifss_website",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "PIFSS website"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_end_of_service_from_pifss_website",
+   "fieldtype": "Attach",
+   "label": "Attach Status from PIFSS Website "
+  },
+  {
+   "fieldname": "attach_registration_from_pifss_website",
+   "fieldtype": "Attach",
+   "label": "Attach Status from PIFSS Website "
+  },
+  {
+   "depends_on": "eval:doc.workflow_state != \"Draft\"",
+   "fieldname": "attachments_section",
+   "fieldtype": "Section Break",
+   "label": "Attachments"
+  },
+  {
+   "fieldname": "attach_on_end_of_service",
+   "fieldtype": "Datetime",
+   "label": "Attach On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attach_on_registration",
+   "fieldtype": "Datetime",
+   "label": "Attach On",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_last_name_in_arabic",
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.status == \"Rejected\" ",
+   "fieldname": "rejection_details_section",
+   "fieldtype": "Section Break",
+   "label": "Rejection Details"
+  },
+  {
+   "fieldname": "reason_of_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason Of Rejection"
+  },
+  {
+   "fieldname": "more_information_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "More Information"
+  },
+  {
+   "fieldname": "progress",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Progress"
+  },
+  {
+   "fieldname": "onboard_employee",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Onboard Employee",
+   "options": "Onboard Employee"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-08-26 16:54:01.477324",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PIFSS Form 103",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Onboarding",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "civil_id"
+}

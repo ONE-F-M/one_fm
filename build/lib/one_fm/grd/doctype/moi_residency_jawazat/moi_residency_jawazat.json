@@ -1,0 +1,584 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-08-31 19:39:53.406596",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "amended_from",
+  "apply_for",
+  "column_break_6",
+  "reason_of_applying",
+  "section_break_8",
+  "employee",
+  "date_of_application",
+  "category",
+  "preparation",
+  "column_break_5",
+  "employee_id",
+  "centeralized_number",
+  "renewal_or_extend",
+  "completed_on",
+  "section_break_16",
+  "first_name_arabic",
+  "second_name_arabic",
+  "third_name_arabic",
+  "forth_name_in_arabic",
+  "last_name_arabic",
+  "column_break_15",
+  "first_name_english",
+  "second_name_english",
+  "third_name_english",
+  "forth_name",
+  "last_name_english",
+  "section_break_20",
+  "one_fm_civil_id",
+  "designation",
+  "place_of_birth",
+  "gender",
+  "birth_date",
+  "column_break_20",
+  "passport_number",
+  "passport_type",
+  "passport_issue_date",
+  "passport_expiry_date",
+  "pam_designation",
+  "nationality",
+  "residency_expiry_date",
+  "section_break_23",
+  "company_pam_file_number",
+  "company_centralized_number",
+  "company_trade_name",
+  "company_email_id",
+  "paci_number",
+  "governorate",
+  "column_break_36",
+  "company_location",
+  "company_block_number",
+  "company_street_name",
+  "company_building_name",
+  "company_contact_number",
+  "section_break_42",
+  "invoice_attachment",
+  "residency_attachment",
+  "new_residency_expiry_date",
+  "column_break_34",
+  "invoice_attachment_date",
+  "residency_attachment_date",
+  "new_residency_expiry_date_update_time",
+  "section_break_40",
+  "grd_operator",
+  "grd_supervisor",
+  "reminded_grd_operator",
+  "reminded_grd_operator_again"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "MOI-.YYYY.-",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Category",
+   "options": "First Time\nTransfer\nRenewal\nExtend\nCancellation"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "MOI Residency Jawazat",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_first_name_in_arabic",
+   "fieldname": "first_name_arabic",
+   "fieldtype": "Data",
+   "label": "First Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_second_name_in_arabic",
+   "fieldname": "second_name_arabic",
+   "fieldtype": "Data",
+   "label": "Second Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_third_name_in_arabic",
+   "fieldname": "third_name_arabic",
+   "fieldtype": "Data",
+   "label": "Third Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_last_name_in_arabic",
+   "fieldname": "last_name_arabic",
+   "fieldtype": "Data",
+   "label": "Last Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.first_name",
+   "fieldname": "first_name_english",
+   "fieldtype": "Data",
+   "label": "First Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.middle_name",
+   "fieldname": "second_name_english",
+   "fieldtype": "Data",
+   "label": "Second Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_third_name",
+   "fieldname": "third_name_english",
+   "fieldtype": "Data",
+   "label": "Third Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.last_name",
+   "fieldname": "last_name_english",
+   "fieldtype": "Data",
+   "label": "Last Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_20",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "one_fm_civil_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Civil ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Data",
+   "label": "Designation",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_place_of_birth",
+   "fieldname": "place_of_birth",
+   "fieldtype": "Data",
+   "label": "Place Of Birth",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.gender",
+   "fieldname": "gender",
+   "fieldtype": "Data",
+   "label": "Gender",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.date_of_birth",
+   "fieldname": "birth_date",
+   "fieldtype": "Data",
+   "label": "Birth Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_passport_type",
+   "fieldname": "passport_type",
+   "fieldtype": "Data",
+   "label": "Passport Type",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.date_of_issue",
+   "fieldname": "passport_issue_date",
+   "fieldtype": "Data",
+   "label": "Passport Issue Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.valid_upto",
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Data",
+   "label": "Passport Expiry Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_pam_designation",
+   "fieldname": "pam_designation",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "PAM Designation"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_23",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "company_pam_file_number",
+   "fieldtype": "Data",
+   "label": "Company PAM File Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company_trade_name",
+   "fieldtype": "Data",
+   "label": "Company Trade Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company_email_id",
+   "fieldtype": "Data",
+   "label": "Company Email ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "paci_number",
+   "fieldtype": "Data",
+   "label": "PACI Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "governorate",
+   "fieldtype": "Data",
+   "label": "Governorate",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_36",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company_location",
+   "fieldtype": "Data",
+   "label": "Company Location",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company_block_number",
+   "fieldtype": "Data",
+   "label": "Company Block Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company_street_name",
+   "fieldtype": "Data",
+   "label": "Company Street Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company_building_name",
+   "fieldtype": "Data",
+   "label": "Company Building Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_42",
+   "fieldtype": "Section Break",
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "invoice_attachment",
+   "fieldtype": "Attach",
+   "label": "Upload Payment Invoice",
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "residency_attachment",
+   "fieldtype": "Attach",
+   "label": "Upload Residency ",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "new_residency_expiry_date",
+   "fieldtype": "Date",
+   "label": "Updated Residency Expiry Date",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "column_break_34",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "invoice_attachment_date",
+   "fieldtype": "Data",
+   "label": "Upload Payment Invoice On",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "residency_attachment_date",
+   "fieldtype": "Data",
+   "label": "Upload Residency On",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "new_residency_expiry_date_update_time",
+   "fieldtype": "Data",
+   "label": "Date Updated On",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "completed_on",
+   "fieldtype": "Date",
+   "label": "Completed On",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_40",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "print_hide": 1
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "label": "GRD Operator",
+   "options": "User",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "label": "GRD Supervisor",
+   "options": "User",
+   "print_hide": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator",
+   "fieldtype": "Check",
+   "label": "Reminded GRD Operator",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator_again",
+   "fieldtype": "Check",
+   "label": "Reminded GRD Operator Again",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.category == 'Renewal' || doc.category == 'Extend' || doc.category == 'Transfer'\n",
+   "fieldname": "renewal_or_extend",
+   "fieldtype": "Data",
+   "label": "Type",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Preparation",
+   "options": "Preparation"
+  },
+  {
+   "fieldname": "company_contact_number",
+   "fieldtype": "Data",
+   "label": "Company Contact Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company_centralized_number",
+   "fieldtype": "Data",
+   "label": "Company Centralized Number",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_centralized_number",
+   "fieldname": "centeralized_number",
+   "fieldtype": "Data",
+   "label": "Centeralized Number",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date of Application",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.residency_expiry_date",
+   "fieldname": "residency_expiry_date",
+   "fieldtype": "Data",
+   "label": "Residency Expiry Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "apply_for",
+   "fieldtype": "Select",
+   "label": "Apply for",
+   "options": "\n1 \u0625\u0634\u0639\u0627\u0631\n14 \u0645\u0624\u0642\u062a\u0629\n18 \u0639\u0645\u0644 \u0623\u0647\u0644\u064a"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason_of_applying",
+   "fieldtype": "Select",
+   "label": "Reason Of Applying",
+   "options": "\n\u0639\u0645\u0644 \u0623\u0647\u0644\u064a\n\u0644\u0644\u0633\u064a\u0627\u062d\u0629"
+  },
+  {
+   "fieldname": "section_break_16",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "employee.one_fm_forth_name_in_arabic",
+   "fieldname": "forth_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Forth Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_forth_name",
+   "fieldname": "forth_name",
+   "fieldtype": "Data",
+   "label": "Forth Name",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-10-07 11:18:29.962985",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "MOI Residency Jawazat",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "date_of_application",
+ "sort_order": "DESC",
+ "title_field": "one_fm_civil_id",
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}

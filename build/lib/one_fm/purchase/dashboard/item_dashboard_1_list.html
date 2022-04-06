@@ -1,0 +1,180 @@
+{% for d in data %}
+	<div class="dashboard-list-item">
+		<div class="row">
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.rfm_status == 1 %}
+					<span class="indicator blue"></span>
+				{% else %}
+					<span class="indicator red"></span>
+				{% endif %}
+				<a data-type="rfm" data-name="{{ d.name }}">{{ d.name }}</a>
+			</div>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.rfp %}
+					{% if d.rfp_status == 1 %}
+						<span class="indicator blue"></span>
+					{% else %}
+						<span class="indicator red"></span>
+					{% endif %}
+					<a data-type="rfp"
+						data-name="{{ d.rfp }}">{{ d.rfp }}
+					</a>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.qcs %}
+					{% if d.qcs_status == 1 %}
+						<span class="indicator blue"></span>
+					{% else %}
+						<span class="indicator red"></span>
+					{% endif %}
+					<a data-type="qcs"
+						data-name="{{ d.qcs }}">{{ d.qcs }}
+					</a>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.po %}
+					{% if d.po_status == 1 %}
+						{% if d.po_workflow == "Approved" %}
+							<span class="indicator blue"></span>
+						{% endif %}
+						{% if d.po_workflow == "Pending Approval" %}
+							<span class="indicator green"></span>
+						{% endif %}
+					{% else %}
+						<span class="indicator red"></span>
+					{% endif %}
+					<a data-type="po"
+						data-name="{{ d.po }}">{{ d.po }}
+					</a>
+					<br/>
+					<!-- <a data-type="po_workflow"
+						data-name="{{ d.po }}">{{ d.po_workflow }}
+					</a> -->
+					<div class="btn-group">
+						<a data-type="po_workflow" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"
+							data-name="{{ d.po }}">{{ d.po_workflow }}
+						</a>
+						<!-- <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+							{{ d.po_workflow }}
+							<span class="caret"></span>
+						</button>
+						<ul role="menu" class="dropdown-menu">
+							<li>
+								<a>Approve</a>
+							</li>
+							<li>
+								<a>Reject</a>
+							</li>
+						</ul> -->
+					</div>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.pr %}
+					{% if d.pr_status == 1 %}
+						<span class="indicator blue"></span>
+					{% else %}
+						<span class="indicator red"></span>
+					{% endif %}
+					<a data-type="pr"
+						data-name="{{ d.pr }}">{{ d.pr }}
+					</a>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			<div class="col-sm-1 small">
+				{% if d.pr && !d.pi %}
+					<div class="btn btn-primary" data-type="pri" data-name="{{ d.pr }}">Invoice
+					</div>
+				{% else %}
+					{% if d.pr && d.pi %}
+						{% if d.pi_status == 1 %}
+							<span class="indicator blue"></span>
+						{% else %}
+							<span class="indicator red"></span>
+						{% endif %}
+						<a data-type="pi"
+							data-name="{{ d.pi }}">{{ d.pi }}
+						</a>
+					{% else %}
+						<span class="indicator darkgrey"></span>
+						<a style="font-size: 12px; color: #8d99a6;">
+							No Record found.
+						</a>
+					{% endif %}
+				{% endif %}
+			</div>
+			<div class="col-sm-1 small">
+				<div class="progress level" style="margin: 0px;">
+					<div class="progress-bar progress-bar-success" role="progressbar"
+						aria-valuenow={{d.progress}}
+						aria-valuemin="0" aria-valuemax="100" style="width: {{d.progress}}%; background-color: {{d.progress_bgc}};">
+					</div>
+				</div>
+				<!-- <span class="inline-graph">
+					<span class="inline-graph-half" title="{{ __("Reserved Qty") }}">
+						<span class="inline-graph-count">{{ d.total_reserved }}</span>
+						<span class="inline-graph-bar">
+							<span class="inline-graph-bar-inner"
+								style="width: {{ cint(Math.abs(d.total_reserved)/max_count * 100) || 5 }}%">
+							</span>
+						</span>
+					</span>
+					<span class="inline-graph-half" title="{{ __("Actual Qty {0} / Waiting Qty {1}", [d.actual_qty, d.pending_qty]) }}">
+						<span class="inline-graph-count">
+							{{ d.actual_qty }} {{ (d.pending_qty > 0) ? ("(" + d.pending_qty+ ")") : "" }}
+						</span>
+						<span class="inline-graph-bar">
+							<span class="inline-graph-bar-inner dark"
+								style="width: {{ cint(d.actual_qty/max_count * 100) }}%">
+							</span>
+							{% if d.pending_qty > 0 %}
+							<span class="inline-graph-bar-inner" title="{{ __("Projected Qty") }}"
+								style="width: {{ cint(d.pending_qty/max_count * 100) }}%">
+							</span>
+							{% endif %}
+						</span>
+					</span>
+				</span> -->
+			</div>
+			<!-- {% if can_write %}
+			<div class="col-sm-2 text-right" style="margin-top: 8px;">
+				{% if d.actual_qty %}
+				<button class="btn btn-default btn-xs btn-move"
+					data-disable_quick_entry="{{ d.disable_quick_entry }}"
+					data-warehouse="{{ d.warehouse }}"
+					data-actual_qty="{{ d.actual_qty }}"
+					data-item="{{ escape(d.item_code) }}">{{ __("Move") }}</a>
+				{% endif %}
+				<button style="margin-left: 7px;" class="btn btn-default btn-xs btn-add"
+					data-disable_quick_entry="{{ d.disable_quick_entry }}"
+					data-warehouse="{{ d.warehouse }}"
+					data-actual_qty="{{ d.actual_qty }}"
+					data-item="{{ escape(d.item_code) }}"
+					data-rate="{{ d.valuation_rate }}">{{ __("Add") }}</a>
+			</div>
+			{% endif %} -->
+		</div>
+	</div>
+{% endfor %}

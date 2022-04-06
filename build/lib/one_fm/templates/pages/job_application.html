@@ -1,0 +1,64 @@
+{% extends "templates/web.html" %}
+
+{% block breadcrumbs %}
+  {% include "templates/includes/breadcrumbs.html" %}
+{% endblock %}
+
+{% block script %}
+  <script>{% include "templates/pages/job_application.js" %}</script>
+  <meta http-equiv="cache-control" content="no-cache" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="-1" />
+{% endblock %}
+
+{% block header %}
+  <h5 id="job_opening" data="{{ frappe.form_dict.job_title }}">Dear applicant, for the position {{frappe.db.get_value('Job Opening', frappe.form_dict.job_title, 'designation')}}, enter your full name in English.</h5>
+{% endblock %}
+
+{% block page_content %}
+  <!-- Applicant Name Section -->
+  <div class="row">
+    <div class="col-sm-6">
+      <input type="text" class="form-control text-left applicant_name" placeholder="Enter Your Name" style="margin-top: 5px;display: inline-block">
+    </div>
+  </div>
+
+  <!-- Country List Section -->
+  <p style='margin-top: 30px' class="applicant_country"></p>
+
+  <div class="row applicant_country_section">
+    <div class="col-sm-6">
+      <select class="form-control country_list hide">
+        <option>Select Country</option>
+        {% for country in country_list %}
+          <option>{{country.name}}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <!-- Contact Section -->
+  <p style='margin-top: 30px' class="applicant_contact"></p>
+
+  <div class="row applicant_contact_section">
+    <div class="col-sm-6">
+      <input type="text" class="form-control text-left contact_number hide" placeholder="Enter Your Mobile Number" style="margin-top: 5px;display: inline-block">
+    </div>
+    <div class="col-sm-6">
+      <input type="text" class="form-control text-left contact_email hide" placeholder="Enter Your Email ID" style="margin-top: 5px;display: inline-block">
+    </div>
+  </div>
+
+  <!-- CV Section -->
+  <p style='margin-top: 30px' class="applicant_cv"></p>
+
+  <div class="row applicant_cv_section">
+    <div class="col-sm-6 cv-file hide" id="cv-file">
+      <input class="cv" type="file" id="cv"/>
+    </div>
+  </div>
+  <br/>
+  <div class="col-sm-12">
+    <button class="btn btn-primary btn-sm btn-submit-application" type="button">{{ _("Submit") }}</button>
+  </div>
+{% endblock %}

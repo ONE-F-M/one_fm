@@ -1,0 +1,62 @@
+{
+ "creation": "2020-12-12 08:08:36.376218",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "checkpoint_name",
+  "site",
+  "project",
+  "checkpoints_form",
+  "checkpoints_form_template"
+ ],
+ "fields": [
+  {
+   "fieldname": "checkpoint_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Checkpoint Name",
+   "options": "Checkpoints",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "checkpoint_name.site_name",
+   "fieldname": "site",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Site"
+  },
+  {
+   "fetch_from": "checkpoint_name.project_name",
+   "fieldname": "project",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Project"
+  },
+  {
+   "default": "0",
+   "fieldname": "checkpoints_form",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Checkpoints Form"
+  },
+  {
+   "fieldname": "checkpoints_form_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Checkpoints Form Template",
+   "options": "Checkpoints Form Template"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-12-26 11:35:02.386797",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Checkpoints Route Assignment Loose Schedule Child Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

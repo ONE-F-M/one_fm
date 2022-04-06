@@ -1,0 +1,67 @@
+{
+ "actions": [],
+ "creation": "2021-06-04 16:27:15.005308",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "child_name",
+  "child_name_in_arabic",
+  "age",
+  "work_status",
+  "married",
+  "health_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "age",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Age"
+  },
+  {
+   "fieldname": "work_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Work Status",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "married",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Married",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "health_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Health Status",
+   "options": "\nNondisabled\nDisable\nDisabled degress"
+  },
+  {
+   "fieldname": "child_name",
+   "fieldtype": "Data",
+   "label": "Name  "
+  },
+  {
+   "fieldname": "child_name_in_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name in Arabic"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-10-11 10:17:55.929243",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Children Details Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

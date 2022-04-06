@@ -1,0 +1,127 @@
+{
+ "autoname": "field:task",
+ "creation": "2021-01-15 19:07:22.937011",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "task",
+  "task_type",
+  "task_category",
+  "task_rate",
+  "task_time",
+  "manpower_requirement",
+  "object_link_section",
+  "object_category",
+  "object_type",
+  "object_material",
+  "tools_and_consumables_section",
+  "cleaning_tools",
+  "cleaning_consumables"
+ ],
+ "fields": [
+  {
+   "fieldname": "task",
+   "fieldtype": "Data",
+   "label": "Task",
+   "unique": 1
+  },
+  {
+   "fieldname": "task_type",
+   "fieldtype": "Select",
+   "label": "Task Type",
+   "options": "Instructions\nSpot Clean\nDeep Clean"
+  },
+  {
+   "depends_on": "eval: doc.task_type == 'Instructions'",
+   "fieldname": "task_category",
+   "fieldtype": "Select",
+   "label": "Task Category",
+   "options": "EMPTY AND FILL TIMES\nCLEAN-UP MATERIALS & EQUIPMENT AFTER USE\nCHANGE AND REPLACE\nCLEANING WORKER TRAVEL SPEEDS"
+  },
+  {
+   "depends_on": "eval: doc.task_type !== 'Instructions'",
+   "fieldname": "task_rate",
+   "fieldtype": "Float",
+   "label": "Task Rate (sq.m/hr)"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.task_type == 'Instructions'",
+   "fieldname": "task_time",
+   "fieldtype": "Time",
+   "label": "Task Time"
+  },
+  {
+   "depends_on": "eval: doc.task_type !== 'Instructions'",
+   "fieldname": "object_link_section",
+   "fieldtype": "Section Break",
+   "label": "Object Link"
+  },
+  {
+   "fieldname": "object_category",
+   "fieldtype": "Link",
+   "label": "Object Category",
+   "options": "Cleaning Object Category"
+  },
+  {
+   "fieldname": "object_type",
+   "fieldtype": "Link",
+   "label": "Object Type",
+   "options": "Cleaning Object Type"
+  },
+  {
+   "fieldname": "object_material",
+   "fieldtype": "Link",
+   "label": "Object Material",
+   "options": "Cleaning Object Material"
+  },
+  {
+   "fieldname": "tools_and_consumables_section",
+   "fieldtype": "Section Break",
+   "label": "Tools and Consumables"
+  },
+  {
+   "fieldname": "cleaning_tools",
+   "fieldtype": "Table",
+   "label": "Cleaning Tools",
+   "options": "Cleaning Master Tasks Tools Child Table"
+  },
+  {
+   "fieldname": "cleaning_consumables",
+   "fieldtype": "Table",
+   "label": "Cleaning Consumables",
+   "options": "Cleaning Master List Consumable Child Table"
+  },
+  {
+   "fieldname": "manpower_requirement",
+   "fieldtype": "Data",
+   "label": "Manpower Requirement"
+  }
+ ],
+ "modified": "2021-03-09 20:49:51.485969",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Cleaning Master Tasks",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}

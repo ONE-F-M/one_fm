@@ -1,0 +1,266 @@
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<style media="screen">
+    #invoice{
+    padding: 30px;
+}
+
+.invoice {
+    position: relative;
+    background-color: #FFF;
+    min-height: 680px;
+    padding: 15px
+}
+
+.invoice header {
+    padding: 10px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #3989c6
+}
+
+.invoice .company-details {
+    text-align: right
+}
+
+.invoice .company-details .name {
+    margin-top: 0;
+    margin-bottom: 0
+}
+
+.invoice .contacts {
+    margin-bottom: 20px
+}
+
+.invoice .invoice-to {
+    text-align: left
+}
+
+.invoice .invoice-to .to {
+    margin-top: 0;
+    margin-bottom: 0
+}
+
+.invoice .invoice-details {
+    text-align: right
+}
+
+.invoice .invoice-details .invoice-id {
+    margin-top: 0;
+    color: #3989c6
+}
+
+.invoice main {
+    padding-bottom: 50px
+}
+
+.invoice main .thanks {
+    margin-top: -100px;
+    font-size: 2em;
+    margin-bottom: 50px
+}
+
+.invoice main .notices {
+    padding-left: 6px;
+    border-left: 6px solid #3989c6
+}
+
+.invoice main .notices .notice {
+    font-size: 1.2em
+}
+
+.invoice table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin-bottom: 20px
+}
+
+.invoice table td,.invoice table th {
+    padding: 15px;
+    background: #eee;
+    border-bottom: 1px solid #fff
+}
+
+.invoice table th {
+    white-space: nowrap;
+    font-weight: 400;
+    font-size: 16px
+}
+
+.invoice table td h3 {
+    margin: 0;
+    font-weight: 400;
+    color: #3989c6;
+    font-size: 1.2em
+}
+
+.invoice table .qty,.invoice table .total,.invoice table .unit {
+    text-align: right;
+    font-size: 1.2em
+}
+
+.invoice table .no {
+    color: #fff;
+    font-size: 1.6em;
+    background: #3989c6
+}
+
+.invoice table .unit {
+    background: #ddd
+}
+
+.invoice table .total {
+    background: #3989c6;
+    color: #fff
+}
+
+.invoice table tbody tr:last-child td {
+    border: none
+}
+
+.invoice table tfoot td {
+    background: 0 0;
+    border-bottom: none;
+    white-space: nowrap;
+    text-align: right;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    border-top: 1px solid #aaa
+}
+
+.invoice table tfoot tr:first-child td {
+    border-top: none
+}
+
+.invoice table tfoot tr:last-child td {
+    color: #3989c6;
+    font-size: 1.4em;
+    border-top: 1px solid #3989c6
+}
+
+.invoice table tfoot tr td:first-child {
+    border: none
+}
+
+.invoice footer {
+    width: 100%;
+    text-align: center;
+    color: #777;
+    border-top: 1px solid #aaa;
+    padding: 8px 0
+}
+
+@media print {
+    .invoice {
+        font-size: 11px!important;
+        overflow: hidden!important
+    }
+
+    .invoice footer {
+        position: absolute;
+        bottom: 10px;
+        page-break-after: always
+    }
+
+    .invoice>div:last-child {
+        page-break-before: always
+    }
+}
+</style>
+
+<div id="invoice">
+
+    <div class="toolbar hidden-print">
+        <div class="text-right">
+            <!-- <button id="printInvoice" class="btn btn-info"><i class="fa fa-print"></i> Print</button>
+            <button class="btn btn-info"><i class="fa fa-file-pdf-o"></i> Export as PDF</button> -->
+        </div>
+        <hr>
+    </div>
+    <div class="invoice overflow-auto">
+        <div style="min-width: 600px">
+            <header>
+                <div class="row">
+                    <div class="col">
+                        <a target="_blank" href="https://lobianijs.com">
+                            <img src="#" data-holder-rendered="true" />
+                            </a>
+                    </div>
+                    <div class="col company-details">
+                        <h2 class="name">
+                            <a target="_blank" href="#">
+                            {{company}}
+                            </a>
+                        </h2>
+                        <!-- <div>455 Foggy Heights, AZ 85004, US</div>
+                        <div>(123) 456-789</div>
+                        <div>company@example.com</div> -->
+                    </div>
+                </div>
+            </header>
+            <main>
+                <div class="row contacts">
+                    <div class="col invoice-to">
+                        <div class="text-gray-light">DUE PURCHASE ORDERS:</div>
+                        <!-- <h2 class="to">John Doe</h2> -->
+                        <div class="address">The following Purchase Order payment schedules are due for payment.</div>
+                        <!-- <div class="email"><a href="mailto:john@example.com">john@example.com</a></div> -->
+                    </div>
+                    <div class="col invoice-details">
+                        <h1 class="invoice-id">Purchase Order</h1>
+                        <!-- <div class="date">Date of Invoice: 01/10/2018</div> -->
+                        <div class="date">Due Date: {{date.date()}}</div>
+                    </div>
+                </div>
+                <table border="0" cellspacing="0" cellpadding="0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th class="">PO. Name</th>
+                            <th class="">Supplier</th>
+                            <th class="">Term</th>
+                            <th>Due Date</th>
+                            <th class="">Invoice Portion</th>
+                            <th class="">Payment Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in items %}
+                        <tr>
+                            <td>{{loop.index}}</td>
+                            <td class=""> <a target="_blank" href="{{frappe.utils.get_url()+'/app/purchase-order/'}}{{i.doc}}">{{i.doc}}</a></td>
+                            <td class="">{{i.supplier_name}}</td>
+                            <td class="">{{i.payment_term}}</td>
+                            <td class="">{{i.due_date}}</td>
+                            <td class="">{{i.invoice_portion}}%</td>
+                            <td>{{frappe.utils.fmt_money(i.payment_amount, currency="KWD")}}</td>
+                        </tr>
+                        {% endfor %}
+
+                    </tbody>
+                    <br><br>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2"></td>
+                            <td colspan="2">TOTAL DUE</td>
+                            <td>{{frappe.utils.fmt_money(total, currency="KWD")}}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="thanks"></div>
+                <div class="notices">
+                    <br><br>
+                    <div>NOTICE:</div>
+                    <div class="notice">Please ensure to confirm the documents before proceeding, you can click on any of the name to open doucment.</div>
+                </div>
+            </main>
+            <footer>
+                <!-- Invoice was created on a computer and is valid without the signature and seal. -->
+            </footer>
+        </div>
+        <!--DO NOT DELETE THIS div. IT is responsible for showing footer always at the bottom-->
+        <div></div>
+    </div>
+</div>

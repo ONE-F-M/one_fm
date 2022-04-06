@@ -1,0 +1,174 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "creation": "2020-07-08 21:46:54.394374",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "accommodation",
+  "accommodation_name",
+  "type",
+  "floor_name",
+  "floor",
+  "accommodation_unit_code",
+  "column_break_3",
+  "owner_reference_number",
+  "paci",
+  "unit_qr",
+  "description_section",
+  "space_details",
+  "total_space",
+  "accommodation_meter_reading_section",
+  "water_and_electricity_consumption_billed_by",
+  "accommodation_meter_readings"
+ ],
+ "fields": [
+  {
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Accommodation",
+   "options": "Accommodation",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "floor_name.floor",
+   "fieldname": "floor",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Floor",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "paci",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "PACI"
+  },
+  {
+   "fieldname": "description_section",
+   "fieldtype": "Section Break",
+   "label": "Description"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Accommodation Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "accommodation_unit_code",
+   "fieldtype": "Data",
+   "label": "Unit Code",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "print_hide": 1
+  },
+  {
+   "fetch_from": "accommodation.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_name",
+   "fieldtype": "Data",
+   "label": "Accommodation Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "space_details",
+   "fieldtype": "Table",
+   "options": "Accommodation Unit Space Type"
+  },
+  {
+   "fieldname": "total_space",
+   "fieldtype": "Float",
+   "label": "Total Flat Space in m2"
+  },
+  {
+   "fieldname": "owner_reference_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Owner Reference Number"
+  },
+  {
+   "fieldname": "floor_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Floor",
+   "options": "Floor",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "unit_qr",
+   "fieldtype": "Data",
+   "label": "Unit QR"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accommodation_meter_reading_section",
+   "fieldtype": "Section Break",
+   "label": "Accommodation Unit Meter Reading"
+  },
+  {
+   "fieldname": "water_and_electricity_consumption_billed_by",
+   "fieldtype": "Select",
+   "label": "Water and Electricity Consumption Billed By",
+   "options": "\nThe Company\nThe Owner"
+  },
+  {
+   "depends_on": "eval:doc.water_and_electricity_consumption_billed_by == 'The Company'",
+   "fieldname": "accommodation_meter_readings",
+   "fieldtype": "Table",
+   "label": "Accommodation Unit Meter Readings",
+   "options": "Accommodation Meter Reading"
+  }
+ ],
+ "links": [],
+ "modified": "2020-11-16 08:47:03.706837",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Unit",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "accommodation, floor_name, accommodation_unit_code",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

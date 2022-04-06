@@ -1,0 +1,204 @@
+{
+ "autoname": "GPLR-.######",
+ "creation": "2020-05-30 15:44:23.152104",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "supplier_info_section",
+  "supplier_category",
+  "column_break_3",
+  "supplier_subcategory",
+  "column_break_5",
+  "supplier",
+  "supplier_name",
+  "candidate_info_section",
+  "gp_letter_candidates",
+  "gp_letter_request_info_section",
+  "sent_date",
+  "reminder1",
+  "reminder2",
+  "pid",
+  "column_break_15",
+  "upload_reminder1",
+  "upload_reminder2",
+  "upload_reminder3",
+  "upload_reminder4",
+  "column_break_19",
+  "gp_status",
+  "accept_date",
+  "excel_sheet_attachment",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "supplier_info_section",
+   "fieldtype": "Section Break",
+   "label": "Supplier Info"
+  },
+  {
+   "fieldname": "supplier_category",
+   "fieldtype": "Link",
+   "label": "Supplier Category",
+   "options": "Item Group"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "supplier_subcategory",
+   "fieldtype": "Link",
+   "label": "Supplier SubCategory",
+   "options": "Item Group"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "read_only": 1
+  },
+  {
+   "fieldname": "candidate_info_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate Info"
+  },
+  {
+   "fieldname": "gp_letter_candidates",
+   "fieldtype": "Table",
+   "label": "GP Letter Candidates",
+   "options": "GP Letter Candidates"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "GP Letter Request",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "gp_letter_request_info_section",
+   "fieldtype": "Section Break",
+   "label": "GP Letter Request Info"
+  },
+  {
+   "fieldname": "accept_date",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Request Travel Agency Accept Date / Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sent_date",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Request Sent Date / Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reminder1",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Request Sent Date / Time (Reminder 1)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reminder2",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Request Sent Date / Time (Reminder 2)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "excel_sheet_attachment",
+   "fieldtype": "Attach",
+   "label": "Excel Sheet Attachment"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier Name",
+   "options": "Supplier"
+  },
+  {
+   "fieldname": "pid",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "PID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gp_status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nAccept\nReject\nNo Response",
+   "read_only": 1
+  },
+  {
+   "fieldname": "upload_reminder1",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Upload Reminder Date / Time"
+  },
+  {
+   "fieldname": "upload_reminder2",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Upload Reminder 2 Date / Time"
+  },
+  {
+   "fieldname": "upload_reminder3",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Upload Reminder 3 Date / Time"
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "upload_reminder4",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Upload Reminder 4 Date / Time"
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2020-06-07 14:41:36.544136",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "GP Letter Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -1,0 +1,160 @@
+{
+ "creation": "2019-12-01 19:11:04.305718",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "home_section",
+  "home_section_title",
+  "home_section_body",
+  "about_us_section",
+  "about_us_section_title",
+  "about_us_section_body",
+  "services_section",
+  "services_data",
+  "clients_section",
+  "clients_section_title",
+  "clients_section_body",
+  "contact_us_section",
+  "address",
+  "phone",
+  "email",
+  "social_media_section",
+  "facebook",
+  "youtube",
+  "column_break_17",
+  "twitter",
+  "instagram"
+ ],
+ "fields": [
+  {
+   "fieldname": "about_us_section",
+   "fieldtype": "Section Break",
+   "label": "About Us"
+  },
+  {
+   "fieldname": "services_section",
+   "fieldtype": "Section Break",
+   "label": "Our Services"
+  },
+  {
+   "fieldname": "services_data",
+   "fieldtype": "Table",
+   "label": "Services data",
+   "options": "Services Subject"
+  },
+  {
+   "fieldname": "contact_us_section",
+   "fieldtype": "Section Break",
+   "label": "Contact Us"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Data",
+   "label": "Address"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "social_media_section",
+   "fieldtype": "Section Break",
+   "label": "Social Media"
+  },
+  {
+   "fieldname": "facebook",
+   "fieldtype": "Data",
+   "label": "Facebook"
+  },
+  {
+   "fieldname": "youtube",
+   "fieldtype": "Data",
+   "label": "Youtube"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "twitter",
+   "fieldtype": "Data",
+   "label": "Twitter"
+  },
+  {
+   "fieldname": "instagram",
+   "fieldtype": "Data",
+   "label": "Instagram"
+  },
+  {
+   "fieldname": "home_section",
+   "fieldtype": "Section Break",
+   "label": "Home"
+  },
+  {
+   "fieldname": "about_us_section_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section title"
+  },
+  {
+   "fieldname": "about_us_section_body",
+   "fieldtype": "Small Text",
+   "label": "Section Body"
+  },
+  {
+   "fieldname": "home_section_title",
+   "fieldtype": "Data",
+   "label": "Section title"
+  },
+  {
+   "fieldname": "home_section_body",
+   "fieldtype": "Small Text",
+   "label": "Section Body"
+  },
+  {
+   "fieldname": "clients_section",
+   "fieldtype": "Section Break",
+   "label": "Clients"
+  },
+  {
+   "fieldname": "clients_section_title",
+   "fieldtype": "Data",
+   "label": "Section title"
+  },
+  {
+   "fieldname": "clients_section_body",
+   "fieldtype": "Small Text",
+   "label": "Section Body"
+  }
+ ],
+ "hide_toolbar": 1,
+ "issingle": 1,
+ "modified": "2020-05-04 11:05:54.579816",
+ "modified_by": "omar.ja93@gmail.com",
+ "module": "One Fm",
+ "name": "Website Info",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

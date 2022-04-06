@@ -1,0 +1,137 @@
+{
+ "autoname": "format:{object_name}-{task}",
+ "creation": "2021-01-18 19:41:02.870130",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "object_name",
+  "size",
+  "space",
+  "object_category",
+  "object_type",
+  "object_material",
+  "task",
+  "task_rate",
+  "task_time",
+  "manpower_requirement",
+  "cleaning_tools",
+  "cleaning_consumables",
+  "section_break_13",
+  "object_task_time"
+ ],
+ "fields": [
+  {
+   "fetch_from": "object_name.size",
+   "fieldname": "size",
+   "fieldtype": "Read Only",
+   "label": "Size"
+  },
+  {
+   "fetch_from": "object_name.space",
+   "fieldname": "space",
+   "fieldtype": "Read Only",
+   "label": "Space"
+  },
+  {
+   "fetch_from": "object_name.object_category",
+   "fieldname": "object_category",
+   "fieldtype": "Read Only",
+   "label": "Object Category"
+  },
+  {
+   "fetch_from": "object_name.object_type",
+   "fieldname": "object_type",
+   "fieldtype": "Read Only",
+   "label": "Object Type"
+  },
+  {
+   "fetch_from": "object_name.object_material",
+   "fieldname": "object_material",
+   "fieldtype": "Read Only",
+   "label": "Object Material"
+  },
+  {
+   "fieldname": "task",
+   "fieldtype": "Link",
+   "label": "Task ",
+   "options": "Cleaning Master Tasks"
+  },
+  {
+   "fetch_from": "task.task_rate",
+   "fieldname": "task_rate",
+   "fieldtype": "Float",
+   "label": "Task Rate",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "task.task_time",
+   "fieldname": "task_time",
+   "fieldtype": "Time",
+   "label": "Task Time",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "task.manpower_requirement",
+   "fieldname": "manpower_requirement",
+   "fieldtype": "Read Only",
+   "label": "Manpower Requirement"
+  },
+  {
+   "fieldname": "cleaning_tools",
+   "fieldtype": "Table",
+   "label": "Cleaning Tools",
+   "options": "Cleaning Master Tasks Tools Child Table",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cleaning_consumables",
+   "fieldtype": "Table",
+   "label": "Cleaning Consumables",
+   "options": "Cleaning Master List Consumable Child Table",
+   "read_only": 1
+  },
+  {
+   "fieldname": "object_name",
+   "fieldtype": "Link",
+   "label": "Object Name",
+   "options": "Cleaning Objects"
+  },
+  {
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "object_task_time",
+   "fieldtype": "Time",
+   "label": "Object Task Time"
+  }
+ ],
+ "modified": "2021-03-10 19:31:46.795157",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Cleaning Object Tasks",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}

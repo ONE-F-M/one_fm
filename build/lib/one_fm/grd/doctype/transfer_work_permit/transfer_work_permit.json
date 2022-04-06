@@ -1,0 +1,55 @@
+{
+ "actions": [],
+ "creation": "2020-08-31 07:05:31.541129",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "work_permit_reference",
+  "status",
+  "reason_of_rejection",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "work_permit_reference",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Work Permit Reference"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Status"
+  },
+  {
+   "depends_on": "eval:doc.status == \"Rejected\"",
+   "fieldname": "reason_of_rejection",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reason of Rejection"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Transfer Work Permit",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2021-09-14 09:03:03.652906",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Transfer Work Permit",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

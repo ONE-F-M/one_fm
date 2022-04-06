@@ -1,0 +1,145 @@
+{
+ "actions": [],
+ "creation": "2021-09-26 14:45:44.788408",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "sec_br_1",
+  "from_shift",
+  "from_site",
+  "from_project",
+  "approver",
+  "approver_name",
+  "col_br_1",
+  "to_shift",
+  "to_site",
+  "to_project",
+  "requestor",
+  "requestor_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_br_1",
+   "fieldtype": "Section Break",
+   "label": "Assignment Changes"
+  },
+  {
+   "fieldname": "from_shift",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "From Shift",
+   "options": "Operations Shift",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "from_shift.site",
+   "fieldname": "from_site",
+   "fieldtype": "Data",
+   "label": "From Site",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "from_shift.project",
+   "fieldname": "from_project",
+   "fieldtype": "Data",
+   "label": "From Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "from_shift.supervisor_name",
+   "fieldname": "approver_name",
+   "fieldtype": "Data",
+   "label": "Approver Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_br_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "to_shift",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "To Shift",
+   "options": "Operations Shift",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "to_shift.site",
+   "fieldname": "to_site",
+   "fieldtype": "Data",
+   "label": "To Site",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "to_shift.project",
+   "fieldname": "to_project",
+   "fieldtype": "Data",
+   "label": "To Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "to_shift.supervisor_name",
+   "fieldname": "requestor_name",
+   "fieldtype": "Data",
+   "label": "Requestor Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "from_shift.supervisor",
+   "fieldname": "approver",
+   "fieldtype": "Link",
+   "label": "Approver",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "to_shift.supervisor",
+   "fieldname": "requestor",
+   "fieldtype": "Link",
+   "label": "Requestor",
+   "options": "Employee"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-09-26 16:01:13.543101",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Request Employee Assignment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

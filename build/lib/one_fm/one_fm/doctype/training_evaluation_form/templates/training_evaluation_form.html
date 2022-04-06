@@ -1,0 +1,71 @@
+{% extends "templates/web.html" %}
+{% block style %}
+<style>
+    {% include "templates/includes/training_evaluation_form/training_evaluation_form.css" %}
+</style>
+{% endblock %}
+{% block page_content %}
+<div class="t-center">
+    <h4>Training Evaluation Form</h4>
+</div>
+<br>
+<div id="parent-refs" data-ref="{{doc.name}}" data-training-event="{{doc.training_event}}" 
+    data-start-time="{{doc.start_time.strftime('%Y-%m-%d')}}" data-end-time="{{doc.end_time.strftime('%Y-%m-%d')}}">
+    <h6>Course Name: <u >{{doc.training_event}}</u></h6>
+    <h6>Date: <u>{{doc.start_time.strftime('%d-%m-%Y')}} to {{doc.end_time.strftime('%d-%m-%Y')}}</u></h6>
+    <h6>Instruction: Please indicate your level of agreement with statements listed below.</h6>
+</div>
+<br>
+<div class="table-responsive-sm">
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th class="t-center" scope="col">S. No.</td>
+                <th colspan="2" scope="col">Question</td>
+                <th class="t-center" scope="col">Strongly Agree</td>
+                <th class="t-center" scope="col">Agree</td>
+                <th class="t-center" scope="col">Neutral</td>
+                <th class="t-center" scope="col">Disagree</td>
+                <th class="t-center" scope="col">Strongly Disagree</td>
+            </tr>
+        </thead>
+
+        <tbody name="parent-wrapper">
+            {% for question in doc.questions %}
+            <tr>
+                <td class="t-center">{{question.idx}}</td>
+                <td colspan="2" scope="row">{{question.question}}</td>
+                <td class="t-center">
+                        <input type="radio" value="strongly_agree" name="{{question.idx}}">
+                </td>
+                <td class="t-center">
+                        <input type="radio" value="agree" name="{{question.idx}}">
+                </td>
+                <td class="t-center">
+                        <input type="radio" value="neutral" name="{{question.idx}}">
+                </td>
+                <td class="t-center">
+                        <input type="radio" value="disagree" name="{{question.idx}}">
+                </td>
+                <td class="t-center">
+                        <input type="radio" value="strongly_disagree" name="{{question.idx}}">
+                </td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td class="t-center" >{{ doc.questions|len + 1 }}</td>
+                <td colspan="2" scope="row">What aspects of the training can be improved?<br>or<br>Do you want to add any comments?</td>
+                <td colspan="5">
+                    <textarea class="form-control" name="additional_comments"></textarea>
+                </td>
+        </tbody>
+    </table>
+</div>
+<div class="t-center">
+    <button type="button" id="submit" class="btn btn-primary btn-submit">Submit Feedback</button>
+</div>
+{% endblock %}
+{% block script %}
+<script>{% include "templates/includes/training_evaluation_form/training_evaluation_form.js" %}</script>
+{% endblock %}
+<!-- this is a sample default web page template -->

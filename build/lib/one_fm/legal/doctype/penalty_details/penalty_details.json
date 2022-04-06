@@ -1,0 +1,178 @@
+{
+ "creation": "2020-06-16 19:02:22.679306",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "penalty_description_english",
+  "column_break_2",
+  "penalty_description_arabic",
+  "column_break_4",
+  "penalty_code",
+  "section_break_6",
+  "occurence_type1",
+  "occurence1",
+  "column_break_8",
+  "occurence_type2",
+  "occurence2",
+  "column_break_10",
+  "occurence_type3",
+  "occurence3",
+  "column_break_12",
+  "occurence_type4",
+  "occurence4",
+  "column_break_14",
+  "occurence_type5",
+  "occurence5",
+  "column_break_21",
+  "occurence_type6",
+  "occurence6"
+ ],
+ "fields": [
+  {
+   "fetch_from": "penalty_description_english.penalty_code",
+   "fieldname": "penalty_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Penalty Code"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "penalty_description_english",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Penalty Description English",
+   "options": "Penalty Type"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "penalty_description_english.penalty_name_arabic",
+   "fieldname": "penalty_description_arabic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Penalty Description Arabic"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "occurence_type1",
+   "fieldtype": "Select",
+   "label": "First Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "occurence_type2",
+   "fieldtype": "Select",
+   "label": "Second Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "occurence_type3",
+   "fieldtype": "Select",
+   "label": "Third Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "occurence_type4",
+   "fieldtype": "Select",
+   "label": "Fourth Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "occurence_type5",
+   "fieldtype": "Select",
+   "label": "Fifth Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "occurence_type6",
+   "fieldtype": "Select",
+   "label": "Sixth Occurence Type",
+   "options": "\nVerbal\nWritten\nDeduction\nTermination"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type1==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence1",
+   "fieldtype": "Float",
+   "label": "First Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type2==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence2",
+   "fieldtype": "Float",
+   "label": "Second Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type3==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence3",
+   "fieldtype": "Float",
+   "label": "Third Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type4==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence4",
+   "fieldtype": "Float",
+   "label": "Fourth Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type5==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence5",
+   "fieldtype": "Float",
+   "label": "Fifth Occurence"
+  },
+  {
+   "depends_on": "eval:doc.occurence_type6==\"Deduction\"",
+   "description": "In days",
+   "fieldname": "occurence6",
+   "fieldtype": "Float",
+   "label": "Sixth Occurence"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-09-24 21:06:44.493799",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Penalty Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

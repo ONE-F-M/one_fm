@@ -1,0 +1,56 @@
+{
+ "actions": [],
+ "creation": "2020-07-10 09:23:59.074764",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "accommodation_object",
+  "quantity",
+  "description",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "accommodation_object",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Accommodation Object",
+   "options": "Accommodation Object",
+   "reqd": 1
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Quantity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Accommodation Space Object",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2020-07-10 09:25:02.833601",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Space Object",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

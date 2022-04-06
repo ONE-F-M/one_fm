@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "creation": "2020-04-30 20:38:41.639703",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "document_required",
+  "required_when",
+  "or_required_when",
+  "column_break_3",
+  "type_of_copy",
+  "or_type_of_copy",
+  "not_mandatory"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_required",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Document Required",
+   "options": "Recruitment Document Required",
+   "reqd": 1
+  },
+  {
+   "fieldname": "required_when",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Required When",
+   "options": "\nPre Interview\nPost Interview\nPre Applying Visa\nPre Offer\nPost Offer\nOn Arrival",
+   "reqd": 1
+  },
+  {
+   "fieldname": "type_of_copy",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type of Copy",
+   "options": "\nSoft Copy\nHard Copy",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "or_required_when",
+   "fieldtype": "Select",
+   "label": "Or Required When",
+   "options": "\nPre Interview\nPost Interview\nPre Applying Visa\nPre Offer\nPost Offer\nOn Arrival"
+  },
+  {
+   "fieldname": "or_type_of_copy",
+   "fieldtype": "Select",
+   "label": "Or Type of Copy",
+   "options": "\nSoft Copy\nHard Copy"
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "not_mandatory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Not Mandatory"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-05-09 15:37:53.545442",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Recruitment Document",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

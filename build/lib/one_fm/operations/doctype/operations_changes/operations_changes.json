@@ -1,0 +1,72 @@
+{
+ "creation": "2020-05-22 22:30:44.153069",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "review_status",
+  "modified_on",
+  "column_break_3",
+  "modified_by_user",
+  "assigned_to",
+  "section_break_6",
+  "diff",
+  "message"
+ ],
+ "fields": [
+  {
+   "fieldname": "diff",
+   "fieldtype": "Code",
+   "label": "Diff"
+  },
+  {
+   "fieldname": "modified_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Modified on"
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Assigned to"
+  },
+  {
+   "fieldname": "review_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Review Status",
+   "options": "Pending\nApproved"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "modified_by_user",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Modified by"
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Small Text",
+   "label": "Change message"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-05-24 19:29:11.125030",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Operations Changes",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

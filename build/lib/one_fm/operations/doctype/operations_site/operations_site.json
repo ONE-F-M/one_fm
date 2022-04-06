@@ -1,0 +1,212 @@
+{
+ "actions": [],
+ "autoname": "field:site_name",
+ "creation": "2020-04-24 12:07:47.302499",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "project",
+  "column_break_2",
+  "section_break_4",
+  "site_name",
+  "site_location",
+  "column_break_7",
+  "account_supervisor",
+  "account_supervisor_name",
+  "site_allowance_section",
+  "include_site_allowance",
+  "allowance_amount",
+  "section_break_15",
+  "transport_required",
+  "column_break_17",
+  "rest_location",
+  "site_security_evaluation_section",
+  "entrance_and_exits",
+  "reception",
+  "number_of_floors",
+  "column_break_23",
+  "area",
+  "neighbours",
+  "camerascctvcontrol_room",
+  "poc_list_section",
+  "contact_html",
+  "poc",
+  "changes_log"
+ ],
+ "fields": [
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break",
+   "label": "Site Details"
+  },
+  {
+   "fieldname": "site_name",
+   "fieldtype": "Data",
+   "label": "Site Name",
+   "unique": 1
+  },
+  {
+   "fieldname": "site_location",
+   "fieldtype": "Link",
+   "label": "Site Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "account_supervisor",
+   "fieldtype": "Link",
+   "label": "Site Supervisor",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "section_break_15",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "transport_required",
+   "fieldtype": "Select",
+   "label": "Transport Required",
+   "options": "Yes\nNo"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rest_location",
+   "fieldtype": "Select",
+   "label": "Rest Location",
+   "options": "Lockers\nRest Room\nBreak Room\nWater"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "site_security_evaluation_section",
+   "fieldtype": "Section Break",
+   "label": "Site Security Evaluation"
+  },
+  {
+   "fieldname": "entrance_and_exits",
+   "fieldtype": "Int",
+   "label": "Entrances & Exits"
+  },
+  {
+   "fieldname": "reception",
+   "fieldtype": "Data",
+   "label": "Reception"
+  },
+  {
+   "fieldname": "number_of_floors",
+   "fieldtype": "Int",
+   "label": "Number of Floors"
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "area",
+   "fieldtype": "Data",
+   "label": "Area"
+  },
+  {
+   "fieldname": "neighbours",
+   "fieldtype": "Data",
+   "label": "Neighbours"
+  },
+  {
+   "fieldname": "camerascctvcontrol_room",
+   "fieldtype": "Data",
+   "label": "Cameras/CCTV/Control Room"
+  },
+  {
+   "fieldname": "poc_list_section",
+   "fieldtype": "Section Break",
+   "label": "POC List"
+  },
+  {
+   "fetch_from": "account_supervisor.employee_name",
+   "fieldname": "account_supervisor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "poc",
+   "fieldtype": "Table",
+   "label": "POC",
+   "options": "POC"
+  },
+  {
+   "fieldname": "changes_log",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Changes Log",
+   "options": "Operations Changes",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contact_html",
+   "fieldtype": "HTML",
+   "label": "Contact Html"
+  },
+  {
+   "default": "0",
+   "fieldname": "include_site_allowance",
+   "fieldtype": "Check",
+   "label": "Include Site Allowance"
+  },
+  {
+   "depends_on": "eval:doc.include_site_allowance==\"1\";",
+   "fieldname": "allowance_amount",
+   "fieldtype": "Currency",
+   "label": "Allowance Amount"
+  },
+  {
+   "fieldname": "site_allowance_section",
+   "fieldtype": "Section Break",
+   "label": "Site Allowance"
+  }
+ ],
+ "links": [],
+ "modified": "2021-10-18 14:15:30.537669",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Operations Site",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}

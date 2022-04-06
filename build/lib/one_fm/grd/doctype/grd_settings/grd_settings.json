@@ -1,0 +1,66 @@
+{
+ "creation": "2020-08-21 15:28:44.847979",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_1",
+  "default_grd_supervisor",
+  "default_grd_operator",
+  "default_grd_operator_pifss",
+  "default_grd_operator_transfer"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "default_grd_supervisor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Default GRD Supervisor",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "default_grd_operator",
+   "fieldtype": "Link",
+   "label": "Default GRD Operator (Renewal)",
+   "options": "User"
+  },
+  {
+   "fieldname": "default_grd_operator_pifss",
+   "fieldtype": "Link",
+   "label": "Default GRD Operator (PIFSS)",
+   "options": "User"
+  },
+  {
+   "fieldname": "default_grd_operator_transfer",
+   "fieldtype": "Link",
+   "label": "Default GRD Operator (Transfer)",
+   "options": "User"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2021-06-30 13:16:44.299264",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "GRD Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

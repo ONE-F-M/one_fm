@@ -1,0 +1,140 @@
+{
+ "creation": "2020-07-28 11:11:40.087475",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "erf_settings_section",
+  "erf_approver",
+  "unplanned_erf_approver",
+  "hr_for_a_quick_workshop",
+  "hrm_to_fill_hr_and_salary_compensation",
+  "close_erf_automatically",
+  "default_hr_user",
+  "column_break_5",
+  "do_not_notify_requester",
+  "notify_gsd_on_erf_approval",
+  "performance_profile_resource",
+  "performance_profile_guid",
+  "job_offer_section",
+  "notify_finance_department_for_job_offer_salary_advance",
+  "job_applicaion_section",
+  "easy_apply_to"
+ ],
+ "fields": [
+  {
+   "fieldname": "erf_settings_section",
+   "fieldtype": "Section Break",
+   "label": "ERF Settings"
+  },
+  {
+   "fieldname": "unplanned_erf_approver",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Unplanned ERF Approver",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "performance_profile_resource",
+   "fieldtype": "Attach",
+   "label": "Resource to Create Performance Profile"
+  },
+  {
+   "fieldname": "performance_profile_guid",
+   "fieldtype": "Attach",
+   "label": "Guid to Create Performance Profile"
+  },
+  {
+   "fieldname": "erf_approver",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "ERF Approver",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "hr_for_a_quick_workshop",
+   "fieldtype": "Link",
+   "label": "HRM For a Quick Workshop to Create Performance Profile",
+   "options": "User"
+  },
+  {
+   "fieldname": "notify_gsd_on_erf_approval",
+   "fieldtype": "Data",
+   "label": "Notify GSD on ERF Approval",
+   "options": "Email"
+  },
+  {
+   "fieldname": "job_offer_section",
+   "fieldtype": "Section Break",
+   "label": "Job Offer"
+  },
+  {
+   "fieldname": "notify_finance_department_for_job_offer_salary_advance",
+   "fieldtype": "Data",
+   "label": "Notify Finance Department for Job Offer Salary Advance",
+   "options": "Email"
+  },
+  {
+   "fieldname": "hrm_to_fill_hr_and_salary_compensation",
+   "fieldtype": "Link",
+   "label": "HRM to Fill HR and Salary Compensation",
+   "options": "User"
+  },
+  {
+   "fieldname": "job_applicaion_section",
+   "fieldtype": "Section Break",
+   "label": "Job Applicaion"
+  },
+  {
+   "fieldname": "easy_apply_to",
+   "fieldtype": "Data",
+   "label": "Easy Apply to",
+   "options": "Email"
+  },
+  {
+   "default": "0",
+   "fieldname": "do_not_notify_requester",
+   "fieldtype": "Check",
+   "label": "Do Not Notify Requester"
+  },
+  {
+   "default": "0",
+   "description": "Close ERF Automatically on Employee Creation with ERF Reference or Number of Employee Selection in ERF.",
+   "fieldname": "close_erf_automatically",
+   "fieldtype": "Check",
+   "label": "Close ERF Automatically"
+  },
+  {
+   "fieldname": "default_hr_user",
+   "fieldtype": "Link",
+   "label": "Default HR User",
+   "options": "User"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2021-06-15 14:41:04.325648",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Hiring Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

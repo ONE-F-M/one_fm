@@ -1,0 +1,223 @@
+{
+ "actions": [],
+ "autoname": "LI-.######",
+ "creation": "2020-07-03 08:48:49.061434",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_doctype",
+  "column_break_3",
+  "reference_docname",
+  "investigation_details_section",
+  "investigation_subject",
+  "investigation_lead",
+  "lead_name",
+  "lead_user",
+  "column_break_6",
+  "start_date",
+  "end_date",
+  "damages_section",
+  "company_damage",
+  "asset_damage",
+  "column_break_15",
+  "customer_property_damage",
+  "other_damages",
+  "section_break_9",
+  "legal_investigation_employees",
+  "results_section",
+  "investigation_results",
+  "sessions_section",
+  "sessions_details",
+  "session_summary",
+  "penalty_issuing_section",
+  "legal_investigation_penalty",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "investigation_details_section",
+   "fieldtype": "Section Break",
+   "label": "Investigation Details"
+  },
+  {
+   "fieldname": "investigation_subject",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_standard_filter": 1,
+   "label": "Investigation Subject"
+  },
+  {
+   "fieldname": "investigation_lead",
+   "fieldtype": "Link",
+   "label": "Investigation Lead",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "investigation_lead.employee_name",
+   "fieldname": "lead_name",
+   "fieldtype": "Data",
+   "label": "Lead name",
+   "read_only": 1
+  },
+  {
+   "description": "Select 2 days from today.",
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break",
+   "label": "Investigation Parties"
+  },
+  {
+   "fieldname": "legal_investigation_employees",
+   "fieldtype": "Table",
+   "label": "Legal Investigation Employees",
+   "options": "Legal Investigation Employees"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "results_section",
+   "fieldtype": "Section Break",
+   "label": "Results"
+  },
+  {
+   "fieldname": "investigation_results",
+   "fieldtype": "Small Text",
+   "label": "Investigation Results"
+  },
+  {
+   "fieldname": "sessions_section",
+   "fieldtype": "Section Break",
+   "label": "Sessions",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sessions_details",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "penalty_issuing_section",
+   "fieldtype": "Section Break",
+   "label": "Penalty Issuing"
+  },
+  {
+   "fieldname": "legal_investigation_penalty",
+   "fieldtype": "Table",
+   "label": "Legal Investigation Penalty",
+   "options": "Legal Investigation Penalty"
+  },
+  {
+   "fieldname": "session_summary",
+   "fieldtype": "Table",
+   "label": "Session Summary",
+   "options": "Legal Investigation Sessions",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Legal Investigation",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "lead_user",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Investigation Lead User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Select",
+   "label": "Reference Document",
+   "options": "\nPenalty\nPenalty Issuance\nPIFSS Monthly Deduction"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_docname",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "damages_section",
+   "fieldtype": "Section Break",
+   "label": "Damages"
+  },
+  {
+   "default": "0",
+   "fieldname": "company_damage",
+   "fieldtype": "Check",
+   "label": "Company Damage"
+  },
+  {
+   "default": "0",
+   "fieldname": "asset_damage",
+   "fieldtype": "Check",
+   "label": "Asset Damage"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "customer_property_damage",
+   "fieldtype": "Check",
+   "label": "Customer Property Damage"
+  },
+  {
+   "default": "0",
+   "fieldname": "other_damages",
+   "fieldtype": "Check",
+   "label": "Other Damages"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-10-05 12:52:43.971762",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Legal Investigation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "investigation_subject,reference_docname",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

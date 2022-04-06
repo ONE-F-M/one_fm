@@ -1,0 +1,202 @@
+{
+ "autoname": "format:SC-{department_code}-{YYYY}-{MM}-{#####}",
+ "creation": "2019-12-15 15:05:12.891397",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_request",
+  "employee",
+  "employee_name",
+  "department",
+  "department_code",
+  "project",
+  "site",
+  "delivery_note",
+  "purchase_order",
+  "column_break_6",
+  "posting_date",
+  "item_request_date",
+  "priority",
+  "nature_of_demand",
+  "budgeted",
+  "section_break_11",
+  "item_coding",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_request",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item Request Code",
+   "options": "Item Request",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Stock Check",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_request.employee",
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_request.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_request.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_request.site",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "item_request.posting_date",
+   "fieldname": "item_request_date",
+   "fieldtype": "Date",
+   "label": "Item Request Date",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_request.priority",
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority",
+   "options": "\nNormal\nUrgent\nCritic",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_request.nature_of_demand",
+   "fieldname": "nature_of_demand",
+   "fieldtype": "Select",
+   "label": "Nature Of Demand",
+   "options": "\nAssets\nConsumables\nServices\nOthers",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.item_request",
+   "fieldname": "section_break_11",
+   "fieldtype": "Section Break",
+   "label": "Item Coding"
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_coding",
+   "fieldtype": "Table",
+   "label": "Item Coding",
+   "options": "Item Coding",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_request.budgeted",
+   "fieldname": "budgeted",
+   "fieldtype": "Select",
+   "label": "Is the request budgeted",
+   "options": "\nYes\nNo",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_note",
+   "fieldtype": "Link",
+   "label": "Delivery Note",
+   "options": "Delivery Note",
+   "read_only": 1
+  },
+  {
+   "fieldname": "purchase_order",
+   "fieldtype": "Link",
+   "label": "Purchase Order",
+   "options": "Purchase Order",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_request.department",
+   "fieldname": "department",
+   "fieldtype": "Data",
+   "label": "Department",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_request.department_code",
+   "fieldname": "department_code",
+   "fieldtype": "Data",
+   "label": "Department Code",
+   "read_only": 1,
+   "reqd": 1
+  }
+ ],
+ "in_create": 1,
+ "is_submittable": 1,
+ "modified": "2020-05-05 18:38:47.160370",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Stock Check",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

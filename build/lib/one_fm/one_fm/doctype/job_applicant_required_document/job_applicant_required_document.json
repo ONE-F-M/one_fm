@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "creation": "2020-05-09 14:44:19.884522",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "document_required",
+  "required_when",
+  "or_required_when",
+  "attach",
+  "column_break_3",
+  "type_of_copy",
+  "or_type_of_copy",
+  "not_mandatory",
+  "received",
+  "exception",
+  "reason_for_exception"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_required",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Document Required",
+   "options": "Recruitment Document Required",
+   "reqd": 1
+  },
+  {
+   "fieldname": "required_when",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Required When",
+   "options": "\nPre Interview\nPost Interview\nPre Applying Visa\nPre Offer\nPost Offer\nOn Arrival"
+  },
+  {
+   "fieldname": "or_required_when",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Or Required When",
+   "options": "\nPre Interview\nPost Interview\nPre Applying Visa\nPre Offer\nPost Offer\nOn Arrival"
+  },
+  {
+   "fieldname": "attach",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Attach"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "type_of_copy",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Type of Copy",
+   "options": "\nSoft Copy\nHard Copy"
+  },
+  {
+   "fieldname": "or_type_of_copy",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Or Type of Copy",
+   "options": "\nSoft Copy\nHard Copy"
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "not_mandatory",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Not Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "received",
+   "fieldtype": "Check",
+   "label": "Received"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: !doc.received",
+   "fieldname": "exception",
+   "fieldtype": "Check",
+   "label": "Exception"
+  },
+  {
+   "depends_on": "eval: doc.exception && !doc.received",
+   "fieldname": "reason_for_exception",
+   "fieldtype": "Small Text",
+   "label": "Reason for Exception"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2021-12-26 18:34:04.603011",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Job Applicant Required Document",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

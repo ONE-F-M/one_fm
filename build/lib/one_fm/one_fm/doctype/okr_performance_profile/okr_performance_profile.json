@@ -1,0 +1,127 @@
+{
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:okr_title",
+ "creation": "2020-05-07 21:32:02.989055",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "okr_title_section",
+  "okr_title",
+  "company_objective",
+  "help_section",
+  "help_text",
+  "objectives_and_key_results_section",
+  "description",
+  "objective_description",
+  "objectives",
+  "key_results"
+ ],
+ "fields": [
+  {
+   "default": "Please write A short Description of the Job that connects with his primary objectives",
+   "fieldname": "description",
+   "fieldtype": "Small Text"
+  },
+  {
+   "fieldname": "okr_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "OKR Performance Profile Title",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "key_results",
+   "fieldtype": "Table",
+   "label": "Below are the Key results you would need to achieve to reach the primary objectives in the given time frame",
+   "options": "OKR Performance Profile Key Result",
+   "reqd": 1
+  },
+  {
+   "fieldname": "objectives",
+   "fieldtype": "Table",
+   "label": "Your Primary Objective is are as below",
+   "options": "OKR Performance Profile Objective",
+   "reqd": 1
+  },
+  {
+   "fieldname": "objective_description",
+   "fieldtype": "HTML",
+   "hidden": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "help_section",
+   "fieldtype": "Section Break",
+   "label": "You should ask these questions before you fill the OKR"
+  },
+  {
+   "fieldname": "help_text",
+   "fieldtype": "HTML",
+   "label": "Help Text",
+   "options": "<p style=\"font-size: 12px; color: #8d99a6;\">Objective:</p>\n<ol>\n<li style=\"font-size: 12px; color: #8d99a6;\">On this job what types of projects and tasks would this person be assigned?</li>\n<li style=\"font-size: 12px; color: #8d99a6;\">Why would a top person who's not looking, would see this as a better career opportunity than the person's current role or some competing opportunity for other than a big monetary increase?</li>\n</ol>\n<p style=\"font-size: 12px; color: #8d99a6;\">Key Results:</p>\n<ol>\n<li style=\"font-size: 12px; color: #8d99a6;\">What the candidate would need to accomplish in doing this work that indicates this person is a great performer?</li>\n</ol>"
+  },
+  {
+   "fieldname": "objectives_and_key_results_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "okr_title_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "company_objective",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Company Objective"
+  }
+ ],
+ "modified": "2020-12-20 14:06:40.492764",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "OKR Performance Profile",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

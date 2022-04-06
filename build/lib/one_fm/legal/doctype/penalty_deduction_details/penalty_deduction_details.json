@@ -1,0 +1,64 @@
+{
+ "creation": "2021-02-04 11:30:17.175066",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "issuance_time",
+  "column_break_2",
+  "deduction_days",
+  "column_break_4",
+  "damages_amount",
+  "column_break_6",
+  "total_deduction_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "issuance_time",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Issuance time"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "deduction_days",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Deduction Days"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "damages_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Damages Amount"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_deduction_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Deduction Amount"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-02-04 11:30:17.175066",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Penalty Deduction Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

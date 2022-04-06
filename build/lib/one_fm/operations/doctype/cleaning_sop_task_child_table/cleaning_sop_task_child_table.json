@@ -1,0 +1,78 @@
+{
+ "creation": "2021-02-20 08:15:06.871786",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "doctype_link",
+  "task_name",
+  "object_name",
+  "size",
+  "space",
+  "object_task_time",
+  "is_instruction"
+ ],
+ "fields": [
+  {
+   "fieldname": "task_name",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Task Name",
+   "options": "doctype_link"
+  },
+  {
+   "fieldname": "object_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Object Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "size",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Size",
+   "read_only": 1
+  },
+  {
+   "fieldname": "space",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Space",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "object_task_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Object Task Time",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_instruction",
+   "fieldtype": "Check",
+   "label": "Is Instruction"
+  },
+  {
+   "default": "Cleaning Object Tasks",
+   "fieldname": "doctype_link",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Doctype Link",
+   "options": "DocType"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-03-11 19:00:23.017210",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Cleaning SOP Task Child Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

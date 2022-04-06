@@ -1,0 +1,57 @@
+{
+ "creation": "2020-12-20 14:24:47.439231",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "objective",
+  "key_result",
+  "update",
+  "issues"
+ ],
+ "fields": [
+  {
+   "fieldname": "objective",
+   "fieldtype": "Data",
+   "label": "Objective"
+  },
+  {
+   "fieldname": "key_result",
+   "fieldtype": "Data",
+   "label": "Key Result"
+  },
+  {
+   "fieldname": "issues",
+   "fieldtype": "Long Text",
+   "label": "Issues"
+  },
+  {
+   "fieldname": "update",
+   "fieldtype": "Long Text",
+   "label": "Update"
+  }
+ ],
+ "modified": "2020-12-20 14:25:48.441469",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "OKR Check In Child Table",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

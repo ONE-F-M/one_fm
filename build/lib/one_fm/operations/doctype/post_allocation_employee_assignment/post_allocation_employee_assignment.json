@@ -1,0 +1,71 @@
+{
+ "creation": "2021-01-26 11:04:53.489806",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "post",
+  "column_break_4",
+  "employee",
+  "employee_name",
+  "column_break_6",
+  "match_percentage",
+  "skill_score"
+ ],
+ "fields": [
+  {
+   "fieldname": "post",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Post",
+   "options": "Operations Post"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "skill_score",
+   "fieldtype": "Small Text",
+   "label": "Skill score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "match_percentage",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Match Percentage",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-04-20 11:06:34.886644",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Post Allocation Employee Assignment",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

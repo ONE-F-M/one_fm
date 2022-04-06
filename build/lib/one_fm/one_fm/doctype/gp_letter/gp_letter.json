@@ -1,0 +1,323 @@
+{
+ "autoname": "GPL-.######",
+ "creation": "2020-05-30 13:12:47.470311",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "candidate_name",
+  "column_break_3",
+  "posting_date",
+  "supplier_info_section",
+  "supplier_category",
+  "column_break_7",
+  "supplier_subcategory",
+  "column_break_9",
+  "supplier",
+  "supplier_name",
+  "gp_letter_info_section",
+  "passport_attachment",
+  "gp_letter_attachment",
+  "gp_letter_attachment_date",
+  "column_break_12",
+  "gp_status",
+  "gp_letter_request_reference",
+  "gp_letter_request_date",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "GP Letter",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supplier_info_section",
+   "fieldtype": "Section Break",
+   "label": "Supplier Info"
+  },
+  {
+   "fieldname": "supplier_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Supplier Category",
+   "options": "Supplier Group",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supplier_subcategory",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Supplier SubCategory",
+   "options": "Supplier Group",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gp_letter_info_section",
+   "fieldtype": "Section Break",
+   "label": "GP Letter Info"
+  },
+  {
+   "fieldname": "passport_attachment",
+   "fieldtype": "Attach",
+   "label": "Passport Attachment"
+  },
+  {
+   "fieldname": "gp_letter_attachment",
+   "fieldtype": "Attach",
+   "label": "GP Letter Attachment",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gp_letter_request_reference",
+   "fieldtype": "Link",
+   "label": "GP Letter Request Reference",
+   "options": "GP Letter Request"
+  },
+  {
+   "fieldname": "gp_letter_request_date",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Request Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "Supplier.supplier_name",
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier Name",
+   "options": "Supplier",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gp_status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nAccept\nReject",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gp_letter_attachment_date",
+   "fieldtype": "Datetime",
+   "label": "GP Letter Attachment Date",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2021-03-17 13:05:04.949813",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "GP Letter",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Travel Agency",
+   "share": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Travel Agency",
+   "share": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Travel Agency",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

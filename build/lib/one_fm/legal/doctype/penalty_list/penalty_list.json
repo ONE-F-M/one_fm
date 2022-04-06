@@ -1,0 +1,109 @@
+{
+ "doctype": "DocType",
+ "modified": "2020-06-16 19:29:55.042070",
+ "autoname": "PNLTY.#####",
+ "sort_field": "modified",
+ "field_order": [
+  "active",
+  "column_break_2",
+  "start_date",
+  "column_break_4",
+  "end_date",
+  "column_break_6",
+  "duration",
+  "section_break_8",
+  "penalty_details",
+  "section_break_9",
+  "notes",
+  "attachment"
+ ],
+ "creation": "2020-06-16 18:58:45.473467",
+ "quick_entry": 1,
+ "modified_by": "Administrator",
+ "editable_grid": 1,
+ "fields": [
+  {
+   "fieldtype": "Check",
+   "default": "0",
+   "fieldname": "active",
+   "label": "Active"
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_break_2"
+  },
+  {
+   "fieldtype": "Date",
+   "in_standard_filter": 1,
+   "fieldname": "start_date",
+   "label": "Start Date",
+   "in_list_view": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_break_4"
+  },
+  {
+   "fieldtype": "Date",
+   "in_standard_filter": 1,
+   "fieldname": "end_date",
+   "label": "End Date",
+   "in_list_view": 1
+  },
+  {
+   "fieldtype": "Column Break",
+   "fieldname": "column_break_6"
+  },
+  {
+   "fieldtype": "Int",
+   "description": "In years",
+   "fieldname": "duration",
+   "label": "Duration",
+   "in_list_view": 1
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_break_8"
+  },
+  {
+   "fieldtype": "Section Break",
+   "fieldname": "section_break_9"
+  },
+  {
+   "fieldtype": "Small Text",
+   "fieldname": "notes",
+   "label": "Notes"
+  },
+  {
+   "fieldtype": "Attach",
+   "fieldname": "attachment",
+   "label": "Attachment"
+  },
+  {
+   "fieldtype": "Table",
+   "options": "Penalty Details",
+   "fieldname": "penalty_details",
+   "label": "Penalty Details"
+  }
+ ],
+ "sort_order": "DESC",
+ "owner": "Administrator",
+ "track_changes": 1,
+ "name": "Penalty List",
+ "permissions": [
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "email": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "module": "Legal",
+ "engine": "InnoDB"
+}

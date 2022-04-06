@@ -1,0 +1,49 @@
+{% extends "templates/web.html" %}
+
+{% block breadcrumbs %}
+  {% include "templates/includes/breadcrumbs.html" %}
+{% endblock %}
+
+{% block script %}
+  	<script>
+  		{% include 'templates/pages/career_history.js' %}
+	</script>
+{% endblock %}
+{% block header %}
+<head>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Facilities Management | Career History</title>
+	<link rel="stylesheet" href="assets/one_fm/assets/css/career_history.css">
+</head>
+{% endblock %}
+
+{% block page_content %}
+<!DOCTYPE html>
+<html lang="en">
+<body>
+<div class="intro_section">
+		<img class="back_illustration" src="assets/one_fm/assets/img/career-history/clip-career-boost.png"/>
+<div class="intro">
+
+</div>
+<button class="btn btn-primary btn-lg btn-intro-next" type="button">Okay!</button>
+</div>
+
+	<br/>
+	<div class=" justify-content-center col-lg-12 col-md-12 main_section" >
+		
+	</div>
+	<br/>
+	<div class="back-btn col-lg-6 col-sm-12 float-left">
+		<button class="btn btn-primary btn-lg float-left btn-back-career-history" type="button">{{ _("Back") }}</button>
+	</div>
+	<div class="next-btn col-lg-6 col-sm-12 float-right">
+		<button class="btn btn-primary btn-lg float-right btn-next-career-history" type="button">{{ _("Next") }}</button>
+	</div>
+	<div class="submit-btn col-sm-12 ">
+		<button class="btn btn-primary btn-lg float-right btn-submit-career-history" type="button">{{ _("Submit") }}</button>
+	</div>
+
+</body>
+{% endblock %}

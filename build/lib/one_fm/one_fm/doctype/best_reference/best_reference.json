@@ -1,0 +1,173 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-05-13 19:31:07.819357",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "reference",
+  "name_of_person",
+  "contact_number",
+  "email",
+  "designation",
+  "column_break_3",
+  "why_he",
+  "reference_feedback",
+  "interview_feedback",
+  "interview",
+  "referenced_by_section",
+  "job_applicant",
+  "applicant_name",
+  "column_break_13",
+  "applicant_contact_number",
+  "applicant_email",
+  "communication_section",
+  "communications"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Reference",
+   "options": "\nBest Boss\nBest Colleague\nBest Employee\nWorst Boss\nWorst Colleague\nWorst Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "name_of_person",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name of Person",
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Contact Number"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "why_he",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Why He/She?"
+  },
+  {
+   "fieldname": "reference_feedback",
+   "fieldtype": "Small Text",
+   "label": "Reference Feedback"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "communication_section",
+   "fieldtype": "Section Break",
+   "label": "Communications"
+  },
+  {
+   "fieldname": "communications",
+   "fieldtype": "Table",
+   "options": "Best Reference Communication",
+   "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "BR-.YYYY.-"
+  },
+  {
+   "fetch_from": "interview_feedback.interview",
+   "fieldname": "interview",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Interview",
+   "options": "Interview"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "referenced_by_section",
+   "fieldtype": "Section Break",
+   "label": "Referenced By"
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_applicant.applicant_name",
+   "fetch_if_empty": 1,
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "applicant_contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_applicant.email_id",
+   "fetch_if_empty": 1,
+   "fieldname": "applicant_email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "interview_feedback",
+   "fieldtype": "Link",
+   "label": "Interview Feedback",
+   "options": "Interview Feedback"
+  }
+ ],
+ "links": [],
+ "modified": "2022-03-04 10:15:57.795759",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Best Reference",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

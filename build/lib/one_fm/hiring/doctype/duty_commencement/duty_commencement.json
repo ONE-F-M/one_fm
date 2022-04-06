@@ -1,0 +1,301 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2021-06-20 14:20:17.385336",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "onboard_employee",
+  "employee_name",
+  "employee",
+  "gender",
+  "nationality",
+  "civil_id",
+  "passport_number",
+  "posting_date",
+  "column_break_5",
+  "job_applicant",
+  "job_offer",
+  "date_of_joining",
+  "designation",
+  "reports_to",
+  "project",
+  "operations_site",
+  "operations_shift",
+  "post_type",
+  "salary_details_section",
+  "base_salary",
+  "salary_structure",
+  "salary_details",
+  "basic_salary",
+  "transportation_salary",
+  "accommodation_salary",
+  "other_allowances_salary",
+  "total_salary",
+  "section_break_10",
+  "attach_duty_commencement",
+  "notes",
+  "progress",
+  "status"
+ ],
+ "fields": [
+  {
+   "default": "DC-.YYYY.-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "DC-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "onboard_employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Onboard Employee",
+   "options": "Onboard Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "onboard_employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "onboard_employee.gender",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "onboard_employee.nationality",
+   "fetch_if_empty": 1,
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "onboard_employee.civil_id",
+   "fetch_if_empty": 1,
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "onboard_employee.passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "onboard_employee.job_applicant",
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "onboard_employee.job_offer",
+   "fieldname": "job_offer",
+   "fieldtype": "Link",
+   "label": "Job Offer",
+   "options": "Job Offer",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "onboard_employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_10",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "progress",
+   "fieldtype": "Percent",
+   "hidden": 1,
+   "label": "Progress",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Status",
+   "options": "\nOpen\nProcessing\nProcess Finished"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attach_duty_commencement",
+   "fieldtype": "Attach",
+   "label": "Attach Duty Commencement"
+  },
+  {
+   "fetch_from": "onboard_employee.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "onboard_employee.operations_site",
+   "fieldname": "operations_site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fieldname": "salary_details_section",
+   "fieldtype": "Section Break",
+   "label": "Salary Details"
+  },
+  {
+   "fieldname": "salary_details",
+   "fieldtype": "Table",
+   "label": "Salary Details",
+   "options": "ERF Salary Detail"
+  },
+  {
+   "fieldname": "basic_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Basic Salary"
+  },
+  {
+   "fieldname": "transportation_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Transportation Salary"
+  },
+  {
+   "fieldname": "accommodation_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Accommodation Salary"
+  },
+  {
+   "fieldname": "other_allowances_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Other Allowances Salary"
+  },
+  {
+   "fieldname": "total_salary",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Total Salary"
+  },
+  {
+   "fetch_from": "job_offer.estimated_date_of_joining",
+   "fetch_if_empty": 1,
+   "fieldname": "date_of_joining",
+   "fieldtype": "Date",
+   "label": "Date of Joining",
+   "reqd": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "fetch_from": "onboard_employee.reports_to",
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "label": "Reports To",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "onboard_employee.operations_shift",
+   "fieldname": "operations_shift",
+   "fieldtype": "Link",
+   "label": "Shift",
+   "options": "Operations Shift",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_offer.base",
+   "fieldname": "base_salary",
+   "fieldtype": "Currency",
+   "label": "Base Salary",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_offer.one_fm_salary_structure",
+   "fieldname": "salary_structure",
+   "fieldtype": "Link",
+   "label": "Salary Structure",
+   "options": "Salary Structure",
+   "read_only": 1
+  },
+  {
+   "fieldname": "post_type",
+   "fieldtype": "Link",
+   "label": "Post Type",
+   "options": "Post Type",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "onboard_employee.employee",
+   "fetch_if_empty": 1,
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-12-21 13:13:30.440487",
+ "modified_by": "Administrator",
+ "module": "Hiring",
+ "name": "Duty Commencement",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

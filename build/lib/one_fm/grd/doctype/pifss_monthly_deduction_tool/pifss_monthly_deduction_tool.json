@@ -1,0 +1,154 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2021-09-28 08:35:41.382649",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "old_pifss_monthly_deduction",
+  "status",
+  "column_break_2",
+  "new_pifss_monthly_deduction",
+  "reason_of_rejection",
+  "attach_mgrp_report",
+  "section_break_4",
+  "pifss_tracking_changes",
+  "amended_from",
+  "mgrp_website",
+  "grd_operator"
+ ],
+ "fields": [
+  {
+   "fieldname": "pifss_tracking_changes",
+   "fieldtype": "Table",
+   "label": "PIFSS Tracking Changes",
+   "options": "PIFSS Monthly Deduction Tool Table"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PIFSS Monthly Deduction Tool",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "old_pifss_monthly_deduction",
+   "fieldtype": "Link",
+   "label": "Old PIFSS Monthly Deduction",
+   "options": "PIFSS Monthly Deduction"
+  },
+  {
+   "fieldname": "new_pifss_monthly_deduction",
+   "fieldtype": "Link",
+   "label": "New PIFSS Monthly Deduction",
+   "options": "PIFSS Monthly Deduction"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "TRAK-.{new_pifss_monthly_deduction}.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Series",
+   "no_copy": 1,
+   "print_hide": 1,
+   "set_only_once": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Open",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nOpen\nPending By Operator\nPending By Supervisor\nCompleted"
+  },
+  {
+   "fieldname": "attach_mgrp_report",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "Attach MGRP Report"
+  },
+  {
+   "default": "https://www.manpower.gov.kw/LoginToPage.aspx?ReturnUrl=https%3a%2f%2fwww.manpower.gov.kw%2fPages%2fCompanies%2fComp_Details.aspx&PLT=1",
+   "fieldname": "mgrp_website",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "MGRP Website"
+  },
+  {
+   "fieldname": "reason_of_rejection",
+   "fieldtype": "Small Text",
+   "label": "Reason Of Rejection",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "grd_operator",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator",
+   "options": "User"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2021-10-23 08:48:40.667388",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PIFSS Monthly Deduction Tool",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

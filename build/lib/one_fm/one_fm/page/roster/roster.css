@@ -1,0 +1,255 @@
+@import url("/css/all.min.css");
+/* @import url("/css/jquery-ui.min.css"); */
+@import url("/css/jquery.dataTables.min.css");
+/* @import url("/css/datepicker.min.css"); */
+@import url("/css/select2.min.css");
+@import url("/css/site.css");
+@import url("/css/responsivedatatable.css");
+@import url("/css/main.css");
+@import url("/css/material_blue.css");
+
+
+body[data-route="roster"] .page-container {
+  margin-top: 0px;
+}
+
+body[data-route="roster"] .collapse {
+  visibility: visible;
+}
+body[data-route="roster"] table {
+  margin: 0px;
+}
+
+body[data-route="roster"] .flatpickr-calendar {
+  width: inherit;
+}
+
+body[data-route="roster"] .postname {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body[data-route="roster"] .simplecheckbox .tooltiptext {
+  visibility: hidden;
+  width: 300px;
+  background-color: #c7c7c7;
+  color: #444;
+  text-align: center;
+  border-radius: 6px;
+  font-weight: 400;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -90px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+body[data-route="roster"] .simplecheckbox .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -60px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #c7c7c7 transparent transparent transparent;
+}
+
+body[data-route="roster"] .simplecheckbox:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+body[data-route="roster"] .sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  left: 0;
+}
+body[data-route="roster"] .vertical-sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+}
+
+/*--------------------------------------------------*/
+/*---------------------SPINNER----------------------*/
+body[data-route="roster"] #cover-spin {
+  position: fixed;
+  width: 100%;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: rgb(255 255 255 / 0.7);
+  z-index: 9999;
+  display: none;
+}
+
+@-webkit-keyframes spin {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+body[data-route="roster"] #cover-spin::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 48%;
+  top: 40%;
+  width: 40px;
+  height: 40px;
+  border-style: solid;
+  border-color: #2c77ff;
+  border-top-color: transparent;
+  border-width: 4px;
+  border-radius: 50%;
+  -webkit-animation: spin 0.8s linear infinite;
+  animation: spin 0.8s linear infinite;
+}
+body[data-route="roster"] .table-parent {
+  overflow-x: scroll;
+  /* float: left; */
+  /* height: calc(80vh - 40px); */
+  height: 700px;
+  transform: scale(0.75); 
+  transform-origin: 0% 0% 0px; 
+  width: 130%
+}
+/*--------------------------------------------------*/
+body[data-route="roster"] .pagination {
+  justify-content: center;
+}
+body[data-route="roster"] .pager li > a,
+body[data-route="roster"] .pager li > span {
+  border-radius: 0px;
+}
+body[data-route="roster"] .pagination > .active > a,
+body[data-route="roster"] .pagination > .active > span,
+body[data-route="roster"] .pagination > .active > a:hover,
+body[data-route="roster"] .pagination > .active > span:hover,
+body[data-route="roster"] .pagination > .active > a:focus,
+body[data-route="roster"] .pagination > .active > span:focus {
+  color: #2c77ff !important;
+}
+
+body[data-route="roster"] .bggreen {
+  background-color: green;
+  color: white;
+}
+body[data-route="roster"] .bgred {
+  background-color: red;
+  color: white;
+}
+body[data-route="roster"] .bgyellow {
+  background-color: yellow;
+  color: black;
+}
+
+body[data-route="roster"] .search-employee {
+  padding: 5px;
+  height: 100%;
+  border: none;
+  width: 270px;
+}
+body[data-route="roster"] .closed {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  right: 0%;
+  font-size: 20px;
+  font-weight: 300;
+  padding: 10px 10px;
+  transform: translate(0%, -50%);
+}
+body[data-route="roster"] .closed:hover {
+  background: #63799b;
+}
+body[data-route="roster"] .rosteringheadingtab {
+  width: 200px;
+  margin-left: 7%;
+}
+body[data-route="roster"] .switch-container {
+  width: 400px;
+  margin-top: 10px;
+  /* margin: 0 auto;
+  margin-left: 20px; */
+    /* margin-left: 7%; */
+}
+ 
+ 
+ #check{
+   display:none;
+ }
+ 
+ 
+ #check:checked ~ span:nth-of-type(1){
+   transform-origin:bottom;
+   transform:rotatez(45deg) translate(8px,0px)
+ }
+ 
+ 
+ #check:checked ~ span:nth-of-type(2){
+   
+   transform-origin:top;
+   transform:rotatez(-45deg)
+ }
+ 
+ 
+ #check:checked ~ span:nth-of-type(3){
+   
+   transform-origin:bottom;
+   width:50%;
+   transform: translate(30px,-11px) rotatez(45deg);
+ 
+ }
+ 
+ .customtooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.customtooltip .customtooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  top: 150%;
+  left: 50%;
+  margin-left: -60px;
+}
+
+.customtooltip .customtooltiptext::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent black transparent;
+}
+
+.customtooltip:hover .customtooltiptext {
+  visibility: visible;
+}

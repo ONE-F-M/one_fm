@@ -1,0 +1,58 @@
+{% extends "templates/web.html" %}
+	<header>
+		{%- block navbar -%}
+        	<div></div>
+        {%- endblock -%}
+	</header>
+
+	{% block page_content %}
+
+		<link rel="stylesheet" type="text/css" href="assets/one_fm/css/gp_letter_request/style.css">
+		<link type="text/css" rel="stylesheet" href="assets/one_fm/css/gp_letter_request/stylesheet.css">
+		
+		<div class="employment_details">
+			<form id="attachment_form" method="post" enctype="multipart/form-data">
+				<h2 class="text-center">GP Letter Attachment</h2>
+				<p class="lead text-center">Please Attach GP Letter for each candidate</p>
+
+
+				<div id="attachments_fields">
+					
+				
+				<!--
+			        <div class="form-group">
+			        	<label class="col-form-label">Candidate Attachment1</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-file"></i></span>
+							<input type="file" name="GPL-000001" id="GPL-000001" class="form-control" required="required">
+						</div>
+			        </div>
+
+			        <div class="form-group">
+			        	<label class="col-form-label">Candidate Attachment2</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-file"></i></span>
+							<input type="file" name="GPL-000002" id="GPL-000002" class="form-control" required="required">
+						</div>
+			        </div>
+
+				-->
+
+				
+		        </div>
+
+
+   
+				<div class="form-group">
+		            <button type="submit" id="submit" class="btn btn-primary btn-block btn-lg"> Submit </button>
+		        </div>
+				<input type="hidden" id="pid" name="pid" value={{pid}}>
+		    </form>
+		</div>
+	{% endblock %}
+
+
+
+
+	{%- block footer -%}{%- endblock -%}
+

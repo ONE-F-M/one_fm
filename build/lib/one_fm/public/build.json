@@ -1,0 +1,8 @@
+{
+  "js/item-dashboard-1.min.js": [
+      "purchase/dashboard/item_dashboard_1.html",
+      "purchase/dashboard/item_dashboard_1_list.html",
+      "purchase/dashboard/item_dashboard_1_heading.html",
+      "purchase/dashboard/item_dashboard_1.js"
+  ]
+}

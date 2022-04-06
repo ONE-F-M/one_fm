@@ -1,0 +1,19 @@
+{%if doc.item_code%}
+<div style="display: inline-block;padding: 5%;">
+	
+
+<div class="qr_code_print" id="qr_code_print">
+    <img src="https://barcode.tec-it.com/barcode.ashx?code=QRCode&multiplebarcodes=false&translate-esc=false&data={{doc.item_code}}&unit=Fit&dpi=96&imagetype=Gif&rotation=0&color=%23000000&bgcolor=%23ffffff&codepage=&qunit=Mm&quiet=0&eclevel=L" alt="">
+</div>
+<br>
+<input name="qr_b_print" type="button" class="qr_ipt" id="qr_ipt" value=" Print ">
+</div>
+<script type="text/javascript">
+$("#qr_ipt").click(function() {
+    var divToPrint = document.getElementById("qr_code_print");
+    newWin = window.open("");
+    newWin.document.write(divToPrint.outerHTML);
+    newWin.print();
+});
+</script>
+{%endif%}

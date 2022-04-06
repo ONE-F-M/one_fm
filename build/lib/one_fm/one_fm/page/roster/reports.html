@@ -1,0 +1,992 @@
+<!-- ============================================================== -->
+<!-- Main section start -->
+<!-- ============================================================== -->
+<div class="layoutSidenav_content">
+    <div class="bg-white d-none d-md-block">
+        <ul class="nav nav-tabs nav-justified rostercustomtab">
+            <li class="cursorpointer">
+                <a class="redirect_route" data-route="roster">
+                    <span><i class="fas fa-tasks"></i></span>
+                    <span class="pl10">Rostering</span>
+                </a>
+            </li>
+            <li class="cursorpointer">
+                <a class="redirect_route" data-route="staff">
+                    <span><i class="fas fa-users"></i></span>
+                    <span class="pl10">Staff</span>
+                </a>
+            </li>
+            <li class="active cursorpointer">
+                <a class="redirect_route" data-route="reports">
+                    <span><i class="fas fa-chart-line"></i></span>
+                    <span class="pl10">Reports</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!--for mobile filter sidedrawer start-->
+    <div class="container-fluid d-md-none">
+
+
+        <div class="row " style="background:#e7edfb">
+            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 pl-0 pr-0 ">
+                <div class="d-lg-flex custommobheight d-flex align-items-center ml20 mainclassfilter ">
+                    <span class="font20 cardheadercolor fontw600 textchange">Reports</span>
+                </div>
+            </div>
+            <div class="col-2 col-lg-4 col-md-4 col-sm-4 col-xs-4 pl-0 pr-0">
+                <div class="sidedrawer" style="right: -200px; opacity: 1; z-index: 2;">
+                    <div id="nav">
+                        <div id="menu" style=""><i class="fas fa-filter iconresponsiveerrow" aria-hidden="true"
+                                style="color: #fff !important"></i></div>
+                        <div id="menuclose" style="display: none;"><i
+                                class="fa fa-chevron-right iconresponsiveerrow sidearrowres" aria-hidden="true"></i>
+                        </div>
+                    </div>
+                    <div class="sidebackground">
+                        <div class="sidedrawer-body">
+                            <div class="card m-0 vh-100" style="border:none !important">
+                                <div class="card-header filtercloseclick"
+                                    style="box-shadow:none !important;border-bottom:none !important">
+                                    <div class="cardHeadingText" style="font-size: 18px !important;">Filters</div>
+                                </div>
+                                <div class="container-fluid responsiveoverflowfilter mx-0">
+                                    <div class="row">
+                                        <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12 ">
+                                            <div class="lightbluecolor font16 cursorpointer mt-4  mr20 allfilters" id=""
+                                                onclick="clearallfilter()">
+                                                <span><i class="fas fa-times"></i></span>
+                                                <span class="pl8 d-md-none d-lg-inline">Clear All Filter</span>
+                                            </div>
+
+
+                                            <div class="mb-4 mb-lg-0 mt-4 mt-md-0  ml-0 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Project</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Project 1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Project 2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Project 3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard()">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Site</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Site 1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Site 2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Site 3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard()">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Shift</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Shift 1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Shift 2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Shift 3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard()">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Department</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Department
+                                                                1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Department
+                                                                2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Department
+                                                                3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard()">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0 mlsm-0 ml20 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Post</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Post 1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Post 2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Post 3</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard()">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-4 mb-lg-0  ml-0 customiconhover">
+                                                <div class="btn-group d-block">
+                                                    <a href="#"
+                                                        class="dropdown-toggle fitertext text-decoration-none customdrodownicon d-flex justify-content-between"
+                                                        id="" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <div class="dropdowncustomres">Employee</div>
+                                                    </a>
+                                                    <div
+                                                        class="dropdown-menu customredropdown dropdown-menu-left customselect">
+                                                        <div class="customdropdownheight">
+                                                            <a class="dropdown-item filteronserviceboard">Employee 1</a>
+                                                            <a class="dropdown-item filteronserviceboard">Employee 2</a>
+                                                            <a class="dropdown-item filteronserviceboard">Employee 3</a>
+                                                            <a class="dropdown-item filteronserviceboard">Employee 4</a>
+                                                            <a class="dropdown-item filteronserviceboard">Employee 5</a>
+                                                        </div>
+                                                        <div class="border-top text-right px-4 py-4">
+                                                            <a href="#"
+                                                                class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                                onclick="ClearServiceBoard()">
+                                                                Clear Filter
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--for mobile filter sidedrawer end-->
+    <div class="tab-content mt30 ml30 mr30 mb30 bg-white">
+        <div class="container-fluid borderradius8 pt30 pl30 pr30 pb30 bg-white">
+            <div class="row d-none d-md-block">
+                <div class="col-xs-12 col-sm-12 col-md-3 col-lg-3">
+                    <span class="font20 cardheadercolor fontw600 textchange">Reports</span>
+                </div>
+            </div>
+            <div class="row pt22 pb22 d-none d-md-flex">
+                <div class="col-xs-12 col-md-12">
+                    <div
+                        class="d-lg-flex lightbluedtbg borderradius4 pt8 pb8 pl20 pr20 align-items-md-center justify-content-end ipadclassremove">
+                        <div class="lightbluecolor font16 cursorpointer  allfilters" id="" onclick="clearallfilter()">
+                            <span><i class="fas fa-times"></i></span>
+                            <span class="pl8 d-md-none d-lg-inline">Clear All Filter</span>
+                        </div>
+                        <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconbghover">
+                            <div class="btn-group">
+                                <a href="#" class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                    id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <div class="dropdowncustomres">Project</div>
+                                </a>
+                                <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                    <div class="customdropdownheight">
+                                        <a class="dropdown-item filteronserviceboard">Project 1</a>
+                                        <a class="dropdown-item filteronserviceboard">Project 2</a>
+                                        <a class="dropdown-item filteronserviceboard">Project 3</a>
+                                    </div>
+                                    <div class="border-top text-right px-4 py-4">
+                                        <a href="#" class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                            onclick="ClearServiceBoard()">
+                                            Clear Filter
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconbghover">
+                            <div class="btn-group">
+                                <a href="#" class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                    id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <div class="dropdowncustomres">Site</div>
+                                </a>
+                                <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                    <div class="customdropdownheight">
+                                        <a class="dropdown-item filteronserviceboard">Site 1</a>
+                                        <a class="dropdown-item filteronserviceboard">Site 2</a>
+                                        <a class="dropdown-item filteronserviceboard">Site 3</a>
+                                    </div>
+                                    <div class="border-top text-right px-4 py-4">
+                                        <a href="#" class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                            onclick="ClearServiceBoard()">
+                                            Clear Filter
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconbghover">
+                            <div class="btn-group">
+                                <a href="#" class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                    id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <div class="dropdowncustomres">Shift</div>
+                                </a>
+                                <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                    <div class="customdropdownheight">
+                                        <a class="dropdown-item filteronserviceboard">Shift 1</a>
+                                        <a class="dropdown-item filteronserviceboard">Shift 2</a>
+                                        <a class="dropdown-item filteronserviceboard">Shift 3</a>
+                                    </div>
+                                    <div class="border-top text-right px-4 py-4">
+                                        <a href="#" class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                            onclick="ClearServiceBoard()">
+                                            Clear Filter
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconbghover">
+                            <div class="btn-group">
+                                <a href="#" class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                    id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <div class="dropdowncustomres">Department</div>
+                                </a>
+                                <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                    <div class="customdropdownheight">
+                                        <a class="dropdown-item filteronserviceboard">Department 1</a>
+                                        <a class="dropdown-item filteronserviceboard">Department 2</a>
+                                        <a class="dropdown-item filteronserviceboard">Department 3</a>
+                                    </div>
+                                    <div class="border-top text-right px-4 py-4">
+                                        <a href="#" class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                            onclick="ClearServiceBoard()">
+                                            Clear Filter
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconbghover">
+                            <div class="btn-group">
+                                <a href="#" class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                    id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <div class="dropdowncustomres">Post</div>
+                                </a>
+                                <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                    <div class="customdropdownheight">
+                                        <a class="dropdown-item filteronserviceboard">Post 1</a>
+                                        <a class="dropdown-item filteronserviceboard">Post 2</a>
+                                        <a class="dropdown-item filteronserviceboard">Post 3</a>
+                                    </div>
+                                    <div class="border-top text-right px-4 py-4">
+                                        <a href="#" class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                            onclick="ClearServiceBoard()">
+                                            Clear Filter
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2 mb-lg-0 mlsm-0 ml20 customiconbghover">
+                            <div class="btn-group">
+                                <a href="#" class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                    id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <div class="dropdowncustomres">Employee</div>
+                                </a>
+                                <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                    <div class="customdropdownheight">
+                                        <a class="dropdown-item filteronserviceboard">Employee 1</a>
+                                        <a class="dropdown-item filteronserviceboard">Employee 2</a>
+                                        <a class="dropdown-item filteronserviceboard">Employee 3</a>
+                                    </div>
+                                    <div class="border-top text-right px-4 py-4">
+                                        <a href="#" class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                            onclick="ClearServiceBoard()">
+                                            Clear Filter
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+
+
+                    </div>
+                </div>
+            </div>
+            <div class="row ">
+                <div class="col-12 col-xs-12 col-md-8 col-lg-8">
+                    <div class="row">
+                        <div class="col-12 col-md-4 col-lg-4  ">
+                            <div class="lightgreycolorbox pt15 pl15 pr15 pb15 minheight120">
+                                <div class="font18 cardtitlecolor text-center">Daily</div>
+                                <div class="font30 darkbluefontcolor pt-2 text-center">6.5h</div>
+                                <div class="font14 text-center text-md-right">Total Working Hours</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4 col-lg-4 mt-3 mt-md-0">
+                            <div class="lightgreycolorbox pt15 pl15 pr15 pb15 minheight120">
+                                <div class="font18 cardtitlecolor text-center">Monthly</div>
+                                <div class="font30 darkbluefontcolor pt-2 text-center">46.8h</div>
+                                <div class="font14 text-center text-md-right">Total Working Hours</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4 col-lg-4  mt-3 mt-md-0">
+                            <div class="lightgreycolorbox pt15 pl15 pr15 pb15 minheight120">
+                                <div class="font18 cardtitlecolor text-center">Yearly</div>
+                                <div class="font30 darkbluefontcolor pt-2 text-center">100.8h</div>
+                                <div class="font14 text-center text-md-right">Total Working Hours</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-xs-12 col-md-4  col-lg-4 mt-3 mt-md-0">
+                    <div class="lightgreycolorbox pt15 pl15 pr15 pb15 minheight120">
+                        <div class="font18 cardtitlecolor">Total Monthly Hours</div>
+                        <div class="d-flex darkbluefontcolor justify-content-between pt-2 text-center">
+                            <div class="lightgrey">0/20</div>
+                            <div class="lightgrey">Total 100%</div>
+                        </div>
+                        <div id="progressbar" class="customprogressbar"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-xs-12 col-md-12 mt30">
+                    <div class="card pl15 pt15 pr15 pb15">
+                        <div class="d-md-flex justify-content-between">
+
+                            <div class="font18 cardtitlecolor">Daily hours</div>
+                            <div class="d-md-flex align-items-center mt-3 mt-md-0">
+
+                                <div class="mt-3 mt-md-0">
+                                    <!--<div class="cardtitlecolor font16 mr-3 text-nowrap mb-1 mb-md-0">From Date</div>-->
+                                    <div id="datepicker" class="input-group date" data-date-format="mm-dd-yyyy">
+                                        <input class="form-control" placeholder="From Date" type="text"
+                                            id="txtinputdate" name="txtinputdate" readonly />
+                                        <span class="input-group-addon inputgroupcalendar"><i
+                                                class="far fa-calendar-alt"></i></span>
+                                    </div>
+                                </div>
+                                <div class="mt-3 mt-md-0 pl14 plsm-0">
+                                    <!--<div class="cardtitlecolor font16 mr-3 text-nowrap mb-1 mb-md-0"> </div>-->
+                                    <div id="ToDatepicker" class="input-group date" data-date-format="mm-dd-yyyy">
+                                        <input class="form-control" placeholder="To Date" type="text"
+                                            id="txttoinputdate" name="txttoinputdate" readonly />
+                                        <span class="input-group-addon inputgroupcalendar"><i
+                                                class="far fa-calendar-alt"></i></span>
+                                    </div>
+                                </div>
+                                <div class="pl14 plsm-0 mt-3 mt-md-0">
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-radio shadow-none">
+                                            <input type="radio" class="custom-control-input" id="txtbycompany"
+                                                name="searchbybtn">
+                                            <label class="custom-control-label font16 cardtitlecolor pl10 "
+                                                for="txtbycompany">Day</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pl14 plsm-0 mt-2 mt-md-0">
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-radio shadow-none">
+                                            <input type="radio" class="custom-control-input" id="txtbyweek1"
+                                                name="searchbybtn">
+                                            <label class="custom-control-label font16 cardtitlecolor pl10 "
+                                                for="txtbyweek1">Week</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pl14 plsm-0 mt-2 mt-md-0">
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-radio shadow-none">
+                                            <input type="radio" class="custom-control-input" id="txtbyproject"
+                                                name="searchbybtn">
+                                            <label class="custom-control-label font16 cardtitlecolor pl10 "
+                                                for="txtbyproject">2 Week</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pl14 plsm-0 mt-2 mt-md-0">
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-radio shadow-none">
+                                            <input type="radio" class="custom-control-input" id="txtforsite"
+                                                name="searchbybtn">
+                                            <label class="custom-control-label font16 cardtitlecolor pl10 "
+                                                for="txtforsite">3 Week</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="lightbluecolor font16 cursorpointer pl14 mt-2 mt-md-0 plsm-0 allfilters"
+                                    id="" onclick="clearallfilter()">
+                                    <span><i class="fas fa-times"></i></span>
+                                    <span class="pl8 d-md-none d-lg-inline">Clear All Filter</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="myChart"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-xs-12 col-md-6 col-lg-6 mt30">
+                    <div class="card pl15 pt15 pr15 pb15">
+                        <div class="d-md-flex justify-content-between align-items-center">
+                            <div class="font18 cardtitlecolor">Monthly</div>
+                            <div class="d-md-flex align-items-center mt-3 mt-md-0">
+                                <div class="">
+                                    <!--<div class="cardtitlecolor font16 mr-3 text-nowrap">From Date</div>-->
+                                    <div id="monthlydatepicker" class="input-group date" data-date-format="mm-dd-yyyy">
+                                        <input class="form-control" placeholder="From Date" type="text"
+                                            id="txtinputdate" name="txtinputdate" readonly />
+                                        <span class="input-group-addon inputgroupcalendar"><i
+                                                class="far fa-calendar-alt"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 mt-md-0">
+                                <!--<div class="cardtitlecolor font16 mr-3 text-nowrap mb-1 mb-md-0">To Date</div>-->
+                                <div id="ToMonthlyDatepicker" class="input-group date" data-date-format="mm-dd-yyyy">
+                                    <input class="form-control" placeholder="To Date" type="text" id="txttoinputdate"
+                                        name="txttoinputdate" readonly />
+                                    <span class="input-group-addon inputgroupcalendar"><i
+                                            class="far fa-calendar-alt"></i></span>
+                                </div>
+                            </div>
+
+
+                        </div>
+                        <div id="monthlychart"></div>
+                    </div>
+                </div>
+                <div class="col-12 col-xs-12 col-md-6 col-lg-6 mt30">
+                    <div class="card pl15 pt15 pr15 pb15">
+                        <div class="d-md-flex justify-content-between align-items-center">
+                            <div class="font18 cardtitlecolor">Yearly</div>
+                            <div class="d-md-flex align-items-center mt-3 mt-md-0">
+                                <div class="">
+                                    <!--<div class="cardtitlecolor font16 mr-3 text-nowrap">From Date </div>-->
+                                    <div id="dailydatepicker" class="input-group date" data-date-format="mm-dd-yyyy">
+                                        <input class="form-control" placeholder="From Date" type="text"
+                                            id="txtinputdate" name="txtinputdate" readonly />
+                                        <span class="input-group-addon inputgroupcalendar"><i
+                                                class="far fa-calendar-alt"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 mt-md-0">
+                                <!--<div class="cardtitlecolor font16 mr-3 text-nowrap mb-1 mb-md-0">To Date </div>-->
+                                <div id="ToYearDatepicker" class="input-group date" data-date-format="mm-dd-yyyy">
+                                    <input class="form-control" placeholder="To Date" type="text" id="txttoinputdate"
+                                        name="txttoinputdate" readonly />
+                                    <span class="input-group-addon inputgroupcalendar"><i
+                                            class="far fa-calendar-alt"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="yearlychart"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-xs-12 col-md-12 col-lg-12 mt30">
+                    <div class="card pl15 pt15 pr15 pb15">
+                        <div id="piechart"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-xs-12 col-md-12 col-lg-12 mt30">
+                    <div class="card pl15 pt15 pr15 pb15">
+
+                        <div class="row">
+
+                            <div class="col-xs-12 col-md-12">
+                                <div
+                                    class="d-lg-flex borderradius4 pt8 pb8 align-items-md-center justify-content-end ipadclassremove">
+
+                                    <div class="lightbluecolor font16 cursorpointer d-flex allfilters mb-3 mb-lg-0 mlsm-0 ml20"
+                                        id="" onclick="clearallfilter()">
+                                        <span><i class="fas fa-times"></i></span>
+                                        <span class="pl8 d-md-none d-lg-inline" style="white-space:nowrap">Clear
+                                            Filter</span>
+                                    </div>
+
+                                    <div class="mb-3 mb-lg-0 mlsm-0 ml20 customiconbghover p-0">
+                                        <div
+                                            class="btn-group d-block d-md-inline-block m-0 responsivebluebtn customizebluebtnres">
+                                            <a href="#"
+                                                class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                                id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <div class="dropdowncustomres">Project</div>
+                                            </a>
+                                            <div
+                                                class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                                <div class="customdropdownheight">
+                                                    <a class="dropdown-item filteronserviceboard">Project 1</a>
+                                                    <a class="dropdown-item filteronserviceboard">Project 2</a>
+                                                    <a class="dropdown-item filteronserviceboard">Project 3</a>
+                                                </div>
+                                                <div class="border-top text-right px-4 py-4">
+                                                    <a href="#"
+                                                        class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                        onclick="ClearServiceBoard()">
+                                                        Clear Filter
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 mb-lg-0 mlsm-0 ml20 customiconbghover p-0">
+                                        <div
+                                            class="btn-group d-block d-md-inline-block m-0 responsivebluebtn customizebluebtnres">
+                                            <a href="#"
+                                                class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                                id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <div class="dropdowncustomres">Site</div>
+                                            </a>
+                                            <div
+                                                class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                                <div class="customdropdownheight">
+                                                    <a class="dropdown-item filteronserviceboard">Site 1</a>
+                                                    <a class="dropdown-item filteronserviceboard">Site 2</a>
+                                                    <a class="dropdown-item filteronserviceboard">Site 3</a>
+                                                </div>
+                                                <div class="border-top text-right px-4 py-4">
+                                                    <a href="#"
+                                                        class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                        onclick="ClearServiceBoard()">
+                                                        Clear Filter
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="mb-3 mb-lg-0 mlsm-0 ml20 customiconbghover p-0">
+                                        <div
+                                            class="btn-group d-block d-md-inline-block m-0 responsivebluebtn customizebluebtnres">
+                                            <a href="#"
+                                                class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                                id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <div class="dropdowncustomres">Shift</div>
+                                            </a>
+                                            <div
+                                                class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                                <div class="customdropdownheight">
+                                                    <a class="dropdown-item filteronserviceboard">Shift 1</a>
+                                                    <a class="dropdown-item filteronserviceboard">Shift 2</a>
+                                                    <a class="dropdown-item filteronserviceboard">Shift 3</a>
+                                                </div>
+                                                <div class="border-top text-right px-4 py-4">
+                                                    <a href="#"
+                                                        class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                        onclick="ClearServiceBoard()">
+                                                        Clear Filter
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 mb-lg-0 mlsm-0 ml20 customiconbghover p-0">
+                                        <div
+                                            class="btn-group d-block d-md-inline-block m-0 responsivebluebtn customizebluebtnres">
+                                            <a href="#"
+                                                class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                                id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <div class="dropdowncustomres">Department</div>
+                                            </a>
+                                            <div
+                                                class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                                <div class="customdropdownheight">
+                                                    <a class="dropdown-item filteronserviceboard">Department 1</a>
+                                                    <a class="dropdown-item filteronserviceboard">Department 2</a>
+                                                    <a class="dropdown-item filteronserviceboard">Department 3</a>
+                                                </div>
+                                                <div class="border-top text-right px-4 py-4">
+                                                    <a href="#"
+                                                        class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                        onclick="ClearServiceBoard()">
+                                                        Clear Filter
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 mb-lg-0 mlsm-0 ml20 customiconbghover p-0">
+                                        <div
+                                            class="btn-group d-block d-md-inline-block m-0 responsivebluebtn customizebluebtnres">
+                                            <a href="#"
+                                                class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                                id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <div class="dropdowncustomres">Post</div>
+                                            </a>
+                                            <div
+                                                class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                                <div class="customdropdownheight">
+                                                    <a class="dropdown-item filteronserviceboard">Post 1</a>
+                                                    <a class="dropdown-item filteronserviceboard">Post 2</a>
+                                                    <a class="dropdown-item filteronserviceboard">Post 3</a>
+                                                </div>
+                                                <div class="border-top text-right px-4 py-4">
+                                                    <a href="#"
+                                                        class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                        onclick="ClearServiceBoard()">
+                                                        Clear Filter
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 mb-lg-0 mlsm-0 ml20 customiconbghover p-0">
+                                        <div
+                                            class="btn-group d-block d-md-inline-block m-0 responsivebluebtn customizebluebtnres">
+                                            <a href="#"
+                                                class="dropdown-toggle fitertext text-decoration-none customdrodownicon "
+                                                id="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <div class="dropdowncustomres">Employee</div>
+                                            </a>
+                                            <div
+                                                class="dropdown-menu customredropdown dropdown-menu-right customselect">
+                                                <div class="customdropdownheight">
+                                                    <a class="dropdown-item filteronserviceboard">Employee 1</a>
+                                                    <a class="dropdown-item filteronserviceboard">Employee 2</a>
+                                                    <a class="dropdown-item filteronserviceboard">Employee 3</a>
+                                                </div>
+                                                <div class="border-top text-right px-4 py-4">
+                                                    <a href="#"
+                                                        class="btncolor px-2 py-2 borderradius4 font14 text-decoration-none"
+                                                        onclick="ClearServiceBoard()">
+                                                        Clear Filter
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 mb-lg-0 mlsm-0 ml20">
+                                        <div id="txtfilterstartdate" class="input-group date"
+                                            data-date-format="mm-dd-yyyy">
+                                            <input class="form-control" placeholder="Start Date" type="text"
+                                                id="txtfiltersdate" name="txtfiltersdate" readonly />
+                                            <span class="input-group-addon inputgroupcalendar"><i
+                                                    class="far fa-calendar-alt"></i></span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 mb-lg-0 mlsm-0 ml20">
+                                        <div id="txtfilterenddate" class="input-group date"
+                                            data-date-format="mm-dd-yyyy">
+                                            <input class="form-control" type="text" placeholder="End Date"
+                                                id="txtfilteredate" name="txtfilteredate" readonly />
+                                            <span class="input-group-addon inputgroupcalendar"><i
+                                                    class="far fa-calendar-alt"></i></span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 mb-lg-0 mlsm-0 ml20">
+                                        <div>
+
+                                            <input type="text" id="endyeartxt" class="form-control datepickertext"
+                                                placeholder="Select Year" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="row mt10">
+                            <div class="col-12 col-xs-12 col-md-12">
+                                <table id="reportporttable" class="table table-striped table-bordered "
+                                    style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Project</th>
+                                            <th>Site</th>
+                                            <th>Shift</th>
+                                            <th>Department</th>
+                                            <th>Post</th>
+                                            <th>Employee</th>
+                                            <!--<th class="w-30">Date</th>
+                                                <th>Sign In</th>
+                                                <th>Sign Out</th>-->
+                                            <th>No of hours</th>
+                                            <th class="w-5"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                Project 1
+                                            </td>
+                                            <td>
+                                                Site 1
+                                            </td>
+                                            <td>
+                                                Shift 1
+                                            </td>
+                                            <td>
+                                                software Development
+                                            </td>
+                                            <td>
+                                                Software Developer
+                                            </td>
+                                            <td>
+                                                Vaishnavi Mahagaonkar
+                                            </td>
+                                            <!--<td>
+                                                    11/4/2020
+                                                </td>
+                                                <td>
+                                                    8.5h
+                                                </td>
+                                                <td>
+                                                    8.5h
+                                                </td>-->
+                                            <td>
+                                                20.0 h
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="#">
+                                                    <img src="images/pdfimg.svg" class="pdfimg" />
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Project 2
+                                            </td>
+                                            <td>
+                                                Site 2
+                                            </td>
+                                            <td>
+                                                Shift 2
+                                            </td>
+                                            <td>
+                                                software Development
+                                            </td>
+                                            <td>
+                                                Software Developer
+                                            </td>
+                                            <td>
+                                                Ravi Jadhav
+                                            </td>
+                                            <!--<td>
+                                                    11/4/2020
+                                                </td>
+                                                <td>
+                                                    8.5h
+                                                </td>
+                                                <td>
+                                                    8.5h
+                                                </td>-->
+                                            <td>
+                                                20.0 h
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="#">
+                                                    <img src="images/pdfimg.svg" class="pdfimg" />
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Project 3
+                                            </td>
+                                            <td>
+                                                Site 3
+                                            </td>
+                                            <td>
+                                                Shift 3
+                                            </td>
+                                            <td>
+                                                software Development
+                                            </td>
+                                            <td>
+                                                Software Developer
+                                            </td>
+                                            <td>
+                                                Trupti Gandhi
+                                            </td>
+                                            <!--<td>
+                                                    14/5/2020
+                                                </td>
+                                                <td>
+                                                    8.5h
+                                                </td>
+                                                <td>
+                                                    8.5h
+                                                </td>-->
+                                            <td>
+                                                20.0 h
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="#">
+                                                    <img src="images/pdfimg.svg" class="pdfimg" />
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Project 4
+                                            </td>
+                                            <td>
+                                                Site 4
+                                            </td>
+                                            <td>
+                                                Shift 4
+                                            </td>
+                                            <td>
+                                                software Development
+                                            </td>
+                                            <td>
+                                                Software Developer
+                                            </td>
+                                            <!--<td>
+                                                    Priyanka Gulia
+                                                </td>
+                                                <td>
+                                                    16/4/2020
+                                                </td>
+                                                <td>
+                                                    8.5h
+                                                </td>-->
+                                            <td>
+                                                8.5h
+                                            </td>
+                                            <td>
+                                                20.0 h
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="#">
+                                                    <img src="images/pdfimg.svg" class="pdfimg" />
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                Project 5
+                                            </td>
+                                            <td>
+                                                Site 1
+                                            </td>
+                                            <td>
+                                                Shift 1
+                                            </td>
+                                            <td>
+                                                software Development
+                                            </td>
+                                            <td>
+                                                Software Developer
+                                            </td>
+                                            <td>
+                                                Riya Agarwal
+                                            </td>
+                                            <!--<td>
+                                                    18/6/2020
+                                                </td>
+                                                <td>
+                                                    8.5h
+                                                </td>
+                                                <td>
+                                                    8.5h
+                                                </td>-->
+                                            <td>
+                                                20.0 h
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="#">
+                                                    <img src="images/pdfimg.svg" class="pdfimg" />
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ============================================================== -->
+<!-- Main srction end -->
+<!-- ============================================================== -->
+<div id="sidenav-backdrop"></div>
+<div class="drawer-backdrop" id="drawershow"></div>
+<script>
+
+    $("#page-roster").find(".redirect_route").on("click", function (e) {
+        console.log(e, this);
+        let template = $(this).attr("data-route");
+        $("#page-roster").empty().append(frappe.render_template(template));
+    });
+
+</script>

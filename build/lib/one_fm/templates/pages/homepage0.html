@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- The above 4 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+    <!-- Title -->
+    <title>One FM</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="assets/one_fm/assets/img/logo-img/favicon.ico">
+    <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/8.5.0/svg/shield.svg">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+
+    <!-- Core Stylesheet -->
+    <link href="assets/one_fm/assets/style.css" rel="stylesheet">
+
+    <link href="assets/one_fm/assets/css/animate.min.css" rel="stylesheet">
+
+    <link href="assets/one_fm/assets/css/effects.min.css" rel="stylesheet">
+
+    <!-- Responsive CSS -->
+    <link href="assets/one_fm/assets/css/responsive.css" rel="stylesheet">
+
+    <script>
+            window.frappe = {};
+            frappe.ready_events = [];
+            frappe.ready = function(fn) {
+                frappe.ready_events.push(fn);
+            }
+            window.dev_server = {{ dev_server }};
+            window.socketio_port = {{ frappe.socketio_port }};
+
+    </script>
+
+
+</head>
+
+<body>
+    <!-- Preloader Start -->
+
+    <!--
+    <div id="preloader">
+        <div class="colorlib-load"></div>
+    </div>
+    -->
+
+
+    <!-- ***** Header Area Start ***** -->
+    <header class="header_area animated">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <!-- Menu Area Start -->
+                <div class="col-12 col-lg-10">
+                    <div class="menu_area">
+                        <nav class="navbar navbar-expand-lg navbar-light">
+                            <!-- Logo -->
+                            <a class="navbar-brand" href="#"><img src="assets/one_fm/assets/img/logo-img/ONEFM_Identity_white.png" alt="One FM" style="width: 35%;vertical-align: initial;" id="logo"></a>
+
+                            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#ca-navbar" aria-controls="ca-navbar" aria-expanded="false" aria-label="Toggle navigation">
+                                <span><i class="fas fa-bars" style="color: #fff;font-size: x-large;"></i></span>
+                            </button>
+                            <!-- Menu Area -->
+                            <div class="collapse navbar-collapse" id="ca-navbar">
+                                <ul class="navbar-nav ml-auto" id="nav">
+                                    <li class="nav-item active"><a class="nav-link" href="#home">Home</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
+                                    <!--<li class="nav-item"><a class="nav-link" href="#projects">Projects</a></li>-->
+                                    <li class="nav-item"><a class="nav-link" href="#clients">Clients</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="#jobs">Jobs</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                                </ul>
+
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+                <!-- Signup btn -->
+                <div class="col-12 col-lg-2">
+                    <div class="sing-up-button d-none d-lg-block">
+                        <a href="#" data-toggle="modal" data-target="#request_quote">Request Quote</a>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </header>
+    <!-- ***** Header Area End ***** -->
+
+
+
+<div id="request_quote" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header right-to-left">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title">Request Quote</h2>
+            </div>
+            <div class="modal-applyed">
+                    <form>
+                        <div class="form-group">
+                        <label for="person_name">Person Name</label>
+                        <input type="text" class="form-control" name="person_name" id="person_name" placeholder="Enter name" required>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="organization_name">Organization Name</label>
+                        <input type="text" class="form-control" name="organization_name" id="organization_name" placeholder="Enter organization name" required>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="quote_email">Email Address</label>
+                        <input type="email" class="form-control" name="quote_email" id="quote_email" placeholder="Enter email" >
+                      </div>
+
+                       <div class="form-group">
+                        <label for="mobile_no">Mobile No.</label>
+                        <input type="text" class="form-control" name="mobile_no" id="mobile_no" placeholder="Enter mobile number" required>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="quote_notes">Notes</label>
+                        <textarea class="form-control" name="quote_notes" id="quote_notes" rows="3"></textarea>
+                      </div>
+
+                      <button type="button" class="btn btn-primary" onclick="request_new_quote()">Submit</button>
+
+                    </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+    <!-- ***** Wellcome Area Start ***** -->
+    <section class="wellcome_area clearfix" id="home">
+        <div class="container h-100">
+            <div class="row h-100 align-items-center">
+                <div class="col-12 col-md">
+                    <div class="wellcome-heading">
+                        <!-- <h2 class="wow fadeInDown" data-wow-delay="0.5s">WE SUPPLY PROTECTION</h2> -->
+
+                        <h2 class="typewrite" data-period="2000" data-type='[ "Hi, We are One FM.",
+                        "We Provide Security Services.", 
+                        "We Provide HVAC services.", 
+                        "We Provide Generator Services.", 
+                        "We Provide Cleaning services.", 
+                        "We Provide Plumbing Services.", 
+                        "We Provide IT services.", 
+                        "We Provide Electrical & AC services.", 
+                        "We Provide Landscaping services.", 
+                        "We Provide Facilities Management services." ]'>
+                            <span class="wrap"></span>
+                        </h2>
+
+                        <h3>One FM
+                            <hr class="full_hr" style="height:10px;background-color:#fff;">
+                            <hr class="half_hr" style="height:10px;background-color:#fff;width:50%;">
+                        </h3>
+                        <p>One Facility Management is a leader in the fields of commercial automation and integrated security management systems providing the latest in products and services in these fields.</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- Welcome thumb -->
+
+        <!--
+        <div class="welcome-thumb wow fadeInDown" data-wow-delay="0.5s">
+            <img src="assets/one_fm/assets/img/bage-img/website-security.png" alt="">
+        </div>
+    -->
+
+
+    </section>
+    <!-- ***** Wellcome Area End ***** -->
+
+    <!-- ***** Special Area Start ***** -->
+    <section class="special-area bg-white section_padding_100">
+        <div class="container" id="about">
+            <div class="row">
+                <div class="col-12">
+                    <!-- Section Heading Area -->
+                    <div class="section-heading text-center">
+                        <h2 id="about_us_title">Why we are ONE</h2>
+                        <div class="line-shape"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12 col-md-12">
+                    <div class="single-special wow fadeInUp" data-wow-delay="0.2s" id="about_us_content">
+                        <h4 class="text-center">YEAR’S OF EXPERIENCE</h4>
+                        <p><i class="fa fa-home"></i>   One Facilities Management Services Company is founded after deep studies and considerations made to the local security and services industry of Kuwait. One Facilities Management promised to have the best security and services solutions delivery ever made by security services providers aiming to lead the industry in the next few years.</p>
+                        <p><i class="fa fa-shield"></i>   Being the best IT Services Company in Kuwait, we are specialized for Security in Kuwait, providing a full range of Security Services, Security Equipment, IT Solutions, Labouring Services, Transportation Services and Security Guards tailored to match our client’s needs using our great experienced staff.</p>
+                        <p><i class="fa fa-paper-plane"></i>   One Facilities Management Systems and procedures allow your organisation to track any service by several reports and assessments during the year, which enhance the quality you are expected. Our People, Our Products and Our Process are our elements to deliver quality in all key areas.</p>
+                        <p><i class="fa fa-paper-plane"></i>   One Facilities Management has the expertise and strength to accept any challenge, delivering services to companies of all sizes on a national basis, those integrated solutions developed at competitive prices with confidentiality guaranteed.</p>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <div class="special_description_area mt-150">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="special_description_content our-goal">
+                            <h2>What We Want!</h2>
+                            <h4>Our Vision</h4>
+                                <ul id="our_vision">
+                                    <li>“One FM – to be a Regional Leader providing a Trade Marked Services”</li>
+                                </ul>
+                            <br>
+                            <h4>Our Mission</h4>
+                                <ul id="our_mission">
+                                    <li>Expert; Delivering the right solution, tailored to our customers.</li>
+                                    <li>Professional; Using such employees, equipments and technologies in serving our customers.</li>
+                                    <li>Transparent; Within the firm and toward our relationships with our valued customers.</li>
+                                    <li>Best Response; To both employees and customers issues, needs and development.</li>
+                                    <li>Human; In dealing with our employees, where unique training and development are our aim, surrounded&nbsp;“Our Employee” – “Our Family Member”.</li>
+                                    <li>Customer satisfaction before profit; which reflects our care to our employee and our valued customers.</li>
+                                </ul>
+                            
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 text-center">
+                        <div class="special_description_img">
+                            <img src="assets/one_fm/assets/img/bage-img/security-man.png" alt="se">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- ***** Special Area End ***** -->
+
+    <!-- ***** Awesome Features Start ***** -->
+    <section class="awesome-feature-area bg-white section_padding_0_50 clearfix" id="services">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <!-- Heading Text -->
+                    <div class="section-heading text-center">
+                        <h2 id="services_title">ONE Services</h2>
+                        <div class="line-shape"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" id="services_content">
+                <!-- Single Feature Start -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="single-feature">
+                        <i class="fa fa-shield"></i>
+                        <h5>Security services</h5>
+                        <p>We are using the latest technology & programs in securing our sites with experienced security guards and supervisors.  We are the best in providing professionally trained security guards to a wide range of industries in different sectors.</p>
+                    </div>
+                </div>
+                <!-- Single Feature Start -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="single-feature">
+                        <i class="ti-panel"></i>
+                        <h5>HVAC services</h5>
+                        <p>After deep studies and considerations in the field, we provide maintenance services by a wide variety of coverage options to keep your indoor air systems safe and reliable by maintaining Air Condition & HVAC systems.</p>
+                    </div>
+                </div>
+                <!-- Single Feature Start -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="single-feature">
+                        <i class="ti-dashboard"></i>
+                        <h5>Generator Services</h5>
+                        <p>We have decades of experience in the field and successfully providing our Generator Maintenance, Repair, Troubleshooting services from small scale organizations to the large scale organizations in all related sectors in Kuwait.</p>
+                    </div>
+                </div>
+                <!-- Single Feature Start -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="single-feature">
+                        <i class="ti-paint-roller"></i>
+                        <h5>Cleaning services</h5>
+                        <p>As a professional cleaning company, we have better equipment than most other companies in Kuwait. We have all the equipments and professional tools to get your job done.</p>
+                    </div>
+                </div>
+                <!-- Single Feature Start -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="single-feature">
+                        <i class="fa fa-tint"></i>
+                        <h5>Plumbing Services</h5>
+                        <p>We have expert technicians who offer a wide range of services for the new installations and complete plumbing repair or troubleshooting services.</p>
+                    </div>
+                </div>
+                <!-- Single Feature Start -->
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="single-feature">
+                        <i class="fa fa-laptop"></i>
+                        <h5>IT services</h5>
+                        <p>We using the latest procedures & technologies in implementing the best security services in Kuwait by using advanced proposing techniques and strong reporting systems that help us and our clients to be aware of all details.</p>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="single-feature">
+                        <i class="fa fa-bolt"></i>
+                        <h5>Electrical & AC services</h5>
+                        <p>We offer a wide range of services includes Electrical Engineering, Wiring, Ground Testing and Electricians to our commercial & industrial customers. We provide expert services to our clients meeting their needs and requirements. we ensure our customers by providing efficient Electrical Maintenance services.</p>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="single-feature">
+                        <i class="fa fa-cogs"></i>
+                        <h5>Landscaping services</h5>
+                        <p>We have specialized engineers and experienced professionals in the field of landscaping who visit your site and inspect the soil, surface, water, and drainage to deliver the landscaping services by meeting your requirements.</p>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="single-feature">
+                        <i class="fa fa-building"></i>
+                        <h5>Facilities Management services</h5>
+                        <p>We operate on the business functions by helping clients, customers and end users understand the potential impact of their decisions on the provision of space, services, cost, and business risk. We ensure a corporate and cost-effective environment for the organizations to function.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- ***** Awesome Features End ***** -->
+
+
+    <!-- ***** Cool Facts Area Start ***** -->
+    <section class="cool_facts_area clearfix" >
+        <div class="container" id="clients">
+            <div class="row">
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <div class="single-cool-fact d-flex justify-content-center reveal-holder wow fadeInUp" data-wow-delay="0.8s">
+                        <div class="counter-area">
+                            <h3><span class="counter" id="clients_count">0</span></h3>
+                        </div>
+                        <div class="cool-facts-content">
+                            <i class="ti-face-smile"></i>
+                            <p><br>Client</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <div class="single-cool-fact d-flex justify-content-center reveal-holder wow fadeInUp" data-wow-delay="0.2s">
+                        <div class="counter-area">
+                            <h3><span class="counter" id="project_count">0</span></h3>
+                        </div>
+                        <div class="cool-facts-content">
+                            <i class="ti-package"></i>
+                            <p><br>Project</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <div class="single-cool-fact d-flex justify-content-center reveal-holder wow fadeInUp" data-wow-delay="0.6s">
+                        <div class="counter-area">
+                            <h3><span class="counter" id="sites_count">0</span></h3>
+                        </div>
+                        <div class="cool-facts-content">
+                            <i class="fa fa-check-circle"></i>
+                            <p><br>Site</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3 col-lg-3">
+                    <div class="single-cool-fact d-flex justify-content-center reveal-holder wow fadeInUp" data-wow-delay="0.4s">
+                        <div class="counter-area">
+                            <h3><span class="counter" id="employee_count">0</span></h3>
+                        </div>
+                        <div class="cool-facts-content">
+                            <i class="fa fa-users"></i>
+                            <p><br>Employee</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!-- ***** Cool Facts Area End ***** -->
+
+
+
+    <!-- ***** Our Team Area Start ***** -->
+    <section class="our-Team-area bg-white section_padding_0_50 clearfix">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <!-- Heading Text  -->
+                    <div class="section-heading">
+                        <h2>Our Clients</h2>
+                        <div class="line-shape"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" id="our_clients_info">
+                
+                <div class="col-12 col-md-6 col-lg-2">
+                    <div class="single-team-member">
+                        <div class="member-image">
+                            <!--<img src="https://www.bird.co/wp-content/uploads/2018/11/FavIcon_org.png" alt="">-->
+                            <div class="team-hover-effects"></div>
+                        </div>
+                        <div class="member-text text-center">
+                            <h4>Roger West</h4>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!-- ***** Our Team Area End ***** -->
+
+
+
+    <section class="our-monthly-membership section_padding_50 clearfix join-our-team">
+        <br><br><br><br><br>
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="membership-description">
+                        <h2>We Make Your Business Our Business</h2>
+                        <p>No.1  in Kuwait providing services to the organizations from the government sector to the public sector all over in Kuwait.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+
+    <section class="awesome-feature-area bg-white section_padding_100_50 clearfix" id="jobs">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <!-- Heading Text -->
+                    <div class="section-heading text-center">
+                        <h2>Join our Team</h2>
+                        <div class="line-shape"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" id="our-jobs">
+                
+
+                <div class="single-project col-lg-4 col-md-4 col-sm-6 col-xs-12">
+                    <div class="hover ehover11">
+                        <img class="img-responsive" src="assets/one_fm/assets/img/bg-img/Welcome-Background.jpg" alt="">
+                        <div class="projectoverlay">
+                            <h2>PROJECT1</h2>
+                            <button class="info nullbutton showmorebutton" data-toggle="modal" data-target="#modal1">Read More
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </section>
+
+
+
+<div id="modal1" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header right-to-left">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title">Hover effect 11</h2>
+            </div>
+            <div class="modal-body">
+                <h3>HTML</h3>
+                <p> Note: if not using bootstrap and you wish to use the hover simply remove the classes on the first div "col-lg-3 col-md-4 col-sm-6 col-xs-12" and give this div a chosen size eg width: 300px</p>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('erpnext-developer').classList.toggle('hidden');">Apply</button>
+            </div>
+            
+            <div class="modal-applyed hidden" id="erpnext-developer">
+                <hr>
+                    <form id="frmFileUp">
+                        <div class="form-group">
+                        <label for="applicant_name">Applicant Name</label>
+                        <input type="text" class="form-control" name="applicant_name" id="applicant_name" placeholder="Enter name" required>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="applicant_email">Email Address</label>
+                        <input type="email" class="form-control" name="applicant_email" id="applicant_email" placeholder="Enter email" required>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="applicant_cover">Cover Letter</label>
+                        <textarea class="form-control" name="applicant_cover" id="applicant_cover" rows="3"></textarea>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="applicant_files">Resume Attachment</label>
+                        <input type="file" class="form-control-file" name="applicant_files" id="applicant_files">
+                      </div>
+
+                      <button type="button" id="btn_upload" class="btn btn-primary" onclick="add_new_job_applicant('erpnext-developer')">Submit</button>
+
+                    </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    <!-- ***** Our Team Area Start ***** -->
+    <section class="our-Team-area bg-white  clearfix">
+    
+                <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d6956.178638870675!2d48.005844!3d29.338378!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x4fde92abc99ed6ca!2sArmor%20Services!5e0!3m2!1sen!2sus!4v1575285888646!5m2!1sen!2sus" width="100%" height="450" frameborder="0" style="border:0;" allowfullscreen=""></iframe>
+
+    </section>
+    <!-- ***** Our Team Area End ***** -->
+
+
+
+
+    <!-- ***** Contact Us Area Start ***** -->
+    <section class="footer-contact-area section_padding_100 clearfix" id="contact">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <!-- Heading Text  -->
+                    <div class="section-heading">
+                        <h2>Get in touch with us!</h2>
+                        <div class="line-shape"></div>
+                    </div>
+                    <div class="footer-text">
+                        <h4>We'd love to hear from you</h4>
+                        <p>Whether you have a question about features, trials, pricing, or anything else, our team is ready to answer all your questions</p>
+                    </div>
+                    <div class="address-text" id="contact_address">
+                        <p><span>Address:</span> 32059, Hawally – 44403</p>
+                    </div>
+                    <div class="phone-text" id="contact_phone">
+                        <p><span>Phone:</span> +965 22651654</p>
+                    </div>
+                    <div class="email-text" id="contact_email">
+                        <p><span>Email:</span> info@one-fm.com</p>
+                    </div>
+                    <div>
+                        <p class="social" id="social_media">
+                            <a href="#" class="external facebook"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="external youtube"><i class="fab fa-youtube"></i></a>
+                            <a href="#" class="external twitter"><i class="fab fa-twitter"></i></a>
+                            <a href="#" title="" class="external instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="mailto:info@one-fm.com" class="email"><i class="fa fa-envelope"> </i></a>
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <!-- Form Start-->
+                    <div class="contact_from">
+                        <form novalidate>
+                            <!-- Message Input Area Start -->
+                            <div class="contact_input_area">
+                                <div class="row">
+                                    <!-- Single Input Area Start -->
+                                    <div class="col-md-12">
+                                        <div class="form-group control-group">
+                                            <div class="controls">
+                                                <input type="text" class="form-control" name="name" id="name" placeholder="Your Name" required data-validation-required-message="Please enter your name">
+                                                <p class="help-block"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Single Input Area Start -->
+                                    <div class="col-md-12">
+                                        <div class="form-group control-group">
+                                            <div class="controls">
+                                                <input type="email" class="form-control" name="email" id="email" placeholder="Your E-mail" required data-validation-required-message="Please enter your email">
+                                                <p class="help-block"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Single Input Area Start -->
+                                    <div class="col-md-12">
+                                        <div class="form-group control-group">
+                                            <div class="controls">
+                                <select class="form-control selectpicker" title="Your Subject" name="subject" id="subject" equired invalid>
+                                  <option value="" disabled selected>Your Subject ...</option>
+                                  <option value="Sales">Sales</option>
+                                  <option value="Partnerships">Partnerships</option>
+                                  <option value="Recruitment Agencies">Recruitment Agencies</option>
+                                  <option value="Staff Issues">Staff Issues</option>
+                                  <option value="General">General</option>
+                                </select>
+                                <p class="help-block"></p>
+                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Single Input Area Start -->
+                                    <div class="col-12">
+                                        <div class="form-group control-group">
+                                            <div class="controls">
+                                            <textarea name="message" class="form-control" id="message" cols="30" rows="4" placeholder="Your Message *" required data-validation-required-message="Please enter your message" minlength="5" 
+          data-validation-minlength-message="Min 5 characters" maxlength="999"></textarea>
+                                            <p class="help-block"></p>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    <!-- Single Input Area Start -->
+                                    <div class="col-12">
+                                        <div id="success"> </div>
+                                        <button type="submit" class="btn submit-btn">Send Now</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Message Input Area End -->
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+    </section>
+    <!-- ***** Contact Us Area End ***** -->
+
+    <!-- ***** Footer Area Start ***** -->
+    <footer class="footer-social-icon text-center section_padding_70 clearfix">
+        <div class="copyright-text">
+            <p>Copyright ©2019 <a href="http://one-fm.com/" target="_blank">ONE Facilities Management</a></p>
+        </div>
+    </footer>
+    <!-- ***** Footer Area Start ***** -->
+
+    <!-- Jquery-2.2.4 JS -->
+    <script src="assets/one_fm/assets/js/jquery-2.2.4.min.js"></script>
+    <!-- Popper js -->
+    <script src="assets/one_fm/assets/js/popper.min.js"></script>
+    <!-- Bootstrap-4 Beta JS -->
+    <script src="assets/one_fm/assets/js/bootstrap.min.js"></script>
+    <!-- All Plugins JS -->
+    <script src="assets/one_fm/assets/js/plugins.js"></script>
+    <!-- Slick Slider Js-->
+    <script src="assets/one_fm/assets/js/slick.min.js"></script>
+    <!-- Footer Reveal JS -->
+    <script src="assets/one_fm/assets/js/footer-reveal.min.js"></script>
+    <!-- Active JS -->
+    <script src="assets/one_fm/assets/js/active.js"></script>
+
+    <script src="assets/one_fm/assets/js/scripts.js"></script>
+    <!-- <script src="assets/one_fm/assets/js/overlay.js"></script> -->
+
+    <script src="assets/one_fm/assets/js/jqBootstrapValidation.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+
+    <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
+    <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
+
+
+    <script>
+
+
+    // var curr_url = window.location.href
+    // if (curr_url.startsWith('http://one-fm') && location.pathname!='/homepage') {
+    //     window.location.href = 'http://one-fm/homepage'
+    // }
+
+
+var TxtType = function(el, toRotate, period) {
+        this.toRotate = toRotate;
+        this.el = el;
+        this.loopNum = 0;
+        this.period = parseInt(period, 10) || 2000;
+        this.txt = '';
+        this.tick();
+        this.isDeleting = false;
+    };
+
+    TxtType.prototype.tick = function() {
+        var i = this.loopNum % this.toRotate.length;
+        var fullTxt = this.toRotate[i];
+
+        if (this.isDeleting) {
+        this.txt = fullTxt.substring(0, this.txt.length - 1);
+        } else {
+        this.txt = fullTxt.substring(0, this.txt.length + 1);
+        }
+
+        this.el.innerHTML = '<span class="wrap">'+this.txt+'</span>';
+
+        var that = this;
+        var delta = 200 - Math.random() * 100;
+
+        if (this.isDeleting) { delta /= 2; }
+
+        if (!this.isDeleting && this.txt === fullTxt) {
+        delta = this.period;
+        this.isDeleting = true;
+        } else if (this.isDeleting && this.txt === '') {
+        this.isDeleting = false;
+        this.loopNum++;
+        delta = 500;
+        }
+
+        setTimeout(function() {
+        that.tick();
+        }, delta);
+    };
+
+    window.onload = function() {
+        var elements = document.getElementsByClassName('typewrite');
+        for (var i=0; i<elements.length; i++) {
+            var toRotate = elements[i].getAttribute('data-type');
+            var period = elements[i].getAttribute('data-period');
+            if (toRotate) {
+              new TxtType(elements[i], JSON.parse(toRotate), period);
+            }
+        }
+        // INJECT CSS
+        var css = document.createElement("style");
+        css.type = "text/css";
+        css.innerHTML = ".typewrite > .wrap { border-right: 0.08em solid #fff}";
+        document.body.appendChild(css);
+    };
+
+</script>
+
+
+
+    <script>
+
+
+//     var eventFired = false,
+//     objectPositionTop = $('.cool_facts_area').offset().top;
+
+// $(window).on('scroll', function() {
+
+//  var currentPosition = $(document).scrollTop();
+//  if (currentPosition > objectPositionTop && eventFired === false) {
+
+//    eventFired = true;
+//    new WOW().init();
+//  }
+
+// });
+       
+
+
+
+// function isOnScreen(elem) {
+//     if( elem.length == 0 ) {
+//         return;
+//     }
+//     var $window = jQuery(window)
+//     var viewport_top = $window.scrollTop()
+//     var viewport_height = $window.height()
+//     var viewport_bottom = viewport_top + viewport_height
+//     var $elem = jQuery(elem)
+//     var top = $elem.offset().top
+//     var height = $elem.height()
+//     var bottom = top + height
+
+//     return (top >= viewport_top && top < viewport_bottom) ||
+//     (bottom > viewport_top && bottom <= viewport_bottom) ||
+//     (height > viewport_height && top <= viewport_top && bottom >= viewport_bottom)
+// }
+
+// jQuery( document ).ready( function() {
+//     window.addEventListener('scroll', function(e) {
+//         if( isOnScreen( jQuery('.cool_facts_area') ) ) { 
+//             console.log('hiii');
+//             new WOW().init();
+//         }   
+//     });
+// });
+       
+    </script>
+
+</body>
+
+</html>

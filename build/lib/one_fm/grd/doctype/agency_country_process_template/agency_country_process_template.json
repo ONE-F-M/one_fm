@@ -1,0 +1,55 @@
+{
+ "actions": [],
+ "autoname": "field:country_process_template",
+ "creation": "2020-08-19 11:31:28.691517",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "country_process_template",
+  "section_break_2",
+  "agency_process_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "country_process_template",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Country Process Template",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "agency_process_details",
+   "fieldtype": "Table",
+   "label": "Agency Process Details",
+   "options": "Agency Process Details"
+  }
+ ],
+ "links": [],
+ "modified": "2020-08-24 13:30:12.436797",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Agency Country Process Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

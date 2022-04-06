@@ -1,0 +1,305 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "creation": "2020-07-08 21:57:16.286991",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "accommodation",
+  "accommodation_name",
+  "floor_name",
+  "floor",
+  "type",
+  "accommodation_space_code",
+  "column_break_3",
+  "accommodation_unit",
+  "accommodation_unit_code",
+  "accommodation_space_type",
+  "bed_space_available",
+  "space_qr",
+  "bed_details_section",
+  "bed_space_type",
+  "bed_type",
+  "column_break_11",
+  "single_bed_capacity",
+  "gender",
+  "double_bed_capacity",
+  "extra_single_bed_capacity",
+  "extra_double_bed_capacity",
+  "beds_section",
+  "beds",
+  "objects_section",
+  "accommodation_objects",
+  "measurements_section",
+  "length",
+  "width",
+  "height",
+  "column_break_10",
+  "area",
+  "volume"
+ ],
+ "fields": [
+  {
+   "fetch_from": "accommodation_unit.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Accommodation",
+   "options": "Accommodation",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "accommodation_unit.type",
+   "fieldname": "type",
+   "fieldtype": "Link",
+   "label": "Accommodation Type",
+   "options": "Accommodation Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "accommodation_unit",
+   "fieldtype": "Link",
+   "label": "Unit",
+   "options": "Accommodation Unit",
+   "reqd": 1
+  },
+  {
+   "fieldname": "accommodation_space_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Space Type",
+   "options": "Accommodation Space Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "measurements_section",
+   "fieldtype": "Section Break",
+   "label": "Measurements"
+  },
+  {
+   "fieldname": "length",
+   "fieldtype": "Float",
+   "label": "Length in Metre"
+  },
+  {
+   "fieldname": "width",
+   "fieldtype": "Float",
+   "label": "Width in Metre"
+  },
+  {
+   "fieldname": "height",
+   "fieldtype": "Float",
+   "label": "Height in Meter"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "area",
+   "fieldtype": "Float",
+   "label": "Area in Square Metre ",
+   "read_only": 1
+  },
+  {
+   "fieldname": "volume",
+   "fieldtype": "Float",
+   "label": "Volume in Cubic Metre",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "bed_space_available",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Bed Available",
+   "read_only": 1
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fieldname": "beds_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fieldname": "bed_space_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Bed Space Type",
+   "options": "Bed Space Type"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fetch_from": "bed_space_type.single_bed_capacity",
+   "fieldname": "single_bed_capacity",
+   "fieldtype": "Int",
+   "label": "Bed Capacity",
+   "read_only": 1
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fetch_from": "bed_space_type.double_bed_capacity",
+   "fetch_if_empty": 1,
+   "fieldname": "double_bed_capacity",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Double Bed Capacity",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "bed_space_type.extra_single_bed_capacity",
+   "fetch_if_empty": 1,
+   "fieldname": "extra_single_bed_capacity",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Extra Single Bed Capacity",
+   "print_hide": 1
+  },
+  {
+   "fetch_from": "bed_space_type.extra_double_bed_capacity",
+   "fieldname": "extra_double_bed_capacity",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Extra Double Bed Capacity",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "objects_section",
+   "fieldtype": "Section Break",
+   "label": "Objects"
+  },
+  {
+   "fieldname": "accommodation_objects",
+   "fieldtype": "Table",
+   "options": "Accommodation Space Object"
+  },
+  {
+   "fieldname": "accommodation_space_code",
+   "fieldtype": "Data",
+   "label": "Space Code",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation_unit.accommodation_unit_code",
+   "fieldname": "accommodation_unit_code",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Accommodation Unit Code"
+  },
+  {
+   "fetch_from": "accommodation_unit.floor",
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Floor",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "print_hide": 1
+  },
+  {
+   "fetch_from": "accommodation.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_name",
+   "fieldtype": "Data",
+   "label": "Accommodation Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation_unit.floor_name",
+   "fetch_if_empty": 1,
+   "fieldname": "floor_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Floor",
+   "options": "Floor",
+   "reqd": 1
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fieldname": "bed_details_section",
+   "fieldtype": "Section Break",
+   "label": "Bed Details"
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fieldname": "beds",
+   "fieldtype": "Table",
+   "label": "Beds",
+   "options": "Accommodation Space Bed"
+  },
+  {
+   "default": "Single",
+   "depends_on": "bed_space_available",
+   "fieldname": "bed_type",
+   "fieldtype": "Select",
+   "label": "Bed Type",
+   "options": "\nSingle\nDouble"
+  },
+  {
+   "depends_on": "bed_space_available",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "space_qr",
+   "fieldtype": "Data",
+   "label": "Space QR"
+  }
+ ],
+ "links": [],
+ "modified": "2020-11-16 08:47:12.986963",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Space",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "accommodation_name, floor_name, accommodation_unit_code",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

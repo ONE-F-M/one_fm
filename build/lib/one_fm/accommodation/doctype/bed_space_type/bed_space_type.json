@@ -1,0 +1,100 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:bed_space_type",
+ "creation": "2020-07-08 22:17:55.836631",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "bed_space_type",
+  "single_bed_capacity",
+  "double_bed_capacity",
+  "extra_single_bed_capacity",
+  "extra_double_bed_capacity",
+  "total_capacity"
+ ],
+ "fields": [
+  {
+   "fieldname": "bed_space_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bed Space Type",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "single_bed_capacity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Single Bed Capacity"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "double_bed_capacity",
+   "fieldtype": "Int",
+   "in_standard_filter": 1,
+   "label": "Double Bed Capacity"
+  },
+  {
+   "fieldname": "extra_single_bed_capacity",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Extra Single Bed Capacity"
+  },
+  {
+   "fieldname": "extra_double_bed_capacity",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Extra Double Bed Capacity"
+  },
+  {
+   "fieldname": "total_capacity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Total Capacity",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2020-11-16 08:45:51.745199",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Bed Space Type",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "restrict_to_domain": "Hospitality",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "bed_space_type",
+ "track_changes": 1
+}

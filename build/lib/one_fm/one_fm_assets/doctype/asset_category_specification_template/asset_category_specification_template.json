@@ -1,0 +1,29 @@
+{
+ "actions": [],
+ "creation": "2020-06-24 20:33:34.297857",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "specification"
+ ],
+ "fields": [
+  {
+   "fieldname": "specification",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Specification",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2020-07-23 19:37:44.124325",
+ "modified_by": "Administrator",
+ "module": "One FM Assets",
+ "name": "Asset Category Specification Template",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

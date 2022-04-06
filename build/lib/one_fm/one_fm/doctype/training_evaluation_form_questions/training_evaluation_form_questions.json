@@ -1,0 +1,94 @@
+{
+ "creation": "2021-02-12 08:22:05.179233",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "question",
+  "section_break_2",
+  "strongly_agree",
+  "column_break_4",
+  "agree",
+  "column_break_6",
+  "neutral",
+  "column_break_8",
+  "disagree",
+  "column_break_10",
+  "strongly_disagree"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "strongly_agree",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Strongly Agree"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "agree",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Agree"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "neutral",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Neutral"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "disagree",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Disagree"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "strongly_disagree",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Strongly Disagree"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-02-12 08:22:05.179233",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Training Evaluation Form Questions",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

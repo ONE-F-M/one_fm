@@ -1,0 +1,402 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "creation": "2020-07-10 09:42:41.792223",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "accommodation_space",
+  "accommodation",
+  "accommodation_name",
+  "governorate",
+  "area",
+  "location",
+  "floor_name",
+  "floor",
+  "bed_code",
+  "column_break_3",
+  "status",
+  "accommodation_space_type",
+  "type",
+  "accommodation_unit",
+  "unit_owner_reference_number",
+  "disabled",
+  "qr_code_section",
+  "bed_qr",
+  "beds_section",
+  "bed_space_type",
+  "bed_type",
+  "column_break_11",
+  "gender",
+  "objects_section",
+  "accommodation_objects",
+  "occupancy_details_section",
+  "employee",
+  "employee_id",
+  "local_or_overseas",
+  "passport_number",
+  "full_name",
+  "civil_id",
+  "nationality",
+  "religion",
+  "designation",
+  "project",
+  "column_break_24",
+  "contact_number",
+  "email",
+  "visa_number",
+  "employee_status",
+  "comments"
+ ],
+ "fields": [
+  {
+   "fetch_from": "accommodation_space.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Accommodation",
+   "options": "Accommodation"
+  },
+  {
+   "fetch_from": "accommodation_space.type",
+   "fieldname": "type",
+   "fieldtype": "Link",
+   "label": "Accommodation Type",
+   "options": "Accommodation Type",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation_space.accommodation_unit",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_unit",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Unit",
+   "options": "Accommodation Unit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Vacant",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "\nBooked\nTemporarily Booked\nOccupied\nOccupied Temporarily\nUnder Maintenance\nBlocked\nVacant",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation_space.accommodation_space_type",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_space_type",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Space Type",
+   "options": "Accommodation Space Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "accommodation_space",
+   "fieldtype": "Link",
+   "label": "Accommodation Space",
+   "options": "Accommodation Space",
+   "reqd": 1
+  },
+  {
+   "fieldname": "beds_section",
+   "fieldtype": "Section Break",
+   "label": "Bed Details"
+  },
+  {
+   "fetch_from": "accommodation_space.bed_space_type",
+   "fieldname": "bed_space_type",
+   "fieldtype": "Link",
+   "label": "Bed Space Type",
+   "options": "Bed Space Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bed_type",
+   "fieldtype": "Select",
+   "label": "Bed Type",
+   "options": "\nSingle\nDouble"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_if_empty": 1,
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fieldname": "objects_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Objects"
+  },
+  {
+   "fieldname": "accommodation_objects",
+   "fieldtype": "Table",
+   "options": "Accommodation Space Object"
+  },
+  {
+   "depends_on": "eval:doc.status=='Occupied' || doc.status=='Booked' || doc.status=='Booked Temporary' || doc.status=='Occupied Temporarily'",
+   "fieldname": "occupancy_details_section",
+   "fieldtype": "Section Break",
+   "label": "Occupancy Details"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "local_or_overseas",
+   "fieldtype": "Select",
+   "label": "Local or Overseas",
+   "options": "\nLocal\nOverseas",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_religion",
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "label": "Religion",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_24",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.cell_number",
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.prefered_email",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_visa_reference_number",
+   "fieldname": "visa_number",
+   "fieldtype": "Data",
+   "label": "Visa Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Comments"
+  },
+  {
+   "fetch_from": "accommodation.accommodation_area",
+   "fieldname": "area",
+   "fieldtype": "Link",
+   "label": "Area",
+   "options": "Governorate Area",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation.accommodation_location",
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Location",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bed_code",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Bed Code",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "print_hide": 1
+  },
+  {
+   "fetch_from": "accommodation.accommodation",
+   "fetch_if_empty": 1,
+   "fieldname": "accommodation_name",
+   "fieldtype": "Data",
+   "label": "Accommodation Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation_unit.floor",
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Floor"
+  },
+  {
+   "fetch_from": "accommodation.accommodation_governorate",
+   "fieldname": "governorate",
+   "fieldtype": "Link",
+   "label": "Governorate",
+   "options": "Governorate",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Disabled",
+   "print_hide": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "qr_code_section",
+   "fieldtype": "Section Break",
+   "label": "QR CODE"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "bed_qr",
+   "fieldtype": "Data",
+   "label": "Bed QR"
+  },
+  {
+   "fetch_from": "accommodation_unit.floor_name",
+   "fieldname": "floor_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Floor",
+   "options": "Floor",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "accommodation_unit.owner_reference_number",
+   "fieldname": "unit_owner_reference_number",
+   "fieldtype": "Data",
+   "label": "Unit Owner Reference Number",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.status",
+   "fieldname": "employee_status",
+   "fieldtype": "Data",
+   "label": "Employee Status",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-08-26 07:13:43.584160",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Bed",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "accommodation_name, governorate, area, bed_type, gender, status",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

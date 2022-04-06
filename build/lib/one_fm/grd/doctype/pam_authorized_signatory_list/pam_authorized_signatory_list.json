@@ -1,0 +1,114 @@
+{
+ "autoname": "PAS-.YYYY.-.MM.-.######",
+ "creation": "2019-12-15 22:16:03.398590",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company_name_arabic",
+  "company_location",
+  "company_paci_number",
+  "column_break_3",
+  "pam_file_name",
+  "pam_file_number",
+  "pam_issuer_number",
+  "section_break_5",
+  "authorized_signatory",
+  "section_break_7",
+  "estimation_expiry_date",
+  "column_break_9",
+  "authorized_signatory_expiry_date"
+ ],
+ "fields": [
+  {
+   "fetch_from": "pam_file_name.pam_file_number",
+   "fieldname": "pam_file_number",
+   "fieldtype": "Read Only",
+   "label": "PAM File Number"
+  },
+  {
+   "fieldname": "pam_file_name",
+   "fieldtype": "Link",
+   "label": "PAM File Name",
+   "options": "PAM File",
+   "unique": 1
+  },
+  {
+   "fieldname": "authorized_signatory",
+   "fieldtype": "Table",
+   "label": "Authorized Signatory",
+   "options": "PAM Authorized Signatory Table"
+  },
+  {
+   "fieldname": "estimation_expiry_date",
+   "fieldtype": "Date",
+   "label": "Estimation Expiry Date"
+  },
+  {
+   "fieldname": "authorized_signatory_expiry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Authorized Signatory Expiry Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company_name_arabic",
+   "fieldtype": "Data",
+   "label": "Company Name Arabic"
+  },
+  {
+   "fieldname": "company_location",
+   "fieldtype": "Data",
+   "label": "Company Location"
+  },
+  {
+   "fieldname": "company_paci_number",
+   "fieldtype": "Data",
+   "label": "Company PACI Number"
+  },
+  {
+   "fieldname": "pam_issuer_number",
+   "fieldtype": "Data",
+   "label": "PAM Issuer Number"
+  }
+ ],
+ "modified": "2021-06-30 21:24:01.666686",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "PAM Authorized Signatory List",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

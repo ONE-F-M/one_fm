@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "autoname": "ACP.###",
+ "creation": "2020-07-07 16:09:20.080308",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "agency",
+  "agency_name",
+  "column_break_3",
+  "country",
+  "country_code",
+  "address_and_contact_section",
+  "address_html",
+  "column_break_18",
+  "contact_html",
+  "section_break_3",
+  "agency_country_process_template",
+  "agency_process_details",
+  "total_duration"
+ ],
+ "fields": [
+  {
+   "fieldname": "agency",
+   "fieldtype": "Link",
+   "label": "Agency",
+   "options": "Agency",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "agency.agency",
+   "fieldname": "agency_name",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Agency Name"
+  },
+  {
+   "fetch_from": "country.code",
+   "fieldname": "country_code",
+   "fieldtype": "Data",
+   "label": "Country Code"
+  },
+  {
+   "fetch_from": "agency.country",
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "agency_process_details",
+   "fieldtype": "Table",
+   "label": "Agency Process Details",
+   "options": "Agency Process Details"
+  },
+  {
+   "fieldname": "total_duration",
+   "fieldtype": "Float",
+   "label": "Total Duration",
+   "read_only": 1
+  },
+  {
+   "fieldname": "address_html",
+   "fieldtype": "HTML",
+   "label": "Address Html"
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contact_html",
+   "fieldtype": "HTML",
+   "label": "contact html"
+  },
+  {
+   "fieldname": "address_and_contact_section",
+   "fieldtype": "Section Break",
+   "label": "Address and Contact"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "agency_country_process_template",
+   "fieldtype": "Link",
+   "label": "Agency Country Process Template",
+   "options": "Agency Country Process Template"
+  }
+ ],
+ "links": [],
+ "modified": "2020-08-19 11:32:55.205190",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Agency Country Process",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

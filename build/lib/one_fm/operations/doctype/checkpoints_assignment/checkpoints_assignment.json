@@ -1,0 +1,103 @@
+{
+ "autoname": "format: {checkpoint_name} | {route_name} | {site} | {employee} | {post} | {YYYY}-{MM}-{DD} | {###}",
+ "creation": "2020-12-16 20:14:20.015538",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "checkpoint_name",
+  "checkpoint_code",
+  "route_name",
+  "site",
+  "project",
+  "employee",
+  "post",
+  "start_date_time",
+  "end_date_time",
+  "checkpoint_form_template"
+ ],
+ "fields": [
+  {
+   "fieldname": "checkpoint_name",
+   "fieldtype": "Link",
+   "label": "Checkpoint Name",
+   "options": "Checkpoints"
+  },
+  {
+   "fetch_from": "checkpoint_name.site_name",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "fetch_from": "checkpoint_name.project_name",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "post",
+   "fieldtype": "Link",
+   "label": "Post",
+   "options": "Operations Post"
+  },
+  {
+   "fieldname": "checkpoint_form_template",
+   "fieldtype": "Data",
+   "label": "Checkpoint Form Template"
+  },
+  {
+   "fetch_from": "checkpoint_name.checkpoint_code",
+   "fieldname": "checkpoint_code",
+   "fieldtype": "Data",
+   "label": "Checkpoint Code"
+  },
+  {
+   "fieldname": "route_name",
+   "fieldtype": "Link",
+   "label": "Route Name",
+   "options": "Checkpoints Route Assignment"
+  },
+  {
+   "fieldname": "start_date_time",
+   "fieldtype": "Datetime",
+   "label": "Start Date Time"
+  },
+  {
+   "fieldname": "end_date_time",
+   "fieldtype": "Datetime",
+   "label": "End Date Time"
+  }
+ ],
+ "modified": "2021-03-21 19:28:16.627113",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Checkpoints Assignment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

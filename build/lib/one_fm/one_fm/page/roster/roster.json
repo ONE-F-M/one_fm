@@ -1,0 +1,23 @@
+{
+ "content": null,
+ "creation": "2020-01-08 17:21:57.558972",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2021-05-13 13:31:43.988786",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "roster",
+ "owner": "Administrator",
+ "page_name": "Roster",
+ "roles": [
+  {
+   "role": "All"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Roster"
+}

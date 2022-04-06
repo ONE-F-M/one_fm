@@ -1,0 +1,135 @@
+{
+ "autoname": "format:{post}|{date}",
+ "creation": "2020-09-07 22:45:45.061371",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "date",
+  "cb1",
+  "post",
+  "column_break_2",
+  "initiated_by",
+  "column_break_4",
+  "handover_to",
+  "section_break_6",
+  "docs_check",
+  "docs_comment",
+  "column_break_9",
+  "equipment_check",
+  "equipment_comment",
+  "column_break_12",
+  "items_check",
+  "items_comment"
+ ],
+ "fields": [
+  {
+   "fieldname": "post",
+   "fieldtype": "Link",
+   "label": "Post",
+   "options": "Operations Post"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "initiated_by",
+   "fieldtype": "Link",
+   "label": "Initiated By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "handover_to",
+   "fieldtype": "Link",
+   "label": "Handover to",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "docs_check",
+   "fieldtype": "Check",
+   "label": "Docs According to Post list"
+  },
+  {
+   "depends_on": "eval:doc.docs_check==0",
+   "fieldname": "docs_comment",
+   "fieldtype": "Small Text",
+   "label": "Comment"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "equipment_check",
+   "fieldtype": "Check",
+   "label": "Equipment as per Post list"
+  },
+  {
+   "depends_on": "eval:doc.equipment_check==0",
+   "fieldname": "equipment_comment",
+   "fieldtype": "Small Text",
+   "label": "Comment"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "items_check",
+   "fieldtype": "Check",
+   "label": "Post items as per instructions"
+  },
+  {
+   "depends_on": "eval:doc.items_check==0",
+   "fieldname": "items_comment",
+   "fieldtype": "Small Text",
+   "label": "Comment"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "modified": "2020-09-19 05:45:56.553518",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Post Handover",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

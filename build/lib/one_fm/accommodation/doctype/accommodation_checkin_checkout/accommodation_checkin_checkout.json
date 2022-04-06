@@ -1,0 +1,450 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2020-09-14 21:04:36.126422",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "transfer_details_section",
+  "transfer_from",
+  "transferred_by",
+  "column_break_4",
+  "reason_for_transfer",
+  "section_break_4",
+  "naming_series",
+  "type",
+  "checked_out",
+  "booking_reference",
+  "checkin_reference",
+  "tenant_category",
+  "employee",
+  "column_break_2",
+  "checkin_checkout_date_time",
+  "reason_for_checkout",
+  "contract_details_section",
+  "contract_company_name",
+  "contract_contact_person",
+  "contract_phone",
+  "column_break_15",
+  "contract_email",
+  "contract_start_date",
+  "contract_end_date",
+  "tenant_details_section",
+  "full_name",
+  "passport_number",
+  "designation",
+  "project",
+  "nationality",
+  "column_break_7",
+  "employee_id",
+  "civil_id",
+  "employment_type",
+  "employee_status",
+  "bed_details_section",
+  "accommodation",
+  "floor",
+  "accommodation_unit",
+  "accommodation_space",
+  "bed",
+  "column_break_14",
+  "comments",
+  "section_break_19",
+  "new_or_current_resident",
+  "column_break_21",
+  "employee_own_asset_related_to_accommodation",
+  "asset_section",
+  "print_accommodation_policy",
+  "attach_print_accommodation_policy",
+  "column_break_26",
+  "print_asset_receiving_declaration",
+  "attach_asset_receiving_declaration",
+  "asset_return_details_section",
+  "asset_return_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.passport_number",
+   "fetch_if_empty": 1,
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fetch_if_empty": 1,
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "CIVIL ID"
+  },
+  {
+   "fieldname": "bed_details_section",
+   "fieldtype": "Section Break",
+   "label": "Bed Details"
+  },
+  {
+   "fetch_from": "bed.accommodation",
+   "fieldname": "accommodation",
+   "fieldtype": "Link",
+   "label": "Accommodation",
+   "options": "Accommodation"
+  },
+  {
+   "fetch_from": "bed.floor_name",
+   "fieldname": "floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Floor"
+  },
+  {
+   "fetch_from": "bed.accommodation_unit",
+   "fieldname": "accommodation_unit",
+   "fieldtype": "Link",
+   "label": "Accommodation Unit",
+   "options": "Accommodation Unit"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "bed",
+   "fieldtype": "Link",
+   "label": "Bed",
+   "options": "Bed",
+   "reqd": 1
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Comments"
+  },
+  {
+   "depends_on": "eval:doc.type=='IN'",
+   "fieldname": "booking_reference",
+   "fieldtype": "Link",
+   "label": "Booking Reference",
+   "options": "Book Bed"
+  },
+  {
+   "fieldname": "new_or_current_resident",
+   "fieldtype": "Select",
+   "label": "New/Current Resident",
+   "options": "\nNew Resident\nCurrent Resident"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "\nIN\nOUT",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.type=='OUT'",
+   "fieldname": "checkin_reference",
+   "fieldtype": "Link",
+   "label": "Checkin Reference",
+   "options": "Accommodation Checkin Checkout"
+  },
+  {
+   "depends_on": "eval:doc.type=='IN'",
+   "fieldname": "section_break_19",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.new_or_current_resident=='Current Resident'",
+   "fieldname": "employee_own_asset_related_to_accommodation",
+   "fieldtype": "Select",
+   "label": "Employee Own Asset Related to Accommodation",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.type==\"IN\"",
+   "fieldname": "asset_section",
+   "fieldtype": "Section Break",
+   "label": "Asset Details"
+  },
+  {
+   "depends_on": "eval:(doc.new_or_current_resident == \"New Resident\" || (doc.new_or_current_resident == 'Current Resident' && doc.employee_own_asset_related_to_accommodation == \"Yes\")) && doc.type==\"IN\" && doc.docstatus == 0",
+   "fieldname": "print_asset_receiving_declaration",
+   "fieldtype": "Button",
+   "label": "Print Asset Receiving Declaration"
+  },
+  {
+   "depends_on": "eval:doc.new_or_current_resident == \"New Resident\" || (doc.new_or_current_resident == 'Current Resident' && doc.employee_own_asset_related_to_accommodation == \"Yes\")",
+   "fieldname": "attach_asset_receiving_declaration",
+   "fieldtype": "Attach",
+   "label": "Signed Copy of Asset Receiving Declaration"
+  },
+  {
+   "depends_on": "eval:doc.type==\"IN\" && doc.docstatus == 0",
+   "fieldname": "print_accommodation_policy",
+   "fieldtype": "Button",
+   "label": "Print Accommodation Policy"
+  },
+  {
+   "fieldname": "attach_print_accommodation_policy",
+   "fieldtype": "Attach",
+   "label": "Signed Copy of Print Accommodation Policy"
+  },
+  {
+   "fieldname": "column_break_26",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.type=='OUT'",
+   "fieldname": "reason_for_checkout",
+   "fieldtype": "Select",
+   "label": "Reason For Checkout",
+   "options": "\nExit the company\nExit the company accommodation\nMoving to a new accommodation\nAccommodation Transfer\nOther"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "\nCHECKIN-.YYYY.-\nCHECKOUT-.YYYY.-"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.type=='OUT'",
+   "fieldname": "asset_return_details_section",
+   "fieldtype": "Section Break",
+   "label": "Asset Return Details"
+  },
+  {
+   "fieldname": "asset_return_details",
+   "fieldtype": "Small Text",
+   "label": "Asset Return Details"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.type == 'IN'",
+   "fieldname": "checked_out",
+   "fieldtype": "Check",
+   "label": "Checked Out",
+   "read_only": 1
+  },
+  {
+   "fieldname": "checkin_checkout_date_time",
+   "fieldtype": "Datetime",
+   "label": "Date and Time",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fetch_if_empty": 1,
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee ID"
+  },
+  {
+   "fieldname": "tenant_category",
+   "fieldtype": "Select",
+   "label": "Tenant Category",
+   "options": "\nGranted Service\nPaid Service",
+   "reqd": 1
+  },
+  {
+   "fieldname": "tenant_details_section",
+   "fieldtype": "Section Break",
+   "label": "Tenant Details"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
+   "fieldname": "contract_details_section",
+   "fieldtype": "Section Break",
+   "label": "Contract Details"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
+   "fieldname": "contract_company_name",
+   "fieldtype": "Data",
+   "label": "Company Name"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
+   "fieldname": "contract_contact_person",
+   "fieldtype": "Data",
+   "label": "Contact Person"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
+   "fieldname": "contract_phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
+   "fieldname": "contract_email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
+   "fieldname": "contract_start_date",
+   "fieldtype": "Date",
+   "label": "Contract Start Date"
+  },
+  {
+   "depends_on": "eval:doc.tenant_category == 'Paid Service'",
+   "fieldname": "contract_end_date",
+   "fieldtype": "Date",
+   "label": "Contract End Date"
+  },
+  {
+   "fetch_from": "bed.accommodation_space",
+   "fieldname": "accommodation_space",
+   "fieldtype": "Link",
+   "label": "Accommodation Space",
+   "options": "Accommodation Space"
+  },
+  {
+   "fetch_from": "employee.employment_type",
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type"
+  },
+  {
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "transfer_from",
+   "fieldname": "transfer_details_section",
+   "fieldtype": "Section Break",
+   "label": "Transfer Details"
+  },
+  {
+   "fieldname": "transfer_from",
+   "fieldtype": "Link",
+   "label": "Transfer From",
+   "options": "Bed",
+   "read_only": 1
+  },
+  {
+   "depends_on": "transfer_from",
+   "fieldname": "reason_for_transfer",
+   "fieldtype": "Small Text",
+   "label": "Reason for Transfer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "transferred_by",
+   "fieldtype": "Link",
+   "label": "Transferred By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.status",
+   "fieldname": "employee_status",
+   "fieldtype": "Data",
+   "label": "Employee Status",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-10-06 11:48:13.222242",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Checkin Checkout",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "employee, employee_id, full_name, civil_id, passport_number, bed",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

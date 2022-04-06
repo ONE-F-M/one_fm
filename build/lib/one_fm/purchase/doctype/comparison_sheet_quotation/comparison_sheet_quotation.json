@@ -1,0 +1,100 @@
+{
+ "actions": [],
+ "autoname": "CSQ.#######",
+ "creation": "2020-06-05 22:25:38.962080",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "quotation",
+  "supplier",
+  "supplier_name",
+  "column_break_3",
+  "estimated_delivery_date",
+  "grand_total",
+  "section_break_5",
+  "item_details",
+  "attach_sq"
+ ],
+ "fields": [
+  {
+   "fieldname": "quotation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Quotation",
+   "oldfieldname": "item_name",
+   "oldfieldtype": "Data",
+   "options": "Quotation From Supplier",
+   "reqd": 1
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Supplier",
+   "options": "Supplier"
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Grand Total"
+  },
+  {
+   "columns": 2,
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break",
+   "oldfieldname": "qty",
+   "oldfieldtype": "Currency",
+   "print_width": "60px",
+   "width": "60px"
+  },
+  {
+   "fieldname": "item_details",
+   "fieldtype": "Text Editor",
+   "label": "Item Details",
+   "oldfieldname": "uom",
+   "oldfieldtype": "Link",
+   "print_width": "100px",
+   "read_only": 1,
+   "width": "100px"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "estimated_delivery_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Delivery Date",
+   "oldfieldname": "description",
+   "oldfieldtype": "Small Text",
+   "print_width": "300px",
+   "width": "300px"
+  },
+  {
+   "fieldname": "attach_sq",
+   "fieldtype": "Attach",
+   "label": "Quotation"
+  },
+  {
+   "depends_on": "supplier",
+   "fetch_from": "supplier.supplier_name",
+   "fetch_if_empty": 1,
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "label": "Supplier Name"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2022-01-06 11:29:34.534738",
+ "modified_by": "Administrator",
+ "module": "Purchase",
+ "name": "Comparison Sheet Quotation",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

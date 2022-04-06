@@ -1,0 +1,101 @@
+{
+ "creation": "2020-06-01 20:34:20.617837",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "default_supplier",
+  "travel_agent_info_section",
+  "travel_agent_email",
+  "grd_info_section",
+  "grd_email",
+  "column_break_14",
+  "grd_name",
+  "column_break_6",
+  "grd_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "default_supplier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Default Supplier",
+   "options": "Supplier",
+   "reqd": 1
+  },
+  {
+   "fieldname": "travel_agent_email",
+   "fieldtype": "Data",
+   "label": "Travel Agent Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "travel_agent_info_section",
+   "fieldtype": "Section Break",
+   "label": "Travel Agent Info"
+  },
+  {
+   "fieldname": "grd_info_section",
+   "fieldtype": "Section Break",
+   "label": "GRD Info"
+  },
+  {
+   "fieldname": "grd_name",
+   "fieldtype": "Data",
+   "label": "GRD Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grd_number",
+   "fieldtype": "Data",
+   "label": "GRD Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "grd_email",
+   "fieldtype": "Data",
+   "label": "GRD Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2020-06-07 10:58:12.879621",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "GP Letter Request Setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Guest",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

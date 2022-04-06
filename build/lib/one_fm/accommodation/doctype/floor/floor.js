@@ -1,0 +1,10 @@
+// Copyright (c) 2020, omar jaber and contributors
+// For license information, please see license.txt
+
+frappe.ui.form.on('Floor', {
+	refresh: function(frm) {
+		if(!frm.is_new()){
+			frm.set_df_property('floor', 'read_only', true);
+		}
+	}
+});

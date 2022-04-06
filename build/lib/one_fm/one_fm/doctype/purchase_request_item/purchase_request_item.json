@@ -1,0 +1,138 @@
+{
+ "autoname": "PRI.#######",
+ "creation": "2020-04-15 23:36:17.352485",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "ordered_qty",
+  "column_break_2",
+  "item_name",
+  "reqd_by_date",
+  "description_section",
+  "description",
+  "section_break_6",
+  "requested_quantity",
+  "uom",
+  "column_break_8",
+  "unit_price",
+  "total_amount",
+  "notes_section",
+  "selected",
+  "note"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item Code",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "item_code.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name"
+  },
+  {
+   "fieldname": "reqd_by_date",
+   "fieldtype": "Date",
+   "label": "Reqd By Date",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "description_section",
+   "fieldtype": "Section Break",
+   "label": "Description"
+  },
+  {
+   "fetch_from": "item_code.description",
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "requested_quantity",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Requested Quantity",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "item_code.stock_uom",
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "label": "UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "unit_price",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Unit Price",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Amount",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "selected",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Ordered",
+   "read_only": 1
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Text Editor",
+   "label": "Note"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "ordered_qty",
+   "fieldtype": "Int",
+   "label": "Ordered Qty",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-04-30 11:29:27.026683",
+ "modified_by": "omar.ja93@gmail.com",
+ "module": "One Fm",
+ "name": "Purchase Request Item",
+ "owner": "omar.ja93@gmail.com",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

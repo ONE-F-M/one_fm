@@ -1,0 +1,84 @@
+.main-container{
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.form-container{
+    width: 100%;
+}
+.message-block-icon {
+	width: 50px;
+	min-width: 50px;
+	height: 50px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #5e64ff12;
+	border-radius: 50%;
+	margin-right: 0.5em;
+	color: #fff;
+	font-size: 1.5em;
+	color: #5e64ff;
+	border: 1px solid #5e64ff1c;
+}
+.message-block-info {
+	font-size: 1.8rem;
+	font-weight: 700;
+	/* color: #5e64ff; */
+}
+.message-block-info span {
+	font-size: 0.875rem;
+	font-weight: 400;
+	display: block;
+	color: #bebfca;
+}
+.message-block-head{
+    display: flex;
+}
+
+#cover-spin {
+	position: fixed;
+	width: 100%;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	background-color: rgb(255 255 255 / 0.7);
+	z-index: 9999;
+	display: none;
+}
+
+@-webkit-keyframes spin {
+	from {
+	  -webkit-transform: rotate(0deg);
+	}
+	to {
+	  -webkit-transform: rotate(360deg);
+	}
+  }
+  
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+#cover-spin::after {
+	content: "";
+	display: block;
+	position: absolute;
+	left: 48%;
+	top: 40%;
+	width: 40px;
+	height: 40px;
+	border-style: solid;
+	border-color: black;
+	border-top-color: transparent;
+	border-width: 4px;
+	border-radius: 50%;
+	-webkit-animation: spin 0.8s linear infinite;
+	animation: spin 0.8s linear infinite;
+  }

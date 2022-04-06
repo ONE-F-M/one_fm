@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>One FM</title>
+
+
+    <!-- Favicon -->
+    <link rel="icon" href="assets/one_fm/assets/img/logo-img/favicon.ico">
+    <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/8.5.0/svg/shield.svg">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+
+    <!-- Core Stylesheet -->
+    <link href="assets/one_fm/assets/style.css" rel="stylesheet">
+
+    <link href="assets/one_fm/assets/css/animate.min.css" rel="stylesheet">
+
+    <link href="assets/one_fm/assets/css/effects.min.css" rel="stylesheet">
+
+    <!-- Responsive CSS -->
+    <link href="assets/one_fm/assets/css/responsive.css" rel="stylesheet">
+
+
+</head>
+
+<body>
+
+	<div id="preloader">
+        <div class="colorlib-load"></div>
+    </div>
+
+    <!--
+<div style="text-align: center;">
+    <img src="assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png" alt="One FM" style="width: 35%;vertical-align: initial;" id="logo"></a>
+</div>
+-->
+
+	
+    <!-- Jquery-2.2.4 JS -->
+    <script src="assets/one_fm/assets/js/jquery-2.2.4.min.js"></script>
+    <!-- Popper js -->
+    <script src="assets/one_fm/assets/js/popper.min.js"></script>
+    <!-- Bootstrap-4 Beta JS -->
+    <script src="assets/one_fm/assets/js/bootstrap.min.js"></script>
+    <!-- All Plugins JS -->
+    <script src="assets/one_fm/assets/js/plugins.js"></script>
+    <!-- Slick Slider Js-->
+    <script src="assets/one_fm/assets/js/slick.min.js"></script>
+    <!-- Footer Reveal JS -->
+    <script src="assets/one_fm/assets/js/footer-reveal.min.js"></script>
+    <!-- Active JS -->
+    <script src="assets/one_fm/assets/js/active.js"></script>
+
+    <script src="assets/one_fm/assets/js/scripts.js"></script>
+    <!-- <script src="assets/one_fm/assets/js/overlay.js"></script> -->
+
+    <script src="assets/one_fm/assets/js/jqBootstrapValidation.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+
+    <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
+    <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
+
+
+    <script>
+
+
+	    var curr_url = window.location.href
+	    if (curr_url.startsWith('http://one-fm') || curr_url.startsWith('https://one-fm')) {
+	        window.location.replace('/homepage');
+	    } else {
+	        window.location.replace('/login');
+	    }
+    
+    </script>
+</body>
+
+</html>

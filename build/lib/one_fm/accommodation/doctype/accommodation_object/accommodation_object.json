@@ -1,0 +1,56 @@
+{
+ "actions": [],
+ "autoname": "field:accommodation_object",
+ "creation": "2020-07-10 09:22:11.354550",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "accommodation_object"
+ ],
+ "fields": [
+  {
+   "fieldname": "accommodation_object",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Accommodation Object",
+   "reqd": 1,
+   "unique": 1
+  }
+ ],
+ "links": [],
+ "modified": "2020-11-16 08:46:01.828340",
+ "modified_by": "Administrator",
+ "module": "Accommodation",
+ "name": "Accommodation Object",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accommodation User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

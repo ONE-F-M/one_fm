@@ -1,0 +1,139 @@
+/*--------------------------------------------------*/
+/*---------------------SPINNER----------------------*/
+#cover-spin {
+  position: fixed;
+  width: 100%;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.952);
+  z-index: 9999;
+  display: none;
+}
+
+@-webkit-keyframes spin {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+#cover-spin::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 48%;
+  top: 40%;
+  width: 40px;
+  height: 40px;
+  border-style: solid;
+  border-color: #a4a7aa;
+  border-top-color: transparent;
+  border-width: 4px;
+  border-radius: 50%;
+  -webkit-animation: spin 0.8s linear infinite;
+  animation: spin 0.8s linear infinite;
+}
+/*--------------------------------------------------*/
+/*--------------------------------------------------*/
+.button1 {
+  border-radius: 0px;
+  background-color: #1a1a1a;
+  color: white;
+}
+.button1:hover {
+  border-radius: 0px;
+  background-color: #a3a7aa;
+  color: white;
+}
+/*---------------------------------------------------*/
+.card {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  margin: auto;
+  text-align: center;
+}
+
+.title {
+  color: grey;
+  /* font-size: 18px; */
+}
+
+.btn-start {
+  text-align: center;
+  cursor: pointer;
+  width: 100%;
+  font-size: 14px;
+  display: block;
+  margin: 5px auto;
+}
+
+/* a {
+  text-decoration: none;
+  /* font-size: 22px; */
+/* color: black;
+} */
+
+button:hover,
+a:hover {
+  opacity: 0.7;
+}
+div#countdown {
+  font-size: 18px;
+  /* color: red; */
+  text-transform: uppercase;
+}
+.verification,
+.enrollment {
+  padding-top: 10px;
+}
+
+video {
+  max-width: 100%;
+  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg); /* Safari and Chrome */
+  -moz-transform: rotateY(180deg); /* Firefox */
+}
+
+.cues {
+  font-size: 16px;
+}
+.countdown {
+  color: red;
+  border: 1px solid;
+  padding: 0 5px;
+  border-radius: 4px;
+}
+.fa-icon {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+@media (max-width: 991px) {
+  #profile-card .card {
+    display: none;
+  }
+}
+
+#button-controls {
+  display: none;
+}
+
+#startButton,
+#endButton,
+#enrollButton,
+#hourlyButton {
+  display: none;
+}

@@ -1,0 +1,156 @@
+{
+ "actions": [],
+ "creation": "2020-04-28 18:51:50.039815",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "site",
+  "column_break_2",
+  "project",
+  "service_type",
+  "shift_details_section",
+  "shift_number",
+  "shift_type",
+  "column_break_8",
+  "supervisor",
+  "column_break_14",
+  "supervisor_name",
+  "section_break_12",
+  "start_time",
+  "end_time",
+  "column_break_15",
+  "duration",
+  "shift_classification"
+ ],
+ "fields": [
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "site.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shift_details_section",
+   "fieldtype": "Section Break",
+   "label": "Shift Details"
+  },
+  {
+   "fieldname": "shift_type",
+   "fieldtype": "Link",
+   "label": "Shift Type",
+   "options": "Shift Type"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "supervisor",
+   "fieldtype": "Link",
+   "label": "Shift Supervisor",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "supervisor.employee_name",
+   "fieldname": "supervisor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "shift_type.start_time",
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "label": "Start time",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift_type.end_time",
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "label": "End time",
+   "read_only": 1
+  },
+  {
+   "description": "In hours",
+   "fetch_from": "shift_type.duration",
+   "fieldname": "duration",
+   "fieldtype": "Int",
+   "label": "Duration",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift_type.shift_type",
+   "fieldname": "shift_classification",
+   "fieldtype": "Data",
+   "label": "Shift Classification",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "service_type",
+   "fieldtype": "Link",
+   "label": "Service Type",
+   "options": "Service Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "shift_number",
+   "fieldtype": "Int",
+   "label": "Shift Number",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2021-09-05 18:01:56.381947",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Operations Shift",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
