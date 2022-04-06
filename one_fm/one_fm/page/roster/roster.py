@@ -432,14 +432,14 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date, keep_da
 			additional_shift_assignment_doc.project = project
 			additional_shift_assignment_doc.site = site
 			additional_shift_assignment_doc.shift = shift
-			additional_shift_assignment_doc.save()
+			additional_shift_assignment_doc.save(ignore_permissions=True)
 		else:
 			additional_shift_assignment_doc = frappe.new_doc("Additional Shift Assignment")
 			additional_shift_assignment_doc.employee = employee
 			additional_shift_assignment_doc.project = project
 			additional_shift_assignment_doc.site = site
 			additional_shift_assignment_doc.shift = shift
-			additional_shift_assignment_doc.save()
+			additional_shift_assignment_doc.save(ignore_permissions=True)
 	elif emp_project == project and emp_site == site and emp_shift == shift:
 		if frappe.db.exists("Additional Shift Assignment", {'employee': employee}):
 			additional_shift_assignment_doc = frappe.get_value("Additional Shift Assignment", {'employee': employee, 'project': project, 'site': site, 'shift': shift})
@@ -484,7 +484,7 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 		for employee in json.loads(employees):
 			st = time.time()
 			if cint(never_end) == 1:
-				rosters = frappe.get_list("Employee Schedule", {"employee": employee["employee"],"date": ('>=', start_date)})
+				rosters = frappe.get_list("Employee Schedule", {"employee": employee["employee"],"date": ('>=', start_date)}, ignore_permissions=True)
 				rosters = [roster.name for roster in rosters]
 				rosters = ', '.join(['"{}"'.format(value) for value in rosters])
 				if rosters:
@@ -493,7 +493,7 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 						where name in ({ids})
 					""".format(ids=rosters))
 			if end_date and cint(never_end) != 1:
-				rosters = frappe.get_list("Employee Schedule", {"employee": employee["employee"], "date": ['between', (start_date, end_date)]})
+				rosters = frappe.get_list("Employee Schedule", {"employee": employee["employee"], "date": ['between', (start_date, end_date)]}, ignore_permissions=True)
 				rosters = [roster.name for roster in rosters]
 				rosters = ', '.join(['"{}"'.format(value) for value in rosters])
 				if rosters:
@@ -829,7 +829,7 @@ def set_dayoff(employee, date):
 	doc.employee_availability = "Day Off"
 	doc.post_abbrv = None
 	doc.roster_type = 'Basic'
-	doc.save()
+	doc.save(ignore_permissions=True)
 
 
 @frappe.whitelist()
