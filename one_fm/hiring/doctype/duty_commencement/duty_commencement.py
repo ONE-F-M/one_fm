@@ -14,8 +14,8 @@ class DutyCommencement(Document):
 		if not self.posting_date:
 			self.posting_date = today()
 
-		if getdate(self.date_of_joining) < getdate():
-			frappe.throw(_("Date of joining cannot be before today"))
+		if getdate(self.date_of_joining) < getdate(self.posting_date):
+			frappe.msgprint(_("Date of joining is before duty commencement posting date"), alert=True)
 
 		self.set_progress()
 		self.update_salary_details_from_job_offer()
