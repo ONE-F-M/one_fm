@@ -23,13 +23,13 @@ def get_context(context):
         context.is_kuwaiti = 0
         if job_applicant.one_fm_nationality == 'Kuwaiti':
             context.is_kuwaiti = 1
-        context.applicant_name = str(job_applicant.name).split("-")[0]
+        context.applicant_name = str(job_applicant.name).split("-")[0].strip()
         context.applicant_designation = job_applicant.designation
         context.email_id = job_applicant.one_fm_email_id
 
 @frappe.whitelist(allow_guest=True)
 def populate_nationality():
-    return frappe.get_list('Nationality', pluck='name')
+    return frappe.get_list('Nationality', pluck='name', ignore_permissions=True)
 
 @frappe.whitelist(allow_guest=True)
 def fetch_nationality(code):

@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "creation": "2022-04-05 07:23:40.874856",
+ "description": "Send residency expiry notification via Email.",
+ "doctype": "DocType",
+ "document_type": "System",
+ "engine": "InnoDB",
+ "field_order": [
+  "settings",
+  "column_break0",
+  "enabled",
+  "company",
+  "frequency",
+  "residency_expire_in_days",
+  "next_send",
+  "column_break1",
+  "recipients"
+ ],
+ "fields": [
+  {
+   "fieldname": "settings",
+   "fieldtype": "Section Break",
+   "label": "Digest Settings"
+  },
+  {
+   "fieldname": "column_break0",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "For Company",
+   "options": "Company",
+   "remember_last_selected_value": 1
+  },
+  {
+   "fieldname": "frequency",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "How frequently?",
+   "mandatory_depends_on": "enabled",
+   "options": "Daily\nWeekly\nMonthly",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.enabled",
+   "fieldname": "next_send",
+   "fieldtype": "Data",
+   "label": "Next email will be sent on:",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Note: Email will not be sent to disabled users",
+   "fieldname": "recipients",
+   "fieldtype": "Table MultiSelect",
+   "label": "Recipients",
+   "mandatory_depends_on": "enabled",
+   "options": "Email Digest Recipient"
+  },
+  {
+   "default": "45",
+   "description": "Get list of employees residency expire in days",
+   "fieldname": "residency_expire_in_days",
+   "fieldtype": "Int",
+   "label": "Residency Expire in Days",
+   "mandatory_depends_on": "enabled"
+  }
+ ],
+ "icon": "fa fa-envelope",
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2022-04-05 09:24:15.093523",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Residency Expiry Notification Digest",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
