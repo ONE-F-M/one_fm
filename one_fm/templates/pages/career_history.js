@@ -15,10 +15,11 @@ career_history = Class.extend({
     $('.submit-btn').hide();
     $('.next-btn').hide();
     $('.main_section').hide();
-    
+    $('.back-btn').hide();
+
     this.intro_btn(me);
     this.introduction();
-    //this.next_career_history();
+    
     this.submit_career_history();
   },
   introduction:function(){
@@ -35,15 +36,15 @@ career_history = Class.extend({
     $(`.promotion_select_${company_no}${promotion_no}`).on("change", function(){
       var promotion_select = $(`.promotion_select_${company_no}${promotion_no}`).val()
       var promotion_details_html = "";
-      var promotion_details_next_job_title_html = `<div class="my-5 col-lg-6 col-md-6">
+      var promotion_details_next_job_title_html = `<div class="my-5 col-lg-12 col-md-12">
           <label class="form-label">So, tell us what position you got promoted to first.</label>
           <input type="text" class="form-control position_${company_no}${promotion_no}" placeholder="Enter Your New Job Title"/>
         </div>`;
-      var promotion_details_salary_html = `<div class="my-5 col-lg-6 col-md-6">
+      var promotion_details_salary_html = `<div class="my-5 col-lg-12 col-md-12">
           <label class="form-label">How much was your incremented salary in KWD?</label>
           <input type="text" class="form-control salary_${company_no}${promotion_no}" placeholder="Enter your increased Salary in KWD"/>
         </div>`;
-      var promotion_details_promotion_date_html = `<div class="my-5 col-lg-6 col-md-6">
+      var promotion_details_promotion_date_html = `<div class="my-5 col-lg-12 col-md-12">
           <label class="form-label">When did you get promoted?</label>
           <input type="date" class="form-control date_of_promotion_${company_no}${promotion_no}"/>
         </div>`;
@@ -119,7 +120,7 @@ career_history = Class.extend({
     });
   },
   are_you_still_working_html: function(company_no) {
-    var are_you_still_working_html = `<div class="row mx-auto col-lg-12 col-md-12 mb-12 are_you_still_working_${company_no}">
+    var are_you_still_working_html = `<div class="row mx-auto col-lg-12 col-md-12 mb-3 are_you_still_working_${company_no}">
       <label  class="form-label">Are you still working?</label>
       <select class="custom-select are_you_still_working_${company_no}_select">
         <option value="0">Choose</option>
@@ -159,15 +160,20 @@ career_history = Class.extend({
   },
   create_company_section_html: function(company_no) {
     $('.main_section').delay(400).fadeIn();
+    if(company_no>=2){
+      $('.back-btn').fadeIn();
+      this.back_career_history(company_no);
+    }
     var company_section_html = `
-    <h3 class=" mx-auto">So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
-		<div class="row mx-auto col-lg-12 col-md-12 mb-12 company_${company_no} border-top">
-		  	<div class="my-5 col-lg-6 col-md-6">
-				<label class="form-label">${stringifyNumber(company_no)} Company Name </label>
+    <div class="section_${company_no}">
+    <h3 class="mx-auto">So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
+		<div class="row mx-auto col-lg-12 col-md-12 mb-3 company_${company_no} border-top">
+		  	<div class="my-3 col-lg-12 col-md-12">
+				<label class="form-label">What was the company's name? </label>
 				<input type="text" class="form-control company_${company_no}_name" placeholder="Enter the ${stringifyNumber(company_no)} Company Name"/>
 		  	</div>
-		  	<div class="my-5 col-lg-6 col-md-6">
-				<label class="form-label">Select country of employment</label> <br>
+		  	<div class="my-3 col-lg-12 col-md-12">
+				<label class="form-label">Which country did you get employed in?</label> <br>
 					<select class="form-control country_of_company_${company_no}">
 					<option>Select Country</option>
 					{% for country in country_list %}
@@ -175,11 +181,11 @@ career_history = Class.extend({
 					{% endfor %}
 				</select>
 		  	</div>
-		  	<div class="mb-3 col-lg-6 col-md-6">
+		  	<div class="mb-3 col-lg-12 col-md-12">
 				<label class="form-label">When did you join the company?</label>
 				<input type="date" class="form-control joined_company${company_no}"/>
 		  	</div>
-		  	<div class="mb-3 col-lg-6 col-md-6">
+		  	<div class="mb-3 col-lg-12 col-md-12">
 				<label class="form-label">What was your first salary at this company?</label>
 				<input type="text" class="form-control salary_company${company_no}" placeholder="Enter your Salary in KWD"/>
 		  	</div>
@@ -188,7 +194,7 @@ career_history = Class.extend({
 				<hr class="my-5"/>
 			</div>
 	
-			<div class="mb-3 col-lg-6 col-md-6">
+			<div class="mb-3 col-lg-12 col-md-12">
 				<label  class="form-label">What was your starting job title?</label>
 				<input type="text" class="form-control starting_job_title_company_${company_no}" placeholder="Enter the Job Title"/>
 			</div>
@@ -205,7 +211,8 @@ career_history = Class.extend({
 				<option value="2">No</option>
 				</select>
 			</div>
-	</div>`;
+	</div>
+  </div>`;
     $(".main_section").append(company_section_html);
     TOTAL_COMPANY_NO += 1;
     this.set_promotion_section_html(company_no, 1);
@@ -215,9 +222,25 @@ career_history = Class.extend({
     // Move to Next Career History
     var me = this;
     $('.btn-next-career-history').click(function(){
-      $(`.company_${company_no-1}`).fadeOut();
+      $(`.section_${company_no-1}`).fadeOut();
       $('.next-btn').fadeOut();
-      me.create_company_section_html(company_no);
+      if($(`.section_${company_no}`).length){
+        $(`.section_${company_no}`).delay(400).fadeIn();
+      }
+      else{
+        me.create_company_section_html(company_no);
+      }
+      
+    });
+  },
+  back_career_history: function(company_no) {
+    // Move to Next Career History
+    var me = this;
+    $('.btn-back-career-history').click(function(){
+      $(`.section_${company_no}`).fadeOut();
+      $(`.section_${company_no-1}`).fadeIn();
+      $('.next-btn').fadeIn();
+      me.next_career_history(company_no);
     });
   },
   submit_career_history: function() {
