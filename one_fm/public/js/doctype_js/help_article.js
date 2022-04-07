@@ -1,7 +1,8 @@
 frappe.ui.form.on('Help Article', {
     refresh:function(frm){
       // set query
-      set_query(frm)
+      set_query(frm);
+      custom_buttons(frm);
     },
     category: function(frm){
       frm.set_query('subcategory', () => {
@@ -25,4 +26,13 @@ let set_query = frm => {
           }
       }
   })
+}
+
+// custom buttons
+let custom_buttons = frm => {
+  if (!frm.is_new()){
+    frm.add_custom_button('Articles in '+frm.doc.category, ()=>{
+      frappe.set_route('List', 'Help Article', {'category':frm.doc.category});
+    }, 'View')
+  }
 }
