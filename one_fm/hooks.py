@@ -83,6 +83,8 @@ doctype_js = {
 	"Issue": "public/js/doctype_js/issue.js",
 	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
 	"Interview": "public/js/doctype_js/interview.js",
+	"Help Category": "public/js/doctype_js/help_category.js",
+	"Help Article": "public/js/doctype_js/help_article.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -304,7 +306,17 @@ doc_events = {
 	},
 	"Comment": {
 		"after_insert": "one_fm.utils.notify_issue_responder_or_assignee_on_comment_in_issue"
-	}
+	},
+	"Help Category": {
+		"validate": "one_fm.api.doc_methods.help_category.validate",
+		"before_insert": "one_fm.api.doc_methods.help_category.before_insert",
+		"on_update": "one_fm.api.doc_methods.help_category.on_update",
+	},
+	"Help Article": {
+		"validate": "one_fm.api.doc_methods.help_article.validate",
+		"before_insert": "one_fm.api.doc_methods.help_article.before_insert",
+		"on_update": "one_fm.api.doc_methods.help_article.on_update",
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
