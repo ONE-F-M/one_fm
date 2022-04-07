@@ -63,6 +63,31 @@
  ],
  "custom_perms": [],
  "doctype": "Help Article",
- "property_setters": [],
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2022-04-07 11:58:04.796692",
+   "default_value": null,
+   "doc_type": "Help Article",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "route",
+   "idx": 0,
+   "modified": "2022-04-07 11:58:04.796692",
+   "modified_by": "Administrator",
+   "name": "Help Article-route-read_only",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "read_only",
+   "property_type": "Check",
+   "row_name": null,
+   "value": "1"
+  }
+ ],
  "sync_on_migrate": 1
 }

@@ -19,23 +19,18 @@ def validate(doc, method):
     if subcategory.category!=category.name:
         frappe.throw(_(f"""Subcategory {subcategory.name} is not a child of {category.name}"""))
 
+
 def before_insert(doc, method):
     """
         Rename route before saving in help category
     """
     # set route
-    pass
-    # doc.route = f"/kb/{slugify(doc.category_name, allow_unicode=True)}"
-    # if (doc.is_subcategory and doc.category):
-    #     doc.route += f"/{slugify(doc.category, allow_unicode=True)}"
+    doc.route = f"/kb/{slugify(doc.category, allow_unicode=True)}/{slugify(doc.subcategory, allow_unicode=True)}/{slugify(doc.title, allow_unicode=True)}"
+
 
 
 def on_update(doc, method):
     """
         Update route before saving in help category
     """
-    # set route
-    pass
-    # doc.route = f"/kb/{slugify(doc.category_name, allow_unicode=True)}"
-    # if (doc.is_subcategory and doc.category):
-    #     doc.route += f"/{slugify(doc.category, allow_unicode=True)}"
+    doc.route = f"/kb/{slugify(doc.category, allow_unicode=True)}/{slugify(doc.subcategory, allow_unicode=True)}/{slugify(doc.title, allow_unicode=True)}"
