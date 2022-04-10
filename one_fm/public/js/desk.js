@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", (event)=>{
 // KNOWLEDGE BASE
 let knowledgeBase = () => {
   // Add knowledge base to help button
-  // let helpbtn = $('#toolbar-help')[0].querySelector('.dropdown-divider.documentation-links');
   let helpbtn = $('#toolbar-help')[0]
   let faq = document.createElement('a');
   faq.id="faq";
@@ -16,5 +15,4 @@ let knowledgeBase = () => {
   faq.href="/knowledge-base";
   faq.innerText = "knowledge Base";
   helpbtn.appendChild(faq);
-  // helpbtn.parentNode.insertBefore(faq, helpbtn.nextSibling);
 }
