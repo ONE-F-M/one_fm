@@ -311,12 +311,12 @@ doc_events = {
 	"Help Category": {
 		"validate": "one_fm.api.doc_methods.help_category.validate",
 		"before_insert": "one_fm.api.doc_methods.help_category.before_insert",
-		"on_update": "one_fm.api.doc_methods.help_category.on_update",
+		# "on_update": "one_fm.api.doc_methods.help_category.on_update",
 	},
 	"Help Article": {
 		"validate": "one_fm.api.doc_methods.help_article.validate",
 		"before_insert": "one_fm.api.doc_methods.help_article.before_insert",
-		"on_update": "one_fm.api.doc_methods.help_article.on_update",
+		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
@@ -341,6 +341,10 @@ website_route_rules = [
 			"doctype": "Request for Supplier Quotation",
 			"parents": [{"label": _("Request for Supplier Quotation"), "route": "rfq1"}]
 		}
+	},
+	{
+		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
+		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
 	}
 ]
 

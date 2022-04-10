@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/assets/one_fm/faq/assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/one_fm/faq/assets/slick/slick.css">
+    <link rel="stylesheet" href="/assets/one_fm/faq/assets/slick/slick-theme.css">
+    <!-- icon css-->
+    <link rel="stylesheet" href="/assets/one_fm/faq/assets/elagent-icon/style.css">
+    <link rel="stylesheet" href="/assets/one_fm/faq/assets/niceselectpicker/nice-select.css">
+    <link rel="stylesheet" href="/assets/one_fm/faq/assets/animation/animate.css">
+    <link rel="stylesheet" href="/assets/one_fm/faq/assets/mcustomscrollbar/jquery.mCustomScrollbar.min.css">
+    <link rel="stylesheet" href="/assets/one_fm/faq/css/style-main.css">
+    <link rel="stylesheet" href="/assets/one_fm/faq/css/responsive.css">
+    <title>{% block title %}{% endblock %}</title>
+</head>
+
+<body data-scroll-animation="true">
+    <div id="preloader">
+        <div id="ctn-preloader" class="ctn-preloader">
+            <div class="round_spinner">
+                <div class="spinner"></div>
+                <div class="text">
+                    <img src="/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png" alt="" width="150">
+                    <!-- <h4><span>ONE-</span>FM</h4> -->
+                </div>
+            </div>
+            <p></p>
+        </div>
+    </div>
+    <div class="body_wrapper">
+        <nav class="navbar navbar-expand-lg menu_one menu_purple sticky-nav">
+            <div class="container">
+                <a class="navbar-brand header_logo" href="/">
+                    <img class="first_logo sticky_logo"  width="100" src="/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png" srcset="img/logo-2x.png 2x" alt="logo">
+                    <img class="white_logo main_logo"  width="100" src="/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png" srcset="img/logo-w2x.png 2x" alt="logo">
+                </a>
+                <button class="navbar-toggler collapsed" type="button" data-toggle="collapse"
+                    data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="menu_toggle">
+                        <span class="hamburger">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                        <span class="hamburger-cross">
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav menu ml-auto">
+                        <li class="nav-item dropdown submenu active">
+                            <a href="/" class="nav-link">Home</a>
+                        <li class="nav-item dropdown submenu mega_menu tab-demo">
+                            <a href="/jobs" class="nav-link">Jobs</a>
+                        </li>
+                        <li class="nav-item dropdown submenu mega_menu tab-demo">
+                            <a href="/knowledge-base" class="nav-link">Knowledge Base</a>
+                        </li>
+                        <li class="nav-item dropdown submenu">
+                            <a class="nav-link" href="/login">Login</a>
+                        </li>
+                    </ul>
+                    <div class="right-nav">
+
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+
+
+        <section class="doc_banner_area search-banner-light">
+          <ul class="list-unstyled banner_shap_img">
+              <li><img src="/assets/one_fm/faq/img/new/banner_shap1.png" alt=""></li>
+              <li><img src="/assets/one_fm/faq/img/new/banner_shap4.png" alt=""></li>
+              <li><img src="/assets/one_fm/faq/img/new/banner_shap3.png" alt=""></li>
+              <li><img src="/assets/one_fm/faq/img/new/banner_shap2.png" alt=""></li>
+              <li><img data-parallax='{"x": -180, "y": 80, "rotateY":2000}' src="/assets/one_fm/faq/img/new/plus1.png" alt=""></li>
+              <li><img data-parallax='{"x": -50, "y": -160, "rotateZ":200}' src="/assets/one_fm/faq/img/new/plus2.png" alt=""></li>
+              <li></li>
+              <li></li>
+              <li></li>
+          </ul>
+            <div class="container">
+                <div class="doc_banner_content">
+                    <form action="/knowledge-base/search" class="header_search_form" method="GET">
+                        <div class="header_search_form_info">
+                            <div class="form-group">
+                                <div class="input-wrapper">
+                                    <i class="icon_search"></i>
+                                    <input type='search' name="q" id="searchbox" autocomplete="off"
+                                            value=""
+                                           placeholder="Search for Topics...." />
+                                    <div class="header_search_form_panel">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="header_search_keyword">
+                            <span class="header-search-form__keywords-label">Popular Searches:</span>
+                            <ul class="list-unstyled">
+                                <li class="wow fadeInUp" data-wow-delay="0.2s"><a href="#">Docy Documentation</a>,</li>
+                                <li class="wow fadeInUp" data-wow-delay="0.3s"><a href="#">Tabs Widget</a>,</li>
+                                <li class="wow fadeInUp" data-wow-delay="0.4s"><a href="#">Process Tab</a></li>
+                            </ul>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        {% block content %}
+
+        {% endblock %}
+
+
+        <footer class="doc_footer_area">
+
+            <div class="doc_footer_bottom">
+                <div class="container d-flex justify-content-between">
+                    <ul class="doc_footer_menu list-unstyled wow fadeInUp" data-wow-delay="0.2s">
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Latest Projects</a></li>
+
+                    </ul>
+                    <!-- <p class="wow fadeInUp" data-wow-delay="0.3s">© 2021 All Rights Reserved Design by
+                        <span>Spider-themes</span>
+                    </p> -->
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Back to top button -->
+    <a id="back-to-top" title="Back to Top"></a>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="/assets/one_fm/faq/js/jquery-3.5.1.min.js"></script>
+    <script src="/assets/one_fm/faq/assets/bootstrap/js/popper.min.js"></script>
+    <script src="/assets/one_fm/faq/assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/assets/one_fm/faq/js/pre-loader.js"></script>
+    <script src="/assets/one_fm/faq/assets/slick/slick.min.js"></script>
+    <script src="/assets/one_fm/faq/js/jquery.parallax-scroll.js"></script>
+    <script src="/assets/one_fm/faq/assets/niceselectpicker/jquery.nice-select.min.js"></script>
+    <script src="/assets/one_fm/faq/assets/wow/wow.min.js"></script>
+    <script src="/assets/one_fm/faq/assets/mcustomscrollbar/jquery.mCustomScrollbar.concat.min.js"></script>
+    <script src="/assets/one_fm/faq/assets/magnify-pop/jquery.magnific-popup.min.js"></script>
+    <script src="/assets/one_fm/faq/js/plugins.js"></script>
+    <script src="https://unpkg.com/ionicons@5.4.0/dist/ionicons.js"></script>
+    <script src="/assets/one_fm/faq/js/main.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", (event)=>{
+        // Add knowledge base to help button
+        let urlParams = new URLSearchParams(window.location.search);
+        let q = urlParams.get('q');
+        if(q){
+          $('#searchbox')[0].value = q;
+        }
+      });
+    </script>
+</body>
+
+</html>

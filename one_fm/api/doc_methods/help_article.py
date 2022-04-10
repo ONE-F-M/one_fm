@@ -26,11 +26,3 @@ def before_insert(doc, method):
     """
     # set route
     doc.route = f"/knowledge-base/{slugify(doc.category, allow_unicode=True)}/{slugify(doc.subcategory, allow_unicode=True)}/{slugify(doc.title, allow_unicode=True)}"
-
-
-
-def on_update(doc, method):
-    """
-        Update route before saving in help category
-    """
-    doc.route = f"/knowledge-base/{slugify(doc.category, allow_unicode=True)}/{slugify(doc.subcategory, allow_unicode=True)}/{slugify(doc.title, allow_unicode=True)}"
