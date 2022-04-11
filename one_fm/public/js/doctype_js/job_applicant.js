@@ -36,13 +36,6 @@ frappe.ui.form.on('Job Applicant', {
 		set_mandatory_fields_for_current_employment(frm);
 
 
-		// if(frm.doc.one_fm_document_verification == 'Verified' || frm.doc.one_fm_document_verification == 'Verified - With Exception'){
-			frm.set_df_property('one_fm_interview_schedules', 'hidden', false);
-		// }
-		// else{
-		//frm.set_df_property('one_fm_interview_schedules_section', 'hidden', true);
-		//frm.set_df_property('one_fm_interview_schedules', 'hidden', true);
-		// }
 		if(!frm.doc.__islocal){
 			frm.set_df_property('one_fm_erf', 'read_only', true);
 			// add a standard menu item
@@ -110,21 +103,7 @@ frappe.ui.form.on('Job Applicant', {
 					},"Action");
 				}
 			}
-    // }
-		// if ((!frm.doc.__islocal) && (frm.doc.status == 'Accepted')) {
-// 			frappe.db.get_value("Employee", {"job_applicant": frm.doc.name}, "name", function(r) {
-// 				if(!r || !r.name){
-// 					frm.add_custom_button(__('Create Employee'),
-// 						function () {
-// 							frappe.model.open_mapped_doc({
-// 								method: "one_fm.hiring.utils.make_employee",
-// 								frm: frm
-// 							});
-// 						}
-// 					);
-// 				}
-// 			});
-				}
+		}
 
 	},
 	one_fm_change_pam_file_number: function(frm){
