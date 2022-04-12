@@ -1,0 +1,38 @@
+{% extends 'www/knowledge-base/base.html' %}
+
+{% block title %}{{title|title}}{% endblock %}
+
+{% block content %}
+
+<section class="doc_tag_area bg_color sec_pad">
+    <div class="container">
+        <div class="section_title text-center">
+            <h2 class="h_title wow fadeInUp">{{title|title}}</h2>
+        </div>
+
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane doc_tab_pane fade show active" id="or" role="tabpanel" aria-labelledby="or-tab">
+                <div class="row">
+                  {% for i in articles %}
+                    <div class="col-sm-4">
+                        <div class="media documentation_item wow fadeInUp">
+                            <div class="icon">
+                                <img src="/assets/one_fm/faq/img/home_one/icon/folder.png" alt="">
+                            </div>
+                            <div class="media-body">
+                                <a href="{{i.route}}">
+                                    <h5>{{i.title|title}}</h5>
+                                </a>
+                                <p>{{i.content}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}

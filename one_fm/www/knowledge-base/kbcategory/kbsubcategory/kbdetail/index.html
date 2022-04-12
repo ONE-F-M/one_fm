@@ -9,9 +9,7 @@
         <div class="breadcrumb_content">
             <h1>{{doc.title}}</h1>
             <div class="single_post_author">
-                <img class="author_img" src="/assets/one_fm/faq/img/blog-single/author_single.jpg" alt="">
                 <div class="text">
-                    <a href="#"><h4>Jason Response</h4></a>
                     <div class="post_tag">
                         <a href="#">{{doc.creation.date()}}</a>
                         <a href="/knowledge-base/{{doc.category.lower().replace(' ', '-')}}">{{doc.category}}</a>
@@ -51,23 +49,10 @@
                         </ul>
                         <ul class="list-unstyled nav-sidebar coding_nav">
                             <li class="nav-item">
-                                <a href="#" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/account.png" alt="">Account</a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="doc-element-code.html" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/coding.png" alt="">Development</a>
+                                <a href="/login" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/account.png" alt="">Account</a>
                             </li>
                         </ul>
-                        <ul class="list-unstyled nav-sidebar bottom_nav">
-                            <li class="nav-item">
-                                <a href="#" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/united-states.png" alt="">United States</a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="#" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/edit.png" alt="">English </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="#" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/users.png" alt="">Sign In <i class="arrow_right"></i></a>
-                            </li>
-                        </ul>
+
                     </div>
                 </aside>
             </div>
@@ -78,15 +63,7 @@
                           {{doc.content}}
                         </p>
                     </div>
-                    <div class="blog_post_author media">
-                        <div class="author_img">
-                            <img src="/assets/one_fm/faq/img/blog-single/author.jpg" alt="">
-                        </div>
-                        <div class="media-body">
-                            <h5>Jason Response</h5>
-                            <p>Loo tomfoolery jolly good bloke chancer chimney pot nice one a, he nicked it mufty Oxford say wind up bits and bobs cheeky bugger, amongst cack bugger Eaton William skive off.!</p>
-                        </div>
-                    </div>
+
                     <div class="blog_related_post">
                       {% if related_article %}
                         <h2 class="c_head">Related Article</h2>

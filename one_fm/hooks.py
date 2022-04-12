@@ -342,10 +342,22 @@ website_route_rules = [
 			"parents": [{"label": _("Request for Supplier Quotation"), "route": "rfq1"}]
 		}
 	},
+	 {
+		"from_route": "/knowledge-base/search",
+		"to_route": "knowledge-base/search"
+	},
+	{
+		"from_route": "/knowledge-base/<path:category>",
+		"to_route": "knowledge-base/kbcategory"
+	},
+	{
+		"from_route": "/knowledge-base/<path:category>/<path:subcategory>",
+		"to_route": "knowledge-base/kbcategory/kbsubcategory"
+	},
 	{
 		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
 		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
-	}
+	},
 ]
 
 # doc_events = {

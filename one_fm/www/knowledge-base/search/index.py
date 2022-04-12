@@ -1,10 +1,8 @@
 import frappe
 from ..api import get_categories, remove_html_tags
 def get_context(context):
-    print(frappe.form_dict)
     context.categories = get_categories()
     context.search_data = search_article(text=frappe.form_dict.q, page=frappe.form_dict.page)
-    print(context)
     return context
 
 

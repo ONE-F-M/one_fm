@@ -39,7 +39,7 @@
             <div class="container">
                 <a class="navbar-brand header_logo" href="/">
                     <img class="first_logo sticky_logo"  width="100" src="/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png" srcset="img/logo-2x.png 2x" alt="logo">
-                    <img class="white_logo main_logo"  width="100" src="/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png" srcset="img/logo-w2x.png 2x" alt="logo">
+                    <img class="white_logo main_logo"  width="100" src="/assets/one_fm/assets/img/logo-img/ONEFM_Identity_white.png" srcset="img/logo-w2x.png 2x" alt="logo">
                 </a>
                 <button class="navbar-toggler collapsed" type="button" data-toggle="collapse"
                     data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
@@ -58,17 +58,18 @@
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav menu ml-auto">
-                        <li class="nav-item dropdown submenu active">
-                            <a href="/" class="nav-link">Home</a>
-                        <li class="nav-item dropdown submenu mega_menu tab-demo">
-                            <a href="/jobs" class="nav-link">Jobs</a>
+                    <ul class="navbar-nav menu ml-auto" style="color:black;">
+                        <li class="nav-item dropdown submenu active"  style="">
+                            <a href="/" class="nav-link"  style="">Home</a>
                         </li>
                         <li class="nav-item dropdown submenu mega_menu tab-demo">
-                            <a href="/knowledge-base" class="nav-link">Knowledge Base</a>
+                            <a href="/jobs" class="nav-link" style="">Jobs</a>
+                        </li>
+                        <li class="nav-item dropdown submenu mega_menu tab-demo">
+                            <a href="/knowledge-base" class="nav-link" style="">Knowledge Base</a>
                         </li>
                         <li class="nav-item dropdown submenu">
-                            <a class="nav-link" href="/login">Login</a>
+                            <a class="nav-link" href="/login" style="">Login</a>
                         </li>
                     </ul>
                     <div class="right-nav">
@@ -80,8 +81,8 @@
 
 
 
-        <section class="doc_banner_area search-banner-light">
-          <ul class="list-unstyled banner_shap_img">
+        <section class="doc_banner_area search-banner-light" style="background-image:url(/img/bg_3.jpg);">
+          <!-- <ul class="list-unstyled banner_shap_img">
               <li><img src="/assets/one_fm/faq/img/new/banner_shap1.png" alt=""></li>
               <li><img src="/assets/one_fm/faq/img/new/banner_shap4.png" alt=""></li>
               <li><img src="/assets/one_fm/faq/img/new/banner_shap3.png" alt=""></li>
@@ -91,10 +92,11 @@
               <li></li>
               <li></li>
               <li></li>
-          </ul>
+          </ul> -->
             <div class="container">
                 <div class="doc_banner_content">
                     <form action="/knowledge-base/search" class="header_search_form" method="GET">
+                      <h3 class="wow fadeInUp" data-wow-delay="0.2s" style="color:gold">Knowledge Base and Help Center</h3>
                         <div class="header_search_form_info">
                             <div class="form-group">
                                 <div class="input-wrapper">
@@ -108,14 +110,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="header_search_keyword">
-                            <span class="header-search-form__keywords-label">Popular Searches:</span>
-                            <ul class="list-unstyled">
-                                <li class="wow fadeInUp" data-wow-delay="0.2s"><a href="#">Docy Documentation</a>,</li>
-                                <li class="wow fadeInUp" data-wow-delay="0.3s"><a href="#">Tabs Widget</a>,</li>
-                                <li class="wow fadeInUp" data-wow-delay="0.4s"><a href="#">Process Tab</a></li>
-                            </ul>
-                        </div>
+
                     </form>
                 </div>
             </div>
@@ -131,13 +126,10 @@
             <div class="doc_footer_bottom">
                 <div class="container d-flex justify-content-between">
                     <ul class="doc_footer_menu list-unstyled wow fadeInUp" data-wow-delay="0.2s">
-                        <li><a href="#">Blog</a></li>
-                        <li><a href="#">Latest Projects</a></li>
+                        <!-- <li><a href="#">Blog</a></li>
+                        <li><a href="#">Latest Projects</a></li> -->
 
                     </ul>
-                    <!-- <p class="wow fadeInUp" data-wow-delay="0.3s">© 2021 All Rights Reserved Design by
-                        <span>Spider-themes</span>
-                    </p> -->
                 </div>
             </div>
         </footer>
