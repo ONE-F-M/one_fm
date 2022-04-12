@@ -263,13 +263,13 @@ function input_data(Data, key1, key2){
 function Submit(){
   var applicant_details = get_details_from_form();
 
-  if($('#Name').attr("data")){
+  if($('#First_Name').attr("data")){
     frappe.freeze();
     frappe.call({
       type: "POST",
       method: "one_fm.templates.pages.applicant_docs.update_job_applicant",
       args: {
-        job_applicant: $('#Name').attr("data"),
+        job_applicant: $('#First_Name').attr("data"),
         data: applicant_details
       },
       btn: this,
@@ -289,7 +289,14 @@ function Submit(){
 
 function get_details_from_form() {
   var applicant_details = {};
-  applicant_details['one_fm_first_name_in_arabic'] = $('#Arabic_Name').val();
+  applicant_details['one_fm_first_name'] = $('#First_Name').val();
+  applicant_details['one_fm_second_name'] = $('#Second_Name').val();
+  applicant_details['one_fm_third_name'] = $('#Third_Name').val();
+  applicant_details['one_fm_last_name'] = $('#Last_Name').val();
+  applicant_details['one_fm_first_name_in_arabic'] = $('#First_Arabic_Name').val();
+  applicant_details['one_fm_second_name_in_arabic'] = $('#Second_Arabic_Name').val();
+  applicant_details['one_fm_third_name_in_arabic'] = $('#Third_Arabic_Name').val();
+  applicant_details['one_fm_last_name_in_arabic'] = $('#Last_Arabic_Name').val();
   applicant_details['one_fm_gender'] = $('#Gender').val();
   applicant_details['one_fm_date_of_birth'] = $('#Date_Of_Birth').val();
   applicant_details['one_fm_cid_number'] = $('#Civil_ID_No').val();
