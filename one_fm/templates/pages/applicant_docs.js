@@ -5,9 +5,10 @@ frappe.ready = function (fn) {
 window.dev_server = {{dev_server}};
 window.socketio_port = {{frappe.socketio_port}};
 
-var is_kuwaiti = $('#Name').attr('is_kuwaiti');
+var is_kuwaiti = $('#First_Name').attr('is_kuwaiti');
+var civil_id_reqd = $('#First_Name').attr('civil_id_reqd');
 
-var applicant_name = (($('#Name').attr('data')).split(' ').slice(0, 2).join(' ')).replace(' ', '_');
+var applicant_name = $('#First_Name').attr('data');
 
 var front_cid_filepath = "";
 var back_cid_filepath = "";
@@ -15,9 +16,16 @@ var front_passport_filepath = "";
 var back_passport_filepath = "";
 
 window.onload = () => {
+  $(".required_indicator").hide();
+  $("#tooltiptext1").hide();
+  $("#tooltiptext2").hide();
+
   $("#Sponsor").hide();
   if(is_kuwaiti == 0){
     $("#Sponsor").show();
+  }
+  if(civil_id_reqd == 1){
+    $(".required_indicator").show()
   }
   populate_nationality();
 }
@@ -120,6 +128,7 @@ function send_request(method, data, token, type){
             r = JSON.parse(request.responseText);
             $("#cover-spin").hide();
             $('#finalForm').css('display', 'block');
+            console.log(r.message)
             fill_form(r.message,request.type, token);
           } catch (e) {
             $("#cover-spin").hide();
@@ -150,6 +159,13 @@ function send_request(method, data, token, type){
 
 
 function upload(){
+  if($("#Civil_ID_Front").val().length == 0 ){
+    $("#tooltiptext1").show()
+  }
+  else if($("#Civil_ID_Back").val().length == 0 ){
+    $("#tooltiptext2").show();
+  }
+  else{
   civil_id_image = new FormData();
   passport_image = new FormData();
   extract_image();
@@ -174,6 +190,7 @@ function upload(){
       };
     }
   });
+}
 };
 
 
@@ -185,8 +202,14 @@ function fill_form(data, type,token){
   }
   else {
     if(type == "Civil ID"){
-      input_data(data,'front_text','Name');
-      input_data(data,'front_text','Arabic_Name');
+      input_data(data,'front_text','First_Name');
+      input_data(data,'front_text','Second_Name');
+      input_data(data,'front_text','Third_Name');
+      input_data(data,'front_text','Last_Name');
+      input_data(data,'front_text','First_Arabic_Name');
+      input_data(data,'front_text','Second_Arabic_Name');
+      input_data(data,'front_text','Third_Arabic_Name');
+      input_data(data,'front_text','Last_Arabic_Name');
       input_data(data,'front_text','Gender');
       input_data(data,'front_text','Civil_ID_No');
       input_data(data,'front_text','Country_Code');
