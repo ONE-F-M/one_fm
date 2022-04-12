@@ -48,7 +48,70 @@
       <input type="text" class="form-control text-left contact_email hide" placeholder="Enter Your Email ID" style="margin-top: 5px;display: inline-block">
     </div>
   </div>
+<br/>
+<div class="row work_details" id="work_details" rotation_shift="{{rotation_shift}}" travel_type="{{travel_type}}" travel= "{{travel}}" night_shift="{{night_shift}}" license="{{driving_license_required}}" >
+    <div class="col-sm-12 rotation_shift hide" id="rotation_shift">
+      <p>Are you willing to work in shifts?</p>
+        <input type="radio" id="work_shift_yes" name="work_shift" value="yes">
+        <label for="work_shift_yes">Yes</label>
 
+        <input type="radio" id="work_shift_no" name="work_shift" value="no">
+        <label for="work_shift_no">No</label>
+    </div>
+    
+    <div class="col-sm-12 night_shift hide" id="night_shift">
+      <p>Are you willing to work in night shifts?</p>
+        <input type="radio" id="night_shift_yes" name="night_shift" value="yes">
+        <label for="night_shift_yes">Yes</label>
+
+        <input type="radio" id="night_shift_no" name="night_shift" value="no">
+        <label for="night_shift_no">No</label>
+    </div>
+
+    <div class="col-sm-12 travel hide" id="travel">
+      <p class="travel_q">Are you willing to travel for work </p>
+        <input type="radio" id="travel_yes" name="travelling" value="yes">
+        <label for="travel_yes">Yes</label>
+
+        <input type="radio" id="travel_no" name="travelling" value="no">
+        <label for="travel_no">No</label>
+    </div>
+
+    <div class="col-sm-12 license hide" id="license">
+    <p>Do you Have license?</p>
+        <input type="radio" id="license_yes" name="driving_license" value="yes">
+        <label for="license_yes">Yes</label>
+        <input type="radio" id="license_no" name="driving_license" value="no">
+        <label for="license_no">No</label>
+        <div class="col-sm-6">
+          <select class="form-control license_type hide">
+            <option>Select your license type:</option>
+            {% for l_type in type_of_license %}
+              <option>{{l_type}}</option>
+            {% endfor %}
+          </select>
+        </div>
+  </div>
+  <div class="col-sm-12 visa hide" id="visa">
+    <p>Do you Have Valid Visa?</p>
+        <input type="radio" id="visa_yes" name="visa_exist" value="yes">
+        <label for="visa_yes">Yes</label>
+        <input type="radio" id="visa_no" name="visa_exist" value="no">
+        <label for="visa_no">No</label>
+        <div class="col-sm-6">
+          <select class="form-control visa_type hide">
+            <option>Select your visa type:</option>
+            {% for v_type in visa_type %}
+              <option>{{v_type.name}}</option>
+            {% endfor %}
+          </select>
+        </div>
+  </div>
+  </div>
+  
+  
+  
+  <br/>
   <!-- CV Section -->
   <p style='margin-top: 30px' class="applicant_cv"></p>
 
@@ -58,6 +121,7 @@
     </div>
   </div>
   <br/>
+  
   <div class="col-sm-12">
     <button class="btn btn-primary btn-sm btn-submit-application" type="button">{{ _("Submit") }}</button>
   </div>

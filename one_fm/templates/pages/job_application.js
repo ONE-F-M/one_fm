@@ -19,8 +19,14 @@ $(document).ready(function() {
       setupReader(value, file_input);
     });
     window.file_reading = false;
+     
   });
 });
+var rotation_shift = $("#work_details").attr("rotation_shift")
+var travel_type = $("#work_details").attr("travel_type")
+var travel = $("#work_details").attr("travel")
+var night_shift = $("#work_details").attr("night_shift")
+var license = $("#work_details").attr("license")
 
 // Setup fiel reader
 function setupReader(file, input) {
@@ -47,6 +53,8 @@ job_application = Class.extend({
     this.on_change_number();
     // Bind Country on change
     this.on_change_country();
+    // Bind Work Detail on change
+    this.on_change_work_details();
     // Bind submit button event
     this.submit_job_application();
   },
@@ -85,8 +93,15 @@ job_application = Class.extend({
         $('.contact_email').focus();
         return false;
       }
-      // Show CV section
-      me.show_cv_section(applicant_name);
+      if(rotation_shift || travel || night_shift){
+        // Show Work Detail Section
+        me.show_rotation_shift();
+      }
+      else{
+          // Show CV section
+          me.show_cv_section();
+      }
+      
     }
   },
   on_change_email: function() {
@@ -108,9 +123,90 @@ job_application = Class.extend({
       me.show_applicant_contact_details();
     });
   },
-  show_cv_section: function(applicant_name) {
+  on_change_work_details: function() {
+    var me  = this;
+    $(".rotation_shift").on("change", function(){
+      // Show CV section
+      me.show_night_shift();
+    });
+    $(".night_shift").on("change", function(){
+      // Show CV section
+      me.show_travel();
+    });
+    $(".travel").on("change", function(){
+      // Show CV section
+      me.show_license();
+    });
+    $(".license").on("change", function(){
+      if($("#license input[type='radio']:checked").val() == 'yes'){
+        $(".license_type").removeClass('hide');
+      }
+      else if($("#license input[type='radio']:checked").val() == 'no'){
+        if(!$(".license_type").hasClass('hide')){
+          $(".license_type").addClass('hide');
+        }
+        $(".visa").removeClass('hide');
+      }
+    });
+    $(".license_type").on("change", function(){
+      $(".visa").removeClass('hide');
+    });
+    $(".visa").on("change", function(){
+      if($("#visa input[type='radio']:checked").val() == 'yes'){
+        $(".visa_type").removeClass('hide');
+      }
+      else if($("#license input[type='radio']:checked").val() == 'no'){
+        if(!$(".visa_type").hasClass('hide')){
+          $(".visa_type").addClass('hide');
+        }
+        me.show_cv_section()
+      }
+    });
+    $(".visa_type").on("change", function(){
+      me.show_cv_section()
+    });
+  },
+  show_rotation_shift: function() {
+    var me  = this;
+    if(rotation_shift == 1){
+      $(".rotation_shift").removeClass('hide');
+    }
+    else{
+      me.show_night_shift();
+    }
+  },
+  show_night_shift: function() {
+    var me  = this;
+    if(night_shift == 1){
+      $(".night_shift").removeClass('hide');
+    }
+    else{
+      me.show_travel();
+    }
+  },
+  show_travel: function() {
+    var me  = this;
+    if(travel == 1 && travel_type){
+      $(".travel").removeClass('hide');
+      $(".travel_q").append(`${travel_type}?`)
+    }
+    else{
+      me.show_license();
+    }
+  },
+  show_license: function() {
+    var me  = this;
+
+    if(license == 1){
+      $(".license").removeClass('hide');
+    }
+    else{
+      $(".visa").removeClass('hide');
+    }
+  },
+  show_cv_section: function() {
     $(".applicant_cv").empty();
-    $(".applicant_cv").append(`<h5>Dear ${applicant_name}, please attach your CV here so we can get to know you better.</h5>`)
+    $(".applicant_cv").append(`<h5>Please attach your CV here so we can get to know you better.</h5>`)
     $(".cv-file").removeClass('hide');
   },
   submit_job_application: function() {
@@ -133,7 +229,15 @@ job_application = Class.extend({
             applicant_email: $(".contact_email").val(),
             applicant_mobile: $(".contact_number").val(),
             job_opening: $('#job_opening').attr("data"),
-            files: file_data
+            files: file_data,
+            rotation_shift: $("#rotation_shift input[type='radio']:checked").val(),
+            night_shift: $("#night_shift input[type='radio']:checked").val(),
+            travel: $("#travel input[type='radio']:checked").val(),
+            travel_type: travel_type,
+            driving_license: $("#license input[type='radio']:checked").val(),
+            license_type: $(".license_type").val(),
+            visa: $("#visa input[type='radio']:checked").val(),
+            visa_type: $(".visa_type").val(),
           },
           btn: this,
           callback: function(r){
