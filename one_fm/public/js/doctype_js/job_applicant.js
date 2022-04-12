@@ -572,8 +572,8 @@ var set_grd_field_properties = function(frm){
 			set_hidden_fields(frm, hide_fields, true);
 		}
 	}
-	//Set GRD section as read only for recruiter role
-	if(frm.doc.one_fm_has_issue && frappe.user.has_role("Senior Recruiter")||frappe.user.has_role("Recruiter")){
+	//Set GRD section as read only for all role except GRD Operator and GRD Supervisor
+	if(frm.doc.one_fm_has_issue && !frappe.user.has_role("GRD Operator") && !frappe.user.has_role("GRD Supervisor")){
 		let read_fields=['authorized_signatory','previous_company_details','authorized_signatory_section',
 		'one_fm_has_issue','one_fm_type_of_issues','one_fm_pam_file_number','one_fm_pam_designation',
 		'one_fm_previous_company_trade_name_in_arabic','one_fm__previous_company_authorized_signatory_name_arabic',
