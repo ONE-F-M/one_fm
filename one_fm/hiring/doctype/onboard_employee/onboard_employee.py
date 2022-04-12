@@ -173,7 +173,7 @@ class OnboardEmployee(Document):
 				pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
 				if not pam_designation:
 					pam_designation = frappe.db.get_value('ERF', self.erf, 'pam_designation')
-				if not pam_designation:
+				if not pam_designation and employee.work_permit:
 					frappe.throw(_('Please set PAM Designation in Job Applicant or ERF!'))
 				employee.one_fm_pam_designation = pam_designation
 				employee.reports_to = self.reports_to
