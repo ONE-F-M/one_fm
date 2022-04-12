@@ -58,7 +58,7 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
         return 0
 
 @frappe.whitelist(allow_guest=True)
-def create_job_applicant_from_job_portal(applicant_name, country, applicant_email, applicant_mobile, job_opening, files, rotation_shift=None, night_shift=None, travel=None, travel_type=None, driving_license=None,license_type=None, visa=None, visa_type=None):
+def create_job_applicant_from_job_portal(applicant_name, country, applicant_email, applicant_mobile, job_opening, files, rotation_shift=None, night_shift=None, travel=None, travel_type=None, driving_license=None,license_type=None, visa=None, visa_type=None, in_kuwait=None):
     '''
         Method to create Job Applicant from Portal
         args:
@@ -115,6 +115,11 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
         else:
             job_applicant.one_fm_have_a_valid_visa_in_kuwait = 0
 
+    if in_kuwait:
+        if in_kuwait == "yes":
+            job_applicant.one_fm_in_kuwait_at_present = 1
+        else:
+            job_applicant.one_fm_in_kuwait_at_present = 0 
     job_applicant.save(ignore_permissions=True)
 
     # If files exisit, attach the file to Job Applicant created

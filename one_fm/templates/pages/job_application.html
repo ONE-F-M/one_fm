@@ -90,10 +90,10 @@
               <option>{{l_type}}</option>
             {% endfor %}
           </select>
-        </div>
-  </div>
-  <div class="col-sm-12 visa hide" id="visa">
-    <p>Do you Have Valid Visa?</p>
+      </div>
+    </div>
+    <div class="col-sm-12 visa hide" id="visa">
+      <p>Do you Have Valid Visa?</p>
         <input type="radio" id="visa_yes" name="visa_exist" value="yes">
         <label for="visa_yes">Yes</label>
         <input type="radio" id="visa_no" name="visa_exist" value="no">
@@ -106,7 +106,15 @@
             {% endfor %}
           </select>
         </div>
-  </div>
+    </div>
+    <div class="col-sm-6 in_kuwait hide" id="in_kuwait">
+        <p>Are you currently in Kuwait?</p>
+        <input type="radio" id="in_kuwait_yes" name="kuwait" value="yes">
+        <label for="in_kuwait_yes">Yes</label>
+
+        <input type="radio" id="in_kuwait_no" name="kuwait" value="no">
+        <label for="in_kuwait_no">No</label>
+    </div>
   </div>
   
   

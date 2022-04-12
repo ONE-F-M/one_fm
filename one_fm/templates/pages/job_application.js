@@ -159,11 +159,14 @@ job_application = Class.extend({
         if(!$(".visa_type").hasClass('hide')){
           $(".visa_type").addClass('hide');
         }
-        me.show_cv_section()
+        $(".in_kuwait").removeClass('hide');
       }
     });
     $(".visa_type").on("change", function(){
-      me.show_cv_section()
+      $(".in_kuwait").removeClass('hide');
+    });
+    $(".in_kuwait").on("change", function(){
+      me.show_cv_section();
     });
   },
   show_rotation_shift: function() {
@@ -238,6 +241,7 @@ job_application = Class.extend({
             license_type: $(".license_type").val(),
             visa: $("#visa input[type='radio']:checked").val(),
             visa_type: $(".visa_type").val(),
+            in_kuwait: $("#in_kuwait input[type='radio']:checked").val(),
           },
           btn: this,
           callback: function(r){
