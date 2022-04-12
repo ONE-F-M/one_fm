@@ -35,7 +35,16 @@
 .message-block-head{
     display: flex;
 }
-
+.tooltiptext {
+    color: red;
+    /* border: 2px solid black; */
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    top: 75%;
+}
 #cover-spin {
 	position: fixed;
 	width: 100%;
