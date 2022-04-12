@@ -1,0 +1,118 @@
+{% extends 'www/knowledge-base/base.html' %}
+
+{% block title %}Search{% endblock %}
+
+{% block content %}
+
+        <!--================ Breadcrumb Area =================-->
+
+        <section class="page_breadcrumb">
+            <div class="container custom_container">
+                <div class="row">
+                    <div class="col-sm-7">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="/knowledge-base">Home</a></li>
+                                <!-- <li class="breadcrumb-item"><a href="#">Docs</a></li> -->
+                                <!-- <li class="breadcrumb-item active" aria-current="page">Docy WordPress Theme</li> -->
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="col-sm-5">
+                        <!-- <a href="#" class="date"><i class="icon_clock_alt"></i>Updated on March 03, 2020</a> -->
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!--================ End Forum Breadcrumb Area =================-->
+
+        <section class="doc_blog_classic_area sec_pad">
+            <div class="container">
+                <div class="row">
+                  <div class="col-lg-3 doc_mobile_menu display_none">
+                      <aside class="doc_left_sidebarlist">
+                          <div class="open_icon" id="left">
+                              <i class="arrow_carrot-right"></i>
+                              <i class="arrow_carrot-left"></i>
+                          </div>
+                          <div class="scroll">
+                              <ul class="list-unstyled nav-sidebar">
+                                  <li class="nav-item active">
+                                      <a href="/knowledge-base" class="nav-link active"><img src="/assets/one_fm/faq/img/side-nav/home.png" alt="">Home</a>
+                                  </li>
+                                  {% for k, v in categories.items() %}
+                                  <li class="nav-item">
+                                      <a href="{{v.info.route}}" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/briefcase.png" alt="briefcase">{{k|title}}</a>
+                                      <span class="icon"><i class="arrow_carrot-down"></i></span>
+                                      <ul class="list-unstyled dropdown_nav">
+                                        {% for sub in v.subcat %}
+                                          <li><a href="{{sub.route}}">{{sub.category_name}}</a></li>
+                                        {% endfor %}
+                                      </ul>
+                                  </li>
+                                  {% endfor %}
+
+                              </ul>
+                              <ul class="list-unstyled nav-sidebar coding_nav">
+                                  <li class="nav-item">
+                                      <a href="/login" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/account.png" alt="">Account</a>
+                                  </li>
+                              </ul>
+                          </div>
+                      </aside>
+                  </div>
+                    <div class="col-lg-9">
+                      <h3>Search Result</h3>
+                      {% if search_data.results %}
+                      {% for i in search_data.results %}
+                        <div class="blog_top_post shadow-sm blog_classic_item">
+                            <div class="b_top_post_content">
+                                <div class="post_tag">
+                                    <a href="#">{{i.creation}}</a>
+                                    <a href="/knowledge-base/{{i.category.lower().replace(' ', '-')}}">{{i.category}}</a>
+                                    <a class="orange" href="/knowledge-base/{{i.category.lower().replace(' ', '-')}}/{{i.subcategory.lower().replace(' ', '-')}}">{{i.subcategory}}</a>
+                                </div>
+                                <a href="{{i.route}}">
+                                    <h3>{{i.title|safe}}</h3>
+                                </a>
+                                <p><a href="{{i.route}}" style="color:black"> {{i.content}}</a></p>
+                                <div class="d-flex justify-content-between p_bottom">
+                                    <a href="{{i.route}}" class="learn_btn">Continue Reading<i class="arrow_right"></i></a>
+
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="blog_top_post shadow-sm blog_classic_item">
+                            <div class="b_top_post_content">
+                                <div class="post_tag">
+
+                                </div>
+                                <a href="#">
+                                    <h3>No result found.</h3>
+                                </a>
+
+                            </div>
+                        </div>
+                        {% endif %}
+
+
+                        <nav class="navigation pagination">
+                            <div class="nav-links">
+                                  {% if search_data.prev  %}
+                                  <a class="btn btn-primary" href="/knowledge-base/search?q={{search_data.q}}&page={{search_data.prev}}"><i class="arrow_carrot-left"></i>Previous</a>
+                                  {% endif %}
+                                  {% if search_data.next %}
+                                  <a class="btn btn-primary" href="/knowledge-base/search?q={{search_data.q}}&page={{search_data.next}}">Next<i class="arrow_carrot-right"></i></a>
+                                  {% endif %}
+                            </div>
+                        </nav>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+
+{% endblock %}

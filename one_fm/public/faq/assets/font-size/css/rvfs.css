@@ -1,0 +1,40 @@
+/*
+ * Font size style declarations for each variation.
+ *
+ * Observation: Note that the amount of classes here
+ * rely on how many variations you set on $.rvFontsize() call.
+ * 
+ * This classes are required to make rv font size jquery plugin works.
+ */
+
+.rvfs-1 p, .rvfs-1 li,.rvfs-1 .documentation_item .media-body h5{ font-size: 70%}
+.rvfs-2 p, .rvfs-2 li,.rvfs-2 .documentation_item .media-body h5{ font-size: 80%}
+.rvfs-3 p, .rvfs-3 li,.rvfs-3 .documentation_item .media-body h5{ font-size: 90%}
+.rvfs-4 p, .rvfs-4 li{ font-size: 100%}
+.rvfs-5 p, .rvfs-5 li,.rvfs-5 .documentation_item .media-body h5{ font-size: 110%}
+.rvfs-6 p, .rvfs-6 li,.rvfs-6 .documentation_item .media-body h5{ font-size: 120%}
+.rvfs-7 p, .rvfs-7 li,.rvfs-7 .documentation_item .media-body h5{ font-size: 130%}
+.rvfs-4 .documentation_item .media-body h5{
+    font-size: 18px;
+}
+.rvfs-1 .shortcode_title h2{
+    font-size: 10px;
+}
+.rvfs-2 .shortcode_title h2{
+    font-size: 20px;
+}
+.rvfs-3 .shortcode_title h2{
+    font-size: 25px;
+}
+.rvfs-4 .shortcode_title h2{
+    font-size: 30px;
+}
+.rvfs-5 .shortcode_title h2{
+    font-size: 35px;
+}
+.rvfs-6 .shortcode_title h2{
+    font-size: 40px;
+}
+.rvfs-7 .shortcode_title h2{
+    font-size: 45px;
+}
