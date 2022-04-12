@@ -37,7 +37,6 @@ frappe.ui.form.on('ERF', {
 		set_shift_hours_btn(frm);
 		set_travel_required_btn(frm);
 		set_open_to_different_btn(frm);
-		set_performance_profile_html(frm);
 		document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
 		set_performance_profile_resource_btn(frm);
 		if(frm.doc.__onload && 'okr_workshop_with_full_name' in frm.doc.__onload){
@@ -172,6 +171,7 @@ frappe.ui.form.on('ERF', {
 		}
 	},
 	onload: function(frm) {
+		set_performance_profile_html(frm);
 		// set_other_benefits(frm);
 	},
 	number_of_candidates_required: function(frm) {
