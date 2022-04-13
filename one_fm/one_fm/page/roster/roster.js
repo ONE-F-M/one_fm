@@ -683,7 +683,7 @@ function bind_events(page) {
 	paginateTable(page);
 	// console.log(wrapper_element.find('#paginate-parent'));
 	wrapper_element.find('#paginate-parent').pageMe({ pagerSelector: '#myPager', showPrevNext: false, hidePageNumbers: false, perPage: 100 });
-	if (["Operations Manager", "Site Supervisor", "Shift Manager", "Projects Manager"].some(i => frappe.user_roles.includes(i))) {
+	if (["Operations Manager", "Site Supervisor", "Shift Manager", "Shift Supervisor", "Projects Manager"].some(i => frappe.user_roles.includes(i))) {
 		let $rosterMonth = $('.rosterMonth');
 		let $rosterOtMonth = $('.rosterOtMonth');
 		let $postMonth = $('.postMonth');
