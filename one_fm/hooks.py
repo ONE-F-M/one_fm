@@ -22,7 +22,8 @@ app_license = "MIT"
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
-		"/assets/one_fm/js/maps.js"
+		"/assets/one_fm/js/maps.js",
+		"/assets/one_fm/js/desk.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -83,6 +84,8 @@ doctype_js = {
 	"Issue": "public/js/doctype_js/issue.js",
 	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
 	"Interview": "public/js/doctype_js/interview.js",
+	"Help Category": "public/js/doctype_js/help_category.js",
+	"Help Article": "public/js/doctype_js/help_article.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -223,6 +226,7 @@ doc_events = {
 		"on_update": "one_fm.utils.supplier_group_on_update",
 	},
 	"Bank Account": {
+		"after_insert": "one_fm.api.doc_methods.bank_account.after_insert",
 		"on_update": "one_fm.utils.bank_account_on_update",
 		"on_trash": "one_fm.utils.bank_account_on_trash",
 		"validate": "one_fm.utils.validate_iban_is_filled",
@@ -303,7 +307,17 @@ doc_events = {
 	},
 	"Comment": {
 		"after_insert": "one_fm.utils.notify_issue_responder_or_assignee_on_comment_in_issue"
-	}
+	},
+	"Help Category": {
+		"validate": "one_fm.api.doc_methods.help_category.validate",
+		"before_insert": "one_fm.api.doc_methods.help_category.before_insert",
+		# "on_update": "one_fm.api.doc_methods.help_category.on_update",
+	},
+	"Help Article": {
+		"validate": "one_fm.api.doc_methods.help_article.validate",
+		"before_insert": "one_fm.api.doc_methods.help_article.before_insert",
+		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -327,7 +341,23 @@ website_route_rules = [
 			"doctype": "Request for Supplier Quotation",
 			"parents": [{"label": _("Request for Supplier Quotation"), "route": "rfq1"}]
 		}
-	}
+	},
+	 {
+		"from_route": "/knowledge-base/search",
+		"to_route": "knowledge-base/search"
+	},
+	{
+		"from_route": "/knowledge-base/<path:category>",
+		"to_route": "knowledge-base/kbcategory"
+	},
+	{
+		"from_route": "/knowledge-base/<path:category>/<path:subcategory>",
+		"to_route": "knowledge-base/kbcategory/kbsubcategory"
+	},
+	{
+		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
+		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
+	},
 ]
 
 # doc_events = {

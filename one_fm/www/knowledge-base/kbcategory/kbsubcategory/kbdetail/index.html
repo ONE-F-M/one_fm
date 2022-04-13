@@ -1,0 +1,100 @@
+{% extends 'www/knowledge-base/base.html' %}
+
+{% block title %}{{doc.title}}{% endblock %}
+
+{% block content %}
+
+<section class="breadcrumb_area_three">
+    <div class="container">
+        <div class="breadcrumb_content">
+            <h1>{{doc.title}}</h1>
+            <div class="single_post_author">
+                <div class="text">
+                    <div class="post_tag">
+                        <a href="#">{{doc.creation.date()}}</a>
+                        <a href="/knowledge-base/{{doc.category.lower().replace(' ', '-')}}">{{doc.category}}</a>
+                        <a class="c_blue" href="/knowledge-base/{{doc.category.lower().replace(' ', '-')}}/{{doc.subcategory.lower().replace(' ', '-')}}">{{doc.subcategory}}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="blog_area">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3 doc_mobile_menu display_none">
+                <aside class="doc_left_sidebarlist">
+                    <div class="open_icon" id="left">
+                        <i class="arrow_carrot-right"></i>
+                        <i class="arrow_carrot-left"></i>
+                    </div>
+                    <div class="scroll">
+                        <ul class="list-unstyled nav-sidebar">
+                            <li class="nav-item active">
+                                <a href="/knowledge-base" class="nav-link active"><img src="/assets/one_fm/faq/img/side-nav/home.png" alt="">Home</a>
+                            </li>
+                            {% for k, v in categories.items() %}
+                            <li class="nav-item{% if v.info.name==doc.category %} active{% endif %}">
+                                <a href="{{v.info.route}}" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/briefcase.png" alt="briefcase">{{k|title}}</a>
+                                <span class="icon"><i class="arrow_carrot-down"></i></span>
+                                <ul class="list-unstyled dropdown_nav">
+                                  {% for sub in v.subcat %}
+                                    <li><a href="{{sub.route}}" class="{% if sub.name==doc.subcategory %}text-warning{% endif %}">{{sub.category_name}}</a></li>
+                                  {% endfor %}
+                                </ul>
+                            </li>
+                            {% endfor %}
+
+                        </ul>
+                        <ul class="list-unstyled nav-sidebar coding_nav">
+                            <li class="nav-item">
+                                <a href="/login" class="nav-link"><img src="/assets/one_fm/faq/img/side-nav/account.png" alt="">Account</a>
+                            </li>
+                        </ul>
+
+                    </div>
+                </aside>
+            </div>
+            <div class="col-lg-9">
+                <div class="blog_single_info">
+                    <div class="blog_single_item">
+                        <p>
+                          {{doc.content}}
+                        </p>
+                    </div>
+
+                    <div class="blog_related_post">
+                      {% if related_article %}
+                        <h2 class="c_head">Related Article</h2>
+                      {% endif %}
+                        <div class="row">
+                          {% for i in related_article %}
+                            <div class="col-lg-4 col-sm-6">
+                                <div class="blog_grid_post wow fadeInUp" data-wow-delay="0.2s">
+                                    <!-- <img src="/assets/one_fm/faq/img/blog-grid/blog_grid_post2.jpg" alt=""> -->
+                                    <div class="grid_post_content">
+                                        <div class="post_tag">
+                                            <a href="/knowledge-base/{{i.category.lower().replace(' ', '-')}}">{{i.category}}</a>
+                                            <a class="cat-Docy" href="/knowledge-base/{{i.category.lower().replace(' ', '-')}}/{{i.subcategory.lower().replace(' ', '-')}}">{{i.subcategory}}</a>
+                                        </div>
+                                        <a href="{{i.route}}">
+                                            <h4 class="b_title">{{i.title}}</h4>
+                                        </a>
+                                        <p>{{i.content}}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{% endblock %}

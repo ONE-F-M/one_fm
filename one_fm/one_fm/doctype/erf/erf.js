@@ -37,7 +37,6 @@ frappe.ui.form.on('ERF', {
 		set_shift_hours_btn(frm);
 		set_travel_required_btn(frm);
 		set_open_to_different_btn(frm);
-		set_performance_profile_html(frm);
 		document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
 		set_performance_profile_resource_btn(frm);
 		if(frm.doc.__onload && 'okr_workshop_with_full_name' in frm.doc.__onload){
@@ -172,6 +171,7 @@ frappe.ui.form.on('ERF', {
 		}
 	},
 	onload: function(frm) {
+		set_performance_profile_html(frm);
 		// set_other_benefits(frm);
 	},
 	number_of_candidates_required: function(frm) {
@@ -944,21 +944,8 @@ var set_default_details_form_designation = function(frm) {
 				filters: {"name":frm.doc.designation}
 			},
 			callback: function(r) {
-				if(r.message){
-					var desgn = r.message;
-					if(desgn.skills){
-						let skill_fields = ['skill', 'one_fm_proficiency'];
-						set_designation_childs_in_erf(frm, desgn.skills, 'Designation Skill', 'designation_skill', skill_fields);
-					}
-					if(desgn.one_fm_tools_required){
-						let tool_fields = ['item', 'quantity'];
-						set_designation_childs_in_erf(frm, desgn.one_fm_tools_required, 'ERF Tool Request Item', 'tool_request_item', tool_fields);
-					}
-					if(desgn.one_fm_languages){
-						let lang_fields = ['language', 'language_name', 'read', 'write', 'speak'];
-						set_designation_childs_in_erf(frm, desgn.one_fm_languages, 'Employee Language Requirement', 'languages', lang_fields);
-					}
-					set_designation_other_details(frm, r.message);
+				if(r.message && r.message.skills){
+					set_designation_childs_in_erf(frm, r.message.skills, 'Designation Skill', 'designation_skill', ['skill', 'one_fm_proficiency']);
 				}
 			},
 			freeze: true,
@@ -966,14 +953,6 @@ var set_default_details_form_designation = function(frm) {
 		});
   }
 	frm.refresh_fields();
-};
-
-var set_designation_other_details = function(frm, designation) {
-	let fields = ['is_height_mandatory', 'shift_working', 'night_shift', 'travel_required', 'type_of_travel',
-		'education_qualification', 'driving_license_required', 'type_of_license', 'is_uniform_needed_for_this_job']
-	fields.forEach((field) => {
-		frm.set_value(field, designation['one_fm_'+field]);
-	});
 };
 
 var set_designation_childs_in_erf = function(frm, data, child_doc, child_field, child_doc_fields) {

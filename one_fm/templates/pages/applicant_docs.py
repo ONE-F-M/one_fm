@@ -20,10 +20,12 @@ def get_context(context):
         # Find Job Applicant from the magic link
         job_applicant = frappe.get_doc('Job Applicant', frappe.db.get_value('Magic Link', magic_link, 'reference_docname'))
         context.job_applicant = job_applicant
-        context.is_kuwaiti = 0
+        context.is_kuwaiti = context.civil_id_reqd = 0
         if job_applicant.one_fm_nationality == 'Kuwaiti':
             context.is_kuwaiti = 1
-        context.applicant_name = str(job_applicant.name).split("-")[0].strip()
+        if job_applicant.one_fm_have_a_valid_visa_in_kuwait == 1:
+            context.civil_id_reqd = 1
+        context.applicant_name = job_applicant.one_fm_first_name
         context.applicant_designation = job_applicant.designation
         context.email_id = job_applicant.one_fm_email_id
 
@@ -129,16 +131,25 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
             else:
                 result["Gender"] = ""
 
-        result["Name"] = ""
+        result["First_Name"] = result["Last_Name"] = result["Second_Name"] =  result["Third_Name"] = Name = ""
         if find_index(assemble,"Name") and find_index(assemble,"Nationality"):
             for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Nationality")-2):
-                result["Name"] = result["Name"] + str(texts[i].description).capitalize() + " "
-    
+                Name = Name + str(texts[i].description).capitalize() + " "
+            Name = Name.split()
+            result["First_Name"] = Name[0]
+            result["Last_Name"] = Name[len(Name)] if len(Name) > 1 else ""
+            result["Second_Name"] = Name[1] if len(Name) > 2 else ""
+            result["Third_Name"] = Name[2] if len(Name) > 3 else ""
 
-        result["Arabic_Name"]= ""
+        result["First_Arabic_Name"] = result["Last_Arabic_Name"] = result["Second_Arabic_Name"] = result["Third_Arabic_Name"] = Ar_Name = ""
         if find_index(assemble,"No") and find_index(assemble,"Name"):
             for i in range(find_index(assemble,"No")+1,find_index(assemble,"Name")-1):
-                result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
+                Ar_Name = Ar_Name + texts[i].description + " "
+            Ar_Name = Ar_Name.split()
+            result["First_Arabic_Name"] = Name[0]
+            result["Last_Arabic_Name"] = Name[len(Name)] if len(Name) > 1 else ""
+            result["Second_Arabic_Name"] = Name[1] if len(Name) > 2 else ""
+            result["Third_Arabic_Name"] = Name[2] if len(Name) > 3 else ""
 
     else:
         if find_index(assemble,"Civil"):
@@ -158,15 +169,25 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
             if texts[find_index(assemble,"Sex")+1].description == "M" or texts[find_index(assemble,"Sex")+1].description == "F":
                 result["Gender"] = texts[find_index(assemble,"Sex")+1].description
 
-        result["Name"] = ""
+        result["First_Name"] = result["Last_Name"] = result["Second_Name"] =  result["Third_Name"] = Name = ""
         if find_index(assemble,"Name") and find_index(assemble,"Passport"):
             for i in range(find_index(assemble,"Name")+1,find_index(assemble,"Passport") - 1):
-                result["Name"] = result["Name"] + str(texts[i].description).capitalize() + " "
-
-            result["Arabic_Name"]= ""
-            if find_index(assemble,"الرقه"):
-                for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
-                    result["Arabic_Name"] = result["Arabic_Name"] + texts[i].description + " "
+                Name = Name + str(texts[i].description).capitalize() + " "
+            name_list = Name.split()
+            result["First_Name"] = name_list[0]
+            result["Last_Name"] = name_list[len(name_list)-1] if len(name_list) >= 2   else ""
+            result["Second_Name"] = name_list[1] if len(name_list) == 3 else ""
+            result["Third_Name"] = name_list[2] if len(name_list) == 4 else ""
+        
+        result["First_Arabic_Name"] = result["Last_Arabic_Name"] = result["Second_Arabic_Name"] = result["Third_Arabic_Name"] = Ar_Name = ""
+        if find_index(assemble,"الرقه"):
+            for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
+                Ar_Name = Ar_Name + texts[i].description + " "
+            ar_name_list = Ar_Name.split()
+            result["First_Arabic_Name"] = ar_name_list[0]
+            result["Last_Arabic_Name"] = ar_name_list[len(ar_name_list)-1] if len(ar_name_list) >= 2 else ""
+            result["Second_Arabic_Name"] = ar_name_list[1] if len(ar_name_list) == 3 else ""
+            result["Third_Arabic_Name"] = ar_name_list[2] if len(ar_name_list) == 4 else ""
 
     return result
 
