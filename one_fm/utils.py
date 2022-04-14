@@ -2552,3 +2552,17 @@ def create_notification_log_for_issue_comments(users, issue, comment):
             if mention in users:
                 users.remove(mention)
     create_notification_log(subject, notification_message, users, issue)
+
+def set_expire_magic_link(reference_doctype, reference_docname, link_for):
+    """
+        Method used to Set expire magic link
+        based on the reference_doctype, reference_docname and link_for values
+        args:
+            reference_doctype: DocType name (Example: 'Job Applicant')
+            reference_docname: Data (Example: 'HR-APP-2022-00286')
+            link_for: Data (Example: Career History)
+    """
+    magic_link = frappe.db.exists('Magic Link', {'reference_doctype': reference_doctype,
+        'reference_docname': reference_docname, 'link_for': link_for, 'expired': False})
+    if magic_link:
+        frappe.db.set_value('Magic Link', magic_link, 'expired', True)
