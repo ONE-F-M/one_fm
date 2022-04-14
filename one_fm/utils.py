@@ -1418,7 +1418,7 @@ def validate_job_applicant(doc, method):
         set_required_documents(doc, method)
     if frappe.session.user != 'Guest' and not doc.one_fm_is_easy_apply:
         validate_mandatory_childs(doc)
-    if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
+    if doc.one_fm_applicant_status in ["Shortlisted", "Selected"] and doc.status not in ["Rejected"]:
         create_job_offer_from_job_applicant(doc.name)
     if doc.one_fm_number_of_kids and doc.one_fm_number_of_kids > 0:
         """This part is comparing the number of children with the listed children details in the table and ask user to add all childrens"""
@@ -1618,19 +1618,22 @@ def create_job_offer_from_job_applicant(job_applicant):
             frappe.throw(_("Number of days off cannot be more than a Week!"))
         elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
             frappe.throw(_("Number of days off cannot be more than a Month!"))
-        erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         job_offer = frappe.new_doc('Job Offer')
         job_offer.job_applicant = job_app.name
         job_offer.applicant_name = job_app.applicant_name
         job_offer.day_off_category = job_app.day_off_category
         job_offer.number_of_days_off = job_app.number_of_days_off
+        job_offer.designation = job_app.designation
         job_offer.offer_date = today()
-        set_erf_details(job_offer, erf)
+        if job_app.one_fm_erf:
+            erf = frappe.get_doc('ERF', job_app.one_fm_erf)
+            set_erf_details(job_offer, erf)
         job_offer.save(ignore_permissions = True)
 
 def set_erf_details(job_offer, erf):
     job_offer.erf = erf.name
-    job_offer.designation = erf.designation
+    if not job_offer.designation:
+        job_offer.designation = erf.designation
     job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
     job_offer.one_fm_provide_transportation_by_company = erf.provide_transportation_by_company
     set_salary_details(job_offer, erf)
