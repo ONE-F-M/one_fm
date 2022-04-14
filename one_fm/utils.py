@@ -36,6 +36,8 @@ from erpnext.hr.utils import get_holidays_for_employee
 from one_fm.processor import sendemail
 from frappe.desk.form import assign_to
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
+from frappe.core.doctype.user.user import extract_mentions
+from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -2515,16 +2517,38 @@ def notify_issue_responder_or_assignee_on_comment_in_issue(doc, method):
     """
     if doc.reference_doctype == "Issue" and doc.reference_name:
         issue = frappe.get_doc(doc.reference_doctype, doc.reference_name)
-        subject = _("New comment on issue {0}".format(issue.name))
-        message = _("Issue {0} have new comment".format(issue.name))
         department_issue_responder = False
+
         if issue.department:
             department_issue_responder = get_department_issue_responder(issue.department)
         if department_issue_responder and len(department_issue_responder) > 0:
-            create_notification_log(subject, message, department_issue_responder, issue)
+            create_notification_log_for_issue_comments(department_issue_responder, issue, doc)
         else:
             try:
                 if issue._assign:
-                    create_notification_log(subject, message, json.loads(issue._assign), issue)
+                    create_notification_log_for_issue_comments(json.loads(issue._assign), issue, doc)
             except Exception as e:
                 pass
+
+def create_notification_log_for_issue_comments(users, issue, comment):
+    """
+        Method used to create notification log from the issue commnets
+        args:
+            users: list of recipients
+            issue: Object of Issue
+            comment: Object of Comment
+    """
+    title = get_title("Issue", issue.name)
+    subject = _("New comment on {0}".format(get_title_html(title)))
+    notification_message = _('''Comment: <br/>{0}'''.format(comment.content))
+
+    """
+        Extracts mentions to remove from notification log recipients,
+        since mentions will be notified by frappe core
+    """
+    mentions = extract_mentions(comment.content)
+    if mentions and len(mentions) > 0:
+        for mention in mentions:
+            if mention in users:
+                users.remove(mention)
+    create_notification_log(subject, notification_message, users, issue)
