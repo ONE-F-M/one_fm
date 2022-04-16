@@ -71,4 +71,3 @@ def after_migrate():
                 with open(os.path.join(folder, fname), 'r') as f:
                     data = json.loads(f.read())
                     sync_customizations_for_doctype(data, folder)
-    # sync_customizations('one_fm')
