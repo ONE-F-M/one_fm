@@ -125,6 +125,7 @@ home_page = "index"
 
 before_install = "one_fm.install.before_install.execute"
 # after_install = "one_fm.install.after_install"
+#revert staging
 
 # Desk Notifications
 # ------------------
