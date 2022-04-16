@@ -125,7 +125,7 @@ home_page = "index"
 
 before_install = "one_fm.install.before_install.execute"
 # after_install = "one_fm.install.after_install"
-
+after_migrate = "one_fm.migrate.after_migrate"
 # Desk Notifications
 # ------------------
 # See frappe.core.notifications.get_notification_config
