@@ -259,7 +259,7 @@ def checkin_checkout_supervisor_reminder():
 		 		for recipient in recipients:
 		 			action_user, Role = get_action_user(recipient.name,recipient.shift)
 					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
-		 			subject = _('{employee} has not checked in yet.".format(employee=recipient.employee_name))
+		 			subject = _('{employee} has not checked in yet.'.format(employee=recipient.employee_name))
 		 			action_message = _("""
 						 <a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
 						 <br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
@@ -497,7 +497,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.flags.ignore_permissions = True
 	penalty_issuance.insert()
 	penalty_issuance.submit()
-	frappe.msgprint(_("A penalty has been issued against {0}'.format(employee_name)))
+	frappe.msgprint(_('A penalty has been issued against {0}'.format(employee_name)))
 
 
 def automatic_shift_assignment():
@@ -635,7 +635,7 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		existing_balance = frappe.get_value("Penalty Deduction", {'employee': employee}, "balance_amount", order_by='posting_time desc')
 
 	#Calculate new amount
-	references =  ', '.join([''{}"'.format(log.name) for log in logs])
+	references =  ', '.join(['"{}"'.format(log.name) for log in logs])
 
 	# references = '"HR-EMP-00002-006", "HR-EMP-00002-004"'
 	damages_amount = frappe.db.sql("""
