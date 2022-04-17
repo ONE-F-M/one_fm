@@ -42,8 +42,8 @@ def send_checkin_hourly_reminder():
 				SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee = emp.name
-				AND tSA.start_date="{date}"
-				AND tSA.shift_type="{shift_type}"
+				AND tSA.start_date='{date}'
+				AND tSA.shift_type='{shift_type}'
 				AND tSA.docstatus=1
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			recipients = [recipient[0] for recipient in recipients if recipient[0]]
@@ -69,23 +69,23 @@ def checkin_checkout_final_reminder():
 				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee=emp.name
-				AND tSA.start_date="{date}"
-				AND tSA.shift_type="{shift_type}"
+				AND tSA.start_date='{date}'
+				AND tSA.shift_type='{shift_type}'
 				AND tSA.docstatus=1
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
 				WHERE
 					emp_sp.employee=emp.name
-				AND emp_sp.workflow_state="Approved"
-				AND emp_sp.shift_type="{shift_type}"
-				AND emp_sp.date="{date}"
+				AND emp_sp.workflow_state='Approved'
+				AND emp_sp.shift_type='{shift_type}'
+				AND emp_sp.date='{date}'
 				AND emp_sp.permission_type="Arrive Late")
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
 					empChkin.log_type="IN"
-				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
-				AND empChkin.shift_type="{shift_type}")
+				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
+				AND empChkin.shift_type='{shift_type}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
@@ -98,23 +98,23 @@ def checkin_checkout_final_reminder():
 				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee = emp.name
-				AND tSA.start_date="{date}"
-				AND tSA.shift_type="{shift_type}"
+				AND tSA.start_date='{date}'
+				AND tSA.shift_type='{shift_type}'
 				AND tSA.docstatus=1
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
 				WHERE
 					emp_sp.employee=emp.name
-				AND emp_sp.workflow_state="Approved"
-				AND emp_sp.shift_type="{shift_type}"
-				AND emp_sp.date="{date}"
+				AND emp_sp.workflow_state='Approved'
+				AND emp_sp.shift_type='{shift_type}'
+				AND emp_sp.date='{date}'
 				AND emp_sp.permission_type="Leave Early")
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
 					empChkin.log_type="OUT"
-				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')="{date}"
-				AND empChkin.shift_type="{shift_type}")
+				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
+				AND empChkin.shift_type='{shift_type}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
@@ -189,24 +189,24 @@ def checkin_checkout_supervisor_reminder():
 				SELECT DISTINCT emp.name, emp.employee_id, emp.employee_name, emp.reports_to, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee=emp.name
-				AND tSA.start_date="{date}"
-				AND tSA.shift_type="{shift_type}"
+				AND tSA.start_date='{date}'
+				AND tSA.shift_type='{shift_type}'
 				AND tSA.docstatus=1
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
 				WHERE
 					emp_sp.employee=emp.name
 				AND emp_sp.workflow_state="Approved"
-				AND emp_sp.shift_type="{shift_type}"
-				AND emp_sp.date="{date}"
+				AND emp_sp.shift_type='{shift_type}'
+				AND emp_sp.date='{date}'
 				AND emp_sp.permission_type="Arrive Late")
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
 						empChkin.log_type="IN"
 						AND empChkin.skip_auto_attendance=0
-						AND date(empChkin.time)="{date}"
-						AND empChkin.shift_type="{shift_type}")
+						AND date(empChkin.time)='{date}'
+						AND empChkin.shift_type='{shift_type}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
@@ -235,31 +235,31 @@ def checkin_checkout_supervisor_reminder():
 		 		SELECT DISTINCT emp.employee_name, emp.reports_to, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 		 		WHERE
 		 	  		tSA.employee=emp.name
-		 		AND tSA.start_date="{date}"
-		 		AND tSA.shift_type="{shift_type}"
+		 		AND tSA.start_date='{date}'
+		 		AND tSA.shift_type='{shift_type}'
 		 		AND tSA.docstatus=1
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
 				WHERE
 					emp_sp.employee=emp.name
 				AND emp_sp.workflow_state="Approved"
-				AND emp_sp.shift_type="{shift_type}"
-				AND emp_sp.date="{date}"
+				AND emp_sp.shift_type='{shift_type}'
+				AND emp_sp.date='{date}'
 				AND emp_sp.permission_type="Leave Early")
 				AND tSA.employee
 		 		NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 		 			WHERE
 		 				empChkin.log_type="OUT"
 		 				AND empChkin.skip_auto_attendance=0
-		 				AND date(empChkin.time)="{date}"
-		 				AND empChkin.shift_type="{shift_type}")
+		 				AND date(empChkin.time)='{date}'
+		 				AND empChkin.shift_type='{shift_type}')
 		 	""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 		 	if len(recipients) > 0:
 		 		for recipient in recipients:
 		 			action_user, Role = get_action_user(recipient.name,recipient.shift)
 					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
-		 			subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
+		 			subject = _('{employee} has not checked in yet.'.format(employee=recipient.employee_name))
 		 			action_message = _("""
 						 <a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
 						 <br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
@@ -299,7 +299,7 @@ def get_active_shifts(now_time):
 			supervisor_reminder_shift_start, supervisor_reminder_start_ends, deadline
 		FROM `tabShift Type`
 		WHERE
-			CAST("{current_time}" as date)
+			CAST('{current_time}' as date)
 			BETWEEN
 				CAST(start_time as date)
 			AND
@@ -376,7 +376,7 @@ def get_location(shift):
 			SELECT loc.latitude, loc.longitude, loc.geofence_radius
 			FROM `tabLocation` as loc
 			WHERE
-				loc.name in(SELECT site_location FROM `tabOperations Site` where name="{site}")
+				loc.name in(SELECT site_location FROM `tabOperations Site` where name='{site}')
 			""".format(site=site), as_dict=1)
 	return location
 
@@ -400,24 +400,24 @@ def checkin_deadline():
 				SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 					tSA.employee = emp.name
-				AND tSA.start_date="{date}"
-				AND tSA.shift_type="{shift_type}"
+				AND tSA.start_date='{date}'
+				AND tSA.shift_type='{shift_type}'
 				AND tSA.docstatus=1
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
             	WHERE
 					emp_sp.employee=emp.name
 				AND emp_sp.workflow_state="Approved"
-				AND emp_sp.shift_type="{shift_type}"
-				AND emp_sp.date="{date}"
+				AND emp_sp.shift_type='{shift_type}'
+				AND emp_sp.date='{date}'
 				AND emp_sp.permission_type="Arrive Late")
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
 					empChkin.log_type="IN"
 				AND empChkin.skip_auto_attendance=0
-				AND date(empChkin.time)="{date}"
-				AND empChkin.shift_type="{shift_type}")
+				AND date(empChkin.time)='{date}'
+				AND empChkin.shift_type='{shift_type}')
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
@@ -443,16 +443,16 @@ def automatic_checkout():
 				SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 					tSA.employee = emp.name
-				AND tSA.start_date="{date}"
-				AND tSA.shift_type="{shift_type}"
+				AND tSA.start_date='{date}'
+				AND tSA.shift_type='{shift_type}'
 				AND tSA.docstatus=1
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
 					empChkin.log_type="OUT"
 				AND empChkin.skip_auto_attendance=0
-				AND date(empChkin.time)="{date}"
-				AND empChkin.shift_type="{shift_type}")
+				AND date(empChkin.time)='{date}'
+				AND empChkin.shift_type='{shift_type}')
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 			if len(recipients) > 0:
 				recipients = [recipient[0] for recipient in recipients if recipient[0]]
@@ -497,7 +497,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.flags.ignore_permissions = True
 	penalty_issuance.insert()
 	penalty_issuance.submit()
-	frappe.msgprint(_("A penalty has been issued against {0}".format(employee_name)))
+	frappe.msgprint(_('A penalty has been issued against {0}'.format(employee_name)))
 
 
 def automatic_shift_assignment():
@@ -517,20 +517,23 @@ def end_previous_shifts():
 		doc.submit()
 
 def create_shift_assignment(schedule, date):
-	shift_assignment = frappe.new_doc("Shift Assignment")
-	shift_assignment.start_date = date
-	shift_assignment.employee = schedule.employee
-	shift_assignment.employee_name = schedule.employee_name
-	shift_assignment.department = schedule.department
-	shift_assignment.post_type = schedule.post_type
-	shift_assignment.shift = schedule.shift
-	shift_assignment.site = schedule.site
-	shift_assignment.project = schedule.project
-	shift_assignment.shift_type = schedule.shift_type
-	shift_assignment.post_type = schedule.post_type
-	shift_assignment.post_abbrv = schedule.post_abbrv
-	shift_assignment.roster_type = schedule.roster_type
-	shift_assignment.submit()
+	try:
+		shift_assignment = frappe.new_doc("Shift Assignment")
+		shift_assignment.start_date = date
+		shift_assignment.employee = schedule.employee
+		shift_assignment.employee_name = schedule.employee_name
+		shift_assignment.department = schedule.department
+		shift_assignment.post_type = schedule.post_type
+		shift_assignment.shift = schedule.shift
+		shift_assignment.site = schedule.site
+		shift_assignment.project = schedule.project
+		shift_assignment.shift_type = schedule.shift_type
+		shift_assignment.post_type = schedule.post_type
+		shift_assignment.post_abbrv = schedule.post_abbrv
+		shift_assignment.roster_type = schedule.roster_type
+		shift_assignment.submit()
+	except Exception:
+			frappe.log_error(frappe.get_traceback())
 
 def update_shift_type():
 	today_datetime = now_datetime()
@@ -709,7 +712,7 @@ def generate_site_allowance():
 				employee_det = frappe.db.sql("""
 							SELECT employee,count(attendance_date) FROM `tabAttendance`
 							WHERE
-								site = "{site}"
+								site = '{site}'
 							AND attendance_date between '{start_date}' and '{end_date}'
 							And status = "Present"
 							GROUP BY employee
