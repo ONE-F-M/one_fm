@@ -5,240 +5,55 @@
 
 <div class="layoutSidenav_content" data-view="roster">
     <div id="cover-spin"></div>
-    <div class="bg-white d-none d-md-block">
-        <ul class="nav nav-tabs nav-justified rostercustomtab">
-            <li class="active cursorpointer"><a class="redirect_route" data-route="roster">
-                    <span><i class="fas fa-tasks"></i></span><span class="pl10">Rostering</span></a>
-            </li>
-            <li class="cursorpointer"><a class="redirect_route" data-route="staff">
-                    <span><i class="fas fa-users"></i></span><span class="pl10">Staff</span></a>
-            </li>
 
-            <li class="cursorpointer"><a class="redirect_route" data-route="reports"><span>
-                        <i class="fas fa-chart-line"></i></span><span class="pl10">Reports</span></a>
+    <!-- Roster Nav bar section -->
+    <div class="container">
+        <ul class="nav nav-tabs justify-content-center">
+            <li class="nav-item">
+                <a class="nav-link active cursorpointer redirect_route" data-route="roster">
+                    <span>
+                        <i class="fas fa-tasks"></i>
+                    </span>
+                    <span>Rostering</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link cursorpointer redirect_route" data-route="staff">
+                    <span>
+                        <i class="fas fa-users"></i>
+                    </span>
+                    <span>Staff</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link cursorpointer redirect_route" data-route="reports">
+                    <span>
+                        <i class="fas fa-chart-line"></i>
+                    </span>
+                    <span>Reports</span>
+                </a>
             </li>
         </ul>
     </div>
-    <div class="tab-content mt30 ml30 mr30 mb30 bg-white">
-        <div class="container-fluid pl-0 pr-0  pt15">
-            <div class="d-flex justify-content-between align-items-center pl30 pr30">
-                <div class="">
-                    <div class="font20 cardheadercolor fontw600 textchange d-inline-block mr10">Rostering</div>
-                </div>
-                <div class="d-none d-md-inline-block">
-                    <ul
-                        class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab rosteringheadingtab">
-                        <li class="active maintabclick"><a class="residenavli rosterviewclick" id="">Staff View</a>
-                        </li>
-                        <li class="maintabclick"><a class="residenavli postviewclick" id="">Post View</a></li>
-                    </ul>
-                    <div class="switch-container">
-                        <div class="d-none d-md-inline-block">
-                            <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab">
-                                <li class="active rosterClick"><a class="residenavli basicRosterClick" id="">Basic
-                                        Roster</a>
-                                </li>
-                                <li class="rosterClick"><a class="residenavli otRosterClick" id="">OT Roster</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-md-right">
-                    <a href="#" class="responsivebluebtnright"><i class="fas fa-print"></i></a>
-                </div>
+    <!-- End Roster Nav bar section -->
+
+    <!-- Rostering body -->
+    <div class="ml-3 mr-3 bg-white">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-center align-items-center">
+                <nav class="nav nav-pills flex-column flex-sm-row mt-5">
+                    <a class="flex-sm-fill text-sm-center nav-link active bg-primary rosterviewclick">Staff View</a>
+                    <a class="flex-sm-fill text-sm-center nav-link postviewclick">Post View</a>
+                </nav>
             </div>
-            <!--<div class="d-flex justify-content-between align-items-center pl30 pr30">
-                <div class="font18 pt30 pb10 cardheadercolor">Filter</div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center pl30 pr30">
-                <div class="listoffilter" style="width: 100%;">
-                    <div class="row">
-                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
-                            <select class="form-control select2plg" id="rosteringprojectselect"
-                                name="rosteringprojectselect">
-                                <option value="">Select Project</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
-                            <select class="form-control select2plg" id="rosteringsiteselect" name="rosteringsiteselect">
-                                <option value="">Select Site</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
-                            <select class="form-control select2plg" id="rosteringshiftselect"
-                                name="rosteringshiftselect">
-                                <option value="">Select Shift</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
-                            <select class="form-control select2plg" id="rosteringdepartmentselect"
-                                name="rosteringdepartmentselect">
-                                <option value="">Select Department</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-12 col-md-2 custompageselecttype mb20">
-                            <select class="form-control select2plg" id="rosteringpostselect" name="rosteringpostselect">
-                                <option value="">Select Post type</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>-->
-            <!-- <div class="switch-container">
-                <div class="d-none d-md-inline-block">
-                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab">
-                        <li class="active rosterClick"><a class="residenavli basicRosterClick" id="">Basic Roster</a>
-                        </li>
-                        <li class="rosterClick"><a class="residenavli otRosterClick" id="">OT Roster</a></li>
-                    </ul>
-                </div>
-            </div> -->
-            <div class="d-md-none pt30 pb30 pl30 pr30 ">
-                <div class="">
-                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-                        <li class="active maintabclick"><a class="residenavli rosterviewclick" id="">Roster
-                                View</a></li>
-                        <li class="maintabclick"><a class="residenavli postviewclick" id="">Post View</a></li>
-                    </ul>
-                </div>
+            <div class="d-flex justify-content-center align-items-center">
+                <nav class="nav nav-pills flex-column flex-sm-row mt-2">
+                    <a class="flex-sm-fill text-sm-center nav-link active bg-primary basicRosterClick">Basic Roster</a>
+                    <a class="flex-sm-fill text-sm-center nav-link otRosterClick">OT Roster</a>
+                </nav>
             </div>
         </div>
-        <div class="container-fluid pl30 pr30 d-none filterhideshow lightbluedtbg mt30">
-            <div class="row py-4 py-md-4 py-lg-0">
-                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0">
-                    <a href="#" class="responsivebluebtn ml-0 dayoff">Day Off</a>
-                    <!--<a href="#" class="responsivebluebtn scheduleleave">Leaves</a>-->
-                    <a href="#" class="responsivebluebtn changepost">Schedule/Change Post</a>
-                    <a href="#" class="responsivebluebtn assignchangemodal">Unschedule/Post Staff</a>
-                </div>
-            </div>
-        </div>
-        <div class="container-fluid pl30 pr30 d-none Postfilterhideshow lightbluedtbg mt30">
-            <div class="row py-4 py-md-0">
-                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0">
-                    <a href="#" class="responsivebluebtn ml-0 editpostclassclick" data-target="#addpostmodal"
-                        data-toggle="modal">Edit Post</a>
-                </div>
-            </div>
-        </div>
-        <div class="container-fluid borderradius8 pt30 pl30 pr30 pb30 bg-white">
-            <div class="row">
-                <div class="col-md-3 col-sm-12">
-                    <div class="dateblock" class="input-group date">
-                        <div id="datepicker" class="input-group date">
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2 col-sm-12">
-                    <div class="font18 pb10 cardheadercolor">Options</div>
-                    <div class="listoffilter dateblock rosterviewfilterbg">
-
-                        <div class="row">
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show all
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkAllStaff">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show scheduled
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkschedule">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unscheduled
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkunschedule">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show assigned
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkassgined">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
-                                <label class="checkboxcontainer simplecheckbox">
-                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unassigned
-                                        staff</span>
-                                    <input type="checkbox" class="selectallcheckbox" id="chkunassgined">
-                                    <span class="checkmark"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                <div class="col-md-6 col-sm-12">
-                    <div class="font18 pb10 pt30 cardheadercolor">Legend</div>
-                    <div class="listoffilter rosterviewfilterbg">
-                        <div class="row">
-                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview lightgreenbox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Day Fulfilled</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview yellowboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Day Off OT</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview redboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Absent</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview greyboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Day Off</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview blueboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Planned</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview borderbox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Unplanned</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview purplebox"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Leave</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
-                                <div class="d-flex">
-                                    <div class="legendboxview pinkboxcolor"></div>
-                                    <div class="pl10 font16 cardtitlecolor">Additional Assignment</div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center pl30 pr30">
-                <div class="font18 pt30 pb10 cardheadercolor">Filter</div>
-            </div>
+        <div class="container-fluid borderradius8 mt-5 pl30 pr30 bg-white">
             <div class="d-flex justify-content-between align-items-center pl30 pr30">
                 <div class="listoffilter" style="width: 100%;">
                     <div class="row">
@@ -278,24 +93,11 @@
                     </div>
                 </div>
             </div>
-            <!-- <div class="switch-container">
-                <div class="d-none d-md-inline-block">
-                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab">
-                        <li class="active rosterClick"><a class="residenavli basicRosterClick" id="">Basic Roster</a>
-                        </li>
-                        <li class="rosterClick"><a class="residenavli otRosterClick" id="">OT Roster</a></li>
-                    </ul>
-                </div>
-            </div> -->
-            <div class="d-md-none pt30 pb30 pl30 pr30 ">
-                <div class="">
-                    <ul class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-                        <li class="active maintabclick"><a class="residenavli rosterviewclick" id="">Roster
-                                View</a></li>
-                        <li class="maintabclick"><a class="residenavli postviewclick" id="">Post View</a></li>
-                    </ul>
-                </div>
-            </div>
+        </div>
+        <div class="container-fluid ml30 pl30 pr30">
+            <small id="passwordHelpInline" class="text-muted" style="font-size: small;">
+                <span style="color:red">*</span> Select atleast one filter to view the roster
+            </small>
         </div>
         <div class="container-fluid pl30 pr30 d-none filterhideshow lightbluedtbg mt30">
             <div class="row py-4 py-md-4 py-lg-0">
@@ -320,7 +122,7 @@
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pt-4 pt-md-0" id="main-section">
                     <!--ROSTER AND POST VIEW HERE-->
                     <div id="partialcalenderview">
-                        <div class="cardheadercolor rosterMonth border-0 shadow-0">
+                        <div class="cardheadercolor rosterMonth shadow rounded">
                             <div
                                 class="card-header pt30 pb30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
                                 <div class="d-lg-flex justify-content-lg-between align-items-lg-center">
@@ -367,9 +169,7 @@
                             </div>
                             <div class="card-body p-0" id="tableviewchange">
                                 <div class="table-responsive table-bordered table-parent">
-                                    <table id="calenderviewtable"
-                                        class="mb-0 table table-striped customcarddetailtable structuredetaildatatable"
-                                        style="width:100%">
+                                    <table id="calenderviewtable" class="mb-0 table table-striped customcarddetailtable structuredetaildatatable">
                                         <thead>
                                             <tr class="rosterViewTH">
                                             </tr>
@@ -396,7 +196,6 @@
                                                 <li class="calenderlink">
                                                     <input class="residenavli search-employee" type="text"
                                                         placeholder="Type and Press Enter (↵)">
-                                                    <span class="closed"><i class="fas fa-times"></i></span>
                                                 </li>
                                                 <li class="active calenderlink"><a href="#"
                                                         class="residenavli active monthviewclick">Month</a></li>
@@ -658,7 +457,128 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Roster legend -->
+        <div class="container-fluid borderradius8 pl30 pr30 pb-30 bg-white">
+            <div class="row">
+                <div class="col-md-3 col-sm-12">
+                    <div class="dateblock" class="input-group date">
+                        <div id="datepicker" class="input-group date">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-12">
+                    <div class="font18 pb10 cardheadercolor">Options</div>
+                    <div class="listoffilter dateblock rosterviewfilterbg">
+
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show all
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkAllStaff">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show scheduled
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkschedule">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unscheduled
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkunschedule">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb20">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show assigned
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkassgined">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="col-sm-12 col-md-12 custompageselecttype mb10">
+                                <label class="checkboxcontainer simplecheckbox">
+                                    <span class="cardtitlecolor font16 customfontweight fontw400">Show unassigned
+                                        staff</span>
+                                    <input type="checkbox" class="selectallcheckbox" id="chkunassgined">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="font18 pb10 pt30 cardheadercolor">Legend</div>
+                    <div class="listoffilter rosterviewfilterbg">
+                        <div class="row">
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview lightgreenbox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Day Fulfilled</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview yellowboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Day Off OT</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview redboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Absent</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview greyboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Day Off</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview blueboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Planned</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview borderbox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Unplanned</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview purplebox"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Leave</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4 custompageselecttype mb10">
+                                <div class="d-flex">
+                                    <div class="legendboxview pinkboxcolor"></div>
+                                    <div class="pl10 font16 cardtitlecolor">Additional Assignment</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--End roster legend -->
+    
     </div>
+    <!-- End Rostering Body-->
+    
 </div>
 <div id="sidenav-backdrop"></div>
 <div class="drawer-backdrop" id="drawershow"></div>
