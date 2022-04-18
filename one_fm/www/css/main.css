@@ -7668,9 +7668,6 @@ button.bg-dark:focus {
   box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.1607843137254902);
   border-radius: 8px;
 }
-.layoutSidenav_content {
-  margin-top: 66px !important;
-}
 #layoutError {
   display: flex;
   flex-direction: column;
@@ -8527,9 +8524,6 @@ a:hover {
   }
   .font38 {
     font-size: calc(38px - 8px) !important;
-  }
-  .layoutSidenav_content {
-    margin-top: 66px !important;
   }
   .sb-topnav {
     padding-left: 0;
@@ -9492,9 +9486,6 @@ a:hover {
   .mr30 {
     margin-right: calc(30px - 10px);
   }
-  .layoutSidenav_content {
-    margin-top: 66px !important;
-  }
   .sb-nav-fixed #layoutSidenav #layoutSidenav_nav {
     width: 200px;
     height: 100vh;
@@ -9888,9 +9879,6 @@ a:hover {
   }
   .mr30 {
     margin-right: calc(30px - 10px);
-  }
-  .layoutSidenav_content {
-    margin-top: 66px !important;
   }
   .sb-topnav.navbar-dark #sidebarToggle {
     color: #63799b !important;
