@@ -1925,11 +1925,11 @@ function GetHeaders(IsMonthSet, element) {
 			var todayDaydate = calDate.format("DD");
 			var th = "";// "<th id="data-day_" + i + "" onclick="ChangeRosteringDate(" + i + ",this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
-				th = '<th class="greytablebg vertical-sticky" style="z-index:-1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="greytablebg vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			} else if (todayDaydate === getdateres) {
-				th = '<th class="hightlightedtable vertical-sticky" style="z-index:-1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="hightlightedtable vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			} else {
-				th = '<th class=" vertical-sticky" style="z-index:-1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class=" vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			dataHTML = dataHTML + th;
 		}
@@ -1951,10 +1951,10 @@ function GetHeaders(IsMonthSet, element) {
 
 			var th = "";// "<th id="data-day_" + i + "" onclick="ChangeRosteringDate(" + i + ",this)">" + calDate.format("ddd") + " " + calDate.format("DD") + "</th>";
 			if (todayDay == 'Fri' || todayDay == 'Sat') {
-				th = '<th class="greytablebg vertical-sticky" style="z-index:-1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="greytablebg vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			else {
-				th = '<th class="vertical-sticky" style="z-index:-1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
+				th = '<th class="vertical-sticky" style="z-index:1" id="data-day_' + i + '" onclick="ChangeRosteringDate(' + i + ',this)">' + calDate.format('ddd') + ' ' + calDate.format('DD') + '</th>';
 			}
 			dataHTML = dataHTML + th;
 
