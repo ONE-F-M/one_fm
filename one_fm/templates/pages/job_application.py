@@ -107,6 +107,8 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
     if driving_license and license_type:
         if driving_license == "yes":
             job_applicant.one_fm_type_of_driving_license = str(license_type)
+        else:
+            job_applicant.one_fm_type_of_driving_license= "Not Available"
     
     if visa and visa_type:
         if visa == "yes":
