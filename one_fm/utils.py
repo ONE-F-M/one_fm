@@ -36,6 +36,8 @@ from erpnext.hr.utils import get_holidays_for_employee
 from one_fm.processor import sendemail
 from frappe.desk.form import assign_to
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
+from frappe.core.doctype.user.user import extract_mentions
+from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -1418,7 +1420,7 @@ def validate_job_applicant(doc, method):
         set_required_documents(doc, method)
     if frappe.session.user != 'Guest' and not doc.one_fm_is_easy_apply:
         validate_mandatory_childs(doc)
-    if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
+    if doc.one_fm_applicant_status in ["Shortlisted", "Selected"] and doc.status not in ["Rejected"]:
         create_job_offer_from_job_applicant(doc.name)
     if doc.one_fm_number_of_kids and doc.one_fm_number_of_kids > 0:
         """This part is comparing the number of children with the listed children details in the table and ask user to add all childrens"""
@@ -1618,19 +1620,22 @@ def create_job_offer_from_job_applicant(job_applicant):
             frappe.throw(_("Number of days off cannot be more than a Week!"))
         elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
             frappe.throw(_("Number of days off cannot be more than a Month!"))
-        erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         job_offer = frappe.new_doc('Job Offer')
         job_offer.job_applicant = job_app.name
         job_offer.applicant_name = job_app.applicant_name
         job_offer.day_off_category = job_app.day_off_category
         job_offer.number_of_days_off = job_app.number_of_days_off
+        job_offer.designation = job_app.designation
         job_offer.offer_date = today()
-        set_erf_details(job_offer, erf)
+        if job_app.one_fm_erf:
+            erf = frappe.get_doc('ERF', job_app.one_fm_erf)
+            set_erf_details(job_offer, erf)
         job_offer.save(ignore_permissions = True)
 
 def set_erf_details(job_offer, erf):
     job_offer.erf = erf.name
-    job_offer.designation = erf.designation
+    if not job_offer.designation:
+        job_offer.designation = erf.designation
     job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
     job_offer.one_fm_provide_transportation_by_company = erf.provide_transportation_by_company
     set_salary_details(job_offer, erf)
@@ -2512,16 +2517,52 @@ def notify_issue_responder_or_assignee_on_comment_in_issue(doc, method):
     """
     if doc.reference_doctype == "Issue" and doc.reference_name:
         issue = frappe.get_doc(doc.reference_doctype, doc.reference_name)
-        subject = _("New comment on issue {0}".format(issue.name))
-        message = _("Issue {0} have new comment".format(issue.name))
         department_issue_responder = False
+
         if issue.department:
             department_issue_responder = get_department_issue_responder(issue.department)
         if department_issue_responder and len(department_issue_responder) > 0:
-            create_notification_log(subject, message, department_issue_responder, issue)
+            create_notification_log_for_issue_comments(department_issue_responder, issue, doc)
         else:
             try:
                 if issue._assign:
-                    create_notification_log(subject, message, json.loads(issue._assign), issue)
+                    create_notification_log_for_issue_comments(json.loads(issue._assign), issue, doc)
             except Exception as e:
                 pass
+
+def create_notification_log_for_issue_comments(users, issue, comment):
+    """
+        Method used to create notification log from the issue commnets
+        args:
+            users: list of recipients
+            issue: Object of Issue
+            comment: Object of Comment
+    """
+    title = get_title("Issue", issue.name)
+    subject = _("New comment on {0}".format(get_title_html(title)))
+    notification_message = _('''Comment: <br/>{0}'''.format(comment.content))
+
+    """
+        Extracts mentions to remove from notification log recipients,
+        since mentions will be notified by frappe core
+    """
+    mentions = extract_mentions(comment.content)
+    if mentions and len(mentions) > 0:
+        for mention in mentions:
+            if mention in users:
+                users.remove(mention)
+    create_notification_log(subject, notification_message, users, issue)
+
+def set_expire_magic_link(reference_doctype, reference_docname, link_for):
+    """
+        Method used to Set expire magic link
+        based on the reference_doctype, reference_docname and link_for values
+        args:
+            reference_doctype: DocType name (Example: 'Job Applicant')
+            reference_docname: Data (Example: 'HR-APP-2022-00286')
+            link_for: Data (Example: Career History)
+    """
+    magic_link = frappe.db.exists('Magic Link', {'reference_doctype': reference_doctype,
+        'reference_docname': reference_docname, 'link_for': link_for, 'expired': False})
+    if magic_link:
+        frappe.db.set_value('Magic Link', magic_link, 'expired', True)

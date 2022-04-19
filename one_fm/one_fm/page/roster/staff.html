@@ -2,17 +2,37 @@
 <!-- ============================================================== -->
 <div class="layoutSidenav_content" data-view="list">
     <div id="cover-spin"></div>
-    <div class="bg-white d-none d-md-block">
-        <ul class="nav nav-tabs nav-justified rostercustomtab">
-            <li class="cursorpointer"><a class="redirect_route" data-route="roster"><span><i
-                            class="fas fa-tasks"></i></span><span class="pl10">Rostering</span></a></li>
-            <li class="active cursorpointer"><a class="redirect_route" data-route="staff"><span><i
-                            class="fas fa-users"></i></span><span class="pl10">Staff</span></a></li>
-            <!--<li class="cursorpointer"><a href="structure.html"><span><i class="far fa-calendar-alt"></i></span><span class="pl10">Structure</span></a></li>-->
-            <li class="cursorpointer"><a class="redirect_route" data-route="reports"><span><i
-                            class="fas fa-chart-line"></i></span><span class="pl10">Reports</span></a></li>
+   
+    <!-- Roster Nav bar section -->
+    <div class="container">
+        <ul class="nav nav-tabs justify-content-center">
+            <li class="nav-item">
+                <a class="nav-link cursorpointer redirect_route" data-route="roster">
+                    <span>
+                        <i class="fas fa-tasks"></i>
+                    </span>
+                    <span>Rostering</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active cursorpointer redirect_route" data-route="staff">
+                    <span>
+                        <i class="fas fa-users"></i>
+                    </span>
+                    <span>Staff</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link cursorpointer redirect_route" data-route="reports">
+                    <span>
+                        <i class="fas fa-chart-line"></i>
+                    </span>
+                    <span>Reports</span>
+                </a>
+            </li>
         </ul>
     </div>
+    <!-- End Roster Nav bar section -->
     <!--for mobile filter sidedrawer start-->
     <div class="container-fluid d-md-none">
         <div class="row">
@@ -348,13 +368,13 @@
         </div>
     </div>
     <!--for mobile filter sidedrawer end-->
-    <div class="tab-content mt30 ml30 mr30 mb30 ">
+    <div class="tab-content ml30 mr30">
         <div class="container-fluid borderradius8 pt30 pl30 pr30 pb30 bg-white">
             <div class="row d-none d-md-block d-lg-flex">
-                <div class="col-xs-12 col-sm-12 col-md-3 col-lg-3">
+                <!-- <div class="col-xs-12 col-sm-12 col-md-3 col-lg-3">
                     <span class="font20 cardheadercolor fontw600 textchange">Staff Management</span>
                     <div class="pt6 font16 lightgrey hideshowprjname d-none">Rostering Application</div>
-                </div>
+                </div> -->
                 <div class="col-xs-12 col-sm-12 col-md-9 col-lg-9 mt-0 mt-md-3 mt-lg-0">
                     <div class="d-md-flex justify-content-md-between justify-content-lg-end">
                         <div class="searchbox">
