@@ -2,12 +2,18 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 import frappe, json
-from frappe.utils import get_url, fmt_money, month_diff, add_days, add_years, getdate
+from frappe.utils import (
+    get_url, fmt_money, month_diff, add_days, add_years, getdate, flt, get_link_to_form
+)
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
 from frappe.modules import scrub
 from frappe import _
 from frappe.desk.form import assign_to
+from one_fm.processor import sendemail
+from one_fm.templates.pages.career_history import send_career_history_magic_link
+from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
+
 
 @frappe.whitelist()
 def get_performance_profile_resource():
@@ -84,27 +90,7 @@ def validate_job_offer_mandatory_fields(job_offer):
             frappe.throw(msg + '</ul>')
 
 def after_insert_job_applicant(doc, method):
-    website_user_for_job_applicant(doc.email_id, doc.one_fm_first_name, doc.one_fm_last_name, doc.one_fm_applicant_password)
     notify_recruiter_and_requester_from_job_applicant(doc, method)
-
-def website_user_for_job_applicant(email_id, first_name, last_name='', applicant_password=False):
-    if not frappe.db.exists ("User", email_id):
-        from frappe.utils import random_string
-        user = frappe.get_doc({
-            "doctype": "User",
-            "first_name": first_name,
-            "last_name": last_name,
-            "email": email_id,
-            "user_type": "Website User",
-            "send_welcome_email": False
-        })
-        user.flags.ignore_permissions=True
-        # user.reset_password_key=random_string(32)
-        user.add_roles("Job Applicant")
-        if applicant_password:
-            from frappe.utils.password import update_password
-            update_password(user=user.name, pwd=applicant_password)
-        return user
 
 def notify_recruiter_and_requester_from_job_applicant(doc, method):
     if doc.one_fm_erf:
@@ -123,7 +109,7 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
         message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
 
         if recipients:
-            frappe.sendmail(
+            sendemail(
                 recipients= recipients,
                 subject='Job Application created for {0}'.format(designation),
                 message=message,
@@ -312,6 +298,17 @@ def update_applicant_status(names, status_field, status, reason_for_rejection=Fa
         job_applicant.save()
 
 @frappe.whitelist()
+def send_magic_link_to_selected_applicants(names, magic_link):
+    names = json.loads(names)
+    for name in names:
+        applicant_data = frappe.db.get_values("Job Applicant", name, ["applicant_name", "designation"], as_dict=True)
+        if applicant_data and len(applicant_data) > 0:
+            if magic_link == 'Career History':
+                send_career_history_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
+            elif magic_link == 'Applicant Doc':
+                send_applicant_doc_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
+
+@frappe.whitelist()
 def add_remove_salary_advance(names, dialog):
     names = json.loads(names)
     job_offer_list = []
@@ -352,7 +349,7 @@ def notify_finance_job_offer_salary_advance(job_offer_id=None, job_offer_list=No
             message += "<li><a href='{0}'>{1}</a>: {2}</li>".format(page_link, job_offer.name,
                 fmt_money(abs(job_offer.one_fm_salary_advance_amount), 3, 'KWD'))
         message += "<ol>"
-        frappe.sendmail(
+        sendemail(
             recipients=[recipient],
             subject=_('Advance Salary for Job Offer'),
             message=message,
@@ -649,3 +646,67 @@ def update_onboarding_doc_workflow_sate(doc):
         if doc.doctype == 'Employee' and onboard_employee.workflow_state == 'Bank Account' and doc.enrolled:
             onboard_employee.workflow_state = 'Mobile App Enrolment'
         onboard_employee.save(ignore_permissions=True)
+
+@frappe.whitelist()
+def get_interview_question_set(interview_round):
+	return frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+
+@frappe.whitelist()
+def get_interview_skill_and_question_set(interview_round):
+    question = frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+    skill = frappe.get_all('Expected Skill Set', filters ={'parent': interview_round}, fields=['skill'])
+    return question, skill
+
+@frappe.whitelist()
+def create_interview_feedback(data, interview_name, interviewer, job_applicant):
+    import json
+
+    from six import string_types
+
+    if isinstance(data, string_types):
+        data = frappe._dict(json.loads(data))
+
+    if frappe.session.user != interviewer:
+        frappe.throw(_('Only Interviewer Are allowed to submit Interview Feedback'))
+
+    interview_feedback = frappe.new_doc('Interview Feedback')
+    interview_feedback.interview = interview_name
+    interview_feedback.interviewer = interviewer
+    interview_feedback.job_applicant = job_applicant
+
+    for d in data.skill_set:
+        d = frappe._dict(d)
+        interview_feedback.append('skill_assessment', {'skill': d.skill, 'rating': d.rating})
+
+    for dq in data.questions:
+        dq = frappe._dict(dq)
+        interview_feedback.append('interview_question_assessment', {'questions': dq.questions, 'answer': dq.answer,
+            'weight': dq.weight, 'applicant_answer': dq.applicant_answer, 'score': dq.score})
+
+    interview_feedback.feedback = data.feedback
+    interview_feedback.result = data.result
+
+    interview_feedback.save()
+    interview_feedback.submit()
+
+    frappe.msgprint(_('Interview Feedback {0} submitted successfully').format(
+    get_link_to_form('Interview Feedback', interview_feedback.name)))
+
+def calculate_interview_feedback_average_rating(doc, method):
+    total_skill_rating = doc.average_rating if doc.average_rating else 0
+    total_score = 0
+    total_questions = 0
+    for d in doc.interview_question_assessment:
+        if d.weight > 0 and d.score:
+            total_score += get_score_out_of_five(d.score, d.weight)
+            total_questions += 1
+
+    average_score = flt(total_score / total_questions if total_questions else 0)
+    if total_score > 0:
+        if total_skill_rating > 0:
+            doc.average_rating = flt((total_skill_rating + average_score) / 2)
+        else:
+            doc.average_rating = flt(average_score)
+
+def get_score_out_of_five(score, weight):
+    return (score * 5) / weight

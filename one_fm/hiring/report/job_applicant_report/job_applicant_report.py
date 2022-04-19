@@ -26,7 +26,7 @@ def get_data():
 		row = [
 			jop.applicant_name,
 			jop.job_title,
-			jop.one_fm_designation,
+			jop.designation,
 			jop.status,
 			jop.one_fm_applicant_status,
 			jop.one_fm_erf

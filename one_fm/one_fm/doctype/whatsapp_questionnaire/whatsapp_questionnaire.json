@@ -1,0 +1,63 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-03-20 11:19:43.990931",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "en_question_1",
+  "en_question_2",
+  "column_break_3",
+  "question_1",
+  "question_2"
+ ],
+ "fields": [
+  {
+   "fieldname": "question_1",
+   "fieldtype": "Text Editor",
+   "label": "Question 1"
+  },
+  {
+   "fieldname": "question_2",
+   "fieldtype": "Text Editor",
+   "label": "Question 2"
+  },
+  {
+   "fieldname": "en_question_1",
+   "fieldtype": "Text Editor",
+   "label": "Question 1 "
+  },
+  {
+   "fieldname": "en_question_2",
+   "fieldtype": "Text Editor",
+   "label": "Question 2"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2022-03-20 11:23:24.042029",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "WhatsApp Questionnaire",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

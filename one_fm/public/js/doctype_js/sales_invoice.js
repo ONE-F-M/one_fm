@@ -139,14 +139,16 @@ frappe.ui.form.on('Sales Invoice', {
                 callback:function(s){
                     if (!s.exc) {
                         //console.log(s.message);
-                        if(s.message){
-                            var selling_price_list = s.message.name;
-                            frm.set_value("selling_price_list",selling_price_list);
-                            frm.refresh_field("selling_price_list");
-                        }
-                        else{
-                            frm.set_value("selling_price_list",null);
-                            frm.refresh_field("selling_price_list");
+                        if(frm.doc.selling_price_list == null){
+                            if(s.message){
+                                var selling_price_list = s.message.name;
+                                frm.set_value("selling_price_list",selling_price_list);
+                                frm.refresh_field("selling_price_list");
+                            }
+                            else{
+                                frm.set_value("selling_price_list",null);
+                                frm.refresh_field("selling_price_list");
+                            }
                         }
                     }
                 }
@@ -175,18 +177,19 @@ frappe.ui.form.on('Sales Invoice', {
             });
         }
     },
-    // contracts: function(frm){
-    //     if(frm.doc.contracts){
-    //         frm.clear_table("items");
-    //         frm.refresh_field("items");
-    //         //get contracts service items
-    //         get_contracts_items(frm);
-    //         //get contracts consumable items
-    //         get_contracts_asset_items(frm);
-    //     }
-    // },
+
+    contracts: function(frm){
+        if(frm.doc.contracts){
+            frm.clear_table("items");
+            frm.refresh_field("items");
+            //get contracts service items
+            get_contracts_items(frm);
+            //get contracts consumable items
+            get_contracts_asset_items(frm);
+        }
+    },
     // add_timesheet_amount: function(frm){
-    //     // add_timesheet_rate(frm);
+    //     add_timesheet_rate(frm);
     // }
 });
 // frappe.ui.form.on('Sales Invoice Item', {
@@ -212,132 +215,132 @@ frappe.ui.form.on('Sales Invoice', {
 //                     }
 //                 }
 //             }
-//         });
-//         frappe.model.set_value(d.doctype, d.name,"test_item",d.item_code);
+//         });  
+//         //frappe.model.set_value(d.doctype, d.name,"test_item",d.item_code);
 //     }
 // });
-//
-// var set_income_account_and_cost_center = function(frm){
-//     console.log('set_income_account_and_cost_center');
-//     frappe.call({
-//         method: 'frappe.client.get_value',
-//         args:{
-//             'doctype':'Project',
-//             'filters':{
-//                 'name': frm.doc.project
-//             },
-//             'fieldname':[
-//                 'income_account',
-//                 'cost_center'
-//             ]
-//         },
-//         callback:function(s){
-//             if (!s.exc) {
-//                 $.each(frm.doc.items || [], function(i, v) {
-//                     frappe.model.set_value(v.doctype, v.name,"income_account",s.message.income_account)
-//                     frappe.model.set_value(v.doctype, v.name,"cost_center",s.message.cost_center)
-//                 })
-//                 frm.refresh_field("items");
-//             }
-//         }
-//     });
-// };
+var set_income_account_and_cost_center = function(frm){
+    console.log('set_income_account_and_cost_center');
+    frappe.call({
+        method: 'frappe.client.get_value',
+        args:{
+            'doctype':'Project',
+            'filters':{
+                'name': frm.doc.project
+            },
+            'fieldname':[
+                'income_account',
+                'cost_center'
+            ]
+        },
+        callback:function(s){
+            if (!s.exc) {
+                $.each(frm.doc.items || [], function(i, v) {
+                    frappe.model.set_value(v.doctype, v.name,"income_account",s.message.income_account)
+                    frappe.model.set_value(v.doctype, v.name,"cost_center",s.message.cost_center)
+                })
+                frm.refresh_field("items");
+            }
+        }
+    });
+};
 //Add timesheet amount
-// var add_timesheet_rate = function(frm){
-//     console.log('add_timesheet_rate.........event');
-//     $.each(frm.doc.items || [], function(i, v) {
-//         var amount = 0;
-//         $.each(frm.doc.timesheets || [], function(i, d) {
-//             if(d.item == v.item_code){
-//                 amount += d.billing_amount;
-//             }
-//         })
-//         if(amount != 0){
-//             frappe.model.set_value(v.doctype, v.name,"rate",flt(amount/v.qty))
-//         }
-//     })
-//     frm.refresh_field("items");
-// };
-// var get_timesheet_details =  function(frm,item) {
-//     frappe.call({
-//         method: 'one_fm.one_fm.sales_invoice_custom.get_projectwise_timesheet_data',
-//         args:{
-//             'project': frm.doc.project,
-//             'item_code': item,
-//             'posting_date': frm.doc.posting_date
-//         },
-//         callback:function(s){
-//             if (!s.exc) {
-//                 console.log(s.message);
-//                 if(s.message != undefined && s.message.length > 0){
-//                     add_timesheet_data(frm,s.message,item);
-//                 }
-//             }
-//         }
-//     });
-// };
-// var add_timesheet_data = function(frm,timesheet_data,item_code){
-//     for (var i=0; i<timesheet_data.length; i++){
-//         var d = frm.add_child("timesheets");
-//         var item = timesheet_data[i];
-//         frappe.model.set_value(d.doctype, d.name, "time_sheet", item.parent);
-//         frappe.model.set_value(d.doctype, d.name, "billing_hours", item.billing_hours);
-//         frappe.model.set_value(d.doctype, d.name, "billing_amount", item.billing_amt);
-//         frappe.model.set_value(d.doctype, d.name, "timesheet_detail", item.name);
-//         frappe.model.set_value(d.doctype, d.name, "item", item_code);
-//         frm.refresh_field("timesheets");
-//     }
-// };
-// var get_contracts_asset_items = function(frm){
-//     console.log('get_contracts_asset_items');
-//     frappe.call({
-//         method: "one_fm.operations.doctype.contracts.contracts.get_contracts_asset_items",
-//         args:{
-//             'contracts': frm.doc.contracts
-//         },
-//         callback:function(s){
-//             if(!s.exc){
-//                 if(s.message != undefined){
-//                     console.log(s.message);
-//                     for (var i=0; i<s.message.length; i++){
-//                         var d = frm.add_child("items");
-//                         var item = s.message[i];
-//                         //facing challange here
-//                         //d.item_code = item.item_code;
-//                         //d.qty = item.qty;
-//                         //d.uom = item.uom;
-//                         frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
-//                         frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
-//                         //frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
-//                         frm.refresh_field("items");
-//                     }
-//                     //loop again and set qty and uom .....not good
-//                 }
-//             }
-//         }
-//     })
-// };
-// var get_contracts_items = function(frm){
-//     console.log('get_contracts_items');
-//     frappe.call({
-//         method: "one_fm.operations.doctype.contracts.contracts.get_contracts_items",
-//         args:{
-//             'contracts': frm.doc.contracts
-//         },
-//         callback:function(s){
-//             if(!s.exc){
-//                 if(s.message != undefined){
-//                     console.log(s.message);
-//                     for (var i=0; i<s.message.length; i++){
-//                         var d = frm.add_child("items");
-//                         var item = s.message[i];
-//                         frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
-//                         frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
-//                         //frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
-//                         frm.refresh_field("items");
-//                     }
-//                 }
-//             }
-//         }
-//     })
-// };
+var add_timesheet_rate = function(frm){
+    console.log('add_timesheet_rate.........event');
+    $.each(frm.doc.items || [], function(i, v) {
+        var amount = 0;
+        $.each(frm.doc.timesheets || [], function(i, d) {
+            if(d.item == v.item_code){
+                amount += d.billing_amount;
+            }
+        })
+        if(amount != 0){
+            frappe.model.set_value(v.doctype, v.name,"rate",flt(amount/v.qty))
+        }
+    })
+    frm.refresh_field("items");
+};
+var get_timesheet_details =  function(frm,item) {
+    frappe.call({
+        method: 'one_fm.one_fm.sales_invoice_custom.get_projectwise_timesheet_data',
+        args:{
+            'project': frm.doc.project,
+            'item_code': item,
+            'posting_date': frm.doc.posting_date
+        },
+        callback:function(s){
+            if (!s.exc) {
+                console.log(s.message);
+                if(s.message != undefined && s.message.length > 0){
+                    add_timesheet_data(frm,s.message,item);
+                }
+            }
+        }
+    });
+};
+var add_timesheet_data = function(frm,timesheet_data,item_code){
+    for (var i=0; i<timesheet_data.length; i++){
+        var d = frm.add_child("timesheets");
+        var item = timesheet_data[i];
+        frappe.model.set_value(d.doctype, d.name, "time_sheet", item.parent);
+        frappe.model.set_value(d.doctype, d.name, "billing_hours", item.billing_hours);
+        frappe.model.set_value(d.doctype, d.name, "billing_amount", item.billing_amt);
+        frappe.model.set_value(d.doctype, d.name, "timesheet_detail", item.name);
+        frappe.model.set_value(d.doctype, d.name, "item", item_code);
+        frm.refresh_field("timesheets");
+    }
+};
+var get_contracts_asset_items = function(frm){
+    console.log('get_contracts_asset_items');
+    frappe.call({
+        method: "one_fm.operations.doctype.contracts.contracts.get_contracts_asset_items",
+        args:{
+            'contracts': frm.doc.contracts
+        },
+        callback:function(s){
+            if(!s.exc){
+                if(s.message != undefined){
+                    console.log(s.message);
+                    for (var i=0; i<s.message.length; i++){
+                        var d = frm.add_child("items");
+                        var item = s.message[i];
+                        //facing challange here
+                        //d.item_code = item.item_code;
+                        //d.qty = item.qty;
+                        //d.uom = item.uom;
+                        frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
+                        frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
+                        //frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
+                        frm.refresh_field("items");
+                    }
+                    //loop again and set qty and uom .....not good
+                }                      
+            }
+        }
+    })
+};
+var get_contracts_items = function(frm){
+    console.log('get_contracts_items');
+    frappe.call({
+        method: "one_fm.operations.doctype.contracts.contracts.get_contracts_items",
+        args:{
+            'contracts': frm.doc.contracts
+        },
+        callback:function(s){
+            if(!s.exc){
+                if(s.message != undefined){
+                    console.log(s.message);
+                    for (var i=0; i<s.message.length; i++){
+                        var item = s.message[i];
+                        frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
+                        frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
+                        frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
+                        //frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
+                        frm.refresh_field("items");
+                        
+                    }
+                }                      
+            }
+        }
+    })
+};

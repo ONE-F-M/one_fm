@@ -6,22 +6,20 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe import _
-from frappe.utils import getdate, month_diff
+from frappe.utils import getdate, month_diff, today, now, get_link_to_form
 from one_fm.utils import validate_applicant_overseas_transferable
 
 class OverlapError(frappe.ValidationError): pass
 class CareerHistory(Document):
 	def on_update(self):
-		update_career_history_score_of_applicant(self)
+		update_interview_and_feedback(self)
 
 	def validate(self):
 		self.validate_with_applicant()
-		self.calculate_promotions_and_experience()
+		if self.career_history_company and self.calculate_promotions_and_experience_automatically:
+			self.calculate_promotions_and_experience()
 		self.calculate_career_history_score()
 		self.career_history_score_action()
-		for company in self.career_history_company:
-			# Validate Overlaping of Career History Company Details with Date
-			validate_overlap(self, company)
 
 	def career_history_score_action(self):
 		if self.career_history_score and self.career_history_score > 0 and self.career_history_score < 2.99:
@@ -50,7 +48,7 @@ class CareerHistory(Document):
 		if self.job_applicant:
 			if frappe.db.get_value('Job Applicant', self.job_applicant, 'status') == 'Rejected':
 				frappe.throw(_('Applicant is Rejected'))
-			validate_applicant_overseas_transferable(self.job_applicant)
+			# validate_applicant_overseas_transferable(self.job_applicant)
 		if not self.name:
 			# hack! if name is null, it could cause problems with !=
 			self.name = "New "+self.doctype
@@ -58,9 +56,6 @@ class CareerHistory(Document):
 		if career_history:
 			frappe.throw(_("""Career History <b><a href="#Form/Career History/{0}">{0}</a></b> is exists against \
 				Job Applicant {1}.!""").format(career_history, self.applicant_name))
-
-	def on_trash(self):
-		update_career_history_score_of_applicant(self, True)
 
 	def calculate_promotions_and_experience(self):
 		'''
@@ -101,60 +96,83 @@ class CareerHistory(Document):
 		if total_months_of_experience:
 			self.total_years_of_experience = total_months_of_experience/12
 
-def update_career_history_score_of_applicant(doc, delete=False):
-	job_applicant = frappe.get_doc('Job Applicant', doc.job_applicant)
-	career_history_score_exists = False
-	if job_applicant.one_fm_job_applicant_score:
-		for score in job_applicant.one_fm_job_applicant_score:
-			if score.reference_dt == doc.doctype and score.reference_dn == doc.name:
-				career_history_score_exists = True
-				if delete:
-					frappe.delete_doc('Job Applicant Score', score.name)
-				else:
-					score.score = doc.career_history_score if doc.career_history_score else 0
-					score.date = getdate(doc.validated_by_recruiter_on)
-	if not career_history_score_exists:
-		interview_score = job_applicant.append('one_fm_job_applicant_score')
-		interview_score.interview = 'Career History'
-		interview_score.score = doc.career_history_score if doc.career_history_score else 0
-		interview_score.reference_dt = doc.doctype
-		interview_score.reference_dn = doc.name
-		interview_score.date = getdate(doc.validated_by_recruiter_on)
-	if doc.pass_to_next_interview == "Reject" and doc.career_history_score and doc.career_history_score > 0 and doc.career_history_score < 2.99:
-		job_applicant.status = 'Rejected' if not delete else 'Open'
-	job_applicant.save(ignore_permissions=True)
+	def	on_submit(self):
+		update_interview_and_feedback(self, True)
 
-def validate_overlap(doc, child_doc):
-	'''
-		Method used Validate Overlaping of Career History Company Details with Date
+	def on_cancel(self):
+		cancel_interview_and_feedback(self)
+
+def cancel_interview_and_feedback(career_history):
+	interview_feedback_exists = frappe.db.exists('Interview Feedback',
+		{'career_history': career_history.name, 'docstatus': ['>', 1]})
+	if interview_feedback_exists:
+		interview = frappe.get_value('Interview Feedback', interview_feedback_exists, 'interview')
+		if interview and frappe.get_value('Interview Detail', filters={'parent': interview, 'interviewer': frappe.session.user}):
+			frappe.get_doc('Interview', interview).cancel()
+
+def update_interview_and_feedback(career_history, submit=False):
+	"""
+		Method is used to create or update interview and interview feedback
 		args:
-			doc: Object of Career History
-			child_doc: Object of Career History Company
-	'''
+			career_history: Object of career_history
+	"""
+	interview_feedback_exists = frappe.db.exists('Interview Feedback',
+		{'career_history': career_history.name, 'docstatus': 0})
+	if interview_feedback_exists:
+		interview_feedback = frappe.get_doc('Interview Feedback', interview_feedback_exists)
+	else:
+		interview_feedback = frappe.new_doc('Interview Feedback')
+	interview_feedback.interview = get_interview(career_history)
+	interview_feedback.interviewer = frappe.session.user
+	interview_feedback.job_applicant = career_history.job_applicant
+	interview_feedback.career_history = career_history.name
+	interview_feedback.skill_assessment = []
+	interview_feedback.append('skill_assessment', {'skill': 'Career History', 'rating': career_history.career_history_score})
+	from frappe.website.utils import get_comment_list
+	comment_list = get_comment_list('Career History', career_history.name)
+	if comment_list and len(comment_list) > 0:
+		from frappe.utils.html_utils import clean_html
+		interview_feedback.feedback = clean_html(comment_list[0].content)
+	interview_feedback.result = get_career_history_result(career_history)
+	interview_feedback.save(ignore_permissions=True)
 
-	query = """
-		select
-			name
-		from
-			`tab{0}`
-		where
-			name != %(name)s and parent = %(parent)s
-			and (start_date between %(start_date)s and %(end_date)s
-			or end_date between %(start_date)s and %(end_date)s
-			or (start_date < %(start_date)s and end_date > %(end_date)s))
-		"""
+	if submit:
+		interview_feedback.submit()
+		interview = frappe.get_doc('Interview', interview_feedback.interview)
+		interview.status = interview_feedback.result
+		interview.submit()
 
-	if not child_doc.name:
-		# hack! if name is null, it could cause problems with !=
-		child_doc.name = "New "+child_doc.doctype
+	frappe.msgprint(_('Interview Feedback {0} {1} successfully').format(
+		get_link_to_form('Interview Feedback', interview_feedback.name), 'submitted' if submit else 'saved'))
 
-	query_filter = {"name": child_doc.name, "parent": doc.name, "start_date": child_doc.start_date, "end_date": child_doc.end_date}
+def get_interview(career_history):
+	interview_exists = frappe.db.exists('Interview',
+		{'career_history': career_history.name, 'docstatus': ['!=', 2]})
+	if interview_exists:
+		from erpnext.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
+		applicable_interviewers = get_applicable_interviewers(interview_exists)
+		if frappe.session.user in applicable_interviewers:
+			return interview_exists
+	return create_interview(career_history)
 
-	overlap_doc = frappe.db.sql(query.format(child_doc.doctype), query_filter, as_dict = 1)
+def create_interview(career_history):
+		interview = frappe.new_doc('Interview')
+		interview.interview_round = 'Career History'
+		interview.job_applicant = career_history.job_applicant
+		interview.career_history = career_history.name
+		interview.scheduled_on = today()
+		interview.from_time = now()
+		interview.to_time = now()
+		interview_details = interview.append('interview_details')
+		interview_details.interviewer = frappe.session.user
+		interview.expected_average_rating = 5
+		interview.save(ignore_permissions = True)
+		return interview.name
 
-	if overlap_doc:
-		frappe.throw(_("Row {0}: Start Date and End Date in Career History Company is overlapping with {1}")
-			.format(child_doc.idx, overlap_doc[0].idx), OverlapError)
+def get_career_history_result(career_history):
+	if career_history.career_history_score < 2.99 and career_history.pass_to_next_interview == 'Rejected':
+		return 'Rejected'
+	return 'Cleared'
 
 @frappe.whitelist()
 def get_career_history(job_applicant):

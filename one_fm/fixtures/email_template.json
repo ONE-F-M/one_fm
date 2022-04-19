@@ -1,0 +1,93 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2022-03-06 12:31:09.068670",
+  "name": "Leave Approval Notification",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "response": "<div class=\"ql-editor read-mode\"><h1>Leave Application Notification</h1><h3>Details:</h3><table class=\"table table-bordered\"><tbody><tr><td data-row=\"1\">Employee</td><td data-row=\"1\">{{employee_name}}</td></tr><tr><td data-row=\"2\">Leave Type</td><td data-row=\"2\">{{leave_type}}</td></tr><tr><td data-row=\"3\">From Date</td><td data-row=\"3\">{{from_date}}</td></tr><tr><td data-row=\"4\">To Date</td><td data-row=\"4\">{{to_date}}</td></tr><tr><td data-row=\"5\">Status</td><td data-row=\"5\">{{status}}</td></tr></tbody></table></div>",
+  "response_html": "<style>\n    .facebook_logo, .twitter_logo, .linkedin_logo, .instagram_logo{\n        width:4vw;\n        height:auto;\n        margin: 0 1vw;\n    }\n    .brand_logo{\n        width: 15vw;\n    }\n</style>\n<div style=\"background-color: #f9fafa;border-radius: 2vw;padding: 1vh 10vw 4vh 10vw;\">\n\t<div style=\"text-align: center;padding: 5px 10px\"> \n        <img class=\"brand_logo\" src=\"https://one-fm.com/files/ONEFM_Identity.png\"/>\n    </div>\n    <div style=\"background-color:white;padding: 3vw;border-radius: 8px;\">\n        <div style=\"padding: 2vh 5vw;;\"> \n        <h1>Leave Application Notification</h1>\n        <p>Details:</p>\n        \n        <table class=\"table table-condensed table-bordered\">\n          <tr>\n            <th class=\"text-center\">Employee</th>\n            <th class=\"text-center\">{{employee_name}}</th>\n          </tr>\n          <tr>\n            <th class=\"text-center\">Leave Type</th>\n            <th class=\"text-center\">{{leave_type}}</th>\n          </tr>\n          <tr>\n            <th class=\"text-center\">Reason</th>\n            <th class=\"text-center\">{{description}}</th>\n          </tr>\n          <tr>\n            <th class=\"text-center\">From Date</th>\n            <th class=\"text-center\">{{from_date}}</th>\n          </tr>\n          <tr>\n            <th class=\"text-center\">To Date</th>\n            <th class=\"text-center\">{{to_date}}</th>\n          </tr>\n        </table>\n        <div style=\"text-align:center; padding: 5px\">\n             <a class=\"btn btn-success\" style=\"background-color:dodgerblue;text-align:center;\" href=\"http://localhost:8000/api/method/one_fm.api.mobile.Leave_application.leave_notify?docname={{name}}&amp;status=Approved\">\n            Approve</a>\n            <a class=\"btn btn-danger\" style=\"background-color:Gray;text-align:center;\" href=\"http://localhost:8000/api/method/one_fm.api.mobile.Leave_application.leave_notify?docname={{name}}&amp;status=Rejected\">\n                Reject</a>  \n        </div>\n       \n    </div>\n       \n        <div class=\"email-signature\">\n            <h5 style=\"margin-bottom: 0px;\">Yours, One Facility Management</h5>\n            <a href=\"mailto:support@one-fm.com\">support@one-fm.com</a>\n        </div>\n        <hr>\n        <div >\n            \n            <div style=\"display:block;text-align: center;\">\n                <div style=\"color: #454a4a;  \">\n                    <h4 style=\"margin: 0;\">Address:\n                        <a style=\"text-decoration: none;\" href=\"https://goo.gl/maps/DRfe8sU9KW4Z3UG19\"> 9th Floor, Humoud Tower, Qibla, Kuwait City, Kuwait</a>\n                    </h4>\n                </div>\n                <div style=\"display:flex;padding: 1vh 15vw;\">\n                    <a href=\"https://www.facebook.com/ONEFacilitiesManagementCompany/\" ><img class=\"facebook_logo\" src=\"https://one-fm.com/files/facebook.png\"/></a>\n                    <a href=\"https://twitter.com/facilitiesone\" ><img class=\"twitter_logo\" src=\"https://one-fm.com/files/twitter.png\"/></a>\n                    <a href=\"https://kw.linkedin.com/company/one-facilities-management-kuwait\" ><img class=\"linkedin_logo\" src=\"https://one-fm.com/files/linkedin.png\"/></a>\n                    <a href=\"https://www.instagram.com/onefmkuwait\" ><img class=\"instagram_logo\" src=\"https://one-fm.com/files/instagram.png\"/></a>\n                </div>\n            </div>\n            <p style=\"color:#a8b0b0 ;\">The content of this email is confidential and intended for the recipient\n            specified in the message only. It is strictly forbidden to share any part of this message \n            with any third party, without the written consent of the sender. If you received this message by \n            mistake, please reply to this message and follow with its deletion, so that we can ensure such \n            a mistake does not occur in the future.</p>\n        </div>\n\t</div>\n</div>\n",
+  "subject": "Leave Approval Notification",
+  "use_html": 1
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2021-10-10 16:28:18.929354",
+  "name": "Leave Status Notification",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "response": "<h1>Leave Application Notification</h1>\n<h3>Details:</h3>\n\n\t<table class=\"table table-bordered small\" style=\"max-width: 500px;\">\n\t\t<tbody><tr>\n\t\t\t<td>Employee</td>\n\t\t\t<td>{{employee_name}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Leave Type</td>\n\t\t\t<td>{{leave_type}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>From Date</td>\n\t\t\t<td>{{from_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>To Date</td>\n\t\t\t<td>{{to_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Status</td>\n\t\t\t<td>{{status}}</td>\n\t\t</tr> \n\t</tbody></table>\n",
+  "response_html": "",
+  "subject": "Leave Status Notification",
+  "use_html": 0
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2021-07-17 09:51:48.989705",
+  "name": "Dispatch Notification",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "response": "<h1>Dispatch Notification</h1>\n<h3>Details:</h3>\n<table class=\"table table-bordered small\" style=\"max-width: 500px;\">\n    <tbody>\n        <tr>\n            <td>Customer's Name</td>\n            <td>{{ customer }}</td>\n        </tr>\n        <tr>\n            <td>Contact's Name</td>\n            <td>{{ first_name }} {{ last_name }}</td>\n        </tr>\n        <tr>\n            <td>Address Name</td>\n            <td>{{ address }}</td>\n        </tr>\n        <tr>\n            <td>Address Details</td>\n            <td>{{ customer_address }}</td>\n        </tr>\n        <tr>\n            <td>Order Number</td>\n            <td>{{ delivery_note }}</td>\n        </tr>\n        <tr>\n            <td>Order Total</td>\n            <td>{{ grand_total }}</td>\n        </tr>\n        <tr>\n            <td>Departure Time</td>\n            <td>{{ departure_time }}</td>\n        </tr>\n        <tr>\n            <td>Estimated Arrival</td>\n            <td>{{ estimated_arrival }}</td>\n        </tr>\n        <tr>\n            <td>Driver's Name</td>\n            <td>{{ driver_name }}</td>\n        </tr>\n        <tr>\n            <td>Driver's Number</td>\n            <td>{{ cell_number }}</td>\n        </tr>\n        <tr>\n            <td>Vehicle Number</td>\n            <td>{{ vehicle }}</td>\n        </tr>\n    </tbody>\n</table>",
+  "response_html": null,
+  "subject": "Your order is out for delivery!",
+  "use_html": 0
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2021-11-24 15:05:53.708319",
+  "name": "Interview Reminder",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "response": "<h1>Interview Reminder</h1>\n\n<p>\n\tInterview: {{name}} is scheduled on {{scheduled_on}} from {{from_time}} to {{to_time}}\n</p>\n",
+  "response_html": null,
+  "subject": "Interview Reminder",
+  "use_html": 0
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2021-11-24 15:05:53.750595",
+  "name": "Interview Feedback Reminder",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "response": "<h1>Interview Feedback Reminder</h1>\n\n<p>\n\tInterview Feedback for Interview {{ name }} is not submitted yet. Please submit your feedback. Thank you, good day!\n</p>\n",
+  "response_html": null,
+  "subject": "Interview Feedback Reminder",
+  "use_html": 0
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2021-12-27 15:05:00.453216",
+  "name": "Work Contract Approval",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "response": "<div class=\"ql-editor read-mode\"><p>The {{job_applicant}} need approval. The Work Contract is below. Kindly, take action to approve this.</p></div>",
+  "response_html": "\nHello,\n    The Work Contract <a href=\"http://localhost:8000/app/work-contract/{{name}}\">{{name}}</a> needs approval. Kindly, take the necessary action.\n<br><br>\n<a class=\"btn btn-success\" style=\"background-color:green;text-align:center;\"  href=\"http://localhost:8000/api/method/one_fm.hiring.doctype.work_contract.work_contract.autorized_signatory_approve?docname={{name}}\">\n    Approve</a>\n<a class=\"btn btn-success\" style=\"background-color:red;text-align:center;\" href=\"http://localhost:8000/api/method/one_fm.hiring.doctype.work_contract.work_contract.autorized_signatory_reject?docname={{name}}\">\n    Reject</a>",
+  "subject": "Approval on Work Contract",
+  "use_html": 1
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2022-02-21 15:51:34.389490",
+  "name": "Default Template",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "response": null,
+  "response_html": "<div class=\"gray-container text-center\">\n\t<div style=\"margin-top: 15px\">\n\t\t<p class=\"text-muted\">{{ message }}</p>\n\t</div>\n</div>",
+  "subject": "{{subject}}",
+  "use_html": 1
+ }
+]
