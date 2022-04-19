@@ -12,6 +12,7 @@ from dateutil.parser import parse
 from frappe import _
 from frappe.model.document import Document
 from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
+from one_fm.utils import set_expire_magic_link
 
 def get_context(context):
     context.title = _("Job Applicant")
@@ -114,17 +115,17 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
     if is_kuwaiti == 1:
         if find_index(assemble,"CARD"):
             result["Civil_ID_No"] = texts[find_index(assemble,"CARD")+1].description
-        
+
         if find_index(assemble,"Nationality"):
             result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
-        
+
         if find_index(assemble,"Birth"):
             if is_date(texts[find_index(assemble,"Birth")+2].description):
                 result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-            
+
             if is_date(texts[find_index(assemble,"Birth")+3].description):
                 result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Birth")+3].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-        
+
         if find_index(assemble,"Sex"):
             if texts[find_index(assemble,"Sex")-1].description == "M" or texts[find_index(assemble,"Sex")-1].description == "F":
                 result["Gender"] = texts[find_index(assemble,"Sex")-1].description
@@ -158,13 +159,13 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
         if find_index(assemble,"Nationality"):
             result["Country_Code"] = texts[find_index(assemble,"Nationality")+1].description
             result["Passport_Number"] = texts[find_index(assemble,"Nationality")-4].description
-            
+
         if find_index(assemble,"Sex"):
             if is_date(texts[find_index(assemble,"Sex")+1].description):
                 result["Date_Of_Birth"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+1].description, '%d/%m/%Y').strftime('%Y-%m-%d')
             if is_date(texts[find_index(assemble,"Sex")+2].description):
                 result["Expiry_Date"] = datetime.datetime.strptime(texts[find_index(assemble,"Sex")+2].description, '%d/%m/%Y').strftime('%Y-%m-%d')
-            
+
             result["Gender"] = ""
             if texts[find_index(assemble,"Sex")+1].description == "M" or texts[find_index(assemble,"Sex")+1].description == "F":
                 result["Gender"] = texts[find_index(assemble,"Sex")+1].description
@@ -178,7 +179,7 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
             result["Last_Name"] = name_list[len(name_list)-1] if len(name_list) >= 2   else ""
             result["Second_Name"] = name_list[1] if len(name_list) == 3 else ""
             result["Third_Name"] = name_list[2] if len(name_list) == 4 else ""
-        
+
         result["First_Arabic_Name"] = result["Last_Arabic_Name"] = result["Second_Arabic_Name"] = result["Third_Arabic_Name"] = Ar_Name = ""
         if find_index(assemble,"الرقه"):
             for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
@@ -398,4 +399,5 @@ def update_job_applicant(job_applicant, data):
         "type_of_copy": "Soft Copy",
 	    })
     doc.save(ignore_permissions=True)
+    set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
     return True

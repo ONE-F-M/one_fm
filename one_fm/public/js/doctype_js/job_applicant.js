@@ -63,19 +63,6 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 
-			if (frm.doc.__onload && frm.doc.__onload.job_offer) {
-				if(frm.doc.status != 'Accepted' && frm.doc.status != 'Rejected'){
-					frm.add_custom_button(__('Accept Offer'), function() {
-						update_job_offer_from_applicant(frm, 'Accepted');
-		      		},"Action").css("background-color", "red");
-					frm.add_custom_button(__('Reject Offer'), function() {
-						update_job_offer_from_applicant(frm, 'Rejected');
-		      		},"Action").addClass('btn-danger');
-				}
-				frm.add_custom_button(__(''), function() {
-				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-			}
-
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
 				frm.add_custom_button(__('Select Applicant'), function() {
 					if(frm.doc.day_off_category && frm.doc.number_of_days_off && frm.doc.number_of_days_off > 0){
@@ -97,7 +84,7 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
-				if (frappe.user.has_role("Hiring Manager")){
+				if (frappe.user.has_role("Job Applicant ERF Changer")){
 					frm.add_custom_button(__('Change ERF'), function() {
 						change_applicant_erf(frm);
 					},"Action");
