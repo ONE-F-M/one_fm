@@ -84,7 +84,7 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
-				if (frappe.user.has_role("Hiring Manager")){
+				if (frappe.user.has_role("Job Applicant ERF Changer")){
 					frm.add_custom_button(__('Change ERF'), function() {
 						change_applicant_erf(frm);
 					},"Action");
