@@ -16,6 +16,7 @@ from frappe.utils import (
 	date_diff,
 	get_url_to_form
 )
+from one_fm.processor import sendemail
 
 class ResidencyExpiryNotificationDigest(Document):
 	def __init__(self, *args, **kwargs):
@@ -54,13 +55,12 @@ class ResidencyExpiryNotificationDigest(Document):
 			for row in self.recipients:
 				msg_for_this_recipient = self.get_msg_html()
 				if msg_for_this_recipient and row.recipient in valid_users:
-					frappe.sendmail(
+					sendemail(
 						recipients=row.recipient,
 						subject=_("{0} Residency Expiry Notification Digest").format(self.frequency),
 						message=msg_for_this_recipient,
 						reference_doctype = self.doctype,
-						reference_name = self.name,
-						unsubscribe_message = _("Unsubscribe from this Residency Expiry Notification Digest")
+						reference_name = self.name
 					)
 
 	def get_msg_html(self):

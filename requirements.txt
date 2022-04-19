@@ -9,3 +9,4 @@ firebase-admin
 openpyxl
 grpcio
 grpcio-tools
+python-slugify

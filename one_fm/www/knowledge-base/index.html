@@ -1,0 +1,89 @@
+{% extends 'www/knowledge-base/base.html' %}
+
+{% block title %}Knowledge Base{% endblock %}
+
+{% block content %}
+
+<section class="doc_features_area">
+    <img class="doc_features_shap" src="" alt="">
+    <div class="container">
+        <div class="doc_features_inner">
+          {% set loopcount = {'c':0} %}
+          {% for k, v in categories.items() %}
+            {% if loop.index > 9 %}
+
+              {% if loopcount.update({'c':1}) %} {% endif %}
+
+
+            <div class="see_more_item collapse-wrap">
+                <div class="media doc_features_item">
+                    <img src="/assets/one_fm/faq/img/new/icon7.png" alt="">
+                    <div class="media-body">
+                        <a href="#">
+                            <h4>{{k|title}}</h4>
+                        </a>
+                        <!-- <p>245 Posts</p> -->
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="media doc_features_item wow fadeInUp" data-wow-delay="0.1s" data-wow-duration="0.5s">
+                <img src="/assets/one_fm/faq/img/new/icon1.png" alt="">
+                <div class="media-body">
+                    <a href="{{v.info.route}}">
+                        <h4>{{k|title}}</h4>
+                    </a>
+                    <!-- <p>245 Posts</p> -->
+                </div>
+            </div>
+            {% endif %}
+
+            {% endfor %}
+
+
+            {% if loopcount.c %}
+            <a href="#more-features" class="collapse-btn see_btn">
+                <i class="arrow_carrot-down_alt2"></i>
+                <span class="text">Show More</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+<section class="recommended_topic_area">
+    <div class="container">
+        <div class="recommended_topic_inner">
+            <img class="doc_shap_one" src="/assets/one_fm/faq/img/new/shap.png" alt="">
+            <div class="doc_round one" data-parallax='{"x": -80, "y": -100, "rotateY":0}'></div>
+            <div class="doc_round two" data-parallax='{"x": -10, "y": 70, "rotateY":0}'></div>
+            <div class="doc_title text-center">
+                <h2 class="wow fadeInUp" data-wow-delay="0.2s">Recommended Topics</h2>
+                <p class="wow fadeInUp" data-wow-delay="0.4s">Loaded with awesome features like Documentation,
+                    Knowledgebase,<br> Forum & more!</p>
+            </div>
+            <div class="row">
+              {% for k, v in categories.items() %}
+                <div class="col-lg-3 col-6">
+                    <div class="recommended_item wow fadeInUp" data-wow-delay="0.2s">
+                        <img src="/assets/one_fm/faq/img/new/smile.png" alt="">
+                        <a href="#">
+                            <h3>{{k|title}}</h3>
+                        </a>
+                        <ul class="list-unstyled">
+                          {% for sub in v.subcat %}
+                            <li><a href="{{sub.route}}">{{sub.category_name|title}}</a></li>
+                          {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="text-center wow fadeInUp" data-wow-delay="0.2s">
+                <a href="#" class="question_text">Want to know more or have a<br> Question?
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

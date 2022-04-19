@@ -70,7 +70,7 @@
                 <section class="form-wrapper">
 
                     <div class="form-container">
-                        <form class="form">
+                        <form class="form" name="file_upload" id="file_upload">
                             <h2>File Upload
                                 <small id="passwordHelpInline" class="text-muted" style="font-size: small;">
                                     Only image files of type png/jpeg accepted*
@@ -79,12 +79,14 @@
                             <hr>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label class="form-label" for="file">Civil ID Front Side</label>
-                                    <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg" >
+                                    <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                    <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg">
+                                    <span id="tooltiptext1">* Please Upload Your Civil ID</span>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label class="form-label" for="file">Civil ID Back Side</label>
-                                    <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg" >
+                                    <label class="form-label" for="file" >Civil ID Back Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                    <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg">
+                                    <span id="tooltiptext2">* Please Upload Your Civil ID</span>
                                     <br>
                                 </div>
                             </div>
@@ -129,12 +131,42 @@
                                 <hr>
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
-                                        <label class="form-label" for="Name">Name</label>
-                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" id="Name" name="name">
+                                        <label class="form-label" for="First_Name">First Name</label>
+                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" civil_id_reqd="{{civil_id_reqd}}" id="First_Name" name="name">
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="Arabic_Name">Name(Arabic)</label>
-                                        <input class="form-control input" type="text" id="Arabic_Name" name="ar_name">
+                                        <label  for="First_Arabic_Name">First Name(Arabic)</label>
+                                        <input class="form-control input" type="text" id="First_Arabic_Name" name="first_ar_name">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Second_Name">Second Name</label>
+                                        <input class="form-control input" type="text" id="Second_Name" name="second_name">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label  for="Second_Arabic_Name">Second Name(Arabic)</label>
+                                        <input class="form-control input" type="text" id="Second_Arabic_Name" name="second_ar_name">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Third_Name">Third Name</label>
+                                        <input class="form-control input" type="text" id="Third_Name" name="third_name">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label  for="Third_Arabic_Name">Third Name(Arabic)</label>
+                                        <input class="form-control input" type="text" id="Third_Arabic_Name" name="third_ar_name">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Last_Name">Last Name</label>
+                                        <input class="form-control input" type="text" id="Last_Name" name="last_name">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label  for="Last_Arabic_Name">Last Name(Arabic)</label>
+                                        <input class="form-control input" type="text" id="Last_Arabic_Name" name="last_ar_name">
                                     </div>
                                 </div>
                                 <div class="row">

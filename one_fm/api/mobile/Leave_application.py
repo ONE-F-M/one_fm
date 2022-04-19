@@ -6,22 +6,23 @@ import datetime
 import collections
 from one_fm.api.tasks import get_action_user,get_notification_user
 import base64, json
+from frappe.utils import getdate
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
     try:
         employee=frappe.get_value("Employee", {'employee_id':employee_id})
         leaves = frappe.get_all("Leave Application", filters={'employee':employee}, fields=["name","leave_type", "status","from_date", "total_leave_days"] )
-        return leaves 
+        return leaves
     except Exception as e:
         print(frappe.get_traceback())
         frappe.log_error(frappe.get_traceback())
         return frappe.utils.response.report_error(e)
-    
+
 @frappe.whitelist()
 def leave_detail(leave_id):
     try:
-        Leave_details = frappe.get_value("Leave Application", leave_id, '*' ) 
+        Leave_details = frappe.get_value("Leave Application", leave_id, '*' )
         return Leave_details
         print(Leave_details)
     except Exception as e:
@@ -35,13 +36,13 @@ def get_leave_balance(employee, leave_type):
     try:
         allocation_records = get_leave_details(employee, today)
         Leave_balance = allocation_records['leave_allocation'][leave_type]
-        
+
         if Leave_balance:
             return Leave_balance
         else:
             frappe.throw(_('You Are Not currently Allocated with a leave policy'))
             return ('No Leave Allocated.')
-            
+
     except Exception as e:
         print(frappe.get_traceback())
         frappe.log_error(frappe.get_traceback())
@@ -74,7 +75,7 @@ def leave_notify(docname,status):
         doc.submit()
         frappe.db.commit()
         frappe.respond_as_web_page(_("Success"), _("Leave Application "+docname+" was "+status), http_status_code=201)
-        #return response('Leave Application was'+status,doc, 201) 
+        #return response('Leave Application was'+status,doc, 201)
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
         frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
@@ -98,15 +99,17 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason, p
     import hashlib
     #get Leave Approver of the employee.
     leave_approver = get_leave_approver(employee)
+    from_date = getdate(from_date)
+    to_date = getdate(to_date)
     #check if leave exist and overlaps with the given date (StartDate1 <= EndDate2) and (StartDate2 <= EndDate1)
     leave_exist = frappe.get_list("Leave Application", filters={"employee": employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}, ignore_permissions=True)
     # Return response status 400, if the leave exists.
     if leave_exist:
         return response('You have already applied leave for this date.',[], 400)
-    
+
     if proof_document_required_for_leave_type(leave_type) and not proof_document:
-        return response('Leave type requires a proof_document.', {}, 400) 
-    
+        return response('Leave type requires a proof_document.', {}, 400)
+
     if leave_approver:
         try:
             attachment_path = None
@@ -121,14 +124,14 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason, p
                 file_ext = "." + attachment_name.split(".")[-1]
                 content = base64.b64decode(attachment)
                 filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
-                
+
                 Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}").mkdir(parents=True, exist_ok=True)
                 OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}/{filename}"
                 with open(OUTPUT_FILE_PATH, "wb") as fh:
                     fh.write(content)
 
                 attachment_path = f"/files/leave-application/{frappe.session.user}/{filename}"
-            
+
             #if sick leave, automatically accept the leave application
             if leave_type == "Sick Leave":
                 doc = new_leave_application(employee,from_date,to_date,leave_type,"Approved",reason,leave_approver, attachment_path)
@@ -159,7 +162,7 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,le
         leave.proof_document = attachment_path
     leave.save()
     frappe.db.commit()
-    return leave     
+    return leave
 
 # Function to create response to the API. It generates json with message, data object and the status code.
 def response(message, data, status_code):
@@ -172,7 +175,7 @@ def response(message, data, status_code):
 def get_leave_approver(employee):
     """
     This function fetches the leave approver for a given employee.
-    The leave approver is fetched  either Report_to or Leave Approver. 
+    The leave approver is fetched  either Report_to or Leave Approver.
     But, if both don't exist, Operation manager is the Leave Approver.
 
     Params: ERP Employee ID
@@ -197,7 +200,7 @@ def get_leave_approver(employee):
 
 def notify_leave_approver(doc):
     """
-    This function is to notify the leave approver and request his action. 
+    This function is to notify the leave approver and request his action.
     The Message sent through mail consist of 2 action: Approve and Reject.(It is sent only when the not sick leave.)
 
     Param: doc -> Leave Application Doc (which needs approval)
