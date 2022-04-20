@@ -11,7 +11,7 @@ from one_fm.api.doc_methods.salary_slip import get_holidays_for_employee,get_lea
 from one_fm.api.doc_methods.item_price import validate,check_duplicates
 from erpnext.hr.doctype.leave_application.leave_application import LeaveApplication
 from one_fm.api.mobile.Leave_application import notify_leave_approver
-from one_fm.hiring.utils import grant_leave_alloc_for_employee
+# from one_fm.hiring.utils import grant_leave_alloc_for_employee
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 from one_fm.operations.doctype.contracts.contracts import calculate_item_values
 
@@ -29,5 +29,5 @@ SalarySlip.get_leave_details = get_leave_details
 ItemPrice.validate = validate
 ItemPrice.check_duplicates = check_duplicates
 LeaveApplication.notify_leave_approver = notify_leave_approver
-LeavePolicyAssignment.grant_leave_alloc_for_employee = grant_leave_alloc_for_employee
+# LeavePolicyAssignment.grant_leave_alloc_for_employee = grant_leave_alloc_for_employee
 calculate_taxes_and_totals.calculate_item_values = calculate_item_values
