@@ -28,8 +28,8 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             end = frappe.get_list("Employee Checkin", {"employee": key, "time": ['between', (date, date)], "log_type": "OUT"}, "time", order_by="time desc")[0].time
             #Get the sale item of post type
             item = frappe.get_value("Post Type", attendance.post_type, 'sale_item')
-            gender = frappe.get_value("Operations_post", post, 'gender')
-            shift_hours = frappe.get_value("Operations_shift", attendance.operations_shift, 'duration')
+            gender = frappe.get_value("Operations Post", post, 'gender')
+            shift_hours = frappe.get_value("Operations Shift", attendance.operations_shift, ['duration'])
             #pass gender, shift hour, dayoffs, uom
             contract_item_detail = get_contrat_item_detail(attendance.project, item, gender, shift_hours)
             if contract_item_detail:
@@ -96,7 +96,7 @@ def get_contrat_item_detail(project, item, gender, shift_hours):
             FROM `tabContract Item` ci, `tabContracts` c 
             WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
                 and c.project = %s and ci.item_code = %s
-                ci.gender = %s and ci.shift_hours = %s
+                and ci.gender = %s and ci.shift_hours = %s
             """, (project, item, gender, shift_hours), as_dict = 1)
 
 def set_billing_hours(project, from_time, to_time, shift_hour):
