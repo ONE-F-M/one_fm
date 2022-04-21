@@ -369,6 +369,11 @@ website_route_rules = [
 #	}
 # }
 
+override_doctype_class = {
+    "Leave Policy Assignment": "one_fm.overrides.leave_policy_assignment.LeavePolicyAssignmentOverride",
+}
+
+
 # Scheduled Tasks
 # ---------------
 
