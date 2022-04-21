@@ -2001,7 +2001,7 @@
   "doctype": "Workflow",
   "document_type": "Job Offer",
   "is_active": 1,
-  "modified": "2021-07-05 12:51:08.388899",
+  "modified": "2022-04-21 15:41:17.020180",
   "name": "Job Offer",
   "override_status": 0,
   "parent": null,
@@ -2036,6 +2036,19 @@
     "update_value": "Awaiting Response"
    },
    {
+    "allow_edit": "Recruiter",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Job Offer",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Submit to Onboarding Officer",
+    "update_field": "status",
+    "update_value": "Accepted"
+   },
+   {
     "allow_edit": "Senior Recruiter",
     "doc_status": "1",
     "is_optional_state": 0,
@@ -2047,6 +2060,19 @@
     "state": "Submit to Onboarding Officer",
     "update_field": "status",
     "update_value": "Accepted"
+   },
+   {
+    "allow_edit": "Recruiter",
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Job Offer",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Offer Rejected",
+    "update_field": "status",
+    "update_value": "Rejected"
    },
    {
     "allow_edit": "Senior Recruiter",
@@ -2138,9 +2164,31 @@
     "state": "Submit for Candidate Response"
    },
    {
+    "action": "Offer Accepted",
+    "allow_self_approval": 1,
+    "allowed": "Recruiter",
+    "condition": null,
+    "next_state": "Submit to Onboarding Officer",
+    "parent": "Job Offer",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Submit for Candidate Response"
+   },
+   {
     "action": "Offer Rejected",
     "allow_self_approval": 1,
     "allowed": "Senior Recruiter",
+    "condition": null,
+    "next_state": "Offer Rejected",
+    "parent": "Job Offer",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Submit for Candidate Response"
+   },
+   {
+    "action": "Offer Rejected",
+    "allow_self_approval": 1,
+    "allowed": "Recruiter",
     "condition": null,
     "next_state": "Offer Rejected",
     "parent": "Job Offer",

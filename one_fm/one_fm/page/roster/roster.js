@@ -73,28 +73,33 @@ function load_js(page) {
 		$rosterMonth = $('.rosterMonth');
 		$rosterOtMonth = $('.rosterOtMonth');
 		$postMonth = $('.postMonth');
-		$rosterWeek = $('.rosterWeek');
-		$rosterOtWeek = $('.rosterOtWeek');
+		//$rosterWeek = $('.rosterWeek');
+		//$rosterOtWeek = $('.rosterOtWeek');
 		$postWeek = $('.postWeek');
 		function basicRosterClick() {
-			$(".rosterClick").removeClass("active");
+			$(".basicRosterClick").addClass("active");
+			$(".basicRosterClick").addClass("bg-primary");
+			$(".otRosterClick").removeClass("active");
+			$(".otRosterClick").removeClass("bg-primary");
 			$rosterMonth.removeClass("d-none");
 			$rosterOtMonth.addClass("d-none");
-			$rosterWeek.addClass("d-none");
-			$rosterOtWeek.addClass("d-none");
+			//$rosterWeek.addClass("d-none");
+			//$rosterOtWeek.addClass("d-none");
 			$(".switch-container").removeClass("d-none");
-			$(this).parent().addClass("active");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
 			get_roster_data(page);
 		};
 		function otRosterClick() {
-			$(".rosterClick").removeClass("active");
+			$(".otRosterClick").addClass("active");
+			$(".otRosterClick").addClass("bg-primary");
+			$(".basicRosterClick").removeClass("active");
+			$(".basicRosterClick").removeClass("bg-primary");
 			$(".filterhideshow").addClass("d-none");
 			$rosterMonth.addClass("d-none");
 			$rosterOtMonth.removeClass("d-none");
-			$rosterWeek.addClass("d-none");
-			$rosterOtWeek.addClass("d-none");
+			//$rosterWeek.addClass("d-none");
+			//$rosterOtWeek.addClass("d-none");
 			$(".switch-container").removeClass("d-none");
 			$(this).parent().addClass("active");
 			displayCalendar(calendarSettings1, page);
@@ -113,12 +118,14 @@ function load_js(page) {
 			$rosterMonth.removeClass("d-none");
 			$rosterOtMonth.addClass("d-none");
 			$postMonth.addClass("d-none");
-			$rosterWeek.addClass("d-none");
-			$rosterOtWeek.addClass("d-none");
+			//$rosterWeek.addClass("d-none");
+			//$rosterOtWeek.addClass("d-none");
 			$postWeek.addClass("d-none");
-			$(".maintabclick").removeClass("active");
+			$(".postviewclick").removeClass("active");
+			$(".postviewclick").removeClass("bg-primary");
+			$(".rosterviewclick").addClass("active");
+			$(".rosterviewclick").addClass("bg-primary");
 			$(".switch-container").removeClass("d-none");
-			$(this).parent().addClass("active");
 			$(".Postfilterhideshow").addClass("d-none");
 			$(".filterhideshow").addClass("d-none");
 			$(".rosterviewfilterbg").removeClass("d-none");
@@ -135,12 +142,14 @@ function load_js(page) {
 			$rosterMonth.addClass("d-none");
 			$rosterOtMonth.addClass("d-none");
 			$postMonth.removeClass("d-none");
-			$rosterWeek.addClass("d-none");
-			$rosterOtWeek.addClass("d-none");
+			//$rosterWeek.addClass("d-none");
+			//$rosterOtWeek.addClass("d-none");
 			$postWeek.addClass("d-none");
-			$(".maintabclick").removeClass("active");
+			$(".postviewclick").addClass("active");
+			$(".postviewclick").addClass("bg-primary");
+			$(".rosterviewclick").removeClass("active");
+			$(".rosterviewclick").removeClass("bg-primary");
 			$(".switch-container").addClass("d-none");
-			$(this).parent().addClass("active");
 			$(".Postfilterhideshow").addClass("d-none");
 			$(".filterhideshow").addClass("d-none");
 			$(".rosterviewfilterbg").addClass("d-none");
@@ -156,7 +165,7 @@ function load_js(page) {
 		$('.postmonthviewclick').click(function () {
 			$rosterMonth.addClass("d-none");
 			$postMonth.removeClass("d-none");
-			$rosterWeek.addClass("d-none");
+			//$rosterWeek.addClass("d-none");
 			$postWeek.addClass("d-none");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".postMonth");
@@ -165,7 +174,7 @@ function load_js(page) {
 		$('.monthviewclick').click(function () {
 			$rosterMonth.removeClass("d-none");
 			$postMonth.addClass("d-none");
-			$rosterWeek.addClass("d-none");
+			//$rosterWeek.addClass("d-none");
 			$postWeek.addClass("d-none");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
@@ -434,7 +443,7 @@ function load_js(page) {
 
 		page.rosterMonth = get_roster_data;
 		page.rosterOtMonth = get_roster_data;
-		page.rosterWeek = get_roster_week_data;
+		//page.rosterWeek = get_roster_week_data;
 		page.postWeek = get_post_week_data;
 		page.postMonth = get_post_data;
 
@@ -687,7 +696,7 @@ function bind_events(page) {
 		let $rosterMonth = $('.rosterMonth');
 		let $rosterOtMonth = $('.rosterOtMonth');
 		let $postMonth = $('.postMonth');
-		let $rosterWeek = $('.rosterWeek');
+		//let $rosterWeek = $('.rosterWeek');
 		let $postWeek = $('.postWeek');
 		$postMonth.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
@@ -757,18 +766,18 @@ function bind_events(page) {
 		});
 
 		//add array on each of data select from calender
-		$rosterWeek.find(".hoverselectclass").on("click", function () {
-			$(this).toggleClass("selectclass");
-			// If the id is not already in the array, add it. If it is, remove it  
-			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+		// $rosterWeek.find(".hoverselectclass").on("click", function () {
+		// 	$(this).toggleClass("selectclass");
+		// 	// If the id is not already in the array, add it. If it is, remove it  
+		// 	classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
-			if (classgrt.join(",") === "") {
-				$(".filterhideshow").addClass("d-none");
-			}
-			else {
-				$(".filterhideshow").removeClass("d-none");
-			}
-		});
+		// 	if (classgrt.join(",") === "") {
+		// 		$(".filterhideshow").addClass("d-none");
+		// 	}
+		// 	else {
+		// 		$(".filterhideshow").removeClass("d-none");
+		// 	}
+		// });
 
 		/*on checkbox select change*/
 		$postWeek.find(`input[name="selectallcheckbox"]`).on("change", function () {
@@ -825,40 +834,40 @@ function bind_events(page) {
 
 		});
 		//on checkbox select change
-		$rosterWeek.find(`input[name="selectallcheckbox"]`).on("change", function () {
-			if ($(this).is(":checked")) {
+		// $rosterWeek.find(`input[name="selectallcheckbox"]`).on("change", function () {
+		// 	if ($(this).is(":checked")) {
 
-				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
-					let [employee, date] = $(v).attr('data-selectid').split('|');
-					if (moment(date).isAfter(moment())) {
-						$(v).addClass("selectclass");
-					}
-				});
-				$(".filterhideshow").removeClass("d-none");
+		// 		$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
+		// 			let [employee, date] = $(v).attr('data-selectid').split('|');
+		// 			if (moment(date).isAfter(moment())) {
+		// 				$(v).addClass("selectclass");
+		// 			}
+		// 		});
+		// 		$(".filterhideshow").removeClass("d-none");
 
-			}
-			else {
-				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
-					classgrt.splice(classgrt.indexOf($(v).attr('data-selectid')), 1);
-				});
-				$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
-				$(".filterhideshow").addClass("d-none");
-			}
-			$(".selectclass").map(function () {
-				classgrt.push($(this).attr("data-selectid"));
-				classgrt = [... new Set(classgrt)];
-				// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
-				// 	if (isMonth == 1) {
-				// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-				// 		classgrt.push($(this).attr("data-selectid"));
-				// 	}
-				// 	else {
-				// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-				// 		classgrtw.push($(this).attr("data-selectid"));
-				// 	}
-				// }
-			});
-		});
+		// 	}
+		// 	else {
+		// 		$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
+		// 			classgrt.splice(classgrt.indexOf($(v).attr('data-selectid')), 1);
+		// 		});
+		// 		$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
+		// 		$(".filterhideshow").addClass("d-none");
+		// 	}
+		// 	$(".selectclass").map(function () {
+		// 		classgrt.push($(this).attr("data-selectid"));
+		// 		classgrt = [... new Set(classgrt)];
+		// 		// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
+		// 		// 	if (isMonth == 1) {
+		// 		// 		// classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+		// 		// 		classgrt.push($(this).attr("data-selectid"));
+		// 		// 	}
+		// 		// 	else {
+		// 		// 		// classgrtw.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
+		// 		// 		classgrtw.push($(this).attr("data-selectid"));
+		// 		// 	}
+		// 		// }
+		// 	});
+		// });
 		//on checkbox select change
 		$rosterMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
 
@@ -1051,16 +1060,7 @@ function get_roster_data(page, isOt) {
 				$('#cover-spin').hide();
 				render_roster(res, page, isOt);
 			});
-	}else{
-		let $rosterMonthbody = isOt ? $('.rosterOtMonth').find('#calenderviewtable tbody') : $('.rosterMonth').find('#calenderviewtable tbody');
-		let pt_row = `
-		<div class="lightgrey font30 paddingdiv borderleft bordertop">
-		Select atleast one filter to view roster data
-		</div>
-		`;
-		$rosterMonthbody.empty();
-		$rosterMonthbody.append(pt_row);
-	}	
+	}
 }
 // Function responsible for Rendering the Table
 // Renders on get_roster_data function
@@ -1181,26 +1181,26 @@ function render_roster(res, page, isOt) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so customtooltip"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip" 
 							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Over-Time' && day_off_ot==1){
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center so customtooltip"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip" 
 							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if (employee_availability && !post_abbrv) {
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so" 
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else {
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so" 
 							data-selectid="${employee + "|" + date}"></div>
 					</td>`;
 				}
@@ -1214,41 +1214,41 @@ function render_roster(res, page, isOt) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so customtooltip"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip" 
 							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"Scheduled: <br>" + shift + "<br>" + "Assigned: <br>" + asa}</span></div>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip" 
+							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Basic' && day_off_ot==1){
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center so customtooltip"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip" 
 							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}
 				else if (employee_availability && !post_abbrv) {
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so" 
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else if (attendance && !employee_availability) {
 					if (attendance == 'Present') { j++; }
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so" 
 							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}</div>
 					</td>`;
 				} else {
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so" 
 							data-selectid="${employee + "|" + date}"></div>
 					</td>`;
 				}
@@ -1511,15 +1511,6 @@ function get_post_data(page) {
 			}).catch(e =>{
 				console.log(e);
 			});
-	}else{
-		let $postMonthbody = $('.postMonth').find('#calenderviewtable tbody');
-		let pt_row = `
-		<div class="lightgrey font30 paddingdiv borderleft bordertop">
-		Select a filter to view the Post data
-		</div>
-		`;
-		$postMonthbody.empty();
-		$postMonthbody.append(pt_row);
 	}	
 }
 
@@ -1855,26 +1846,27 @@ function get_wrapper_element(element) {
 	if (element) return element;
 	let roster_element = $(".rosterMonth").attr("class").split(/\s+/).includes("d-none");
 	let roster_ot_element = $(".rosterOtMonth").attr("class").split(/\s+/).includes("d-none");
-	let roster_week_element = $(".rosterWeek").attr("class").split(/\s+/).includes("d-none");
+	// let roster_week_element = $(".rosterWeek").attr("class").split(/\s+/).includes("d-none");
 	let post_element = $(".postMonth").attr("class").split(/\s+/).includes("d-none");
 	let post_week_element = $(".postWeek").attr("class").split(/\s+/).includes("d-none");
 
-	if (roster_element && roster_week_element && !post_element && post_week_element) {
+	if (roster_element && !post_element && post_week_element) {
 		element = '.postMonth';
 		return element;
-	} else if (!roster_element && roster_week_element && post_element && post_week_element) {
+	} else if (!roster_element && post_element && post_week_element) {
 		element = '.rosterMonth';
 		return element;
-	} else if (!roster_ot_element && roster_week_element && post_element && post_week_element) {
+	} else if (!roster_ot_element && post_element && post_week_element) {
 		element = '.rosterOtMonth';
 		return element;
-	} else if (roster_element && roster_week_element && post_element && !post_week_element) {
+	} else if (roster_element && post_element && !post_week_element) {
 		element = '.postWeek';
 		return element;
-	} else if (roster_element && !roster_week_element && post_element && post_week_element) {
-		element = '.rosterWeek';
-		return element;
-	}
+	} 
+	// else if (roster_element && !roster_week_element && post_element && post_week_element) {
+	// 	element = '.rosterWeek';
+	// 	return element;
+	// }
 }
 
 const search_staff = () => {
