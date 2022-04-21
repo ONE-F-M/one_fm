@@ -2001,7 +2001,7 @@
   "doctype": "Workflow",
   "document_type": "Job Offer",
   "is_active": 1,
-  "modified": "2022-04-21 15:41:17.020180",
+  "modified": "2022-04-21 16:04:57.683090",
   "name": "Job Offer",
   "override_status": 0,
   "parent": null,
@@ -2011,6 +2011,19 @@
   "states": [
    {
     "allow_edit": "Senior Recruiter",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Job Offer",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Open",
+    "update_field": "status",
+    "update_value": "Awaiting Response"
+   },
+   {
+    "allow_edit": "Recruiter",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2044,9 +2057,9 @@
     "parent": "Job Offer",
     "parentfield": "states",
     "parenttype": "Workflow",
-    "state": "Submit to Onboarding Officer",
+    "state": "Submit for Candidate Response",
     "update_field": "status",
-    "update_value": "Accepted"
+    "update_value": "Awaiting Response"
    },
    {
     "allow_edit": "Senior Recruiter",
@@ -2063,6 +2076,19 @@
    },
    {
     "allow_edit": "Recruiter",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Job Offer",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Submit to Onboarding Officer",
+    "update_field": "status",
+    "update_value": "Accepted"
+   },
+   {
+    "allow_edit": "Senior Recruiter",
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -2075,7 +2101,7 @@
     "update_value": "Rejected"
    },
    {
-    "allow_edit": "Senior Recruiter",
+    "allow_edit": "Recruiter",
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -2153,6 +2179,17 @@
     "state": "Open"
    },
    {
+    "action": "Submit for Candidate Response",
+    "allow_self_approval": 1,
+    "allowed": "Recruiter",
+    "condition": null,
+    "next_state": "Submit for Candidate Response",
+    "parent": "Job Offer",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Open"
+   },
+   {
     "action": "Offer Accepted",
     "allow_self_approval": 1,
     "allowed": "Senior Recruiter",
@@ -2222,6 +2259,17 @@
     "action": "Submit to Onboarding Officer",
     "allow_self_approval": 1,
     "allowed": "Senior Recruiter",
+    "condition": null,
+    "next_state": "Submit to Onboarding Officer",
+    "parent": "Job Offer",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Onboarding Officer Rejected"
+   },
+   {
+    "action": "Submit to Onboarding Officer",
+    "allow_self_approval": 1,
+    "allowed": "Recruiter",
     "condition": null,
     "next_state": "Submit to Onboarding Officer",
     "parent": "Job Offer",
