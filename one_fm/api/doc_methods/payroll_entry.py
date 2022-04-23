@@ -237,7 +237,7 @@ def export_payroll(doc, method):
 		if employee.salary_mode == "Cash":
 			cash_salary_employees.append(employee)
 		elif employee.salary_mode == "Bank":
-			if not employee.iban_number or not employee.bank_account_no:
+			if not employee.iban_number:
 				frappe.throw(_("No Iban/Bank account set for employee: {employee}".format(employee=employee.employee)))
 		elif not employee.salary_mode:
 			frappe.throw(_("No salary mode set for employee: {employee}".format(employee=employee.employee)))
