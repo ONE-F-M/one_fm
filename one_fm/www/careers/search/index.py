@@ -1,5 +1,5 @@
 import frappe
-from ..utils import get_department_list, remove_html_tags, get_openings, get_openings_keywords
+from ..utils import get_department_list, get_openings
 
 def get_context(context):
 
@@ -13,7 +13,7 @@ def get_context(context):
 
     keywords = frappe.form_dict.keywords
     if keywords:
-        res = get_openings_keywords(keywords)
+        res = get_openings(keywords)
         
         if len(res):
             openings, request_has_keyword, result_has_keyword = res, True, True
