@@ -70,8 +70,10 @@
                 {% endif %}
 
                 {% if request_has_keyword and not result_has_keyword %}
-                    <p class="text-dark">We couldn't find what you are looking for :/</p>
-                    <p class="text-dark">You can check out some openings below:</p>
+                    <h4 class="text-dark">
+                        We couldn't find what you are looking for :(<br>
+                    </h4>
+                    <p class="text-dark p-0"> You can check out some openings below!</p>
                 {% endif %}
 
                 {% if openings|length > 0 %}
