@@ -19,32 +19,30 @@ def get_openings(keywords=None, department=None):
         List : list of job opening objects
     """
     openings = []
-    
+
     filters = {
         'publish': 1,
-        'status': 'Open',
-        'one_fm_job_post_valid_till': ['>', getdate()]
+        'status': 'Open'
     }
-
     if keywords:
         filters.update({'designation': ['like', f"%{keywords}%"]})
 
     if department:
         filters.update({'department': department})
-    
-    openings_raw_format = frappe.db.get_list("Job Opening", filters, 
+
+    openings_raw_format = frappe.db.get_list("Job Opening", filters,
                                 ["name", "designation", "description", "one_fm_job_opening_created", "department"],
                                 order_by="one_fm_job_opening_created desc")
-    
+
     for opening in openings_raw_format:
         data = {
             'name': opening.name,
             'designation': opening.designation,
-            'description': remove_html_tags(opening.description)[0:250] + "...",
+            'description': ((remove_html_tags(opening.description)[0:250] + "...") if opening.description else ""),
             'department': opening.department,
             'posting_date': str(opening.one_fm_job_opening_created)
         }
 
         openings.append(data)
-    
+
     return openings
