@@ -1,0 +1,107 @@
+{% extends base_template_path %}
+<!DOCTYPE html>
+<html lang="en">
+
+{% block header %}
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers</title>
+</head>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="/assets/frappe/js/lib/socket.io.min.js"></script>
+<script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<body>
+    
+    <!-- Careers page banner -->
+    <div class="p-5 text-center bg-image" style="
+        background-image: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ), url('../assets/one_fm/careers/img/careers_bg.jpg');
+        height: 70%;
+    ">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="container w-50">
+                <h1 class="mb-3 text-white">Come Join Us</h1>
+                <h4 class="mt-10 mb-5 text-white">Search for open roles</h4>
+                <form action="/careers/search" class="justify-content-center align-items-center mt-2 form-inline">
+                    <input class="form-control mr-sm-1 col-xs-8" type="search" placeholder="Type keywords and hit enter" aria-label="Type keywords and hit enter" name="keywords">
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- End careers page banner -->
+
+    <div class="d-flex p-10">
+        <!-- Filters section -->
+        <section id="sidebar" class="d-inline-block w-25 mt-10">
+            <div>
+                <h6 class="p-1 text-secondary border-bottom">Department</h6>
+                <ul class="list-unstyled pl-2">
+                    {% for department in department_list %}
+                        <li><a class="text-muted" href="#">{{ department }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+        <!--End filters section -->
+
+        <!-- Openings section -->
+        <section id="openings" class="d-inline-block w-75 m-10">
+            <div class="container">
+                {% if request_has_keyword and keywords %}
+                    <div class="d-flex p-2">
+                        <h2 class="text-secondary">Search results for '{{ keywords }}'</h2>
+                    </div>
+                {% else %}
+                    <div class="d-flex p-2">
+                        <h2 class="text-secondary">Openings</h2>
+                    </div>
+                {% endif %}
+
+                {% if request_has_keyword and not result_has_keyword %}
+                    <h4 class="text-dark">
+                        We couldn't find what you are looking for :(<br>
+                    </h4>
+                    <p class="text-dark p-0"> You can check out some openings below!</p>
+                {% endif %}
+
+                {% if openings|length > 0 %}
+                    {% for opening in openings %}
+                        <div class="row">
+                            <div class="col-sm-10">
+                                <div class="card mb-5 p-2 shadow bg-white rounded">
+                                    <div class="card-body">
+                                        <h5 class="card-title float-left">{{ opening.designation }}</h5>
+                                        <p class="card-text float-right"><small>Posted: {{ opening.posting_date }}</small></p>
+                                        <div class="clearfix"></div>
+                                        <p class="card-text">{{ opening.description }}</p>
+                                        <p class="card-text float-left"><small><span class="text-muted"> {{ opening.department }}</span></small></p>
+                                        <form action="/careers/opening" method="GET">
+                                            <button type="submit" class="btn btn-dark float-right" name="job_id" value="{{ opening.name }}">Apply</button>
+                                        </form>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                
+                {% else %}
+                    <h4 class="p-2 text-dark">Stay tuned!</h4>
+                {% endif %}
+            </div>
+        </section>
+        <!-- End openings section -->
+    </div>
+</body>
+{% endblock %}
+</html>
