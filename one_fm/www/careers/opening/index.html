@@ -34,7 +34,10 @@
                     {{ opening.description }}
                 </p>
                 <br>
-                <button type="button" class="btn btn-dark">Apply</button>
+                <a class='btn btn-dark'
+                    href='/job_application?new=1&job_title={{ opening.name }}'>
+                    {{ "Apply" }}
+                </a>
             {% else %}
                 <h4 class="p-2 text-dark">Could not find job opening</h4>
             {% endif %}
