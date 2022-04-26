@@ -1,6 +1,7 @@
 frappe.ui.form.on('Employee', {
 	refresh: function(frm) {
 		frm.trigger('set_queries');
+		set_mandatory(frm);
 	},
 	set_queries: frm => {
 		// set bank account query
@@ -31,3 +32,13 @@ frappe.ui.form.on('Employee Incentive', {
 		});
 	}
 });
+
+// SET MANDATORY FIELDS
+let set_mandatory = frm => {
+	if (frm.doc.status != 'Left'){
+		['leave_policy', 'project', 'site', 'shift', 'permanent_address', 'cell_number'].forEach((item, i) => {
+			frm.toggle_reqd(item, 1);
+		});
+
+	}
+}
