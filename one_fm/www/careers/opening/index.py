@@ -11,6 +11,6 @@ def get_context(context):
         designation, description = frappe.db.get_value("Job Opening", {'name': job_id}, ["designation", "description"])
         opening.update({'name': job_id})
         opening.update({'designation': designation})
-        opening.update({'description': remove_html_tags(description)})
+        opening.update({'description': remove_html_tags(description) if description else ""})
 
     context.opening = opening
