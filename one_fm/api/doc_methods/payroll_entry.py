@@ -398,11 +398,11 @@ def export_nbk(doc, template_path):
 
 
 frappe.whitelist()
-def export_cash_payroll(cash_payroll_employees, doc_name):
+def export_cash_payroll(cash_salary_employees, doc_name):
 	"""This method takes the list of employees who have salary mode set as Cash and exports the payroll employee details into an excel sheet.
 
 	Args:
-		cash_payroll_employees (List[dict]): payroll empployee details
+		cash_salary_employees (List[dict]): payroll empployee details
 		doc_name (str): Name of the payroll entry document.
 	"""
 	try:
@@ -430,7 +430,7 @@ def export_cash_payroll(cash_payroll_employees, doc_name):
 		row_number = 2
 
 		# Fill employees in rows
-		for employee in cash_payroll_employees:
+		for employee in cash_salary_employees:
 			destination_ws.cell(row=row_number, column=1).value = employee.employee_name
 			destination_ws.cell(row=row_number, column=2).value = employee.payment_amount
 			destination_ws.cell(row=row_number, column=3).value = employee.civil_id_number
