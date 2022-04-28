@@ -513,13 +513,13 @@ def automatic_shift_assignment():
 			errored_shift.append(str(e))
 	# check for errors
 	if errored_shift:
-		frappe.log_error(str(errored_shift))
+		frappe.log_error(str(errored_shift), 'Shift Assignment')
 		frappe.new_doc(dict(
 			doctype='Issue',
 			subject='Shift Assignment not Scheduled',
 			issue_type='Technical Issue',
 			description=str(errored_shift)
-		))
+		)).insert(ignore_permissions=1)
 
 def end_previous_shifts():
 	date = datetime.date.today() - datetime.timedelta(days=1)
