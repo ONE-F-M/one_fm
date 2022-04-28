@@ -516,7 +516,7 @@ def automatic_shift_assignment():
 		frappe.log_error(str(errored_shift), 'Shift Assignment')
 		frappe.new_doc(dict(
 			doctype='Issue',
-			subject='Shift Assignment not Scheduled',
+			subject='Basic Shift Assignment not Scheduled',
 			issue_type='Technical Issue',
 			description=str(errored_shift)
 		)).insert(ignore_permissions=1)
@@ -551,10 +551,8 @@ def create_shift_assignment(schedule, date):
 
 def overtime_shift_assignment():
 	"""
-	This method is to generate Shift Assignment for Employee Scheduling 
-	with roster type 'Over_Time'. It first looks up for Shift Assignment
-	of the employee for the day if he has any. Change the Status to "Inactive"
-	and proceeds with creating New shift Assignments with Roster Type OverTime.
+	This method is to fetch Shift Assignment for Employee Scheduling 
+	with roster type 'Over_Time'.
 	"""
 	date = cstr(getdate())
 	now_time = now_datetime().strftime("%H:%M:00")
@@ -562,18 +560,45 @@ def overtime_shift_assignment():
 	frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
 
 def process_overtime_shift(roster, date, time):
+	""" 
+	This method is to generate Shift Assignment for Employee Scheduling 
+	with roster type 'Over_Time'.
+	It first looks up for Shift Assignment
+	of the employee for the day if he has any. Change the Status to "Inactive"
+	and proceeds with creating New shift Assignments with Roster Type OverTime
+
+	Args:
+		roster (object): list of over-time employee schedule
+		date (date): current date
+		time (time): current time
+	"""
+	errored_shift = []
+
 	for schedule in roster:	
-		#Check for employee's shift assignment of the day, if he has any.
-		shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
-		if shift_assignment:
-			shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
-			#check if the given shift has ended
-			# Set status inactive before creating new shift
-			if str(shift_end_time) == str(time):
-				frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
+		try:
+			#Check for employee's shift assignment of the day, if he has any.
+			shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
+			if shift_assignment:
+				shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
+				#check if the given shift has ended
+				# Set status inactive before creating new shift
+				if str(shift_end_time) == str(time):
+					frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
+					create_shift_assignment(schedule, date)
+			else:
 				create_shift_assignment(schedule, date)
-		else:
-			create_shift_assignment(schedule, date)
+		except Exception as e:
+			errored_shift.append(str(e))
+	
+	# check for errors
+	if errored_shift:
+		frappe.log_error(str(errored_shift), 'Shift Assignment')
+		frappe.new_doc(dict(
+			doctype='Issue',
+			subject='Over-Time Shift Assignment not Scheduled',
+			issue_type='Technical Issue',
+			description=str(errored_shift)
+		)).insert(ignore_permissions=1)
 
 def update_shift_type():
 	today_datetime = now_datetime()
