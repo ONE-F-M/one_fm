@@ -504,8 +504,22 @@ def automatic_shift_assignment():
 	date = cstr(getdate())
 	end_previous_shifts()
 	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" }, ["*"])
+	errored_shift = []
 	for schedule in roster:
-		create_shift_assignment(schedule, date)
+		# skip errors and continue
+		try:
+			create_shift_assignment(schedule, date)
+		except Exception as e:
+			errored_shift.append(str(e))
+	# check for errors
+	if errored_shift:
+		frappe.log_error(str(errored_shift))
+		frappe.new_doc(dict(
+			doctype='Issue',
+			subject='Shift Assignment not Scheduled',
+			issue_type='Technical Issue',
+			description=str(errored_shift)
+		))
 
 def end_previous_shifts():
 	date = datetime.date.today() - datetime.timedelta(days=1)
