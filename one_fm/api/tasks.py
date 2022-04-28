@@ -545,7 +545,6 @@ def overtime_shift_assignment():
 	date = cstr(getdate())
 	now_time = now_datetime().strftime("%H:%M:00")
 	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Over-Time"}, ["*"])
-
 	frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
 
 def process_overtime_shift(roster, date, time):
