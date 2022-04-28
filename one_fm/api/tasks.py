@@ -503,7 +503,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 def automatic_shift_assignment():
 	date = cstr(getdate())
 	end_previous_shifts()
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" }, ["*"])
+	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Basic"}, ["*"])
 	errored_shift = []
 	for schedule in roster:
 		# skip errors and continue
@@ -531,20 +531,49 @@ def end_previous_shifts():
 		doc.submit()
 
 def create_shift_assignment(schedule, date):
-	shift_assignment = frappe.new_doc("Shift Assignment")
-	shift_assignment.start_date = date
-	shift_assignment.employee = schedule.employee
-	shift_assignment.employee_name = schedule.employee_name
-	shift_assignment.department = schedule.department
-	shift_assignment.post_type = schedule.post_type
-	shift_assignment.shift = schedule.shift
-	shift_assignment.site = schedule.site
-	shift_assignment.project = schedule.project
-	shift_assignment.shift_type = schedule.shift_type
-	shift_assignment.post_type = schedule.post_type
-	shift_assignment.post_abbrv = schedule.post_abbrv
-	shift_assignment.roster_type = schedule.roster_type
-	shift_assignment.submit()
+	try:
+		shift_assignment = frappe.new_doc("Shift Assignment")
+		shift_assignment.start_date = date
+		shift_assignment.employee = schedule.employee
+		shift_assignment.employee_name = schedule.employee_name
+		shift_assignment.department = schedule.department
+		shift_assignment.post_type = schedule.post_type
+		shift_assignment.shift = schedule.shift
+		shift_assignment.site = schedule.site
+		shift_assignment.project = schedule.project
+		shift_assignment.shift_type = schedule.shift_type
+		shift_assignment.post_type = schedule.post_type
+		shift_assignment.post_abbrv = schedule.post_abbrv
+		shift_assignment.roster_type = schedule.roster_type
+		shift_assignment.submit()
+	except Exception:
+			frappe.log_error(frappe.get_traceback())
+
+def overtime_shift_assignment():
+	"""
+	This method is to generate Shift Assignment for Employee Scheduling 
+	with roster type 'Over_Time'. It first looks up for Shift Assignment
+	of the employee for the day if he has any. Change the Status to "Inactive"
+	and proceeds with creating New shift Assignments with Roster Type OverTime.
+	"""
+	date = cstr(getdate())
+	now_time = now_datetime().strftime("%H:%M:00")
+	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Over-Time"}, ["*"])
+	frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
+
+def process_overtime_shift(roster, date, time):
+	for schedule in roster:	
+		#Check for employee's shift assignment of the day, if he has any.
+		shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
+		if shift_assignment:
+			shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
+			#check if the given shift has ended
+			# Set status inactive before creating new shift
+			if str(shift_end_time) == str(time):
+				frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
+				create_shift_assignment(schedule, date)
+		else:
+			create_shift_assignment(schedule, date)
 
 def update_shift_type():
 	today_datetime = now_datetime()
