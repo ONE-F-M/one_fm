@@ -100,7 +100,7 @@ def checkin_after_insert(doc, method):
 			#	create_notification_log(subject, message, for_users, doc)
 
 			# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
-			if get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
+			if shift_type.enable_entry_grace_period == 1 and get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
 				time_diff = get_datetime(doc.time) - get_datetime(doc.shift_start)
 				hrs, mins, secs = cstr(time_diff).split(":")
 				delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
@@ -125,7 +125,7 @@ def checkin_after_insert(doc, method):
 				print("124", doc.employee, supervisor_user)
 				send_notification(subject, message, for_users)
 			#EARLY: Checkout time is before [Shift End - Early grace exit time] 
-			elif doc.device_id and get_datetime(doc.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
+			elif shift_type.enable_exit_grace_period == 1 and doc.device_id and get_datetime(doc.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
 				time_diff = get_datetime(curr_shift.end_datetime) - get_datetime(doc.time)
 				hrs, mins, secs = cstr(time_diff).split(":")
 				early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
