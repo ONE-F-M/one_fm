@@ -86,6 +86,11 @@ def checkin_checkout_final_reminder():
 					empChkin.log_type="IN"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
 				AND empChkin.shift_type='{shift_type}')
+				AND tSA.start_date
+				NOT IN(SELECT holiday_date from `tabHoliday` h
+				WHERE 
+					h.parent = emp.holiday_list
+				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
@@ -115,6 +120,11 @@ def checkin_checkout_final_reminder():
 					empChkin.log_type="OUT"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
 				AND empChkin.shift_type='{shift_type}')
+				AND tSA.start_date
+				NOT IN(SELECT holiday_date from `tabHoliday` h
+				WHERE 
+					h.parent = emp.holiday_list
+				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
@@ -207,6 +217,11 @@ def checkin_checkout_supervisor_reminder():
 						AND empChkin.skip_auto_attendance=0
 						AND date(empChkin.time)='{date}'
 						AND empChkin.shift_type='{shift_type}')
+				AND tSA.start_date
+				NOT IN(SELECT holiday_date from `tabHoliday` h
+				WHERE 
+					h.parent = emp.holiday_list
+				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
@@ -253,6 +268,11 @@ def checkin_checkout_supervisor_reminder():
 		 				AND empChkin.skip_auto_attendance=0
 		 				AND date(empChkin.time)='{date}'
 		 				AND empChkin.shift_type='{shift_type}')
+				AND tSA.start_date
+				NOT IN(SELECT holiday_date from `tabHoliday` h
+				WHERE 
+					h.parent = emp.holiday_list
+				AND h.holiday_date = '{date}')
 		 	""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 		 	if len(recipients) > 0:
