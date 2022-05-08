@@ -35,7 +35,6 @@ def enroll():
 	try:
 		files = frappe.request.files
 		file = files['file']
-		username = file.filename
 		
 		# Get user video
 		content_bytes = file.stream.read()
@@ -49,7 +48,7 @@ def enroll():
 		stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
 			# request body
 		req = enroll_pb2.EnrollRequest(
-			username = username,
+			username = frappe.session.user,
 			user_encoded_video = video_content,
 		)
 
@@ -84,7 +83,6 @@ def verify():
 		# timestamp = frappe.local.form_dict['timestamp']
 		files = frappe.request.files
 		file = files['file']
-		user_name = file.filename
 		
 		# Get user video
 		content_bytes = file.stream.read()
@@ -99,7 +97,7 @@ def verify():
 
 		# request body
 		req = facial_recognition_pb2.FaceRecognitionRequest(
-			username = user_name,
+			username = frappe.session.user,
 			media_type = "video",
 			media_content = video_content,
 		)
@@ -114,7 +112,7 @@ def verify():
 		return check_in(log_type, skip_attendance, latitude, longitude)
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
-		raise exc
+		frappe.throw("Internal Server Error")
 
 
 def check_in(log_type, skip_attendance, latitude, longitude):
