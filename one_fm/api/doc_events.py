@@ -39,7 +39,8 @@ def employee_checkin_validate(doc, method):
 		prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
 		if curr_shift:
 			existing_perm = frappe.db.exists("Shift Permission", {"date": curr_shift.start_datetime.strftime('%Y-%m-%d'), "employee": doc.employee, "permission_type": perm_map[doc.log_type], "workflow_state": "Approved"})
-			assignment, shift_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": curr_shift.start_datetime.date(), "shift_type": curr_shift.shift_type.name}, ["shift", "shift_type"])
+			name, assignment, shift_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": curr_shift.start_datetime.date(), "shift_type": curr_shift.shift_type.name}, ["name","shift", "shift_type"])
+			doc.shift_assignment = name
 			doc.operations_shift = assignment
 			doc.shift_type = shift_type
 	
