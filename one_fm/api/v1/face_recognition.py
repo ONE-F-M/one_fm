@@ -34,10 +34,6 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         return response("Bad Request", 400, None, "video type must be str.")
 
     try:
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
-
-        if not employee:
-            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
         # Setup channel
         face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
@@ -46,7 +42,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
         # request body
         req = enroll_pb2.EnrollRequest(
-            username = employee_id,
+            username = frappe.session.user,
             user_encoded_video = video,
         )
 
