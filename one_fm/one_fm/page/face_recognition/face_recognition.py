@@ -227,7 +227,7 @@ def check_existing():
 		True: The log in was "IN", so his next Log Type should be "OUT".
 		False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
 	"""
-	employee = frappe.get_value("Employee", {"user_id": "s.shaikh@armor-services.com"})
+	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
 
 	# get current and previous day date.
 	today = nowdate()
