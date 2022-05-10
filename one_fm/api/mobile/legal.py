@@ -148,18 +148,33 @@ def accept_penalty(file, retries, docname):
 		'success' message upon verification || updated retries and 'error' message || Exception. 
 	"""
 	try:
+		import grpc
+		from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
+		
+		penalty_doc = frappe.get_doc("Penalty", docname)
 		retries_left = cint(retries) - 1
-		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
-		penalty = frappe.get_doc("Penalty", docname)
-		image = upload_image(file, OUTPUT_IMAGE_PATH)
-		if recognize_face(image) or retries_left == 0:
-			if retries_left == 0:
-				penalty.verified = 0
-				send_email_to_legal(penalty)
+		# setup channel
+		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+		channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+		# setup stub
+		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+
+		# request body
+		req = facial_recognition_pb2.FaceRecognitionRequest(
+			username = frappe.session.user,
+			media_type = "image",
+			media_content = file,
+		)
+		# Call service stub and get response
+		res = stub.FaceRecognition(req)
+		if res.verification == "OK":
+			if cint(penalty_doc.retries) == 0:
+				penalty_doc.verified = 0
+				send_email_to_legal(penalty_doc)
 			else:
-				penalty.verified = 1		
-				penalty.workflow_state = "Penalty Accepted"
-			penalty.save(ignore_permissions=True)
+				penalty_doc.verified = 1		
+				penalty_doc.workflow_state = "Penalty Accepted"
+			penalty_doc.save(ignore_permissions=True)
 			
 			file_doc = frappe.get_doc({
 				"doctype": "File",
@@ -175,11 +190,11 @@ def accept_penalty(file, retries, docname):
 
 			frappe.db.commit()
 
-			return response("Face Recognition Successfull.", {}, True ,200)
+			return response("Penalty accepted successfully.", {}, True ,200)
 		else:
+			penalty_doc.db_set("retries", retries_left)
 			return response("Face Recognition Failed. You have "+str(retries_left)+" retries left." ,{"retries_left":retries_left},False,401)
-			penalty.db_set("retries", retries_left)
-			frappe.throw(_("Face could not be recognized. You have {0} retries left.").format(frappe.bold(retries_left)), title='Validation Error')
+			# frappe.throw(_("Face could not be recognized. You have {0} retries left.").format(frappe.bold(retries_left)), title='Validation Error')
 
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
