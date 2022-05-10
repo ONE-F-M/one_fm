@@ -1,6 +1,6 @@
 import frappe, ast, base64, time
 from frappe import _
-from one_fm.one_fm.page.face_recognition.face_recognition import create_dataset, setup_directories, check_in, update_onboarding_employee
+from one_fm.one_fm.page.face_recognition.face_recognition import check_in, update_onboarding_employee
 from one_fm.api.mobile.roster import get_current_shift
 from one_fm.proto import enroll_pb2, enroll_pb2_grpc, facial_recognition_pb2, facial_recognition_pb2_grpc
 import json
