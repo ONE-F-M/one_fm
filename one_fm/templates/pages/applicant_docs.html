@@ -23,13 +23,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>One Facilities Management | Easy Job Application Portal</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v3.0.0/css/line.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
         integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="/assets/one_fm/assets/css/applicant_docs.css" rel="stylesheet" >
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+    <link rel="stylesheet" href="/assets/one_fm/assets/css/applicant_docs.css">
 </head>
 {% endblock %}
 
@@ -37,49 +37,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <body>
+    <div id="cover-spin"></div>
     <main>
+        <div
+            class="p-5 text-center bg-image"
+            style="
+            background-image:  linear-gradient( rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) ), url('assets/one_fm/assets/img/job-application/ja-banner.png');
+            height: 300px;
+            ">
+            <div class="d-flex justify-content-center align-items-center">
+                <h1 style="color:#ffff; line-height: 100px;" class="mb-3">Applicant Documents</h1>
+            </div>
+            <hr style="width:50%;text-align:left;border-top: 1px solid #ffff;">
+            <div class="text-center mt-10">
+                <h6 style="color:#ffff"><strong>{{applicant_name}}</strong></h6>
+                <h6 style="color:#ffff"><strong>{{email_id}}</strong></h6>
+                <h6 style="color:#ffff"><strong>{{applicant_designation}}</strong></h6>
+            </div>
+        </div>
+        
+        <br><br>
         <article class="main-container m-auto p-auto">
-            <div >
-
-                <!-- Contenido del lado izquierdo -->
+            <div>
+                <div class="row col-lg-12 col-md-12 mb-12">
+                    <h6>Dear {{applicant_name}}, greetings from One Facilities Management!</h6> 
+                    <h6>As a part of the onboarding process for the {{applicant_designation}} role, we request you to provide us with the following documents and complete the below form.</h6>
+                    <ul>
+                        <li><h6>Passport - front and back side</h6></li>
+                        <li><h6>Civil ID - front and back side (Applicable if you are a resident of Kuwait)</h6></li>
+                    </ul>
+                </div>
                 <section class="form-wrapper">
-                    <div class="message-block-head d-flex">
-                        <div class="message-block-icon rounded-circle border border-secondary p-4 m-1 h2"><i class="uil uil-user text-info h1"></i></div>
-                        <div class="message-block-info p-1 m-1">
-                            <h2>Welcome! Upload Your Civil ID and Passport</h2>
-                            <span>Kindly, attach your civil ID below. Note: attach image file only!</span>
-                        </div>
-                    </div>
 
-                    <!-- Header con links y botón de back -->
-
-                    <!-- Contenedor del formulario y sus mensajes -->
-                    <div class="form-container border border-secondary bg-light p-4 m-2 rounded">
-
-                        <!-- Mensaje de login -->
-
-
-                        <!-- Formulario -->
-                        <form class="form">
+                    <div class="form-container">
+                        <form class="form" name="file_upload" id="file_upload">
+                            <h2>File Upload
+                                <small id="passwordHelpInline" class="text-muted" style="font-size: small;">
+                                    Only image files of type png/jpeg accepted*
+                                </small>
+                            </h2>
+                            <hr>
                             <div class="row">
                                 <div class="form-group col-md-6">
-                                    <label  for="file">Upload Front Side of your civil ID:</label>
-                                    <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg" >
+                                    <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                    <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg">
+                                    <span id="tooltiptext1">* Please Upload Your Civil ID</span>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label  for="file">Upload Back Side of your civil ID:</label>
-                                    <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg" >
+                                    <label class="form-label" for="file" >Civil ID Back Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                    <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg">
+                                    <span id="tooltiptext2">* Please Upload Your Civil ID</span>
                                     <br>
                                 </div>
                             </div>
 
                             <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label  for="file">Upload Front Side of your passport:</label>
+                                        <label  for="file">Passport Front Side</label>
                                         <input class="form-control" type="file" id="Passport_Front" placeholder="Front Passport"  name="file"  accept="image/png, image/jpeg" >
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="file">Upload Back Side of your passport:</label>
+                                        <label  for="file">Passport Back Side</label>
                                         <input class="form-control" type="file" id="Passport_Back" placeholder="Back Passport"  name="file"  accept="image/png, image/jpeg" >
                                         <br>
                                     </div>
@@ -87,7 +105,7 @@
 
 
                             <div>
-                                <button class="btn btn-primary btn-lg" type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()" class="btn btn-primary">Upload!</button>
+                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()" >Upload</button>
                             </div>
                         </form>
 
@@ -97,127 +115,157 @@
             </div>
                 <br><br>
 
-                <div  id="finalForm  m-auto p-auto">
+                <div  class="m-auto p-auto">
 
                 <div>
-
-                    <!-- Contenido del lado izquierdo -->
-                    <section class="form-wrapper" id="finalForm">
+                    <section class="form-wrapper" id="finalForm" style="display:none;">
                         <div class="message-block-head d-flex">
                         <div class="message-block-info p-1 h2 m-1">
                                 <p id="output_message" style="font-size: 22px;"></p>
                             </div>
                         </div>
 
-                        <div class="form-container border border-secondary bg-light p-4 m-2 rounded">
-
-                            <!-- Mensaje de login -->
-
-
-                            <!-- Formulario -->
+                        <div class="form-container">
                             <form class="form">
+                                <h2>Personal Details</h2>
+                                <hr>
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
-                                        <label  for="Name">Name:
-                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" size="50" id="Name" name="name" ></label><br><br>
+                                        <label class="form-label" for="First_Name">First Name</label>
+                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" civil_id_reqd="{{civil_id_reqd}}" id="First_Name" name="name">
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="Arabic_Name">Name(ar):
-                                        <input class="form-control input" type="text" id="Arabic_Name" name="ar_name" size="50"></label><br><br>
+                                        <label  for="First_Arabic_Name">First Name(Arabic)</label>
+                                        <input class="form-control input" type="text" id="First_Arabic_Name" name="first_ar_name">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Second_Name">Second Name</label>
+                                        <input class="form-control input" type="text" id="Second_Name" name="second_name">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label  for="Second_Arabic_Name">Second Name(Arabic)</label>
+                                        <input class="form-control input" type="text" id="Second_Arabic_Name" name="second_ar_name">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Third_Name">Third Name</label>
+                                        <input class="form-control input" type="text" id="Third_Name" name="third_name">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label  for="Third_Arabic_Name">Third Name(Arabic)</label>
+                                        <input class="form-control input" type="text" id="Third_Arabic_Name" name="third_ar_name">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="Last_Name">Last Name</label>
+                                        <input class="form-control input" type="text" id="Last_Name" name="last_name">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label  for="Last_Arabic_Name">Last Name(Arabic)</label>
+                                        <input class="form-control input" type="text" id="Last_Arabic_Name" name="last_ar_name">
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="form-group col-md-6 w-50">
-                                        <label  for="Gender">Gender
-                                        <select class="form-control input" id="Gender" name="gender" aria-placeholder="Gender" >
-                                            <option value="select" selected disabled>Select Your Gender...</option>
+                                        <label class="form-label" for="Gender">Gender</label>
+                                        <select class="form-control input" id="Gender" name="gender" aria-placeholder="Gender">
+                                            <option value="select" selected disabled>Select Your Gender</option>
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
-                                        </select></label><br>  <br>
+                                        </select>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="Date_Of_Birth">Date Of Birth:
-                                        <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" size="50"></label><br><br>
+                                        <label class="form-label" for="Date_Of_Birth">Date Of Birth</label>
+                                        <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" size="50">
                                     </div>
                                 </div>
 
-
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label for="Civil_ID_No">Civil ID Number:
-                                        <input class="form-control input" type="text" id="Civil_ID_No" name="civilid" size="50"></label><br><br>
+                                        <label for="Civil_ID_No">Civil ID Number</label>
+                                        <input class="form-control input" type="text" id="Civil_ID_No" name="civilid" size="50">
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="Expiry_Date">Civil ID Expiry Date:
-                                        <input class="form-control input" type="date" id="Expiry_Date" name="civil_expiry_date" size="50"><br><br>
+                                        <label class="form-label" for="Expiry_Date">Civil ID Expiry Date</label>
+                                        <input class="form-control input" type="date" id="Expiry_Date" name="civil_expiry_date" size="50">
                                     </div>
                                 </div>
 
                                 <div class="row">
                                     <div class="form-group col-md-4 w-75">
-                                        <label  for="Nationality">Nationality:
+                                        <label class="form-label" for="Nationality">Nationality</label>
                                         <select class="form-control input2" id="Nationality" name="nationality" aria-placeholder="Select Your Nationality">
                                             <option value="select" selected disabled>Select Your Nationality</option>
-                                        </select></label><br>  <br>
+                                        </select>
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label  for="Country_Code">Country Code:
-                                        <input class="form-control input2" type="text" id="Country_Code" name="country_code" onchange="fetchNationality(this)" size="50"></label><br>  <br>
+                                        <label class="form-label" for="Country_Code">Country Code</label>
+                                        <input class="form-control input2" type="text" id="Country_Code" name="country_code" onchange="fetchNationality(this)" size="50">
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label  for="Birth_Place">Place of Birth:
-                                        <input class="form-control input2" type="text" id="Birth_Place" name="birth_place" size="50"></label><br>  <br>
+                                        <label class="form-label" for="Birth_Place">Place of Birth</label>
+                                        <input class="form-control input2" type="text" id="Birth_Place" name="birth_place" size="50">
                                     </div>
 
                                 </div>
 
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label  for="PACI_No">PACI No.:
-                                        <input class="form-control input" type="text" id="PACI_No" name="paci_no" size="50" ></label><br>  <br>
+                                        <label class="form-label" for="PACI_No">PACI Number</label>
+                                        <input class="form-control input" type="text" id="PACI_No" name="paci_no">
                                     </div>
 
-                                    <div class="form-group col-md-6" id="Sponsor" style="display: none;">
-                                        <label  for="Sponsor_Name">Sponsor
-                                        <input class="form-control input"  type="text" id="Sponsor_Name" name="sponsor" size="50"></label><br><br>
+                                    <div class="form-group col-md-6" id="Sponsor">
+                                        <label class="form-label" for="Sponsor_Name">Sponsor</label>
+                                        <input class="form-control input"  type="text" id="Sponsor_Name" name="sponsor">
                                     </div>
 
                                 </div>
 
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label  for="Passport_Number">Passport Number
-                                        <input class="form-control input" type="text" id="Passport_Number" name="passport_no" size="50"></label><br><br>
+                                        <label class="form-label" for="Passport_Number">Passport Number</label>
+                                        <input class="form-control input" type="text" id="Passport_Number" name="passport_no">
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label  for="Passport_Type">Passport Type:
+                                        <label class="form-label" for="Passport_Type">Passport Type</label>
                                         <select class="form-control input" id="Passport_Type" name="passport_type" aria-placeholder="Passport Type">
-                                            <option value="select" selected disabled>Passport Type...</option>
+                                            <option value="select" selected disabled>Passport Type</option>
                                             <option value="Normal">Normal</option>
                                             <option value="Diplomat">Diplomat</option>
-                                        </select></label><br>  <br>
+                                        </select>
                                     </div>
                                 </div>
 
                                 <div class="row">
                                     <div class="form-group col-md-4">
-                                        <label  for="Passport_Date_of_Issue">Passport Date of Issue:
-                                        <input class="form-control input2" type="date" id="Passport_Date_of_Issue" name="p_date_of_issue" size="50"></label><br><br>
+                                        <label class="form-label" for="Passport_Date_of_Issue">Passport Date of Issue</label>
+                                        <input class="form-control input2" type="date" id="Passport_Date_of_Issue" name="p_date_of_issue">
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label  for="Passport_Date_of_Expiry">Passport Expiry Date:
-                                        <input class="form-control input2" type="date" id="Passport_Date_of_Expiry" name="passport_expiry_date" size="50"></label><br><br>
+                                        <label class="form-label" for="Passport_Date_of_Expiry">Passport Expiry Date</label>
+                                        <input class="form-control input2" type="date" id="Passport_Date_of_Expiry" name="passport_expiry_date">
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label  for="Passport_Place_of_Issue">Passport Place of Issue:
-                                        <input class="form-control input2" type="text" id="Passport_Place_of_Issue" name="p_place_of_issue" size="50"></label><br><br>
+                                        <label class="form-label" for="Passport_Place_of_Issue">Passport Place of Issue</label>
+                                        <input class="form-control input2" type="text" id="Passport_Place_of_Issue" name="p_place_of_issue">
                                     </div>
                                 </div>
-
-                                <div class="col-auto">
-                                    <button class="btn btn-primary btn-lg" type="button" href="json.json" value="submit" id="submitForm" onclick="Submit()" class="btn btn-primary">Submit!</button>
+                                <br>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="confirmData" onchange="document.getElementById('submitForm').disabled = !this.checked;">
+                                    <label class="form-check-label" for="confirmData">
+                                      </span>I hereby confirm that the above information is correct <span style="color:red">*</span>
+                                    </label>
                                 </div>
-                                <p id="demo"></p>
+                                <br>
+                                <div>
+                                    <button class="btn btn-dark" type="button" href="json.json" value="submit" id="submitForm" onclick="Submit()" disabled="disabled" >Submit</button>
+                                </div>
                             </form>
 
                         </div>

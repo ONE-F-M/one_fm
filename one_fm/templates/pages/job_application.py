@@ -9,7 +9,15 @@ def get_context(context):
     context.parents = [{'route': 'jobs', 'title': _('All Jobs') }]
     context.title = _("Application")
     # Get job opening id from url to the context // frappe.form_dict.<args in url>
-    context.job_opening = frappe.get_doc('Job Opening', frappe.form_dict.job_title)
+    job_opening = frappe.get_doc('Job Opening', frappe.form_dict.job_title)
+    context.job_opening = job_opening
+    context.erf = job_opening.one_fm_erf
+    context.travel, context.rotation_shift, context.night_shift , context.driving_license_required = frappe.get_value("ERF",{"name":context.erf}, ['travel_required', 'shift_working', 'night_shift', 'driving_license_required'])
+    if context.travel != 0:
+        context.travel_type = frappe.get_value("ERF",{"name":context.erf}, ['type_of_travel'])
+    if context.driving_license_required != 0:
+        context.type_of_license = ["Light", "Heavy", "Motor Bike", "Inshaya"]
+    context.visa_type = frappe.get_all("Visa Type", ["name"])
     # Get Country List to the context to show in the portal
     context.country_list = frappe.get_all('Country', fields=['name'])
 
@@ -50,7 +58,7 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
         return 0
 
 @frappe.whitelist(allow_guest=True)
-def create_job_applicant_from_job_portal(applicant_name, country, applicant_email, applicant_mobile, job_opening, files):
+def create_job_applicant_from_job_portal(applicant_name, country, applicant_email, applicant_mobile, job_opening, files, rotation_shift=None, night_shift=None, travel=None, travel_type=None, driving_license=None,license_type=None, visa=None, visa_type=None, in_kuwait=None):
     '''
         Method to create Job Applicant from Portal
         args:
@@ -78,7 +86,42 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
     job_applicant.one_fm_first_name_in_arabic = applicant_name
     job_applicant.one_fm_last_name = applicant_name
     job_applicant.one_fm_last_name_in_arabic = applicant_name
+    if rotation_shift:
+        if rotation_shift == "yes":
+            job_applicant.one_fm_rotation_shift = "Yes, I Will Work in Rotation Shift"
+        else:
+            job_applicant.one_fm_rotation_shift = "No, I Cant Work in Rotation Shift"
+        
+    if night_shift:
+        if night_shift == "yes":
+            job_applicant.one_fm_night_shift = "Yes, I Will Work in Night Shift"
+        else:
+            job_applicant.one_fm_night_shift = "No, I Cant Work in Night Shift"
+    
+    if travel and travel_type:
+        if travel == "yes":
+            job_applicant.one_fm_type_of_travel = "I Will Travel "+str(travel_type)
+        else:
+            job_applicant.one_fm_type_of_travel = "I Cant Travel "+str(travel_type)
 
+    if driving_license and license_type:
+        if driving_license == "yes":
+            job_applicant.one_fm_type_of_driving_license = str(license_type)
+        else:
+            job_applicant.one_fm_type_of_driving_license= "Not Available"
+    
+    if visa and visa_type:
+        if visa == "yes":
+            job_applicant.one_fm_have_a_valid_visa_in_kuwait = 1
+            job_applicant.one_fm_visa_type = visa_type
+        else:
+            job_applicant.one_fm_have_a_valid_visa_in_kuwait = 0
+
+    if in_kuwait:
+        if in_kuwait == "yes":
+            job_applicant.one_fm_in_kuwait_at_present = 1
+        else:
+            job_applicant.one_fm_in_kuwait_at_present = 0 
     job_applicant.save(ignore_permissions=True)
 
     # If files exisit, attach the file to Job Applicant created

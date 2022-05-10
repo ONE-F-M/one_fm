@@ -5,23 +5,33 @@ frappe.ready = function (fn) {
 window.dev_server = {{dev_server}};
 window.socketio_port = {{frappe.socketio_port}};
 
-var is_kuwaiti = $('#Name').attr('is_kuwaiti');
+var is_kuwaiti = $('#First_Name').attr('is_kuwaiti');
+var civil_id_reqd = $('#First_Name').attr('civil_id_reqd');
 
-var applicant_name = (($('#Name').attr('data')).split(' ').slice(0, 2).join(' ')).replace(' ', '_');
-console.log(applicant_name)
+var applicant_name = $('#First_Name').attr('data');
+
 var front_cid_filepath = "";
 var back_cid_filepath = "";
 var front_passport_filepath = "";
 var back_passport_filepath = "";
 
-window.onload = () =>{
-if(is_kuwaiti==0){
-  document.getElementById("Sponsor").style.display = "block";
+window.onload = () => {
+  $(".required_indicator").hide();
+  $("#tooltiptext1").hide();
+  $("#tooltiptext2").hide();
+
+  $("#Sponsor").hide();
+  if(is_kuwaiti == 0){
+    $("#Sponsor").show();
+  }
+  if(civil_id_reqd == 1){
+    $(".required_indicator").show()
+  }
+  populate_nationality();
 }
-populate_nationality();
-}
-let civil_id_image = new FormData();
-let passport_image = new FormData();
+
+let civil_id_image;
+let passport_image;
 
 function extract_image(){
   extract(document.getElementById("Civil_ID_Front").files[0],"Civil_ID","front_civil")
@@ -65,9 +75,6 @@ function extract(file, type, key){
       }
     };
   }
-  else{
-    console.log("File missing")
-  }
 }
 
 function populate_nationality(){
@@ -80,7 +87,7 @@ function populate_nationality(){
         var select = document.getElementById("Nationality");
         for (let i=0; i<=langArray.length;i++) {
           select.options[select.options.length] = new Option(langArray[i], langArray[i]);
-     }
+        }
       }
     }
   });
@@ -102,6 +109,8 @@ function fetchNationality(code){
     }
   });
 }
+
+
 function send_request(method, data, token, type){
   var request = new XMLHttpRequest();
   // POST to httpbin which returns the POST data as JSON
@@ -113,26 +122,52 @@ function send_request(method, data, token, type){
     request.type = type
     request.onreadystatechange = () => {
       if (request.readyState == XMLHttpRequest.DONE) {
-          if (request.status === 200) {
-        let r = null;
-        try {
-          r = JSON.parse(request.responseText);
-          fill_form(r.message,request.type, token);
-        } catch (e) {
-          r = request.responseText;
-        }
+        if (request.status === 200) {
+          let r = null;
+          try {
+            r = JSON.parse(request.responseText);
+            $("#cover-spin").hide();
+            $('#finalForm').css('display', 'block');
+            console.log(r.message)
+            fill_form(r.message,request.type, token);
+          } catch (e) {
+            $("#cover-spin").hide();
+            $('#finalForm').css('display', 'block');
+            r = request.responseText;
+          }
         } else if (request.status === 403) {
-        let response = JSON.parse(request.responseText);
-        frappe.msgprint({
-          title: __("Not permitted"),
-          indicator: "red",
-          message: response._error_message,
-        });
+          $("#cover-spin").hide();
+          $('#finalForm').css('display', 'block');
+          let response = JSON.parse(request.responseText);
+          frappe.msgprint({
+            title: __("Not permitted"),
+            indicator: "red",
+            message: response._error_message,
+          });
+        } else {
+          $("#cover-spin").hide();
+          $('#finalForm').css('display', 'block');
+          frappe.msgprint({
+            title: __("Error extracting text"),
+            indicator: "orange",
+            message: __("Please fill out the below form manually."),
+          });
         }
       }
-      };
+    };
 }
+
+
 function upload(){
+  if($("#Civil_ID_Front").val().length == 0 ){
+    $("#tooltiptext1").show()
+  }
+  else if($("#Civil_ID_Back").val().length == 0 ){
+    $("#tooltiptext2").show();
+  }
+  else{
+  civil_id_image = new FormData();
+  passport_image = new FormData();
   extract_image();
 
   var method_map = {
@@ -146,13 +181,16 @@ function upload(){
       var token = r.message
        if (!!civil_id_image.entries().next().value){
         civil_id_image.append("is_kuwaiti",is_kuwaiti)
+        $("#cover-spin").show(0);
         send_request(method_map['civil_id'], civil_id_image, token,"Civil ID")
       };
       if (!!passport_image.entries().next().value){
+        $("#cover-spin").show(0);
         send_request(method_map['passport'], passport_image, token,"Passport")
       };
     }
   });
+}
 };
 
 
@@ -164,8 +202,14 @@ function fill_form(data, type,token){
   }
   else {
     if(type == "Civil ID"){
-      input_data(data,'front_text','Name');
-      input_data(data,'front_text','Arabic_Name');
+      input_data(data,'front_text','First_Name');
+      input_data(data,'front_text','Second_Name');
+      input_data(data,'front_text','Third_Name');
+      input_data(data,'front_text','Last_Name');
+      input_data(data,'front_text','First_Arabic_Name');
+      input_data(data,'front_text','Second_Arabic_Name');
+      input_data(data,'front_text','Third_Arabic_Name');
+      input_data(data,'front_text','Last_Arabic_Name');
       input_data(data,'front_text','Gender');
       input_data(data,'front_text','Civil_ID_No');
       input_data(data,'front_text','Country_Code');
@@ -193,9 +237,10 @@ function fill_form(data, type,token){
     }
   }
 };
+
+
 function input_filepath(Data, key1, key2,token){
   if(Data[key1][key2]!= undefined){
-    console.log(key2)
     upload_image(document.getElementById(key2).files[0],Data[key1][key2],applicant_name+"_"+key2+'.png',token)
     return Data[key1][key2]
   }
@@ -218,13 +263,13 @@ function input_data(Data, key1, key2){
 function Submit(){
   var applicant_details = get_details_from_form();
 
-  if($('#Name').attr("data")){
+  if($('#First_Name').attr("data")){
     frappe.freeze();
     frappe.call({
       type: "POST",
       method: "one_fm.templates.pages.applicant_docs.update_job_applicant",
       args: {
-        job_applicant: $('#Name').attr("data"),
+        job_applicant: $('#First_Name').attr("data"),
         data: applicant_details
       },
       btn: this,
@@ -244,7 +289,14 @@ function Submit(){
 
 function get_details_from_form() {
   var applicant_details = {};
-  applicant_details['one_fm_first_name_in_arabic'] = $('#Arabic_Name').val();
+  applicant_details['one_fm_first_name'] = $('#First_Name').val();
+  applicant_details['one_fm_second_name'] = $('#Second_Name').val();
+  applicant_details['one_fm_third_name'] = $('#Third_Name').val();
+  applicant_details['one_fm_last_name'] = $('#Last_Name').val();
+  applicant_details['one_fm_first_name_in_arabic'] = $('#First_Arabic_Name').val();
+  applicant_details['one_fm_second_name_in_arabic'] = $('#Second_Arabic_Name').val();
+  applicant_details['one_fm_third_name_in_arabic'] = $('#Third_Arabic_Name').val();
+  applicant_details['one_fm_last_name_in_arabic'] = $('#Last_Arabic_Name').val();
   applicant_details['one_fm_gender'] = $('#Gender').val();
   applicant_details['one_fm_date_of_birth'] = $('#Date_Of_Birth').val();
   applicant_details['one_fm_cid_number'] = $('#Civil_ID_No').val();
@@ -265,7 +317,6 @@ function get_details_from_form() {
   get_filepath(applicant_details['applicant_doc'],back_passport_filepath, "Passport Back" )
 
   // applicant_details['paci_no'] = $('#PACI_No').val();
-  console.log(applicant_details)
   return applicant_details;
 };
 

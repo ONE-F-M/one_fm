@@ -1,0 +1,75 @@
+
+
+
+<svg width="107" height="91" viewBox="0 0 107 91" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+<style>
+            .cls-1 {
+                fill: url(#linear-gradient);
+            }
+
+            .cls-2 {
+                fill: #92d0ff;
+            }
+
+            .cls-3 {
+                fill: url(#linear-gradient-2);
+            }
+
+            .cls-4 {
+                fill: url(#linear-gradient-3);
+            }
+            .leaf{
+                animation: 2s ease-in-out infinite leafMotion;
+                -webkit-animation: 2s ease-in-out infinite leafMotion;
+                -moz-animation: 2s ease-in-out infinite leafMotion;
+            }
+            .one{
+                animation-duration: 2.3s;
+                -webkit-animation-duration: 2.3s;
+                -moz-animation-duration: 2.3s;
+                transform-origin: 0px 200px;
+            }
+            .two{
+                animation-duration: 2.7s;
+                -webkit-animation-duration: 2.7s;
+                -moz-animation-duration: 2.7s;
+                transform-origin: 40px 100px;
+            }
+            .three{
+                animation-duration: 3s;
+                -webkit-animation-duration: 3s;
+                -moz-animation-duration: 3s;
+                transform-origin: -20px 300px;
+            }
+            @keyframes leafMotion {
+                50% {
+                  transform: rotate(4deg)
+                }
+              }
+
+                @-webkit-keyframes leafMotion {
+                50% {
+                  -webkit-transform: rotate(4deg)
+                }
+              }
+
+                @-moz-keyframes leafMotion {
+                50% {
+                  -moz-transform: rotate(4deg)
+                }
+              }
+        </style>
+
+
+<path opacity="0.5" d="M55.1869 90.0762H46.558C46.558 90.0762 42.641 75.8741 12.8704 63.5104C-16.9001 51.1467 16.0669 49.4574 30.062 60.2394C16.9944 44.7537 17.4168 36.1414 25.8221 34.3775C34.2357 32.6136 62.6896 60.8025 55.1869 90.0762Z" fill="#C1C9E0"/>
+<path opacity="0.4" d="M42.0862 68.9584C42.0862 68.9584 38.6081 47.7422 25.052 34.5918C17.4251 36.7283 17.4168 45.2579 30.062 60.2384L36.4468 65.8612C36.4468 65.8612 15.9593 57.4062 2.13813 53.8619C-0.950722 55.2531 0.82144 58.4993 12.8704 63.5094C42.641 75.8731 46.558 90.0752 46.558 90.0752H55.1869C59.9485 71.4924 50.2265 53.3651 40.3389 43.0385L42.0862 68.9584Z" fill="#AFB9D3"/>
+<path class="leaf two" d="M57.7048 90.0757C57.7048 90.0757 73.0331 44.1321 60.8599 12.4817C48.6867 -19.1604 38.4512 17.2185 42.0121 38.4761C45.5813 59.7254 49.7798 90.0757 49.7798 90.0757H57.7048Z" fill="#C8D1E5"/>
+<g class="leaf two" style="mix-blend-mode:multiply" opacity="0.3">
+<path d="M55.2367 90.0756C60.5035 58.6819 50.6904 5.30193 49.7712 0.440918C43.3948 3.42212 39.6351 24.3071 42.0118 38.476C45.581 59.7253 49.7795 90.0756 49.7795 90.0756H55.2367Z" fill="#AFB9D3"/>
+</g>
+<path class="leaf two" d="M63.6667 90.0755C63.6667 90.0755 92.0295 53.7463 92.9322 37.0267C93.8348 20.3072 57.1744 34.236 55.1869 90.0755C56.8514 90.0755 63.6667 90.0755 63.6667 90.0755Z" fill="#AFB9D3"/>
+<path class="leaf two" opacity="0.35" d="M89.3713 30.7077C80.2621 27.7844 56.7686 45.6882 55.1869 90.0749C56.015 90.0749 58.135 90.0749 60.0396 90.0749C63.1202 70.2168 80.966 36.5872 89.3713 30.7077Z" fill="#E2E8F7"/>
+<path d="M63.6667 90.0756H68.1717C68.1717 90.0756 102.455 75.4263 106.646 68.5116C110.836 61.5969 76.7509 63.9653 63.6667 90.0756Z" fill="#E2E8F7"/>
+<path opacity="0.5" d="M104.948 65.5801C97.8594 63.543 74.1009 69.2569 63.6667 90.0756H65.6708C65.6708 90.0756 84.502 71.9069 104.948 65.5801Z" fill="#AFB9D3"/>
+</svg>

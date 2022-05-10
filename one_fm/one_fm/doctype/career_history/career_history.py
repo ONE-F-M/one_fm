@@ -19,7 +19,6 @@ class CareerHistory(Document):
 		if self.career_history_company and self.calculate_promotions_and_experience_automatically:
 			self.calculate_promotions_and_experience()
 		self.calculate_career_history_score()
-		self.career_history_score_action()
 
 	def career_history_score_action(self):
 		if self.career_history_score and self.career_history_score > 0 and self.career_history_score < 2.99:
@@ -52,7 +51,7 @@ class CareerHistory(Document):
 		if not self.name:
 			# hack! if name is null, it could cause problems with !=
 			self.name = "New "+self.doctype
-		career_history = frappe.db.exists('Career History', {'job_applicant': self.job_applicant, 'name': ['!=', self.name]})
+		career_history = frappe.db.exists('Career History', {'job_applicant': self.job_applicant, 'name': ['!=', self.name], 'docstatus': ['<', 2]})
 		if career_history:
 			frappe.throw(_("""Career History <b><a href="#Form/Career History/{0}">{0}</a></b> is exists against \
 				Job Applicant {1}.!""").format(career_history, self.applicant_name))
@@ -97,6 +96,7 @@ class CareerHistory(Document):
 			self.total_years_of_experience = total_months_of_experience/12
 
 	def	on_submit(self):
+		self.career_history_score_action()
 		update_interview_and_feedback(self, True)
 
 	def on_cancel(self):
@@ -157,7 +157,7 @@ def get_interview(career_history):
 
 def create_interview(career_history):
 		interview = frappe.new_doc('Interview')
-		interview.interview_round = 'Career History'
+		interview.interview_round = get_interview_round_for_career_history()
 		interview.job_applicant = career_history.job_applicant
 		interview.career_history = career_history.name
 		interview.scheduled_on = today()
@@ -168,6 +168,34 @@ def create_interview(career_history):
 		interview.expected_average_rating = 5
 		interview.save(ignore_permissions = True)
 		return interview.name
+
+def get_interview_round_for_career_history():
+	if not frappe.db.exists('Interview Round', {'name': 'Career History'}):
+		interview_round = frappe.new_doc("Interview Round")
+		interview_round.round_name = 'Career History'
+		interview_round.interview_type = get_interview_type_for_career_history()
+		interview_round.expected_average_rating = 5
+		expected_skill_set = interview_round.append('expected_skill_set')
+		expected_skill_set.skill = get_skill_for_career_history()
+		interview_round.save(ignore_permissions=True)
+	return 'Career History'
+
+def get_interview_type_for_career_history():
+	if not frappe.db.exists('Interview Type', {'name': 'Career History'}):
+		interview_type = frappe.new_doc("Interview Type")
+		interview_type.__newname = 'Career History'
+		interview_type.description = 'Career History'
+		interview_type.save(ignore_permissions=True)
+	return 'Career History'
+
+
+def get_skill_for_career_history():
+	if not frappe.db.exists('Skill', {'name': 'Career History'}):
+		skill = frappe.new_doc("Skill")
+		skill.skill_name = 'Career History'
+		skill.description = 'Career History'
+		skill.save(ignore_permissions=True)
+	return 'Career History'
 
 def get_career_history_result(career_history):
 	if career_history.career_history_score < 2.99 and career_history.pass_to_next_interview == 'Rejected':

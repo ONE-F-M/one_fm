@@ -34,6 +34,10 @@ from frappe import utils
 import pandas as pd
 from erpnext.hr.utils import get_holidays_for_employee
 from one_fm.processor import sendemail
+from frappe.desk.form import assign_to
+from one_fm.one_fm.payroll_utils import get_user_list_by_role
+from frappe.core.doctype.user.user import extract_mentions
+from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -621,13 +625,10 @@ def validate_leave_type_for_one_fm_paid_leave(doc, method):
         doc.is_lwp = False
         doc.one_fm_is_paid_sick_leave = False
         doc.one_fm_is_hajj_leave = False
-        # if not doc.one_fm_annual_leave_allocation_reduction:
-        #     frappe.throw(_('Annual Leave Allocation Reduction is Mandatory'))
         if not doc.leave_allocation_matrix:
             frappe.throw(_('Leave Allocation Matrix is Mandatory'))
     elif doc.one_fm_is_hajj_leave:
         doc.one_fm_is_paid_annual_leave = False
-        doc.one_fm_is_hajj_leave = False
 
 @frappe.whitelist(allow_guest=True)
 def bereavement_leave_validation(doc, method):
@@ -1419,7 +1420,7 @@ def validate_job_applicant(doc, method):
         set_required_documents(doc, method)
     if frappe.session.user != 'Guest' and not doc.one_fm_is_easy_apply:
         validate_mandatory_childs(doc)
-    if doc.one_fm_applicant_status in ["Shortlisted", "Selected"]:
+    if doc.one_fm_applicant_status in ["Shortlisted", "Selected"] and doc.status not in ["Rejected"]:
         create_job_offer_from_job_applicant(doc.name)
     if doc.one_fm_number_of_kids and doc.one_fm_number_of_kids > 0:
         """This part is comparing the number of children with the listed children details in the table and ask user to add all childrens"""
@@ -1619,19 +1620,22 @@ def create_job_offer_from_job_applicant(job_applicant):
             frappe.throw(_("Number of days off cannot be more than a Week!"))
         elif job_app.day_off_category == "Monthly" and frappe.utils.cint(job_app.number_of_days_off) > 30:
             frappe.throw(_("Number of days off cannot be more than a Month!"))
-        erf = frappe.get_doc('ERF', job_app.one_fm_erf)
         job_offer = frappe.new_doc('Job Offer')
         job_offer.job_applicant = job_app.name
         job_offer.applicant_name = job_app.applicant_name
         job_offer.day_off_category = job_app.day_off_category
         job_offer.number_of_days_off = job_app.number_of_days_off
+        job_offer.designation = job_app.designation
         job_offer.offer_date = today()
-        set_erf_details(job_offer, erf)
+        if job_app.one_fm_erf:
+            erf = frappe.get_doc('ERF', job_app.one_fm_erf)
+            set_erf_details(job_offer, erf)
         job_offer.save(ignore_permissions = True)
 
 def set_erf_details(job_offer, erf):
     job_offer.erf = erf.name
-    job_offer.designation = erf.designation
+    if not job_offer.designation:
+        job_offer.designation = erf.designation
     job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
     job_offer.one_fm_provide_transportation_by_company = erf.provide_transportation_by_company
     set_salary_details(job_offer, erf)
@@ -2321,3 +2325,244 @@ def generate_code():
 @frappe.whitelist()
 def fetch_employee_signature(user_id):
     return frappe.get_value("Employee", {"user_id":user_id},["employee_signature"])
+
+@frappe.whitelist()
+def get_issue_type_in_department(doctype, txt, searchfield, start, page_len, filters):
+    query = """SELECT name FROM `tabIssue Type` WHERE name LIKE %(txt)s"""
+    if filters.get('department'):
+        query = """
+            select
+                issue_types.issue_type
+            from
+                `tabDepartment` department, `tabDepartment Issue Type` issue_types
+            where
+                issue_types.parent=department.name and department.name=%(department)s
+                    and issue_types.issue_type like %(txt)s
+        """
+    return frappe.db.sql(query,
+        {
+            'department': filters.get("department"),
+            'start': start,
+            'page_len': page_len,
+            'txt': "%%%s%%" % txt
+        }
+    )
+
+def notify_on_close(doc, method):
+    '''
+        This Method is used to notify the issuer, when the issue is closed.
+    '''
+
+    #Form Subject and Message
+    subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
+    msg = """Hello user,<br>
+        Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing
+    the issue you may reply back to this email and we will do our best to help.
+    """.format(issue_id = doc.name, url= doc.get_url())
+
+    if doc.status == "Closed":
+        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delay=False)
+
+def assign_issue(doc, method):
+    '''
+        This Method is used to assign issue.
+        args:
+            doc: object of Issue
+        called from hooks doc events
+    '''
+    if doc.department:
+        assign_issue_to_department_issue_responder(doc.name, doc.department)
+
+def assign_issue_to_department_issue_responder(issue, department):
+    '''
+        This Method is used to assign issue to the Issue Responer in mentioned in the department.
+        args:
+            issue: name valuse of Issue(Example: ISS-2021-00001)
+            department: name value of Department(Example: IT - ONEFM)
+        Method will check if `issue responder role` is mentioned in department,
+        if yes then get the users having that role and assign the issue to the users
+    '''
+    department_issue_responder = get_department_issue_responder(department)
+    if department_issue_responder and len(department_issue_responder) > 0:
+        for issue_responder in department_issue_responder:
+            try:
+                assign_to.add({
+                    'assign_to': [issue_responder],
+                    'doctype': 'Issue',
+                    'name': issue,
+                    'description': (_('The Issue {0} is assigned').format(issue)),
+                    'notify': 0
+                })
+            except assign_to.DuplicateToDoError:
+                pass
+
+def get_department_issue_responder(department):
+    '''
+        This Method is used to get all issue responder users in department.
+        args:
+            department: name value of Department(Example: IT - ONEFM)
+        Method will check if `issue responder role` is mentioned in department,
+        if yes then grab the users having that role.
+    '''
+    issue_responder_role = frappe.db.get_value('Department', department, 'issue_responder_role')
+    if issue_responder_role:
+        return get_user_list_by_role(issue_responder_role)
+    return False
+
+@frappe.whitelist()
+def set_my_issue_filters():
+    filters = '[["Issue","_assign","like","'+frappe.session.user+'",false],["Issue","status","=","Open"]]'
+    set_user_filters_for_doctype_list_view(frappe.session.user, 'Issue', 'Assign to Me', filters)
+    filters = '[["Issue","raised_by","=","'+frappe.session.user+'",false]]'
+    set_user_filters_for_doctype_list_view(frappe.session.user, 'Issue', 'My Issues', filters)
+    if frappe.db.exists('Employee', {"user_id": frappe.session.user}):
+        department = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["department"])
+        if department and frappe.db.get_value('Department', department, 'issue_responder_role'):
+            filters = '[["Issue","department","=","'+department+'",false]]'
+            set_user_filters_for_doctype_list_view(frappe.session.user, 'Issue', 'Department Issues', filters)
+
+def set_user_filters_for_doctype_list_view(user, doctype, filter_name, filters):
+    '''
+        This Method is used to save user filters for doctype list view.
+        args:
+            user: name value of User(Example: user1@abc.com)
+            doctype: name value of DocType(Example: Issue)
+            filter_name: text value
+            filters: filter value
+        Method will check if List Filter exists for `For User, Reference Doctype and Filter Name`,
+        if no then create List Filter
+    '''
+    if not frappe.db.exists('List Filter', {'for_user': user, 'reference_doctype': doctype, 'filter_name': filter_name}):
+        list_filter = frappe.new_doc('List Filter')
+        list_filter.filter_name = filter_name
+        list_filter.for_user = user
+        list_filter.reference_doctype = doctype
+        list_filter.filters = filters
+        list_filter.save(ignore_permissions=True)
+
+@frappe.whitelist()
+def get_issue_permission_query_conditions(user):
+    """
+        Method used to set the permission to get the list of docs (Example: list view query)
+        Called from the permission_query_conditions of hooks for the DocType Issue
+        args:
+            user: name of User object or current user
+        return conditions query
+    """
+    if not user: user = frappe.session.user
+    # Fetch all the roles associated with the current user
+    user_roles = frappe.get_roles(user)
+    # If Support Team role is in user roles or user is Administrator, then user permitted
+    if user == "Administrator" or 'Support Team' in user_roles:
+        return None
+    # Defualt query conditions: issue is raised by or assigned to the current user
+    conditions = """(`tabIssue`.raised_by = '{user}' or `tabIssue`._assign like '%{user}%')""".format(user = user)
+    if frappe.db.exists('Employee', {"user_id": user}):
+        department = frappe.db.get_value("Employee", {"user_id": user}, ["department"])
+        if department:
+            """
+                If department exists, then fetch the department issue responder role
+                If Department Issue Responder Role is in user roles,
+                 then condition will be added with department filter
+            """
+            department_issue_responder_role = frappe.db.get_value('Department', department, 'issue_responder_role')
+            if department_issue_responder_role in user_roles:
+                # Query conditions filter will be raised by or assigned to the current user or department is same in the Issue
+                conditions = """(`tabIssue`.raised_by = '{user}' or `tabIssue`._assign like '%{user}%' or `tabIssue`.department = '{department}')"""\
+                .format(user = user, department = department)
+    return conditions
+
+def has_permission_to_issue(doc, user=None):
+    """
+        Method used to set the permission to view / edit the document
+        Called from the has_permission of hooks for the DocType Issue
+        args:
+            doc: Object of Issue
+            user: name of User object
+        return True or False with respect to the conditions
+    """
+    user = user or frappe.session.user
+    # Fetch all the roles associated with the current user
+    user_roles = frappe.get_roles(user)
+    # Fetch the department assigned to the employee linked with the ERPNext user
+    department = frappe.db.get_value("Employee", {"user_id": user}, ["department"])
+    has_permission = False
+    """
+        If department exists, then fetch the department issue responder role
+        If Department Issue Responder Role is in user roles, then user permitted to the doc
+    """
+    if department:
+        department_issue_responder_role = frappe.db.get_value('Department', department, 'issue_responder_role')
+        if department_issue_responder_role in user_roles:
+            has_permission = True
+    # If Support Team role is in user roles or user is Administrator, then user permitted to the doc
+    if frappe.session.user == "Administrator" or 'Support Team' in user_roles:
+        has_permission = True
+    # If the issue is assigned to the current user, then user permitted to the doc
+    try:
+        if doc._assign and user in doc._assign:
+            has_permission = True
+    except Exception as e:
+        pass
+    # If the issue owner or the issue is raised by the current user, then user permitted to the doc
+    if doc.owner==user or doc.raised_by==user:
+        has_permission = True
+    return has_permission
+
+def notify_issue_responder_or_assignee_on_comment_in_issue(doc, method):
+    """
+        Method used to notify issue responder on comment in issue
+        args:
+            doc: Object of Comment
+    """
+    if doc.reference_doctype == "Issue" and doc.reference_name:
+        issue = frappe.get_doc(doc.reference_doctype, doc.reference_name)
+        department_issue_responder = False
+
+        if issue.department:
+            department_issue_responder = get_department_issue_responder(issue.department)
+        if department_issue_responder and len(department_issue_responder) > 0:
+            create_notification_log_for_issue_comments(department_issue_responder, issue, doc)
+        else:
+            try:
+                if issue._assign:
+                    create_notification_log_for_issue_comments(json.loads(issue._assign), issue, doc)
+            except Exception as e:
+                pass
+
+def create_notification_log_for_issue_comments(users, issue, comment):
+    """
+        Method used to create notification log from the issue commnets
+        args:
+            users: list of recipients
+            issue: Object of Issue
+            comment: Object of Comment
+    """
+    title = get_title("Issue", issue.name)
+    subject = _("New comment on {0}".format(get_title_html(title)))
+    notification_message = _('''Comment: <br/>{0}'''.format(comment.content))
+
+    """
+        Extracts mentions to remove from notification log recipients,
+        since mentions will be notified by frappe core
+    """
+    mentions = extract_mentions(comment.content)
+    if mentions and len(mentions) > 0:
+        for mention in mentions:
+            if mention in users:
+                users.remove(mention)
+    create_notification_log(subject, notification_message, users, issue)
+
+def set_expire_magic_link(reference_doctype, reference_docname, link_for):
+    """
+        Method used to Set expire magic link
+        based on the reference_doctype, reference_docname and link_for values
+        args:
+            reference_doctype: DocType name (Example: 'Job Applicant')
+            reference_docname: Data (Example: 'HR-APP-2022-00286')
+            link_for: Data (Example: Career History)
+    """
+    magic_link = frappe.db.exists('Magic Link', {'reference_doctype': reference_doctype,
+        'reference_docname': reference_docname, 'link_for': link_for, 'expired': False})
+    if magic_link:
+        frappe.db.set_value('Magic Link', magic_link, 'expired', True)

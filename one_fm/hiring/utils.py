@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 import frappe, json
 from frappe.utils import (
-    get_url, fmt_money, month_diff, add_days, add_years, getdate, flt, get_link_to_form
+    get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form
 )
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
@@ -13,6 +13,9 @@ from frappe.desk.form import assign_to
 from one_fm.processor import sendemail
 from one_fm.templates.pages.career_history import send_career_history_magic_link
 from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
+from one_fm.one_fm.doctype.erf.erf import (
+    set_description_by_performance_profile, set_erf_skills_in_job_opening, set_erf_language_in_job_opening
+)
 
 
 @frappe.whitelist()
@@ -142,6 +145,8 @@ def make_employee_from_job_offer(source_name, target_doc=None):
                 for earning in salary_structure.earnings:
                     if earning.salary_component == 'Basic':
                         target.one_fm_basic_salary = earning.amount
+            if source.base:
+                target.one_fm_basic_salary = source.base
             target.salary_mode = salary_structure.mode_of_payment
         set_map_job_applicant_details(target, source.job_applicant)
     doc = get_mapped_doc("Job Offer", source_name, {
@@ -280,6 +285,7 @@ def create_salary_structure_assignment(doc, method):
         assignment.salary_structure = doc.job_offer_salary_structure
         assignment.company = doc.company
         assignment.from_date = doc.date_of_joining
+        assignment.base = doc.one_fm_basic_salary
         assignment.save(ignore_permissions = True)
 
 @frappe.whitelist()
@@ -710,3 +716,23 @@ def calculate_interview_feedback_average_rating(doc, method):
 
 def get_score_out_of_five(score, weight):
     return (score * 5) / weight
+
+def set_job_opening_erf_missing_values(doc, method):
+    if doc.one_fm_erf:
+        erf = frappe.get_doc('ERF', doc.one_fm_erf)
+        doc.designation = erf.designation
+        doc.department = erf.department
+        employee = frappe.db.exists("Employee", {"user_id": erf.owner})
+        doc.one_fm_hiring_manager = employee if employee else ''
+        doc.one_fm_no_of_positions_by_erf = erf.number_of_candidates_required
+        doc.one_fm_job_opening_created = today()
+        doc.one_fm_minimum_experience_required = erf.minimum_experience_required
+        doc.one_fm_performance_profile = erf.performance_profile
+        if not doc.description:
+            description = set_description_by_performance_profile(doc, erf)
+            if description:
+                doc.description = description
+        if not doc.one_fm_designation_skill:
+            set_erf_skills_in_job_opening(doc, erf)
+        if not doc.one_fm_languages:
+            set_erf_language_in_job_opening(doc, erf)

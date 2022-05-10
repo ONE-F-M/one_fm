@@ -139,7 +139,7 @@ class OnboardEmployee(Document):
 
 	@frappe.whitelist()
 	def create_duty_commencement(self):
-		if self.work_contract_status == "Applicant Signed":
+		if self.work_contract_status in ["Applicant Signed", "Submitted to Legal", "Send to Authorised Signatory", "Completed"]:
 			duty_commencement = frappe.new_doc('Duty Commencement')
 			duty_commencement.onboard_employee = self.name
 			duty_commencement.workflow_state = 'Open'
@@ -170,7 +170,12 @@ class OnboardEmployee(Document):
 
 				employee.permanent_address = "Test"
 				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
-				employee.one_fm_pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
+				pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
+				if not pam_designation:
+					pam_designation = frappe.db.get_value('ERF', self.erf, 'pam_designation')
+				if not pam_designation and employee.work_permit:
+					frappe.throw(_('Please set PAM Designation in Job Applicant or ERF!'))
+				employee.one_fm_pam_designation = pam_designation
 				employee.reports_to = self.reports_to
 				date_of_joining = frappe.db.get_value('Duty Commencement', self.duty_commencement, 'date_of_joining')
 				if date_of_joining:

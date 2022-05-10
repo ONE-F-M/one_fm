@@ -4,6 +4,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url, getdate, today
 from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
+from one_fm.utils import set_expire_magic_link
 
 def get_context(context):
     context.title = _("Career History")
@@ -60,14 +61,8 @@ def create_career_history_from_portal(job_applicant, career_history_details):
             company.why_do_you_plan_to_leave_the_job = history.get('reason_for_leaving_job')
 
     career_history.save(ignore_permissions=True)
-    set_expire_magic_link(job_applicant)
+    set_expire_magic_link('Job Applicant', job_applicant, 'Career History')
     return True
-
-def set_expire_magic_link(job_applicant):
-    magic_link = frappe.db.exists('Magic Link', {'reference_doctype': 'Job Applicant',
-        'reference_docname': job_applicant, 'link_for': 'Career History', 'expired': False})
-    if magic_link:
-        frappe.db.set_value('Magic Link', magic_link, 'expired', True)
 
 @frappe.whitelist()
 def send_career_history_magic_link(job_applicant, applicant_name, designation):
@@ -84,7 +79,7 @@ def send_career_history_magic_link(job_applicant, applicant_name, designation):
         # Email Magic Link to the Applicant
         subject = "Fill your Career History Sheet"
         url_prefix = "/career_history?magic_link="
-        msg = "<b>Fill your Career History Sheet by clciking on the magic link below</b>\
+        msg = "<b>Fill your Career History Sheet by visiting the magic link below</b>\
             <br/>Applicant ID: {0}<br/>Applicant Name: {1}<br/>Designation: {2}</br>".format(job_applicant, applicant_name, designation)
         send_magic_link('Job Applicant', job_applicant, 'Career History', [applicant_email], url_prefix, msg, subject)
     else:

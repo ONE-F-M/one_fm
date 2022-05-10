@@ -83,7 +83,7 @@ def verify():
 		# timestamp = frappe.local.form_dict['timestamp']
 		files = frappe.request.files
 		file = files['file']
-		
+
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
@@ -103,7 +103,7 @@ def verify():
 		)
 		# Call service stub and get response
 		res = stub.FaceRecognition(req)
-		
+
 		if res.verification == "FAILED":
 			msg = res.message
 			data = res.data
@@ -205,6 +205,15 @@ def create_dataset(video):
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()
 
+def update_onboarding_employee(employee):
+    onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
+    if onboard_employee_exist:
+        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist)
+        onboard_employee.enrolled = True
+        onboard_employee.enrolled_on = now_datetime()
+        onboard_employee.save(ignore_permissions=True)
+        frappe.db.commit()
+
 def create_encodings(directory, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
 	"""
 		directory : directory path containing dataset 
@@ -253,7 +262,27 @@ def create_encodings(directory, detection_method="hog"):# detection_method can b
 	data = json.dumps(data, cls=NumpyArrayEncoder)
 	with open(encoding_path,"w") as f:
 		f.write(data)
-	f.close()
+		f.close()
+
+
+@frappe.whitelist()
+def check_existing():
+	"""API to determine the applicable Log type.
+	The api checks employee's last lcheckin log type. and determine what next log type needs to be
+
+	Returns:
+		True: The log in was "IN", so his next Log Type should be "OUT".
+		False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
+	"""
+	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+
+	# get current and previous day date.
+	todate = nowdate()
+	prev_date = (datetime.datetime.today() - datetime.timedelta(days=1)).strftime ('%Y-%m-%d')
+
+	if not employee:
+		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
+
 
 
 def recognize_face(image):
