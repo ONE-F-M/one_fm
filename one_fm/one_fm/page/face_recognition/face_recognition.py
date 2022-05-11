@@ -283,7 +283,19 @@ def check_existing():
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
 
+	#get checkin log previous days and current date.
+	logs = frappe.db.sql("""
+			select log_type from `tabEmployee Checkin` where date(time) BETWEEN '{date1}' and '{date2}' and skip_auto_attendance=0 and employee="{employee}"
+			""".format(date1=prev_date, date2=todate, employee=employee), as_dict=1)
 
+	val = [log.log_type for log in logs]
+
+	#For Check IN
+	if not val or (val and val[-1] == "OUT"):
+		return False
+	#For Check OUT
+	else:
+		return True
 
 def recognize_face(image):
 	try:
