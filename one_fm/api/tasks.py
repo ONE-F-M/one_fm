@@ -577,7 +577,7 @@ def process_overtime_shift(roster, date, time):
 	for schedule in roster:	
 		try:
 			#Check for employee's shift assignment of the day, if he has any.
-			shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
+			shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date, "roster_type":"Basic"},["name","shift_type"])
 			if shift_assignment:
 				shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
 				#check if the given shift has ended
