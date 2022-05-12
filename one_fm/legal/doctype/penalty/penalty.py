@@ -30,21 +30,20 @@ class Penalty(Document):
 
 	def on_update(self):
 		doc_before_update = self.get_doc_before_save()
-		print(self.as_dict())
 		if (doc_before_update and doc_before_update.workflow_state != "Penalty Accepted") and self.workflow_state == "Penalty Accepted":
 			self.update_penalty_deductions()
 
 		if (doc_before_update and doc_before_update.workflow_state != "Penalty Rejected") and self.workflow_state == "Penalty Rejected":
 			legal_inv = self.create_legal_investigation()
-			self.db_set("legal_investigation_code", legal_inv.name)		
+			self.db_set("legal_investigation_code", legal_inv.name)
 
 	def validate(self):
 		self.validate_self_issuance()
-	
+
 	def validate_self_issuance(self):
 		if self.recipient_employee==self.issuer_employee:
-			frappe.throw(_("Penalty recepient and issuer cannot be the same Employee.")) 
-	
+			frappe.throw(_("Penalty recepient and issuer cannot be the same Employee."))
+
 	def update_penalty_deductions(self):
 		penalty = frappe.get_doc("Penalty", self.name)
 		penalty.append("penalty_details", {
@@ -57,6 +56,12 @@ class Penalty(Document):
 		if frappe.db.exists("Legal Investigation",{"reference_doctype": self.doctype, "reference_docname": self.name}):
 			frappe.throw(_("Legal Investigaton already created."))
 		legal_manager = frappe.get_all("Employee", {"designation":"Legal Manager"},["name"])
+		if legal_manager:
+			pass
+		else:
+			legal_manager = frappe.db.sql("""
+				SELECT DISTINCT r.parent FROM `tabHas Role` r INNER JOIN `tabEmployee` e ON r.parent=e.user_id
+				WHERE role=%s AND e.status='Active';""", ("Legal Manager",), as_dict=1)
 		legal_inv = frappe.new_doc("Legal Investigation")
 		legal_inv.reference_doctype = self.doctype
 		legal_inv.reference_docname = self.name
@@ -67,13 +72,13 @@ class Penalty(Document):
 			"employee_name": self.issuer_name,
 			"designation": self.issuer_designation,
 			"party": "Plaintiff"
-		})	
+		})
 		legal_inv.append("legal_investigation_employees", {
 			"employee_id": self.recipient_employee,
 			"employee_name": self.recipient_name,
 			"designation": self.recipient_designation,
 			"party": "Defendant"
-		})	
+		})
 		legal_inv.start_date = add_to_date(getdate(), days=2)
 		legal_inv.save(ignore_permissions=True)
 		frappe.db.commit()
@@ -84,16 +89,16 @@ def accept_penalty(file, retries, docname):
 	"""
 	This is an API to accept penalty. To Accept Penalty, one needs to pass the face recognition test.
 	Image file in base64 format is passed through face regonition test. And, employee is given 3 tries.
-	If face recognition is true, the penalty gets accepted. 
-	If Face recognition fails even after 3 tries, the image is sent to legal mangager for investigation. 
+	If face recognition is true, the penalty gets accepted.
+	If Face recognition fails even after 3 tries, the image is sent to legal mangager for investigation.
 
 	Params:
 	File: Base64 url of captured image.
 	Retries: number of tries left out of three
 	Docname: Name of the penalty doctype
 
-	Returns: 
-		'success' message upon verification || updated retries and 'error' message || Exception. 
+	Returns:
+		'success' message upon verification || updated retries and 'error' message || Exception.
 	"""
 	retries_left = cint(retries) - 1
 	OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+frappe.session.user+".png"
@@ -104,10 +109,10 @@ def accept_penalty(file, retries, docname):
 			penalty.verified = 0
 			send_email_to_legal(penalty)
 		else:
-			penalty.verified = 1		
+			penalty.verified = 1
 			penalty.workflow_state = "Penalty Accepted"
 		penalty.save(ignore_permissions=True)
-		
+
 		file_doc = frappe.get_doc({
 			"doctype": "File",
 			"file_url": "/private/files/"+frappe.session.user+".png",
@@ -252,14 +257,20 @@ def automatic_reject():
 	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	time_range = add_to_date(now_datetime(), hours=-47, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	docs = frappe.get_all("Penalty", {"penalty_issuance_time": ["between", [time, time_range]], "workflow_state": "Penalty Issued"})
-    #"2021-05-11 11:07:09"
+
 	for doc in docs:
-		penalty = frappe.get_doc("Penalty", doc.name)
-		penalty.verified = 0
-		penalty.reason_for_rejection = "Penalty was rejected after 48 hours automatically."
-		penalty.workflow_state = "Penalty Rejected"
-		penalty.save(ignore_permissions=True)
-		notify_employee_autoreject(penalty)
-		send_email_to_legal(penalty, _("Penalty was rejected after 48 hours automatically. Please review."))
-	
+		session_user = frappe.session.user #store session user temporarily
+		try:
+			penalty = frappe.get_doc("Penalty", doc.name)
+			frappe.set_user(penalty.recipient_user) # user recipient as user
+			penalty.verified = 0
+			penalty.reason_for_rejection = "Penalty was rejected after 48 hours automatically."
+			penalty.workflow_state = "Penalty Rejected"
+			penalty.save(ignore_permissions=True)
+			notify_employee_autoreject(penalty)
+			send_email_to_legal(penalty, _("Penalty was rejected after 48 hours automatically. Please review."))
+		except Exception as e:
+			frappe.log_error(str(e), 'Auto Penalty Reject Failed')
+
+	frappe.set_user(session_user) #restore session user
 	frappe.db.commit()
