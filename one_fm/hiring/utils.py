@@ -518,6 +518,9 @@ def create_onboarding_from_job_offer(job_offer):
                     else:
                         o_employee.set(od, job_applicant.get('one_fm_'+od))
 
+                #set employee's name in arabic    
+                o_employee.set('employee_name_in_arabic',job_applicant.get('one_fm_last_name_in_arabic') +" "+ job_applicant.get('one_fm_first_name_in_arabic'))
+
                 # Set Documents attached in the Job Applicant to Onboard Employee document
                 for applicant_document in job_applicant.one_fm_documents_required:
                     doc_required = o_employee.append('applicant_documents')
