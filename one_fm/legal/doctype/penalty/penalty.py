@@ -55,13 +55,7 @@ class Penalty(Document):
 	def create_legal_investigation(self):
 		if frappe.db.exists("Legal Investigation",{"reference_doctype": self.doctype, "reference_docname": self.name}):
 			frappe.throw(_("Legal Investigaton already created."))
-		legal_manager = frappe.get_all("Employee", {"designation":"Legal Manager"},["name"])
-		if legal_manager:
-			pass
-		else:
-			legal_manager = frappe.db.sql("""
-				SELECT DISTINCT r.parent FROM `tabHas Role` r INNER JOIN `tabEmployee` e ON r.parent=e.user_id
-				WHERE role=%s AND e.status='Active';""", ("Legal Manager",), as_dict=1)
+		legal_manager = get_legal_manager()
 		legal_inv = frappe.new_doc("Legal Investigation")
 		legal_inv.reference_doctype = self.doctype
 		legal_inv.reference_docname = self.name
@@ -83,6 +77,17 @@ class Penalty(Document):
 		legal_inv.save(ignore_permissions=True)
 		frappe.db.commit()
 		return legal_inv
+
+def get_legal_manager():
+	legal_manager = frappe.get_all("Employee", {"designation":"Legal Manager"},["name"])
+	if legal_manager:
+		pass
+	else:
+		legal_manager = frappe.db.sql("""
+			SELECT DISTINCT r.parent FROM `tabHas Role` r INNER JOIN `tabEmployee` e ON r.parent=e.user_id
+			WHERE role=%s AND e.status='Active';""", ("Legal Manager",), as_dict=1)
+
+	return legal_manager
 
 @frappe.whitelist()
 def accept_penalty(file, retries, docname):
@@ -257,7 +262,7 @@ def automatic_reject():
 	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	time_range = add_to_date(now_datetime(), hours=-47, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	docs = frappe.get_all("Penalty", {"penalty_issuance_time": ["between", [time, time_range]], "workflow_state": "Penalty Issued"})
-
+	error_list = """"""
 	for doc in docs:
 		session_user = frappe.session.user #store session user temporarily
 		try:
@@ -271,6 +276,9 @@ def automatic_reject():
 			send_email_to_legal(penalty, _("Penalty was rejected after 48 hours automatically. Please review."))
 		except Exception as e:
 			frappe.log_error(str(e), 'Auto Penalty Reject Failed')
+			error_list += f"""{penalty.name}, {penalty.recipient_employee}<br>"""
 
 	frappe.set_user(session_user) #restore session user
+	if error_list:
+		sendemail([get_legal_manager()], subject='Failed Penalty Rejection by Scheduler', message=error_list)
 	frappe.db.commit()
