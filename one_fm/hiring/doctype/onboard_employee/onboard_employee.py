@@ -42,15 +42,9 @@ class OnboardEmployee(Document):
 			self.reload()
 
 		if self.workflow_state == 'Work Contract' and not self.work_contract:
-			if self.electronic_signature_status == 1:
-				self.create_work_contract()
-				self.reload()
-			else:
-				frappe.throw(_("Please Update Electronic Signature Declaration with Applicant Signature to Proceed"))
-
-		if self.workflow_state == 'Declaration of Electronic Signature':
-			self.create_declaration_of_electronic_signature()
+			self.create_work_contract()
 			self.reload()
+
 
 		if self.workflow_state == 'Duty Commencement' and not self.duty_commencement:
 			self.create_duty_commencement()
