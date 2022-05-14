@@ -259,6 +259,9 @@ def notify_employee_autoreject(doc):
 	create_notification_log(subject, message, [doc.recipient_user], doc)
 
 def automatic_reject():
+	"""
+		This auto rejects penalties after 48 hours if no action and would create e legal case.
+	"""
 	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	time_range = add_to_date(now_datetime(), hours=-47, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	docs = frappe.get_all("Penalty", {"penalty_issuance_time": ["between", [time, time_range]], "workflow_state": "Penalty Issued"})
