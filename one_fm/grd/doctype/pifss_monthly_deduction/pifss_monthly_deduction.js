@@ -6,10 +6,12 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 		if(frm.doc.__unsaved || frm.is_new()){//Check if the document is saved or new
 			frappe.throw('Please Save the Document First');
 		}
-		else if(!frm.doc.attach_report || !frm.doc.additional_attach_report){
-			frappe.throw('Please Attach The Required Documents');
-		}
-		else if(frm.doc.attach_report || frm.doc.additional_attach_report){
+		// else if(!frm.doc.attach_report || !frm.doc.additional_attach_report){
+		// 	frappe.throw('Please Attach The Required Documents');
+		// }
+		// else if(frm.doc.attach_report || frm.doc.additional_attach_report){
+
+		else {
 		/*
 		This is an Ajax call that calls a method with a document name as an argument,
 		the callback is a dictionary list of the 2 attached files(csv file and additional report file),
@@ -25,6 +27,7 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 					callback: function(r){
 					let table_data = r.message[0];
 					if(!r.exc && table_data.length > 0){
+						frm.doc.deductions.length = 0;
 					for(let i=0; i < r.message[1]; i++){
 							frm.add_child('deductions', table_data[i]);
 						}
@@ -34,12 +37,12 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 					frm.set_value("press_button",1);
 					frm.save();
 				}
-			});	
+			});
 		};
 	}
 },
 	refresh:function(frm){
-		
+
 		if (frm.doc.press_button == 0){
 			document.querySelectorAll("[data-fieldname='fetch_data']")[1].style.backgroundColor ="#44c95a";
 		}else{
@@ -73,20 +76,20 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 					  freeze: true,
 					  freeze_message: __("Creating Pifss Monthly Deduction Tracking Tool ...!")
 					})
-					}).addClass('btn-primary'); 
+					}).addClass('btn-primary');
 		}
 			if (frm.doc.pifss_monthly_deduction_tool) {
 			// If `pifss_monthly_deduction_tool` is set, button name will be `Go to Pifss Monthly Deduction Tracking Tool` and will call route to the name of the tool record
 			frm.add_custom_button(__('Go to Pifss Monthly Deduction Tracking Tool'),
 				function () {
 					frappe.set_route("Form", "PIFSS Monthly Deduction Tool", frm.doc.pifss_monthly_deduction_tool);
-				}).addClass('btn-primary'); 
-			}	
+				}).addClass('btn-primary');
+			}
 	}
-		
+
 	},
 	remaining_amount: function(frm){
-		//  `remaining_amount` is the amount being paid by the company and it is fixed to be 828.98KWD 
+		//  `remaining_amount` is the amount being paid by the company and it is fixed to be 828.98KWD
 		if(frm.doc.remaining_amount){
 			frm.set_value("total_payments",frm.doc.total_sub+frm.doc.remaining_amount+frm.doc.total_additional_deduction);
 		}
@@ -121,5 +124,5 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 			frm.set_value('attached_on',frappe.datetime.now_datetime());
 		}
 	},
-		
+
 });

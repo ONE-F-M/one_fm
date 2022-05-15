@@ -6,30 +6,22 @@
  "engine": "InnoDB",
  "field_order": [
   "pifss_id_no",
-  "column_break_2",
   "civil_id",
+  "actual_salary",
+  "social_security_salary",
   "column_break_1",
-  "basic_insurance",
-  "column_break_6",
-  "supplementary_insurance",
-  "column_break_8",
-  "fund_increase",
-  "column_break_10",
-  "unemployment_insurance",
-  "column_break_12",
-  "compensation_amount",
-  "column_break_14",
-  "total_subscription",
-  "column_break_4",
-  "employee_deduction",
-  "column_break_18",
-  "additional_deduction",
-  "column_break_20",
-  "total_deductions",
-  "has_tracking_record"
+  "employee_contribution",
+  "company_contribution",
+  "total_contribution",
+  "column_break_2",
+  "employee",
+  "employee_name",
+  "employee_name_in_arabic"
  ],
  "fields": [
   {
+   "fetch_from": "employee.pifss_id_no",
+   "fetch_if_empty": 1,
    "fieldname": "pifss_id_no",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -41,46 +33,8 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "total_subscription",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Total Subscription",
-   "precision": "3"
-  },
-  {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "employee_deduction",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Employee Deduction ",
-   "precision": "3"
-  },
-  {
-   "fieldname": "column_break_6",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "additional_deduction",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Employee Additional Deduction",
-   "precision": "3"
-  },
-  {
-   "fieldname": "column_break_8",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "total_deductions",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Total Employee Deduction",
-   "precision": "3"
-  },
-  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fetch_if_empty": 1,
    "fieldname": "civil_id",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -92,72 +46,64 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_12",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_14",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_18",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_20",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "basic_insurance",
-   "fieldtype": "Currency",
+   "fetch_from": "employee.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Basic Insurance ",
+   "label": "Employee Name",
    "precision": "3"
   },
   {
-   "fieldname": "supplementary_insurance",
+   "fieldname": "actual_salary",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Supplementary Insurance",
+   "label": "Actual Salary",
    "precision": "3"
   },
   {
-   "fieldname": "fund_increase",
+   "fieldname": "social_security_salary",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Fund Increase ",
+   "label": "Social Security Salary",
    "precision": "3"
   },
   {
-   "fieldname": "unemployment_insurance",
+   "fieldname": "employee_contribution",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Unemployment Insurance",
+   "label": "Employee Contribution",
    "precision": "3"
   },
   {
-   "fieldname": "compensation_amount",
+   "fieldname": "company_contribution",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Compensation Amount",
+   "label": "Company Contribution",
    "precision": "3"
   },
   {
-   "allow_on_submit": 1,
-   "default": "0",
-   "fieldname": "has_tracking_record",
-   "fieldtype": "Check",
-   "label": "Has Tracking Record",
-   "read_only": 1
+   "fieldname": "total_contribution",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Contribution",
+   "precision": "3"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "employee_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Employee Name in Arabic"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2021-10-20 13:20:55.988213",
+ "modified": "2022-05-16 00:11:33.725567",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction Employees",
