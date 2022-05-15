@@ -362,7 +362,7 @@ def get_assigned_sites(employee_id, project=None):
 		filters = {}
 		if project:
 			filters.update({"project": project})
-		if project is None and ("Operations Manager" in user_roles or "Projects Manager" in user_roles):
+		if project is None and ("Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles):
 			return frappe.get_list("Operations Site", limit_page_length=9999, order_by="name asc")
 
 		elif "Operations Manager" in user_roles or "Projects Manager" in user_roles:
