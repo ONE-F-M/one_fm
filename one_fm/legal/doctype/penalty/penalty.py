@@ -259,29 +259,27 @@ def notify_employee_autoreject(doc):
 	create_notification_log(subject, message, [doc.recipient_user], doc)
 
 def automatic_reject():
-	"""
-		This auto rejects penalties after 48 hours if no action and would create e legal case.
-	"""
 	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	time_range = add_to_date(now_datetime(), hours=-47, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	docs = frappe.get_all("Penalty", {"penalty_issuance_time": ["between", [time, time_range]], "workflow_state": "Penalty Issued"})
 	error_list = """"""
-	for doc in docs:
+	if docs:
 		session_user = frappe.session.user #store session user temporarily
-		try:
-			penalty = frappe.get_doc("Penalty", doc.name)
-			frappe.set_user(penalty.recipient_user) # user recipient as user
-			penalty.verified = 0
-			penalty.reason_for_rejection = "Penalty was rejected after 48 hours automatically."
-			penalty.workflow_state = "Penalty Rejected"
-			penalty.save(ignore_permissions=True)
-			notify_employee_autoreject(penalty)
-			send_email_to_legal(penalty, _("Penalty was rejected after 48 hours automatically. Please review."))
-		except Exception as e:
-			frappe.log_error(str(e), 'Auto Penalty Reject Failed')
-			error_list += f"""{penalty.name}, {penalty.recipient_employee}<br>"""
+		for doc in docs:
+			try:
+				penalty = frappe.get_doc("Penalty", doc.name)
+				frappe.set_user(penalty.recipient_user) # user recipient as user
+				penalty.verified = 0
+				penalty.reason_for_rejection = "Penalty was rejected after 48 hours automatically."
+				penalty.workflow_state = "Penalty Rejected"
+				penalty.save(ignore_permissions=True)
+				notify_employee_autoreject(penalty)
+				send_email_to_legal(penalty, _("Penalty was rejected after 48 hours automatically. Please review."))
+			except Exception as e:
+				frappe.log_error(str(e), 'Auto Penalty Reject Failed')
+				error_list += f"""{penalty.name}, {penalty.recipient_employee}<br>"""
 
-	frappe.set_user(session_user) #restore session user
-	if error_list:
-		sendemail([get_legal_manager()], subject='Failed Penalty Rejection by Scheduler', message=error_list)
-	frappe.db.commit()
+		frappe.set_user(session_user) #restore session user
+		if error_list:
+			sendemail([get_legal_manager()], subject='Failed Penalty Rejection by Scheduler', message=error_list)
+		frappe.db.commit()
