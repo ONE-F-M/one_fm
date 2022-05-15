@@ -38,11 +38,7 @@
   "section_break_9",
   "note",
   "column_break_32",
-  "rejection_reason",
-  "signatures_section",
-  "employee_signature",
-  "column_break_34",
-  "authority_signature"
+  "rejection_reason"
  ],
  "fields": [
   {
@@ -230,26 +226,6 @@
    "label": "PAM File Number"
   },
   {
-   "fieldname": "signatures_section",
-   "fieldtype": "Section Break",
-   "label": "Signatures"
-  },
-  {
-   "description": "Employee Signature",
-   "fieldname": "employee_signature",
-   "fieldtype": "Signature",
-   "label": "Employee Signature"
-  },
-  {
-   "fieldname": "column_break_34",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "authority_signature",
-   "fieldtype": "Attach Image",
-   "label": "Authority Signature"
-  },
-  {
    "fieldname": "authorized_signatory_user_id",
    "fieldtype": "Data",
    "hidden": 1,
@@ -266,7 +242,7 @@
   }
  ],
  "links": [],
- "modified": "2021-12-30 09:50:21.177601",
+ "modified": "2022-05-12 16:50:18.025022",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
