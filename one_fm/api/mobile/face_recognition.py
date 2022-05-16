@@ -5,6 +5,7 @@ from one_fm.api.mobile.roster import get_current_shift
 from one_fm.proto import enroll_pb2, enroll_pb2_grpc, facial_recognition_pb2, facial_recognition_pb2_grpc
 import json
 import grpc
+from one_fm.one_fm.page.face_recognition.face_recognition import user_within_site_geofence
 
 
 @frappe.whitelist()
@@ -52,6 +53,11 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 		longitude: longitude of current location
 	"""
 	try:
+
+		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
+
+		if not user_within_site_geofence(employee, latitude, longitude):
+			return ("Please check {log_type} at your site location.".format(log_type=log_type))
 
 		# setup channel
 		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
@@ -104,4 +110,4 @@ def get_site_location(employee):
 	except Exception as e:
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
-		return frappe.utils.response.report_error(e)
+		return frappe.utils.response.report_error(e)		
