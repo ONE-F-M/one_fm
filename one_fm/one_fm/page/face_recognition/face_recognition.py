@@ -119,7 +119,6 @@ def verify():
 		return check_in(log_type, skip_attendance, latitude, longitude)
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
-		frappe.throw("Internal Server Error")
 
 
 def user_within_site_geofence(employee, user_latitude, user_longitude):
