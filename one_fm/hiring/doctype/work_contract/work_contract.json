@@ -33,8 +33,11 @@
   "working_hours",
   "section_break_23",
   "documents",
+  "signature_proof_section",
+  "authorized_signatory_document",
   "select_authorised_signatory_signed_work_contract",
-  "authorized_signatory_user_id",
+  "column_break_31",
+  "employee_received_document",
   "section_break_9",
   "note",
   "column_break_32",
@@ -226,23 +229,37 @@
    "label": "PAM File Number"
   },
   {
-   "fieldname": "authorized_signatory_user_id",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Authorized Signatory User ID",
-   "read_only": 1
-  },
-  {
    "fieldname": "workflow",
    "fieldtype": "Link",
    "hidden": 1,
    "label": "Workflow",
    "options": "Workflow",
    "read_only": 1
+  },
+  {
+   "fieldname": "signature_proof_section",
+   "fieldtype": "Section Break",
+   "label": "Signature Proof"
+  },
+  {
+   "depends_on": "eval:doc.authorized_signatory_document || doc.workflow_state=='Send to Authorised Signatory'",
+   "fieldname": "authorized_signatory_document",
+   "fieldtype": "Attach",
+   "label": "Authorized Signatory Document"
+  },
+  {
+   "fieldname": "column_break_31",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.employee_received_document || doc.workflow_state=='Awaiting Employee Received Copy'",
+   "fieldname": "employee_received_document",
+   "fieldtype": "Attach",
+   "label": "Employee Received Document"
   }
  ],
  "links": [],
- "modified": "2022-05-12 16:50:18.025022",
+ "modified": "2022-05-16 11:04:22.521942",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
