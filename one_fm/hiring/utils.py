@@ -648,9 +648,7 @@ def update_onboarding_doc_workflow_sate(doc):
         onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_id)
         if doc.doctype == 'Work Contract':
             onboard_employee.workflow_state = 'Work Contract'
-        if doc.doctype == 'Electronic Signature Declaration':
-            onboard_employee.workflow_state = 'Declaration of Electronic Signature'
-        if doc.doctype == 'Duty Commencement' and onboard_employee.workflow_state == 'Declaration of Electronic Signature':
+        if doc.doctype == 'Duty Commencement':
             onboard_employee.workflow_state = 'Duty Commencement'
         if doc.doctype == 'Employee' and onboard_employee.workflow_state == 'Bank Account' and doc.enrolled:
             onboard_employee.workflow_state = 'Mobile App Enrolment'

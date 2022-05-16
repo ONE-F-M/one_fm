@@ -1054,5 +1054,41 @@
   "parenttype": null,
   "style": "",
   "workflow_state_name": "Inform Applicant"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2022-01-13 01:23:19.809607",
+  "name": "Active",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "",
+  "workflow_state_name": "Active"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2022-01-13 01:24:07.135618",
+  "name": "Inactive",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "",
+  "workflow_state_name": "Inactive"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2022-05-15 10:32:50.061096",
+  "name": "Awaiting Employee Received Copy",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "",
+  "workflow_state_name": "Awaiting Employee Received Copy"
  }
 ]
