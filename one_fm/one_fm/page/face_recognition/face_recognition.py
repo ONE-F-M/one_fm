@@ -11,6 +11,8 @@ import cv2, os
 import face_recognition
 import json
 from imutils import face_utils, paths
+from one_fm.api.doc_events import haversine
+from one_fm.api.mobile.roster import get_current_shift
 
 
 class NumpyArrayEncoder(JSONEncoder):
@@ -84,6 +86,11 @@ def verify():
 		files = frappe.request.files
 		file = files['file']
 
+		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
+
+		if not user_within_site_geofence(employee, latitude, longitude):
+			return ("Please check {log_type} at your site location.".format(log_type=log_type))
+
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
@@ -114,6 +121,26 @@ def verify():
 		frappe.log_error(frappe.get_traceback())
 		frappe.throw("Internal Server Error")
 
+
+def user_within_site_geofence(employee, user_latitude, user_longitude):
+	""" This method checks if user's given coordinates fall within the geofence radius of the user's assigned site in Shift Assigment. """
+	shift = get_current_shift(employee)
+	if shift and shift.shift:
+		site = frappe.get_value("Operations Shift", shift.shift, "site")
+		location= frappe.db.sql("""
+		SELECT loc.latitude, loc.longitude, loc.geofence_radius
+		FROM `tabLocation` as loc
+		WHERE
+			loc.name in(SELECT site_location FROM `tabOperations Site` where name="{site}")
+		""".format(site=site), as_dict=1)
+
+		if location:
+			location_details = location[0]
+			distance = float(haversine(location_details.latitude, location_details.longitude, user_latitude, user_longitude))
+			if distance <= float(location_details.geofence_radius):
+				return True
+
+	return False
 
 def check_in(log_type, skip_attendance, latitude, longitude):
 	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
