@@ -3,6 +3,9 @@ frappe.ui.form.on('Employee', {
 		frm.trigger('set_queries');
 		set_mandatory(frm);
 	},
+	status: function(frm){
+		set_mandatory(frm);
+	},
 	set_queries: frm => {
 		// set bank account query
 		frm.set_query('bank_account', function() {
@@ -35,10 +38,17 @@ frappe.ui.form.on('Employee Incentive', {
 
 // SET MANDATORY FIELDS
 let set_mandatory = frm => {
-	if (frm.doc.status != 'Left'){
-		['leave_policy', 'project', 'site', 'shift', 'permanent_address', 'cell_number'].forEach((item, i) => {
-			frm.toggle_reqd(item, 1);
-		});
-
+	if (['Left', 'Court Case', 'Absconding', 'Vacation'].includes(frm.doc.status)){
+		toggle_required(frm, 0);
+	} else {
+		toggle_required(frm, 1);
 	}
+}
+
+// TOGGLE REQUIRED
+let toggle_required = (frm, state) => {
+	['leave_policy', 'project', 'site', 'shift', 'permanent_address', 'cell_number',
+	'last_name_in_arabic'].forEach((item, i) => {
+		frm.toggle_reqd(item, state);
+	});
 }
