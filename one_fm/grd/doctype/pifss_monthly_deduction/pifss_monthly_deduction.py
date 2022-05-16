@@ -40,45 +40,58 @@ class PIFSSMonthlyDeduction(Document):
 
 	def set_total_values(self):
 		"""This method adding all columns in the deductions table and setting total value per column in the its total amount field"""
+		total_contribution=0.0
+		company_contribution=0.0
+		employee_contribution=0.0
 
-		subscription=0.0
-		additional=0.0
-		basic=0.0
-		supplementary=0.0
-		fund=0.0
-		unemployment=0.0
-		compensation=0.0
+		for i in self.deductions:
+			total_contribution += i.total_contribution
+			company_contribution += i.company_contribution
+			employee_contribution += i.employee_contribution
 
-		if self.attach_report and self.additional_attach_report:
-			if not self.total_sub and not self.total_additional_deduction:
-				for row in self.deductions:
-						if row.total_subscription:
-							subscription += row.total_subscription
-						if row.additional_deduction:
-							additional +=row.additional_deduction
-						if row.basic_insurance:
-							basic +=row.basic_insurance
-						if row.supplementary_insurance:
-							supplementary +=row.supplementary_insurance
-						if row.fund_increase:
-							fund += row.fund_increase
-						if row.unemployment_insurance:
-							 unemployment +=row.unemployment_insurance
-						if row.compensation_amount:
-							compensation += row.compensation_amount
+		self.total_contribution = total_contribution
+		self.company_contribution = company_contribution
+		self.employee_contribution = employee_contribution
 
-				self.total_additional_deduction=additional
-				self.total_sub=subscription
-				self.basic_insurance_in_csv=basic
-				self.supplementary_insurance_in_csv=supplementary
-				self.fund_increase_in_csv=fund
-				self.unemployment_insurance_in_csv=unemployment
-				self.compensation_in_csv=compensation
 
-				if not self.total_payments:
-					if self.remaining_amount and self.total_additional_deduction and self.total_sub:
-						self.total_payments = self.remaining_amount+self.total_additional_deduction+self.total_sub
-		frappe.db.commit()
+		# subscription=0.0
+		# additional=0.0
+		# basic=0.0
+		# supplementary=0.0
+		# fund=0.0
+		# unemployment=0.0
+		# compensation=0.0
+
+		# if self.attach_report and self.additional_attach_report:
+		# 	if not self.total_sub and not self.total_additional_deduction:
+		# 		for row in self.deductions:
+		# 				if row.total_subscription:
+		# 					subscription += row.total_subscription
+		# 				if row.additional_deduction:
+		# 					additional +=row.additional_deduction
+		# 				if row.basic_insurance:
+		# 					basic +=row.basic_insurance
+		# 				if row.supplementary_insurance:
+		# 					supplementary +=row.supplementary_insurance
+		# 				if row.fund_increase:
+		# 					fund += row.fund_increase
+		# 				if row.unemployment_insurance:
+		# 					 unemployment +=row.unemployment_insurance
+		# 				if row.compensation_amount:
+		# 					compensation += row.compensation_amount
+		#
+		# 		self.total_additional_deduction=additional
+		# 		self.total_sub=subscription
+		# 		self.basic_insurance_in_csv=basic
+		# 		self.supplementary_insurance_in_csv=supplementary
+		# 		self.fund_increase_in_csv=fund
+		# 		self.unemployment_insurance_in_csv=unemployment
+		# 		self.compensation_in_csv=compensation
+		#
+		# 		if not self.total_payments:
+		# 			if self.remaining_amount and self.total_additional_deduction and self.total_sub:
+		# 				self.total_payments = self.remaining_amount+self.total_additional_deduction+self.total_sub
+		# frappe.db.commit()
 
 
 	def check_workflow_states(self):
