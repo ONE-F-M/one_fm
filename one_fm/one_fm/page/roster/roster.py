@@ -440,10 +440,16 @@ def schedule(employee, shift, post_type, otRoster, start_date, end_date, keep_da
 			additional_shift_assignment_doc.site = site
 			additional_shift_assignment_doc.shift = shift
 			additional_shift_assignment_doc.save(ignore_permissions=True)
+	
 	elif emp_project == project and emp_site == site and emp_shift == shift:
-		if frappe.db.exists("Additional Shift Assignment", {'employee': employee}):
-			additional_shift_assignment_doc = frappe.get_value("Additional Shift Assignment", {'employee': employee, 'project': project, 'site': site, 'shift': shift})
-			frappe.delete_doc("Additional Shift Assignment", additional_shift_assignment_doc)
+		frappe.db.sql(""" 
+		DELETE FROM 
+			`tabAdditional Shift Assignment`
+		WHERE
+			employee=%(employee)s
+		""", {'employee': employee})
+
+		frappe.db.commit()
 
 	elif emp_project and emp_site is None and emp_shift is None:
 		update_employee_assignment(employee, project, site, shift)

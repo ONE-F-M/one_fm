@@ -1,11 +1,11 @@
 import frappe, base64
 from frappe.utils import cint
 from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
-from one_fm.legal.doctype.penalty.penalty import send_email_to_legal, upload_image
-from one_fm.one_fm.page.face_recognition.face_recognition import recognize_face
+from one_fm.legal.doctype.penalty.penalty import send_email_to_legal
 from frappe import _
-import pickle, face_recognition
 import json
+from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
+import grpc
 from one_fm.api.v1.utils import response
 
 @frappe.whitelist()
@@ -208,15 +208,27 @@ def accept_penalty(employee_id: str = None, file: str = None, docname: str = Non
 		return response("Bad Request", 400, None, "docname must be of type str.")
 	
 	try:
-		OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/"+employee_id+".png"
 		penalty_doc = frappe.get_doc("Penalty", docname)
 
 		if not penalty_doc:
 			return response("Resource not found", 404, None, "No penalty of name {penalty_doc} found.".format(penalty_doc=penalty_doc))
 
 		penalty_doc.retries = cint(penalty_doc.retries) - 1
-		image = upload_image(file, OUTPUT_IMAGE_PATH)
-		if recognize_face(image):
+		# setup channel
+		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+		channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+		# setup stub
+		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+
+		# request body
+		req = facial_recognition_pb2.FaceRecognitionRequest(
+			username = frappe.session.user,
+			media_type = "image",
+			media_content = file,
+		)
+		# Call service stub and get response
+		res = stub.FaceRecognition(req)
+		if res.verification == "OK":
 			if cint(penalty_doc.retries) == 0:
 				penalty_doc.verified = 0
 				send_email_to_legal(penalty_doc)
