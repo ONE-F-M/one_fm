@@ -115,7 +115,7 @@ class OnboardEmployee(Document):
 
 	@frappe.whitelist()
 	def create_duty_commencement(self):
-		if self.work_contract_status in ["Applicant Signed", "Submitted to Legal", "Send to Authorised Signatory", "Completed"]:
+		if self.work_contract_status in ["Applicant Signed", "Submitted to Legal", "Send to Authorised Signatory", "Awaiting Employee Received Copy", "Completed"]:
 			duty_commencement = frappe.new_doc('Duty Commencement')
 			duty_commencement.onboard_employee = self.name
 			duty_commencement.workflow_state = 'Open'
