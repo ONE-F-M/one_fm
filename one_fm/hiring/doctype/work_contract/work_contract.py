@@ -43,11 +43,6 @@ class WorkContract(Document):
 			self.validate_authorized_signatory()
 		if self.workflow_state == 'Awaiting Employee Received Copy':
 			self.validate_autority_signature()
-		if self.workflow_state == 'Submitted for Applicant Review':
-			#if applicant sign the contract, the workflow changes to "Applicant Signed",
-			if self.check_for_applicant_signature():
-				self.workflow_state = "Applicant Signed"
-				self.save()
 		if self.workflow_state == 'Completed':
 			self.validate_employee_signature()
 	
