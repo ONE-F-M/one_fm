@@ -104,11 +104,6 @@ class OnboardEmployee(Document):
 			for filter in filters:
 				wc.set(filter, filters[filter])
 
-			for applicant_docs in self.applicant_documents:
-				doc_required = wc.append('documents')
-				fields = ['document_required', 'attach', 'type_of_copy']
-				for field in fields:
-					doc_required.set(field, applicant_docs.get(field))
 
 			wc.save(ignore_permissions=True)
 
