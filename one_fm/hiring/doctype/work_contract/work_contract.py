@@ -39,7 +39,7 @@ class WorkContract(Document):
 
 	def update_on_workflow_state(self):
 		if self.workflow_state == 'Send to Authorised Signatory':
-			self.validate_attachments()
+			#self.validate_attachments()
 			self.validate_authorized_signatory()
 		if self.workflow_state == 'Awaiting Employee Received Copy':
 			self.validate_autority_signature()
