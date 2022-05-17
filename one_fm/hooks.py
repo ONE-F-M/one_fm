@@ -258,6 +258,7 @@ doc_events = {
 		"on_cancel": "one_fm.one_fm.utils.manage_attendance_on_holiday"
 	},
 	"Attendance Request": {
+		"after_insert": "one_fm.api.doc_events.after_insert_attendance_request",
 		"before_submit": "one_fm.api.doc_events.before_submit_attendance_request"
 	},
 	"Asset":{
@@ -374,6 +375,7 @@ website_route_rules = [
 
 override_doctype_class = {
     "Leave Policy Assignment": "one_fm.overrides.leave_policy_assignment.LeavePolicyAssignmentOverride",
+	"Attendance Request": "one_fm.overrides.attendance_request.AttendanceRequestOverride"
 }
 
 
