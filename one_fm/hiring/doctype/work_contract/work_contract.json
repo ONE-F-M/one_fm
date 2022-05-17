@@ -36,6 +36,7 @@
   "select_authorised_signatory_signed_work_contract",
   "column_break_31",
   "employee_received_document",
+  "authorized_signatory_civil_id",
   "section_break_9",
   "note",
   "column_break_32",
@@ -243,10 +244,16 @@
    "fieldname": "employee_received_document",
    "fieldtype": "Attach",
    "label": "Employee Received Document"
+  },
+  {
+   "fieldname": "authorized_signatory_civil_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Authorized Signatory Civil ID"
   }
  ],
  "links": [],
- "modified": "2022-05-17 11:59:46.547834",
+ "modified": "2022-05-17 16:54:03.466005",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",

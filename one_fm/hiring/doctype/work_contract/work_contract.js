@@ -12,6 +12,9 @@ frappe.ui.form.on('Work Contract', {
 	},
 	onboard_employee: function(frm) {
 		set_employee_details(frm);
+	},
+	select_authorised_signatory_signed_work_contract: function(frm){
+		fetch_civil_id_of_authorised_signatory(frm);
 	}
 });
 
@@ -22,6 +25,18 @@ var populate_autorized_signatory = function(frm) {
 			callback: function(r) {
 			if(r && r.message){
 				frm.set_df_property('select_authorised_signatory_signed_work_contract', 'options', r.message);
+			}
+		}
+	});
+};
+
+var fetch_civil_id_of_authorised_signatory = function(frm) {
+	frappe.call({
+		doc: frm.doc,
+		method: 'fetch_civil_id_of_authorised_signatory',
+			callback: function(r) {
+			if(r && r.message){
+				frm.set_value('authorized_signatory_civil_id', r.message);
 			}
 		}
 	});
