@@ -31,8 +31,6 @@
   "monthly_salary",
   "pam_file_number",
   "working_hours",
-  "section_break_23",
-  "documents",
   "signature_proof_section",
   "authorized_signatory_document",
   "select_authorised_signatory_signed_work_contract",
@@ -189,11 +187,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_break_23",
-   "fieldtype": "Section Break",
-   "label": "Applicant Documents"
-  },
-  {
    "fieldname": "column_break_32",
    "fieldtype": "Column Break"
   },
@@ -202,12 +195,6 @@
    "fieldname": "rejection_reason",
    "fieldtype": "Small Text",
    "label": "Rejection Reason"
-  },
-  {
-   "fieldname": "documents",
-   "fieldtype": "Table",
-   "label": "Documents",
-   "options": "Job Applicant Required Document"
   },
   {
    "allow_on_submit": 1,
@@ -259,7 +246,7 @@
   }
  ],
  "links": [],
- "modified": "2022-05-16 11:04:22.521942",
+ "modified": "2022-05-17 11:59:46.547834",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
