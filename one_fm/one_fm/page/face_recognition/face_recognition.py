@@ -119,7 +119,7 @@ def verify():
 		return check_in(log_type, skip_attendance, latitude, longitude)
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
-
+		raise exc
 
 def user_within_site_geofence(employee, user_latitude, user_longitude):
 	""" This method checks if user's given coordinates fall within the geofence radius of the user's assigned site in Shift Assigment. """
