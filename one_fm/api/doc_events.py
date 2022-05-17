@@ -561,3 +561,45 @@ def create_additional_salary(employee, amount, component, payroll_date, notes):
 	except Exception as e:
 		frappe.log_error(e)
 		frappe.throw(_(e))
+
+# Attendance Request
+def before_submit_attendance_request(doc, method):
+	import pandas as pd
+	
+	requestor_reports_to = frappe.db.get_value("Employee", {'employee': doc.employee}, ['reports_to'])
+	
+	if requestor_reports_to:
+		if frappe.session.user != frappe.db.get_value("Employee", {'employee': requestor_reports_to}, ['user_id']):
+			frappe.throw("You are not authorized to submit this document. Please contact your line manager to submit this request.")
+
+	status = "Work From Home" if doc.reason == "Work From Home" else "Present"
+	if doc.half_day:
+		status = "Half Day"
+
+	any_attendance = False
+
+	for date in pd.date_range(start=doc.from_date, end=doc.to_date):
+		if frappe.db.exists("Attendance", {'employee': doc.employee, 'attendance_date': date, 'status': 'Absent'}):
+			attendance_doc = frappe.get_doc("Attendance", {'employee': doc.employee, 'attendance_date': date, 'status': 'Absent'})
+			any_attendance = True
+
+			new_attendance = frappe.new_doc("Attendance")
+			new_attendance.employee = attendance_doc.employee
+			new_attendance.status = status
+			new_attendance.attendance_date = date
+			new_attendance.shift = attendance_doc.shift
+			new_attendance.site = attendance_doc.site
+			new_attendance.project = attendance_doc.project
+			new_attendance.post_type = attendance_doc.post_type
+			new_attendance.post_abbrv = attendance_doc.post_abbrv
+			new_attendance.operations_shift = attendance_doc.operations_shift
+			new_attendance.roster_type = attendance_doc.roster_type
+
+			attendance_doc.cancel()
+			frappe.delete_doc("Attendance", attendance_doc.name)
+			
+			new_attendance.save(ignore_permissions=True)
+			frappe.db.commit()
+
+	if any_attendance:
+		frappe.msgprint("Attendance updated succesfully", alert=True)
