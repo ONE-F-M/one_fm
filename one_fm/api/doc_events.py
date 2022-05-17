@@ -563,6 +563,26 @@ def create_additional_salary(employee, amount, component, payroll_date, notes):
 		frappe.throw(_(e))
 
 # Attendance Request
+def after_insert_attendance_request(doc, method):
+	from one_fm.processor import sendemail
+	from frappe.utils import get_link_to_form
+	import urllib
+
+	requestor_reports_to = frappe.db.get_value("Employee", {'employee': doc.employee}, ['reports_to'])
+
+	if requestor_reports_to:
+		approver_email = frappe.db.get_value("Employee", {'employee': requestor_reports_to}, ["user_id"])
+		if approver_email:
+			link = get_link_to_form("Attendance Request", doc.name)
+			subject = f"Attendance Request created by {doc.employee}"
+			message = """
+			An attendance request was made by an employee reporting to you.
+			If you wish to approve the attendance request, please visit the below link and submit the document.
+			Document link: {link}
+			""".format(link=link)
+			sendemail([approver_email], subject=subject, message=message, reference_doctype="Attendance Request", reference_name=doc.name)	
+
+# Attendance Request
 def before_submit_attendance_request(doc, method):
 	import pandas as pd
 	
@@ -579,27 +599,15 @@ def before_submit_attendance_request(doc, method):
 	any_attendance = False
 
 	for date in pd.date_range(start=doc.from_date, end=doc.to_date):
-		if frappe.db.exists("Attendance", {'employee': doc.employee, 'attendance_date': date, 'status': 'Absent'}):
-			attendance_doc = frappe.get_doc("Attendance", {'employee': doc.employee, 'attendance_date': date, 'status': 'Absent'})
+		attendance_doc_name = frappe.db.get_value("Attendance", {'employee': doc.employee, 'attendance_date': date, 'status': 'Absent'}, ["name"])
+		if attendance_doc_name:
 			any_attendance = True
 
-			new_attendance = frappe.new_doc("Attendance")
-			new_attendance.employee = attendance_doc.employee
-			new_attendance.status = status
-			new_attendance.attendance_date = date
-			new_attendance.shift = attendance_doc.shift
-			new_attendance.site = attendance_doc.site
-			new_attendance.project = attendance_doc.project
-			new_attendance.post_type = attendance_doc.post_type
-			new_attendance.post_abbrv = attendance_doc.post_abbrv
-			new_attendance.operations_shift = attendance_doc.operations_shift
-			new_attendance.roster_type = attendance_doc.roster_type
-
-			attendance_doc.cancel()
-			frappe.delete_doc("Attendance", attendance_doc.name)
-			
-			new_attendance.save(ignore_permissions=True)
+			frappe.db.set_value("Attendance", attendance_doc_name, "status", status)
 			frappe.db.commit()
+		
 
-	if any_attendance:
-		frappe.msgprint("Attendance updated succesfully", alert=True)
+	if not any_attendance:
+		frappe.throw("No Attendance records found in the given date range.")
+	
+	frappe.msgprint("Attendance updated succesfully", alert=True)
