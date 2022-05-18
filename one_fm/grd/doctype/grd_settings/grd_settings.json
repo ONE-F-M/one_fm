@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2020-08-21 15:28:44.847979",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -7,13 +8,17 @@
   "section_break_1",
   "default_grd_supervisor",
   "default_grd_operator",
+  "column_break_4",
   "default_grd_operator_pifss",
-  "default_grd_operator_transfer"
+  "default_grd_operator_transfer",
+  "preparation_record_settings_section",
+  "preparation_record_creation_day"
  ],
  "fields": [
   {
    "fieldname": "section_break_1",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "GSD Default Settings"
   },
   {
    "fieldname": "default_grd_supervisor",
@@ -40,10 +45,28 @@
    "fieldtype": "Link",
    "label": "Default GRD Operator (Transfer)",
    "options": "User"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "15",
+   "description": "Preparation Record Creation for Next Month on the Day of Current Month<br>You can enter a value from 1 to 28.",
+   "fieldname": "preparation_record_creation_day",
+   "fieldtype": "Int",
+   "label": "Preparation Record Creation Day"
+  },
+  {
+   "description": "Preparation record that contain list of all employees that their residency expiry date will be between the first and the last date of the next month.\nThis record will go to HR user to set value for each employee either renewal or extend and on the submit of this record it will ask for hr permission and approval.\nThen, it will create wp, mi, moi, and paci records for all employees in the list.",
+   "fieldname": "preparation_record_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Preparation Record Settings"
   }
  ],
  "issingle": 1,
- "modified": "2021-06-30 13:16:44.299264",
+ "links": [],
+ "modified": "2022-05-18 14:37:00.889505",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "GRD Settings",

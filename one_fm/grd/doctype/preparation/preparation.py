@@ -17,6 +17,7 @@ from frappe.utils import (
     get_first_day,
     get_last_day
 )
+import datetime
 from one_fm.grd.doctype.work_permit import work_permit
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
@@ -107,29 +108,37 @@ class Preparation(Document):
             create_notification_log(subject, message, [self.grd_operator], self)
 
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
-def create_preparation():
+def auto_create_preparation_record():
     """
-    runs: at 8am of the 15th in every month
+    runs: at the Preparation Record Creation Day configured in the GRD Settings
     This method will create preparation record that contain list of all employees that their residency expiry date will be between the first and the last date of the next month
     This record will go to HR user to set value for each employee either renewal or extend and on the submit of this record it will ask for hr permission and approval.
     Then, it will create wp, mi, moi, and paci records for all employees in the list.
+    """
+    preparation_record_creation_day = frappe.db.get_single_value("GRD Settings", "preparation_record_creation_day")
+    if preparation_record_creation_day and preparation_record_creation_day > 0:
+        preparation_record_creation_day_date = datetime.date.today().replace(day=preparation_record_creation_day)
+        if getdate(preparation_record_creation_day_date) == getdate(today()):
+            create_preparation_record()
+
+def create_preparation_record():
+    """
+        This method will create preparation record for next month from the date of execution.
+        The record contain list of all employees that their residency expiry date will be between the first and the last date of the next month
+        This record will go to HR user to set value for each employee either renewal or extend and on the submit of this record it will ask for hr permission and approval.
     """
     doc = frappe.new_doc('Preparation')
     doc.posting_date = nowdate()
     first_day = get_first_day(add_months(getdate(today()), 1))
     last_day = get_last_day(getdate(first_day))
-    get_employee_entries(doc, first_day, last_day)
-
-#Create list of employee Residency Expiry Date next month
-def get_employee_entries(doc, first_day, last_day):
     employee_entries = frappe.db.get_list('Employee',
-                            fields=("residency_expiry_date", "name"),
-                            filters={
-                                'residency_expiry_date': ['between', (first_day, last_day)],
-                                'status': 'Active',
-                                'under_company_residency':['=', 1]
-                            }
-                            )
+        fields=("residency_expiry_date", "name"),
+        filters={
+            'residency_expiry_date': ['between', (first_day, last_day)],
+            'status': 'Active',
+            'under_company_residency':['=', 1]
+        }
+    )
     employee_entries.sort(key=sort)
     for employee in employee_entries:
         doc.append("preparation_record", {
