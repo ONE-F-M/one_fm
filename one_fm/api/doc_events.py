@@ -14,7 +14,9 @@ from erpnext.hr.utils import get_holidays_for_employee
 #Shift Type
 @frappe.whitelist()
 def naming_series(doc, method):
-	doc.name = doc.name+"|"+doc.shift_type+"|"+doc.start_time+"-"+doc.end_time+"|"+cstr(doc.duration)+" hours"
+		if frappe.db.exists("Shift Type", {'name':doc.shift_type+"|"+doc.start_time+"-"+doc.end_time+"|"+cstr(doc.duration)+" hours"}):
+			frappe.throw(doc.shift_type+"|"+doc.start_time+"-"+doc.end_time+"|"+cstr(doc.duration)+" hours Already exists")
+		doc.name = doc.shift_type+"|"+doc.start_time+"-"+doc.end_time+"|"+cstr(doc.duration)+" hours"
 
 
 #Operations Shift
@@ -24,7 +26,7 @@ def shift_after_insert(doc, method):
 	if doc.start_time <= doc.end_time:
 		pass
 	elif doc.start_time > doc.end_time:
-		pass 
+		pass
 
 #Employee Checkin
 def employee_checkin_validate(doc, method):
@@ -43,7 +45,7 @@ def employee_checkin_validate(doc, method):
 			doc.shift_assignment = name
 			doc.operations_shift = assignment
 			doc.shift_type = shift_type
-	
+
 		if shift_actual_timings[0] and shift_actual_timings[1]:
 			if existing_perm:
 				perm_doc = frappe.get_doc("Shift Permission", existing_perm)
@@ -64,15 +66,15 @@ def checkin_after_insert(doc, method):
 	print("CALLED CHECKIN AFTER INSERT")
 	# These are returned according to dates. Time is not taken into account
 	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
-	
+
 	# In case of back to back shift
 	if doc.shift_type:
 		shift_doc = frappe.get_doc("Shift Type", doc.shift_type)
 		curr_shift = frappe._dict({
 			'actual_start': doc.shift_actual_start,
-			'actual_end': doc.shift_actual_end, 
-			'end_datetime': doc.shift_end, 
-			'start_datetime': doc.shift_start, 
+			'actual_end': doc.shift_actual_end,
+			'end_datetime': doc.shift_end,
+			'start_datetime': doc.shift_start,
 			'shift_type': shift_doc
 		})
 	# print("72", prev_shift.end_datetime, curr_shift.end_datetime, next_shift.end_datetime)
@@ -83,7 +85,7 @@ def checkin_after_insert(doc, method):
 		message_suffix = _("Location logged is inside the site.") if distance <= radius else _("Location logged is {location}m outside the site location.").format(location=cstr(cint(distance)- radius))
 
 		if doc.log_type == "IN" and doc.skip_auto_attendance == 0:
-			#EARLY: Checkin time is before [Shift Start - Variable Checkin time] 
+			#EARLY: Checkin time is before [Shift Start - Variable Checkin time]
 			#if get_datetime(doc.time) < get_datetime(curr_shift.actual_start):
 			#	time_diff = get_datetime(curr_shift.start_datetime) - get_datetime(doc.time)
 			#	hrs, mins, secs = cstr(time_diff).split(":")
@@ -125,7 +127,7 @@ def checkin_after_insert(doc, method):
 				for_users = [supervisor_user]
 				print("124", doc.employee, supervisor_user)
 				send_notification(subject, message, for_users)
-			#EARLY: Checkout time is before [Shift End - Early grace exit time] 
+			#EARLY: Checkout time is before [Shift End - Early grace exit time]
 			elif shift_type.enable_exit_grace_period == 1 and doc.device_id and get_datetime(doc.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
 				time_diff = get_datetime(curr_shift.end_datetime) - get_datetime(doc.time)
 				hrs, mins, secs = cstr(time_diff).split(":")
@@ -174,14 +176,14 @@ def get_notification_user(doc, employee=None):
 		supervisor = get_employee_user_id(operations_shift.supervisor)
 		if supervisor != doc.owner:
 			return supervisor
-	
+
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
 	print(operations_site.account_supervisor, operations_site.name)
 	if operations_site.account_supervisor:
 		account_supervisor = get_employee_user_id(operations_site.account_supervisor)
 		if account_supervisor != doc.owner:
 			return account_supervisor
-	
+
 	if operations_site.project:
 		project = frappe.get_doc("Project", operations_site.project)
 		print(project.account_manager, project.name)
@@ -231,7 +233,7 @@ def notify_poc_changes(doc, doc_before_save):
 		for change in changes.removed:
 			if(change[0] == "poc"):
 				message = message + "{poc_name} has been removed as a POC.\n".format(poc_name=change[1].poc)
-	
+
 	recipients = get_recipients(doc)
 	create_notification_log(_(subject), _(message), recipients, doc)
 
@@ -246,14 +248,14 @@ def get_recipients(doc):
 		for manager in operations_manager:
 			manager_user = get_employee_user_id(manager.name)
 			recipient_list.append(manager_user)
-		recipient_list.append(project_manager_user)		
+		recipient_list.append(project_manager_user)
 		return recipient_list
 
 def get_employee_user_id(employee):
 	return frappe.get_value("Employee", {"name": employee}, "user_id")
 
 def get_closest_location(time, location):
-	time = get_datetime(time).strftime("%Y-%m-%d %H:%M")	
+	time = get_datetime(time).strftime("%Y-%m-%d %H:%M")
 	latitude, longitude = location.split(",")
 
 	#Get the closest site according to the checkin location
@@ -269,24 +271,24 @@ def get_closest_location(time, location):
 			* 180/pi()) * 60 * 1.1515 * 1.609344 * 1000
 			)AS distance, os.name FROM `tabLocation` AS loc, `tabOperations Site` AS os
 		WHERE os.site_location = loc.name ORDER BY distance ASC """.format(latitude=latitude, longitude=longitude), as_dict=1)
-	
+
 	site_name = site[0].name
 	# Unused for now
 	distance = site[0].distance
 
 	#Check for active shift at the closest site.
 	active_shift = frappe.db.sql("""
-		SELECT 
-			supervisor 
+		SELECT
+			supervisor
 		FROM `tabOperations Shift`
-		WHERE 
+		WHERE
 			site="{site_name}" AND
-			CAST("{current_time}" as datetime) 
+			CAST("{current_time}" as datetime)
 			BETWEEN
-				CAST(start_time as datetime) 
-			AND 
-				IF(end_time < start_time, DATE_ADD(CAST(end_time as datetime), INTERVAL 1 DAY), CAST(end_time as datetime)) 
-			
+				CAST(start_time as datetime)
+			AND
+				IF(end_time < start_time, DATE_ADD(CAST(end_time as datetime), INTERVAL 1 DAY), CAST(end_time as datetime))
+
 	""".format(current_time=time, site_name=site_name), as_dict=1)
 
 	if len(active_shift) > 0:
@@ -348,17 +350,17 @@ def employee_validate(self):
 #Training Result
 @frappe.whitelist()
 def update_certification_data(doc, method):
-	""" 
-	This function adds/updates the Training Program Certificate doctype 
-	by checking the pass/fail criteria of the employees based on the Training Result. 
+	"""
+	This function adds/updates the Training Program Certificate doctype
+	by checking the pass/fail criteria of the employees based on the Training Result.
 	Also adds the training event data to the Employee Skill Map.
 	"""
 	passed_employees = []
-	
-	training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email, end_datetime = frappe.db.get_value("Training Event", {'event_name': doc.training_event}, ["training_program", "has_certificate", "minimum_score", "validity", "company", "trainer_name", "trainer_email", "end_time"])	
-	
+
+	training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email, end_datetime = frappe.db.get_value("Training Event", {'event_name': doc.training_event}, ["training_program", "has_certificate", "minimum_score", "validity", "company", "trainer_name", "trainer_email", "end_time"])
+
 	if has_certificate:
-		
+
 		expiry_date = None
 		issue_date = cstr(end_datetime).split(" ")[0]
 		if validity > 0:
@@ -367,7 +369,7 @@ def update_certification_data(doc, method):
 		for employee in doc.employees:
 			if employee.grade and min_score and cint(employee.grade) >= min_score:
 				passed_employees.append(employee.employee)
-		
+
 		for passed_employee in passed_employees:
 			if frappe.db.exists("Training Program Certificate", {'training_program_name': training_program_name, 'employee': passed_employee}):
 				update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date)
@@ -379,7 +381,7 @@ def update_training_program_certificate(training_program_name, passed_employee, 
 	doc.issue_date = issue_date
 	doc.expiry_date = expiry_date
 	doc.save()
-	
+
 def create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None, company=None, trainer_name=None, trainer_email=None):
 	doc = frappe.new_doc("Training Program Certificate")
 	doc.training_program_name = training_program_name
@@ -405,10 +407,10 @@ def update_training_event_data(doc, method):
 
 # Attendance
 def create_additional_salary_for_overtime(doc, method):
-	""" 
+	"""
 	This function creates an additional salary document for a given by specifying the salary component for overtime set in the HR and Payroll Additional Settings,
 	by obtaining the details from Attendance where the roster type is set to Over-Time.
-	
+
 	The over time rate is fetched from the project which is linked with the shift the employee was working in.
 	The over time rate is calculated by multiplying the number of hours of the shift with the over time rate for the project.
 
@@ -416,7 +418,7 @@ def create_additional_salary_for_overtime(doc, method):
 	Amount is calucated and additional salary is created as:
 	1. If employee has an existing basic schedule on the same day - working day rate is applied
 	2. Working on a holiday of type "weekly off: - day off rate is applied.
-	3. Working on a holiday of type non "weekly off" - public/additional holiday.   
+	3. Working on a holiday of type non "weekly off" - public/additional holiday.
 
 	Args:
 		doc: The attendance document
@@ -446,13 +448,13 @@ def create_additional_salary_for_overtime(doc, method):
 
 		# If project has a specified overtime rate, calculate amount based on overtime rate and create additional salary
 		if project_has_overtime_rate:
-			
+
 			if project_overtime_rate > 0:
 				amount = round(project_overtime_rate * overtime_duration, 3)
 				notes = "Calculated based on overtime rate set for the project: {project}".format(project=project)
-				
+
 				create_additional_salary(doc.employee, amount, overtime_component, payroll_date, notes)
-			
+
 			else:
 				frappe.throw(_("Overtime rate must be greater than zero for project: {project}".format(project=project)))
 
@@ -460,7 +462,7 @@ def create_additional_salary_for_overtime(doc, method):
 		else:
 			# Fetch assigned shift, basic salary  and holiday list for the given employee
 			assigned_shift, basic_salary, holiday_list = frappe.db.get_value("Employee", {'employee': doc.employee}, ["shift", "one_fm_basic_salary", "holiday_list"])
-			
+
 			if assigned_shift:
 				# Fetch duration of the shift employee is assigned to
 				assigned_shift_duration = frappe.db.get_value("Operations Shift", assigned_shift, ["duration"])
@@ -472,15 +474,15 @@ def create_additional_salary_for_overtime(doc, method):
 
 					# Check if a basic schedule exists for the employee and the attendance date
 					if frappe.db.exists("Employee Schedule", {'employee': doc.employee, 'date': doc.attendance_date, 'employee_availability': "Working", 'roster_type': roster_type_basic}):
-						
+
 						if working_day_overtime_rate > 0:
-							
+
 							# Compute amount as per working day rate
 							amount = round(hourly_wage * overtime_duration * working_day_overtime_rate, 3)
 							notes = "Calculated based on working day rate => (Basic hourly wage) * (Duration of worked hours) * {working_day_overtime_rate}".format(working_day_overtime_rate=working_day_overtime_rate)
-							
+
 							create_additional_salary(doc.employee, amount, overtime_component, payroll_date, notes)
-						
+
 						else:
 							frappe.throw(_("No Wroking Day overtime rate set in HR and Payroll Additional Settings."))
 
@@ -490,49 +492,49 @@ def create_additional_salary_for_overtime(doc, method):
 						# Pass last parameter as "False" to get weekly off days
 						holidays_weekly_off = get_holidays_for_employee(doc.employee, doc.attendance_date, doc.attendance_date, False, False)
 
-						# Pass last paramter as "True" to get non weekly off days, ie, public/additional holidays 
+						# Pass last paramter as "True" to get non weekly off days, ie, public/additional holidays
 						holidays_public_holiday = get_holidays_for_employee(doc.employee, doc.attendance_date, doc.attendance_date, False, True)
 
 						# Check for weekly off days length and if description of day off is set as one of the weekdays. (By default, description is set to a weekday name)
 						if len(holidays_weekly_off) > 0 and holidays_weekly_off[0].description in days_of_week:
-						
+
 							if day_off_overtime_rate > 0:
-								
+
 								# Compute amount as per day off rate
 								amount = round(hourly_wage * overtime_duration * day_off_overtime_rate, 3)
 								notes = "Calculated based on day off rate => (Basic hourly wage) * (Duration of worked hours) * {day_off_overtime_rate}".format(day_off_overtime_rate=day_off_overtime_rate)
 
 								create_additional_salary(doc.employee, amount, overtime_component, payroll_date, notes)
-							
+
 							else:
 								frappe.throw(_("No Day Off overtime rate set in HR and Payroll Additional Settings."))
 
 						# Check for weekly off days set to "False", ie, Public/additional holidays in holiday list
 						elif len(holidays_public_holiday) > 0:
-							
+
 							if public_holiday_overtime_rate > 0:
-								
+
 								# Compute amount as per public holiday rate
 								amount = round(hourly_wage * overtime_duration * public_holiday_overtime_rate, 3)
 								notes = "Calculated based on day off rate => (Basic hourly wage) * (Duration of worked hours) * {public_holiday_overtime_rate}".format(public_holiday_overtime_rate=public_holiday_overtime_rate)
 
 								create_additional_salary(doc.employee, amount, overtime_component, payroll_date, notes)
-							
+
 							else:
 								frappe.throw(_("No Public Holiday overtime rate set in HR and Payroll Additional Settings."))
 					else:
 						frappe.throw(_("No basic Employee Schedule or Holiday List found for employee: {employee}".format(employee=doc.employee)))
-				
+
 				else:
 					frappe.throw(_("Basic Salary not set for employee: {employee} in the employee record.".format(employee=doc.employee)))
-			
+
 			else:
 				frappe.throw(_("Shift not set for employee: {employee} in the employee record.".format(employee=doc.employee)))
 
 
 
 def create_additional_salary(employee, amount, component, payroll_date, notes):
-	""" 
+	"""
 	This function creates a document in the Additonal Salary doctype.
 
 	Args:
@@ -541,7 +543,7 @@ def create_additional_salary(employee, amount, component, payroll_date, notes):
 		component: type of component
 		payroll_date: date that falls in the range during which this additional salary must be considered for payroll
 		notes: Any additional notes
-	
+
 	Raises:
 		exception e: Any internal server error
 	"""
@@ -557,57 +559,7 @@ def create_additional_salary(employee, amount, component, payroll_date, notes):
 		additional_salary.notes = notes
 		additional_salary.insert()
 		additional_salary.submit()
-	
+
 	except Exception as e:
 		frappe.log_error(e)
 		frappe.throw(_(e))
-
-# Attendance Request
-def after_insert_attendance_request(doc, method):
-	from one_fm.processor import sendemail
-	from frappe.utils import get_link_to_form
-	import urllib
-
-	requestor_reports_to = frappe.db.get_value("Employee", {'employee': doc.employee}, ['reports_to'])
-
-	if requestor_reports_to:
-		approver_email = frappe.db.get_value("Employee", {'employee': requestor_reports_to}, ["user_id"])
-		if approver_email:
-			link = get_link_to_form("Attendance Request", doc.name)
-			subject = f"Attendance Request created by {doc.employee}"
-			message = """
-			An attendance request was made by an employee reporting to you.
-			If you wish to approve the attendance request, please visit the below link and submit the document.
-			Document link: {link}
-			""".format(link=link)
-			sendemail([approver_email], subject=subject, message=message, reference_doctype="Attendance Request", reference_name=doc.name)	
-
-# Attendance Request
-def before_submit_attendance_request(doc, method):
-	import pandas as pd
-	
-	requestor_reports_to = frappe.db.get_value("Employee", {'employee': doc.employee}, ['reports_to'])
-	
-	if requestor_reports_to:
-		if frappe.session.user != frappe.db.get_value("Employee", {'employee': requestor_reports_to}, ['user_id']):
-			frappe.throw("You are not authorized to submit this document. Please contact your line manager to submit this request.")
-
-	status = "Work From Home" if doc.reason == "Work From Home" else "Present"
-	if doc.half_day:
-		status = "Half Day"
-
-	any_attendance = False
-
-	for date in pd.date_range(start=doc.from_date, end=doc.to_date):
-		attendance_doc_name = frappe.db.get_value("Attendance", {'employee': doc.employee, 'attendance_date': date, 'status': 'Absent'}, ["name"])
-		if attendance_doc_name:
-			any_attendance = True
-
-			frappe.db.set_value("Attendance", attendance_doc_name, "status", status)
-			frappe.db.commit()
-		
-
-	if not any_attendance:
-		frappe.throw("No Attendance records found in the given date range.")
-	
-	frappe.msgprint("Attendance updated succesfully", alert=True)
