@@ -561,3 +561,53 @@ def create_additional_salary(employee, amount, component, payroll_date, notes):
 	except Exception as e:
 		frappe.log_error(e)
 		frappe.throw(_(e))
+
+# Attendance Request
+def after_insert_attendance_request(doc, method):
+	from one_fm.processor import sendemail
+	from frappe.utils import get_link_to_form
+	import urllib
+
+	requestor_reports_to = frappe.db.get_value("Employee", {'employee': doc.employee}, ['reports_to'])
+
+	if requestor_reports_to:
+		approver_email = frappe.db.get_value("Employee", {'employee': requestor_reports_to}, ["user_id"])
+		if approver_email:
+			link = get_link_to_form("Attendance Request", doc.name)
+			subject = f"Attendance Request created by {doc.employee}"
+			message = """
+			An attendance request was made by an employee reporting to you.
+			If you wish to approve the attendance request, please visit the below link and submit the document.
+			Document link: {link}
+			""".format(link=link)
+			sendemail([approver_email], subject=subject, message=message, reference_doctype="Attendance Request", reference_name=doc.name)	
+
+# Attendance Request
+def before_submit_attendance_request(doc, method):
+	import pandas as pd
+	
+	requestor_reports_to = frappe.db.get_value("Employee", {'employee': doc.employee}, ['reports_to'])
+	
+	if requestor_reports_to:
+		if frappe.session.user != frappe.db.get_value("Employee", {'employee': requestor_reports_to}, ['user_id']):
+			frappe.throw("You are not authorized to submit this document. Please contact your line manager to submit this request.")
+
+	status = "Work From Home" if doc.reason == "Work From Home" else "Present"
+	if doc.half_day:
+		status = "Half Day"
+
+	any_attendance = False
+
+	for date in pd.date_range(start=doc.from_date, end=doc.to_date):
+		attendance_doc_name = frappe.db.get_value("Attendance", {'employee': doc.employee, 'attendance_date': date, 'status': 'Absent'}, ["name"])
+		if attendance_doc_name:
+			any_attendance = True
+
+			frappe.db.set_value("Attendance", attendance_doc_name, "status", status)
+			frappe.db.commit()
+		
+
+	if not any_attendance:
+		frappe.throw("No Attendance records found in the given date range.")
+	
+	frappe.msgprint("Attendance updated succesfully", alert=True)
