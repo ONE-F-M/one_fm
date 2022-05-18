@@ -38,16 +38,10 @@ class WorkContract(Document):
 		update_onboarding_doc(self)
 
 	def update_on_workflow_state(self):
-		if self.workflow_state == 'Send to Authorised Signatory':
-			#self.validate_attachments()
+		if self.workflow_state =='Submitted for Applicant Review':
 			self.validate_authorized_signatory()
 		if self.workflow_state == 'Awaiting Employee Received Copy':
 			self.validate_autority_signature()
-		if self.workflow_state == 'Submitted for Applicant Review':
-			#if applicant sign the contract, the workflow changes to "Applicant Signed",
-			if self.check_for_applicant_signature():
-				self.workflow_state = "Applicant Signed"
-				self.save()
 		if self.workflow_state == 'Completed':
 			self.validate_employee_signature()
 	
@@ -97,17 +91,22 @@ class WorkContract(Document):
 				authorize_signatory.append(auth_sign["authorized_signatory_name_english"])
 		return authorize_signatory
 
-
-	def fetch_authorized_signatory_user_id(self):
-		if self.select_authorised_signatory_signed_work_contract and self.pam_file_number:
+	@frappe.whitelist()
+	def fetch_authorised_signatory_details(self):
+		if not self.select_authorised_signatory_signed_work_contract:
+			frappe.throw(_("Please select Authorized Signatory!"))
+		elif not self.pam_file_number:
+			frappe.throw(_("Please select PAM File Number!"))
+		else:
 			pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':self.pam_file_number},["authorized_signatory"],as_dict = True)
 			pam_auth_sign = pam_authorized_signatory.as_dict()
 			for auth_sign in pam_auth_sign["authorized_signatory"]:
 				if self.select_authorised_signatory_signed_work_contract == auth_sign["authorized_signatory_name_english"]:
-					user_id = auth_sign["user"]
-			return user_id
+					civil_id = auth_sign["civil_id_number"]
+					arabic_name = auth_sign["authorized_signatory_name_arabic"]
+			return civil_id, arabic_name
 
-
+@frappe.whitelist()
 def	fetch_authority_signature(doc):
 	signature = False
 	if doc.select_authorised_signatory_signed_work_contract and doc.pam_file_number:
