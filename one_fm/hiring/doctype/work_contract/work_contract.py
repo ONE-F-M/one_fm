@@ -36,21 +36,28 @@ class WorkContract(Document):
 		self.set_progress()
 		self.update_on_workflow_state()
 		update_onboarding_doc(self)
-		self.authorized_signatory_user_id = self.fetch_authorized_signatory_user_id()
-
 
 	def update_on_workflow_state(self):
 		if self.workflow_state == 'Send to Authorised Signatory':
-			self.validate_attachments()
+			#self.validate_attachments()
 			self.validate_authorized_signatory()
-			#email_authority_for_signature(self)
+		if self.workflow_state == 'Awaiting Employee Received Copy':
+			self.validate_autority_signature()
 		if self.workflow_state == 'Submitted for Applicant Review':
 			#if applicant sign the contract, the workflow changes to "Applicant Signed",
 			if self.check_for_applicant_signature():
 				self.workflow_state = "Applicant Signed"
 				self.save()
 		if self.workflow_state == 'Completed':
-			fetch_authority_signature(self)
+			self.validate_employee_signature()
+	
+	def validate_autority_signature(self):
+		if not self.authorized_signatory_document:
+			frappe.throw(_("Please Attach Document from Authorized Signatory!"))
+
+	def validate_employee_signature(self):
+		if not self.employee_received_document:
+			frappe.throw(_("Please Attach Document from Employee!"))
 
 	def validate_attachments(self):
 		document_required = ["Civil ID Front","Civil ID Back","Passport Front","Passport Back"]

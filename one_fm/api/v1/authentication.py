@@ -11,7 +11,7 @@ import requests, json
 from frappe.utils.password import update_password as _update_password
 from twilio.rest import Client as TwilioClient
 from one_fm.api.v1.utils import response
-from one_fm.processor import sendemail
+from one_fm.processor import sendemail, send_whatsapp
 
 
 @frappe.whitelist(allow_guest=True)
@@ -221,19 +221,12 @@ def process_2fa_for_whatsapp(user, token, otp_secret):
 
 
 def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
-    sid, auth_token, t_number = frappe.db.get_value('Twilio Setting', filters=None, fieldname=['sid','token','t_number'])
-    client = TwilioClient(sid, auth_token)
-    From = 'whatsapp:' + t_number
-    to = 'whatsapp:+' + phone_no
+  
     hotp = pyotp.HOTP(otpsecret)
     body= 'Your verification code {}.'.format(hotp.at(int(token)))
     
-    message = client.messages.create( 
-                              from_=From,  
-                              body=body,      
-                              to=to 
-                          ) 
- 
+    message = send_whatsapp(sender_id=phone_no,body=body)
+
     return True
 
 def process_2fa_for_email(user, token, otp_secret, method='Email'):

@@ -42,15 +42,9 @@ class OnboardEmployee(Document):
 			self.reload()
 
 		if self.workflow_state == 'Work Contract' and not self.work_contract:
-			if self.electronic_signature_status == 1:
-				self.create_work_contract()
-				self.reload()
-			else:
-				frappe.throw(_("Please Update Electronic Signature Declaration with Applicant Signature to Proceed"))
-
-		if self.workflow_state == 'Declaration of Electronic Signature':
-			self.create_declaration_of_electronic_signature()
+			self.create_work_contract()
 			self.reload()
+
 
 		if self.workflow_state == 'Duty Commencement' and not self.duty_commencement:
 			self.create_duty_commencement()
@@ -110,36 +104,13 @@ class OnboardEmployee(Document):
 			for filter in filters:
 				wc.set(filter, filters[filter])
 
-			for applicant_docs in self.applicant_documents:
-				doc_required = wc.append('documents')
-				fields = ['document_required', 'attach', 'type_of_copy']
-				for field in fields:
-					doc_required.set(field, applicant_docs.get(field))
 
 			wc.save(ignore_permissions=True)
 
-	@frappe.whitelist()
-	def create_declaration_of_electronic_signature(self):
-		"""
-		Create declaration_of_electronic_signature from onboard employee doc.
-		"""
-		if not frappe.db.exists('Electronic Signature Declaration', {'onboard_employee': self.name}):
-			doc = frappe.new_doc('Electronic Signature Declaration')
-			doc.new_employee = 1
-			doc.onboard_employee = self.name
-			doc.employee_name = self.employee_name
-			doc.employee_name_in_arabic = self.employee_name_in_arabic
-			doc.nationality = self.nationality
-			doc.civil_id = self.civil_id
-			doc.company = self.company
-			doc.declarationen = "<h4>I,  {0}, nationality  {1}, holding civil ID no. {2} the undersigned, acknowledge that the signature written at the bottom of this acknowledgment is my own, certified, and valid signature, and that I acknowledge the acceptance and enforcement of this signature against me and against others, and I authorize {3} company / to adopt this signature as a legally valid electronic signature.</h4>".format(self.employee_name,self.nationality,self.civil_id,self.company)
-			doc.declarationar = "<h4>{0} قر أنا الموقع أدناه  / ، واحمل بطاقة مدنية ر {1} الجنسية({2}) بأن التوقيع المدون أسفل هذا اإلقرار و التوقيع الخاص بي معتمد وساري ،وأنني اقر بقبول ونفاذ هذا التوقيع في مواجهتي مواجهة الغير ، باعتماد {3}وأنني افوض شركة / .هذا التوقيع كتوقيع إلكتروني ساري المفعول قانوناً</h4>".format(self.employee_name_in_arabic,frappe.db.get_value("Nationality", self.nationality, 'nationality_arabic'),self.civil_id,self.company)
-			doc.save(ignore_permissions=True)
-			doc.submit()
 
 	@frappe.whitelist()
 	def create_duty_commencement(self):
-		if self.work_contract_status in ["Applicant Signed", "Submitted to Legal", "Send to Authorised Signatory", "Completed"]:
+		if self.work_contract_status in ["Applicant Signed", "Submitted to Legal", "Send to Authorised Signatory", "Awaiting Employee Received Copy", "Completed"]:
 			duty_commencement = frappe.new_doc('Duty Commencement')
 			duty_commencement.onboard_employee = self.name
 			duty_commencement.workflow_state = 'Open'
@@ -155,6 +126,8 @@ class OnboardEmployee(Document):
 				frappe.throw(_("Select Leave Policy before Creating Employee!"))
 			if not self.reports_to:
 				frappe.throw(_("Select reports to user!"))
+			if self.job_applicant:
+				job_applicant = frappe.get_doc("Job Applicant",self.job_applicant)
 			if self.job_offer:
 				employee = make_employee_from_job_offer(self.job_offer)
 				employee.reports_to = self.reports_to
@@ -164,9 +137,15 @@ class OnboardEmployee(Document):
 					employee.one_fm_nationality = self.nationality
 				employee.leave_policy = self.leave_policy
 				employee.salary_mode = self.salary_mode
-				employee.one_fm_first_name_in_arabic = employee.employee_name
+				if job_applicant:
+					employee.one_fm_first_name_in_arabic = job_applicant.one_fm_first_name_in_arabic
+					employee.one_fm_last_name_in_arabic = job_applicant.one_fm_last_name_in_arabic
+				else:
+					employee.one_fm_first_name_in_arabic = self.employee_name_in_arabic.split()[len(doc.employee_name_in_arabic.split())-1]
+					employee.one_fm_last_name_in_arabic = self.employee_name_in_arabic.split()[0]
 				if self.declaration_of_electronic_signature:
 					employee.employee_signature = frappe.get_value("Electronic Signature Declaration",self.declaration_of_electronic_signature,['applicant_signature'])
+
 
 				employee.permanent_address = "Test"
 				employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')

@@ -31,18 +31,15 @@
   "monthly_salary",
   "pam_file_number",
   "working_hours",
-  "section_break_23",
-  "documents",
+  "signature_proof_section",
+  "authorized_signatory_document",
   "select_authorised_signatory_signed_work_contract",
-  "authorized_signatory_user_id",
+  "column_break_31",
+  "employee_received_document",
   "section_break_9",
   "note",
   "column_break_32",
-  "rejection_reason",
-  "signatures_section",
-  "employee_signature",
-  "column_break_34",
-  "authority_signature"
+  "rejection_reason"
  ],
  "fields": [
   {
@@ -190,11 +187,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_break_23",
-   "fieldtype": "Section Break",
-   "label": "Applicant Documents"
-  },
-  {
    "fieldname": "column_break_32",
    "fieldtype": "Column Break"
   },
@@ -203,12 +195,6 @@
    "fieldname": "rejection_reason",
    "fieldtype": "Small Text",
    "label": "Rejection Reason"
-  },
-  {
-   "fieldname": "documents",
-   "fieldtype": "Table",
-   "label": "Documents",
-   "options": "Job Applicant Required Document"
   },
   {
    "allow_on_submit": 1,
@@ -230,43 +216,37 @@
    "label": "PAM File Number"
   },
   {
-   "fieldname": "signatures_section",
-   "fieldtype": "Section Break",
-   "label": "Signatures"
-  },
-  {
-   "description": "Employee Signature",
-   "fieldname": "employee_signature",
-   "fieldtype": "Signature",
-   "label": "Employee Signature"
-  },
-  {
-   "fieldname": "column_break_34",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "authority_signature",
-   "fieldtype": "Attach Image",
-   "label": "Authority Signature"
-  },
-  {
-   "fieldname": "authorized_signatory_user_id",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Authorized Signatory User ID",
-   "read_only": 1
-  },
-  {
    "fieldname": "workflow",
    "fieldtype": "Link",
    "hidden": 1,
    "label": "Workflow",
    "options": "Workflow",
    "read_only": 1
+  },
+  {
+   "fieldname": "signature_proof_section",
+   "fieldtype": "Section Break",
+   "label": "Signature Proof"
+  },
+  {
+   "depends_on": "eval:doc.authorized_signatory_document || doc.workflow_state=='Send to Authorised Signatory'",
+   "fieldname": "authorized_signatory_document",
+   "fieldtype": "Attach",
+   "label": "Authorized Signatory Document"
+  },
+  {
+   "fieldname": "column_break_31",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.employee_received_document || doc.workflow_state=='Awaiting Employee Received Copy'",
+   "fieldname": "employee_received_document",
+   "fieldtype": "Attach",
+   "label": "Employee Received Document"
   }
  ],
  "links": [],
- "modified": "2021-12-30 09:50:21.177601",
+ "modified": "2022-05-17 11:59:46.547834",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",

@@ -518,6 +518,9 @@ def create_onboarding_from_job_offer(job_offer):
                     else:
                         o_employee.set(od, job_applicant.get('one_fm_'+od))
 
+                #set employee's name in arabic    
+                o_employee.set('employee_name_in_arabic',job_applicant.get('one_fm_last_name_in_arabic') +" "+ job_applicant.get('one_fm_first_name_in_arabic'))
+
                 # Set Documents attached in the Job Applicant to Onboard Employee document
                 for applicant_document in job_applicant.one_fm_documents_required:
                     doc_required = o_employee.append('applicant_documents')
@@ -645,9 +648,7 @@ def update_onboarding_doc_workflow_sate(doc):
         onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_id)
         if doc.doctype == 'Work Contract':
             onboard_employee.workflow_state = 'Work Contract'
-        if doc.doctype == 'Electronic Signature Declaration':
-            onboard_employee.workflow_state = 'Declaration of Electronic Signature'
-        if doc.doctype == 'Duty Commencement' and onboard_employee.workflow_state == 'Declaration of Electronic Signature':
+        if doc.doctype == 'Duty Commencement':
             onboard_employee.workflow_state = 'Duty Commencement'
         if doc.doctype == 'Employee' and onboard_employee.workflow_state == 'Bank Account' and doc.enrolled:
             onboard_employee.workflow_state = 'Mobile App Enrolment'
