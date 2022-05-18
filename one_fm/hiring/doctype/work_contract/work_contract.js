@@ -33,10 +33,11 @@ var populate_autorized_signatory = function(frm) {
 var fetch_civil_id_of_authorised_signatory = function(frm) {
 	frappe.call({
 		doc: frm.doc,
-		method: 'fetch_civil_id_of_authorised_signatory',
+		method: 'fetch_authorised_signatory_details',
 			callback: function(r) {
 			if(r && r.message){
-				frm.set_value('authorized_signatory_civil_id', r.message);
+				frm.set_value('authorized_signatory_civil_id', String(r.message[0]));
+				frm.set_value('authorized_signatory_arabic_name', String(r.message[1]));
 			}
 		}
 	});

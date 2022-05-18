@@ -91,19 +91,8 @@ class WorkContract(Document):
 				authorize_signatory.append(auth_sign["authorized_signatory_name_english"])
 		return authorize_signatory
 
-
-	def fetch_authorized_signatory_user_id(self):
-		if self.select_authorised_signatory_signed_work_contract and self.pam_file_number:
-			pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':self.pam_file_number},["authorized_signatory"],as_dict = True)
-			pam_auth_sign = pam_authorized_signatory.as_dict()
-			for auth_sign in pam_auth_sign["authorized_signatory"]:
-				if self.select_authorised_signatory_signed_work_contract == auth_sign["authorized_signatory_name_english"]:
-					user_id = auth_sign["user"]
-			return user_id
-	
 	@frappe.whitelist()
-	def fetch_civil_id_of_authorised_signatory(self):
-		print("Here")
+	def fetch_authorised_signatory_details(self):
 		if not self.select_authorised_signatory_signed_work_contract:
 			frappe.throw(_("Please select Authorized Signatory!"))
 		elif not self.pam_file_number:
@@ -114,7 +103,8 @@ class WorkContract(Document):
 			for auth_sign in pam_auth_sign["authorized_signatory"]:
 				if self.select_authorised_signatory_signed_work_contract == auth_sign["authorized_signatory_name_english"]:
 					civil_id = auth_sign["civil_id_number"]
-			return civil_id
+					arabic_name = auth_sign["authorized_signatory_name_arabic"]
+			return civil_id, arabic_name
 
 @frappe.whitelist()
 def	fetch_authority_signature(doc):

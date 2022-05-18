@@ -36,6 +36,7 @@
   "select_authorised_signatory_signed_work_contract",
   "column_break_31",
   "employee_received_document",
+  "authorized_signatory_arabic_name",
   "authorized_signatory_civil_id",
   "section_break_9",
   "note",
@@ -250,10 +251,16 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Authorized Signatory Civil ID"
+  },
+  {
+   "fieldname": "authorized_signatory_arabic_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Authorized Signatory Arabic Name"
   }
  ],
  "links": [],
- "modified": "2022-05-17 16:54:03.466005",
+ "modified": "2022-05-18 08:53:03.921235",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
