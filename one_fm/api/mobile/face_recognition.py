@@ -1,10 +1,11 @@
 import frappe, ast, base64, time
 from frappe import _
-from one_fm.one_fm.page.face_recognition.face_recognition import setup_directories, create_dataset, check_in
+from one_fm.one_fm.page.face_recognition.face_recognition import check_in, update_onboarding_employee
 from one_fm.api.mobile.roster import get_current_shift
-from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc
+from one_fm.proto import enroll_pb2, enroll_pb2_grpc, facial_recognition_pb2, facial_recognition_pb2_grpc
 import json
 import grpc
+from one_fm.one_fm.page.face_recognition.face_recognition import user_within_site_geofence
 
 
 @frappe.whitelist()
@@ -14,20 +15,30 @@ def enroll(video):
 	video: base64 encoded data
 	"""
 	try:
-		setup_directories()
-		content = base64.b64decode(video)
-		filename = frappe.session.user+".mp4"	
-		OUTPUT_VIDEO_PATH = frappe.utils.cstr(frappe.local.site)+"/private/files/user/"+filename
-		with open(OUTPUT_VIDEO_PATH, "wb") as fh:
-				fh.write(content)
-				start_enroll = time.time()
-				create_dataset(OUTPUT_VIDEO_PATH)
-				end_enroll = time.time()
-				print("Ënroll Time Taken = ", end_enroll-start_enroll)
-				print("Enrolling Success")
+		# Setup channel
+		face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
+		channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
+		# setup stub
+		stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
+		# request body
+		req = enroll_pb2.EnrollRequest(
+			username = frappe.session.user,
+			user_encoded_video = video,
+		)
+
+		res = stub.FaceRecognitionEnroll(req)
+
+		if res.enrollment == "FAILED":
+			return (res.message, 400, None, res.data)
+			
+		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+		doc.enrolled = 1
+		doc.save(ignore_permissions=True)
+		update_onboarding_employee(doc)
+		frappe.db.commit()
 		return _("Successfully Enrolled!")
+	
 	except Exception as exc:
-		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
 		return frappe.utils.response.report_error(exc)
 
@@ -42,14 +53,11 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 		longitude: longitude of current location
 	"""
 	try:
-		setup_directories()
-		# Get user encoding file
-		encoding_file_path = frappe.utils.cstr(frappe.local.site)+"/private/files/facial_recognition/"+frappe.session.user+".json"
-		encoding_content_json = json.loads(open(encoding_file_path, "rb").read()) # dict
-		encoding_content_str = json.dumps(encoding_content_json) # str
-		encoding_content_bytes = encoding_content_str.encode('ascii')
-		encoding_content_base64_bytes = base64.b64encode(encoding_content_bytes)
-		user_encoding_json = encoding_content_base64_bytes.decode('ascii')
+
+		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
+
+		if not user_within_site_geofence(employee, latitude, longitude):
+			return ("Please check {log_type} at your site location.".format(log_type=log_type))
 
 		# setup channel
 		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
@@ -58,10 +66,10 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 		# request body
-		req = facial_recognition_pb2.Request(
+		req = facial_recognition_pb2.FaceRecognitionRequest(
 			username = frappe.session.user,
-			user_encoded_video = video,
-			user_encoding = user_encoding_json
+			media_type = "video",
+			media_content = video
 		)
 		# Call service stub and get response
 		res = stub.FaceRecognition(req)
@@ -102,4 +110,4 @@ def get_site_location(employee):
 	except Exception as e:
 		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
-		return frappe.utils.response.report_error(e)
+		return frappe.utils.response.report_error(e)		

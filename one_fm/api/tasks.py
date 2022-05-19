@@ -171,6 +171,7 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 		if log_type=="OUT":
 			push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=False,arriveLate=False,checkout=True)
 
+			
 	# send notification mail to list of employee using user_id
 	if log_type == "IN":
 		send_notification(title, checkin_subject, checkin_message,notification_category,user_id_list)

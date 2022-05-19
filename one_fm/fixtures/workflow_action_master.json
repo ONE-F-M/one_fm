@@ -438,5 +438,35 @@
   "parentfield": null,
   "parenttype": null,
   "workflow_action_name": "Mobile App Enrolment"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2022-01-13 01:32:10.637725",
+  "name": "Ammend",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Ammend"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2022-01-13 02:57:11.576841",
+  "name": "Set Inactive",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Set Inactive"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2022-05-15 14:46:17.383396",
+  "name": "Authority Signed",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Authority Signed"
  }
 ]
