@@ -25,14 +25,11 @@
   "section_break_4",
   "deductions",
   "section_break_8",
-  "remaining_amount",
-  "total_deduction",
-  "column_break_14",
-  "total_sub",
-  "column_break_16",
-  "total_additional_deduction",
-  "column_break_18",
-  "total_payments",
+  "total_contribution",
+  "column_break_21",
+  "company_contribution",
+  "column_break_9",
+  "employee_contribution",
   "detailed_basic_amounts_section",
   "basic_insurance",
   "supplementary_insurance",
@@ -130,23 +127,6 @@
    "label": "Total Values From Deductions Table"
   },
   {
-   "bold": 1,
-   "fieldname": "total_sub",
-   "fieldtype": "Currency",
-   "label": "+     Total Subscription",
-   "precision": "3",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "total_deduction",
-   "fieldtype": "Currency",
-   "hidden": 1,
-   "label": "Total Employee Deduction",
-   "precision": "3",
-   "read_only": 1
-  },
-  {
    "allow_on_submit": 1,
    "description": "Manual report for pifss montly deduction",
    "fieldname": "attach_manual_report",
@@ -163,37 +143,12 @@
    "label": "Attach PDF Report"
   },
   {
-   "bold": 1,
-   "depends_on": "additional_attach_report",
-   "fieldname": "total_additional_deduction",
-   "fieldtype": "Currency",
-   "label": "+  Employees Total Additional Deduction",
-   "precision": "3",
-   "read_only": 1
-  },
-  {
-   "bold": 1,
-   "default": "828.982",
-   "description": "The amount will be taken from report, (828.982)KD ",
-   "fieldname": "remaining_amount",
-   "fieldtype": "Currency",
-   "label": "Company Remaining Amount"
-  },
-  {
-   "bold": 1,
-   "depends_on": "additional_attach_report",
-   "fieldname": "total_payments",
-   "fieldtype": "Currency",
-   "label": "=  Total Payments",
-   "precision": "3",
-   "read_only": 1
-  },
-  {
    "collapsible": 1,
    "collapsible_depends_on": "eval:doc.workflow_state == \"Pending By Finance\"",
    "depends_on": "attach_report",
    "fieldname": "detailed_basic_amounts_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Basic Amounts"
   },
   {
@@ -227,6 +182,7 @@
    "depends_on": "attach_report",
    "fieldname": "detailed_additional_amounts_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Additional Amounts From Manual Report"
   },
   {
@@ -384,18 +340,6 @@
    "label": "Fetch Data"
   },
   {
-   "fieldname": "column_break_14",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_16",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_18",
-   "fieldtype": "Column Break"
-  },
-  {
    "depends_on": "eval:doc.workflow_state != \"Draft\"",
    "fieldname": "finance_section_section",
    "fieldtype": "Section Break",
@@ -464,11 +408,45 @@
    "fieldtype": "Link",
    "label": "PIFSS Monthly Deduction Tool",
    "options": "PIFSS Monthly Deduction Tool"
+  },
+  {
+   "fieldname": "total_contribution",
+   "fieldtype": "Currency",
+   "label": "Total Contribution",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company_contribution",
+   "fieldtype": "Currency",
+   "label": "Company Contribution",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_contribution",
+   "fieldtype": "Currency",
+   "label": "Employee Contribution",
+   "precision": "3",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "links": [],
- "modified": "2021-11-22 15:33:49.522847",
+ "links": [
+  {
+   "link_doctype": "Additional Salary",
+   "link_fieldname": "pifss_monthly_deduction"
+  }
+ ],
+ "modified": "2022-05-19 13:51:36.106487",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",

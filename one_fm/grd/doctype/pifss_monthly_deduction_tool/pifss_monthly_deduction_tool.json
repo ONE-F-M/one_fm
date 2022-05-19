@@ -66,7 +66,6 @@
    "set_only_once": 1
   },
   {
-   "allow_on_submit": 1,
    "default": "Open",
    "fieldname": "status",
    "fieldtype": "Select",
@@ -103,7 +102,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-23 08:48:40.667388",
+ "modified": "2022-05-19 12:55:22.321984",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction Tool",

@@ -88,7 +88,8 @@ def get_employee_shift(employee_id, date_type='month'):
 		     limit=1,
 		 )
 		if(len(shift_assignment)):
-			shift_location = frappe.get_doc('Location', shift_assignment[0].site)
+			site = frappe.get_doc("Operations Site", shift_assignment[0].site)
+			shift_location = frappe.get_doc("Location", site.site_location)
 			shift_type = frappe.get_doc('Shift Type', shift_assignment[0].shift_type)
 			days_worked = frappe.db.get_list('Attendance',
 		    filters=[

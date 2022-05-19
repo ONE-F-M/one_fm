@@ -14,34 +14,34 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n%one_fm/proto/facial_recognition.proto\"N\n\x07Request\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x1a\n\x12user_encoded_video\x18\x02 \x01(\t\x12\x15\n\ruser_encoding\x18\x03 \x01(\t\"Q\n\x08Response\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\x12\x14\n\x0cverification\x18\x04 \x01(\t2@\n\x16\x46\x61\x63\x65RecognitionService\x12&\n\x0f\x46\x61\x63\x65Recognition\x12\x08.Request\x1a\t.Responseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n%one_fm/proto/facial_recognition.proto\"U\n\x16\x46\x61\x63\x65RecognitionRequest\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x15\n\rmedia_content\x18\x02 \x01(\t\x12\x12\n\nmedia_type\x18\x03 \x01(\t\"`\n\x17\x46\x61\x63\x65RecognitionResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\x12\x14\n\x0cverification\x18\x04 \x01(\t2^\n\x16\x46\x61\x63\x65RecognitionService\x12\x44\n\x0f\x46\x61\x63\x65Recognition\x12\x17.FaceRecognitionRequest\x1a\x18.FaceRecognitionResponseb\x06proto3')
 
 
 
-_REQUEST = DESCRIPTOR.message_types_by_name['Request']
-_RESPONSE = DESCRIPTOR.message_types_by_name['Response']
-Request = _reflection.GeneratedProtocolMessageType('Request', (_message.Message,), {
-  'DESCRIPTOR' : _REQUEST,
+_FACERECOGNITIONREQUEST = DESCRIPTOR.message_types_by_name['FaceRecognitionRequest']
+_FACERECOGNITIONRESPONSE = DESCRIPTOR.message_types_by_name['FaceRecognitionResponse']
+FaceRecognitionRequest = _reflection.GeneratedProtocolMessageType('FaceRecognitionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _FACERECOGNITIONREQUEST,
   '__module__' : 'one_fm.proto.facial_recognition_pb2'
-  # @@protoc_insertion_point(class_scope:Request)
+  # @@protoc_insertion_point(class_scope:FaceRecognitionRequest)
   })
-_sym_db.RegisterMessage(Request)
+_sym_db.RegisterMessage(FaceRecognitionRequest)
 
-Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Message,), {
-  'DESCRIPTOR' : _RESPONSE,
+FaceRecognitionResponse = _reflection.GeneratedProtocolMessageType('FaceRecognitionResponse', (_message.Message,), {
+  'DESCRIPTOR' : _FACERECOGNITIONRESPONSE,
   '__module__' : 'one_fm.proto.facial_recognition_pb2'
-  # @@protoc_insertion_point(class_scope:Response)
+  # @@protoc_insertion_point(class_scope:FaceRecognitionResponse)
   })
-_sym_db.RegisterMessage(Response)
+_sym_db.RegisterMessage(FaceRecognitionResponse)
 
 _FACERECOGNITIONSERVICE = DESCRIPTOR.services_by_name['FaceRecognitionService']
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _REQUEST._serialized_start=41
-  _REQUEST._serialized_end=119
-  _RESPONSE._serialized_start=121
-  _RESPONSE._serialized_end=202
-  _FACERECOGNITIONSERVICE._serialized_start=204
-  _FACERECOGNITIONSERVICE._serialized_end=268
+  _FACERECOGNITIONREQUEST._serialized_start=41
+  _FACERECOGNITIONREQUEST._serialized_end=126
+  _FACERECOGNITIONRESPONSE._serialized_start=128
+  _FACERECOGNITIONRESPONSE._serialized_end=224
+  _FACERECOGNITIONSERVICE._serialized_start=226
+  _FACERECOGNITIONSERVICE._serialized_end=320
 # @@protoc_insertion_point(module_scope)

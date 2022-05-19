@@ -86,6 +86,11 @@ def checkin_checkout_final_reminder():
 					empChkin.log_type="IN"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
 				AND empChkin.shift_type='{shift_type}')
+				AND tSA.start_date
+				NOT IN(SELECT holiday_date from `tabHoliday` h
+				WHERE 
+					h.parent = emp.holiday_list
+				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
@@ -115,6 +120,11 @@ def checkin_checkout_final_reminder():
 					empChkin.log_type="OUT"
 				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
 				AND empChkin.shift_type='{shift_type}')
+				AND tSA.start_date
+				NOT IN(SELECT holiday_date from `tabHoliday` h
+				WHERE 
+					h.parent = emp.holiday_list
+				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
@@ -161,6 +171,7 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 		if log_type=="OUT":
 			push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=False,arriveLate=False,checkout=True)
 
+			
 	# send notification mail to list of employee using user_id
 	if log_type == "IN":
 		send_notification(title, checkin_subject, checkin_message,notification_category,user_id_list)
@@ -207,6 +218,11 @@ def checkin_checkout_supervisor_reminder():
 						AND empChkin.skip_auto_attendance=0
 						AND date(empChkin.time)='{date}'
 						AND empChkin.shift_type='{shift_type}')
+				AND tSA.start_date
+				NOT IN(SELECT holiday_date from `tabHoliday` h
+				WHERE 
+					h.parent = emp.holiday_list
+				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 			if len(recipients) > 0:
@@ -253,6 +269,11 @@ def checkin_checkout_supervisor_reminder():
 		 				AND empChkin.skip_auto_attendance=0
 		 				AND date(empChkin.time)='{date}'
 		 				AND empChkin.shift_type='{shift_type}')
+				AND tSA.start_date
+				NOT IN(SELECT holiday_date from `tabHoliday` h
+				WHERE 
+					h.parent = emp.holiday_list
+				AND h.holiday_date = '{date}')
 		 	""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 		 	if len(recipients) > 0:
@@ -504,22 +525,8 @@ def automatic_shift_assignment():
 	date = cstr(getdate())
 	end_previous_shifts()
 	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Basic"}, ["*"])
-	errored_shift = []
 	for schedule in roster:
-		# skip errors and continue
-		try:
-			create_shift_assignment(schedule, date)
-		except Exception as e:
-			errored_shift.append(str(e))
-	# check for errors
-	if errored_shift:
-		frappe.log_error(str(errored_shift), 'Shift Assignment')
-		frappe.new_doc(dict(
-			doctype='Issue',
-			subject='Basic Shift Assignment not Scheduled',
-			issue_type='Technical Issue',
-			description=str(errored_shift)
-		)).insert(ignore_permissions=1)
+		create_shift_assignment(schedule, date)
 
 def end_previous_shifts():
 	date = datetime.date.today() - datetime.timedelta(days=1)
@@ -551,8 +558,10 @@ def create_shift_assignment(schedule, date):
 
 def overtime_shift_assignment():
 	"""
-	This method is to fetch Shift Assignment for Employee Scheduling 
-	with roster type 'Over_Time'.
+	This method is to generate Shift Assignment for Employee Scheduling 
+	with roster type 'Over_Time'. It first looks up for Shift Assignment
+	of the employee for the day if he has any. Change the Status to "Inactive"
+	and proceeds with creating New shift Assignments with Roster Type OverTime.
 	"""
 	date = cstr(getdate())
 	now_time = now_datetime().strftime("%H:%M:00")
@@ -560,45 +569,18 @@ def overtime_shift_assignment():
 	frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
 
 def process_overtime_shift(roster, date, time):
-	""" 
-	This method is to generate Shift Assignment for Employee Scheduling 
-	with roster type 'Over_Time'.
-	It first looks up for Shift Assignment
-	of the employee for the day if he has any. Change the Status to "Inactive"
-	and proceeds with creating New shift Assignments with Roster Type OverTime
-
-	Args:
-		roster (object): list of over-time employee schedule
-		date (date): current date
-		time (time): current time
-	"""
-	errored_shift = []
-
 	for schedule in roster:	
-		try:
-			#Check for employee's shift assignment of the day, if he has any.
-			shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date, "roster_type":"Basic"},["name","shift_type"])
-			if shift_assignment:
-				shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
-				#check if the given shift has ended
-				# Set status inactive before creating new shift
-				if str(shift_end_time) == str(time):
-					frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
-					create_shift_assignment(schedule, date)
-			else:
+		#Check for employee's shift assignment of the day, if he has any.
+		shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
+		if shift_assignment:
+			shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
+			#check if the given shift has ended
+			# Set status inactive before creating new shift
+			if str(shift_end_time) == str(time):
+				frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
 				create_shift_assignment(schedule, date)
-		except Exception as e:
-			errored_shift.append(str(e))
-	
-	# check for errors
-	if errored_shift:
-		frappe.log_error(str(errored_shift), 'Shift Assignment')
-		frappe.new_doc(dict(
-			doctype='Issue',
-			subject='Over-Time Shift Assignment not Scheduled',
-			issue_type='Technical Issue',
-			description=str(errored_shift)
-		)).insert(ignore_permissions=1)
+		else:
+			create_shift_assignment(schedule, date)
 
 def update_shift_type():
 	today_datetime = now_datetime()
