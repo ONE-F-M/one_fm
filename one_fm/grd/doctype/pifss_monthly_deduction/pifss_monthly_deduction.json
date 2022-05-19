@@ -148,6 +148,7 @@
    "depends_on": "attach_report",
    "fieldname": "detailed_basic_amounts_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Basic Amounts"
   },
   {
@@ -181,6 +182,7 @@
    "depends_on": "attach_report",
    "fieldname": "detailed_additional_amounts_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Additional Amounts From Manual Report"
   },
   {
@@ -438,8 +440,13 @@
   }
  ],
  "is_submittable": 1,
- "links": [],
- "modified": "2022-05-16 13:24:02.304231",
+ "links": [
+  {
+   "link_doctype": "Additional Salary",
+   "link_fieldname": "pifss_monthly_deduction"
+  }
+ ],
+ "modified": "2022-05-19 13:51:36.106487",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",

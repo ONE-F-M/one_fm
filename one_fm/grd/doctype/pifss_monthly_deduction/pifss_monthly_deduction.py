@@ -99,12 +99,15 @@ class PIFSSMonthlyDeduction(Document):
 		This function throw the mandatory fields `set_mandatory_fields` upon each `workflow_state`
 		"""
 		if self.workflow_state == "Pending By Supervisor":# Check the previous workflow (DRAFT) required fields
-			field_list = [{'Attach Monthly Deduction Report':'attach_report'},{'Attach Manual Report':'attach_manual_report'},
-							{'Attach Employee Additional Monthly Report':'additional_attach_report'},
-							{'Attach PDF Report':'attach_pdf_report'},
-							{'Basic Insurance':'basic_insurance'},{'Supplementary Insurance':'supplementary_insurance'},
-							{'Fund Increase':'fund_increase'},{'Unemployment Insurance':'unemployment_insurance'},
-							{'Compensation':'compensation'},{'Total Amount':'total'}]
+			field_list = [
+							{'Attach Monthly Deduction Report':'attach_report'},
+							# {'Attach Manual Report':'attach_manual_report'},
+							# {'Attach Employee Additional Monthly Report':'additional_attach_report'},
+							# {'Attach PDF Report':'attach_pdf_report'},
+							# {'Basic Insurance':'basic_insurance'},{'Supplementary Insurance':'supplementary_insurance'},
+							# {'Fund Increase':'fund_increase'},{'Unemployment Insurance':'unemployment_insurance'},
+							# {'Compensation':'compensation'},{'Total Amount':'total'}
+							]
 
 			message_detail = '<b style="color:red; text-align:center;">First, Scan the Manual Report and Download csv files from <a href="{0}" target="_blank">PIFSS Website</a></b>'.format(self.pifss_website)
 			self.set_mandatory_fields(field_list,message_detail)
@@ -112,15 +115,16 @@ class PIFSSMonthlyDeduction(Document):
 			self.notify_grd_supervisor()# Notify supervisor to check the document before sending it finance.
 
 		if self.workflow_state == "Pending By Finance":
-			field_list = [{'Total Payment Required':'total_payment_required'}]
-			self.set_mandatory_fields(field_list)
-			create_payment_request(self.total_payment_required,self.name, self.attach_manual_report)
-			self.notify_finance()# Notify finance with the created payment request.
+			pass
+			# field_list = [{'Total Payment Required':'total_payment_required'}]
+			# self.set_mandatory_fields(field_list)
+			# create_payment_request(self.total_payment_required,self.name, self.attach_manual_report)
+			# self.notify_finance()# Notify finance with the created payment request.
 
 		if self.workflow_state == "Completed":
 			field_list = [{'Attach Invoice':'attach_invoice'}]
 			message_detail = '<b style="color:red; text-align:center;">First, Scan the Receipt</b>'
-			self.set_mandatory_fields(field_list,message_detail)
+			# self.set_mandatory_fields(field_list,message_detail)
 
 	def set_mandatory_fields(self,field_list,message_detail=None):
 		mandatory_fields = []
@@ -187,6 +191,17 @@ class PIFSSMonthlyDeduction(Document):
 
 	def on_submit(self):
 		self.create_legal_investigation()
+
+	def before_cancel(self):
+		self.cancel_additional_salary()
+
+	def cancel_additional_salary(self):
+		additional_salaries = frappe.db.get_list("Additional Salary", {'pifss_monthly_deduction':self.name})
+		for row in addtional_salaries:
+			print('cancelling', row.employee, row.name, row.amount)
+			additional_salary = frappe.get_doc("Additional Salary", row.name)
+			if(additional_salary.docstatus==1):
+				additional_salary.cancel()
 
 	def notify_payroll(self, employee_list):
 		email = frappe.get_value("HR Settings", "HR Settings", "payroll_notifications_email")
@@ -322,22 +337,22 @@ def import_deduction_data(doc_name):
 			# employee_amount = flt(row[1] * (47.730/ 100))
 	#
 	# Fetch the second csv file for additional deduction records and store its content in a dictionary list `additional_table`
-	additional_table = {}
-	if doc.additional_attach_report:
-		file_url_2 = doc.additional_attach_report
-		url_2 = frappe.get_site_path() + file_url_2
-		df_2 = pd.read_csv(url_2, encoding='utf-8')
-		for index, row in df_2.iterrows():
-			if frappe.db.exists("Employee", {"one_fm_civil_id": row[7]}):
-				additional_amount = flt(row[1], precision=3)
-				additional_table[cstr(row[7])] = {'civil_id': cstr(row[7]),'additional_deduction': additional_amount}
-
-	# Looping in the first list `table_data` and set the actual additional value for employees who are listed in the second list `additional_table`
-	list_additional_values = [value for elem in additional_table for value in elem.values()]# Convert `additional_table` dictionary list into list of [civil_id, additional_value] (eg: list_additional_values=['288020300233', 30.0] )
-	for employee in table_data:
-		if additional_table.get(employee['civil_id']):
-			employee.update({
-				'additional_deduction':additional_table.get(employee['civil_id'])
-			})
+	# additional_table = {}
+	# if doc.additional_attach_report:
+	# 	file_url_2 = doc.additional_attach_report
+	# 	url_2 = frappe.get_site_path() + file_url_2
+	# 	df_2 = pd.read_csv(url_2, encoding='utf-8')
+	# 	for index, row in df_2.iterrows():
+	# 		if frappe.db.exists("Employee", {"one_fm_civil_id": row[7]}):
+	# 			additional_amount = flt(row[1], precision=3)
+	# 			additional_table[cstr(row[7])] = {'civil_id': cstr(row[7]),'additional_deduction': additional_amount}
+	#
+	# # Looping in the first list `table_data` and set the actual additional value for employees who are listed in the second list `additional_table`
+	# list_additional_values = [value for elem in additional_table for value in elem.values()]# Convert `additional_table` dictionary list into list of [civil_id, additional_value] (eg: list_additional_values=['288020300233', 30.0] )
+	# for employee in table_data:
+	# 	if additional_table.get(employee['civil_id']):
+	# 		employee.update({
+	# 			'additional_deduction':additional_table.get(employee['civil_id'])
+	# 		})
 
 	return table_data,len(table_data)
