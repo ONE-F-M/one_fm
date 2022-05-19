@@ -433,9 +433,6 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_renewal',#paci hawiyati
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer'
 		],
-		"0 8 15 * *": [
-			'one_fm.grd.doctype.preparation.preparation.create_preparation',
-		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
@@ -468,7 +465,7 @@ scheduler_events = {
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
 		],
-		"0 8 * * *": [
+		"0 8 * * *": [# Runs everyday at 8:00 am.
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
@@ -480,7 +477,8 @@ scheduler_events = {
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
 			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
-			'one_fm.utils.issue_roster_actions'
+			'one_fm.utils.issue_roster_actions',
+			'one_fm.grd.doctype.preparation.preparation.auto_create_preparation_record',
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',
