@@ -12,7 +12,11 @@
   "default_grd_operator_pifss",
   "default_grd_operator_transfer",
   "preparation_record_settings_section",
-  "preparation_record_creation_day"
+  "preparation_record_creation_day",
+  "create_preparation_record_manually",
+  "column_break_10",
+  "last_preparation_record_created_on",
+  "last_preparation_record_created_by"
  ],
  "fields": [
   {
@@ -62,11 +66,33 @@
    "fieldname": "preparation_record_settings_section",
    "fieldtype": "Section Break",
    "label": "Preparation Record Settings"
+  },
+  {
+   "fieldname": "create_preparation_record_manually",
+   "fieldtype": "Button",
+   "label": "Create Preparation Record Manually"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_preparation_record_created_on",
+   "fieldtype": "Datetime",
+   "label": "Last Preparation Record Created on",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_preparation_record_created_by",
+   "fieldtype": "Link",
+   "label": "Last Preparation Record Created by",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2022-05-18 14:37:00.889505",
+ "modified": "2022-05-20 08:50:40.970850",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "GRD Settings",

@@ -107,6 +107,13 @@ class Preparation(Document):
             send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
 
+    def after_insert(self):
+        self.update_last_preparation_details_to_grd_settings()
+
+    def update_last_preparation_details_to_grd_settings(self):
+        frappe.db.set_value("GRD Settings", None, "last_preparation_record_created_on", self.creation)
+        frappe.db.set_value("GRD Settings", None, "last_preparation_record_created_by", self.owner)
+
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def auto_create_preparation_record():
     """
@@ -121,6 +128,7 @@ def auto_create_preparation_record():
         if getdate(preparation_record_creation_day_date) == getdate(today()):
             create_preparation_record()
 
+@frappe.whitelist()
 def create_preparation_record():
     """
         This method will create preparation record for next month from the date of execution.
