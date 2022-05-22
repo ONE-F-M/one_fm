@@ -152,6 +152,7 @@ class PIFSSMonthlyDeduction(Document):
 
 	def on_submit(self):
 		self.create_additional_salary()
+		frappe.msgprint("Addtional Salaries has been creeated.")
 
 	def create_additional_salary(self):
 		for row in self.deductions:
