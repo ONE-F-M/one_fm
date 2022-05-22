@@ -257,10 +257,6 @@ doc_events = {
 		],
 		"on_cancel": "one_fm.one_fm.utils.manage_attendance_on_holiday"
 	},
-	"Attendance Request": {
-		# "after_insert": "one_fm.api.doc_events.after_insert_attendance_request",
-		# "before_submit": "one_fm.api.doc_events.before_submit_attendance_request"
-	},
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
 		"on_submit": "one_fm.one_fm.asset_custom.on_asset_submit"
@@ -514,6 +510,9 @@ scheduler_events = {
 		],
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
+		],
+		"0 23 * * *": [
+			'one_fm.tasks.one_fm.daily.mark_future_attendance_request'
 		]
 	}
 }
