@@ -258,8 +258,8 @@ doc_events = {
 		"on_cancel": "one_fm.one_fm.utils.manage_attendance_on_holiday"
 	},
 	"Attendance Request": {
-		"after_insert": "one_fm.api.doc_events.after_insert_attendance_request",
-		"before_submit": "one_fm.api.doc_events.before_submit_attendance_request"
+		# "after_insert": "one_fm.api.doc_events.after_insert_attendance_request",
+		# "before_submit": "one_fm.api.doc_events.before_submit_attendance_request"
 	},
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
