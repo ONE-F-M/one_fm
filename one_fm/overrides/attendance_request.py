@@ -54,7 +54,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 		if(self.future_request and (getdate(self.from_date) >= getdate(nowdate()) and getdate(nowdate()) <= getdate(self.to_date))):
 			attendance_date = nowdate()
 			skip_attendance = self.validate_if_attendance_not_applicable(attendance_date)
-			
+
 			if not skip_attendance:
 				attendance = frappe.new_doc("Attendance")
 				attendance.employee = self.employee
@@ -70,7 +70,6 @@ class AttendanceRequestOverride(AttendanceRequest):
 				attendance.attendance_request = self.name
 				attendance.save(ignore_permissions=True)
 				attendance.submit()
-				print(attendance.as_dict())
 
 
 	def validate_if_attendance_not_applicable(self, attendance_date):
