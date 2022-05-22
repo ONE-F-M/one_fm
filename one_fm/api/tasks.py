@@ -520,6 +520,12 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.submit()
 	frappe.msgprint(_('A penalty has been issued against {0}'.format(employee_name)))
 
+def check_schedule_time():
+	schedule = frappe.get_doc("Employee Schedule","2022-05-22/HR-EMP-00001/Basic")
+	shift_start_time, before_time  = frappe.get_value("Shift Type", {"name":schedule.shift_type},["start_time", "begin_check_in_before_shift_start_time"])
+	now_time = now_datetime().strftime("%H:%M:00")
+	
+
 
 def automatic_shift_assignment():
 	date = cstr(getdate())
