@@ -97,7 +97,13 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 		return False
 
-
+	@frappe.whitelist()
+	def reports_to(self):
+		reports_to = frappe.db.get_value("Employee", {'name':frappe.db.get_value("Employee", {'name':self.employee}, ['reports_to'])}, ['user_id'])
+		if not frappe.session.user in [reports_to, 'administrator', 'Administrator']:
+			frappe.msgprint('This Attendance Request can only be approved by the employee supervisor')
+			return False
+		return True
 
 def validate_future_dates(doc, from_date, to_date):
 	date_of_joining, relieving_date = frappe.db.get_value(

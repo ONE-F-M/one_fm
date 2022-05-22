@@ -86,6 +86,7 @@ doctype_js = {
 	"Interview": "public/js/doctype_js/interview.js",
 	"Help Category": "public/js/doctype_js/help_category.js",
 	"Help Article": "public/js/doctype_js/help_article.js",
+	"Attendance Request": "public/js/doctype_js/attendance_request.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
