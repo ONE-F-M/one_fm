@@ -86,6 +86,7 @@ doctype_js = {
 	"Interview": "public/js/doctype_js/interview.js",
 	"Help Category": "public/js/doctype_js/help_category.js",
 	"Help Article": "public/js/doctype_js/help_article.js",
+	"Attendance Request": "public/js/doctype_js/attendance_request.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -256,10 +257,6 @@ doc_events = {
 			"one_fm.one_fm.utils.manage_attendance_on_holiday"
 		],
 		"on_cancel": "one_fm.one_fm.utils.manage_attendance_on_holiday"
-	},
-	"Attendance Request": {
-		"after_insert": "one_fm.api.doc_events.after_insert_attendance_request",
-		"before_submit": "one_fm.api.doc_events.before_submit_attendance_request"
 	},
 	"Asset":{
 		"after_insert" : "one_fm.one_fm.asset_custom.after_insert_asset",
@@ -514,6 +511,9 @@ scheduler_events = {
 		],
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
+		],
+		"0 23 * * *": [
+			'one_fm.tasks.one_fm.daily.mark_future_attendance_request'
 		]
 	}
 }
