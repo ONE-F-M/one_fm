@@ -67,7 +67,6 @@
  ],
  "fields": [
   {
-   "allow_on_submit": 1,
    "description": "Data will be imported from attached report",
    "fieldname": "attach_report",
    "fieldtype": "Attach",
@@ -115,6 +114,7 @@
    "description": "Data will be imported from attached report",
    "fieldname": "additional_attach_report",
    "fieldtype": "Attach",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "Attach Employee Additional Monthly Report"
   },
@@ -131,6 +131,7 @@
    "description": "Manual report for pifss montly deduction",
    "fieldname": "attach_manual_report",
    "fieldtype": "Attach",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "Attach Manual Report"
   },
@@ -139,6 +140,7 @@
    "description": "PDF report ",
    "fieldname": "attach_pdf_report",
    "fieldtype": "Attach",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "Attach PDF Report"
   },
@@ -343,6 +345,7 @@
    "depends_on": "eval:doc.workflow_state != \"Draft\"",
    "fieldname": "finance_section_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Finance Section"
   },
   {
@@ -364,6 +367,7 @@
    "depends_on": "eval:doc.workflow_state == \"Pending By Finance\" || doc.workflow_state == \"Completed\"",
    "fieldname": "invoice_attachment_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Invoice Attachment"
   },
   {
@@ -446,7 +450,7 @@
    "link_fieldname": "pifss_monthly_deduction"
   }
  ],
- "modified": "2022-05-19 13:51:36.106487",
+ "modified": "2022-05-22 12:24:11.482246",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction",
