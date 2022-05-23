@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 from __future__ import unicode_literals
-import frappe, json
+import frappe, json, pycountry, random
 from frappe.utils import (
     get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form
 )
@@ -204,6 +204,44 @@ def employee_after_insert(doc, method):
     update_erf_close_with(doc)
     create_wp_for_transferable_employee(doc)
     create_leave_policy_assignment(doc)
+    create_employee_user(doc)
+
+
+def create_employee_user(doc):
+    """
+        Create user account for employee if no user_id or employee while importing
+    """
+    if not doc.employee_id:
+        generate_employee_id(doc)
+    if ((not doc.user_id) or (not doc.prefered_email)):
+        doc.reload()
+        user = frappe.get_doc({
+            'doctype':'User',
+            'email':f"{doc.employee_id.upper()}@one-fm.com",
+            'first_name':doc.first_name,
+            'last_name':doc.last_name,
+            'role_profile_name': 'Only Employee',
+            'gender':doc.gender,
+            'date_of_birth':doc.date_of_birth,
+            'send_welcome_email': 0
+        })
+        user.insert(ignore_permissions=True)
+        doc.db_set("user_id", user.name)
+        doc.db_set("create_user_permission", 1)
+        doc.reload()
+
+def generate_employee_id(doc):
+    """
+        Generate employee ID
+    """
+
+    country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
+    joining_year = doc.date_of_joining.split('-')[0][-2:].zfill(2)
+    joining_month = doc.date_of_joining.split('-')[1].zfill(2)
+    count = frappe.db.count('Employee', {'date_of_joining': doc.date_of_joining,})
+    doc.reload()
+    doc.db_set("employee_id", f"{joining_year}{joining_month}{str(count).zfill(3)}{country}".upper())
+    doc.reload()
 
 def create_leave_policy_assignment(doc):
     '''
@@ -518,7 +556,7 @@ def create_onboarding_from_job_offer(job_offer):
                     else:
                         o_employee.set(od, job_applicant.get('one_fm_'+od))
 
-                #set employee's name in arabic    
+                #set employee's name in arabic
                 o_employee.set('employee_name_in_arabic',job_applicant.get('one_fm_last_name_in_arabic') +" "+ job_applicant.get('one_fm_first_name_in_arabic'))
 
                 # Set Documents attached in the Job Applicant to Onboard Employee document
