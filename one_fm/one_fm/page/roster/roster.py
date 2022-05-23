@@ -335,6 +335,7 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 			for employee in json.loads(employees):
 				if not cint(request_employee_schedule):
 					frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot, is_async=True, queue='long')
+					frappe.msgprint(f"Successfully started scheduling {employee}", alert=True)
 				else:
 					from_schedule = frappe.db.sql("""select shift, post_type from `tabEmployee Schedule` where shift!= %(shift)s and date >= %(start_date)s and date <= %(end_date)s and employee = %(employee)s""",{
 						'shift' : shift,
@@ -346,6 +347,7 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 						from_shift = from_schedule[0].shift
 						from_post_type = from_schedule[0].post_type
 						frappe.enqueue(create_request_employee_schedule, employee=employee, from_shift=from_shift, from_post_type=from_post_type, to_shift=shift, to_post_type=post_type, otRoster=otRoster, start_date=start_date, end_date=end_date, is_async=True, queue='long')
+						frappe.msgprint(f"Successfully created request for employee schedule for {employee}", alert=True)
 					else:
 						frappe.throw("This employee is not scheduled. Please uncheck Request Employee Schedule option.")
 						frappe.log_error("This employee is not scheduled. Please uncheck Request Employee Schedule option.")	
