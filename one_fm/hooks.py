@@ -515,7 +515,7 @@ scheduler_events = {
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
 		],
-		"0 23 * * *": [
+		"1 23 1-31 * *": [
 			'one_fm.tasks.one_fm.daily.mark_future_attendance_request'
 		]
 	}
