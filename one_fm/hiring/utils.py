@@ -235,12 +235,18 @@ def generate_employee_id(doc):
         Generate employee ID
     """
     try:
-        country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
+        if not doc.one_fm_place_of_birth:
+            country = ''
+        else:
+            country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
     except Exception as e:
         country = ''
     joining_year = doc.date_of_joining.split('-')[0][-2:].zfill(2)
     joining_month = doc.date_of_joining.split('-')[1].zfill(2)
-    count = frappe.db.count('Employee', {'date_of_joining': doc.date_of_joining,})
+    count = len(frappe.db.sql(f"""
+        SELECT name FROM tabEmployee
+        WHERE date_of_joining BETWEEN '{doc.date_of_joining[:8]}01' AND '{doc.date_of_joining[:8]}31'""",
+        as_dict=1))
     doc.reload()
     doc.db_set("employee_id", f"{joining_year}{joining_month}{str(count).zfill(3)}{country}".upper())
     doc.reload()
