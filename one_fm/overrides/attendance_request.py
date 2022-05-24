@@ -51,7 +51,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 					attendance.submit()
 
 	def create_future_attendance(self):
-		if(self.future_request and (getdate(self.from_date) >= getdate(nowdate()) and getdate(nowdate()) <= getdate(self.to_date))):
+		if(self.future_request and (getdate(self.from_date) <= getdate(nowdate()) <= getdate(self.to_date))):
 			attendance_date = nowdate()
 			skip_attendance = self.validate_if_attendance_not_applicable(attendance_date)
 
