@@ -167,15 +167,23 @@ def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latit
     return checkin.as_dict()
 
 @frappe.whitelist()
-def get_site_location(employee_id: str = None) -> dict:
+def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
 
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
+
+    if not latitude:
+        return response("Bad Request", 400, None, "latitude required.")
+
+    if not longitude:
+        return response("Bad Request", 400, None, "longitude required.")
 
     if not isinstance(employee_id, str):
         return response("Bad Request", 400, None, "employee must be of type str.")
 	
     try:
+        from one_fm.api.doc_events import haversine
+
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
@@ -183,7 +191,7 @@ def get_site_location(employee_id: str = None) -> dict:
         
         shift = get_current_shift(employee)
         if not shift or len(shift) == 0:
-            return response("Resource Not Found", 404, None, "User not assigned to a shift.")
+            return response("Resource Not Found", 400, None, "User not assigned to a shift.")
         
         site = frappe.get_value("Operations Shift", shift.shift, "site")
         location = frappe.db.sql("""
@@ -197,6 +205,12 @@ def get_site_location(employee_id: str = None) -> dict:
             return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
         
         result=location[0]
+        result['user_within_geofence_radius'] = True
+
+        distance = float(haversine(result.latitude, result.longitude, latitude, longitude))
+        if distance > float(result.geofence_radius):
+            result['user_within_geofence_radius'] = False
+        
         result['site_name']=site
         return response("Success", 200, result)
 
