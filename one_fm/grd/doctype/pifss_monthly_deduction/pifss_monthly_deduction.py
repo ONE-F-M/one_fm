@@ -54,45 +54,6 @@ class PIFSSMonthlyDeduction(Document):
 		self.employee_contribution = employee_contribution
 
 
-		# subscription=0.0
-		# additional=0.0
-		# basic=0.0
-		# supplementary=0.0
-		# fund=0.0
-		# unemployment=0.0
-		# compensation=0.0
-
-		# if self.attach_report and self.additional_attach_report:
-		# 	if not self.total_sub and not self.total_additional_deduction:
-		# 		for row in self.deductions:
-		# 				if row.total_subscription:
-		# 					subscription += row.total_subscription
-		# 				if row.additional_deduction:
-		# 					additional +=row.additional_deduction
-		# 				if row.basic_insurance:
-		# 					basic +=row.basic_insurance
-		# 				if row.supplementary_insurance:
-		# 					supplementary +=row.supplementary_insurance
-		# 				if row.fund_increase:
-		# 					fund += row.fund_increase
-		# 				if row.unemployment_insurance:
-		# 					 unemployment +=row.unemployment_insurance
-		# 				if row.compensation_amount:
-		# 					compensation += row.compensation_amount
-		#
-		# 		self.total_additional_deduction=additional
-		# 		self.total_sub=subscription
-		# 		self.basic_insurance_in_csv=basic
-		# 		self.supplementary_insurance_in_csv=supplementary
-		# 		self.fund_increase_in_csv=fund
-		# 		self.unemployment_insurance_in_csv=unemployment
-		# 		self.compensation_in_csv=compensation
-		#
-		# 		if not self.total_payments:
-		# 			if self.remaining_amount and self.total_additional_deduction and self.total_sub:
-		# 				self.total_payments = self.remaining_amount+self.total_additional_deduction+self.total_sub
-		# frappe.db.commit()
-
 
 	def check_workflow_states(self):
 		"""
@@ -190,7 +151,29 @@ class PIFSSMonthlyDeduction(Document):
 
 
 	def on_submit(self):
-		self.create_legal_investigation()
+		self.create_additional_salary()
+		frappe.msgprint("Addtional Salaries has been creeated.")
+
+	def create_additional_salary(self):
+		for row in self.deductions:
+			try:
+				if not frappe.db.exists("Additional Salary", {'pifss_monthly_deduction':row.parent, 'employee':row.employee}):
+					additional_salary = frappe.new_doc("Additional Salary")
+					additional_salary.employee = row.employee
+					additional_salary.salary_component = "Social Security"
+					additional_salary.amount = row.employee_contribution
+					additional_salary.payroll_date = self.deduction_month
+					additional_salary.company = erpnext.get_default_company()
+					additional_salary.overwrite_salary_structure_amount = 1
+					additional_salary.notes = "Social Security Deduction"
+					additional_salary.pifss_monthly_deduction = row.parent
+					additional_salary.insert()
+					additional_salary.submit()
+				else:
+					frappe.throw(f" Something is not right on <b class='text-danger'>row {row.idx}, {row.employee_name}</b>. Please check Employee records or Additional Salary Slip.")
+			except Exception as e:
+				frappe.throw(f"{str(e)} <b class='text-danger'>row {row.idx}, {row.employee_name}</b>")
+
 
 	def before_cancel(self):
 		self.cancel_additional_salary()
