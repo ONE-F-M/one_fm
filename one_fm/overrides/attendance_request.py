@@ -2,6 +2,10 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_days, date_diff, getdate, nowdate
+from frappe.workflow.doctype.workflow_action.workflow_action import (
+	get_common_email_args, deduplicate_actions, get_next_possible_transitions,
+	get_doc_workflow_state, get_workflow_name, get_users_next_action_data
+)
 
 from erpnext.hr.doctype.employee.employee import is_holiday
 from erpnext.hr.utils import validate_active_employee, validate_dates
@@ -23,10 +27,14 @@ class AttendanceRequestOverride(AttendanceRequest):
 		attendance_list = frappe.get_list(
 			"Attendance", {"employee": self.employee, "attendance_request": self.name}
 		)
+		self.db_set("workflow_state", 'Cancelled')
+		self.reload()
 		if attendance_list:
 			for attendance in attendance_list:
 				attendance_obj = frappe.get_doc("Attendance", attendance["name"])
 				attendance_obj.cancel()
+	def on_update(self):
+		self.send_notification()
 
 	def create_attendance(self):
 		if(not self.future_request):
@@ -51,6 +59,9 @@ class AttendanceRequestOverride(AttendanceRequest):
 					attendance.submit()
 
 	def create_future_attendance(self):
+		reports_to = self.reports_to()
+		if not reports_to:
+			frappe.throw("You are not the employee supervisor")
 		if(self.future_request and (getdate(self.from_date) <= getdate(nowdate()) <= getdate(self.to_date))):
 			attendance_date = nowdate()
 			skip_attendance = self.validate_if_attendance_not_applicable(attendance_date)
@@ -70,6 +81,10 @@ class AttendanceRequestOverride(AttendanceRequest):
 				attendance.attendance_request = self.name
 				attendance.save(ignore_permissions=True)
 				attendance.submit()
+
+	def send_notification(self):
+		if self.workflow_state in ['Pending Approval', 'Rejected', 'Approved']:
+			send_workflow_action_email([self.get_reports_to()], self)
 
 
 	def validate_if_attendance_not_applicable(self, attendance_date):
@@ -97,13 +112,17 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 		return False
 
+	def get_reports_to(self):
+		return frappe.db.get_value("Employee", {'name':frappe.db.get_value("Employee", {'name':self.employee}, ['reports_to'])}, ['user_id'])
+
 	@frappe.whitelist()
 	def reports_to(self):
-		reports_to = frappe.db.get_value("Employee", {'name':frappe.db.get_value("Employee", {'name':self.employee}, ['reports_to'])}, ['user_id'])
+		reports_to = self.get_reports_to()
 		if not frappe.session.user in [reports_to, 'administrator', 'Administrator']:
 			frappe.msgprint('This Attendance Request can only be approved by the employee supervisor')
 			return False
 		return True
+
 
 def validate_future_dates(doc, from_date, to_date):
 	date_of_joining, relieving_date = frappe.db.get_value(
@@ -119,3 +138,24 @@ def validate_future_dates(doc, from_date, to_date):
 		frappe.throw(_("From date can not be less than employee's joining date"))
 	elif relieving_date and getdate(to_date) > getdate(relieving_date):
 		frappe.throw(_("To date can not greater than employee's relieving date"))
+
+
+def send_workflow_action_email(recipients, doc):
+	workflow = get_workflow_name(doc.get("doctype"))
+	next_possible_transitions = get_next_possible_transitions(
+		workflow, get_doc_workflow_state(doc), doc
+	)
+	user_data_map = get_users_next_action_data(next_possible_transitions, doc)
+
+
+	common_args = get_common_email_args(doc)
+	message = common_args.pop("message", None)
+	for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
+		email_args = {
+			"recipients": recipients,
+			"args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message},
+			"reference_name": doc.name,
+			"reference_doctype": doc.doctype,
+		}
+		email_args.update(common_args)
+		frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
