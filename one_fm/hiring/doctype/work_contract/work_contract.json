@@ -29,6 +29,7 @@
   "column_break_13",
   "designation",
   "monthly_salary",
+  "pam_authorized_signatory",
   "pam_file_number",
   "working_hours",
   "signature_proof_section",
@@ -212,10 +213,13 @@
    "options": "ERF"
   },
   {
-   "fetch_from": "erf.pam_file_number",
+   "depends_on": "pam_authorized_signatory",
+   "fetch_from": "pam_authorized_signatory.pam_file_number",
+   "fetch_if_empty": 1,
    "fieldname": "pam_file_number",
    "fieldtype": "Data",
-   "label": "PAM File Number"
+   "label": "PAM File Number",
+   "read_only": 1
   },
   {
    "fieldname": "workflow",
@@ -257,10 +261,16 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Authorized Signatory Arabic Name"
+  },
+  {
+   "fieldname": "pam_authorized_signatory",
+   "fieldtype": "Link",
+   "label": "PAM Authorized Signatory",
+   "options": "PAM Authorized Signatory List"
   }
  ],
  "links": [],
- "modified": "2022-05-18 08:53:03.921235",
+ "modified": "2022-05-26 13:52:29.334547",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
