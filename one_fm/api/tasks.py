@@ -49,7 +49,7 @@ def send_checkin_hourly_reminder():
 			recipients = [recipient[0] for recipient in recipients if recipient[0]]
 
 			subject = _("Hourly Reminder: Please checkin")
-			message = _('<a class="btn btn-warning" href="/desk#face-recognition">Hourly Check In</a>')
+			message = _('<a class="btn btn-warning" href="/app/ace-recognition">Hourly Check In</a>')
 			send_notification(title, subject, message, category, recipients)
 
 def checkin_checkout_final_reminder():
@@ -88,7 +88,7 @@ def checkin_checkout_final_reminder():
 				AND empChkin.shift_type='{shift_type}')
 				AND tSA.start_date
 				NOT IN(SELECT holiday_date from `tabHoliday` h
-				WHERE 
+				WHERE
 					h.parent = emp.holiday_list
 				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
@@ -122,7 +122,7 @@ def checkin_checkout_final_reminder():
 				AND empChkin.shift_type='{shift_type}')
 				AND tSA.start_date
 				NOT IN(SELECT holiday_date from `tabHoliday` h
-				WHERE 
+				WHERE
 					h.parent = emp.holiday_list
 				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
@@ -142,12 +142,12 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 	title  = "Final Reminder"
 	checkin_subject = _("Please checkin in the next five minutes.")
 	checkin_message = _("""
-					<a class="btn btn-success" href="/desk#face-recognition">Check In</a>&nbsp;
-					<a class="btn btn-primary" href="/desk#shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
+					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
+					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
 					""")
 	notification_category = "Attendance"
 	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
-	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
+	checkout_message = _("""<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
 	user_id_list = []
@@ -171,7 +171,7 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 		if log_type=="OUT":
 			push_notification_rest_api_for_checkin(employee_id, Notification_title, Notification_body, checkin=False,arriveLate=False,checkout=True)
 
-			
+
 	# send notification mail to list of employee using user_id
 	if log_type == "IN":
 		send_notification(title, checkin_subject, checkin_message,notification_category,user_id_list)
@@ -220,7 +220,7 @@ def checkin_checkout_supervisor_reminder():
 						AND empChkin.shift_type='{shift_type}')
 				AND tSA.start_date
 				NOT IN(SELECT holiday_date from `tabHoliday` h
-				WHERE 
+				WHERE
 					h.parent = emp.holiday_list
 				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
@@ -271,7 +271,7 @@ def checkin_checkout_supervisor_reminder():
 		 				AND empChkin.shift_type='{shift_type}')
 				AND tSA.start_date
 				NOT IN(SELECT holiday_date from `tabHoliday` h
-				WHERE 
+				WHERE
 					h.parent = emp.holiday_list
 				AND h.holiday_date = '{date}')
 		 	""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
@@ -558,7 +558,7 @@ def create_shift_assignment(schedule, date):
 
 def overtime_shift_assignment():
 	"""
-	This method is to generate Shift Assignment for Employee Scheduling 
+	This method is to generate Shift Assignment for Employee Scheduling
 	with roster type 'Over_Time'. It first looks up for Shift Assignment
 	of the employee for the day if he has any. Change the Status to "Inactive"
 	and proceeds with creating New shift Assignments with Roster Type OverTime.
@@ -569,7 +569,7 @@ def overtime_shift_assignment():
 	frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
 
 def process_overtime_shift(roster, date, time):
-	for schedule in roster:	
+	for schedule in roster:
 		#Check for employee's shift assignment of the day, if he has any.
 		shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
 		if shift_assignment:

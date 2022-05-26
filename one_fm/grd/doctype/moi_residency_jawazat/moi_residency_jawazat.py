@@ -19,7 +19,7 @@ class MOIResidencyJawazat(Document):
         self.set_company_address()
         self.set_company_unified_number()
         self.set_paci_number()
-	
+
     def set_grd_values(self):
         if not self.grd_supervisor:
             self.grd_supervisor = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
@@ -29,7 +29,7 @@ class MOIResidencyJawazat(Document):
         if self.category != "Extend":
             employee = frappe.get_doc('Employee',self.employee)
             self.new_residency_expiry_date = employee.work_permit_expiry_date
-            
+
     def set_company_address(self):
         """
         This method sets the company address from MOCI document
@@ -85,7 +85,7 @@ class MOIResidencyJawazat(Document):
             for field in fields:
                 if not self.get(fields[field]):
                     mandatory_fields.append(field)
-        
+
         if len(mandatory_fields) > 0:
             message= 'Mandatory fields required in Work Permit form<br><br><ul>'
             for mandatory_field in mandatory_fields:
@@ -97,8 +97,8 @@ class MOIResidencyJawazat(Document):
         """
         runs: `on_submit`
         This method to sort records of employee documents upon document name;
-        First, get the employee document child table. 
-        second, find index of the document. 
+        First, get the employee document child table.
+        second, find index of the document.
         Third, set the new document.
         After that, clear the child table and append the new order
         """
@@ -130,10 +130,10 @@ class MOIResidencyJawazat(Document):
             })
         employee.residency_expiry_date = self.new_residency_expiry_date
         employee.save()
-            
-#fetching the list of employee has Extend and renewal status from HR list. 
+
+#fetching the list of employee has Extend and renewal status from HR list.
 def set_employee_list_for_moi(preparation_name):
-    # filter work permit records only take the non kuwaiti 
+    # filter work permit records only take the non kuwaiti
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
@@ -151,7 +151,7 @@ def creat_moi_for_transfer(work_permit_name):
             create_moi_record(frappe.get_doc('Employee',employee.employee),"Transfer")
 
 def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
-    
+
     if Renewal_or_Extend == "Renewal":
         category = "Renewal"
         start_date = add_days(employee.residency_expiry_date, -14)
@@ -161,7 +161,7 @@ def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
     if Renewal_or_Extend != "Renewal" and Renewal_or_Extend != "Transfer":
         category = "Extend"
         start_date = add_days(employee.residency_expiry_date, -7)
-        
+
 
     # start_day_for_renewal = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
     new_moi = frappe.new_doc('MOI Residency Jawazat')
@@ -172,7 +172,7 @@ def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
     new_moi.category = category
     new_moi.insert()
 
-#=================================================================> Reminder Notification 
+#=================================================================> Reminder Notification
 def system_remind_renewal_operator_to_apply():# cron job at 4pm
     """This is a cron method runs every day at 4pm. It gets Draft renewal MOI list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
@@ -181,7 +181,7 @@ def system_remind_renewal_operator_to_apply():# cron job at 4pm
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['in',('Renewal','Extend')]},
     ['one_fm_civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
     notification_reminder(moi_list,supervisor,renewal_operator,"Renewal or Extend")
-   
+
 
 def system_remind_transfer_operator_to_apply():# cron job at 4pm
     """This is a cron method runs every day at 4pm. It gets Draft transfer MOI list and reminds operator to apply on pam website"""
@@ -191,13 +191,13 @@ def system_remind_transfer_operator_to_apply():# cron job at 4pm
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Transfer')]},
     ['one_fm_civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
     notification_reminder(moi_list,supervisor,transfer_operator,"Local Transfer")
-    
-    
+
+
 def notification_reminder(moi_list,supervisor,operator,type):
     """This method sends first, second, reminders and then send third one and cc supervisor in the email"""
-    first_reminder_list=[] 
-    second_reminder_list=[] 
-    penality_reminder_list=[] 
+    first_reminder_list=[]
+    second_reminder_list=[]
+    penality_reminder_list=[]
     if moi_list and len(moi_list) > 0:
         for moi in moi_list:
             if moi.reminded_grd_operator_again:
@@ -217,14 +217,14 @@ def notification_reminder(moi_list,supervisor,operator,type):
         email_notification_reminder(operator,first_reminder_list,"First Reminder","Apply for",type)
         for moi in first_reminder_list:
             frappe.db.set_value('MOI Residency Jawazat',moi.name,'reminded_grd_operator',1)
-        
+
 def email_notification_reminder(grd_user,moi_list,reminder_number, action,type, cc=[]):
     """
     This method send email to the required operator with the list of MOI Residency Jawazat that their date of application is today or passed already
     """
     message_list=[]
     for moi in moi_list:
-        page_link = get_url("/desk#Form/MOI Residency Jawazat/"+moi.name)
+        page_link = get_url(moi.get_url())
         message = "<a href='{0}'>{1}</a>".format(page_link, moi.one_fm_civil_id)
         message_list.append(message)
 

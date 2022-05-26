@@ -26,8 +26,8 @@ class StockCheck(Document):
                 frappe.db.commit()
 
                 self.delivery_note = delivery_doc.name
-                
-                page_link = get_url("/desk#Form/Delivery Note/" + delivery_doc.name)
+
+                page_link = get_url(delivery_doc.get_url())
                 frappe.msgprint("<a href='{0}'>Delivery Note</a> has been created".format(page_link))
 
                 self.send_notifications(page_link)
@@ -48,7 +48,7 @@ class StockCheck(Document):
 
                 self.purchase_order = purchase_doc.name
 
-                page_link = get_url("/desk#Form/Purchase Order/" + purchase_doc.name)
+                page_link = get_url(purchase_doc.get_url())
                 frappe.msgprint("<a href='{0}'>Purchase Order</a> has been created".format(page_link))
 
                 self.send_notifications(page_link)
@@ -56,7 +56,7 @@ class StockCheck(Document):
 
     def send_notifications(self,page_link):
         from frappe.core.doctype.communication.email import make
-        
+
         msg_emp = frappe.render_template('one_fm/templates/emails/item_request_emp.html', context={"page_link": page_link})
         msg_mng = frappe.render_template('one_fm/templates/emails/item_request_mng.html', context={"page_link": page_link})
 
@@ -64,10 +64,10 @@ class StockCheck(Document):
         sender = "omar.ja93@gmail.com" or None
         prefered_email_employee = frappe.get_value("Employee", filters = {"name": self.employee}, fieldname = "prefered_email")
         prefered_email_manager = frappe.get_value("Employee", filters = {"name": frappe.session.user}, fieldname = "prefered_email")
-        
+
         # stock manager
         frappe.publish_realtime(event='msgprint', message='Stock Check has been approved, please check next step from <a href="{0}">Here</a> for your Action'.format(page_link), user='omar.ja93@gmail.com')
-        
+
         # employee who create
         frappe.publish_realtime(event='msgprint', message='Stock Check has been approved, and its now in the next step', user=prefered_email_employee)
 
@@ -75,7 +75,7 @@ class StockCheck(Document):
             try:
                 make(subject = "Item Request | {0}".format(self.name), content=msg_mng, recipients=prefered_email_employee,
                     send_email=True, sender=sender)
-                
+
                 print('send email for '+prefered_email_employee)
             except:
                 print('could not send for '+prefered_email_employee)
@@ -84,7 +84,7 @@ class StockCheck(Document):
             try:
                 make(subject = "Item Request | {0}".format(page_link), content=msg_mng, recipients=prefered_email_manager,
                     send_email=True, sender=sender)
-                
+
                 print('send email for '+prefered_email_manager)
             except:
                 print('could not send for '+prefered_email_manager)

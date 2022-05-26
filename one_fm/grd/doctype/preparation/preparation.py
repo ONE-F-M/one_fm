@@ -101,7 +101,7 @@ class Preparation(Document):
         This method will notifiy operator to apply for the wp, mi, moi, paci, fp that are created for all employees in the list
         """
         if self.grd_operator:
-            page_link = get_url("/desk#Form/Preparation/" + self.name)
+            page_link = get_url(self.get_url())
             message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
             subject = 'Records are created for WP, MI, MOI, PACI, and FP'
             send_email(self, [self.grd_operator], message, subject)
@@ -160,7 +160,7 @@ def sort(r):
     return r['residency_expiry_date']
 
 def notify_hr(doc):
-    page_link = get_url("/desk#Form/Preparation/" + doc.name)
+    page_link = get_url(doc.get_url())
     subject = ("Preparation Record has been created")
     message = "<p>Kindly, Check and Fill The Renewal and Extend Field for Employees whose Residency Will Expire in the Following month <a href='{0}'></a></p>".format(page_link)
     create_notification_log(subject, message, [doc.hr_user], doc)
@@ -168,7 +168,7 @@ def notify_hr(doc):
 def notify_request_for_renewal_or_extend():# Notify finance
     filters = {'docstatus': 1, 'hr_approval': ['=', "Yes"]}
     preparation_list = frappe.get_doc('Preparation', filters,['name', 'notify_finance_user'])
-    page_link = get_url("/desk#Form/Preparation/"+preparation_list.name)
+    page_link = get_url(preparation_list.get_url())
     message = "<p>Please Review the Renewal and Extend List of employee {0}<a href='{1}'></a></p>".format(page_link,preparation_list.name)
     subject = '{0} Renewal and Extend list approved'.format("Prepare Payments")
     send_email(preparation_list, [preparation_list.notify_finance_user], message, subject)
