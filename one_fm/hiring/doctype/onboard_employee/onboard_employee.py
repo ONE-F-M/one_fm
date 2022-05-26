@@ -143,8 +143,6 @@ class OnboardEmployee(Document):
 				else:
 					employee.one_fm_first_name_in_arabic = self.employee_name_in_arabic.split()[len(doc.employee_name_in_arabic.split())-1]
 					employee.one_fm_last_name_in_arabic = self.employee_name_in_arabic.split()[0]
-				if self.declaration_of_electronic_signature:
-					employee.employee_signature = frappe.get_value("Electronic Signature Declaration",self.declaration_of_electronic_signature,['applicant_signature'])
 
 
 				employee.permanent_address = "Test"
