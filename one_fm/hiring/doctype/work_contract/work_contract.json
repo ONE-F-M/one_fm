@@ -200,6 +200,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval: doc.pam_file_number;",
    "fieldname": "select_authorised_signatory_signed_work_contract",
    "fieldtype": "Select",
    "label": "Select Authorized Signatory Signed Work Contract"
@@ -212,11 +213,11 @@
    "options": "ERF"
   },
   {
-   "fetch_from": "erf.pam_file_number",
    "fieldname": "pam_file_number",
    "fieldtype": "Link",
    "label": "PAM File Number",
-   "options": "PAM File Number"
+   "options": "PAM File Number",
+   "read_only": 1
   },
   {
    "fieldname": "workflow",
@@ -261,7 +262,7 @@
   }
  ],
  "links": [],
- "modified": "2022-05-26 12:13:51.092339",
+ "modified": "2022-05-26 12:57:55.950138",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
