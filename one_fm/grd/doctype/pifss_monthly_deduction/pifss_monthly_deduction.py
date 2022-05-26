@@ -255,7 +255,7 @@ def create_pifss_mothly_dedution_record():
 def notify_pro(pifss_mothly_dedution):
 	doc = frappe.get_doc("PIFSS Monthly Deduction",pifss_mothly_dedution.name)
 	if doc:
-		page_link = get_url("/desk#Form/PIFSS Monthly Deduction/"+doc.name)
+		page_link = get_url(doc.get_url())
 		email = frappe.db.get_single_value("GRD Settings", "default_grd_operator_pifss")
 		subject = _("PIFSS Monthly Deduction record is created")
 		message = _("PIFSS Monthly Deduction record is created: {0}").format(page_link)

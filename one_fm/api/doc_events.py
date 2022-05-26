@@ -131,11 +131,11 @@ def checkin_after_insert(doc, method):
 
 			elif doc.log_type == "OUT":
 				# Automatic checkout
-				
+
 				if not doc.device_id:
 					from one_fm.api.tasks import send_notification
 					subject = _("Automated Checkout: {employee} forgot to checkout.".format(employee=doc.employee_name))
-					message = _('<a class="btn btn-primary" href="/desk#Form/Employee Checkin/{name}">Review check out</a>&nbsp;'.format(name=doc.name))
+					message = _('<a class="btn btn-primary" href="/app/employee-checkin/{name}">Review check out</a>&nbsp;'.format(name=doc.name))
 					for_users = [supervisor_user]
 					print("124", doc.employee, supervisor_user)
 					send_notification(subject, message, for_users)

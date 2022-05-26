@@ -38,7 +38,7 @@ class PACI(Document):
         self.set_New_civil_id_Expiry_date_in_employee_doctype()
         self.db_set('paci_status',"Completed")
         self.db_set('completed_on', today())
-	
+
     def validate_mandatory_fields_on_submit(self):
         if self.workflow_state == 'Completed':
             field_list = [{'Upload Civil ID':'upload_civil_id'},{'New Civil ID Expiry Date':'new_civil_id_expiry_date'}]
@@ -50,7 +50,7 @@ class PACI(Document):
             for field in fields:
                 if not self.get(fields[field]):
                     mandatory_fields.append(field)
-        
+
         if len(mandatory_fields) > 0:
             message= 'Mandatory fields required in PACI form<br><br><ul>'
             for mandatory_field in mandatory_fields:
@@ -61,8 +61,8 @@ class PACI(Document):
     def set_New_civil_id_Expiry_date_in_employee_doctype(self):
         """
         This method to sort records of employee documents upon document name;
-        First, get the employee document child table. 
-        second, find index of the document. 
+        First, get the employee document child table.
+        second, find index of the document.
         Third, set the new document.
         After that, clear the child table and append the new order
         """
@@ -93,9 +93,9 @@ class PACI(Document):
             "valid_till":self.new_civil_id_expiry_date
             })
         employee.civil_id_expiry_date = self.new_civil_id_expiry_date
-        employee.save()    
+        employee.save()
 
-# Create PACI record once a month for renewals list  
+# Create PACI record once a month for renewals list
 def create_PACI_renewal(preparation_name):
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
     if employee_in_preparation.preparation_record:
@@ -113,7 +113,7 @@ def create_PACI(employee,Type,preparation_name = None):
         if Type == "Renewal":
             start_day = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE
         if Type == "Transfer":
-            start_day = today()       
+            start_day = today()
         PACI_new = frappe.new_doc('PACI')
         PACI_new.employee = employee.name
         PACI_new.category = Type
@@ -122,7 +122,7 @@ def create_PACI(employee,Type,preparation_name = None):
         PACI_new.save()
 
 
-#==============================================================================> Reminder Notification 
+#==============================================================================> Reminder Notification
 def notify_operator_to_take_hawiyati_renewal():# cron job at 8am in working days
     renewal_list=[]
     supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
@@ -152,7 +152,7 @@ def system_remind_renewal_operator_to_apply():# cron job at 8am in working days
     paci_list = frappe.db.get_list('PACI',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Renewal')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     notification_reminder(paci_list,supervisor,renewal_operator,"Renewal")
-    
+
 
 def system_remind_transfer_operator_to_apply():# cron job at 8am in working days
     """
@@ -163,15 +163,15 @@ def system_remind_transfer_operator_to_apply():# cron job at 8am in working days
     paci_list = frappe.db.get_list('PACI',
     {'date_of_application':['<=',today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     notification_reminder(paci_list,supervisor,transfer_operator,"Transfer")
-    
+
 
 def notification_reminder(paci_list,supervisor,operator,type):
     """
     This method sends first, second, reminders and then send third one and cc supervisor in the email
     """
-    first_reminder_list=[] 
-    second_reminder_list=[] 
-    penality_reminder_list=[] 
+    first_reminder_list=[]
+    second_reminder_list=[]
+    penality_reminder_list=[]
     if paci_list and len(paci_list) > 0:
         for paci in paci_list:
             if paci.reminder_grd_operator_again:
@@ -191,14 +191,14 @@ def notification_reminder(paci_list,supervisor,operator,type):
         email_notification_reminder(operator,first_reminder_list,"First Reminder","Apply for",type)
         for paci in first_reminder_list:
             frappe.db.set_value('PACI',paci.name,'reminder_grd_operator',1)
-        
+
 def email_notification_reminder(grd_user,paci_list,reminder_number, action,type, cc=[]):
     """
     This method send email to the required operator with the list of PACI that their date of application is today or passed already
     """
     message_list=[]
     for paci in paci_list:
-        page_link = get_url("/desk#Form/PACI/"+paci.name)
+        page_link = get_url(paci.get_url())
         message = "<a href='{0}'>{1}</a>".format(page_link, paci.civil_id)
         message_list.append(message)
 
@@ -223,4 +223,3 @@ def send_email(doc, recipients, message, subject):
 		reference_doctype=doc.doctype,
 		reference_name=doc.name
 	)
-

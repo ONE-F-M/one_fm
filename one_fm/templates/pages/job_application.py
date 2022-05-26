@@ -30,8 +30,8 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
     applicant_name += (" "+third_name) if third_name else ""
     applicant_name += " "+last_name
     job = frappe.get_doc('Job Opening', job_opening)
-    erf_link = get_url("/desk#Form/ERF/" + job.one_fm_erf)
-    job_link = get_url("/desk#Form/Job Opening/" + job.name)
+    erf_link = get_url("/app/erf/" + job.one_fm_erf)
+    job_link = get_url(doc.get_url())
     subject = """Application for {0}""".format(job.designation)
     message_details = """
         <b>Name:</b> {0}<br>
@@ -91,13 +91,13 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
             job_applicant.one_fm_rotation_shift = "Yes, I Will Work in Rotation Shift"
         else:
             job_applicant.one_fm_rotation_shift = "No, I Cant Work in Rotation Shift"
-        
+
     if night_shift:
         if night_shift == "yes":
             job_applicant.one_fm_night_shift = "Yes, I Will Work in Night Shift"
         else:
             job_applicant.one_fm_night_shift = "No, I Cant Work in Night Shift"
-    
+
     if travel and travel_type:
         if travel == "yes":
             job_applicant.one_fm_type_of_travel = "I Will Travel "+str(travel_type)
@@ -109,7 +109,7 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
             job_applicant.one_fm_type_of_driving_license = str(license_type)
         else:
             job_applicant.one_fm_type_of_driving_license= "Not Available"
-    
+
     if visa and visa_type:
         if visa == "yes":
             job_applicant.one_fm_have_a_valid_visa_in_kuwait = 1
@@ -121,7 +121,7 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
         if in_kuwait == "yes":
             job_applicant.one_fm_in_kuwait_at_present = 1
         else:
-            job_applicant.one_fm_in_kuwait_at_present = 0 
+            job_applicant.one_fm_in_kuwait_at_present = 0
     job_applicant.save(ignore_permissions=True)
 
     # If files exisit, attach the file to Job Applicant created
