@@ -214,8 +214,9 @@
   {
    "fetch_from": "erf.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Data",
-   "label": "PAM File Number"
+   "fieldtype": "Link",
+   "label": "PAM File Number",
+   "options": "PAM File Number"
   },
   {
    "fieldname": "workflow",
@@ -260,7 +261,7 @@
   }
  ],
  "links": [],
- "modified": "2022-05-18 08:53:03.921235",
+ "modified": "2022-05-26 12:13:51.092339",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
