@@ -122,7 +122,9 @@ class RosterProjection(object):
 						# Add data to chart
 						labels.append("...")
 						datasets[0]['values'].append(item_projection)
-						datasets[1]['values'].append(item_live_projection)
+
+						if date < getdate():
+							datasets[1]['values'].append(item_live_projection)
 
 			self.chart = {
                 "data": {
