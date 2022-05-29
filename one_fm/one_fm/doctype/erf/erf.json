@@ -822,8 +822,9 @@
    "depends_on": "pam_file",
    "fetch_from": "pam_file.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "PAM File Number",
+   "options": "PAM File Number",
    "read_only": 1
   },
   {
@@ -842,7 +843,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-12-18 16:35:00.696615",
+ "modified": "2022-05-26 11:14:33.133102",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

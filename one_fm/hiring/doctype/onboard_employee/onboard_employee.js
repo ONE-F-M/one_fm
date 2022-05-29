@@ -160,13 +160,10 @@ var create_custom_buttons = function(frm) {
 		4. Bank Account - Create only if Employee is Created and salary mode is Bank
 	*/
 	if(frm.doc.docstatus < 2){
-		if(frm.doc.applicant_attended && !frm.doc.declaration_of_electronic_signature){
-			cutom_btn_and_action(frm, 'create_declaration_of_electronic_signature', 'Electronic Signature Declaration');
-		}
-		if(frm.doc.electronic_signature_status == 1 && !frm.doc.work_contract){
+		if(frm.doc.applicant_attended && !frm.doc.work_contract){
 			cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
 		}
-		if(frm.doc.work_contract_status == "Applicant Signed" && frm.doc.declaration_of_electronic_signature && !frm.doc.duty_commencement){
+		if(frm.doc.work_contract_status == "Applicant Signed" && !frm.doc.duty_commencement){
 			cutom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
 		}
 		if(frm.doc.duty_commencement_status == "Applicant Signed and Uploaded" && !frm.doc.employee){
