@@ -36,6 +36,27 @@ class AttendanceRequestOverride(AttendanceRequest):
 	def on_update(self):
 		self.send_notification()
 
+	def check_shift_assignment(self, attendance_date):
+		"""
+			Check if shift exist for employee
+		"""
+		if(frappe.db.exists("Shift Assignment",
+			{'employee':self.employee, 'docstatus':1, 'status':'Active', 'start_date':attendance_date})):
+			shift_assignment = frappe.db.get_list("Shift Assignment",
+				{'employee':self.employee, 'docstatus':1, 'status':'Active', 'start_date':attendance_date})
+			return frappe.get_doc("Shift Assignment", shift_assignment[0].name)
+
+		return False
+
+	def check_attendance(self, attendance_date):
+		"""check if attendance exist"""
+		if(frappe.db.exists("Attendance",
+			{'employee':self.employee, 'docstatus':1, 'attendance_date':attendance_date})):
+			attendance = frappe.db.get_list("Attendance",
+				{'employee':self.employee, 'docstatus':1, 'attendance_date':attendance_date})[0].name
+			return frappe.get_doc("Attendance", attendance)
+		return False
+
 	def create_attendance(self):
 		if(not self.future_request):
 			request_days = date_diff(self.to_date, self.from_date) + 1
@@ -43,6 +64,31 @@ class AttendanceRequestOverride(AttendanceRequest):
 				attendance_date = add_days(self.from_date, number)
 				skip_attendance = self.validate_if_attendance_not_applicable(attendance_date)
 				if not skip_attendance:
+					self.mark_attendance(attendance_date)
+
+	def create_future_attendance(self):
+		reports_to = self.reports_to()
+		if not reports_to:
+			frappe.throw("You are not the employee supervisor")
+		if(self.future_request and (getdate(self.from_date) <= getdate(nowdate()) <= getdate(self.to_date))):
+			attendance_date = nowdate()
+			skip_attendance = self.validate_if_attendance_not_applicable(attendance_date)
+			if not skip_attendance:
+				self.mark_attendance(attendance_date)
+
+
+	def mark_attendance(self, attendance_date):
+		try:
+			check_shift_assignment = self.check_shift_assignment(attendance_date)
+			if check_shift_assignment:
+				check_attendance = self.check_attendance(attendance_date)
+
+				if check_attendance:
+					if check_attendance.status=='Absent':
+						check_attendance.db_set('Status', 'Work From Home')
+						check_attendance.db_set('attendance_request', self.name)
+						check_attendance.reload()
+				else:
 					attendance = frappe.new_doc("Attendance")
 					attendance.employee = self.employee
 					attendance.employee_name = self.employee_name
@@ -55,32 +101,17 @@ class AttendanceRequestOverride(AttendanceRequest):
 					attendance.attendance_date = attendance_date
 					attendance.company = self.company
 					attendance.attendance_request = self.name
+					attendance.operations_shift = check_shift_assignment.shift
+					attendance.roster_type = check_shift_assignment.roster_type
+					attendance.shift = check_shift_assignment.shift_type
+					attendance.project = check_shift_assignment.project
+					attendance.site = check_shift_assignment.site
+					attendance.post_type = check_shift_assignment.post_type
 					attendance.save(ignore_permissions=True)
 					attendance.submit()
+		except Exception as e:
+			frappe.log_error(str(e), 'Attendance Request')
 
-	def create_future_attendance(self):
-		reports_to = self.reports_to()
-		if not reports_to:
-			frappe.throw("You are not the employee supervisor")
-		if(self.future_request and (getdate(self.from_date) <= getdate(nowdate()) <= getdate(self.to_date))):
-			attendance_date = nowdate()
-			skip_attendance = self.validate_if_attendance_not_applicable(attendance_date)
-
-			if not skip_attendance:
-				attendance = frappe.new_doc("Attendance")
-				attendance.employee = self.employee
-				attendance.employee_name = self.employee_name
-				if self.half_day and date_diff(getdate(self.half_day_date), getdate(attendance_date)) == 0:
-					attendance.status = "Half Day"
-				elif self.reason == "Work From Home":
-					attendance.status = "Work From Home"
-				else:
-					attendance.status = "Present"
-				attendance.attendance_date = attendance_date
-				attendance.company = self.company
-				attendance.attendance_request = self.name
-				attendance.save(ignore_permissions=True)
-				attendance.submit()
 
 	def send_notification(self):
 		if self.workflow_state in ['Pending Approval', 'Rejected', 'Approved']:
