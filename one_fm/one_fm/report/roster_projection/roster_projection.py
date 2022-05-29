@@ -49,7 +49,8 @@ class RosterProjection(object):
 		self.columns.append({
 			"label": _("Sale Item"),
             "fieldname": "sale_item",
-            "fieldtype": "Data",
+            "fieldtype": "Link",
+			"options": "Item",
             "width": 250
 		})
 
