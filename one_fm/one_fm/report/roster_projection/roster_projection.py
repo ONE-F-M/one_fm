@@ -4,14 +4,17 @@
 import frappe
 from frappe import _
 import pandas as pd
-from calendar import monthrange
-from frappe.utils import add_to_date
+from frappe.utils import getdate, get_first_day, get_last_day
 
 def execute(filters=None):
 	if filters:
-		days_in_month = monthrange(int(filters.year), int(filters.month))[1]
-		filters["start_date"] = filters.year + "-" + filters.month + "-" + "1"
-		filters["end_date"] = add_to_date(filters["start_date"], days=days_in_month-1)
+		date = str(getdate())
+
+		first_day_of_month = str(get_first_day(date))
+		last_day_of_month = str(get_last_day(date))
+
+		filters["start_date"] = first_day_of_month
+		filters["end_date"] = last_day_of_month
 
 	return RosterProjection(filters).run()
 
