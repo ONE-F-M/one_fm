@@ -15,11 +15,11 @@ class RequestforPurchase(Document):
 	def onload(self):
 		self.set_onload('accepter', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_accepter'))
 		self.set_onload('approver', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver'))
-	
+
 	def on_submit(self):
 		self.notify_request_for_material_accepter()
 		frappe.msgprint(_("Notification sent to purchaser"))
-		
+
 	@frappe.whitelist()
 	def send_request_for_purchase(self):
 		self.status = "Approved"
@@ -29,7 +29,7 @@ class RequestforPurchase(Document):
 
 	def notify_request_for_material_accepter(self):
 		if self.accepter:
-			page_link = get_url("/desk#Form/Request for Purchase/" + self.name)
+			page_link = get_url(self.get_url())
 			message = "<p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
 			send_email(self, [self.accepter], message, subject)
@@ -45,10 +45,10 @@ class RequestforPurchase(Document):
 				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
 					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description,
 					warehouse=self.warehouse, quotation=item.quotation)
-	
+
 	@frappe.whitelist()
 	def accept_approve_reject_request_for_purchase(self, status, approver, accepter, reason_for_rejection=None):
-		page_link = get_url("/desk#Form/Request for Purchase/" + self.name)
+		page_link = get_url(self.get_url())
 		# Notify Requester
 		self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
 

@@ -15,14 +15,14 @@ from one_fm.api.notification import create_notification_log
 class TransferPaper(Document):
     def validate(self):
         self.set_today_date()
-        # self.set_new_salary_from_job_offer()# comment it for now (until I get request to activate it) 
+        # self.set_new_salary_from_job_offer()# comment it for now (until I get request to activate it)
         self.set_pam_designation()
         self.set_pam_file_number()
         self.set_electronic_signature()
         self.arrange_arabic_name()
         # self.set_pas_values()
         self.set_grd_values()
-        
+
     def on_update(self):
         self.check_workflow_states()
 
@@ -39,7 +39,7 @@ class TransferPaper(Document):
                 components = frappe.get_doc('Salary Structure',salary)
                 for component in components.earnings:
                     if component.salary_component == "Basic":
-                        self.db_set('salary', component.amount) 
+                        self.db_set('salary', component.amount)
             elif not salary:
                 frappe.throw("Job Offer Does not Have Basic Salary...!")
 
@@ -50,7 +50,7 @@ class TransferPaper(Document):
                 self.db_set('pam_designation',doc.one_fm_pam_designation)
             elif doc.pam_designation_button == 0 and doc.one_fm_erf_pam_designation != None:
                 self.db_set('pam_designation',doc.one_fm_erf_pam_designation)
-    
+
     def set_pam_file_number(self):
         """This method is to get the pam file number and
          check if its contract or private and set it in the right field"""
@@ -58,34 +58,34 @@ class TransferPaper(Document):
             doc = frappe.get_doc('Job Applicant',self.applicant)
             if doc.pam_number_button == 1 and doc.one_fm_file_number != None: #pam number get changed in job applicant
                 govermental,main_file = frappe.db.get_value('PAM File',{'pam_file_number':doc.one_fm_file_number},['government_project','file_number'])
-                if govermental == 0:#the file not govermental 
+                if govermental == 0:#the file not govermental
                     self.db_set('pam_file_number',doc.one_fm_file_number)
                 if govermental == 1:
                     self.db_set('contract_file_number',doc.one_fm_file_number)
                     self.db_set('pam_file_number',main_file)
-            
+
             elif doc.pam_number_button == 0 and doc.one_fm_erf_pam_file_number != None: #pam number is the one set in erf
                 govermental,main_file = frappe.db.get_value('PAM File',{'pam_file_number':doc.one_fm_erf_pam_file_number},['government_project','file_number'])
                 print(govermental,main_file)
-                if govermental == 0:#the file not govermental 
+                if govermental == 0:#the file not govermental
                     self.db_set('pam_file_number',doc.one_fm_erf_pam_file_number)
                 if govermental == 1:
                     self.db_set('contract_file_number',doc.one_fm_erf_pam_file_number)
                     self.db_set('pam_file_number',main_file)
-        
+
     def set_grd_values(self):
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
 
     def set_electronic_signature(self):
         if not self.authorized_signature:
-            doc = frappe.get_doc('Job Applicant',self.applicant) 
+            doc = frappe.get_doc('Job Applicant',self.applicant)
             if doc.one_fm_signatory_name and doc.one_fm_pam_authorized_signatory:
                 authorized_list = frappe.get_doc('PAM Authorized Signatory List',doc.one_fm_pam_authorized_signatory)
                 for authorized in authorized_list.authorized_signatory:
                     if doc.one_fm_signatory_name == authorized.authorized_signatory_name_arabic:
                         self.db_set('authorized_signature', authorized.signature)
-                
+
     def arrange_arabic_name(self):
         """This method arranges the names in the print format based on what is filled in job applicant doctype"""
         if self.applicant:
@@ -114,7 +114,7 @@ class TransferPaper(Document):
                 self.third_name_in_arabic = applicant.one_fm_forth_name_in_arabic
                 self.forth_name_in_arabic = applicant.one_fm_last_name_in_arabic
                 self.last_name_in_arabic = ''
-    
+
     def check_workflow_states(self):
         if self.workflow_state == "Under Process":
             field_list = [{'Attach Signed TP':'attach_tp'}]
@@ -146,13 +146,13 @@ class TransferPaper(Document):
             self.db_set('license_number', company_data.license_number)#licence to issuer_number
             self.db_set('pam_file_number', company_data.pam_file_number)
 
-    
+
     def check_signed_workContract_employee_completed(self):
         """"
-        This method create wp record after tp is submitted and notify operator 
+        This method create wp record after tp is submitted and notify operator
         """
         if self.signed == "Yes" and self.tp_status == "Pending By GRD":
-            if frappe.db.exists("Employee", {"one_fm_civil_id":self.civil_id}):#employee is created 
+            if frappe.db.exists("Employee", {"one_fm_civil_id":self.civil_id}):#employee is created
                 if not frappe.db.exists("Work Permit", {"transfer_paper":self.name}):#work permit not yet created
                     employee = frappe.db.get_value("Employee", {"one_fm_civil_id":self.civil_id})
                     if employee:
@@ -161,12 +161,12 @@ class TransferPaper(Document):
 
     def recall_create_transfer_work_permit(self,employee):
         work_permit.create_work_permit_transfer(self.name,employee)
-        
+
     def notify_grd_transfer_wp_record(self):
         wp = frappe.db.get_value("Work Permit",{'transfer_paper':self.name,'work_permit_status':'Draft'})
         if wp:
             wp_record = frappe.get_doc('Work Permit', wp)
-            page_link = get_url("/desk#Form/Work Permit/" + wp_record.name)
+            page_link = get_url(wp_record.get_url())
             subject = ("Apply for Transfer Work Permit Online")
             message = "<p>Please Apply for Transfer WP Online for <a href='{0}'></a>.</p>".format(page_link, wp_record.employee)
             create_notification_log(subject, message, [self.grd_operator_transfer], wp_record)

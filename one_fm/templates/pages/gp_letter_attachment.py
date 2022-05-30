@@ -24,7 +24,7 @@ def get_context(context):
     if frappe.local.request.method == "GET":
         context.pid = frappe.form_dict.pid
 
-    
+
 def verify_pid(pid):
     verified_pid = frappe.db.get_value("GP Letter Request", filters = {"pid": pid}, fieldname = "pid")
     return verified_pid if verified_pid else False
@@ -69,8 +69,7 @@ def get_attachment_details(data, qp_letter):
                 doc.pam_visa_reminder1 = frappe.utils.now()
                 doc.insert()
 
-                page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(doc.name)
-                # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+                page_link = get_url(doc.get_url())
                 msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link})
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                 recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
@@ -82,7 +81,7 @@ def get_attachment_details(data, qp_letter):
         return 'success'
 
     else:
-        return 'invalid token'  
+        return 'invalid token'
 
 def attach_file_to_gp_letter(filedata, docname):
 
@@ -129,5 +128,3 @@ def validate_missing_fields_values(form_data, fields):
             frappe.response["message"] = "Please fill the missing fields"
             return False
     return True
-
-    
