@@ -49,7 +49,7 @@ def send_checkin_hourly_reminder():
 			recipients = [recipient[0] for recipient in recipients if recipient[0]]
 
 			subject = _("Hourly Reminder: Please checkin")
-			message = _('<a class="btn btn-warning" href="/app/ace-recognition">Hourly Check In</a>')
+			message = _('<a class="btn btn-warning" href="/app/face-recognition">Hourly Check In</a>')
 			send_notification(title, subject, message, category, recipients)
 
 def checkin_checkout_final_reminder():
