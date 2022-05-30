@@ -34,7 +34,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         return response("Bad Request", 400, None, "video type must be str.")
 
     try:
-        
+
         # Setup channel
         face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
         channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
@@ -50,13 +50,13 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
         if res.enrollment == "FAILED":
             return response(res.message, 400, None, res.data)
-            
+
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
         doc.enrolled = 1
         doc.save(ignore_permissions=True)
         update_onboarding_employee(doc)
         frappe.db.commit()
-        
+
         return response("Success", 201, "User enrolled successfully.")
 
     except Exception as error:
@@ -92,7 +92,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
 
     if not log_type:
         return response("Bad Request", 400, None, "log_type required.")
-    
+
     if not skip_attendance:
         return response("Bad Request", 400, None, "skip_attendance required.")
 
@@ -119,7 +119,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
 
     if not isinstance(latitude, float):
         return response("Bad Request", 400, None, "latitude must be of type float.")
-    
+
     if not isinstance(longitude, float):
         return response("Bad Request", 400, None, "longitude must be of type float.")
 
@@ -128,7 +128,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-        
+
         # setup channel
         face_recognition_service_url = frappe.local.conf.face_recognition_service_url
         channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
@@ -180,7 +180,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
     if not isinstance(employee_id, str):
         return response("Bad Request", 400, None, "employee must be of type str.")
-	
+
     try:
         from one_fm.api.doc_events import haversine
 
@@ -188,11 +188,11 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-        
+
         shift = get_current_shift(employee)
         if not shift or len(shift) == 0:
             return response("Resource Not Found", 400, None, "User not assigned to a shift.")
-        
+
         site = frappe.get_value("Operations Shift", shift.shift, "site")
         location = frappe.db.sql("""
             SELECT loc.latitude, loc.longitude, loc.geofence_radius
@@ -200,18 +200,26 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             WHERE
                 loc.name in(SELECT site_location FROM `tabOperations Site` where name=%(site)s)
         """, {'site': site}, as_dict=1)
-       
+
         if not location:
             return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
-        
+
         result=location[0]
         result['user_within_geofence_radius'] = True
 
         distance = float(haversine(result.latitude, result.longitude, latitude, longitude))
         if distance > float(result.geofence_radius):
             result['user_within_geofence_radius'] = False
-        
+
         result['site_name']=site
+        # log to checkin radius log
+        data = result.copy()
+        data = {
+            **data,
+            **{'employee':employee_id, 'user_latitude':latitude, 'user_longitude':longitude, 'user_distance':distance, 'diff':distance-result.geofence_radius}
+        }
+        frappe.enqueue('one_fm.one_fm.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
+            **{'data':data})
         return response("Success", 200, result)
 
     except Exception as error:
