@@ -313,17 +313,18 @@ def send_notification(title, subject, message, category, recipients):
 
 def get_active_shifts(now_time):
 	return frappe.db.sql("""
-		SELECT name, start_time, end_time, notification_reminder_after_shift_start,
-			late_entry_grace_period,notification_reminder_after_shift_end,
-			allow_check_out_after_shift_end_time,supervisor_reminder_shift_start,
-			supervisor_reminder_start_ends,deadline 
+		SELECT
+			name, start_time, end_time,
+			notification_reminder_after_shift_start, late_entry_grace_period,
+			notification_reminder_after_shift_end, allow_check_out_after_shift_end_time,
+			supervisor_reminder_shift_start, supervisor_reminder_start_ends, deadline
 		FROM `tabShift Type`
 		WHERE
-		CAST("{current_time}" as date)
-		BETWEEN
-			CAST(start_time as date)
-		AND
-			IF(end_time < start_time, DATE_ADD(CAST(end_time as date), INTERVAL 1 DAY), CAST(end_time as date))
+			CAST('{current_time}' as date)
+			BETWEEN
+				CAST(start_time as date)
+			AND
+				IF(end_time < start_time, DATE_ADD(CAST(end_time as date), INTERVAL 1 DAY), CAST(end_time as date))
 	""".format(current_time=now_time), as_dict=1)
 
 def get_action_user(employee, shift):
