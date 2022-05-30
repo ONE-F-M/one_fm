@@ -15,7 +15,7 @@
   "column_break_4",
   "user_latitude",
   "user_longitude",
-  "user_geofence_radius",
+  "user_distance_from_site_location",
   "column_break_10",
   "latitude",
   "longitude",
@@ -131,12 +131,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "user_geofence_radius",
-   "fieldtype": "Float",
-   "label": "User Geofence Radius",
-   "read_only": 1
-  },
-  {
    "fieldname": "column_break_10",
    "fieldtype": "Column Break"
   },
@@ -155,11 +149,17 @@
   {
    "fieldname": "column_break_16",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user_distance_from_site_location",
+   "fieldtype": "Float",
+   "label": "User Distance from Site Location",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-30 14:06:28.321568",
+ "modified": "2022-05-30 14:49:12.479198",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Checkin Radius Log",

@@ -34,7 +34,7 @@ def create_checkin_radius_log(data):
 		site=data['site_name'],
 		user_latitude= data['user_latitude'],
 		user_longitude= data['user_longitude'],
-		user_geofence_radius= data['user_distance'],
+		user_distance_from_site_location= data['user_distance'],
 		distance= data['user_distance'],
 		difference= data['diff']
 	))
