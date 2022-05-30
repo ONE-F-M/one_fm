@@ -142,7 +142,7 @@ class OnboardEmployee(Document):
 					employee.one_fm_last_name_in_arabic = job_applicant.one_fm_last_name_in_arabic
 				else:
 					employee.one_fm_first_name_in_arabic = self.employee_name_in_arabic.split()[len(doc.employee_name_in_arabic.split())-1]
-					employee.one_fm_last_name_in_arabic = self.employee_name_in_arabic.split()[0]
+					employee.one_fm_last_name_in_arabic = self.employee_name_in_arabic.split()[0] 
 
 
 				employee.permanent_address = "Test"

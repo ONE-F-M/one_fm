@@ -160,20 +160,23 @@ var create_custom_buttons = function(frm) {
 		4. Bank Account - Create only if Employee is Created and salary mode is Bank
 	*/
 	if(frm.doc.docstatus < 2){
+		if(!frm.doc.applicant_attended && frm.doc.informed_applicant){
+			btn_mark_applicant_attended(frm);
+		}
 		if(frm.doc.applicant_attended && !frm.doc.work_contract){
-			cutom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
+			custom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
 		}
 		if(frm.doc.work_contract_status == "Applicant Signed" && !frm.doc.duty_commencement){
-			cutom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
+			custom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
 		}
 		if(frm.doc.duty_commencement_status == "Applicant Signed and Uploaded" && !frm.doc.employee){
-			cutom_btn_and_action(frm, 'create_employee', 'Employee');
+			custom_btn_and_action(frm, 'create_employee', 'Employee');
 		}
 		if(frm.doc.employee && !frm.doc.employee_id){
-			cutom_btn_and_action(frm, 'create_employee_id', 'Employee ID Card');
+			custom_btn_and_action(frm, 'create_employee_id', 'Employee ID Card');
 		}
 		if(frm.doc.employee && !frm.doc.user_created){
-			cutom_btn_and_action(frm, 'create_user_and_permissions', 'ERPNext User');
+			custom_btn_and_action(frm, 'create_user_and_permissions', 'ERPNext User');
 		}
 		if(frm.doc.employee && frm.doc.user_created && !frm.doc.inform_and_send_enrolment_details_to_employee){
 			frm.add_custom_button(__('Inform and Send Enrolment Details to Employee'), function() {
@@ -182,7 +185,7 @@ var create_custom_buttons = function(frm) {
 			}).addClass('btn-primary');
 		}
 		if(frm.doc.employee && !frm.doc.bank_account && frm.doc.salary_mode=='Bank'){
-			cutom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
+			custom_btn_and_action(frm, 'create_bank_account', 'Bank Account');
 		}
 		if(frm.doc.employee && !frm.doc.loan && frm.doc.net_loan_amount > 0){
 			frm.add_custom_button(__('Loan'), function() {
@@ -190,13 +193,13 @@ var create_custom_buttons = function(frm) {
 			}, __('Create')).addClass('btn-primary');
 		}
 		if(frm.doc.employee && !frm.doc.mgrp && frm.doc.nationality == 'Kuwaiti'){
-			cutom_btn_and_action(frm, 'create_mgrp', 'MGRP');
+			custom_btn_and_action(frm, 'create_mgrp', 'MGRP');
 		}
 		if(frm.doc.employee && !frm.doc.pifss_form_103 && frm.doc.nationality == 'Kuwaiti'){
-			cutom_btn_and_action(frm, 'create_103_form', 'PIFSS Form 103');
+			custom_btn_and_action(frm, 'create_103_form', 'PIFSS Form 103');
 		}
 		if(frm.doc.employee && frm.doc.tools_needed_for_work && !frm.doc.request_for_material){
-			cutom_btn_and_action(frm, 'create_rfm_from_eo', 'Request for Material');
+			custom_btn_and_action(frm, 'create_rfm_from_eo', 'Request for Material');
 		}
 	}
 };
@@ -223,7 +226,7 @@ var btn_create_loan_action = function(frm) {
 	}
 };
 
-var cutom_btn_and_action = function(frm, method, dt) {
+var custom_btn_and_action = function(frm, method, dt) {
 	frm.add_custom_button(__(dt), function() {
 		frappe.call({
 			doc: frm.doc,
