@@ -213,10 +213,13 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
         result['site_name']=site
         data = result.copy()
-        data['employee'] = employee_id
+        data = {
+            **data,
+            **{'employee':employee_id, 'user_latitude':latitude, 'user_longitude':longitude, 'user_distance':distance, 'diff':distance-result.geofence_radius}
+        }
         # log to checkin radius log
         frappe.enqueue('one_fm.one_fm.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
-            {'data':result})
+            **{'data':data})
         return response("Success", 200, result)
 
     except Exception as error:

@@ -7,13 +7,23 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "employee_id",
   "employee",
   "employee_name",
-  "user_within_geofence_radius",
+  "site",
+  "project",
   "column_break_4",
+  "user_latitude",
+  "user_longitude",
+  "user_geofence_radius",
+  "column_break_10",
   "latitude",
   "longitude",
   "geofence_radius",
+  "result_section",
+  "user_within_geofence_radius",
+  "column_break_16",
+  "difference",
   "section_break_8",
   "map"
  ],
@@ -21,10 +31,9 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "depends_on": "employee",
@@ -39,7 +48,9 @@
    "default": "0",
    "fieldname": "user_within_geofence_radius",
    "fieldtype": "Check",
-   "label": "User within Geofence Radius"
+   "in_list_view": 1,
+   "label": "User within Geofence Radius",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_4",
@@ -51,6 +62,7 @@
    "in_list_view": 1,
    "label": "Latitude",
    "precision": "9",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -59,6 +71,7 @@
    "in_list_view": 1,
    "label": "Longitude",
    "precision": "9",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -66,6 +79,8 @@
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Geofence Radius",
+   "precision": "9",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -76,11 +91,75 @@
    "fieldname": "map",
    "fieldtype": "Geolocation",
    "label": "Map"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "site.project",
+   "fetch_if_empty": 1,
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_latitude",
+   "fieldtype": "Float",
+   "label": "User Latitude",
+   "precision": "9",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_longitude",
+   "fieldtype": "Float",
+   "label": "User Longitude",
+   "precision": "9",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_geofence_radius",
+   "fieldtype": "Float",
+   "label": "User Geofence Radius",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "result_section",
+   "fieldtype": "Section Break",
+   "label": "Result"
+  },
+  {
+   "fieldname": "difference",
+   "fieldtype": "Float",
+   "label": "Difference",
+   "precision": "9",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-29 16:22:26.713187",
+ "modified": "2022-05-30 14:06:28.321568",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Checkin Radius Log",
@@ -100,5 +179,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "employee_name"
 }
