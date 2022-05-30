@@ -130,9 +130,9 @@ def validate_future_dates(doc, from_date, to_date):
 	)
 	if getdate(from_date) > getdate(to_date):
 		frappe.throw(_("To date can not be less than from date"))
-	elif (getdate(from_date) > getdate(nowdate()) and (not doc.future_request)):
+	elif (getdate(from_date) > getdate(nowdate()) or (getdate(to_date) > getdate(nowdate()))) and (not doc.future_request):
 		frappe.throw(_("Future dates not allowed"))
-	elif (getdate(from_date) < getdate(nowdate()) and (doc.future_request)):
+	elif ((getdate(from_date) < getdate(nowdate())) or (getdate(from_date) < getdate(nowdate()))) and (doc.future_request):
 		frappe.throw(_("Past dates not allowed"))
 	elif date_of_joining and getdate(from_date) < getdate(date_of_joining):
 		frappe.throw(_("From date can not be less than employee's joining date"))
