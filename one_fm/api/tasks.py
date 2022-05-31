@@ -397,8 +397,8 @@ def get_location(shift):
 			SELECT loc.latitude, loc.longitude, loc.geofence_radius
 			FROM `tabLocation` as loc
 			WHERE
-				loc.name in(SELECT site_location FROM `tabOperations Site` where name='{site}')
-			""".format(site=site), as_dict=1)
+				loc.name in (SELECT site_location FROM `tabOperations Site` where name=%s)
+			""",site, as_dict=1)
 	return location
 
 def checkin_deadline():
