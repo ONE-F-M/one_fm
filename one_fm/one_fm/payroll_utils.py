@@ -13,7 +13,7 @@ from frappe.utils import (
 )
 
 @frappe.whitelist()
-def get_wage_for_employee_incentive(employee, rewarded_by, on_date=today()):
+def get_wage_for_employee_incentive(employee, rewarded_by, on_date=False):
     '''
         this function returns the wage of an employee based on the rewarded_by value
         if rewarded_by == "Number of Daily Wage" returns basic_salary/30
@@ -24,6 +24,8 @@ def get_wage_for_employee_incentive(employee, rewarded_by, on_date=today()):
             rewarded_by: "Percentage of Monthly Wage" or "Number of Daily Wage"
             on_date: Payroll Date
     '''
+    if not on_date:
+        on_date = getdate(today())
     wage = 0
     basic_salary = frappe.db.get_value('Employee', employee, 'one_fm_basic_salary')
     if basic_salary:
