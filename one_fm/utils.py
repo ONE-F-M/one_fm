@@ -922,13 +922,15 @@ def get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type):
 
     return new_leaves_allocated
 
-def get_paid_annual_leave_allocation_list(date=nowdate()):
+def get_paid_annual_leave_allocation_list(date=False):
     '''
         Function is used to get paid annual leave allocation
         args:
             date: date
         return: List of Leave Allocation
     '''
+    if not date:
+        date = getdate(nowdate())
     # Get List of Paid Annual Leave Allocation for a date of a Leave Type (having Is Paid Annual Leave marekd True)
     query = """
         select
