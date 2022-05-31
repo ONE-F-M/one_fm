@@ -5,13 +5,16 @@ import frappe
 from frappe import _
 import pandas as pd
 from frappe.utils import getdate, get_first_day, get_last_day
+from datetime import date
 
 def execute(filters=None):
 	if filters:
-		date = str(getdate())
+		today_date = date.today()
 
-		first_day_of_month = str(get_first_day(date))
-		last_day_of_month = str(get_last_day(date))
+		report_date = str(today_date.year) + "-" + str(filters.month) + "-1"
+
+		first_day_of_month = str(get_first_day(report_date))
+		last_day_of_month = str(get_last_day(report_date))
 
 		filters["start_date"] = first_day_of_month
 		filters["end_date"] = last_day_of_month
