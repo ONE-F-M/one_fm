@@ -44,7 +44,7 @@ class WorkContract(Document):
 			self.validate_autority_signature()
 		if self.workflow_state == 'Completed':
 			self.validate_employee_signature()
-	
+
 	def validate_autority_signature(self):
 		if not self.authorized_signatory_document:
 			frappe.throw(_("Please Attach Document from Authorized Signatory!"))
@@ -89,6 +89,8 @@ class WorkContract(Document):
 			pam_auth_sign = pam_authorized_signatory.as_dict()
 			for auth_sign in pam_auth_sign["authorized_signatory"]:
 				authorize_signatory.append(auth_sign["authorized_signatory_name_english"])
+		else:
+			frappe.msgprint(_("Please select a PAM File in ERF({0}) to get Authorised Signatory").format(self.erf))
 		return authorize_signatory
 
 	@frappe.whitelist()
@@ -96,7 +98,7 @@ class WorkContract(Document):
 		if not self.select_authorised_signatory_signed_work_contract:
 			frappe.throw(_("Please select Authorized Signatory!"))
 		elif not self.pam_file_number:
-			frappe.throw(_("Please select PAM File Number!"))
+			frappe.msgprint(_("Please select a PAM File in ERF({0}) to set PAM File Number in Work Contract").format(self.erf))
 		else:
 			pam_authorized_signatory = frappe.get_doc("PAM Authorized Signatory List",{'pam_file_number':self.pam_file_number},["authorized_signatory"],as_dict = True)
 			pam_auth_sign = pam_authorized_signatory.as_dict()
