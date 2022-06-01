@@ -213,7 +213,7 @@ def create_employee_user(doc):
     """
     if not doc.employee_id:
         generate_employee_id(doc)
-    if ((not doc.user_id)):
+    if ((not doc.user_id) or (not doc.prefered_email)):
         doc.reload()
         user = frappe.get_doc({
             'doctype':'User',
@@ -223,13 +223,13 @@ def create_employee_user(doc):
             'role_profile_name': 'Only Employee',
             'gender':doc.gender,
             'date_of_birth':doc.date_of_birth,
-            'send_welcome_email': 0
+            'send_welcome_email': 0,
+            'enabled':1,
         })
         user.insert(ignore_permissions=True)
         doc.db_set("user_id", user.name)
         doc.db_set("create_user_permission", 1)
         doc.reload()
-        frappe.db.commit()
 
 def generate_employee_id(doc):
     """

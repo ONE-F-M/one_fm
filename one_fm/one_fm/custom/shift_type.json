@@ -273,7 +273,7 @@
    "in_preview": 0,
    "in_standard_filter": 0,
    "insert_after": "late_entry_grace_period",
-   "label": "Deadline",
+   "label": "Deadline (In Minutes)",
    "length": 0,
    "mandatory_depends_on": null,
    "modified": "2022-01-11 20:46:21.278818",
