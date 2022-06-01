@@ -451,7 +451,6 @@ def checkin_deadline():
 
 				for employee in employees:
 					mark_attendance(employee, today, 'Absent', shift.name)
-					print("Here")
 					# op_shift =  frappe.get_doc("Operations Shift", {"shift_type":shift.name})
 					# action_user, Role = get_action_user(employee,op_shift.name)
 					# if Role:
