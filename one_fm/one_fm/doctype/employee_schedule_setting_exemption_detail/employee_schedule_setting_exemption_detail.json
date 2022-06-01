@@ -19,6 +19,9 @@
    "reqd": 1
   },
   {
+   "depends_on": "project",
+   "fetch_from": "project.project_name",
+   "fetch_if_empty": 1,
    "fieldname": "project_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -28,7 +31,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2022-06-01 16:47:47.808183",
+ "modified": "2022-06-01 16:58:19.462088",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Schedule Setting Exemption Detail",
