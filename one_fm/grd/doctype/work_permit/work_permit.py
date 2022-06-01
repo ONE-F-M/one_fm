@@ -22,20 +22,20 @@ from one_fm.processor import sendemail
 
 # from PyPDF2 import PdfFileReader
 
-# from pdfminer.pdfparser import PDFParser, PDFDocument  
+# from pdfminer.pdfparser import PDFParser, PDFDocument
 class WorkPermit(Document):
     def on_update(self):
-        self.update_work_permit_details_in_tp() 
+        self.update_work_permit_details_in_tp()
         self.check_required_document_for_workflow()
 
     def validate(self):
         self.set_grd_values()
-        
+
     def set_grd_values(self):
         """
 		runs: `validate`
 		param: work permit object
-		This method is fetching values of grd supervisor and operator for transfer, pifss operator from GRD settings 
+		This method is fetching values of grd supervisor and operator for transfer, pifss operator from GRD settings
 		"""
         if not self.grd_supervisor:
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
@@ -100,7 +100,7 @@ class WorkPermit(Document):
                 field_list = [{'Work Permit Registration ':'work_permit_registration'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Registration taken from <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
                 self.set_mendatory_fields(field_list,message_detail)
-            
+
             if self.work_permit_type == "Local Transfer":
                 field_list = [{'Work Permit Expiry Date':'work_permit_expiry_date'},{'Attach Work Permit ':'attach_work_permit'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Registration taken from <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
@@ -114,14 +114,14 @@ class WorkPermit(Document):
                 self.set_mendatory_fields(field_list,message_detail)
                 self.update_work_permit_details_in_tp()# update the rejected record in the transfer paper child table
             self.reload()
-    
+
     def set_mendatory_fields(self,field_list,message_detail=None):
         mandatory_fields = []
         for fields in field_list:
             for field in fields:
                 if not self.get(fields[field]):
                     mandatory_fields.append(field)
-        
+
         if len(mandatory_fields) > 0:
             if message_detail:
                 message = message_detail
@@ -137,14 +137,14 @@ class WorkPermit(Document):
         """
         runs: `on_update`
         param: work_permit object
-        This method add all work permit trails records under same transfer paper into child table called `work_permit_records`, 
-        if the work permit referance is already exists, it update the work permit status. 
+        This method add all work permit trails records under same transfer paper into child table called `work_permit_records`,
+        if the work permit referance is already exists, it update the work permit status.
         if not exist and it reaches end of the records, it add new row in the table
         """
         if self.work_permit_type == "Local Transfer" and self.transfer_paper:
             tp = frappe.get_doc('Transfer Paper',self.transfer_paper)
             if tp:
-                if tp.work_permit_records != []:# If table for tracking wp in the transfer paper records is not empty, update the rows of the work permit records in the transfer paper upon wp referance name 
+                if tp.work_permit_records != []:# If table for tracking wp in the transfer paper records is not empty, update the rows of the work permit records in the transfer paper upon wp referance name
                     for wp_index, wp in enumerate(tp.work_permit_records):
                         if wp.work_permit_reference == self.name and self.work_permit_status != "Completed":
                             wp.update({
@@ -216,18 +216,18 @@ class WorkPermit(Document):
         mi = frappe.db.get_value("Medical Insurance",{'employee':self.employee,'insurance_status':'Local Transfer'},['name'])
         if mi:
             mi_record = frappe.get_doc('Medical Insurance', mi)
-            page_link = get_url("/desk#Form/Medical Insurance/" + mi_record.name)
+            page_link = get_url(mi_record.get_url())
             subject = ("Apply for Medical Insurance Online")
             message = "<p>Please Apply for Medical Insurance for employee:  <a href='{0}'></a>.</p>".format(mi_record.civil_id,page_link)
             create_notification_log(subject, message, [transfer_operator], mi_record)
-     
+
     def validate_mandatory_fields_for_grd_operator_again(self):
         users = frappe.utils.user.get_users_with_role('GRD Operator')
         filtered_users = []
         for user in users:
             if has_permission(doctype=self.doctype, user=user):
                 filtered_users.append(user)
-            if filtered_users and len(filtered_users) > 0: 
+            if filtered_users and len(filtered_users) > 0:
                 if "Pending By PAM" in self.workflow_state and not self.upload_work_permit and not self.attach_invoice:
                     frappe.throw(_("Upload Required Documents To Submit"))
 
@@ -254,8 +254,8 @@ class WorkPermit(Document):
         runs: `on_submit`
         param: work_permit object
         This method to sort records of employee documents upon document name;
-        First, get the employee document child table. 
-        second, find index of the document. 
+        First, get the employee document child table.
+        second, find index of the document.
         Third, set the new document.
         After that, clear the child table and append the new sorted list in the child table
         """
@@ -286,8 +286,8 @@ class WorkPermit(Document):
             "valid_till":new_expiry_date
             })
         employee.work_permit_expiry_date = new_expiry_date
-        employee.save()   
-        
+        employee.save()
+
     @frappe.whitelist()
     def get_required_documents(self):
         set_required_documents(self)
@@ -323,9 +323,9 @@ def create_work_permit_transfer(tp_name,employee):
         employee_in_tp = frappe.get_doc('Employee',employee)
         if employee_in_tp:
             create_wp_transfer(frappe.get_doc('Employee',employee_in_tp.employee),"Local Transfer",tp_name)#check if you need to do it this way create_wp_transfer(employee_in_tp,"Local Transfer",tp_name)
-            
 
-# Create Work Permit record once a month for renewals list  
+
+# Create Work Permit record once a month for renewals list
 def create_work_permit_renewal(preparation_name):
 #Get employees of the choosen preparation record
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
@@ -333,7 +333,7 @@ def create_work_permit_renewal(preparation_name):
         for employee in employee_in_preparation.preparation_record:
             if employee.renewal_or_extend == 'Renewal':
                 create_wp_renewal(frappe.get_doc('Employee',employee.employee),employee.renewal_or_extend,preparation_name)
-      
+
 
 #FOR RENEWAL
 def create_wp_renewal(employee,status,name):
@@ -356,7 +356,7 @@ def create_wp_renewal(employee,status,name):
         new_work_permit.transfer_paper = None
         new_work_permit.ref_doctype = Doctype
         new_work_permit.ref_name = name
-        new_work_permit.insert()  
+        new_work_permit.insert()
     else:
         work_permit = frappe.new_doc('Work Permit')
         work_permit.employee = employee.name
@@ -385,7 +385,7 @@ def create_wp_transfer(employee,status,name):
         new_work_permit.ref_doctype = Doctype
         new_work_permit.ref_name = name
         new_work_permit.transfer_paper = name
-        new_work_permit.insert()        
+        new_work_permit.insert()
     else:
         work_permit = frappe.new_doc('Work Permit')
         work_permit.employee = employee.name
@@ -396,7 +396,7 @@ def create_wp_transfer(employee,status,name):
         work_permit.ref_name = name
         work_permit.transfer_paper = name
         work_permit.save()
-    
+
 
 #For New Kuwaiti New Kuwaiti
 def create_wp_kuwaiti(employee,status,name):
@@ -414,7 +414,7 @@ def create_wp_kuwaiti(employee,status,name):
         new_work_permit.ref_doctype = Doctype
         new_work_permit.ref_name = name
         new_work_permit.transfer_paper = None
-        new_work_permit.insert()         
+        new_work_permit.insert()
     else:
         work_permit = frappe.new_doc('Work Permit')
         work_permit.employee = employee.name
@@ -426,7 +426,7 @@ def create_wp_kuwaiti(employee,status,name):
         work_permit.transfer_paper = None
         work_permit.save()
 
-#===================================================> Reminder Notification 
+#===================================================> Reminder Notification
 def system_remind_renewal_operator_to_apply():
     """
     This is a cron method runs every day at 8am. It gets Draft `renewal` work permit list and reminds operator to apply on pam website
@@ -452,9 +452,9 @@ def notification_reminder(work_permit_list,supervisor,operator,type):
     """
     This method sends first, second, reminders and then send third one and cc supervisor in the email
     """
-    first_reminder_list=[] 
-    second_reminder_list=[] 
-    penality_reminder_list=[] 
+    first_reminder_list=[]
+    second_reminder_list=[]
+    penality_reminder_list=[]
     if work_permit_list and len(work_permit_list) > 0:
         for wp in work_permit_list:
             if wp.reminded_grd_operator_again:
@@ -474,14 +474,14 @@ def notification_reminder(work_permit_list,supervisor,operator,type):
         email_notification_reminder(operator,first_reminder_list,"First Reminder","Apply for",type)
         for wp in first_reminder_list:
             frappe.db.set_value('Work Permit',wp.name,'reminded_grd_operator',1)
-        
+
 def email_notification_reminder(grd_user,work_permit_list,reminder_number, action,type, cc=[]):
     """
     This method send email to the required operator with the list of work permit that their date of application is today or passed already
     """
     message_list=[]
     for work_permit in work_permit_list:
-        page_link = get_url("/desk#Form/Work Permit/"+work_permit.name)
+        page_link = get_url(work_permit.get_url())
         message = "<a href='{0}'>{1}</a>".format(page_link, work_permit.civil_id)
         message_list.append(message)
 

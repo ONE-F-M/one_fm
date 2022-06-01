@@ -69,7 +69,7 @@ def notify_grd_to_check_applicant_documents(doc):
     dt = frappe.get_doc('Job Applicant',doc.name)
     if dt:
         email = [doc.one_fm_grd_operator]
-        page_link = get_url("/desk#List/Job Applicant/" + dt.name)
+        page_link = get_url(dt.get_url())
         message = "<p>Check If Transferable.<br>Civil id:{0} - Passport Number:{1}<a href='{2}'></a>.</p>".format(dt.one_fm_cid_number,dt.one_fm_passport_number,page_link)
         subject = 'Check If Transferable.<br>Civil id:{0} - Passport Number:{1}'.format(dt.one_fm_cid_number,dt.one_fm_passport_number)
         # send_email(dt, email, message, subject)
@@ -98,7 +98,7 @@ def notify_recruiter_after_checking(doc):
         if dt:
             if dt.one_fm_has_issue == "Yes" and dt.one_fm_notify_recruiter == 0:
                 email = users
-                page_link = get_url("/desk#List/Job Applicant/" + dt.name)
+                page_link = get_url(dt.get_url())
                 message="<p>Transfer for {0} has issue, but you can still print the paper<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
                 subject='Transfer for {0} has issue, but you can still print the paper'.format(dt.applicant_name)
                 create_notification_log(subject,message,email,dt)#remove [email] to check if will fix hashable issue
@@ -107,7 +107,7 @@ def notify_recruiter_after_checking(doc):
 
             if dt.one_fm_has_issue == "No" and dt.one_fm_notify_recruiter == 0:
                 email = users
-                page_link = get_url("/desk#List/Job Applicant/" + dt.name)
+                page_link = get_url(dt.get_url())
                 message="<p>Transfer for {0} has no issue<a href='{1}'></a>.</p>".format(dt.applicant_name,page_link)
                 subject='Transfer for {0} has no issues'.format(dt.applicant_name)
                 create_notification_log(subject,message,email,dt)#remove [email]
@@ -117,7 +117,7 @@ def notify_recruiter_after_checking(doc):
 
 def notify_pam_authorized_signature(doc):
     user = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':doc.one_fm_signatory_name},['user'])
-    page_link = get_url("/desk#Form/Job Applicant/" + doc.name)
+    page_link = get_url(doc.get_url())
     subject = _("Attention: Your E-Signature will be used for Transfer Paper")
     message = "<p>Please note that your E-Signature will be used on Transfer Paper: <a href='{0}'></a></p>.".format(page_link)
     create_notification_log(subject, message, [user], doc)
@@ -238,7 +238,7 @@ def get_signatory_name_erf_file(parent,name):
 def notify_supervisor_change_file_number(name):
     job_Applicant = frappe.get_doc('Job Applicant',name)
     grd_supervisor = frappe.db.get_single_value('GRD Settings','default_grd_supervisor')
-    page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
+    page_link = get_url(job_Applicant.get_url())
     subject = _("You Are Requested to Change/Approve New PAM File Number for Applicant with Civil ID:{0} ").format(job_Applicant.one_fm_cid_number)
     message = "<p>Kindly, you are requested to Change the PAM File Number for Job Applicant: {0}  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
     create_notification_log(subject, message, [grd_supervisor], job_Applicant)
@@ -247,7 +247,7 @@ def notify_supervisor_change_file_number(name):
 def notify_supervisor_change_pam_designation(name):
     job_Applicant = frappe.get_doc('Job Applicant',name)
     grd_supervisor = frappe.db.get_single_value('GRD Settings','default_grd_supervisor')
-    page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
+    page_link = get_url(job_Applicant.get_url())
     subject = _("You Are Requested to Change/Approve New PAM Designation for Applicant with Civil ID:{0} ").format(job_Applicant.one_fm_cid_number)
     message = "<p>Kindly, you are requested to Change the PAM Designation for Job Applicant: {0}  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
     create_notification_log(subject, message, [grd_supervisor], job_Applicant)
@@ -258,12 +258,12 @@ def notify_operator_with_supervisor_response(name):
     job_Applicant = frappe.get_doc('Job Applicant',name)
     grd_operator = frappe.db.get_single_value('GRD Settings','default_grd_operator_transfer')
     if job_Applicant.accept_changes == 1 and job_Applicant.reject_changes == 0:
-        page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
+        page_link = get_url(job_Applicant.get_url())
         subject = _("Supervisor Accepted Your Changes in Job Applicant")
         message = "<p>Kindly, you are requested to mark (no internal issues) box for Job Applicant: {0} and check if candidate has external issues while transfering  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
         create_notification_log(subject, message, [grd_operator], job_Applicant)
     if job_Applicant.accept_changes == 0 and job_Applicant.reject_changes == 1:
-        page_link = get_url("/desk#Form/Job Applicant/" + job_Applicant.name)
+        page_link = get_url(job_Applicant.get_url())
         subject = _("Supervisor Rejected Your Changes in Job Applicant and Provide Suggested Changes")
         message = "<p>Kindly, you are requested to Check Suggestions box for Job Applicant: {0} and check if candidate has external issues while transfering  <a href='{1}'></a></p>".format(job_Applicant.name,page_link)
         create_notification_log(subject, message, [grd_operator], job_Applicant)

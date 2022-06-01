@@ -49,7 +49,7 @@ class MGRP(Document):
 		update_onboarding_doc(self)
 
 	def set_resignation_attachment(self):
-		""" 
+		"""
 		runs: `validate`
 		param: mgrp object
 		This method checks if resignation form is not set in employee attachments, will fetch the attachment and set its value
@@ -58,7 +58,7 @@ class MGRP(Document):
 		for row in table.one_fm_employee_documents:
 			if row.document_name  == "Resignation Form":
 				self.db_set('end_of_service_attachment',row.attach)
-		
+
 	def set_grd_values(self):
 		"""
 		runs: `validate`
@@ -110,13 +110,13 @@ class MGRP(Document):
 		"""
 		runs: `on_update`
 		param: mgrp object
-		This method asks for mandatory fields in every `workflow_state` 
+		This method asks for mandatory fields in every `workflow_state`
 		"""
 		if self.workflow_state == "Form Printed":
 			field_list = [{'Status':'status'},{'Employee':'employee'},{'Company Name':'company_name'}
 						,{'Signatory Name':'signatory_name'}]
 			self.set_mendatory_fields(field_list)
-		
+
 		if self.workflow_state == "Apply Online by PRO":
 			field_list = [{'Attach MGRP Signed Form':'attach_mgrp_signed_form'}]
 			self.set_mendatory_fields(field_list)
@@ -167,7 +167,7 @@ def notify_awaiting_response_mgrp():
 def notification_reminder(mgrp_list):
 	"""
 	This method for notifying operator to check the status of the employee on MGRP website
-	
+
 	Args:
 		mgrp_list ([list of objects]): [list of objects having `Awaiting Response` workflow state]
 	"""
@@ -175,7 +175,7 @@ def notification_reminder(mgrp_list):
 	grd_user = frappe.db.get_single_value("GRD Settings", "default_grd_operator_pifss")
 	grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
 	for mgrp in mgrp_list:
-		page_link = get_url("/desk#Form/MGRP/"+mgrp.name)
+		page_link = get_url(mgrp.get_url())
 		message = "<a href='{0}'>{1}</a>".format(page_link, mgrp.civil_id)
 		message_list.append(message)
 
@@ -223,7 +223,7 @@ def get_signatory_user_for_mgrp(company_name,user_name):
 
 	Returns:
 		user: Authorized Signatory user id to notify him later on
-		signature: Authorized Electronic signature 
+		signature: Authorized Electronic signature
 	"""
 	parent = frappe.db.get_value('PIFSS Authorized Signatory',{'company_name_arabic':company_name},['name'])
 	user,signature = frappe.db.get_value('PAM Authorized Signatory Table',{'parent':parent,'authorized_signatory_name_arabic':user_name},['user','signature'])

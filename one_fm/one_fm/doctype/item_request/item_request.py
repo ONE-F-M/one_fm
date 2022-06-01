@@ -14,7 +14,7 @@ class ItemRequest(Document):
                 self.docstatus = 1
                 self.docstatus = 2
 
-        page_link = get_url("/desk#Form/Item Request/" + self.name)
+        page_link = get_url(self.get_url())
 
         # self.send_notifications(page_link)
 
@@ -48,13 +48,13 @@ class ItemRequest(Document):
         check_stock.save()
         frappe.db.commit()
 
-        page_link = get_url("/desk#Form/Stock Check/" + check_stock.name)
+        page_link = get_url(check_stock.get_url()))
 
         # self.send_notifications(page_link)
-        
+
         # stock manager
         frappe.publish_realtime(event='msgprint', message='New Item Request has been approved, please check next step from <a href="{0}">Here</a> for your Action'.format(page_link), user='Administrator')
-        
+
         # employee who create
         prefered_email_employee = frappe.get_value("Employee", filters = {"name": self.employee}, fieldname = "prefered_email")
         frappe.publish_realtime(event='msgprint', message='Your Item Request has been approved, and its now under stock review', user=prefered_email_employee)
@@ -62,7 +62,7 @@ class ItemRequest(Document):
 
     def send_notifications(self,page_link):
         from frappe.core.doctype.communication.email import make
-        
+
         msg_emp = frappe.render_template('one_fm/templates/emails/item_request_emp.html', context={"page_link": page_link})
         msg_mng = frappe.render_template('one_fm/templates/emails/item_request_mng.html', context={"page_link": page_link})
 
@@ -70,10 +70,10 @@ class ItemRequest(Document):
         sender = "omar.ja93@gmail.com" or None
         prefered_email_employee = frappe.get_value("Employee", filters = {"name": self.employee}, fieldname = "prefered_email")
         prefered_email_manager = frappe.get_value("Employee", filters = {"name": frappe.session.user}, fieldname = "prefered_email")
-        
+
         # stock manager
         frappe.publish_realtime(event='msgprint', message='New Item Request has been approved, please check next step from <a href="{0}">Here</a> for your Action'.format(page_link), user='omar.ja93@gmail.com')
-        
+
         # employee who create
         frappe.publish_realtime(event='msgprint', message='Your Item Request has been approved, and its now under stock review', user=prefered_email_employee)
 
@@ -81,7 +81,7 @@ class ItemRequest(Document):
             try:
                 make(subject = "Item Request | {0}".format(self.name), content=msg_mng, recipients=prefered_email_employee,
                     send_email=True, sender=sender)
-                
+
                 print('send email for '+prefered_email_employee)
             except:
                 print('could not send for '+prefered_email_employee)
@@ -90,7 +90,7 @@ class ItemRequest(Document):
             try:
                 make(subject = "Item Request | {0}".format(page_link), content=msg_mng, recipients=prefered_email_manager,
                     send_email=True, sender=sender)
-                
+
                 print('send email for '+prefered_email_manager)
             except:
                 print('could not send for '+prefered_email_manager)
@@ -117,4 +117,3 @@ def get_data(doctype, txt, searchfield, start, page_len, filters):
             'page_len': page_len,
             'project_parent': filters.get("project_parent")
         })
-    

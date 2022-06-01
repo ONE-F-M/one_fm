@@ -27,105 +27,41 @@ var set_issue_type_filter = frm => {
 
 let pivotal_tracker_button = frm => {
   // add a link in dashboard section if issue has been added to pivotal tracker
-  if(frm.doc.status=='Open' && frappe.user.has_role('System Manager') && !frm.doc.pivotal_tracker){
+  if(['Open', 'Replied', 'On Hold'].includes(frm.doc.status) && frappe.user.has_role('System Manager') && !frm.doc.pivotal_tracker){
     frm.add_custom_button('Pivotal Tracker', () => {
-      // check if description exists
-            let description_content = `<div class="ql-editor read-mode"><p><br></p></div>`;
-            let description = frm.doc.description;
-            console.log(description)
-            if (description==description_content){
-              // get comments
-              const table_fields = [
-          			{
-          				fieldname: "comment", fieldtype: "Text Editor",
-          				in_list_view: 1, label: "Commment"
-          			}
-          		];
-              let d = new frappe.ui.Dialog({
-              title: 'Get description from Commment',
-              fields: [
-                  {
-                      fieldname: "comments",
-                      fieldtype: "Table",
-                      label: "Comments",
-                      reqd: 1,
-                      data: [],
-                      fields: table_fields
-
-                  },
-              ],
-              primary_action_label: 'Submit',
-              primary_action(values) {
-
-                  frappe.confirm('Are you sure you want to proceed?',
-                  () => {
-                      // action to perform if Yes is selected
-                      console.log(values);
-                      frappe.call({
-                          method: "one_fm.api.doc_methods.issue.log_pivotal_tracker", //dotted path to server method
-                          freeze_message: 'Logging story to Pivotal Tracker',
-                          args:{name:frm.doc.name, comments: values.comments},
-                          callback: function(r) {
-                              // code snippet
-                              if(r.message.status=='success'){
-                                frappe.msgprint("Pivotal Tracker story created successfully");
-                                frm.refresh();
-                                frm.reload_doc();
-                              }
-                          }
-                      })
-                  }, () => {
-                      // action to perform if No is selected
-                  })
-                  d.hide();
-              }
-          });
-
-          d.show();
-          // populate table
-
-          frm.timeline.timeline_items.forEach((item, i) => {
-            if(item.icon=="small-message"){
-              d.fields_dict.comments.df.data.push(
-        				{
-                  comment: `${item.content[0].querySelector('.ql-editor.read-mode').outerHTML}`
-                }
-        			);
+      frappe.confirm('Are you sure you create Pivotal Tracker story?',
+        () => {
+            let description = ``;
+            if (!frm.doc.description){
+              description = frm.timeline.timeline_items[0].content[0].innerText.split('Website: https://one-fm.com\nAddress:')[0];
+            } else {
+              description = frm.doc.description.replace(/(<([^>]+)>)/gi, "");
             }
-          });
-          d.fields_dict.comments.grid.refresh()
-
-
-        } else {
-            frappe.confirm('Are you sure you create Pivotal Tracker story?',
-              () => {
-                  // action to perform if Yes is selected
-                  frappe.call({
-                      method: "one_fm.api.doc_methods.issue.log_pivotal_tracker", //dotted path to server method
-                      freeze_message: 'Logging story to Pivotal Tracker',
-                      args:frm.doc,
-                      callback: function(r) {
-                          // code snippet
-                          if(r.message.status=='success'){
-                            frappe.msgprint("Pivotal Tracker story created successfully");
-                            frm.refresh();
-                            frm.reload_doc();
-                          }
-                      }
-                  })
-              }, () => {
-                  // action to perform if No is selected
-              }
-            )
-          }
-
+            // action to perform if Yes is selected
+            frappe.call({
+                method: "one_fm.api.doc_methods.issue.log_pivotal_tracker", //dotted path to server method
+                freeze_message: 'Logging story to Pivotal Tracker',
+                args:{name:frm.doc.name, description:description},
+                callback: function(r) {
+                    // code snippet
+                    if(r.message.status=='success'){
+                      frappe.msgprint("Pivotal Tracker story created successfully");
+                      frm.refresh();
+                      frm.reload_doc();
+                    }
+                }
+            })
+        }, () => {
+            // action to perform if No is selected
+        }
+      )
     }, 'Create')
   }
 }
 
 
 let add_pivotal_section = frm => {
-  if(frm.doc.status=='Open' && frappe.user.has_role('System Manager')
+  if(frappe.user.has_role('System Manager')
     && frm.doc.pivotal_tracker && !document.querySelector('#pivotal_tracker_span')){
     let el = `
     <span id="pivotal_tracker_span">Issue have been logged to Pivotal tracker</span><br>

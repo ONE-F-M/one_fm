@@ -24,7 +24,7 @@ def get_context(context):
     if frappe.local.request.method == "GET":
         context.pid = frappe.form_dict.pid
 
-    
+
 def verify_pid(pid):
     verified_pid = frappe.db.get_value("GP Letter Request", filters = {"pid": pid}, fieldname = "pid")
     return verified_pid if verified_pid else False
@@ -103,11 +103,11 @@ def update_gp_letter_request_status(pid, gp_status):
                 frappe.db.commit()
 
             else:
-                
+
                 gp_letter_request = frappe.db.get_value("GP Letter Request", filters = {"pid": pid}, fieldname = "name")
 
-                page_link = "http://206.189.228.82/desk#Form/GP Letter Request/" + cstr(gp_letter_request)
-                # page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
+                page_link = get_url(doc.get_url("/app/gp-letter-request/" + cstr(gp_letter_request)"))
+
                 msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_rejected.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 
@@ -118,5 +118,4 @@ def update_gp_letter_request_status(pid, gp_status):
 
             return 'success'
     else:
-        return 'invalid token'  
-
+        return 'invalid token'

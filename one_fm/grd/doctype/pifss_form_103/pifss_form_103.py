@@ -20,7 +20,7 @@ class PIFSSForm103(Document):
 		self.check_employee_fields()
 		self.set_grd_values()
 		self.set_date()
-		self.set_progress() 
+		self.set_progress()
 		# self.check_penality_for_registration()#for setting the 3 dates to identify to whom is the penlty (date of request - Date of Register - Date of Acceptance - Date of Joining)
 
 	def after_insert(self):
@@ -42,7 +42,7 @@ class PIFSSForm103(Document):
 
 	def on_cancel(self):
 		update_onboarding_doc(self, True)
-		# self.check_penality_for_registration()#for setting the 3 dates to identify to whom is the penlty (date of request - Date of Register - Date of Acceptance - Date of Joining) 
+		# self.check_penality_for_registration()#for setting the 3 dates to identify to whom is the penlty (date of request - Date of Register - Date of Acceptance - Date of Joining)
 	def employee_full_name(self):
 		"""
 		runs: `validate`
@@ -66,13 +66,13 @@ class PIFSSForm103(Document):
 				self.second_name = employee.one_fm_third_name_in_arabic
 				self.third_name = employee.one_fm_last_name_in_arabic
 				self.last_name = ''
-				
+
 
 	def check_employee_fields(self):
 		"""
 		runs: `validate`
 		param: PIFSS_for_103 object
-		This method asks for setting mandatory fields upon `request_type` 
+		This method asks for setting mandatory fields upon `request_type`
 		`request_type` (eg: End of Service)
 		"""
 		field_list_in_employee=[]
@@ -93,7 +93,7 @@ class PIFSSForm103(Document):
 		"""
 		runs: `validate`
 		param: PIFSS_for_103 object
-		This method is fetching values of grd supervisor or pifss operator from GRD settings 
+		This method is fetching values of grd supervisor or pifss operator from GRD settings
 		"""
 		if not self.grd_supervisor:
 			self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
@@ -136,10 +136,10 @@ class PIFSSForm103(Document):
 			self.set_mendatory_fields(field_list,message_detail)
 
 		self.date_of_acceptance = today()
-		# This method will be used to create penalty for operator work delay, but not defined yet by project owner, what have been defined currently is tracking three dates 
+		# This method will be used to create penalty for operator work delay, but not defined yet by project owner, what have been defined currently is tracking three dates
 		# (date_of_request, date_of_registration, date_of_acceptance)
 		# and based on these three dates we can create penalty on (employee: delay in providing his/her documents, operator: delay on registering employee on pifss, onboarding user: delay on requesting grd to apply for employee on pifss)
-		# self.check_penality() 
+		# self.check_penality()
 		update_onboarding_doc(self)
 		# self.recall_create_work_permit_new_kuwaiti()
 
@@ -160,7 +160,7 @@ class PIFSSForm103(Document):
 			field_list = [{'Request Type':'request_type'},{'Employee':'employee'},{'Company Name':'company_name'}
 						,{'Signatory Name':'signatory_name'}]
 			self.set_mendatory_fields(field_list)
-			
+
 
 		if self.workflow_state == "Pending by GRD":
 			field_list = [{'Attach 103 Signed Form':'attach_signed_form'}]
@@ -220,7 +220,7 @@ class PIFSSForm103(Document):
 		This method notify operator to apply for PIFSS 103
 		"""
 		if self.workflow_state == "Pending by GRD":
-			page_link = get_url("/desk#Form/PIFSS Form 103/" + self.name)
+			page_link = get_url(self.get_url())
 			subject = _("PIFSS Form 103 has been created for {0}").format(self.employee_name)
 			message = "<p>Please Apply for {0} throught PIFSS Website for {1} <a href='{2}'></a></p>".format(self.request_type,self.employee_name,page_link)
 			create_notification_log(subject, message, [self.grd_operator], self)
@@ -240,7 +240,7 @@ class PIFSSForm103(Document):
 		"""
 		if self.notify_for_signature == 0 and self.user:
 			name = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':self.signatory_name},['authorized_signatory_name_english'])
-			page_link = get_url("/desk#Form/PIFSS Form 103/" + self.name)
+			page_link = get_url(self.get_url())
 			subject = _("<p>Attention: Your signature will be used on PIFSS Form 103</p>")
 			message = "<p>Dear {0},<br>You are requested to sgin on PIFSS Form 103 Record ({1}) for {2}<br>Please note that your E-Signature will be used on PIFSS Form 103 <a href='{3}'></a></p>.".format(name,self.name,self.employee_name,page_link)
 			create_notification_log(subject, message, [self.user], self)
@@ -262,7 +262,7 @@ def notify_grd_to_check_under_process_status_on_pifss():
 def notification_reminder(pifss_103_list):
 	"""
 	This method for notifying operator to check the status of the employee on PIFSS website
-	
+
 	Args:
 		pifss_103_list ([list of objects]): [list of objects having `Awaiting Response` workflow state]
 	"""
@@ -270,7 +270,7 @@ def notification_reminder(pifss_103_list):
 	grd_user = frappe.db.get_single_value("GRD Settings", "default_grd_operator_pifss")
 	grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
 	for pifss_103 in pifss_103_list:
-		page_link = get_url("/desk#Form/PIFSS Form 103/"+pifss_103.name)
+		page_link = get_url(pifss_103.get_url())
 		message = "<a href='{0}'>{1}</a>".format(page_link, pifss_103.civil_id)
 		message_list.append(message)
 
@@ -317,22 +317,22 @@ def get_signatory_user(user_name):
 
 	Returns:
 		user: Authorized Signatory user id to notify him later on
-		signature: Authorized Electronic signature 
+		signature: Authorized Electronic signature
 	"""
 	user,signature = frappe.db.get_value('PAM Authorized Signatory Table',{'authorized_signatory_name_arabic':user_name},['user','signature'])
 	return user,signature
 
 @frappe.whitelist()
 def create_103_form(param, dateofrequest,rt,cn,sn,sf):
-	"""	
-	This Method runs when operator re-apply for a rejected employee, so it will create new record with some common data. 
+	"""
+	This Method runs when operator re-apply for a rejected employee, so it will create new record with some common data.
 	Args:
 		param: employee (eg: HR-EMP-00001)
 		dateofrequest: The auto fill date once HR User submit the record to GRD, means requested date won't change when re-applying for a rejected employee
 		rt: `request_type` (eg: End of Service)
 		cn: `company_name`
-		sn: `signatory_name` 
-		sf: `attach_signed_form` 
+		sn: `signatory_name`
+		sf: `attach_signed_form`
 
 	Returns:
 		[type]: [description]

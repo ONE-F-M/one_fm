@@ -13,7 +13,7 @@ from frappe.utils import (
 )
 
 @frappe.whitelist()
-def get_wage_for_employee_incentive(employee, rewarded_by, on_date=today()):
+def get_wage_for_employee_incentive(employee, rewarded_by, on_date=False):
     '''
         this function returns the wage of an employee based on the rewarded_by value
         if rewarded_by == "Number of Daily Wage" returns basic_salary/30
@@ -24,6 +24,8 @@ def get_wage_for_employee_incentive(employee, rewarded_by, on_date=today()):
             rewarded_by: "Percentage of Monthly Wage" or "Number of Daily Wage"
             on_date: Payroll Date
     '''
+    if not on_date:
+        on_date = getdate(today())
     wage = 0
     basic_salary = frappe.db.get_value('Employee', employee, 'one_fm_basic_salary')
     if basic_salary:
@@ -112,7 +114,7 @@ def notify_employee_incentive(employee_incentive, action_user, notify_user_list)
     status = employee_incentive.workflow_state
     if employee_incentive.workflow_state == 'Draft':
         status = 'Drafted'
-    url = get_url("/desk#Form/Employee Incentive/" + employee_incentive.name)
+    url = get_url(employee_incentive.get_url())
     subject = _("Employee Incentive for the Employee {0}.".format(employee_incentive.employee_name))
     message = _("{0} {1} <p>Employee Incentive {2}<a href='{3}'></a></p> for the Employee {4}.".format(action_user_fullname, status, employee_incentive.name, url, employee_incentive.employee_name))
     create_notification_log(subject, message, notify_user_list, employee_incentive)

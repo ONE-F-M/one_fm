@@ -15,16 +15,16 @@ from one_fm.grd.doctype.moi_residency_jawazat import moi_residency_jawazat
 from one_fm.processor import sendemail
 
 class MedicalInsurance(Document):
-    
+
     def validate(self):
         self.set_value()
-        
+
     def set_value(self):
-        if not self.grd_supervisor: 
+        if not self.grd_supervisor:
             self.grd_supervisor = frappe.db.get_single_value("GRD Settings", "default_grd_supervisor")
-        if not self.grd_operator: 
+        if not self.grd_operator:
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
-    
+
     def on_submit(self):
         self.set_depend_on_fields()
         self.db_set('medical_insurance_submitted_by', frappe.session.user)
@@ -35,7 +35,7 @@ class MedicalInsurance(Document):
     def recall_create_moi_transfer(self):
         moi_residency_jawazat.creat_moi_for_transfer(self.work_permit)
 
-    
+
     def set_depend_on_fields(self):
         if self.upload_medical_insurance == None:
             frappe.throw(_('Upload Medical Insurance Is Required To Submit'))
@@ -63,9 +63,9 @@ def create_mi_record(WorkPermit):
         Insurance_status = "Renewal"
         new_medical_insurance.date_of_application = WorkPermit.date_of_application #setting the same date of application of wp
     elif(WorkPermit.work_permit_type == "New Non Kuwaiti"):#Overseas
-        Insurance_status = "New" 
+        Insurance_status = "New"
     elif (WorkPermit.work_permit_type == "Local Transfer"):#for non kuwaiti <if it is for kuwait called new or renew and they don't have MI process
-        Insurance_status = "Local Transfer" # the Insurance_status will be new for overseas only 
+        Insurance_status = "Local Transfer" # the Insurance_status will be new for overseas only
         new_medical_insurance.date_of_application = today() #set the date of creation
 
     new_medical_insurance.work_permit = WorkPermit.name
@@ -81,8 +81,8 @@ def get_employee_data_from_civil_id(civil_id):
     employee_id = frappe.db.exists('Employee', {'one_fm_civil_id': civil_id})
     if employee_id:
         return frappe.get_doc('Employee', employee_id)
-    
-#=======================================================================> Reminder Notification 
+
+#=======================================================================> Reminder Notification
 def system_remind_renewal_operator_to_apply_mi():
     """
     This is a cron method runs every day at 8am. It gets Draft `renewal` Medical Insurance list and reminds operator to apply on pam website
@@ -92,7 +92,7 @@ def system_remind_renewal_operator_to_apply_mi():
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
     {'date_of_application':['<=',today()],'workflow_state':'Apply Online by PRO','insurance_status':['in',('Renewal','New')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     notification_reminder(medical_insurance_list,supervisor,renewal_operator,"Renewal or New")
-    
+
 
 def system_remind_transfer_operator_to_apply_mi():
     """
@@ -103,16 +103,16 @@ def system_remind_transfer_operator_to_apply_mi():
     medical_insurance_list = frappe.db.get_list('Medical Insurance',
     {'date_of_application':['<=',today()],'workflow_state':'Apply Online by PRO','insurance_status':['=',('Local Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
     notification_reminder(medical_insurance_list,supervisor,transfer_operator,"Local Transfer")
-    
+
 
 
 def notification_reminder(medical_insurance_list,supervisor,operator,type):
     """
     This method sends first, second, reminders and then send third one and cc supervisor in the email
     """
-    first_reminder_list=[] 
-    second_reminder_list=[] 
-    penality_reminder_list=[] 
+    first_reminder_list=[]
+    second_reminder_list=[]
+    penality_reminder_list=[]
     if medical_insurance_list and len(medical_insurance_list) > 0:
         for mi in medical_insurance_list:
             if mi.reminder_grd_operator_again:
@@ -132,14 +132,14 @@ def notification_reminder(medical_insurance_list,supervisor,operator,type):
         email_notification_reminder(operator,first_reminder_list,"First Reminder","Apply for",type)
         for mi in first_reminder_list:
             frappe.db.set_value('Medical Insurance',mi.name,'reminder_grd_operator',1)
-        
+
 def email_notification_reminder(grd_user,medical_insurance_list,reminder_number, action,type, cc=[]):
     """
     This method send email to the required operator with the list of Medical Insurance that their date of application is today or passed already
     """
     message_list=[]
     for medical_insurance in medical_insurance_list:
-        page_link = get_url("/desk#Form/Medical Insurance/"+medical_insurance.name)
+        page_link = get_url(medical_insurance.get_url())
         message = "<a href='{0}'>{1}</a>".format(page_link, medical_insurance.civil_id)
         message_list.append(message)
 

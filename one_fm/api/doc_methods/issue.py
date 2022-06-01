@@ -10,17 +10,8 @@ def log_pivotal_tracker(**kwargs):
     try:
         TAG_RE = re.compile(r'<[^>]+>')
         doc = frappe.get_doc("Issue", frappe.form_dict.name)
-        if frappe.form_dict.comments:
-            comments = json.loads(frappe.form_dict.comments)
-            description = """"""
-            for i in comments:
-                i['comment'].replace('ql-editor read-mode', '')
-                description += f"""<br><br>{i['comment']}"""
-            description = TAG_RE.sub('', description)
-        else:
-            description = TAG_RE.sub('', doc.description)
-
-        doc_link = frappe.utils.get_url()+doc.get_url()
+        description = frappe.form_dict.description
+        doc_link = frappe.utils.get_url(doc.get_url())
         default_api_integration = frappe.get_doc("Default API Integration")
 
         pivotal_tracker = frappe.get_doc("API Integration",
@@ -31,8 +22,6 @@ def log_pivotal_tracker(**kwargs):
             "Content-Type": "application/json"}
         project_id = pivotal_tracker.get_password('project_id').replace(' ', '')
         url = f"{pivotal_tracker.url}/services/v5/projects/{project_id}/stories"
-        print(url)
-        # escape HTML in description
 
         req = requests.post(
             url=url,
