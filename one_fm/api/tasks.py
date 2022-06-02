@@ -149,8 +149,8 @@ def checkin_checkout_reminder():
 
 			if len(recipients) > 0:
 				
-				notification_title = _("Checkin reminder")
-				notification_body = _("Don't forget to checkin!")
+				notification_title = _("Checkout reminder")
+				notification_body = _("Don't forget to checkout!")
 				
 				for recipient in recipients:
 
