@@ -26,7 +26,7 @@ def get_recent_openings():
                                 },
                                 ["name", "designation", "description", "one_fm_job_opening_created", "department"],
                                 order_by="one_fm_job_opening_created desc",
-                                limit=10)
+                                )
 
     for opening in recent_openings_raw_format:
         data = {

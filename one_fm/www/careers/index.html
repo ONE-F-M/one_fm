@@ -72,8 +72,9 @@
                                         <div class="clearfix"></div>
                                         <p class="card-text">{{ opening.description }}</p>
                                         <p class="card-text float-left"><small><span class="text-muted"> {{ opening.department }}</span></small></p>
-                                        <form action="/careers/opening" method="GET">
-                                            <button type="submit" class="btn btn-dark float-right" name="job_id" value="{{ opening.name }}">View More</button>
+                                        <form action="void(0);">
+                                            <a href="/careers/opening?job_id={{ opening.name }}"
+                                            class="btn btn-dark float-right">View More</a>
                                         </form>
                                         <div class="clearfix"></div>
                                     </div>
