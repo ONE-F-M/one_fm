@@ -2,6 +2,13 @@ import frappe, calendar
 from frappe.utils import (
     nowdate, getdate, add_days
 )
+from frappe import enqueue
+from one_fm.api.tasks import automatic_shift_assignment
+
+def execute():
+    enqueue('one_fm.tasks.one_fm.monthly.employee_schedule_monthly')
+
+
 
 
 def employee_schedule_monthly():
@@ -32,5 +39,7 @@ def employee_schedule_monthly():
                         es.date = f'2022-06-{i}'
                         es.insert()
                     except Exception as e:
-                        print(e)
-                frappe.db.commit()
+            frappe.db.commit()
+
+        # RUN SHIFT ASSIGNMENTS
+        automatic_shift_assignment()
