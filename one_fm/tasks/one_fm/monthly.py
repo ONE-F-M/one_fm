@@ -36,7 +36,7 @@ def employee_schedule_monthly():
                         es.owner = ''
                         es.roster_type = 'Basic'
                         es.employee_availability = 'Working'
-                        es.date = f'2022-06-{i}'
+                        es.date = f'{today.year}-{today.month}-{i}'
                         es.insert()
                     except Exception as e:
                         pass
