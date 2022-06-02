@@ -213,6 +213,7 @@
    "options": "ERF"
   },
   {
+   "fetch_from": "erf.pam_file_number",
    "fieldname": "pam_file_number",
    "fieldtype": "Link",
    "label": "PAM File Number",
@@ -262,7 +263,7 @@
   }
  ],
  "links": [],
- "modified": "2022-05-26 12:57:55.950138",
+ "modified": "2022-06-01 14:58:37.850660",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
