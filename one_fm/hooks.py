@@ -442,6 +442,7 @@ scheduler_events = {
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
+			"one_fm.api.tasks.checkin_checkout_reminder",
 			"one_fm.api.tasks.checkin_checkout_final_reminder",
 			"one_fm.api.tasks.checkin_deadline",
 			"one_fm.api.tasks.overtime_shift_assignment"
