@@ -80,7 +80,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Permission Type",
-   "options": "\nArrive Late\nLeave Early",
+   "options": "\nArrive Late\nLeave Early\nForget to Checkin\nForget to Checkout\nCheckin Checkout Issue",
    "reqd": 1
   },
   {
@@ -140,7 +140,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-11-06 16:56:05.624791",
+ "modified": "2022-06-02 08:04:35.015017",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
