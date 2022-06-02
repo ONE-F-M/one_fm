@@ -39,6 +39,7 @@ def employee_schedule_monthly():
                         es.date = f'2022-06-{i}'
                         es.insert()
                     except Exception as e:
+                        pass
             frappe.db.commit()
 
         # RUN SHIFT ASSIGNMENTS
