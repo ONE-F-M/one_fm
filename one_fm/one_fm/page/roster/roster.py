@@ -81,7 +81,7 @@ def get_staff_filters_data():
 
 
 @frappe.whitelist()
-def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, post_type=None, designation=None, isOt=None, limit_start=0, limit_page_length=100):
+def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, post_type=None, designation=None, isOt=None, limit_start=0, limit_page_length=9999):
 	start = time.time()
 		
 	master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
