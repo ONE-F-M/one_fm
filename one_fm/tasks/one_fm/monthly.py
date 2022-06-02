@@ -20,7 +20,9 @@ def employee_schedule_monthly():
         exempt_projects = [row.project for row in settings.exempt_projects]
         projects = frappe.db.get_list(
             'Project',
-            filters={'name':['NOT IN', exempt_projects], 'exempt_auto_employee_schedule':0})
+            filters={'name':['NOT IN', exempt_projects], 'exempt_auto_employee_schedule':0,
+                'project_type':'External'}
+            )
         # get dates
         today = getdate()
         last_month_date = add_days(today, -1)
