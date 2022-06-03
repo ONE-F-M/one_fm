@@ -8,6 +8,8 @@ from frappe.model.document import Document
 from frappe.utils import getdate
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
+from erpnext.hr.doctype.shift_assignment.shift_assignment import get_shift_details
+
 class ShiftPermission(Document):
 	def validate(self):
 		self.check_permission_type()
@@ -32,7 +34,7 @@ class ShiftPermission(Document):
 	def validate_date(self):
 		if self.docstatus==0 and getdate(self.date) < getdate():
 			frappe.throw(_("Oops! You cannot apply for permission for a previous date."))
-	
+
 	# This method validates any dublicate permission for the employee on same day
 	def validate_record(self):
 		date = getdate(self.date).strftime('%d-%m-%Y')
@@ -46,7 +48,7 @@ class ShiftPermission(Document):
 			for field in fields:
 				if not self.get(fields[field]):
 					mandatory_fields.append(field)
-        
+
 		if len(mandatory_fields) > 0:
 			message= 'Mandatory fields required in Shift Permission<br><br><ul>'
 			for mandatory_field in mandatory_fields:
@@ -63,3 +65,36 @@ class ShiftPermission(Document):
 		subject = _("{employee} has applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date))
 		message = _("{employee} has applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date))
 		create_notification_log(subject, message, [user], self)
+
+	def on_submit(self):
+		if self.workflow_state == 'Approved':
+			create_employee_checkin_for_shift_permission(self)
+
+def create_employee_checkin_for_shift_permission(shift_permission):
+	"""
+		Method to create Employee Checkin from the Shift Permission
+		args:
+			shift_permission: Object of Shift Permission
+	"""
+	if not not frappe.db.exists('Employee Checkin', {'shift_permission': shift_permission.name}):
+		log_type = False
+		if shift_permission.permission_type in ["Arrive Late", "Forget to Checkin", "Checkin Issue"]:
+			log_type = "IN"
+		elif shift_permission.permission_type in ["Leave Early", "Forget to Checkout", "Checkout Issue"]:
+			log_type = "OUT"
+		if not log_type:
+			return False
+
+		# Get shift details for the employee
+		shift_details = get_shift_details(shift_permission.employee, getdate(shift_permission.date))
+
+		employee_checkin = frappe.new_doc('Employee Checkin')
+		employee_checkin.employee = shift_permission.employee
+		employee_checkin.log_type = log_type
+		employee_checkin.shift = shift_permission.shift_type
+		employee_checkin.time = shift_details.start_datetime if log_type == "IN" else shift_details.end_datetime
+		employee_checkin.skip_auto_attendance = False
+		employee_checkin.operations_shift = shift_permission.shift
+		employee_checkin.shift_assignment = shift_permission.assigned_shift
+		employee_checkin.shift_permission = shift_permission.name
+		employee_checkin.save(ignore_permissions=True)
