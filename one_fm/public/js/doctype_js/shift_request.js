@@ -10,10 +10,13 @@ frappe.ui.form.on('Shift Request', {
 function set_approver(frm){
     if(frm.doc.employee){
         frappe.call({
-            method: 'one_fm.api.doc_methods.shift_request',
+            method: 'one_fm.api.doc_methods.shift_request.fetch_approver',
+            args:{
+                'employee':frm.doc.employee
+            },
             callback: function(r) {
                 if(r.message){
-                    console.log(r.message)
+                    frm.set_value("approver",r.message)
                 }
             }
         });
