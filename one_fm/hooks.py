@@ -615,3 +615,5 @@ jenv = {
         # "xmul:one_fm.jinja.methods.xmultiply"
     ]
 }
+
+after_migrate = "one_fm.tasks.hooks.after_migrate.execute"
