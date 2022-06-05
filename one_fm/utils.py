@@ -1812,6 +1812,8 @@ def create_roster_employee_actions():
                             select
                                 employee from `tabEmployee`
                             where
+                                status = 'Active'
+                            AND
                                 employee not in
                                 (select employee
                                 from `tabEmployee Schedule`
