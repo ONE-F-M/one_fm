@@ -77,7 +77,7 @@
    "description": null,
    "docstatus": 0,
    "dt": "Shift Assignment",
-   "fetch_from": "shift.site",
+   "fetch_from": "",
    "fetch_if_empty": 0,
    "fieldname": "site",
    "fieldtype": "Link",
