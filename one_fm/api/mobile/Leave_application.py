@@ -4,7 +4,6 @@ from erpnext.hr.doctype.leave_application.leave_application import get_leave_bal
 from datetime import date
 import datetime
 import collections
-from one_fm.api.tasks import get_action_user,get_notification_user
 import base64, json
 from frappe.utils import getdate
 
@@ -198,6 +197,7 @@ def get_leave_approver(employee):
         approver = leave_approver
     return approver
 
+@frappe.whitelist()
 def notify_leave_approver(doc):
     """
     This function is to notify the leave approver and request his action.
