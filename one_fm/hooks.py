@@ -519,6 +519,9 @@ scheduler_events = {
 		],
 		"1 23 1-31 * *": [
 			'one_fm.tasks.one_fm.daily.mark_future_attendance_request'
+		],
+		"30 0 1 * *": [
+			'one_fm.tasks.one_fm.monthly.execute'
 		]
 	}
 }

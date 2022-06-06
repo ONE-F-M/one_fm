@@ -38,9 +38,18 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Employee Schedule Setting",
+   "link_to": "Employee Schedule Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2022-02-23 13:52:17.052195",
+ "modified": "2022-06-01 17:00:02.899265",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONE FM Settings",
