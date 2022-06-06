@@ -294,7 +294,7 @@ def checkin_checkout_supervisor_reminder():
 						 if notify_user is not None:
 							 send_notification(title, subject, notify_message, category, notify_user)
 
-
+@frappe.whitelist()
 def send_notification(title, subject, message, category, recipients):
 	for user in recipients:
 		notification = frappe.new_doc("Notification Log")
@@ -327,6 +327,7 @@ def get_active_shifts(now_time):
 				IF(end_time < start_time, DATE_ADD(CAST(end_time as date), INTERVAL 1 DAY), CAST(end_time as date))
 	""".format(current_time=now_time), as_dict=1)
 
+@frappe.whitelist()
 def get_action_user(employee, shift):
 		"""
 				Shift > Site > Project > Reports to
@@ -363,6 +364,7 @@ def get_action_user(employee, shift):
 
 		return action_user, Role
 
+@frappe.whitelist()
 def get_notification_user(employee, shift, Role):
 	"""
 			Shift > Site > Project > Reports to
