@@ -659,23 +659,24 @@ def end_previous_shifts():
 		doc.submit()
 
 def create_shift_assignment(schedule, date):
-	try:
-		shift_assignment = frappe.new_doc("Shift Assignment")
-		shift_assignment.start_date = date
-		shift_assignment.employee = schedule.employee
-		shift_assignment.employee_name = schedule.employee_name
-		shift_assignment.department = schedule.department
-		shift_assignment.post_type = schedule.post_type
-		shift_assignment.shift = schedule.shift
-		shift_assignment.site = schedule.site
-		shift_assignment.project = schedule.project
-		shift_assignment.shift_type = schedule.shift_type
-		shift_assignment.post_type = schedule.post_type
-		shift_assignment.post_abbrv = schedule.post_abbrv
-		shift_assignment.roster_type = schedule.roster_type
-		shift_assignment.submit()
-	except Exception:
-			frappe.log_error(frappe.get_traceback())
+	if not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ]}):
+		try:
+			shift_assignment = frappe.new_doc("Shift Assignment")
+			shift_assignment.start_date = date
+			shift_assignment.employee = schedule.employee
+			shift_assignment.employee_name = schedule.employee_name
+			shift_assignment.department = schedule.department
+			shift_assignment.post_type = schedule.post_type
+			shift_assignment.shift = schedule.shift
+			shift_assignment.site = schedule.site
+			shift_assignment.project = schedule.project
+			shift_assignment.shift_type = schedule.shift_type
+			shift_assignment.post_type = schedule.post_type
+			shift_assignment.post_abbrv = schedule.post_abbrv
+			shift_assignment.roster_type = schedule.roster_type
+			shift_assignment.submit()
+		except Exception:
+				frappe.log_error(frappe.get_traceback())
 
 def overtime_shift_assignment():
 	"""

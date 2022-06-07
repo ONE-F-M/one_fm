@@ -7,22 +7,22 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
 import json
 
 def shift_request_submit(self):
-	for date in pd.date_range(start=self.from_date, end=self.to_date):
-		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":date}):
-			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":date}, "status" , "Inactive")
-		assignment_doc = frappe.new_doc("Shift Assignment")
-		assignment_doc.company = self.company
-		assignment_doc.shift = self.operations_shift
-		assignment_doc.site = self.operation_site
-		assignment_doc.shift_type = self.shift_type
-		assignment_doc.employee = self.employee
-		assignment_doc.start_date = date
-		assignment_doc.shift_request = self.name
-		assignment_doc.insert()
-		assignment_doc.submit()
-		assignment_doc.end_date = date
-		assignment_doc.submit()
-		frappe.db.commit()
+	if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}):
+		frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}, "status" , "Inactive")
+	
+	assignment_doc = frappe.new_doc("Shift Assignment")
+	assignment_doc.company = self.company
+	assignment_doc.shift = self.operations_shift
+	assignment_doc.site = self.operation_site
+	assignment_doc.shift_type = self.shift_type
+	assignment_doc.employee = self.employee
+	assignment_doc.start_date = self.from_date
+	assignment_doc.shift_request = self.name
+	assignment_doc.insert()
+	assignment_doc.submit()
+	assignment_doc.end_date = self.to_date
+	assignment_doc.submit()
+	frappe.db.commit()
 
 @frappe.whitelist()
 def fetch_approver(employee):
