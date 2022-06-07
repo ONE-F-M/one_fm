@@ -452,7 +452,7 @@ def checkin_deadline():
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
 
 				for employee in employees:
-					mark_attendance(employee, today, 'Absent', shift.name)
+					frappe.enqueue(mark_attendance, employee=employee, attendance_date=today, status='Absent', shift=shift.name,  is_async=True, queue='long')
 					# op_shift =  frappe.get_doc("Operations Shift", {"shift_type":shift.name})
 					# action_user, Role = get_action_user(employee,op_shift.name)
 					# if Role:
