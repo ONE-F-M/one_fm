@@ -181,7 +181,7 @@ def get_front_side_civil_id_text(image_path, client, is_kuwaiti):
             result["Third_Name"] = name_list[2] if len(name_list) == 4 else ""
 
         result["First_Arabic_Name"] = result["Last_Arabic_Name"] = result["Second_Arabic_Name"] = result["Third_Arabic_Name"] = Ar_Name = ""
-        if find_index(assemble,"الرقه"):
+        if find_index(assemble,"الرقه") and find_index(assemble,"Name"):
             for i in range(find_index(assemble,"الرقه")+1,find_index(assemble,"Name")):
                 Ar_Name = Ar_Name + texts[i].description + " "
             ar_name_list = Ar_Name.split()
@@ -234,7 +234,7 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
             result["PACI_No"] = texts[find_index(assemble,"YI")-1].description
 
         result["Sponsor_Name"]= ""
-        if find_index(assemble, "(") and find_index(assemble, ")"):
+        if find_index(assemble, "(") and find_index(assemble, ")") and find_index(assemble,"العنوان:"):
             for i in range(find_index(assemble,")")+1,find_index(assemble,"العنوان:")):
                 result["Sponsor_Name"] = result["Sponsor_Name"] + texts[i].description + " "
 
