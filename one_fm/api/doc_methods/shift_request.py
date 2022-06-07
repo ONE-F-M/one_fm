@@ -7,8 +7,8 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
 import json
 
 def shift_request_submit(self):
-	if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":[">=", from_date ], "end_date": ["<=", from_date ]}):
-		frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":[">=", from_date ], "end_date": ["<=", from_date ]}, "status" , "Inactive")
+	if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}):
+		frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}, "status" , "Inactive")
 	
 	assignment_doc = frappe.new_doc("Shift Assignment")
 	assignment_doc.company = self.company
@@ -16,11 +16,11 @@ def shift_request_submit(self):
 	assignment_doc.site = self.operation_site
 	assignment_doc.shift_type = self.shift_type
 	assignment_doc.employee = self.employee
-	assignment_doc.start_date = from_date
+	assignment_doc.start_date = self.from_date
 	assignment_doc.shift_request = self.name
 	assignment_doc.insert()
 	assignment_doc.submit()
-	assignment_doc.end_date = to_date
+	assignment_doc.end_date = self.to_date
 	assignment_doc.submit()
 	frappe.db.commit()
 
