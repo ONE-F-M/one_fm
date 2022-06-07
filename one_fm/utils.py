@@ -1126,13 +1126,13 @@ def warehouse_naming_series(doc, method):
         doc.name = name +'-'+doc.warehouse_code+'-'+doc.warehouse_name
 
 def create_new_project_code(project_id):
-    project_code = frappe.db.sql("select one_fm_project_code+1 from `tabProject` order by one_fm_project_code desc limit 1")
-    if project_code:
-        new_project_code = project_code[0][0]
-    else:
-        new_project_code = '1'
-    frappe.db.set_value('Project', project_id, 'one_fm_project_code', str(int(new_project_code)).zfill(4))
-    return str(int(new_project_code)).zfill(4)
+	project_code = frappe.db.sql("select one_fm_project_code+1 from `tabProject` order by one_fm_project_code desc limit 1")
+	if project_code and len(project_code) > 1 and project_code[0][0]:
+		new_project_code = project_code[0][0]
+	else:
+		new_project_code = '1'
+	frappe.db.set_value('Project', project_id, 'one_fm_project_code', str(int(new_project_code)).zfill(4))
+	return str(int(new_project_code)).zfill(4)
 
 @frappe.whitelist()
 def get_warehouse_children(doctype, parent=None, company=None, is_root=False):
