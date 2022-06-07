@@ -63,7 +63,6 @@ def employee_checkin_validate(doc, method):
 
 @frappe.whitelist()
 def checkin_after_insert(doc, method):
-	print("CALLED CHECKIN AFTER INSERT")
 	from one_fm.api.tasks import send_notification, issue_penalty
 	# These are returned according to dates. Time is not taken into account
 	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
