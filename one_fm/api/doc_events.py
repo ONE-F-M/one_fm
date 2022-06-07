@@ -63,7 +63,6 @@ def employee_checkin_validate(doc, method):
 
 @frappe.whitelist()
 def checkin_after_insert(doc, method):
-	print("CALLED CHECKIN AFTER INSERT")
 	from one_fm.api.tasks import send_notification, issue_penalty
 	# These are returned according to dates. Time is not taken into account
 	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
@@ -102,23 +101,6 @@ def checkin_after_insert(doc, method):
 			message_suffix = _("Location logged is inside the site.") if distance <= radius else _("Location logged is {location}m outside the site location.").format(location=cstr(cint(distance)- radius))
 
 			if doc.log_type == "IN" and doc.skip_auto_attendance == 0:
-				#EARLY: Checkin time is before [Shift Start - Variable Checkin time]
-				#if get_datetime(doc.time) < get_datetime(curr_shift.actual_start):
-				#	time_diff = get_datetime(curr_shift.start_datetime) - get_datetime(doc.time)
-				#	hrs, mins, secs = cstr(time_diff).split(":")
-				#	early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
-				#	subject = _("{employee} has checked in early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
-				#	message = _("{employee} has checked in early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
-				#	for_users = [supervisor_user]
-				#	create_notification_log(subject, message, for_users, doc)
-
-				# ON TIME
-				#elif get_datetime(doc.time) >= get_datetime(doc.shift_actual_start) and get_datetime(doc.time) <= (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
-				#	subject = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
-				#	message = _("{employee} has checked in on time. {location}".format(employee=doc.employee_name, location=message_suffix))
-				#	for_users = [supervisor_user]
-				#	create_notification_log(subject, message, for_users, doc)
-
 				# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
 				if not shift_permission_late_entry and shift_type.enable_entry_grace_period == 1 and get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
 					time_diff = get_datetime(doc.time) - get_datetime(doc.shift_start)
@@ -156,22 +138,6 @@ def checkin_after_insert(doc, method):
 					issue_penalty(doc.employee, doc.time, penalty_code_early_checkout, doc.operations_shift, supervisor_user, doc.device_id)
 					create_notification_log(subject, message, for_users, doc)
 
-				# ON TIME
-				#elif doc.device_id and get_datetime(doc.time) <= get_datetime(doc.shift_actual_end) and get_datetime(doc.time) >= (get_datetime(doc.shift_end) - timedelta(minutes=shift_type.early_exit_grace_period)):
-				#	subject = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
-				#	message = _("{employee} has checked out on time. {location}".format(employee=doc.employee_name, location=message_suffix))
-				#	for_users = [supervisor_user]
-				#	create_notification_log(subject, message, for_users, doc)
-
-				# LATE: Checkin time is after [Shift End + Variable checkout time]
-				#elif doc.device_id and get_datetime(doc.time) > get_datetime(doc.shift_actual_end):
-				#	time_diff = get_datetime(doc.time) - get_datetime(doc.shift_end)
-				#	hrs, mins, secs = cstr(time_diff).split(":")
-				#	delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
-				#	subject = _("{employee} has checked out late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
-				#	message = _("{employee} has checked out late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
-				#	for_users = [supervisor_user]
-				#	create_notification_log(subject, message, for_users, doc)
 		else:
 			# When no shift assigned, supervisor of active shift of the nearest site is sent a notification about unassigned checkin.
 			location = doc.device_id
