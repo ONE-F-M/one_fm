@@ -87,6 +87,7 @@ doctype_js = {
 	"Help Category": "public/js/doctype_js/help_category.js",
 	"Help Article": "public/js/doctype_js/help_article.js",
 	"Attendance Request": "public/js/doctype_js/attendance_request.js",
+	"Shift Request": "public/js/doctype_js/shift_request.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -320,6 +321,9 @@ doc_events = {
 		"before_insert": "one_fm.api.doc_methods.help_article.before_insert",
 		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
 	},
+	"Shift Request":{
+		"before_save":"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
+	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -442,6 +446,7 @@ scheduler_events = {
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
+			"one_fm.api.tasks.checkin_checkout_reminder",
 			"one_fm.api.tasks.checkin_checkout_final_reminder",
 			"one_fm.api.tasks.checkin_deadline",
 			"one_fm.api.tasks.overtime_shift_assignment"
@@ -514,6 +519,9 @@ scheduler_events = {
 		],
 		"1 23 1-31 * *": [
 			'one_fm.tasks.one_fm.daily.mark_future_attendance_request'
+		],
+		"30 0 1 * *": [
+			'one_fm.tasks.one_fm.monthly.execute'
 		]
 	}
 }

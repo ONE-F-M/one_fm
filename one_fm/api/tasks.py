@@ -52,6 +52,119 @@ def send_checkin_hourly_reminder():
 			message = _('<a class="btn btn-warning" href="/app/face-recognition">Hourly Check In</a>')
 			send_notification(title, subject, message, category, recipients)
 
+def checkin_checkout_reminder():
+	"""
+	This function sends a push notification to users to remind them to checkin/checkout at the start/end time of their shift.
+	"""
+	try:
+		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
+			return
+
+		# Get current date and time
+		date = getdate()
+		now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
+
+		# Get list of active shifts
+		shifts_list = get_active_shifts(now_time)
+
+		for shift in shifts_list:
+
+			# Current time == shift start time => Checkin
+			if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
+				recipients = frappe.db.sql("""
+					SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
+					WHERE
+						tSA.employee=emp.name
+					AND tSA.start_date='{date}'
+					AND tSA.shift_type='{shift_type}'
+					AND tSA.docstatus=1
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+					WHERE
+						emp_sp.employee=emp.name
+					AND emp_sp.workflow_state='Approved'
+					AND emp_sp.shift_type='{shift_type}'
+					AND emp_sp.date='{date}'
+					AND emp_sp.permission_type="Arrive Late")
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
+					WHERE
+						empChkin.log_type="IN"
+					AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
+					AND empChkin.shift_type='{shift_type}')
+					AND tSA.start_date
+					NOT IN(SELECT holiday_date from `tabHoliday` h
+					WHERE
+						h.parent = emp.holiday_list
+					AND h.holiday_date = '{date}')
+				""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+
+				if len(recipients) > 0:
+					
+					notification_title = _("Checkin reminder")
+					notification_body = _("Don't forget to checkin!")
+					
+					for recipient in recipients:
+
+						# Get Employee ID and User Role for the given recipient
+						employee_id = recipient.name
+						user_roles = frappe.get_roles(recipient.user_id)
+						
+						# Send push notifications
+						if "Head Office Employee" in user_roles:
+							# Arrive late option is true only if the employee has the user role "Head Office Employee".
+							push_notification_rest_api_for_checkin(employee_id, notification_title, notification_body, checkin=True, arriveLate=True, checkout=False)
+						else:
+							push_notification_rest_api_for_checkin(employee_id, notification_title, notification_body, checkin=True, arriveLate=False, checkout=False)
+
+			
+			# current time == shift end time => Checkout
+			if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
+				recipients = frappe.db.sql("""
+					SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
+					WHERE
+						tSA.employee = emp.name
+					AND tSA.start_date='{date}'
+					AND tSA.shift_type='{shift_type}'
+					AND tSA.docstatus=1
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+					WHERE
+						emp_sp.employee=emp.name
+					AND emp_sp.workflow_state='Approved'
+					AND emp_sp.shift_type='{shift_type}'
+					AND emp_sp.date='{date}'
+					AND emp_sp.permission_type="Leave Early")
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
+					WHERE
+						empChkin.log_type="OUT"
+					AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
+					AND empChkin.shift_type='{shift_type}')
+					AND tSA.start_date
+					NOT IN(SELECT holiday_date from `tabHoliday` h
+					WHERE
+						h.parent = emp.holiday_list
+					AND h.holiday_date = '{date}')
+				""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+
+				if len(recipients) > 0:
+					
+					notification_title = _("Checkout reminder")
+					notification_body = _("Don't forget to checkout!")
+					
+					for recipient in recipients:
+
+						# Get Employee ID and User Role for the given recipient
+						employee_id = recipient.name
+						user_roles = frappe.get_roles(recipient.user_id)
+						
+						push_notification_rest_api_for_checkin(employee_id, notification_title, notification_body, checkin=False, arriveLate=False, checkout=True)
+
+	except Exception as error:
+		frappe.log_error(str(error), 'Checkin/checkout initial reminder failed')
+
+
 def checkin_checkout_final_reminder():
 	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
 		return
@@ -294,7 +407,7 @@ def checkin_checkout_supervisor_reminder():
 						 if notify_user is not None:
 							 send_notification(title, subject, notify_message, category, notify_user)
 
-
+@frappe.whitelist()
 def send_notification(title, subject, message, category, recipients):
 	for user in recipients:
 		notification = frappe.new_doc("Notification Log")
@@ -327,6 +440,7 @@ def get_active_shifts(now_time):
 				IF(end_time < start_time, DATE_ADD(CAST(end_time as date), INTERVAL 1 DAY), CAST(end_time as date))
 	""".format(current_time=now_time), as_dict=1)
 
+@frappe.whitelist()
 def get_action_user(employee, shift):
 		"""
 				Shift > Site > Project > Reports to
@@ -363,6 +477,7 @@ def get_action_user(employee, shift):
 
 		return action_user, Role
 
+@frappe.whitelist()
 def get_notification_user(employee, shift, Role):
 	"""
 			Shift > Site > Project > Reports to
@@ -450,7 +565,7 @@ def checkin_deadline():
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
 
 				for employee in employees:
-					mark_attendance(employee, today, 'Absent', shift.name)
+					frappe.enqueue(mark_attendance, employee=employee, attendance_date=today, status='Absent', shift=shift.name,  is_async=True, queue='long')
 					# op_shift =  frappe.get_doc("Operations Shift", {"shift_type":shift.name})
 					# action_user, Role = get_action_user(employee,op_shift.name)
 					# if Role:
@@ -546,23 +661,24 @@ def end_previous_shifts():
 		doc.submit()
 
 def create_shift_assignment(schedule, date):
-	try:
-		shift_assignment = frappe.new_doc("Shift Assignment")
-		shift_assignment.start_date = date
-		shift_assignment.employee = schedule.employee
-		shift_assignment.employee_name = schedule.employee_name
-		shift_assignment.department = schedule.department
-		shift_assignment.post_type = schedule.post_type
-		shift_assignment.shift = schedule.shift
-		shift_assignment.site = schedule.site
-		shift_assignment.project = schedule.project
-		shift_assignment.shift_type = schedule.shift_type
-		shift_assignment.post_type = schedule.post_type
-		shift_assignment.post_abbrv = schedule.post_abbrv
-		shift_assignment.roster_type = schedule.roster_type
-		shift_assignment.submit()
-	except Exception:
-			frappe.log_error(frappe.get_traceback())
+	if not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ]}):
+		try:
+			shift_assignment = frappe.new_doc("Shift Assignment")
+			shift_assignment.start_date = date
+			shift_assignment.employee = schedule.employee
+			shift_assignment.employee_name = schedule.employee_name
+			shift_assignment.department = schedule.department
+			shift_assignment.post_type = schedule.post_type
+			shift_assignment.shift = schedule.shift
+			shift_assignment.site = schedule.site
+			shift_assignment.project = schedule.project
+			shift_assignment.shift_type = schedule.shift_type
+			shift_assignment.post_type = schedule.post_type
+			shift_assignment.post_abbrv = schedule.post_abbrv
+			shift_assignment.roster_type = schedule.roster_type
+			shift_assignment.submit()
+		except Exception:
+				frappe.log_error(frappe.get_traceback())
 
 def overtime_shift_assignment():
 	"""
