@@ -63,8 +63,6 @@ def employee_checkin_validate(doc, method):
 
 @frappe.whitelist()
 def checkin_after_insert(doc, method):
-	print("Here")
-
 	from one_fm.api.tasks import send_notification, issue_penalty
 	# These are returned according to dates. Time is not taken into account
 	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
@@ -118,15 +116,12 @@ def checkin_after_insert(doc, method):
 
 				# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
 				if shift_type.enable_entry_grace_period == 1 and get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
-					print("Here2")
-
 					time_diff = get_datetime(doc.time) - get_datetime(doc.shift_start)
 					hrs, mins, secs = cstr(time_diff).split(":")
 					delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 					subject = _("{employee} has checked in late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
 					message = _("{employee_name} has checked in late by {delay}. {location} <br><br><div class='btn btn-primary btn-danger late-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name,shift=doc.operations_shift, date=cstr(doc.time), employee=doc.employee, delay=delay, location=message_suffix))
 					for_users = [supervisor_user]
-					issue_penalty(doc.employee, doc.time, penalty_code_late_checkin, doc.operations_shift, supervisor_user, doc.device_id)
 					create_notification_log(subject, message, for_users, doc)
 
 			elif doc.log_type == "IN" and doc.skip_auto_attendance == 1:
