@@ -63,11 +63,12 @@ def employee_checkin_validate(doc, method):
 
 @frappe.whitelist()
 def checkin_after_insert(doc, method):
+	print("Here")
+
 	from one_fm.api.tasks import send_notification, issue_penalty
 	# These are returned according to dates. Time is not taken into account
 	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
-	penalty_code_late_checkin = "102"
-	penalty_code_early_checkout="103"
+
 
 	log_exist = frappe.db.sql("""
 			SELECT name FROM `tabEmployee Checkin` empChkin
@@ -117,6 +118,8 @@ def checkin_after_insert(doc, method):
 
 				# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
 				if shift_type.enable_entry_grace_period == 1 and get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
+					print("Here2")
+
 					time_diff = get_datetime(doc.time) - get_datetime(doc.shift_start)
 					hrs, mins, secs = cstr(time_diff).split(":")
 					delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
