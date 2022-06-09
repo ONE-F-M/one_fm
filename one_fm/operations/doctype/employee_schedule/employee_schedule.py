@@ -12,6 +12,9 @@ class EmployeeSchedule(Document):
 		if frappe.db.exists("Employee Schedule", {"employee": self.employee, "date": self.date, "roster_type" : self.roster_type}):
 			frappe.throw(_("Employee Schedule already scheduled for {employee} on {date}.".format(employee=self.employee_name, date=cstr(self.date))))
 
+		# validate employee is active
+		if not frappe.db.exists("Employee", {'status':'Active', 'name':self.employee}):
+			frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be scheduled.")
 
 @frappe.whitelist()
 def get_post_types(doctype, txt, searchfield, start, page_len, filters):
