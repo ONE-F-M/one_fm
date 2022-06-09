@@ -3,7 +3,7 @@ from frappe.utils import getdate, cint, cstr, random_string, now_datetime
 import datetime
 
 def response(message, status_code, data=None, error=None):
-    """This method generates a response for an API call with appropriate data and status code. 
+    """This method generates a response for an API call with appropriate data and status code.
 
     Args:
         message (str): Message to be shown depending upon API result. Eg: Success/Error/Forbidden/Bad Request.
@@ -48,7 +48,7 @@ def validate_date(date: str) -> bool:
     """
     if "-" not in date:
         return False
-    
+
     date_elements = date.split("-")
 
     if len(date_elements) != 3:
@@ -60,16 +60,16 @@ def validate_date(date: str) -> bool:
 
     if len(year) != 4:
         return False
-    
+
     if len(month) > 2:
         return False
-    
+
     if int(month) > 12 or int(month) < 1:
         return False
 
     if len(day) > 2:
         return False
-    
+
     if int(day) > 31 or int(day) < 1:
         return False
 
@@ -132,9 +132,21 @@ def get_current_shift(employee):
 					if start_time <= time <= end_time:
 						return shift
 		elif len(shifts)==0:
-			return shifts		
+			return shifts
 		else:
 			return shifts[0].shift
 	except Exception as e:
 		print(frappe.get_traceback())
 		return frappe.utils.response.report_error(e.http_status_code)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_mobile_version():
+    """
+        Retrieve the version number of the mobile app
+    """
+    try:
+        version = frappe.db.get_single_value("ONEFM General Setting", 'mobile_app_version')
+        return response(message='Successful', status_code=200, data={'version':version}, error=None)
+    except Exception as e:
+        return response(message='Failed', status_code=500, data={}, error=str(e))
