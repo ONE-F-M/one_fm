@@ -47,9 +47,18 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "General Setting",
+   "link_to": "ONEFM General Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2022-06-01 17:00:02.899265",
+ "modified": "2022-06-09 12:11:07.563300",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONE FM Settings",
