@@ -653,8 +653,7 @@ def automatic_shift_assignment():
 def end_previous_shifts():
 	shifts=frappe.get_list("Shift Assignment",  filters = {"end_date": ('is', 'not set')})
 	for shift in shifts:
-		Shift_name = shift.name
-		doc = frappe.get_doc("Shift Assignment",Shift_name)
+		doc = frappe.get_doc("Shift Assignment",shift.name)
 		doc.end_date = doc.start_date
 		doc.submit()
 
@@ -674,8 +673,6 @@ def create_shift_assignment(schedule, date):
 			shift_assignment.post_type = schedule.post_type
 			shift_assignment.post_abbrv = schedule.post_abbrv
 			shift_assignment.roster_type = schedule.roster_type
-			shift_assignment.submit()
-			shift_assignment.end_date = date
 			shift_assignment.submit()
 		except Exception:
 				frappe.log_error(frappe.get_traceback())
