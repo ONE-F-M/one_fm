@@ -279,7 +279,7 @@ function Submit(){
         frappe.unfreeze();
         frappe.msgprint(frappe._("Succesfully Submitted your Details and our HR team will be responding to you soon."));
         if(r.message){
-          window.location.href = "/applicant_docs";
+          window.location.href = "/careers";
         }
       }
     });
