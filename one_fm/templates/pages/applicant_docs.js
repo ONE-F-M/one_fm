@@ -34,8 +34,10 @@ let civil_id_image;
 let passport_image;
 
 function extract_image(){
-  extract(document.getElementById("Civil_ID_Front").files[0],"Civil_ID","front_civil")
-  extract(document.getElementById("Civil_ID_Back").files[0],"Civil_ID","back_civil")
+  if (civil_id_reqd == 1){
+    extract(document.getElementById("Civil_ID_Front").files[0],"Civil_ID","front_civil")
+    extract(document.getElementById("Civil_ID_Back").files[0],"Civil_ID","back_civil")
+  }
   extract(document.getElementById("Passport_Front").files[0],"Passport","front_passport")
   extract(document.getElementById("Passport_Back").files[0],"Passport","back_passport")
 }
@@ -159,13 +161,13 @@ function send_request(method, data, token, type){
 
 
 function upload(){
-  if($("#Civil_ID_Front").val().length == 0 ){
-    $("#tooltiptext1").show()
-  }
-  else if($("#Civil_ID_Back").val().length == 0 ){
-    $("#tooltiptext2").show();
-  }
-  else{
+  // if($("#Civil_ID_Front").val().length == 0 ){
+  //   $("#tooltiptext1").show()
+  // }
+  // else if($("#Civil_ID_Back").val().length == 0 ){
+  //   $("#tooltiptext2").show();
+  // }
+  // else{
   civil_id_image = new FormData();
   passport_image = new FormData();
   extract_image();
@@ -191,7 +193,7 @@ function upload(){
     }
   });
 }
-};
+// };
 
 
 function fill_form(data, type,token){
