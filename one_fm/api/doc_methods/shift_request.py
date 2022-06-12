@@ -5,9 +5,10 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
 	get_doc_workflow_state, get_workflow_name, get_users_next_action_data
 )
 import json
+from frappe.utils import getdate
 
 def shift_request_submit(self):
-	if self.from_date == cstr(getdate()):
+	if self.from_date == getdate():
 		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}):
 			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}, "status" , "Inactive")
 		
