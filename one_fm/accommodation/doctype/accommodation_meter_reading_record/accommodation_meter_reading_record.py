@@ -30,6 +30,7 @@ class AccommodationMeterReadingRecord(Document):
 			}
 		)
 
+@frappe.whitelist()
 def filter_meter_ref(doctype, txt, searchfield, start, page_len, filters):
 	query = """
 		select
@@ -44,6 +45,7 @@ def filter_meter_ref(doctype, txt, searchfield, start, page_len, filters):
 	if filters.get('reference_doctype') and filters.get('reference_name'):
 		query += " and parenttype = %(reference_doctype)s and parent = %(reference_name)s"
 	query += " limit %(start)s, %(page_len)s"
+
 	return frappe.db.sql(query,
 		{
 			'reference_doctype': filters.get("reference_doctype"),
