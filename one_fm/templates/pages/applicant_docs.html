@@ -64,7 +64,9 @@
                     <h6>As a part of the onboarding process for the {{applicant_designation}} role, we request you to provide us with the following documents and complete the below form.</h6>
                     <ul>
                         <li><h6>Passport - front and back side</h6></li>
-                        <li><h6>Civil ID - front and back side (Applicable if you are a resident of Kuwait)</h6></li>
+                        {% if civil_id_reqd %}
+                            <li><h6>Civil ID - front and back side</h6></li>
+                        {% endif %}
                     </ul>
                 </div>
                 <section class="form-wrapper">
@@ -77,20 +79,21 @@
                                 </small>
                             </h2>
                             <hr>
-                            <div class="row">
-                                <div class="form-group col-md-6">
-                                    <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
-                                    <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg">
-                                    <span id="tooltiptext1">* Please Upload Your Civil ID</span>
+                            {% if civil_id_reqd %}
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                        <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg">
+                                        <span id="tooltiptext1">* Please Upload Your Civil ID</span>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="file" >Civil ID Back Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                        <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg">
+                                        <span id="tooltiptext2">* Please Upload Your Civil ID</span>
+                                        <br>
+                                    </div>
                                 </div>
-                                <div class="form-group col-md-6">
-                                    <label class="form-label" for="file" >Civil ID Back Side</label> <span class="required_indicator" style="color: red;">*</span>
-                                    <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg">
-                                    <span id="tooltiptext2">* Please Upload Your Civil ID</span>
-                                    <br>
-                                </div>
-                            </div>
-
+                            {% endif %}
                             <div class="row">
                                     <div class="form-group col-md-6">
                                         <label  for="file">Passport Front Side</label>
