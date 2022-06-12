@@ -22,8 +22,7 @@ app_license = "MIT"
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
-		"/assets/one_fm/js/maps.js",
-		"/assets/one_fm/js/desk.js"
+		"/assets/one_fm/js/maps.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -84,15 +83,10 @@ doctype_js = {
 	"Issue": "public/js/doctype_js/issue.js",
 	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
 	"Interview": "public/js/doctype_js/interview.js",
-	"Help Category": "public/js/doctype_js/help_category.js",
-	"Help Article": "public/js/doctype_js/help_article.js",
-	"Attendance Request": "public/js/doctype_js/attendance_request.js",
-	"Shift Request": "public/js/doctype_js/shift_request.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
-	"Job Offer": "public/js/doctype_js/job_offer_list.js",
-	"Issue": "public/js/doctype_list_js/issue_list.js"
+	"Job Offer": "public/js/doctype_js/job_offer_list.js"
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -127,7 +121,6 @@ home_page = "index"
 
 before_install = "one_fm.install.before_install.execute"
 # after_install = "one_fm.install.after_install"
-#revert staging
 
 # Desk Notifications
 # ------------------
@@ -152,13 +145,11 @@ before_install = "one_fm.install.before_install.execute"
 # Hook on document methods and events
 permission_query_conditions = {
 	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
-	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
-	"Issue": "one_fm.utils.get_issue_permission_query_conditions"
+	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions"
 }
 has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
- 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
-	"Issue": "one_fm.utils.has_permission_to_issue"
+ 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission"
 }
 
 doc_events = {
@@ -229,7 +220,6 @@ doc_events = {
 		"on_update": "one_fm.utils.supplier_group_on_update",
 	},
 	"Bank Account": {
-		"after_insert": "one_fm.api.doc_methods.bank_account.after_insert",
 		"on_update": "one_fm.utils.bank_account_on_update",
 		"on_trash": "one_fm.utils.bank_account_on_trash",
 		"validate": "one_fm.utils.validate_iban_is_filled",
@@ -322,7 +312,10 @@ doc_events = {
 		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
 	},
 	"Shift Request":{
-		"before_save":"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
+		"before_save":[
+			"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
+			"one_fm.api.doc_methods.shift_request.fill_to_date",
+		]
 	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
@@ -347,23 +340,7 @@ website_route_rules = [
 			"doctype": "Request for Supplier Quotation",
 			"parents": [{"label": _("Request for Supplier Quotation"), "route": "rfq1"}]
 		}
-	},
-	 {
-		"from_route": "/knowledge-base/search",
-		"to_route": "knowledge-base/search"
-	},
-	{
-		"from_route": "/knowledge-base/<path:category>",
-		"to_route": "knowledge-base/kbcategory"
-	},
-	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory"
-	},
-	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
-	},
+	}
 ]
 
 # doc_events = {
@@ -373,12 +350,6 @@ website_route_rules = [
 # 		"on_trash": "method"
 #	}
 # }
-
-override_doctype_class = {
-    "Leave Policy Assignment": "one_fm.overrides.leave_policy_assignment.LeavePolicyAssignmentOverride",
-	"Attendance Request": "one_fm.overrides.attendance_request.AttendanceRequestOverride"
-}
-
 
 # Scheduled Tasks
 # ---------------
@@ -434,6 +405,9 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_renewal',#paci hawiyati
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer'
 		],
+		"0 8 15 * *": [
+			'one_fm.grd.doctype.preparation.preparation.create_preparation',
+		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
@@ -446,10 +420,8 @@ scheduler_events = {
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
-			"one_fm.api.tasks.checkin_checkout_reminder",
 			"one_fm.api.tasks.checkin_checkout_final_reminder",
-			"one_fm.api.tasks.checkin_deadline",
-			"one_fm.api.tasks.overtime_shift_assignment"
+			"one_fm.api.tasks.checkin_deadline"
 			#"one_fm.api.tasks.automatic_checkout"
 		],
 		"0/15 * * * *": [
@@ -467,7 +439,7 @@ scheduler_events = {
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
 		],
-		"0 8 * * *": [# Runs everyday at 8:00 am.
+		"0 8 * * *": [
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
@@ -479,8 +451,7 @@ scheduler_events = {
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
 			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
-			'one_fm.utils.issue_roster_actions',
-			'one_fm.grd.doctype.preparation.preparation.auto_create_preparation_record',
+			'one_fm.utils.issue_roster_actions'
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',
@@ -516,12 +487,6 @@ scheduler_events = {
 		],
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
-		],
-		"1 23 1-31 * *": [
-			'one_fm.tasks.one_fm.daily.mark_future_attendance_request'
-		],
-		"30 0 1 * *": [
-			'one_fm.tasks.one_fm.monthly.execute'
 		]
 	}
 }
