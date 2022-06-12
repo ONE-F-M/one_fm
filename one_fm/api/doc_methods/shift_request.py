@@ -1,24 +1,29 @@
 import frappe 
+import pandas as pd
+from frappe.workflow.doctype.workflow_action.workflow_action import (
+	get_common_email_args, deduplicate_actions, get_next_possible_transitions,
+	get_doc_workflow_state, get_workflow_name, get_users_next_action_data
+)
+import json
 
 def shift_request_submit(self):
-	if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":[">=", self.from_date ]}):
-		frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":[">=", self.from_date ]}, "status" , "Inactive")
-	
-	assignment_doc = frappe.new_doc("Shift Assignment")
-	assignment_doc.company = self.company
-	assignment_doc.shift = self.operations_shift
-	assignment_doc.site = self.operation_site
-	assignment_doc.shift_type = self.shift_type
-	assignment_doc.employee = self.employee
-	assignment_doc.start_date = self.from_date
-	assignment_doc.shift_request = self.name
-	assignment_doc.check_in_site = self.check_in_site
-	assignment_doc.check_out_site = self.check_out_site
-	assignment_doc.insert()
-	assignment_doc.submit()
-	assignment_doc.end_date = self.to_date
-	assignment_doc.submit()
-	frappe.db.commit()
+	if self.from_date == cstr(getdate()):
+		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}):
+			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}, "status" , "Inactive")
+		
+		assignment_doc = frappe.new_doc("Shift Assignment")
+		assignment_doc.company = self.company
+		assignment_doc.shift = self.operations_shift
+		assignment_doc.site = self.operation_site
+		assignment_doc.shift_type = self.shift_type
+		assignment_doc.employee = self.employee
+		assignment_doc.start_date = self.from_date
+		assignment_doc.shift_request = self.name
+		assignment_doc.check_in_site = self.check_in_site
+		assignment_doc.check_out_site = self.check_out_site
+		assignment_doc.insert()
+		assignment_doc.submit()
+		frappe.db.commit()
 
 @frappe.whitelist()
 def fetch_approver(employee):
