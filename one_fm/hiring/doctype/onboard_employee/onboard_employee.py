@@ -238,7 +238,7 @@ class OnboardEmployee(Document):
 		if frappe.db.get_value("Employee", self.employee, "user_id"):
 			self.user_created = True
 			self.save(ignore_permissions=True)
-		if self.company_email and not self.user_created:
+		elif self.company_email and not self.user_created:
 			user = frappe.new_doc('User')
 			user.first_name = self.employee_name
 			user.email = self.company_email
