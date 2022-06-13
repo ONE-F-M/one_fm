@@ -133,6 +133,16 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Accommodation Meter",
+   "link_to": "Accommodation Meter",
+   "link_type": "DocType",
+   "onboard": 0,
+   "only_for": "",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Governorate",
    "link_to": "Governorate",
    "link_type": "DocType",
@@ -163,6 +173,7 @@
    "label": "Accommodation Reports",
    "link_type": "DocType",
    "onboard": 0,
+   "only_for": "",
    "type": "Card Break"
   },
   {
@@ -225,6 +236,7 @@
    "label": "Uniform Management",
    "link_type": "DocType",
    "onboard": 0,
+   "only_for": "",
    "type": "Card Break"
   },
   {
@@ -240,8 +252,10 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Designation Profile",
+   "link_to": "Designation Profile",
    "link_type": "DocType",
    "onboard": 0,
+   "only_for": "",
    "type": "Link"
   },
   {
@@ -250,6 +264,7 @@
    "label": "Uniform Management Reports",
    "link_type": "DocType",
    "onboard": 0,
+   "only_for": "",
    "type": "Card Break"
   },
   {
@@ -276,6 +291,7 @@
    "label": "Purchasing",
    "link_type": "DocType",
    "onboard": 0,
+   "only_for": "",
    "type": "Card Break"
   },
   {
@@ -347,6 +363,7 @@
    "label": "Item Description Masters",
    "link_type": "DocType",
    "onboard": 0,
+   "only_for": "",
    "type": "Card Break"
   },
   {
@@ -400,6 +417,7 @@
    "label": "Fleet Management",
    "link_type": "DocType",
    "onboard": 0,
+   "only_for": "",
    "type": "Card Break"
   },
   {
@@ -439,8 +457,8 @@
    "type": "Link"
   }
  ],
- "modified": "2022-03-06 10:17:59.833222",
- "modified_by": "e.anthony@armor-services.com",
+ "modified": "2022-06-13 10:11:27.282812",
+ "modified_by": "Administrator",
  "module": "One Fm",
  "name": "GSD",
  "owner": "Administrator",
