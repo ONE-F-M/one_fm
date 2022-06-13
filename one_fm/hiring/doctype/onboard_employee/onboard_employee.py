@@ -161,6 +161,9 @@ class OnboardEmployee(Document):
 						self.date_of_joining = getdate(date_of_joining)
 					employee.save(ignore_permissions=True)
 					self.employee = employee.name
+				user_id = frappe.db.get_value("Employee", self.employee, "user_id")
+				if user_id and not self.user_created:
+					self.user_created = True
 				self.save(ignore_permissions=True)
 				self.update_duty_commencement()
 
@@ -232,8 +235,10 @@ class OnboardEmployee(Document):
 
 	@frappe.whitelist()
 	def create_user_and_permissions(self):
-		if self.company_email:
-			# if not frappe.db.exists('User', self.company_email):
+		if frappe.db.get_value("Employee", self.employee, "user_id"):
+			self.user_created = True
+			self.save(ignore_permissions=True)
+		if self.company_email and not self.user_created:
 			user = frappe.new_doc('User')
 			user.first_name = self.employee_name
 			user.email = self.company_email
