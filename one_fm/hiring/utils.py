@@ -200,10 +200,10 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
         external_work_history.total_experience = exp_in_month / 12
 
 def employee_after_insert(doc, method):
-    create_salary_structure_assignment(doc, method)
-    update_erf_close_with(doc)
-    create_wp_for_transferable_employee(doc)
-    create_leave_policy_assignment(doc)
+	create_salary_structure_assignment(doc, method)
+	update_erf_close_with(doc)
+	create_wp_for_transferable_employee(doc)
+	create_leave_policy_assignment(doc)
 	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_generate_employee_id_on_employee_creation") and not doc.employee_id:
 		generate_employee_id(doc)
 	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
