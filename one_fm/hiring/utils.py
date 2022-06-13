@@ -204,32 +204,37 @@ def employee_after_insert(doc, method):
     update_erf_close_with(doc)
     create_wp_for_transferable_employee(doc)
     create_leave_policy_assignment(doc)
-    create_employee_user(doc)
+    create_employee_user_from_employee_id(doc)
 
 
-def create_employee_user(doc):
+def create_employee_user_from_employee_id(doc):
     """
         Create user account for employee if no user_id or employee while importing
     """
-    if not doc.employee_id:
-        generate_employee_id(doc)
-    if ((not doc.user_id) or (not doc.prefered_email)):
-        doc.reload()
-        user = frappe.get_doc({
-            'doctype':'User',
-            'email':f"{doc.employee_id.upper()}@one-fm.com",
-            'first_name':doc.first_name,
-            'last_name':doc.last_name,
-            'role_profile_name': 'Only Employee',
-            'gender':doc.gender,
-            'date_of_birth':doc.date_of_birth,
-            'send_welcome_email': 0,
-            'enabled':1,
-        })
-        user.insert(ignore_permissions=True)
-        doc.db_set("user_id", user.name)
-        doc.db_set("create_user_permission", 1)
-        doc.reload()
+    try:
+        if not doc.employee_id:
+            generate_employee_id(doc)
+        if (not doc.user_id):
+            doc.reload()
+            user = frappe.get_doc({
+                'doctype':'User',
+                'email':f"{doc.employee_id.upper()}@one-fm.com",
+                'first_name':doc.first_name,
+                'last_name':doc.last_name,
+                'role_profile_name': 'Only Employee',
+                'gender':doc.gender,
+                'date_of_birth':doc.date_of_birth,
+                'send_welcome_email': 0,
+                'enabled':1,
+            })
+            user.insert(ignore_permissions=True)
+			user.add_roles("Employee", "Employee Self Service")
+            doc.db_set("user_id", user.name)
+            doc.db_set("create_user_permission", 1)
+            doc.reload()
+            pass
+    except Exception as e:
+        frappe.log_error(str(e), 'CREATE USER')
 
 def generate_employee_id(doc):
     """
