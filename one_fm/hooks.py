@@ -455,6 +455,9 @@ scheduler_events = {
 		"0/15 * * * *": [
 			"one_fm.api.tasks.update_shift_type"
 		],
+		"45 23 * * *": [
+			'one_fm.api.tasks.issue_penalties'
+		],
 		"30 10 * * *": [
 			'one_fm.utils.create_gp_letter_request'
 		],
