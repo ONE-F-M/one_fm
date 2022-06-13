@@ -50,8 +50,8 @@ def check_upload_original_visa_submission_reminder2():
         pam_visa_doc.save(ignore_permissions = True)
 
 
-        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
-        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        page_link = get_url(pam_visa_doc.get_url())
+
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
@@ -72,8 +72,8 @@ def check_upload_original_visa_submission_reminder1():
         pam_visa_doc.save(ignore_permissions = True)
 
 
-        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
-        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        page_link = get_url(pam_visa_doc.get_url())
+
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
@@ -106,8 +106,8 @@ def check_pam_visa_approval_submission_seven():
         pam_visa_doc.save(ignore_permissions = True)
 
 
-        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
-        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        page_link = get_url(pam_visa_doc.get_url())
+
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
@@ -129,8 +129,8 @@ def check_pam_visa_approval_submission_six_half():
         pam_visa_doc.save(ignore_permissions = True)
 
 
-        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
-        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        page_link = get_url(pam_visa_doc.get_url())
+
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
@@ -160,8 +160,8 @@ def check_upload_tasriah_reminder2():
         pam_visa_doc.upload_tasriah_reminder2 = frappe.utils.now()
         pam_visa_doc.save(ignore_permissions = True)
 
-        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
-        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        page_link = get_url(pam_visa_doc.get_url())
+
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
@@ -184,8 +184,8 @@ def check_upload_tasriah_reminder1():
         pam_visa_doc.save(ignore_permissions = True)
 
 
-        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
-        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        page_link = get_url(pam_visa_doc.get_url())
+
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
@@ -224,8 +224,8 @@ def check_grp_supervisor_submission_daily():
         pam_visa_doc.pam_visa_reminder_supervisor = frappe.utils.now()
         pam_visa_doc.save(ignore_permissions = True)
 
-        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
-        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        page_link = get_url(pam_visa_doc.get_url())
+
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Supervisor'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
@@ -245,8 +245,8 @@ def check_grp_operator_submission_four_half():
         pam_visa_doc.save(ignore_permissions = True)
 
 
-        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
-        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        page_link = get_url(pam_visa_doc.get_url())
+
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
@@ -268,8 +268,8 @@ def check_grp_operator_submission_four():
         pam_visa_doc.save(ignore_permissions = True)
 
 
-        page_link = "http://206.189.228.82/desk#Form/PAM Visa/" + cstr(pam_visa)
-        # page_link = get_url("/desk#Form/PAM Visa/" + doc.name)
+        page_link = get_url(pam_visa_doc.get_url())
+
         msg = frappe.render_template('one_fm/templates/emails/pam_visa.html', context={"page_link": page_link, "approval": 'Operator'})
         sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
@@ -352,8 +352,8 @@ def send_gp_letter_attachment_no_response():
             gp_letter_doc.upload_reminder4 = frappe.utils.now()
             gp_letter_doc.save(ignore_permissions = True)
 
-            page_link = "http://206.189.228.82/desk#Form/GP Letter Request/" + gp_letter_request
-            # page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
+            page_link = get_url(gp_letter_doc.get_url())
+
             msg = frappe.render_template('one_fm/templates/emails/gp_letter_attachment_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
             sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
             recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
@@ -386,8 +386,8 @@ def send_travel_agent_email():
             #     gp_letter_doc.gp_status = 'No Response'
             #     gp_letter_doc.save(ignore_permissions = True)
 
-            #     page_link = "http://206.189.228.82/desk#Form/GP Letter Request/" + gp_letter_request
-            #     # page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
+            #     page_link = get_url(gp_letter_doc.get_url())
+            #
             #     msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
             #     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
             #     recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
@@ -422,8 +422,8 @@ def send_gp_letter_reminder():
                     gp_letter_doc.gp_status = 'No Response'
                     gp_letter_doc.save(ignore_permissions = True)
 
-                    page_link = "http://206.189.228.82/desk#Form/GP Letter Request/" + gp_letter_request
-                    # page_link = get_url("/desk#Form/GP Letter Request/" + gp_letter_request)
+                    page_link = get_url(gp_letter_doc.get_url())
+
                     msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_no_response.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
                     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                     recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
@@ -922,13 +922,15 @@ def get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type):
 
     return new_leaves_allocated
 
-def get_paid_annual_leave_allocation_list(date=nowdate()):
+def get_paid_annual_leave_allocation_list(date=False):
     '''
         Function is used to get paid annual leave allocation
         args:
             date: date
         return: List of Leave Allocation
     '''
+    if not date:
+        date = getdate(nowdate())
     # Get List of Paid Annual Leave Allocation for a date of a Leave Type (having Is Paid Annual Leave marekd True)
     query = """
         select
@@ -1070,7 +1072,7 @@ def pam_salary_certificate_expiry_date():
     for pam in pam_salary_certificate:
         date_difference = date_diff(pam[1], getdate(nowdate()))
 
-        page_link = get_url("/desk#Form/PAM Salary Certificate/" + pam[0])
+        page_link = get_url("/app/pam-salary-certificate/" + pam[0])
         setting = frappe.get_doc("PAM Salary Certificate Setting")
 
         if date_difference>0 and date_difference<setting.notification_start and date_difference%setting.notification_period == 0 :
@@ -1094,7 +1096,7 @@ def pam_authorized_signatory():
     for pam in pam_authorized_signatory:
         date_difference = date_diff(pam[1], getdate(nowdate()))
 
-        page_link = get_url("/desk#Form/PAM Authorized Signatory List/" + pam[0])
+        page_link = get_url("/app/pam-authorized-signatory-list/" + pam[0])
         setting = frappe.get_doc("PAM Authorized Signatory Setting")
 
         if date_difference>0 and date_difference<setting.notification_start and date_difference%setting.notification_period == 0 :
@@ -1124,13 +1126,13 @@ def warehouse_naming_series(doc, method):
         doc.name = name +'-'+doc.warehouse_code+'-'+doc.warehouse_name
 
 def create_new_project_code(project_id):
-    project_code = frappe.db.sql("select one_fm_project_code+1 from `tabProject` order by one_fm_project_code desc limit 1")
-    if project_code:
-        new_project_code = project_code[0][0]
-    else:
-        new_project_code = '1'
-    frappe.db.set_value('Project', project_id, 'one_fm_project_code', str(int(new_project_code)).zfill(4))
-    return str(int(new_project_code)).zfill(4)
+	project_code = frappe.db.sql("select one_fm_project_code+1 from `tabProject` order by one_fm_project_code desc limit 1")
+	if project_code and len(project_code) > 1 and project_code[0][0]:
+		new_project_code = project_code[0][0]
+	else:
+		new_project_code = '1'
+	frappe.db.set_value('Project', project_id, 'one_fm_project_code', str(int(new_project_code)).zfill(4))
+	return str(int(new_project_code)).zfill(4)
 
 @frappe.whitelist()
 def get_warehouse_children(doctype, parent=None, company=None, is_root=False):
@@ -1810,6 +1812,8 @@ def create_roster_employee_actions():
                             select
                                 employee from `tabEmployee`
                             where
+                                status = 'Active'
+                            AND
                                 employee not in
                                 (select employee
                                 from `tabEmployee Schedule`

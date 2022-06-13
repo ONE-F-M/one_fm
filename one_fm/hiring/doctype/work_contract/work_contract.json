@@ -31,18 +31,17 @@
   "monthly_salary",
   "pam_file_number",
   "working_hours",
-  "section_break_23",
-  "documents",
+  "signature_proof_section",
+  "authorized_signatory_document",
   "select_authorised_signatory_signed_work_contract",
-  "authorized_signatory_user_id",
+  "column_break_31",
+  "employee_received_document",
+  "authorized_signatory_arabic_name",
+  "authorized_signatory_civil_id",
   "section_break_9",
   "note",
   "column_break_32",
-  "rejection_reason",
-  "signatures_section",
-  "employee_signature",
-  "column_break_34",
-  "authority_signature"
+  "rejection_reason"
  ],
  "fields": [
   {
@@ -190,11 +189,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_break_23",
-   "fieldtype": "Section Break",
-   "label": "Applicant Documents"
-  },
-  {
    "fieldname": "column_break_32",
    "fieldtype": "Column Break"
   },
@@ -205,13 +199,8 @@
    "label": "Rejection Reason"
   },
   {
-   "fieldname": "documents",
-   "fieldtype": "Table",
-   "label": "Documents",
-   "options": "Job Applicant Required Document"
-  },
-  {
    "allow_on_submit": 1,
+   "depends_on": "eval: doc.pam_file_number;",
    "fieldname": "select_authorised_signatory_signed_work_contract",
    "fieldtype": "Select",
    "label": "Select Authorized Signatory Signed Work Contract"
@@ -226,34 +215,9 @@
   {
    "fetch_from": "erf.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Data",
-   "label": "PAM File Number"
-  },
-  {
-   "fieldname": "signatures_section",
-   "fieldtype": "Section Break",
-   "label": "Signatures"
-  },
-  {
-   "description": "Employee Signature",
-   "fieldname": "employee_signature",
-   "fieldtype": "Signature",
-   "label": "Employee Signature"
-  },
-  {
-   "fieldname": "column_break_34",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "authority_signature",
-   "fieldtype": "Attach Image",
-   "label": "Authority Signature"
-  },
-  {
-   "fieldname": "authorized_signatory_user_id",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Authorized Signatory User ID",
+   "fieldtype": "Link",
+   "label": "PAM File Number",
+   "options": "PAM File Number",
    "read_only": 1
   },
   {
@@ -263,10 +227,43 @@
    "label": "Workflow",
    "options": "Workflow",
    "read_only": 1
+  },
+  {
+   "fieldname": "signature_proof_section",
+   "fieldtype": "Section Break",
+   "label": "Signature Proof"
+  },
+  {
+   "depends_on": "eval:doc.authorized_signatory_document || doc.workflow_state=='Send to Authorised Signatory'",
+   "fieldname": "authorized_signatory_document",
+   "fieldtype": "Attach",
+   "label": "Authorized Signatory Document"
+  },
+  {
+   "fieldname": "column_break_31",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.employee_received_document || doc.workflow_state=='Awaiting Employee Received Copy'",
+   "fieldname": "employee_received_document",
+   "fieldtype": "Attach",
+   "label": "Employee Received Document"
+  },
+  {
+   "fieldname": "authorized_signatory_civil_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Authorized Signatory Civil ID"
+  },
+  {
+   "fieldname": "authorized_signatory_arabic_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Authorized Signatory Arabic Name"
   }
  ],
  "links": [],
- "modified": "2021-12-30 09:50:21.177601",
+ "modified": "2022-06-01 14:58:37.850660",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",

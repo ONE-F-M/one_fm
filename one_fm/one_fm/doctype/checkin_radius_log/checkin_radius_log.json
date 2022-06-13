@@ -1,0 +1,195 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:CRL-{YY}-{MM}-{DD}-{####}",
+ "creation": "2022-05-29 16:19:09.864218",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee_id",
+  "employee",
+  "employee_name",
+  "site",
+  "project",
+  "column_break_4",
+  "user_latitude",
+  "user_longitude",
+  "user_distance_from_site_location",
+  "column_break_10",
+  "latitude",
+  "longitude",
+  "geofence_radius",
+  "result_section",
+  "user_within_geofence_radius",
+  "column_break_16",
+  "difference",
+  "section_break_8",
+  "map"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "depends_on": "employee",
+   "fetch_from": "employee.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "user_within_geofence_radius",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "User within Geofence Radius",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "latitude",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Latitude",
+   "precision": "9",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "longitude",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Longitude",
+   "precision": "9",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "geofence_radius",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Geofence Radius",
+   "precision": "9",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "map",
+   "fieldtype": "Geolocation",
+   "label": "Map"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "site.project",
+   "fetch_if_empty": 1,
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_latitude",
+   "fieldtype": "Float",
+   "label": "User Latitude",
+   "precision": "9",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_longitude",
+   "fieldtype": "Float",
+   "label": "User Longitude",
+   "precision": "9",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "result_section",
+   "fieldtype": "Section Break",
+   "label": "Result"
+  },
+  {
+   "fieldname": "difference",
+   "fieldtype": "Float",
+   "label": "Difference",
+   "precision": "9",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user_distance_from_site_location",
+   "fieldtype": "Float",
+   "label": "User Distance from Site Location",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2022-05-31 14:01:21.553447",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Checkin Radius Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "employee_name"
+}

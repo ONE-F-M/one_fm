@@ -22,7 +22,7 @@ class RequestforMaterial(BuyingController):
 
 	def notify_request_for_material_accepter(self):
 		if self.request_for_material_accepter:
-			page_link = get_url("/desk#Form/Request for Material/" + self.name)
+			page_link = get_url(self.get_url())
 			message = "<p>Please Review the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
 			send_email(self, [self.request_for_material_accepter], message, subject)
@@ -30,7 +30,7 @@ class RequestforMaterial(BuyingController):
 
 	def notify_request_for_material_approver(self):
 		if self.request_for_material_approver:
-			page_link = get_url("/desk#Form/Request for Material/" + self.name)
+			page_link = get_url(self.get_url())
 			message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
 			send_email(self, [self.request_for_material_approver], message, subject)
@@ -39,7 +39,7 @@ class RequestforMaterial(BuyingController):
 	@frappe.whitelist()
 	def accept_approve_reject_request_for_material(self, status, reason_for_rejection=None):
 		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
-			page_link = get_url("/desk#Form/Request for Material/" + self.name)
+			page_link = get_url(self.get_url())
 			# Notify Requester
 			self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
 
@@ -49,14 +49,14 @@ class RequestforMaterial(BuyingController):
 				subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
 				send_email(self, [self.request_for_material_approver], message, subject)
 				create_notification_log(subject, message, [self.request_for_material_approver], self)
-				
+
 			# Notify Accepter and requester
 			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
 				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
 				self.notify_material_requester(status, page_link)
-				
+
 			self.status = status
-			
+
 			if status == "Approved":
 				#fetch Signature from employee doc using user ID
 				signature = fetch_employee_signature(self.request_for_material_accepter)

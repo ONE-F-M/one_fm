@@ -81,7 +81,7 @@ def get_staff_filters_data():
 
 
 @frappe.whitelist()
-def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, post_type=None, designation=None, isOt=None, limit_start=0, limit_page_length=100):
+def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, post_type=None, designation=None, isOt=None, limit_start=0, limit_page_length=9999):
 	start = time.time()
 		
 	master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
@@ -335,6 +335,7 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 			for employee in json.loads(employees):
 				if not cint(request_employee_schedule):
 					frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, post_type=post_type, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot, is_async=True, queue='long')
+					frappe.msgprint(f"Successfully started scheduling {employee}", alert=True)
 				else:
 					from_schedule = frappe.db.sql("""select shift, post_type from `tabEmployee Schedule` where shift!= %(shift)s and date >= %(start_date)s and date <= %(end_date)s and employee = %(employee)s""",{
 						'shift' : shift,
@@ -346,6 +347,7 @@ def schedule_staff(employees, shift, post_type, otRoster, start_date, project_en
 						from_shift = from_schedule[0].shift
 						from_post_type = from_schedule[0].post_type
 						frappe.enqueue(create_request_employee_schedule, employee=employee, from_shift=from_shift, from_post_type=from_post_type, to_shift=shift, to_post_type=post_type, otRoster=otRoster, start_date=start_date, end_date=end_date, is_async=True, queue='long')
+						frappe.msgprint(f"Successfully created request for employee schedule for {employee}", alert=True)
 					else:
 						frappe.throw("This employee is not scheduled. Please uncheck Request Employee Schedule option.")
 						frappe.log_error("This employee is not scheduled. Please uncheck Request Employee Schedule option.")	
@@ -759,6 +761,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 	if cint(selected_dates):
 		for employee in json.loads(employees):
 			set_dayoff(employee["employee"], employee["date"])
+			frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
 	else:
 		if repeat and repeat_freq in ["Daily", "Weekly", "Monthly", "Yearly"]:
 			end_date = None
@@ -777,6 +780,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 							frappe.throw(_("No contract linked with project {project}".format(project=project)))	
 					for date in	pd.date_range(start=employee["date"], end=end_date):
 						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
+						frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
 
 			elif repeat_freq == "Weekly":
 				for employee in json.loads(employees):
@@ -791,6 +795,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 					for date in	pd.date_range(start=employee["date"], end=end_date):
 						if getdate(date).strftime('%A') in week_days:
 							frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
+							frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
 
 			elif repeat_freq == "Monthly":
 				for employee in json.loads(employees):
@@ -804,6 +809,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 							frappe.throw(_("No contract linked with project {project}".format(project=project)))	
 					for date in	month_range(employee["date"], end_date):
 						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
+						frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
 
 			elif repeat_freq == "Yearly":
 				for employee in json.loads(employees):
@@ -817,6 +823,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 							frappe.throw(_("No contract linked with project {project}".format(project=project)))
 					for date in	pd.date_range(start=employee["date"], end=end_date, freq=pd.DateOffset(years=1)):
 						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
+						frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
 
 def set_dayoff(employee, date):
 	if frappe.db.exists("Employee Schedule", {"date": date, "employee": employee}):

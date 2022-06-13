@@ -23,7 +23,7 @@ class FingerprintAppointment(Document):
     def on_update(self):
         self.check_workflow()
         self.check_appointment_date()
-        
+
     def on_submit(self):
         self.db_set('status', 'Completed')
         self.db_set('completed_on', now_datetime())
@@ -40,11 +40,11 @@ class FingerprintAppointment(Document):
             self.grd_operator_renewal = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_single_value("GRD Settings","default_grd_operator_transfer")
-    
+
     # def validate_mendatory_fields(self):
     #      if not self.date_and_time_confirmation or self.preparing_documents == "No":
     #          frappe.throw(_("Note: You need to prepare Passport and Appointment letter / You Can proceed before one day of the appointment."))
-            
+
     def check_workflow(self):
         if self.workflow_state == "Awaiting for Appointment":
             if self.reminded_grd_operator == 0:
@@ -59,14 +59,14 @@ class FingerprintAppointment(Document):
             self.notify_shift_supervisor()
             if self.required_transportation == "Yes":
                 self.notify_transportation()
-    
+
     def before_one_day_of_appointment_date(self):
         today = date.today()
         if date_diff(getdate(self.date_and_time_confirmation),today) == -1 and self.preparing_documents == "No":
             self.notify_operator_to_prepare_for_fp()
 
     def notify_operator_to_apply_for_fp(self):
-        page_link = get_url("/desk#Form/Fingerprint Appointment/" + self.name)
+        page_link = get_url(self.get_url())
         if self.fingerprint_appointment_type == "Renewal" and self.workflow_state == "Awaiting for Appointment":
             message = "<p>Please Apply for Fingerprint Appointment for Renewal to civil id: <a href='{0}'>{1}</a>.</p>".format(page_link, self.civil_id)
             subject = 'Apply for Fingerprint Appointment for Renewal to civil id:{0} '.format(self.civil_id)
@@ -79,7 +79,7 @@ class FingerprintAppointment(Document):
             send_email(self, [self.grd_operator_transfer,self.grd_supervisor], message, subject)
 
     def notify_operator_to_prepare_for_fp(self):
-        page_link = get_url("/desk#Form/Fingerprint Appointment/" + self.name)
+        page_link = get_url(self.get_url())
         if self.fingerprint_appointment_type == "Renewal" and self.workflow_state == "Booked":
             message = "<p>Please Prepare Fingerprint Appointment Documents for employee with civil id: <a href='{0}'>{1}</a>.</p>".format(page_link, self.civil_id)
             subject = 'Please Prepare Fingerprint Appointment Documents for employee with civil id:{0} '.format(self.civil_id)
@@ -96,7 +96,7 @@ class FingerprintAppointment(Document):
         for fields in field_list:
             for field in fields:
                 if not self.get(fields[field]):
-                    mandatory_fields.append(field) 
+                    mandatory_fields.append(field)
         if len(mandatory_fields) > 0:
             if message_detail:
                 message = message_detail
@@ -117,7 +117,7 @@ class FingerprintAppointment(Document):
             if site_doc:
                 employee = frappe.get_doc("Employee", site_doc.account_supervisor)
                 send_email_notification(self, [employee.user_id])
-            
+
     def notify_shift_supervisor(self):
         """Notify shift supervisor with the employee's appointment"""
         shift = frappe.db.get_value("Employee",{'one_fm_civil_id':self.civil_id},['shift'])
@@ -130,7 +130,7 @@ class FingerprintAppointment(Document):
     def notify_transportation(self):
         """Notify transportation with the employee's appointment"""
         user_email = "I.ANWARE@one-fm.com"
-        content="<h4>Dear "+ user_email +",</h4><p> This email to inform you that Fingerprint Appointment for employee Name: {0} - {1} Required Transportation at {2}.</p>".format(self.full_name,self.employee_id,self.date_and_time_confirmation)  
+        content="<h4>Dear "+ user_email +",</h4><p> This email to inform you that Fingerprint Appointment for employee Name: {0} - {1} Required Transportation at {2}.</p>".format(self.full_name,self.employee_id,self.date_and_time_confirmation)
         sendemail(recipients=[user_email],
             sender=self.grd_supervisor,
             subject="Transportation Required For Fingerprint Appointment", content=content)
@@ -146,7 +146,7 @@ def nationality_requires_fp():
     array = nationalities.split(",")
     return array
 
-# Create fingerprint appointment record once a month for renewals list  
+# Create fingerprint appointment record once a month for renewals list
 def creat_fp_record(preparation_name):
     nationalities = nationality_requires_fp()
     employee_in_preparation = frappe.get_doc('Preparation',preparation_name)
@@ -161,9 +161,9 @@ def get_employee_list():
     today = date.today()
     employee_list = frappe.db.get_list('Employee',['employee','residency_expiry_date'])
     for employee in employee_list:
-        if date_diff(employee.residency_expiry_date,today) == -45: 
+        if date_diff(employee.residency_expiry_date,today) == -45:
             creat_fp(frappe.get_doc('Employee',employee.employee))
-            
+
 def creat_fp(employee,type,preparation):
     if type == "Renewal":
         fingerprint_appointment_type = "Renewal"
@@ -177,7 +177,7 @@ def creat_fp(employee,type,preparation):
     fp.fingerprint_appointment_type = fingerprint_appointment_type
     fp.date_of_application = today
     fp.save(ignore_permissions=True)
-           
+
 def to_do_to_grd_users(subject, description, user):
     frappe.get_doc({
         "doctype": "ToDo",
@@ -190,7 +190,7 @@ def to_do_to_grd_users(subject, description, user):
     }).insert(ignore_permissions=True)
 
 def send_email_notification(doc, recipients):
-	page_link = get_url("/desk#Form/Fingerprint Appointment/" + doc.name)
+	page_link = get_url(doc.get_url())
 	message = "<p>Please Review the Fingerprint Appointment for employee: {0} at {1}<a href='{2}'>{3}</a>.</p>".format(doc.employee_id,doc.date_and_time_confirmation,page_link, doc.name)
 	sendemail(
 		recipients= recipients,

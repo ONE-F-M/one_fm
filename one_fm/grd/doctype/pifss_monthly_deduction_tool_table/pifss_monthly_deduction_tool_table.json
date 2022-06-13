@@ -6,6 +6,8 @@
  "engine": "InnoDB",
  "field_order": [
   "employee",
+  "employee_name",
+  "civil_id",
   "old_value",
   "delta_amount",
   "details",
@@ -63,7 +65,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "PIFSS No",
-   "print_hide": 1
+   "print_hide": 1,
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.status == \"Increased\" || doc.status == \"Decreased\"",
@@ -82,10 +85,12 @@
   {
    "depends_on": "eval:doc.status == \"New\"",
    "fetch_from": "employee.date_of_joining",
+   "fetch_if_empty": 1,
    "fieldname": "date_of_joining",
    "fieldtype": "Date",
    "label": "Date of Joining",
-   "mandatory_depends_on": "eval:doc.status == \"New\""
+   "mandatory_depends_on": "eval:doc.status == \"New\"",
+   "read_only": 1
   },
   {
    "depends_on": "eval: doc.status == \"Increased\" || doc.status == \"Decreased\"",
@@ -117,12 +122,29 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Date Of Change"
+  },
+  {
+   "depends_on": "employee",
+   "fetch_from": "employee.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fetch_if_empty": 1,
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "Civil ID",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-11-14 16:13:12.146056",
+ "modified": "2022-05-19 11:16:49.400483",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PIFSS Monthly Deduction Tool Table",

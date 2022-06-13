@@ -86,6 +86,8 @@ doctype_js = {
 	"Interview": "public/js/doctype_js/interview.js",
 	"Help Category": "public/js/doctype_js/help_category.js",
 	"Help Article": "public/js/doctype_js/help_article.js",
+	"Attendance Request": "public/js/doctype_js/attendance_request.js",
+	"Shift Request": "public/js/doctype_js/shift_request.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -319,6 +321,9 @@ doc_events = {
 		"before_insert": "one_fm.api.doc_methods.help_article.before_insert",
 		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
 	},
+	"Shift Request":{
+		"before_save":"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
+	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -359,6 +364,14 @@ website_route_rules = [
 		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
 		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
 	},
+	{
+		"from_route": "/careers/opening/<path:job_id>",
+		"to_route": "careers/opening"
+	},
+	{
+		"from_route": "/job_application/<path:job_title>",
+		"to_route": "job_application"
+	},
 ]
 
 # doc_events = {
@@ -371,6 +384,7 @@ website_route_rules = [
 
 override_doctype_class = {
     "Leave Policy Assignment": "one_fm.overrides.leave_policy_assignment.LeavePolicyAssignmentOverride",
+	"Attendance Request": "one_fm.overrides.attendance_request.AttendanceRequestOverride"
 }
 
 
@@ -428,9 +442,6 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_renewal',#paci hawiyati
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer'
 		],
-		"0 8 15 * *": [
-			'one_fm.grd.doctype.preparation.preparation.create_preparation',
-		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
@@ -443,6 +454,7 @@ scheduler_events = {
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
+			"one_fm.api.tasks.checkin_checkout_reminder",
 			"one_fm.api.tasks.checkin_checkout_final_reminder",
 			"one_fm.api.tasks.checkin_deadline",
 			"one_fm.api.tasks.overtime_shift_assignment"
@@ -463,7 +475,7 @@ scheduler_events = {
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
 		],
-		"0 8 * * *": [
+		"0 8 * * *": [# Runs everyday at 8:00 am.
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
@@ -475,7 +487,8 @@ scheduler_events = {
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
 			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
-			'one_fm.utils.issue_roster_actions'
+			'one_fm.utils.issue_roster_actions',
+			'one_fm.grd.doctype.preparation.preparation.auto_create_preparation_record',
 		],
 		"0 9 * * *": [
 			'one_fm.utils.check_upload_tasriah_submission_nine',
@@ -511,6 +524,12 @@ scheduler_events = {
 		],
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
+		],
+		"1 23 1-31 * *": [
+			'one_fm.tasks.one_fm.daily.mark_future_attendance_request'
+		],
+		"30 0 1 * *": [
+			'one_fm.tasks.one_fm.monthly.execute'
 		]
 	}
 }

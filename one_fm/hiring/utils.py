@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 from __future__ import unicode_literals
-import frappe, json
+import frappe, json, pycountry, random
 from frappe.utils import (
     get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form
 )
@@ -108,7 +108,7 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
             if erf_details[0].secondary_recruiter_assigned:
                 recipients.append(erf_details[0].secondary_recruiter_assigned)
         designation = frappe.db.get_value('Job Opening', doc.job_title, 'designation')
-        page_link = get_url("/desk#Form/Job Applicant/" + doc.name)
+        page_link = get_url(doc.get_url())
         message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
 
         if recipients:
@@ -204,6 +204,61 @@ def employee_after_insert(doc, method):
     update_erf_close_with(doc)
     create_wp_for_transferable_employee(doc)
     create_leave_policy_assignment(doc)
+	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_generate_employee_id_on_employee_creation") and not doc.employee_id:
+		generate_employee_id(doc)
+	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
+		create_employee_user_from_employee_id(doc)
+
+
+def create_employee_user_from_employee_id(doc):
+    """
+        Create user account for employee if no user_id or employee while importing
+    """
+    try:
+        if not doc.employee_id:
+            generate_employee_id(doc)
+        if (not doc.user_id):
+            doc.reload()
+            user = frappe.get_doc({
+                'doctype':'User',
+                'email':f"{doc.employee_id.upper()}@one-fm.com",
+                'first_name':doc.first_name,
+                'last_name':doc.last_name,
+                'role_profile_name': 'Only Employee',
+                'gender':doc.gender,
+                'date_of_birth':doc.date_of_birth,
+                'send_welcome_email': 0,
+                'enabled':1,
+            })
+            user.insert(ignore_permissions=True)
+			user.add_roles("Employee", "Employee Self Service")
+            doc.db_set("user_id", user.name)
+            doc.db_set("create_user_permission", 1)
+            doc.reload()
+            pass
+    except Exception as e:
+        frappe.log_error(str(e), 'CREATE USER')
+
+def generate_employee_id(doc):
+    """
+        Generate employee ID
+    """
+    try:
+        if not doc.one_fm_place_of_birth:
+            country = ''
+        else:
+            country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
+    except Exception as e:
+        country = ''
+    joining_year = doc.date_of_joining.split('-')[0][-2:].zfill(2)
+    joining_month = doc.date_of_joining.split('-')[1].zfill(2)
+    count = len(frappe.db.sql(f"""
+        SELECT name FROM tabEmployee
+        WHERE date_of_joining BETWEEN '{doc.date_of_joining[:8]}01' AND '{doc.date_of_joining[:8]}31'""",
+        as_dict=1))
+    doc.reload()
+    doc.db_set("employee_id", f"{joining_year}{joining_month}{str(count).zfill(3)}{country}".upper())
+    doc.reload()
 
 def create_leave_policy_assignment(doc):
     '''
@@ -265,7 +320,7 @@ def notify_grd_operator_for_transfer_wp_record(tp):
     wp = frappe.db.get_value("Work Permit",{'transfer_paper':tp.name,'work_permit_status':'Draft'})
     if wp:
         wp_record = frappe.get_doc('Work Permit', wp)
-        page_link = get_url("/desk#Form/Work Permit/" + wp_record.name)
+        page_link = get_url(wp_record.get_url())
         subject = ("Apply for Transfer Work Permit Online")
         message = "<p>Please Apply for Transfer Work Permit Online for employee civil ID: <a href='{0}'>{1}</a>.</p>".format(page_link, wp_record.civil_id)
         create_notification_log(subject, message, [operator], wp_record)
@@ -351,7 +406,7 @@ def notify_finance_job_offer_salary_advance(job_offer_id=None, job_offer_list=No
         for job_offer in job_offer_list:
             doc = frappe.get_doc('Job Offer', job_offer.name)
             frappe.db.set_value('Job Offer', job_offer.name, 'one_fm_notified_finance_department', True)
-            page_link = get_url("/desk#Form/Job Offer/"+job_offer.name)
+            page_link = get_url(job_offer.get_url())
             message += "<li><a href='{0}'>{1}</a>: {2}</li>".format(page_link, job_offer.name,
                 fmt_money(abs(job_offer.one_fm_salary_advance_amount), 3, 'KWD'))
         message += "<ol>"
@@ -444,7 +499,7 @@ def job_offer_on_update_after_submit(doc, method):
         notify_recruiter(doc)
 
 def notify_onboarding_officer(job_offer):
-    page_link = get_url("/desk#Form/Job Offer/" + job_offer.name)
+    page_link = get_url(job_offer.get_url())
     subject = ("Job Offer {0} is assigned to you for Onboard Employee").format(job_offer.name)
     message = ("Job Offer <a href='{1}'>{0}</a> is assigned to you for Onboard Employee. Please respond immediatly!").format(job_offer.name, page_link)
     create_notification_log(subject, message, [job_offer.onboarding_officer], job_offer)
@@ -453,7 +508,7 @@ def notify_recruiter(job_offer):
     recruiter = frappe.db.get_value('ERF', job_offer.one_fm_erf, ['recruiter_assigned'])
     if recruiter:
         user_name = frappe.get_value("User", job_offer.onboarding_officer, "full_name")
-        page_link = get_url("/desk#Form/Job Offer/" + job_offer.name)
+        page_link = get_url(job_offer.get_url())
         subject = ("Job Offer {0} is {1} by Onboard Officer {2}").format(job_offer.name, job_offer.workflow_state, user_name)
         message = ("Job Offer <a href='{1}'>{0}</a> is {2} by Onboard Officer {3}").format(job_offer.name, page_link, job_offer.workflow_state, user_name)
         create_notification_log(subject, message, [recruiter], job_offer)
@@ -518,7 +573,7 @@ def create_onboarding_from_job_offer(job_offer):
                     else:
                         o_employee.set(od, job_applicant.get('one_fm_'+od))
 
-                #set employee's name in arabic    
+                #set employee's name in arabic
                 o_employee.set('employee_name_in_arabic',job_applicant.get('one_fm_last_name_in_arabic') +" "+ job_applicant.get('one_fm_first_name_in_arabic'))
 
                 # Set Documents attached in the Job Applicant to Onboard Employee document
@@ -648,9 +703,7 @@ def update_onboarding_doc_workflow_sate(doc):
         onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_id)
         if doc.doctype == 'Work Contract':
             onboard_employee.workflow_state = 'Work Contract'
-        if doc.doctype == 'Electronic Signature Declaration':
-            onboard_employee.workflow_state = 'Declaration of Electronic Signature'
-        if doc.doctype == 'Duty Commencement' and onboard_employee.workflow_state == 'Declaration of Electronic Signature':
+        if doc.doctype == 'Duty Commencement':
             onboard_employee.workflow_state = 'Duty Commencement'
         if doc.doctype == 'Employee' and onboard_employee.workflow_state == 'Bank Account' and doc.enrolled:
             onboard_employee.workflow_state = 'Mobile App Enrolment'
@@ -739,3 +792,20 @@ def set_job_opening_erf_missing_values(doc, method):
             set_erf_skills_in_job_opening(doc, erf)
         if not doc.one_fm_languages:
             set_erf_language_in_job_opening(doc, erf)
+
+def get_employee_record_exists_for_job_offer_or_job_applicant(job_offer=False, job_applicant=False, status='Active'):
+	"""
+		Method used to get employee record exists against a job offer or a job applicant
+		args:
+			job_offer: name of Job Offer record
+			job_applicant: name of Job Applicant record
+			status: status of the employee record
+		return:
+			employee record id, if exists
+	"""
+	employee = False
+	if job_applicant:
+		employee = frappe.db.get_value("Employee", {"job_applicant": job_applicant, "status": status}, "name")
+	elif job_offer:
+		employee = frappe.db.get_value("Employee", {"job_offer": job_offer, "status": status}, "name")
+	return employee
