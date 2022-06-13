@@ -140,8 +140,8 @@ class OnboardEmployee(Document):
 					employee.leave_policy = self.leave_policy
 					employee.salary_mode = self.salary_mode
 					if self.job_applicant:
-						employee.one_fm_first_name_in_arabic = frappe.db.get_value("Job Applicant", slef.job_applicant, "one_fm_first_name_in_arabic")
-						employee.one_fm_last_name_in_arabic = frappe.db.get_value("Job Applicant", slef.job_applicant, "one_fm_last_name_in_arabic")
+						employee.one_fm_first_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_first_name_in_arabic")
+						employee.one_fm_last_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_last_name_in_arabic")
 					else:
 						employee.one_fm_first_name_in_arabic = self.employee_name_in_arabic.split()[len(doc.employee_name_in_arabic.split())-1]
 						employee.one_fm_last_name_in_arabic = self.employee_name_in_arabic.split()[0]
