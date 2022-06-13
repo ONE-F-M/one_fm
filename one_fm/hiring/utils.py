@@ -789,3 +789,20 @@ def set_job_opening_erf_missing_values(doc, method):
             set_erf_skills_in_job_opening(doc, erf)
         if not doc.one_fm_languages:
             set_erf_language_in_job_opening(doc, erf)
+
+def get_employee_record_exists_for_job_offer_or_job_applicant(job_offer=False, job_applicant=False, status='Active'):
+	"""
+		Method used to get employee record exists against a job offer or a job applicant
+		args:
+			job_offer: name of Job Offer record
+			job_applicant: name of Job Applicant record
+			status: status of the employee record
+		return:
+			employee record id, if exists
+	"""
+	employee = False
+	if job_applicant:
+		employee = frappe.db.get_value("Employee", {"job_applicant": job_applicant, "status": status}, "name")
+	elif job_offer:
+		employee = frappe.db.get_value("Employee", {"job_offer": job_offer, "status": status}, "name")
+	return employee
