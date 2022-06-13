@@ -204,7 +204,10 @@ def employee_after_insert(doc, method):
     update_erf_close_with(doc)
     create_wp_for_transferable_employee(doc)
     create_leave_policy_assignment(doc)
-    create_employee_user_from_employee_id(doc)
+	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_generate_employee_id_on_employee_creation") and not doc.employee_id:
+		generate_employee_id(doc)
+	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
+		create_employee_user_from_employee_id(doc)
 
 
 def create_employee_user_from_employee_id(doc):
