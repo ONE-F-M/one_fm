@@ -48,7 +48,7 @@ class ItemRequest(Document):
         check_stock.save()
         frappe.db.commit()
 
-        page_link = get_url(check_stock.get_url()))
+        page_link = get_url(check_stock.get_url())
 
         # self.send_notifications(page_link)
 
