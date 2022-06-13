@@ -9,7 +9,7 @@ from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 from one_fm.hiring.doctype.candidate_orientation.candidate_orientation import create_candidate_orientation
 from one_fm.hiring.doctype.work_contract.work_contract import employee_details_for_wc
-from one_fm.hiring.utils import make_employee_from_job_offer
+from one_fm.hiring.utils import make_employee_from_job_offer, get_employee_record_exists_for_job_offer_or_job_applicant
 from frappe.utils import now, today, getdate
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 from one_fm.processor import sendemail
