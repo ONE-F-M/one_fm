@@ -204,10 +204,10 @@ def employee_after_insert(doc, method):
     update_erf_close_with(doc)
     create_wp_for_transferable_employee(doc)
     create_leave_policy_assignment(doc)
-    create_employee_user(doc)
+    create_employee_user_from_employee_id(doc)
 
 
-def create_employee_user(doc):
+def create_employee_user_from_employee_id(doc):
     """
         Create user account for employee if no user_id or employee while importing
     """
@@ -228,6 +228,7 @@ def create_employee_user(doc):
                 'enabled':1,
             })
             user.insert(ignore_permissions=True)
+			user.add_roles("Employee", "Employee Self Service")
             doc.db_set("user_id", user.name)
             doc.db_set("create_user_permission", 1)
             doc.reload()
