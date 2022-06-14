@@ -236,11 +236,11 @@ frappe.ui.form.on('Request for Material', {
 
 		if (frm.doc.docstatus == 1){
 			// if(frappe.session.user==frm.doc.request_for_material_accepter && frm.doc.status == "Draft"){
-			// 	frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_approve_request_for_material(frm, 'Accepted')).addClass('btn-primary');
+			// 	frm.add_custom_button(__('Accept'), () => frm.events.accept_approve_reject_request_for_material(frm, "Accepted", false)).addClass('btn-primary');
 			// 	frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_material(frm, 'Rejected')).addClass('btn-danger');
 			// }
 			if(frappe.session.user==frm.doc.request_for_material_approver && (frm.doc.status == "Accepted" || frm.doc.status == "Draft")){
-				frm.add_custom_button(__('Approve'), () => frm.events.confirm_accept_approve_request_for_material(frm, 'Approved')).addClass('btn-primary');
+				frm.add_custom_button(__('Approve'), () => frm.events.accept_approve_reject_request_for_material(frm, "Approved", false)).addClass('btn-primary');
 				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_material(frm, 'Rejected')).addClass('btn-danger');
 			}
 		}
@@ -268,76 +268,6 @@ frappe.ui.form.on('Request for Material', {
 			},
 		});
 		d.show();
-	},
-	confirm_accept_approve_request_for_material: function(frm, status) {
-		let msg_status = 'Approve';
-		if(status != 'Approved'){
-			msg_status = status == 'Accepted' ? 'Accept': 'Reject'
-		}
-		frappe.confirm(
-			__('A one time code will be sent to you for verification in order to use your signature for approval. Do You Want to {0} this Request for Material?', [msg_status]),
-			function(){
-				// Yes
-				var doctype = frm.doc.doctype
-				var document_name = frm.doc.name
-				frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
-					.then(res => {
-						console.log(res);
-					}).catch(e => {
-						console.log(e);
-					})
-				var d = new frappe.ui.Dialog({
-					title : __("Approval verification"),
-					fields : [
-						{
-							fieldtype: "Int",
-							label: "Enter verification code sent to your email address",
-							fieldname: "verification_code",
-							reqd: 1,
-							onchange: function(){
-								let code = d.get_value('verification_code')
-								if (!is_valid_verification_code(code)){frappe.throw(__("Invalid verification code."))}
-							}
-						},
-						{
-							fieldtype: "Button",
-							label: "Resend code",
-							fieldname: "resend_verification_code"
-						},
-						{
-							fieldtype: "HTML",
-							label: "Time remaining",
-							fieldname: "timer"
-						}
-					],
-					primary_action_label: __("Submit"),
-					primary_action: function(){
-						var verification_code = d.get_value('verification_code');
-						frappe.xcall('one_fm.utils.verify_verification_code', {doctype, document_name, verification_code})
-							.then(res => {
-								if (res){
-									d.hide()
-									frm.events.accept_approve_reject_request_for_material(frm, status, false);
-								} else{
-									frappe.msgprint(__("Incorrect verification code. Please try again."));
-								}
-							})
-					},
-				});
-				d.fields_dict.resend_verification_code.input.onclick = function() {
-					reset_timer();
-					frappe.xcall('one_fm.utils.send_verification_code', {doctype, document_name})
-					.then(res => {
-						console.log(res);
-					}).catch(e => {
-						console.log(e);
-					})
-				}
-				start_timer(60 * 5, d);
-				d.show();
-			},
-			function(){} // No
-		);
 	},
 	accept_approve_reject_request_for_material: function(frm, status, reason_for_rejection) {
 		frappe.call({
@@ -964,42 +894,3 @@ function set_t_warehouse(frm){
 		erpnext.utils.copy_value_in_all_rows(frm.doc, frm.doc.doctype, frm.doc.name, "items", "t_warehouse");
 	}
 };
-
-var timer;
-function start_timer(duration, d) {
-    timer = duration;
-    var minutes, seconds;
-    setInterval(function () {
-        minutes = parseInt(timer / 60, 10)
-        seconds = parseInt(timer % 60, 10);
-
-        minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds;
-
-        d.set_value('timer', "Verification code expires in: " + minutes + ":" + seconds);
-
-        if (--timer < 0) {
-            timer = duration;
-        }
-    }, 1000);
-}
-
-function reset_timer() {
-  timer = 60 * 5;
-}
-
-function is_valid_verification_code(code){
-	const code_expression = /^\d{6}(\s*,\s*\d{6})*$/;
-	if (code_expression.test(code))  return true;
-
-	return false;
-}
-
-
-const hideItemField = frm => {
-	if (frm.doc.docstatus !== 1){
-		document.querySelectorAll("[data-fieldname='item_code']").forEach((item, i)=>{
-			item.style.display = 'none';
-		})
-	}
-}
