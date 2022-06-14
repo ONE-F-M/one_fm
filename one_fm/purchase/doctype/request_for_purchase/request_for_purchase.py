@@ -57,16 +57,7 @@ class RequestforPurchase(Document):
 			message = "<p>Please Review and Approve or Reject the Request for Purchase <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
 			subject = '{0} Request for Purchase by {1}'.format(status, frappe.session.user)
 			send_email(self, [approver], message, subject)
-			create_notification_log(subject, message, [approver], self)
-
-		#fetch Signature from employee doc using user ID
-		if status == "Approved" and frappe.session.user == accepter:
-			signature = fetch_employee_signature(accepter)
-			if signature:
-				self.authorized_signatures = signature
-				self.save(ignore_permissions=True)
-			else:
-				frappe.throw(_("Your Signature is missing!"))
+			create_notification_log(subject, message, [approver], self)			
 
 		# Notify Accepter
 		if status in ['Approved', 'Rejected'] and frappe.session.user == approver:

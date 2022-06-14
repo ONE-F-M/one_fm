@@ -67,7 +67,6 @@ def checkin_after_insert(doc, method):
 	# These are returned according to dates. Time is not taken into account
 	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
 
-
 	log_exist = frappe.db.sql("""
 			SELECT name FROM `tabEmployee Checkin` empChkin
 		 			WHERE
@@ -77,7 +76,6 @@ def checkin_after_insert(doc, method):
 		 				AND empChkin.shift_type='{shift_type}'
 						AND name !='{current_doc}'
 			""".format(date=cstr(getdate()), shift_type=doc.shift_type,log_type=doc.log_type, current_doc=doc.name), as_dict=1)
-
 	if not log_exist:
 		# In case of back to back shift
 		if doc.shift_type:

@@ -5,24 +5,26 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
 	get_doc_workflow_state, get_workflow_name, get_users_next_action_data
 )
 import json
+from frappe.utils import getdate
 
 def shift_request_submit(self):
-	if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}):
-		frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}, "status" , "Inactive")
-	
-	assignment_doc = frappe.new_doc("Shift Assignment")
-	assignment_doc.company = self.company
-	assignment_doc.shift = self.operations_shift
-	assignment_doc.site = self.operation_site
-	assignment_doc.shift_type = self.shift_type
-	assignment_doc.employee = self.employee
-	assignment_doc.start_date = self.from_date
-	assignment_doc.shift_request = self.name
-	assignment_doc.insert()
-	assignment_doc.submit()
-	assignment_doc.end_date = self.to_date
-	assignment_doc.submit()
-	frappe.db.commit()
+	if self.from_date == getdate():
+		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}):
+			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}, "status" , "Inactive")
+		
+		assignment_doc = frappe.new_doc("Shift Assignment")
+		assignment_doc.company = self.company
+		assignment_doc.shift = self.operations_shift
+		assignment_doc.site = self.operation_site
+		assignment_doc.shift_type = self.shift_type
+		assignment_doc.employee = self.employee
+		assignment_doc.start_date = self.from_date
+		assignment_doc.shift_request = self.name
+		assignment_doc.check_in_site = self.check_in_site
+		assignment_doc.check_out_site = self.check_out_site
+		assignment_doc.insert()
+		assignment_doc.submit()
+		frappe.db.commit()
 
 @frappe.whitelist()
 def fetch_approver(employee):
@@ -38,6 +40,10 @@ def fetch_approver(employee):
 			)
 			approvers = [approver[0] for approver in approvers]
 			return approvers[0]
+
+def fill_to_date(doc, method):
+	if not doc.to_date:
+		doc.to_date = doc.from_date
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, method):

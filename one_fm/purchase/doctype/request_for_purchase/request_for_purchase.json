@@ -34,8 +34,6 @@
   "technical_remarks",
   "notes_section",
   "notes",
-  "signature_section",
-  "authorized_signatures",
   "amended_from"
  ],
  "fields": [
@@ -260,25 +258,12 @@
    "hidden": 1,
    "label": "Series",
    "options": "RFP-.YYYY.-"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval: doc.status == 'Approved';",
-   "fieldname": "authorized_signatures",
-   "fieldtype": "Signature",
-   "label": "Authorized Signatures",
-   "read_only": 1
-  },
-  {
-   "fieldname": "signature_section",
-   "fieldtype": "Section Break",
-   "label": "Signature"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2022-01-09 10:32:39.553821",
+ "modified": "2022-06-14 09:12:02.926644",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",

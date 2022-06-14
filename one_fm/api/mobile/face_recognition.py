@@ -56,7 +56,7 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 
 		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
 
-		if not user_within_site_geofence(employee, latitude, longitude):
+		if not user_within_site_geofence(employee,log_type, latitude, longitude):
 			return ("Please check {log_type} at your site location.".format(log_type=log_type))
 
 		# setup channel

@@ -808,3 +808,11 @@ def get_employee_record_exists_for_job_offer_or_job_applicant(job_offer=False, j
 	elif job_offer:
 		employee = frappe.db.get_value("Employee", {"job_offer": job_offer, "status": status}, "name")
 	return employee
+
+
+@frappe.whitelist()
+def change_applicant_erf(job_applicant, old_erf, new_erf):
+	if old_erf == frappe.db.get_value("Job Applicant", job_applicant, "one_fm_erf") and frappe.db.exists("ERF", new_erf):
+		frappe.db.set_value("Job Applicant", job_applicant, "one_fm_erf", new_erf)
+		job_opening = frappe.db.get_value("Job Opening", {'one_fm_erf': new_erf})
+		frappe.db.set_value("Job Applicant", job_applicant, "job_title", job_opening)

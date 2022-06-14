@@ -28,21 +28,24 @@ def employee_schedule_monthly():
         last_month_date = add_days(today, -1)
         last_day_of_current_month = calendar.monthrange(today.year, today.month)[1]
         for p in projects:
-            employee_schedule = frappe.db.get_list("Employee Schedule", filters={'date':str(last_month_date), 'project':p.name})
-            for es in employee_schedule:
-                for i in range(1, last_day_of_current_month):
-                    try:
-                        es = frappe.get_doc("Employee Schedule", es.name)
-                        es.creation = ''
-                        es.modified_by = ''
-                        es.owner = ''
-                        es.roster_type = 'Basic'
-                        es.employee_availability = 'Working'
-                        es.date = f'{today.year}-{today.month}-{i}'
-                        es.insert()
-                    except Exception as e:
-                        pass
+            employee_schedule = frappe.db.get_list("Employee Schedule",
+                filters={'date':str(last_month_date), 'project':p.name},
+                fields=['name', 'employee'])
+            for row in employee_schedule:
+                if frappe.db.exists("Employee", {'status':'Active', 'name':row.employee}):
+                    for i in range(1, last_day_of_current_month):
+                        try:
+                            es = frappe.get_doc("Employee Schedule", row.name)
+                            es.creation = ''
+                            es.modified_by = ''
+                            es.owner = ''
+                            es.roster_type = 'Basic'
+                            es.employee_availability = 'Working'
+                            es.date = f'{today.year}-{today.month}-{i}'
+                            es.insert()
+                        except Exception as e:
+                            pass
             frappe.db.commit()
 
         # RUN SHIFT ASSIGNMENTS
-        automatic_shift_assignment()
+        # automatic_shift_assignment()
