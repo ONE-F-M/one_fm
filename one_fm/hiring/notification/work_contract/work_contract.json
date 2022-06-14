@@ -28,7 +28,7 @@
  "send_system_notification": 1,
  "send_to_all_assignees": 0,
  "sender": "Notifications",
- "sender_email": "s.shaikh@armor-services.com",
+ "sender_email": "notifications@one-fm.com",
  "subject": "{{doc.name}} needs an action.",
  "value_changed": "workflow_state"
 }
