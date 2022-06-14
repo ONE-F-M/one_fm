@@ -7,6 +7,8 @@
  "field_order": [
   "hr_settings_section",
   "holiday_compensatory_leave_type",
+  "auto_generate_employee_id_on_employee_creation",
+  "auto_create_erpnext_user_on_employee_creation_using_employee_id",
   "payroll_settings_section",
   "holiday_additional_salary_component",
   "maximum_salary_deduction_percentage",
@@ -136,12 +138,25 @@
    "fieldname": "remind_supervisor_checkin_checkout",
    "fieldtype": "Check",
    "label": "Remind Supervisor Checkin/Checkout"
+  },
+  {
+   "default": "0",
+   "description": "ERPNext user will be created automatically on creation of employee by using employee id.",
+   "fieldname": "auto_create_erpnext_user_on_employee_creation_using_employee_id",
+   "fieldtype": "Check",
+   "label": "Auto Create ERPNext User on Employee Creation Using Employee ID"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_generate_employee_id_on_employee_creation",
+   "fieldtype": "Check",
+   "label": "Auto Generate Employee ID on Employee Creation"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-01-11 21:03:52.900225",
+ "modified": "2022-06-13 17:02:06.505030",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",

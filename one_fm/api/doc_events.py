@@ -66,8 +66,6 @@ def checkin_after_insert(doc, method):
 	from one_fm.api.tasks import send_notification, issue_penalty
 	# These are returned according to dates. Time is not taken into account
 	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
-	penalty_code_late_checkin = "102"
-	penalty_code_early_checkout="103"
 
 	log_exist = frappe.db.sql("""
 			SELECT name FROM `tabEmployee Checkin` empChkin
@@ -79,9 +77,6 @@ def checkin_after_insert(doc, method):
 						AND name !='{current_doc}'
 			""".format(date=cstr(getdate()), shift_type=doc.shift_type,log_type=doc.log_type, current_doc=doc.name), as_dict=1)
 	
-	shift_permission_late_entry = frappe.db.exists("Shift Permission",{'employee':doc.employee,"date":cstr(getdate()), "permission_type":"Arrive Late"})
-	shift_permission_early_exit = frappe.db.exists("Shift Permission",{'employee':doc.employee,"date":cstr(getdate()), "permission_type":"Leave Early"})
-
 	if not log_exist:
 		# In case of back to back shift
 		if doc.shift_type:
@@ -109,7 +104,6 @@ def checkin_after_insert(doc, method):
 					subject = _("{employee} has checked in late by {delay}. {location}".format(employee=doc.employee_name, delay=delay, location=message_suffix))
 					message = _("{employee_name} has checked in late by {delay}. {location} <br><br><div class='btn btn-primary btn-danger late-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name,shift=doc.operations_shift, date=cstr(doc.time), employee=doc.employee, delay=delay, location=message_suffix))
 					for_users = [supervisor_user]
-					issue_penalty(doc.employee, doc.time, penalty_code_late_checkin, doc.operations_shift, supervisor_user, doc.device_id)
 					create_notification_log(subject, message, for_users, doc)
 
 			elif doc.log_type == "IN" and doc.skip_auto_attendance == 1:
@@ -135,7 +129,6 @@ def checkin_after_insert(doc, method):
 					subject = _("{employee} has checked out early by {early}. {location}".format(employee=doc.employee_name, early=early, location=message_suffix))
 					message = _("{employee_name} has checked out early by {early}. {location} <br><br><div class='btn btn-primary btn-danger early-punch-out' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=doc.employee_name, shift=doc.operations_shift, date=cstr(doc.time), employee=doc.employee_name, early=early, location=message_suffix))
 					for_users = [supervisor_user]
-					issue_penalty(doc.employee, doc.time, penalty_code_early_checkout, doc.operations_shift, supervisor_user, doc.device_id)
 					create_notification_log(subject, message, for_users, doc)
 
 		else:

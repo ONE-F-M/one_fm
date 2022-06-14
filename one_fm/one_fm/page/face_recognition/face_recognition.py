@@ -3,7 +3,7 @@ import grpc
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, cstr, nowdate, cint
+from frappe.utils import now_datetime, cstr, nowdate, cint , getdate
 import numpy as np
 import datetime
 from json import JSONEncoder
@@ -88,7 +88,7 @@ def verify():
 
 		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
 
-		if not user_within_site_geofence(employee, latitude, longitude):
+		if not user_within_site_geofence(employee, log_type, latitude, longitude):
 			frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
 
 		# Get user video
@@ -121,11 +121,19 @@ def verify():
 		frappe.log_error(frappe.get_traceback())
 		raise exc
 
-def user_within_site_geofence(employee, user_latitude, user_longitude):
+def user_within_site_geofence(employee, log_type, user_latitude, user_longitude):
 	""" This method checks if user's given coordinates fall within the geofence radius of the user's assigned site in Shift Assigment. """
 	shift = get_current_shift(employee)
+	date = cstr(getdate())
 	if shift and shift.shift:
-		site = frappe.get_value("Operations Shift", shift.shift, "site")
+		if frappe.db.exists("Shift Request", {"employee":employee, "from_date": ['>=', date], "to_date": ['<=', date]}):
+			check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, "from_date": ['>=', date], "to_date": ['>=', date]},["check_in_site","check_out_site"])
+			if log_type == "IN":
+				site = check_in_site
+			else:
+				site = check_out_site
+		else:
+			site = frappe.get_value("Operations Shift", shift.shift, "site")
 		location= frappe.db.sql("""
 		SELECT loc.latitude, loc.longitude, loc.geofence_radius
 		FROM `tabLocation` as loc
