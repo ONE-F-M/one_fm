@@ -6,6 +6,7 @@
 
 frappe.ui.form.on('Request for Material', {
 	setup: function(frm) {
+		// hideItemField(frm);
 		// formatter for material request item
 		frm.set_indicator_formatter('item_code',
 			function(doc) { return (doc.qty<=doc.ordered_qty) ? "green" : "orange"; });
@@ -35,6 +36,7 @@ frappe.ui.form.on('Request for Material', {
 		set_item_field_property(frm);
 	},
 	onload: function(frm) {
+		// hideItemField(frm);
 		erpnext.utils.add_item(frm);
 		if(!frm.doc.requested_by){
 			frm.set_value('requested_by', frappe.session.user);
@@ -49,9 +51,11 @@ frappe.ui.form.on('Request for Material', {
 		};
 	},
 	onload_post_render: function(frm) {
+		// hideItemField(frm);
 		frm.get_field("items").grid.set_multiple_add("item_code", "qty");
 	},
 	refresh: function(frm) {
+		// 	hideItemField(frm);
 		frm.events.make_custom_buttons(frm);
 		set_item_field_property(frm);
 		let status = ['Draft', 'Accepted', 'Approved', 'Rejected', 'Transferred'];
