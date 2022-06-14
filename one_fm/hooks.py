@@ -371,6 +371,14 @@ website_route_rules = [
 		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
 		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
 	},
+	{
+		"from_route": "/careers/opening/<path:job_id>",
+		"to_route": "careers/opening"
+	},
+	{
+		"from_route": "/job_application/<path:job_title>",
+		"to_route": "job_application"
+	},
 ]
 
 # doc_events = {

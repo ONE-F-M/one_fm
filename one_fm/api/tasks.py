@@ -681,7 +681,6 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.submit()
 	frappe.msgprint(_('A penalty has been issued against {0}'.format(employee_name)))
 
-
 def automatic_shift_assignment():
 	date = cstr(getdate())
 	end_previous_shifts()
@@ -690,16 +689,15 @@ def automatic_shift_assignment():
 		create_shift_assignment(schedule, date)
 
 def end_previous_shifts():
-	date = datetime.date.today() - datetime.timedelta(days=1)
 	shifts=frappe.get_list("Shift Assignment",  filters = {"end_date": ('is', 'not set')})
 	for shift in shifts:
 		Shift_name = shift.name
 		doc = frappe.get_doc("Shift Assignment",Shift_name)
-		doc.end_date = date
+		doc.end_date = doc.start_date
 		doc.submit()
 
 def create_shift_assignment(schedule, date):
-	if not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ]}):
+	if not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ], "status":"Active"}):
 		try:
 			shift_assignment = frappe.new_doc("Shift Assignment")
 			shift_assignment.start_date = date
@@ -714,6 +712,8 @@ def create_shift_assignment(schedule, date):
 			shift_assignment.post_type = schedule.post_type
 			shift_assignment.post_abbrv = schedule.post_abbrv
 			shift_assignment.roster_type = schedule.roster_type
+			shift_assignment.submit()
+			shift_assignment.end_date = date
 			shift_assignment.submit()
 		except Exception:
 				frappe.log_error(frappe.get_traceback())

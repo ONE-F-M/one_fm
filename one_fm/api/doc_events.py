@@ -76,7 +76,6 @@ def checkin_after_insert(doc, method):
 		 				AND empChkin.shift_type='{shift_type}'
 						AND name !='{current_doc}'
 			""".format(date=cstr(getdate()), shift_type=doc.shift_type,log_type=doc.log_type, current_doc=doc.name), as_dict=1)
-	
 	if not log_exist:
 		# In case of back to back shift
 		if doc.shift_type:
@@ -97,7 +96,7 @@ def checkin_after_insert(doc, method):
 
 			if doc.log_type == "IN" and doc.skip_auto_attendance == 0:
 				# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
-				if not shift_permission_late_entry and shift_type.enable_entry_grace_period == 1 and get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
+				if shift_type.enable_entry_grace_period == 1 and get_datetime(doc.time) > (get_datetime(doc.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
 					time_diff = get_datetime(doc.time) - get_datetime(doc.shift_start)
 					hrs, mins, secs = cstr(time_diff).split(":")
 					delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
@@ -122,7 +121,7 @@ def checkin_after_insert(doc, method):
 					print("124", doc.employee, supervisor_user)
 					send_notification(subject, message, for_users)
 				#EARLY: Checkout time is before [Shift End - Early grace exit time]
-				elif not shift_permission_early_exit and shift_type.enable_exit_grace_period == 1 and doc.device_id and get_datetime(doc.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
+				elif shift_type.enable_exit_grace_period == 1 and doc.device_id and get_datetime(doc.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
 					time_diff = get_datetime(curr_shift.end_datetime) - get_datetime(doc.time)
 					hrs, mins, secs = cstr(time_diff).split(":")
 					early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
