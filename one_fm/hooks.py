@@ -322,11 +322,15 @@ doc_events = {
 		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
 	},
 	"Shift Request":{
-		"before_save":"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
+		"before_save":[
+			"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
+			"one_fm.api.doc_methods.shift_request.fill_to_date",
+		],
 	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
+
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
