@@ -584,8 +584,22 @@ var change_applicant_erf = function(frm) {
 				__('Are you sure to change ERF for the Job Applicant?'),
 				function(){
 					// Yes
-					frm.set_value('one_fm_erf', dialog.get_value('erf'));
-					dialog.hide();
+					frappe.call({
+						method: "one_fm.hiring.utils.change_applicant_erf",
+						args: {
+							'job_applicant': frm.doc.name,
+							'old_erf': frm.doc.one_fm_erf,
+							'new_erf': dialog.get_value('erf')
+						},
+						callback: function(r) {
+							if(!r.exc){
+								dialog.hide();
+								frm.reload_doc();
+							}
+						},
+						freeze: true,
+						freeze_message: __("Change ERF.....")
+					});
 				},
 				function(){
 					// No
