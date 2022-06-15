@@ -119,30 +119,6 @@ def filter_description_specific_for_item_group(doctype, txt, searchfield, start,
         )
 
 @frappe.whitelist()
-def accept_approve_purchase_order(doc):
-    po = frappe.get_doc("Purchase Order", doc)
-    if po.workflow_state == "Approved":
-        #fetch Signature from employee doc using user ID
-        signature = fetch_employee_signature(frappe.session.user)
-        if signature:
-            po.authority_signature = signature
-            po.save(ignore_permissions=True)
-        else:
-            frappe.throw(_("Your Signature is missing!")) 
-
-@frappe.whitelist()
-def accept_approve_purchase_receipt(doc):
-    pr = frappe.get_doc("Purchase Receipt", doc)
-    if pr.status == "Completed":
-        #fetch Signature from employee doc using user ID
-        signature = fetch_employee_signature(frappe.session.user)
-        if signature:
-            pr.authority_signature = signature
-            pr.save(ignore_permissions=True)
-        else:
-            frappe.throw(_("Your Signature is missing!")) 
-
-@frappe.whitelist()
 def get_supplier_list(doctype, txt, searchfield, start, page_len, filters):
     if filters.get('request_for_quotation'):
         query = """

@@ -58,14 +58,6 @@ class RequestforMaterial(BuyingController):
 			self.status = status
 
 			if status == "Approved":
-				#fetch Signature from employee doc using user ID
-				signature = fetch_employee_signature(self.request_for_material_accepter)
-				if signature:
-					self.authority_signature = signature
-					self.save(ignore_permissions=True)
-				else:
-					frappe.throw(_("Your Signature is missing!"))
-
 
 				# Notify Stock Manager - Stock Manger Check If Item Available
 				# If Item Available then Create SE Issue and Transfer and update qty issued in the RFMItem

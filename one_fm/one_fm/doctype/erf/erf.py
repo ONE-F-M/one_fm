@@ -138,9 +138,12 @@ class ERF(Document):
 
 	def on_update(self):
 		assign_recruiter_to_project_task(self)
+		if self.status in ['Closed',]:
+			self.close_job_opening()
 
 	def before_cancel(self):
 		self.status = 'Cancelled'
+		self.close_job_opening()
 
 	def on_submit(self):
 		self.validate_total_required_candidates()
@@ -148,6 +151,13 @@ class ERF(Document):
 		self.erf_finalized = today()
 		self.validate_recruiter_assigned()
 		self.notify_approver()
+
+	def close_job_opening(self):
+		job_openings = frappe.db.get_list("Job Opening", filters={'one_fm_erf':self.name})
+		for row in job_openings:
+			job_opening = frappe.get_doc("Job Opening", row.name)
+			job_opening.db_set('publish', 0)
+			job_opening.db_set('status', 'Closed')
 
 	def validate_submit_to_hr(self):
 		if not self.draft_erf_to_hrm and self.docstatus == 1:
