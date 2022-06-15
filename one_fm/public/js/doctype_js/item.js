@@ -127,111 +127,111 @@ frappe.ui.form.on('Item', {
 			get_item_code(frm);
 		}
 		if(frm.doc.subitem_group == 'Equipment'){
-			frm.set_df_property('item_color', 'reqd', false);
-			frm.set_value('have_uniform_type_and_description', false);
-			frm.set_df_property('brand', 'reqd', true);
-			frm.set_df_property('item_model', 'reqd', true);
-			frm.set_df_property('item_material', 'reqd', true);
-			frm.set_df_property('item_area_of_use', 'reqd', true);
-			frm.set_df_property('item_uom', 'reqd', true);
+			// frm.set_df_property('item_color', 'reqd', false);
+			// frm.set_value('have_uniform_type_and_description', false);
+			// frm.set_df_property('brand', 'reqd', true);
+			// frm.set_df_property('item_model', 'reqd', true);
+			// frm.set_df_property('item_material', 'reqd', true);
+			// frm.set_df_property('item_area_of_use', 'reqd', true);
+			// frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Fixture'){
-			frm.set_df_property('item_color', 'reqd', false);
-			frm.set_df_property('item_area_of_use', 'reqd', false);
-			frm.set_value('have_uniform_type_and_description', false);
-			frm.set_df_property('brand', 'reqd', true);
-			frm.set_df_property('item_model', 'reqd', true);
-			frm.set_df_property('item_material', 'reqd', true);
-			frm.set_df_property('item_uom', 'reqd', true);
+			// frm.set_df_property('item_color', 'reqd', false);
+			// frm.set_df_property('item_area_of_use', 'reqd', false);
+			// frm.set_value('have_uniform_type_and_description', false);
+			// frm.set_df_property('brand', 'reqd', true);
+			// frm.set_df_property('item_model', 'reqd', true);
+			// frm.set_df_property('item_material', 'reqd', true);
+			// frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Vehicle'){
-			frm.set_df_property('item_material', 'reqd', false);
-			frm.set_value('have_uniform_type_and_description', false);
-			frm.set_df_property('brand', 'reqd', true);
-			frm.set_df_property('item_model', 'reqd', true);
-			frm.set_df_property('item_area_of_use', 'reqd', true);
-			frm.set_df_property('item_uom', 'reqd', true);
+			// frm.set_df_property('item_material', 'reqd', false);
+			// frm.set_value('have_uniform_type_and_description', false);
+			// frm.set_df_property('brand', 'reqd', true);
+			// frm.set_df_property('item_model', 'reqd', true);
+			// frm.set_df_property('item_area_of_use', 'reqd', true);
+			// frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Intangible'){
-			frm.set_df_property('item_material', 'hidden', 1);
-			frm.set_df_property('item_color', 'hidden', 1);
-			frm.set_df_property('item_material', 'reqd', false);
-			frm.set_df_property('item_color', 'reqd', false);
-			frm.set_df_property('item_packaging', 'hidden', 1);
-			frm.set_df_property('brand', 'reqd', false);
-			frm.set_df_property('item_model', 'reqd', false);
-			frm.set_df_property('item_area_of_use', 'reqd', false);
-			
-			frm.set_df_property('item_uom', 'reqd', false);
-			frm.set_value('have_uniform_type_and_description', false);
+			// frm.set_df_property('item_material', 'hidden', 1);
+			// frm.set_df_property('item_color', 'hidden', 1);
+			// frm.set_df_property('item_material', 'reqd', false);
+			// frm.set_df_property('item_color', 'reqd', false);
+			// frm.set_df_property('item_packaging', 'hidden', 1);
+			// frm.set_df_property('brand', 'reqd', false);
+			// frm.set_df_property('item_model', 'reqd', false);
+			// frm.set_df_property('item_area_of_use', 'reqd', false);
+			//
+			// frm.set_df_property('item_uom', 'reqd', false);
+			// frm.set_value('have_uniform_type_and_description', false);
 		}
 		else if(frm.doc.subitem_group == 'Service'){
-			frm.set_value('is_service', true);
-			frm.set_df_property('start_date', 'reqd', false);
-			frm.set_df_property('end_date', 'reqd', false);
-			frm.set_df_property('brand', 'reqd', false);
-			frm.set_df_property('item_model', 'reqd', false);
-			frm.set_df_property('item_material', 'reqd', false);
-			frm.set_df_property('item_area_of_use', 'reqd', false);
-			frm.set_df_property('item_color', 'reqd', false);
-			frm.set_df_property('item_uom', 'reqd', false);
-			frm.set_value('have_uniform_type_and_description', false);
+			// frm.set_value('is_service', true);
+			// frm.set_df_property('start_date', 'reqd', false);
+			// frm.set_df_property('end_date', 'reqd', false);
+			// frm.set_df_property('brand', 'reqd', false);
+			// frm.set_df_property('item_model', 'reqd', false);
+			// frm.set_df_property('item_material', 'reqd', false);
+			// frm.set_df_property('item_area_of_use', 'reqd', false);
+			// frm.set_df_property('item_color', 'reqd', false);
+			// frm.set_df_property('item_uom', 'reqd', false);
+			// frm.set_value('have_uniform_type_and_description', false);
 		}
 		else if(frm.doc.subitem_group == 'Consumables'){
-			frm.set_df_property('item_color', 'reqd', false);
-			frm.set_value('have_uniform_type_and_description', false);
-			frm.set_df_property('brand', 'reqd', true);
-			frm.set_df_property('item_model', 'reqd', true);
-			frm.set_df_property('item_material', 'reqd', true);
-			frm.set_df_property('item_uom', 'reqd', true);
+			// frm.set_df_property('item_color', 'reqd', false);
+			// frm.set_value('have_uniform_type_and_description', false);
+			// frm.set_df_property('brand', 'reqd', true);
+			// frm.set_df_property('item_model', 'reqd', true);
+			// frm.set_df_property('item_material', 'reqd', true);
+			// frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Tools'){
-			frm.set_df_property('item_color', 'reqd', false);
-			frm.set_value('have_uniform_type_and_description', false);
-			frm.set_df_property('brand', 'reqd', true);
-			frm.set_df_property('item_model', 'reqd', true);
-			frm.set_df_property('item_material', 'reqd', true);
-			frm.set_df_property('item_uom', 'reqd', true);
+			// frm.set_df_property('item_color', 'reqd', false);
+			// frm.set_value('have_uniform_type_and_description', false);
+			// frm.set_df_property('brand', 'reqd', true);
+			// frm.set_df_property('item_model', 'reqd', true);
+			// frm.set_df_property('item_material', 'reqd', true);
+			// frm.set_df_property('item_uom', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Uniform'){
-			frm.set_value('is_service', true);
-			frm.set_value('have_uniform_type_and_description', true);
-			frm.set_df_property('start_date', 'reqd', false);
-			frm.set_df_property('end_date', 'reqd', false);
-			frm.set_df_property('brand', 'reqd', true);
-			frm.set_df_property('item_model', 'reqd', true);
-			frm.set_df_property('item_material', 'reqd', true);
-			frm.set_df_property('item_uom', 'reqd', true);
-			frm.set_df_property('item_area_of_use', 'reqd', false);
-			frm.set_df_property('item_color', 'reqd', true);
-			frm.set_df_property('supplier_items', 'reqd', true);
+			// frm.set_value('is_service', true);
+			// frm.set_value('have_uniform_type_and_description', true);
+			// frm.set_df_property('start_date', 'reqd', false);
+			// frm.set_df_property('end_date', 'reqd', false);
+			// frm.set_df_property('brand', 'reqd', true);
+			// frm.set_df_property('item_model', 'reqd', true);
+			// frm.set_df_property('item_material', 'reqd', true);
+			// frm.set_df_property('item_uom', 'reqd', true);
+			// frm.set_df_property('item_area_of_use', 'reqd', false);
+			// frm.set_df_property('item_color', 'reqd', true);
+			// frm.set_df_property('supplier_items', 'reqd', true);
 		}
 		else if(frm.doc.subitem_group == 'Bedding'){
-			frm.set_value('is_service', true);
-			frm.set_value('have_uniform_type_and_description', false);
-			frm.set_df_property('start_date', 'reqd', false);
-			frm.set_df_property('end_date', 'reqd', false);
-			frm.set_df_property('brand', 'reqd', true);
-			frm.set_df_property('item_model', 'reqd', false);
-			frm.set_df_property('item_material', 'reqd', true);
-			frm.set_df_property('item_area_of_use', 'reqd', false);
-			frm.set_df_property('item_color', 'reqd', true);
-			frm.set_df_property('item_uom', 'reqd', true);
-			frm.set_df_property('item_uom', 'reqd', true);
-			frm.set_df_property('supplier_items', 'reqd', true);
+			// frm.set_value('is_service', true);
+			// frm.set_value('have_uniform_type_and_description', false);
+			// frm.set_df_property('start_date', 'reqd', false);
+			// frm.set_df_property('end_date', 'reqd', false);
+			// frm.set_df_property('brand', 'reqd', true);
+			// frm.set_df_property('item_model', 'reqd', false);
+			// frm.set_df_property('item_material', 'reqd', true);
+			// frm.set_df_property('item_area_of_use', 'reqd', false);
+			// frm.set_df_property('item_color', 'reqd', true);
+			// frm.set_df_property('item_uom', 'reqd', true);
+			// frm.set_df_property('item_uom', 'reqd', true);
+			// frm.set_df_property('supplier_items', 'reqd', true);
 		}
 		else{
-			frm.set_value('is_service', false);
-			frm.set_df_property('start_date', 'reqd', false);
-			frm.set_value('have_uniform_type_and_description', false);
-			frm.set_df_property('end_date', 'reqd', false);
-			frm.set_df_property('brand', 'reqd', true);
-			frm.set_df_property('item_model', 'reqd', true);
-			frm.set_df_property('item_material', 'reqd', true);
-			frm.set_df_property('item_area_of_use', 'reqd', true);
-			frm.set_df_property('item_color', 'reqd', true);
-			
-		}	
+			// frm.set_value('is_service', false);
+			// frm.set_df_property('start_date', 'reqd', false);
+			// frm.set_value('have_uniform_type_and_description', false);
+			// frm.set_df_property('end_date', 'reqd', false);
+			// frm.set_df_property('brand', 'reqd', true);
+			// frm.set_df_property('item_model', 'reqd', true);
+			// frm.set_df_property('item_material', 'reqd', true);
+			// frm.set_df_property('item_area_of_use', 'reqd', true);
+			// frm.set_df_property('item_color', 'reqd', true);
+
+		}
 	},
 	item_group: function(frm) {
 		set_item_field_property(frm);
@@ -265,7 +265,7 @@ frappe.ui.form.on('Item', {
 		if(frm.doc.item_group == "Electronics Spare parts" || frm.doc.item_group == "Electronics Accessories" || frm.doc.item_group == "Vehicle Spare parts" || frm.doc.item_group == "Vehicle Accessories"){
 			frm.set_df_property('item_color', 'reqd', false);
 		}
-	
+
 
 		// if(frm.doc.item_group){
 		// 	frappe.call({

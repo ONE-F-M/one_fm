@@ -3,7 +3,7 @@ from frappe.utils import getdate
 from .utils import remove_html_tags, get_department_list
 
 def get_context(context):
-
+    no_cache = 1
     # Get recent openings
     context.recent_openings = get_recent_openings()
 

@@ -64,7 +64,9 @@
                     <h6>As a part of the onboarding process for the {{applicant_designation}} role, we request you to provide us with the following documents and complete the below form.</h6>
                     <ul>
                         <li><h6>Passport - front and back side</h6></li>
-                        <li><h6>Civil ID - front and back side (Applicable if you are a resident of Kuwait)</h6></li>
+                        {% if civil_id_reqd %}
+                            <li><h6>Civil ID - front and back side</h6></li>
+                        {% endif %}
                     </ul>
                 </div>
                 <section class="form-wrapper">
@@ -77,20 +79,21 @@
                                 </small>
                             </h2>
                             <hr>
-                            <div class="row">
-                                <div class="form-group col-md-6">
-                                    <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
-                                    <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg">
-                                    <span id="tooltiptext1">* Please Upload Your Civil ID</span>
+                            {% if civil_id_reqd %}
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                        <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg">
+                                        <span id="tooltiptext1">* Please Upload Your Civil ID</span>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="form-label" for="file" >Civil ID Back Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                        <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg">
+                                        <span id="tooltiptext2">* Please Upload Your Civil ID</span>
+                                        <br>
+                                    </div>
                                 </div>
-                                <div class="form-group col-md-6">
-                                    <label class="form-label" for="file" >Civil ID Back Side</label> <span class="required_indicator" style="color: red;">*</span>
-                                    <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg">
-                                    <span id="tooltiptext2">* Please Upload Your Civil ID</span>
-                                    <br>
-                                </div>
-                            </div>
-
+                            {% endif %}
                             <div class="row">
                                     <div class="form-group col-md-6">
                                         <label  for="file">Passport Front Side</label>
@@ -171,7 +174,7 @@
                                 </div>
                                 <div class="row">
                                     <div class="form-group col-md-6 w-50">
-                                        <label class="form-label" for="Gender">Gender</label>
+                                        <label class="form-label" for="Gender">Gender *</label>
                                         <select class="form-control input" id="Gender" name="gender" aria-placeholder="Gender">
                                             <option value="select" selected disabled>Select Your Gender</option>
                                             <option value="Male">Male</option>
@@ -179,7 +182,7 @@
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label class="form-label" for="Date_Of_Birth">Date Of Birth</label>
+                                        <label class="form-label" for="Date_Of_Birth">Date Of Birth *</label>
                                         <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" size="50">
                                     </div>
                                 </div>
@@ -197,7 +200,7 @@
 
                                 <div class="row">
                                     <div class="form-group col-md-4 w-75">
-                                        <label class="form-label" for="Nationality">Nationality</label>
+                                        <label class="form-label" for="Nationality">Nationality *</label>
                                         <select class="form-control input2" id="Nationality" name="nationality" aria-placeholder="Select Your Nationality">
                                             <option value="select" selected disabled>Select Your Nationality</option>
                                         </select>
@@ -207,7 +210,7 @@
                                         <input class="form-control input2" type="text" id="Country_Code" name="country_code" onchange="fetchNationality(this)" size="50">
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label class="form-label" for="Birth_Place">Place of Birth</label>
+                                        <label class="form-label" for="Birth_Place">Place of Birth *</label>
                                         <input class="form-control input2" type="text" id="Birth_Place" name="birth_place" size="50">
                                     </div>
 
@@ -228,7 +231,7 @@
 
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label class="form-label" for="Passport_Number">Passport Number</label>
+                                        <label class="form-label" for="Passport_Number">Passport Number *</label>
                                         <input class="form-control input" type="text" id="Passport_Number" name="passport_no">
                                     </div>
                                     <div class="form-group col-md-6">
@@ -243,15 +246,15 @@
 
                                 <div class="row">
                                     <div class="form-group col-md-4">
-                                        <label class="form-label" for="Passport_Date_of_Issue">Passport Date of Issue</label>
+                                        <label class="form-label" for="Passport_Date_of_Issue">Passport Date of Issue *</label>
                                         <input class="form-control input2" type="date" id="Passport_Date_of_Issue" name="p_date_of_issue">
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label class="form-label" for="Passport_Date_of_Expiry">Passport Expiry Date</label>
+                                        <label class="form-label" for="Passport_Date_of_Expiry">Passport Expiry Date *</label>
                                         <input class="form-control input2" type="date" id="Passport_Date_of_Expiry" name="passport_expiry_date">
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label class="form-label" for="Passport_Place_of_Issue">Passport Place of Issue</label>
+                                        <label class="form-label" for="Passport_Place_of_Issue">Passport Place of Issue *</label>
                                         <input class="form-control input2" type="text" id="Passport_Place_of_Issue" name="p_place_of_issue">
                                     </div>
                                 </div>
