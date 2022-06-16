@@ -681,18 +681,51 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.submit()
 	frappe.msgprint(_('A penalty has been issued against {0}'.format(employee_name)))
 
-def automatic_shift_assignment():
+def assign_am_shift():
 	date = cstr(getdate())
-	end_previous_shifts()
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Basic"}, ["*"])
+	end_previous_shifts("AM")
+	roster = frappe.db.sql("""
+			SELECT * from `tabEmployee Schedule` ES
+			WHERE
+			ES.date = '{date}'
+			AND ES.employee_availability = "Working" 
+			AND ES.roster_type = "Basic"
+			AND ES.shift_type IN(
+				SELECT name from `tabShift Type` st 
+				WHERE st.start_time >= '00:00:00' 
+				AND  st.start_time < '12:00:00')
+	""".format(date=cstr(date)), as_dict=1)
 	for schedule in roster:
 		create_shift_assignment(schedule, date)
 
-def end_previous_shifts():
-	shifts=frappe.get_list("Shift Assignment",  filters = {"end_date": ('is', 'not set')})
+def assign_pm_shift():
+	date = cstr(getdate())
+	end_previous_shifts("PM")
+	roster = frappe.db.sql("""
+			SELECT * from `tabEmployee Schedule` ES
+			WHERE
+			ES.date = '{date}'
+			AND ES.employee_availability = "Working" 
+			AND ES.roster_type = "Basic"
+			AND ES.shift_type IN(
+				SELECT name from `tabShift Type` st 
+				WHERE st.start_time >= '12:00:00' 
+				AND  st.start_time < '00:00:00')
+	""".format(date=cstr(date)), as_dict=1)
+	for schedule in roster:
+		create_shift_assignment(schedule, date)
+
+def end_previous_shifts(time):
+	if time == "AM":
+		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "00:00"], "start_time": ["<", "12:00"]},['name'], pluck='name')
+	else:
+		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"], "start_time": ["<", "00:00"]},['name'], pluck='name')
+
+	shifts=frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'], ["shift_type", "IN", shift_type]], fields=['name','start_date'])
+
 	for shift in shifts:
 		doc = frappe.get_doc("Shift Assignment",shift.name)
-		doc.end_date = doc.start_date
+		doc.end_date = shift.start_date
 		doc.submit()
 
 def create_shift_assignment(schedule, date):
