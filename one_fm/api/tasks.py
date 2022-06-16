@@ -310,7 +310,7 @@ def checkin_checkout_supervisor_reminder():
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
 			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.name, emp.employee_id, emp.employee_name, emp.reports_to, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
+				SELECT DISTINCT emp.name, emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
 			  		tSA.employee=emp.name
 				AND tSA.start_date='{date}'
@@ -361,7 +361,7 @@ def checkin_checkout_supervisor_reminder():
 		 	date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		 	checkin_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
 		 	recipients = frappe.db.sql("""
-		 		SELECT DISTINCT emp.employee_name, emp.reports_to, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
+		 		SELECT DISTINCT emp.name, emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 		 		WHERE
 		 	  		tSA.employee=emp.name
 		 		AND tSA.start_date='{date}'
@@ -446,14 +446,13 @@ def get_action_user(employee, shift):
 				Shift > Site > Project > Reports to
 		"""
 
-		Employee = frappe.get_doc("Employee", {"name":employee})
 		operations_shift = frappe.get_doc("Operations Shift", shift)
 		operations_site = frappe.get_doc("Operations Site", operations_shift.site)
 		project = frappe.get_doc("Project", operations_site.project)
-		report_to = get_employee_user_id(Employee.reports_to) if Employee.reports_to else ""
+		report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
 
 		if report_to:
-			action_user = report_to
+			action_user = get_employee_user_id(report_to)
 			Role = "Report To"
 		else:
 			if operations_shift.supervisor:
@@ -477,56 +476,17 @@ def get_action_user(employee, shift):
 
 		return action_user, Role
 
-def issue_penalties():
-	"""This function to issue penalty to employee if employee checkin late without Shift Permission to Arrive Late.
-	Also, if employee check out early withou Shift Permission to Leave Early
-	"""
-	#Define the constant
-	penalty_code_late_checkin = "102"
-	penalty_code_early_checkout="103"
-	date = cstr(getdate())
-
-	#Fetch the day's attendance
-	attendance_list = frappe.get_list("Attendance",{"attendance_date":date},["*"])
-
-	for attendance in attendance_list:
-		#fetch location of the shift.
-		location = get_location(attendance.operations_shift)
-
-		if location:
-			penalty_location = str(location[0].latitude)+","+str(location[0].longitude)
-		else:
-			penalty_location ="0,0"
-		
-		#Fetch Supervisor
-		action_user, Role = get_action_user(attendance.employee,attendance.operations_shift)
-		if Role:
-			issuing_user = get_notification_user(attendance.employee,attendance.operations_shift,Role) if get_notification_user(attendance.employee,attendance.operations_shift,Role) else get_employee_user_id(frappe.get_value("Employee",{"name":attendance.employee},['reports_to']))
-		else:
-			issuing_user= get_employee_user_id(frappe.get_value("Employee",{"name":attendance.employee},['reports_to']))
-		
-		#Check if Shift Permission exists.
-		shift_permission_late_entry = frappe.db.exists("Shift Permission",{'employee':attendance.employee,"date":date, "permission_type":"Arrive Late"})
-		shift_permission_early_exit = frappe.db.exists("Shift Permission",{'employee':attendance.employee,"date":date, "permission_type":"Leave Early"})
-		
-		if attendance.late_entry == 1 and not shift_permission_late_entry:
-			issue_penalty(attendance.employee, now_datetime(), penalty_code_late_checkin, attendance.operations_shift, issuing_user, penalty_location)
-		
-		if attendance.early_exit == 1 and not shift_permission_early_exit:
-			issue_penalty(attendance.employee, now_datetime(), penalty_code_early_checkout, attendance.operations_shift, issuing_user, penalty_location)
-
 @frappe.whitelist()
 def get_notification_user(employee, shift, Role):
 	"""
 			Shift > Site > Project > Reports to
 	"""
-	Employee = frappe.get_doc("Employee", {"name":employee})
 	operations_shift = frappe.get_doc("Operations Shift", shift)
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
 	project = frappe.get_doc("Project", operations_site.project)
 	project_manager = site_supervisor = shift_supervisor = None
 
-	report_to = get_employee_user_id(Employee.reports_to) if Employee.reports_to else ""
+	reports_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
 
 	if operations_site.project and project.account_manager and get_employee_user_id(project.account_manager) != operations_shift.owner:
 		project_manager = get_employee_user_id(project.account_manager)
@@ -535,7 +495,9 @@ def get_notification_user(employee, shift, Role):
 	elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owne:
 		shift_supervisor = get_employee_user_id(operations_shift.supervisor)
 
-	if Role == "Shift Supervisor" and site_supervisor and project_manager:
+	if Role == "Report To" and reports_to:
+		notify_user = [get_employee_user_id(reports_to)]
+	elif Role == "Shift Supervisor" and site_supervisor and project_manager:
 		notify_user = [site_supervisor,project_manager]
 	elif Role == "Site Supervisor" and project_manager:
 		notify_user = [project_manager]
