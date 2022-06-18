@@ -19,6 +19,7 @@ frappe.ui.form.on('ERF', {
 				}
 			};
 		});
+
 		set_shift_working_btn(frm);
 		set_driving_license_required_btn(frm);
 		set_is_uniform_needed_for_this_job_btn(frm);
@@ -37,6 +38,10 @@ frappe.ui.form.on('ERF', {
 		set_shift_hours_btn(frm);
 		set_travel_required_btn(frm);
 		set_open_to_different_btn(frm);
+		// close erf
+		if(!frm.is_new()){
+			loadJobOpening(frm);
+		}
 		document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
 		set_performance_profile_resource_btn(frm);
 		if(frm.doc.__onload && 'okr_workshop_with_full_name' in frm.doc.__onload){
@@ -997,3 +1002,26 @@ var set_salary_structure_to_salary_details = function(frm) {
 		});
 	}
 };
+
+
+// close job opening
+const closeJobOpening = frm => {
+	frappe.confirm('Are you sure you want to proceed?',
+    () => {
+        // action to perform if Yes is selected
+				frm.call('close_job_opening').then(res=>{
+					frm.refresh();
+				})
+    }, () => {
+        // action to perform if No is selected
+    })
+}
+
+
+const loadJobOpening = frm => {
+	frm.call('job_opening_status').then(res=>{
+		if (res.message.opening){
+			frm.add_custom_button(__('Close Job Opening'), () => closeJobOpening(frm)).addClass('btn-primary');
+		}
+	})
+}
