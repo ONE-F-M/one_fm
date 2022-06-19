@@ -696,7 +696,7 @@ def automatic_shift_assignment():
 	for schedule in roster:
 		create_shift_assignment(schedule, date)
 
-def end_previous_shifts(time):
+def end_previous_shifts():
 	shifts=frappe.get_list("Shift Assignment",  filters = {"end_date": ('is', 'not set')})
 	for shift in shifts:
 		doc = frappe.get_doc("Shift Assignment",shift.name)
