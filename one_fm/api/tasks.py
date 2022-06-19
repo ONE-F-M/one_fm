@@ -481,6 +481,10 @@ def issue_penalties():
 	"""This function to issue penalty to employee if employee checkin late without Shift Permission to Arrive Late.
 	Also, if employee check out early withou Shift Permission to Leave Early
 	"""
+	# check if issue_penalty is enabled in the setting
+	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'issue_penalty'):
+		return
+
 	#Define the constant
 	penalty_code_late_checkin = "102"
 	penalty_code_early_checkout="103"
@@ -555,6 +559,10 @@ def get_location(shift):
 	return location
 
 def checkin_deadline():
+
+	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'checkin_deadline'):
+		return
+
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	today = now_datetime().strftime("%Y-%m-%d")
 	shifts_list = get_active_shifts(now_time)
@@ -692,7 +700,7 @@ def end_previous_shifts():
 	shifts=frappe.get_list("Shift Assignment",  filters = {"end_date": ('is', 'not set')})
 	for shift in shifts:
 		doc = frappe.get_doc("Shift Assignment",shift.name)
-		doc.end_date = doc.start_date
+		doc.end_date = shift.start_date
 		doc.submit()
 
 def create_shift_assignment(schedule, date):
