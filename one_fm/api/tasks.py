@@ -481,6 +481,7 @@ def issue_penalties():
 	"""This function to issue penalty to employee if employee checkin late without Shift Permission to Arrive Late.
 	Also, if employee check out early withou Shift Permission to Leave Early
 	"""
+	# check if issue_penalty is enabled in the setting
 	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'issue_penalty'):
 		return
 
