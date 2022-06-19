@@ -689,50 +689,19 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.submit()
 	frappe.msgprint(_('A penalty has been issued against {0}'.format(employee_name)))
 
-def assign_am_shift():
+def automatic_shift_assignment():
 	date = cstr(getdate())
-	end_previous_shifts("AM")
-	roster = frappe.db.sql("""
-			SELECT * from `tabEmployee Schedule` ES
-			WHERE
-			ES.date = '{date}'
-			AND ES.employee_availability = "Working" 
-			AND ES.roster_type = "Basic"
-			AND ES.shift_type IN(
-				SELECT name from `tabShift Type` st 
-				WHERE st.start_time >= '00:00:00' 
-				AND  st.start_time < '12:00:00')
-	""".format(date=cstr(date)), as_dict=1)
+	end_previous_shifts()
+	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Basic"}, ["*"])
 	for schedule in roster:
-		frappe.enqueue(create_shift_assignment,schedule, date, is_async=True, queue='long')
-
-def assign_pm_shift():
-	date = cstr(getdate())
-	end_previous_shifts("PM")
-	roster = frappe.db.sql("""
-			SELECT * from `tabEmployee Schedule` ES
-			WHERE
-			ES.date = '{date}'
-			AND ES.employee_availability = "Working" 
-			AND ES.roster_type = "Basic"
-			AND ES.shift_type IN(
-				SELECT name from `tabShift Type` st 
-				WHERE st.start_time >= '12:00:00' 
-				AND  st.start_time < '00:00:00')
-	""".format(date=cstr(date)), as_dict=1)
-	for schedule in roster:
-		frappe.enqueue(create_shift_assignment,schedule, date, is_async=True, queue='long')
+		create_shift_assignment(schedule, date)
 
 def end_previous_shifts(time):
-	if time == "AM":
-		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "00:00"], "start_time": ["<", "12:00"]},['name'], pluck='name')
-	else:
-		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"], "start_time": ["<", "00:00"]},['name'], pluck='name')
-
-	shift_assignments = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'], ["shift_type", "IN", shift_type]], fields=['name','start_date'])
-
-	for shift_assignment in shift_assignments:
-		frappe.set_value("Shift Assignment", shift_assignment.name,'end_date',shift_assignment.start_date)
+	shifts=frappe.get_list("Shift Assignment",  filters = {"end_date": ('is', 'not set')})
+	for shift in shifts:
+		doc = frappe.get_doc("Shift Assignment",shift.name)
+		doc.end_date = shift.start_date
+		doc.submit()
 
 def create_shift_assignment(schedule, date):
 	if not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ], "status":"Active"}):
@@ -750,11 +719,6 @@ def create_shift_assignment(schedule, date):
 			shift_assignment.post_type = schedule.post_type
 			shift_assignment.post_abbrv = schedule.post_abbrv
 			shift_assignment.roster_type = schedule.roster_type
-			if frappe.db.exists("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]}):
-				shift_request, check_in_site, check_out_site = frappe.get_value("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]},["name","check_in_site","check_out_site"])
-				shift_assignment.shift_request = shift_request
-				shift_assignment.check_in_site = check_in_site
-				shift_assignment.check_out_site = check_out_site
 			shift_assignment.submit()
 		except Exception:
 				frappe.log_error(frappe.get_traceback())
