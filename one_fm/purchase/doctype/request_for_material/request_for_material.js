@@ -534,7 +534,7 @@ var set_item_field_property = function(frm) {
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
 	}
 	if(frm.doc.type == 'Stock'){
-		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
+//		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = false;
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = false;
 	}
