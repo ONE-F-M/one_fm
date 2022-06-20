@@ -288,7 +288,6 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "job_offer.project",
-   "fetch_if_empty": 1,
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
@@ -1182,7 +1181,6 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "job_offer.operations_shift",
-   "fetch_if_empty": 1,
    "fieldname": "operations_shift",
    "fieldtype": "Link",
    "label": "Operations Shift",
@@ -1191,7 +1189,6 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "job_offer.operations_site",
-   "fetch_if_empty": 1,
    "fieldname": "operations_site",
    "fieldtype": "Link",
    "label": "Operations Site",
@@ -1450,7 +1447,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-20 12:31:58.009526",
+ "modified": "2022-06-20 12:46:36.073212",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
