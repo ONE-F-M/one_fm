@@ -529,6 +529,27 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 		for es in employee_schedules:
 			item_hours += float(frappe.db.get_value("Operations Shift", {'name': es.shift}, ["duration"]))
 
+		# Get any absentees from previous month's invoice date till end of previous month
+
+		previous_invoice_date = cstr(add_to_date(invoice_date, months=-1))
+		previous_month_last_day = cstr(get_last_day(add_to_date(getdate(), months=-1)))
+		
+		att_filters = {
+			'project': project,
+			'post_type': ['in', post_type_list],
+			'status': 'Absent',
+			'attendance_date': ['between', (previous_invoice_date, previous_month_last_day)]
+		}
+
+		previous_attendances = frappe.db.get_list("Attendance", att_filters, ["operations_shift", "in_time", "out_time", "working_hours"])
+
+		for attendance in previous_attendances:
+			hours = 0
+			if attendance.operations_shift:
+				hours += float(frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"]))
+
+			item_hours -= hours
+
 	# If total item hours exceed expected hours, apply overtime rate on extra hours
 	if item_hours > expected_item_hours:
 		normal_amount = item_rate * expected_item_hours
