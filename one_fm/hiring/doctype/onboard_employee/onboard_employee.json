@@ -286,6 +286,7 @@
    "options": "Employee Grade"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "job_offer.project",
    "fetch_if_empty": 1,
    "fieldname": "project",
@@ -1179,6 +1180,7 @@
    "label": "MGRP Progress"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "job_offer.operations_shift",
    "fetch_if_empty": 1,
    "fieldname": "operations_shift",
@@ -1187,6 +1189,7 @@
    "options": "Operations Shift"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "job_offer.operations_site",
    "fetch_if_empty": 1,
    "fieldname": "operations_site",
@@ -1447,7 +1450,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-05-26 11:13:06.717307",
+ "modified": "2022-06-20 12:31:58.009526",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
