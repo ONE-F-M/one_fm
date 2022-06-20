@@ -634,6 +634,20 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 
 		item_days += employee_schedules
 
+		previous_invoice_date = cstr(add_to_date(invoice_date, months=-1))
+		previous_month_last_day = cstr(get_last_day(add_to_date(getdate(), months=-1)))
+		
+		att_filters = {
+			'project': project,
+			'post_type': ['in', post_type_list],
+			'status': 'Absent',
+			'attendance_date': ['between', (previous_invoice_date, previous_month_last_day)]
+		}
+
+		previous_attendances = frappe.db.get_list("Attendance", att_filters, ["operations_shift", "in_time", "out_time", "working_hours"])
+
+		item_days -= previous_attendances
+
 	# If total item days exceed expected days, apply overtime rate on extra days
 	if item_days > expected_item_days:
 		normal_amount = item_rate * expected_item_days
