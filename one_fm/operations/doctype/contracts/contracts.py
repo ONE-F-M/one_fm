@@ -31,12 +31,27 @@ class Contracts(Document):
 	@frappe.whitelist()
 	def generate_sales_invoice(self):
 		# if period, contract came from frontend else scheduler (use dnow())
+
+		curent_month = False
+		calculation_date = None
+		if str(self.month_of_invoice).lower() == "current month":
+			current_month = True
+			calculation_date = cstr(getdate())
+
+		elif str(self.month_of_invoice).lower() == "previous month":
+			calculation_date = add_to_date(getdate(), months=-1)
+
 		period = frappe.form_dict.period
-		date = period if period else cstr(getdate())
-		temp_invoice_year = date.split("-")[0]
-		temp_invoice_month = date.split("-")[1]
-		invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
-		sys_invoice_date = datetime.fromisoformat(invoice_date).date()
+		date = period if period else calculation_date
+
+		if str(self.due_date).lower() != "end of month":
+			temp_invoice_year = date.split("-")[0]
+			temp_invoice_month = date.split("-")[1]
+			invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
+		else:
+			invoice_date = cstr(getdate())
+		
+		# sys_invoice_date = datetime.fromisoformat(invoice_date).date()
 		last_day = get_last_day(date)
 		if datetime.today().date() < last_day:
 			contract_invoice_date = invoice_date
@@ -54,7 +69,7 @@ class Contracts(Document):
 
 		try:
 			if self.create_sales_invoice_as == "Single Invoice":
-				items_amounts = get_service_items_invoice_amounts(self, date)
+				items_amounts = get_service_items_invoice_amounts(self, date, current_month)
 				sales_invoice_doc.title = self.client + ' - ' + 'Single Invoice'
 
 				income_account = frappe.db.get_value("Project", self.project, ["income_account"])
@@ -92,7 +107,7 @@ class Contracts(Document):
 
 			if self.create_sales_invoice_as == "Separate Invoice for Each Site":
 				sales_invoice_docs = []
-				site_invoices = get_separate_invoice_for_sites(self, date)
+				site_invoices = get_separate_invoice_for_sites(self, date, current_month)
 				# get delivery note
 				delivery_note = get_delivery_note(self, date)
 
@@ -145,7 +160,7 @@ class Contracts(Document):
 				return sales_invoice_docs
 
 			if self.create_sales_invoice_as == "Separate Item Line for Each Site":
-				separate_site_items = get_single_invoice_for_separate_sites(self, date)
+				separate_site_items = get_single_invoice_for_separate_sites(self, date, current_month)
 				# get delivery note
 				delivery_note = get_delivery_note(self, date)
 				sales_invoice_doc.title = self.client + ' - ' + 'Item Lines'
@@ -394,7 +409,7 @@ def auto_renew_contracts():
 		contract_doc.save()
 		frappe.db.commit()
 
-def get_service_items_invoice_amounts(contract, date):
+def get_service_items_invoice_amounts(contract, date, current_month=False):
 	# use date args instead of system date
 	first_day_of_month = cstr(get_first_day(date))
 	last_day_of_month = cstr(get_last_day(date))
@@ -402,7 +417,10 @@ def get_service_items_invoice_amounts(contract, date):
 	temp_invoice_year = first_day_of_month.split("-")[0]
 	temp_invoice_month = first_day_of_month.split("-")[1]
 
-	invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(contract.due_date)
+	if str(contract.due_date).lower() != "end of month":
+		invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + contract.due_date
+	else:
+		invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + last_day_of_month.split("-")[2]
 
 	project = contract.project
 	contract_overtime_rate = contract.overtime_rate
@@ -416,20 +434,20 @@ def get_service_items_invoice_amounts(contract, date):
 			uom = str(item.uom)
 
 			if uom.lower() == "hourly":
-				data = get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate)
+				data = get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month)
 				master_data.append(data)
 
 			elif uom.lower() == "daily":
-				data = get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate)
+				data = get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month)
 				master_data.append(data)
 
 			elif uom.lower() == "monthly":
-				data = get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate)
+				data = get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month)
 				master_data.append(data)
 
 	return master_data
 
-def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site=None):
+def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month=False, site=None):
 	""" This method computes the total number of hours worked by employees for a particular service item by referring to
 		the attendance for days prior to invoice due date and employee schedules ahead of the invoice due date,
 		hence calculating the amount for the service amount.
@@ -462,12 +480,15 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 	# Get post types with sale item as item code
 	post_type_list = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
 
-	attendance_filters = {
-		'attendance_date': ['between', (first_day_of_month, add_to_date(invoice_date, days=-1))],
-		'post_type': ['in', post_type_list],
-		'project': project,
-		'status': "Present"
-	}
+	attendance_filters = {}
+	if current_month:
+		attendance_filters.update({'attendance_date': ['between', (first_day_of_month, add_to_date(invoice_date, days=-1))]})
+	else:
+		attendance_filters.update({'attendance_date': ['between', (first_day_of_month, last_day_of_month)]})
+
+	attendance_filters.update({'post_type': ['in', post_type_list]})
+	attendance_filters.update({'project': project})
+	attendance_filters.update({'status': "Present"})
 
 	if site:
 		attendance_filters.update({'site': site})
@@ -491,7 +512,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 		item_hours += hours
 
 	# Get employee schedules for remaining days of the month from the invoice due date if due date is before last day
-	if invoice_date < last_day_of_month:
+	if current_month and invoice_date < last_day_of_month:
 		es_filters = {
 			'project': project,
 			'post_type': ['in', post_type_list],
@@ -527,7 +548,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 		'amount': amount,
 	}
 
-def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site=None):
+def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month=False, site=None):
 	""" This method computes the total number of days worked by employees for a particular service item by referring to
 		the attendance for days prior to invoice due date and employee schedules ahead of the invoice due date,
 		hence calculating the amount for the service amount.
@@ -558,12 +579,15 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 	# Get post types with sale item as item code
 	post_type_list = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
 
-	attendance_filters = {
-		'attendance_date': ['between', (first_day_of_month, add_to_date(invoice_date, days=-1))],
-		'post_type': ['in', post_type_list],
-		'project': project,
-		'status': "Present"
-	}
+	attendance_filters = {}
+	if current_month:
+		attendance_filters.update({'attendance_date': ['between', (first_day_of_month, add_to_date(invoice_date, days=-1))]})
+	else:
+		attendance_filters.update({'attendance_date': ['between', (first_day_of_month, last_day_of_month)]})
+
+	attendance_filters.update({'post_type': ['in', post_type_list]})
+	attendance_filters.update({'project': project})
+	attendance_filters.update({'status': "Present"})
 
 	if site:
 		attendance_filters.update({'site': site})
@@ -574,7 +598,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 	item_days += attendances
 
 	# Get employee schedules for remaining days of the month from the invoice due date if due date is before last day
-	if invoice_date < last_day_of_month:
+	if current_month and invoice_date < last_day_of_month:
 		es_filters = {
 			'project': project,
 			'post_type': ['in', post_type_list],
@@ -610,7 +634,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 		'amount': amount,
 	}
 
-def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site=None):
+def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month=False, site=None):
 	""" This method computes the total number of hours worked by employees for a particular service item by referring to
 		the attendance for days prior to invoice due date and employee schedules ahead of the invoice due date.
 		If the number of days worked for this item is equal to the expected number of days, amount is directly applied as monthly rate.
@@ -643,12 +667,15 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 	# Get post types with sale item as item code
 	post_type_list = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
 
-	attendance_filters = {
-		'attendance_date': ['between', (first_day_of_month, add_to_date(invoice_date, days=-1))],
-		'post_type': ['in', post_type_list],
-		'project': project,
-		'status': "Present"
-	}
+	attendance_filters = {}
+	if current_month:
+		attendance_filters.update({'attendance_date': ['between', (first_day_of_month, add_to_date(invoice_date, days=-1))]})
+	else:
+		attendance_filters.update({'attendance_date': ['between', (first_day_of_month, last_day_of_month)]})
+
+	attendance_filters.update({'post_type': ['in', post_type_list]})
+	attendance_filters.update({'project': project})
+	attendance_filters.update({'status': "Present"})
 
 	if site:
 		attendance_filters.update({'site': site})
@@ -659,7 +686,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 	item_days += attendances
 
 	# Get employee schedules for remaining days of the month from the invoice due date if due date is before last day
-	if invoice_date < last_day_of_month:
+	if current_month and invoice_date < last_day_of_month:
 		es_filters = {
 			'project': project,
 			'post_type': ['in', post_type_list],
@@ -698,7 +725,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 		'amount': amount,
 	}
 
-def get_separate_invoice_for_sites(contract, date):
+def get_separate_invoice_for_sites(contract, date, current_month=False):
 	# use date args instead of system date
 	first_day_of_month = cstr(get_first_day(date))
 	last_day_of_month = cstr(get_last_day(date))
@@ -706,7 +733,10 @@ def get_separate_invoice_for_sites(contract, date):
 	temp_invoice_year = first_day_of_month.split("-")[0]
 	temp_invoice_month = first_day_of_month.split("-")[1]
 
-	invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + contract.due_date
+	if str(contract.due_date).lower() != "end of month":
+		invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + contract.due_date
+	else:
+		invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + last_day_of_month.split("-")[2]
 
 	project = contract.project
 	contract_overtime_rate = contract.overtime_rate
@@ -737,22 +767,22 @@ def get_separate_invoice_for_sites(contract, date):
 				if item_group.lower() == "service":
 
 					if item.uom == "Hourly":
-						item_data = get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
+						item_data = get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month, site.site)
 						site_item_amounts.append(item_data)
 
 					if item.uom == "Daily":
-						item_data = get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
+						item_data = get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month, site.site)
 						site_item_amounts.append(item_data)
 
 					if item.uom == "Monthly":
-						item_data = get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
+						item_data = get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month, site.site)
 						site_item_amounts.append(item_data)
 
 			invoices[site.site] = site_item_amounts
 
 	return invoices
 
-def get_single_invoice_for_separate_sites(contract, date):
+def get_single_invoice_for_separate_sites(contract, date, current_month=False):
 	# use date args instead of system date
 	first_day_of_month = cstr(get_first_day(date))
 	last_day_of_month = cstr(get_last_day(date))
@@ -760,7 +790,10 @@ def get_single_invoice_for_separate_sites(contract, date):
 	temp_invoice_year = first_day_of_month.split("-")[0]
 	temp_invoice_month = first_day_of_month.split("-")[1]
 
-	invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + contract.due_date
+	if str(contract.due_date).lower() != "end of month":
+		invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + contract.due_date
+	else:
+		invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + last_day_of_month.split("-")[2]
 
 	project = contract.project
 	contract_overtime_rate = contract.overtime_rate
@@ -789,15 +822,15 @@ def get_single_invoice_for_separate_sites(contract, date):
 				if item_group.lower() == "service":
 
 					if item.uom == "Hourly":
-						item_data = get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
+						item_data = get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month, site.site)
 						site_items[site.site] = item_data
 
 					if item.uom == "Daily":
-						item_data = get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
+						item_data = get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month, site.site)
 						site_items[site.site] = item_data
 
 					if item.uom == "Monthly":
-						item_data = get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, site.site)
+						item_data = get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month, invoice_date, contract_overtime_rate, current_month, site.site)
 						site_items[site.site] = item_data
 	return site_items
 
