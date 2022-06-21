@@ -34,6 +34,7 @@
   "start_date",
   "end_date",
   "due_date",
+  "month_of_invoice",
   "overtime_rate",
   "column_break_27",
   "invoice_output_format",
@@ -171,7 +172,7 @@
    "fieldname": "due_date",
    "fieldtype": "Select",
    "label": "Invoice Due Date",
-   "options": "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28"
+   "options": "5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\nEnd of Month"
   },
   {
    "fieldname": "invoice_output_format",
@@ -437,11 +438,17 @@
    "fieldtype": "Select",
    "label": "Create Auto Sales Invoice as",
    "options": "Single Invoice\nSeparate Item Line for Each Site\nSeparate Invoice for Each Site\nSeparate Item Line for Days of Work and Service Item\nInvoice for Full Amount in the Contract\nInvoice for Airport"
+  },
+  {
+   "fieldname": "month_of_invoice",
+   "fieldtype": "Select",
+   "label": "Month of Invoice",
+   "options": "Current Month\nPrevious Month"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-02-21 15:57:13.588811",
+ "modified": "2022-06-20 17:03:07.002247",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

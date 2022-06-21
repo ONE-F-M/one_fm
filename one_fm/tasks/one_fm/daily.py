@@ -1,6 +1,6 @@
 from datetime import datetime
 import frappe
-from frappe.utils import getdate, nowdate
+from frappe.utils import getdate, nowdate, get_last_day
 
 
 def generate_contracts_invoice():
@@ -9,11 +9,21 @@ def generate_contracts_invoice():
     """
     try:
         contracts = frappe.get_list('Contracts', filters={
-        'docstatus':1, 'workflow_state':'Active', 'due_date':str(datetime.today().date().day)
+            'docstatus':1, 
+            'workflow_state':'Active', 
+            # 'due_date':str(datetime.today().date().day)
         })
         # generate
-        for i in contracts:
-            contract = frappe.get_doc("Contracts", i.name).generate_sales_invoice()
+        for contract in contracts:
+            contract_doc = frappe.get_doc("Contracts", contract.name)
+            contract_due_date = contract_doc.due_date
+
+            if str(contract_due_date).lower() == "end of month" and getdate() == get_last_day(getdate()):
+                contract_doc.generate_sales_invoice()
+
+            elif contract_due_date == str(datetime.today().date().day):
+                contract_doc.generate_sales_invoice()
+
     except Exception as e:
         frappe.log(str(e), "Contracts Invoice")
 

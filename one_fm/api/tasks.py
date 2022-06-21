@@ -100,16 +100,16 @@ def checkin_checkout_reminder():
 				""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 				if len(recipients) > 0:
-					
+
 					notification_title = _("Checkin reminder")
 					notification_body = _("Don't forget to checkin!")
-					
+
 					for recipient in recipients:
 
 						# Get Employee ID and User Role for the given recipient
 						employee_id = recipient.name
 						user_roles = frappe.get_roles(recipient.user_id)
-						
+
 						# Send push notifications
 						if "Head Office Employee" in user_roles:
 							# Arrive late option is true only if the employee has the user role "Head Office Employee".
@@ -117,7 +117,7 @@ def checkin_checkout_reminder():
 						else:
 							push_notification_rest_api_for_checkin(employee_id, notification_title, notification_body, checkin=True, arriveLate=False, checkout=False)
 
-			
+
 			# current time == shift end time => Checkout
 			if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
 				recipients = frappe.db.sql("""
@@ -149,16 +149,16 @@ def checkin_checkout_reminder():
 				""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
 
 				if len(recipients) > 0:
-					
+
 					notification_title = _("Checkout reminder")
 					notification_body = _("Don't forget to checkout!")
-					
+
 					for recipient in recipients:
 
 						# Get Employee ID and User Role for the given recipient
 						employee_id = recipient.name
 						user_roles = frappe.get_roles(recipient.user_id)
-						
+
 						push_notification_rest_api_for_checkin(employee_id, notification_title, notification_body, checkin=False, arriveLate=False, checkout=True)
 
 	except Exception as error:
@@ -497,21 +497,21 @@ def issue_penalties():
 			penalty_location = str(location[0].latitude)+","+str(location[0].longitude)
 		else:
 			penalty_location ="0,0"
-		
+
 		#Fetch Supervisor
 		action_user, Role = get_action_user(attendance.employee,attendance.operations_shift)
 		if Role:
 			issuing_user = get_notification_user(attendance.employee,attendance.operations_shift,Role) if get_notification_user(attendance.employee,attendance.operations_shift,Role) else get_employee_user_id(frappe.get_value("Employee",{"name":attendance.employee},['reports_to']))
 		else:
 			issuing_user= get_employee_user_id(frappe.get_value("Employee",{"name":attendance.employee},['reports_to']))
-		
+
 		#Check if Shift Permission exists.
 		shift_permission_late_entry = frappe.db.exists("Shift Permission",{'employee':attendance.employee,"date":date, "permission_type":"Arrive Late"})
 		shift_permission_early_exit = frappe.db.exists("Shift Permission",{'employee':attendance.employee,"date":date, "permission_type":"Leave Early"})
-		
+
 		if attendance.late_entry == 1 and not shift_permission_late_entry:
 			issue_penalty(attendance.employee, now_datetime(), penalty_code_late_checkin, attendance.operations_shift, issuing_user, penalty_location)
-		
+
 		if attendance.early_exit == 1 and not shift_permission_early_exit:
 			issue_penalty(attendance.employee, now_datetime(), penalty_code_early_checkout, attendance.operations_shift, issuing_user, penalty_location)
 
@@ -594,7 +594,7 @@ def checkin_deadline():
 				AND empChkin.shift_type='{shift_type}')
 				AND tSA.start_date
 				NOT IN(SELECT holiday_date from `tabHoliday` h
-				WHERE 
+				WHERE
 					h.parent = emp.holiday_list
 				AND h.holiday_date = '{date}')
 			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
@@ -729,7 +729,8 @@ def end_previous_shifts(time):
 		doc.submit()
 
 def create_shift_assignment(schedule, date):
-	if not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ], "status":"Active"}):
+	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ], "status":"Active"}) and
+			frappe.db.exists('Employee', {'employee':schedule.employee, 'status':'Active'})):
 		try:
 			shift_assignment = frappe.new_doc("Shift Assignment")
 			shift_assignment.start_date = date

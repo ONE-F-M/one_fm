@@ -2,6 +2,9 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Employee Schedule', {
+	refresh: frm => {
+		filter_active_employee(frm);
+	},
 	shift : function(frm) {
 		let {shift} = frm.doc;
 		if(shift){
@@ -11,7 +14,18 @@ frappe.ui.form.on('Employee Schedule', {
 					filters: {shift}
 				};
 			});
-			
+
 		}
 	}
 });
+
+
+function filter_active_employee(frm){
+	frm.set_query('employee', () => {
+		return {
+				filters: {
+						status: 'Active'
+				}
+		}
+	})
+}
