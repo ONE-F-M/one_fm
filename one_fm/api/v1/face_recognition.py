@@ -193,7 +193,15 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if not shift or len(shift) == 0:
             return response("Resource Not Found", 400, None, "User not assigned to a shift.")
 
-        site = frappe.get_value("Operations Shift", shift.shift, "site")
+        if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
+            check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
+            if log_type == "IN":
+                site = check_in_site
+            else:
+                site = check_out_site
+        else:
+            site = frappe.get_value("Operations Shift", shift.shift, "site")
+                
         location = frappe.db.sql("""
             SELECT loc.latitude, loc.longitude, loc.geofence_radius
             FROM `tabLocation` as loc
