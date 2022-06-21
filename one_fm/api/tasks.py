@@ -61,13 +61,13 @@ def checkin_checkout_reminder():
 			return
 
 		# Get current date and time
-		date = getdate()
 		now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 
 		# Get list of active shifts
 		shifts_list = get_active_shifts(now_time)
 
 		for shift in shifts_list:
+			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 
 			# Current time == shift start time => Checkin
 			if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
@@ -171,10 +171,10 @@ def checkin_checkout_final_reminder():
 
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
-	date = getdate()
 
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
+		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		# shift_start is equal to now time - notification reminder in mins
 		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
