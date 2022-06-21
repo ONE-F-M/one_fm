@@ -130,7 +130,7 @@ def get_leave_types(employee_id: str = None) -> dict:
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
-        leave_types_set = {}
+        leave_types_set = set()
         leave_type_list = frappe.get_list("Leave Allocation", {"employee": employee}, 'leave_type')
         
         if not leave_type_list or len(leave_type_list) == 0:
