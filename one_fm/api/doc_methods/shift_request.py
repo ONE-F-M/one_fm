@@ -28,6 +28,9 @@ def shift_request_submit(self):
 @frappe.whitelist()
 def fetch_approver(employee):
 	if employee:
+		if frappe.db.exists("Employee", employee,["reports_to"]):
+			return frappe.get_value("Employee", employee,["reports_to"])
+			
 		shift, department = frappe.get_value("Employee", employee, ["shift","department"])
 		if shift:
 			shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")

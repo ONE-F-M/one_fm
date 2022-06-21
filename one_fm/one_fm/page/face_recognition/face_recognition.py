@@ -126,8 +126,8 @@ def user_within_site_geofence(employee, log_type, user_latitude, user_longitude)
 	shift = get_current_shift(employee)
 	date = cstr(getdate())
 	if shift and shift.shift:
-		if frappe.db.exists("Shift Request", {"employee":employee, "from_date": ['>=', date], "to_date": ['<=', date]}):
-			check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, "from_date": ['>=', date], "to_date": ['>=', date]},["check_in_site","check_out_site"])
+		if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
+			check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
 			if log_type == "IN":
 				site = check_in_site
 			else:
