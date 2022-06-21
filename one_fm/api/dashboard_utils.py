@@ -54,7 +54,7 @@ def get_open_count(doctype, name, links):
 
 
 @frappe.whitelist()
-def get_employee_shift(employee_id, date_type='month')):
+def get_employee_shift(employee_id, date_type='month'):
 	"""
 		Fetch employee information relating to
 		leave_balance, shift, penalties and attendance
