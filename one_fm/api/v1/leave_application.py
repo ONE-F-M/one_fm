@@ -216,7 +216,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         
         
         # Approve leave application for "Sick Leave"
-        if leave_type == "Sick Leave":
+        if str(leave_type).lower() == "sick leave":
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Approved", reason, leave_approver)
             doc.submit()
             frappe.db.commit()
