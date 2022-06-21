@@ -644,7 +644,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 			'attendance_date': ['between', (previous_invoice_date, previous_month_last_day)]
 		}
 
-		previous_attendances = frappe.db.get_list("Attendance", att_filters, ["operations_shift", "in_time", "out_time", "working_hours"])
+		previous_attendances = len(frappe.db.get_list("Attendance", att_filters, ["operations_shift", "in_time", "out_time", "working_hours"]))
 
 		item_days -= previous_attendances
 
@@ -745,7 +745,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 			'attendance_date': ['between', (previous_invoice_date, previous_month_last_day)]
 		}
 
-		previous_attendances = frappe.db.get_list("Attendance", att_filters, ["operations_shift", "in_time", "out_time", "working_hours"])
+		previous_attendances = len(frappe.db.get_list("Attendance", att_filters, ["operations_shift", "in_time", "out_time", "working_hours"]))
 
 		item_days -= previous_attendances
 
