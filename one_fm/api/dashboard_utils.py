@@ -101,9 +101,8 @@ def get_employee_shift(employee_id, date_type='month'):
 		    order_by='modified desc',
 		 	)[0].count
 			penalties = frappe.db.sql(f"""
-				SELECT COUNT(*) as count, pi.name, pie.employee_id
-				FROM `tabPenalty Issuance Employees` pie
-				JOIN `tabPenalty Issuance` pi ON pie.parent=pi.name
+				SELECT COUNT(*) as count, pi.name, pi.recipient_user
+				JOIN `tabPenalty` pi ON pie.parent=pi.name
 				WHERE pie.employee_id="{employee.name}" AND pi.docstatus=1
 				AND pi.issuing_time BETWEEN "{_start} 00:00:00" AND "{_end} 23:59:59";
 			""", as_dict=1)[0].count
