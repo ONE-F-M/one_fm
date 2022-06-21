@@ -696,7 +696,7 @@ def assign_am_shift():
 				AND  st.start_time < '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
 	for schedule in roster:
-		frappe.enqueue(create_shift_assignment,schedule, date, is_async=True, queue='long')
+		frappe.enqueue(create_shift_assignment,schedule = schedule, date = date, is_async=True, queue='long')
 
 def assign_pm_shift():
 	date = cstr(getdate())
@@ -713,7 +713,7 @@ def assign_pm_shift():
 				AND  st.start_time < '00:00:00')
 	""".format(date=cstr(date)), as_dict=1)
 	for schedule in roster:
-		frappe.enqueue(create_shift_assignment,schedule, date, is_async=True, queue='long')
+		frappe.enqueue(create_shift_assignment,schedule = schedule, date = date, is_async=True, queue='long')
 
 def end_previous_shifts(time):
 	if time == "AM":
