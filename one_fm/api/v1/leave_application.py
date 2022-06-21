@@ -46,9 +46,9 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
                 return response("Resource Not Found", 404, None, "No leaves found for {employee_id}".format(employee_id=employee_id))
         
         elif leave_id:
-            leave_data = frappe.db.get_value("Leave Application",{'name': leave_id}, ["*"] )
+            leave_data = frappe.get_doc("Leave Application", leave_id)
             if leave_data:
-                return response("Success", 200, leave_data)
+                return response("Success", 200, leave_data.as_dict())
             else:
                 return response("Resource Not Found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
     
