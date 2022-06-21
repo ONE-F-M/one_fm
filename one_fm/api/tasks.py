@@ -476,6 +476,44 @@ def get_action_user(employee, shift):
 
 		return action_user, Role
 
+def issue_penalties():
+	"""This function to issue penalty to employee if employee checkin late without Shift Permission to Arrive Late.
+	Also, if employee check out early withou Shift Permission to Leave Early
+	"""
+	#Define the constant
+	penalty_code_late_checkin = "102"
+	penalty_code_early_checkout="103"
+	date = cstr(getdate())
+
+	#Fetch the day's attendance
+	attendance_list = frappe.get_list("Attendance",{"attendance_date":date},["*"])
+
+	for attendance in attendance_list:
+		#fetch location of the shift.
+		location = get_location(attendance.operations_shift)
+
+		if location:
+			penalty_location = str(location[0].latitude)+","+str(location[0].longitude)
+		else:
+			penalty_location ="0,0"
+
+		#Fetch Supervisor
+		action_user, Role = get_action_user(attendance.employee,attendance.operations_shift)
+		if Role:
+			issuing_user = get_notification_user(attendance.employee,attendance.operations_shift,Role) if get_notification_user(attendance.employee,attendance.operations_shift,Role) else get_employee_user_id(frappe.get_value("Employee",{"name":attendance.employee},['reports_to']))
+		else:
+			issuing_user= get_employee_user_id(frappe.get_value("Employee",{"name":attendance.employee},['reports_to']))
+
+		#Check if Shift Permission exists.
+		shift_permission_late_entry = frappe.db.exists("Shift Permission",{'employee':attendance.employee,"date":date, "permission_type":"Arrive Late"})
+		shift_permission_early_exit = frappe.db.exists("Shift Permission",{'employee':attendance.employee,"date":date, "permission_type":"Leave Early"})
+
+		if attendance.late_entry == 1 and not shift_permission_late_entry:
+			issue_penalty(attendance.employee, now_datetime(), penalty_code_late_checkin, attendance.operations_shift, issuing_user, penalty_location)
+
+		if attendance.early_exit == 1 and not shift_permission_early_exit:
+			issue_penalty(attendance.employee, now_datetime(), penalty_code_early_checkout, attendance.operations_shift, issuing_user, penalty_location)
+
 @frappe.whitelist()
 def get_notification_user(employee, shift, Role):
 	"""
