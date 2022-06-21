@@ -54,12 +54,13 @@ def get_open_count(doctype, name, links):
 
 
 @frappe.whitelist()
-def get_employee_shift(employee_id, date_type='month'):
+def get_employee_shift():
 	"""
 		Fetch employee information relating to
 		leave_balance, shift, penalties and attendance
 	"""
-
+	employee_id = "HR-EMP-00001"
+	date_type='month'
 	# prepare dates
 	today = datetime.today()
 	_start = today.replace(day=1).date()
@@ -101,11 +102,11 @@ def get_employee_shift(employee_id, date_type='month'):
 		    order_by='modified desc',
 		 	)[0].count
 			penalties = frappe.db.sql(f"""
-				SELECT COUNT(*) as count, pi.name, pie.employee_id
-				FROM `tabPenalty Issuance Employees` pie
-				JOIN `tabPenalty Issuance` pi ON pie.parent=pi.name
-				WHERE pie.employee_id="{employee.name}" AND pi.docstatus=1
-				AND pi.issuing_time BETWEEN "{_start} 00:00:00" AND "{_end} 23:59:59";
+				SELECT COUNT(*) as count
+				FROM `tabPenalty` p
+				WHERE p.recipient_employee="{employee.name}"
+				AND p.workflow_state = 'Penalty Accepted'
+				AND p.penalty_issuance_time BETWEEN "{_start} 00:00:00" AND "{_end} 23:59:59";
 			""", as_dict=1)[0].count
 			# get leav balance filters
 			filters=frappe._dict({'from_date':_start, 'to_date':_end, 'employee':employee.name})
