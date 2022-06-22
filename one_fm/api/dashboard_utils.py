@@ -65,6 +65,10 @@ def get_employee_shift(employee_id, date_type='month'):
 	_start = today.replace(day=1).date()
 	_end = today.replace(day = calendar.monthrange(today.year, today.month)[1]).date()
 	
+	if(date_type=='year'):
+		_start = date(today.year, 1, 31)
+		_end = date(today.year, 12, 31)
+		
 	penalty_start_date = date(today.year-1, today.month, today.day+1)
 	penalty_end_date = date(today.year, today.month, today.day)
 
