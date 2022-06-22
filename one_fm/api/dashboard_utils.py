@@ -64,9 +64,9 @@ def get_employee_shift(employee_id, date_type='month'):
 	today = datetime.today()
 	_start = today.replace(day=1).date()
 	_end = today.replace(day = calendar.monthrange(today.year, today.month)[1]).date()
-	if(date_type=='year'):
-		_start = date(today.year, 1, 31)
-		_end = date(today.year, 12, 31)
+	
+	penalty_start_date = date(today.year-1, today.month, today.day+1)
+	penalty_end_date = date(today.year, today.month, today.day)
 
 	data = {
 		"leave_balance": "",
@@ -105,7 +105,7 @@ def get_employee_shift(employee_id, date_type='month'):
 				FROM `tabPenalty` p
 				WHERE p.recipient_employee="{employee.name}"
 				AND p.workflow_state = 'Penalty Accepted'
-				AND p.penalty_issuance_time BETWEEN "{_start} 00:00:00" AND "{_end} 23:59:59";
+				AND p.penalty_issuance_time BETWEEN "{penalty_start_date} 00:00:00" AND "{penalty_end_date} 23:59:59";
 			""", as_dict=1)[0].count
 			# get leav balance filters
 			filters=frappe._dict({'from_date':_start, 'to_date':_end, 'employee':employee.name})
