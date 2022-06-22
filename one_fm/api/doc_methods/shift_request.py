@@ -25,11 +25,34 @@ def shift_request_submit(self):
 		assignment_doc.submit()
 		frappe.db.commit()
 
+def validate_approver(self):
+	shift, department = frappe.get_value("Employee", self.employee, ["shift","department"])
+	
+	approvers = frappe.db.sql(
+		"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
+		(department),
+	)
+
+	approvers = [approver[0] for approver in approvers]
+	
+	if frappe.db.exists("Employee", self.employee,["reports_to"]):
+		report_to = frappe.get_value("Employee", self.employee,["reports_to"])
+		approvers.append(frappe.get_value("Employee", report_to, "user_id"))
+	
+	
+	if shift:
+			shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")
+			approvers.append(frappe.get_value("Employee", shift_supervisor, "user_id"))
+	
+	if self.approver not in approvers:
+		frappe.throw(_("Only Approvers can Approve this Request."))
+
 @frappe.whitelist()
 def fetch_approver(employee):
 	if employee:
 		if frappe.db.exists("Employee", employee,["reports_to"]):
-			return frappe.get_value("Employee", employee,["reports_to"])
+			report_to = frappe.get_value("Employee", employee,["reports_to"])
+			return frappe.get_value("Employee", report_to, "user_id")
 			
 		shift, department = frappe.get_value("Employee", employee, ["shift","department"])
 		if shift:
