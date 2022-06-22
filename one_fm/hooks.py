@@ -88,6 +88,7 @@ doctype_js = {
 	"Help Article": "public/js/doctype_js/help_article.js",
 	"Attendance Request": "public/js/doctype_js/attendance_request.js",
 	"Shift Request": "public/js/doctype_js/shift_request.js",
+	"Shift Assignment": "public/js/doctype_js/shift_assignment.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -327,6 +328,11 @@ doc_events = {
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
 		],
 	},
+	"Shift Assignment":{
+		"before_insert":[
+			"one_fm.tasks.erpnext.shift_assignment.before_insert"
+		]
+	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
@@ -540,7 +546,13 @@ scheduler_events = {
 		],
 		"30 0 1 * *": [
 			'one_fm.tasks.one_fm.monthly.execute'
-		]
+		],
+		"0 0 * * *": [
+			'one_fm.api.tasks.assign_am_shift'
+		],
+		"0 12 * * *": [
+			'one_fm.api.tasks.assign_pm_shift'
+		],
 	}
 }
 

@@ -152,12 +152,22 @@ class ERF(Document):
 		self.validate_recruiter_assigned()
 		self.notify_approver()
 
+	@frappe.whitelist()
+	def job_opening_status(self):
+		data = len(frappe.db.get_list('Job Opening', filters={
+			'one_fm_erf':self.name, 'status':'Open', 'publish':1
+		}))
+		return {'opening': data}
+
+	@frappe.whitelist()
 	def close_job_opening(self):
 		job_openings = frappe.db.get_list("Job Opening", filters={'one_fm_erf':self.name})
 		for row in job_openings:
 			job_opening = frappe.get_doc("Job Opening", row.name)
 			job_opening.db_set('publish', 0)
 			job_opening.db_set('status', 'Closed')
+
+		frappe.msgprint('Job Opening Closed')
 
 	def validate_submit_to_hr(self):
 		if not self.draft_erf_to_hrm and self.docstatus == 1:

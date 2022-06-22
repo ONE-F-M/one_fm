@@ -46,9 +46,9 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
                 return response("Resource Not Found", 404, None, "No leaves found for {employee_id}".format(employee_id=employee_id))
         
         elif leave_id:
-            leave_data = frappe.db.get_value("Leave Application",{'name': leave_id}, ["*"] )
+            leave_data = frappe.get_doc("Leave Application", leave_id)
             if leave_data:
-                return response("Success", 200, leave_data)
+                return response("Success", 200, leave_data.as_dict())
             else:
                 return response("Resource Not Found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
     
@@ -130,7 +130,7 @@ def get_leave_types(employee_id: str = None) -> dict:
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
-        leave_types_set = {}
+        leave_types_set = set()
         leave_type_list = frappe.get_list("Leave Allocation", {"employee": employee}, 'leave_type')
         
         if not leave_type_list or len(leave_type_list) == 0:
@@ -217,7 +217,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         if not leave_approver:
             return response("Resource Not Found", 404, None, "No leave approver found for {employee}.".format(employee=employee_id))
         
-        if frappe.db.exists("Leave Application", filters={'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
+        if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
             return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
         
         attachment_path = None
@@ -242,6 +242,8 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
 
 
         # Approve leave application for "Sick Leave"
+        if str(leave_type).lower() == "sick leave":
+            doc = new_leave_application(employee, from_date, to_date, leave_type, "Approved", reason, leave_approver)
         if leave_type == "Sick Leave":
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Approved", reason, leave_approver, attachment_path)
             doc.submit()
