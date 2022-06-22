@@ -200,40 +200,43 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
         external_work_history.total_experience = exp_in_month / 12
 
 def employee_after_insert(doc, method):
-    create_salary_structure_assignment(doc, method)
-    update_erf_close_with(doc)
-    create_wp_for_transferable_employee(doc)
-    create_leave_policy_assignment(doc)
-    create_employee_user(doc)
+	create_salary_structure_assignment(doc, method)
+	update_erf_close_with(doc)
+	create_wp_for_transferable_employee(doc)
+	create_leave_policy_assignment(doc)
+	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_generate_employee_id_on_employee_creation") and not doc.employee_id:
+		generate_employee_id(doc)
+	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
+		create_employee_user_from_employee_id(doc)
 
 
-def create_employee_user(doc):
-    """
-        Create user account for employee if no user_id or employee while importing
-    """
-    try:
-        if not doc.employee_id:
-            generate_employee_id(doc)
-        if (not doc.user_id):
-            doc.reload()
-            user = frappe.get_doc({
-                'doctype':'User',
-                'email':f"{doc.employee_id.upper()}@one-fm.com",
-                'first_name':doc.first_name,
-                'last_name':doc.last_name,
-                'role_profile_name': 'Only Employee',
-                'gender':doc.gender,
-                'date_of_birth':doc.date_of_birth,
-                'send_welcome_email': 0,
-                'enabled':1,
-            })
-            user.insert(ignore_permissions=True)
-            doc.db_set("user_id", user.name)
-            doc.db_set("create_user_permission", 1)
-            doc.reload()
-            pass
-    except Exception as e:
-        frappe.log_error(str(e), 'CREATE USER')
+def create_employee_user_from_employee_id(doc):
+	"""
+	Create user account for employee if no user_id or employee while importing
+	"""
+	try:
+		if not doc.employee_id:
+			generate_employee_id(doc)
+		if not doc.user_id and doc.employee_id:
+			doc.reload()
+			user = frappe.get_doc({
+				'doctype':'User',
+				'email':f"{doc.employee_id.upper()}@one-fm.com",
+				'first_name':doc.first_name,
+				'last_name':doc.last_name,
+				'gender':doc.gender,
+				'date_of_birth':doc.date_of_birth,
+				'send_welcome_email': 0,
+				'enabled':1,
+			})
+			user.insert(ignore_permissions=True)
+			user.add_roles("Employee", "Employee Self Service")
+			doc.db_set("user_id", user.name)
+			doc.db_set("create_user_permission", 1)
+			doc.reload()
+			pass
+	except Exception as e:
+		frappe.log_error(str(e), 'CREATE USER')
 
 def generate_employee_id(doc):
     """
@@ -788,3 +791,20 @@ def set_job_opening_erf_missing_values(doc, method):
             set_erf_skills_in_job_opening(doc, erf)
         if not doc.one_fm_languages:
             set_erf_language_in_job_opening(doc, erf)
+
+def get_employee_record_exists_for_job_offer_or_job_applicant(job_offer=False, job_applicant=False, status='Active'):
+	"""
+		Method used to get employee record exists against a job offer or a job applicant
+		args:
+			job_offer: name of Job Offer record
+			job_applicant: name of Job Applicant record
+			status: status of the employee record
+		return:
+			employee record id, if exists
+	"""
+	employee = False
+	if job_applicant:
+		employee = frappe.db.get_value("Employee", {"job_applicant": job_applicant, "status": status}, "name")
+	elif job_offer:
+		employee = frappe.db.get_value("Employee", {"job_offer": job_offer, "status": status}, "name")
+	return employee

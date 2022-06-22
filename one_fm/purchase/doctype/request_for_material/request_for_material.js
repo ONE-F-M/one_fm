@@ -6,7 +6,6 @@
 
 frappe.ui.form.on('Request for Material', {
 	setup: function(frm) {
-		// hideItemField(frm);
 		// formatter for material request item
 		frm.set_indicator_formatter('item_code',
 			function(doc) { return (doc.qty<=doc.ordered_qty) ? "green" : "orange"; });
@@ -36,7 +35,7 @@ frappe.ui.form.on('Request for Material', {
 		set_item_field_property(frm);
 	},
 	onload: function(frm) {
-		// hideItemField(frm);
+
 		erpnext.utils.add_item(frm);
 		if(!frm.doc.requested_by){
 			frm.set_value('requested_by', frappe.session.user);
@@ -51,11 +50,9 @@ frappe.ui.form.on('Request for Material', {
 		};
 	},
 	onload_post_render: function(frm) {
-		// hideItemField(frm);
 		frm.get_field("items").grid.set_multiple_add("item_code", "qty");
 	},
 	refresh: function(frm) {
-		// 	hideItemField(frm);
 		frm.events.make_custom_buttons(frm);
 		set_item_field_property(frm);
 		let status = ['Draft', 'Accepted', 'Approved', 'Rejected', 'Transferred'];
@@ -85,19 +82,14 @@ frappe.ui.form.on('Request for Material', {
 
 	},
 	items_on_form_rendered: (frm) => {
-		hideItemField(frm);
 	},
 	before_items_remove: (frm) => {
-		hideItemField(frm);
 	},
 	items_add: (frm) => {
-		hideItemField(frm);
 	},
 	items_remove: (frm) => {
-		hideItemField(frm);
 	},
 	items_move: (frm) => {
-		hideItemField(frm);
 	},
 	// after_save: function(frm){
 	// 	let item_changes =
@@ -429,19 +421,14 @@ frappe.ui.form.on('Request for Material', {
 
 frappe.ui.form.on('Request for Material Item', { // The child table is defined in a DoctType called "Dynamic Link"
 	items_on_form_rendered: (frm) => {
-		hideItemField(frm);
 	},
 	before_items_remove: (frm) => {
-		hideItemField(frm);
 	},
 	items_add: (frm) => {
-		hideItemField(frm);
 	},
 	items_remove: (frm) => {
-		hideItemField(frm);
 	},
 	items_move: (frm) => {
-		hideItemField(frm);
 	},
 });
 
@@ -547,7 +534,7 @@ var set_item_field_property = function(frm) {
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
 	}
 	if(frm.doc.type == 'Stock'){
-		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
+//		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = false;
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = false;
 	}

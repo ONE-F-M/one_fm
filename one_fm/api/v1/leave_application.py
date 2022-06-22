@@ -145,7 +145,7 @@ def get_leave_types(employee_id: str = None) -> dict:
         return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
-def create_new_leave_application(employee_id: str = None, from_date: str = None, to_date: str = None, leave_type: str = None, reason: str = None) -> dict:
+def create_new_leave_application(employee_id: str = None, from_date: str = None, to_date: str = None, leave_type: str = None, reason: str = None, proof_document = {}) -> dict:
     """[summary]
 
     Args:
@@ -199,8 +199,14 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
     if not isinstance(reason, str):
         return response("Bad Request", 400, None, "reason must be of type str.")
 
+    if proof_document_required_for_leave_type(leave_type) and not proof_document:
+        return response('Leave type requires a proof_document.', {}, 400)
     
     try:
+        from pathlib import Path
+        import hashlib
+        import base64, json
+
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
@@ -214,22 +220,44 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
             return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
         
-        
+        attachment_path = None
+        if proof_document_required_for_leave_type(leave_type):
+            proof_doc_json = json.loads(proof_document)
+            attachment = proof_doc_json['attachment']
+            attachment_name = proof_doc_json['attachment_name']
+
+            if not attachment or not attachment_name:
+                return response('proof_document key requires attachment and attachment_name', {}, 400)
+
+            file_ext = "." + attachment_name.split(".")[-1]
+            content = base64.b64decode(attachment)
+            filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
+
+            Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}").mkdir(parents=True, exist_ok=True)
+            OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}/{filename}"
+            with open(OUTPUT_FILE_PATH, "wb") as fh:
+                fh.write(content)
+
+            attachment_path = f"/files/leave-application/{frappe.session.user}/{filename}"
+
+
         # Approve leave application for "Sick Leave"
         if str(leave_type).lower() == "sick leave":
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Approved", reason, leave_approver)
+        if leave_type == "Sick Leave":
+            doc = new_leave_application(employee, from_date, to_date, leave_type, "Approved", reason, leave_approver, attachment_path)
             doc.submit()
             frappe.db.commit()
             return response("Success", 201, doc)
 
         else:
-            doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver)
+            doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
             return response("Success", 201, doc)
     
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str) -> dict:
+def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachment_path = None) -> dict:
     leave = frappe.new_doc("Leave Application")
     leave.employee=employee
     leave.leave_type=leave_type
@@ -239,6 +267,8 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.follow_via_email=1
     leave.status=status
     leave.leave_approver = leave_approver
+    if attachment_path:
+        leave.proof_document = attachment_path
     leave.save()
     frappe.db.commit()
     return leave.as_dict()
@@ -267,3 +297,10 @@ def get_leave_approver(employee: str) -> str:
                 return operation_manager_user_id
     
     return leave_approver
+
+
+def proof_document_required_for_leave_type(leave_type):
+    if int(frappe.db.get_value("Leave Type", {'name': leave_type}, "is_proof_document_required")):
+        return True
+
+    return False

@@ -1,8 +1,9 @@
 import frappe, ast, base64, time
 from frappe import _
-from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee
+from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.api.v1.utils import get_current_shift
 from one_fm.api.v1.utils import response
+from frappe.utils import cstr, getdate
 import grpc
 import json
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
@@ -185,6 +186,12 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         from one_fm.api.doc_events import haversine
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        date = cstr(getdate())
+        log = check_existing()
+        if log == True:
+            log_type = "IN"
+        else:
+            log_type = "OUT"
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
@@ -193,7 +200,15 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if not shift or len(shift) == 0:
             return response("Resource Not Found", 400, None, "User not assigned to a shift.")
 
-        site = frappe.get_value("Operations Shift", shift.shift, "site")
+        if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
+            check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
+            if log_type == "IN":
+                site = check_in_site
+            else:
+                site = check_out_site
+        else:
+            site = frappe.get_value("Operations Shift", shift.shift, "site")
+                
         location = frappe.db.sql("""
             SELECT loc.latitude, loc.longitude, loc.geofence_radius
             FROM `tabLocation` as loc
