@@ -168,7 +168,7 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 			verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
 		
 		result = {
-			"message": "Password reset instructions sent via {otp_source}",
+			"message": "Password reset instructions sent via {otp_source}".format(otp_source=otp_source),
 			"temp_id": tmp_id
 		}
 
