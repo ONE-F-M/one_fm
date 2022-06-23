@@ -88,8 +88,8 @@ def verify():
 
 		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
 
-		if not user_within_site_geofence(employee, log_type, latitude, longitude):
-			frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
+		# if not user_within_site_geofence(employee, log_type, latitude, longitude):
+		# 	frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
 
 		# Get user video
 		content_bytes = file.stream.read()
