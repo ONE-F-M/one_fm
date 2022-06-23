@@ -734,13 +734,6 @@ def end_previous_shifts(time):
 	for shift_assignment in shift_assignments:
 		frappe.set_value("Shift Assignment", shift_assignment.name,'end_date',shift_assignment.start_date)
 
-def end_previous_shifts():
-	shifts=frappe.get_list("Shift Assignment",  filters = {"end_date": ('is', 'not set')})
-	for shift in shifts:
-		doc = frappe.get_doc("Shift Assignment",shift.name)
-		doc.end_date = shift.start_date
-		doc.submit()
-
 
 def create_shift_assignment(schedule, date):
 	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ], "status":"Active"}) and
