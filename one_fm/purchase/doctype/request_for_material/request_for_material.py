@@ -163,8 +163,10 @@ class RequestforMaterial(BuyingController):
 	def set_item_fields(self):
 		if self.items and self.type == 'Stock':
 			for item in self.items:
-				item.requested_item_name = item.item_name
-				item.requested_description = item.description
+				if item.item_name:
+					item.requested_item_name = item.item_name
+				if item.description:
+					item.requested_description = item.description
 
 	def set_request_for_material_accepter_and_approver(self):
 		if not self.request_for_material_accepter:
@@ -610,7 +612,7 @@ def make_request_for_purchase(source_name, target_doc=None):
 				["parent", "request_for_material"]
 			],
 			"postprocess": update_item,
-			"condition": lambda doc: (doc.item_code and doc.reject_item==0)
+			"condition": lambda doc: (doc.pur_qty > 0 and doc.reject_item==0)
 		}
 	}, target_doc)
 
