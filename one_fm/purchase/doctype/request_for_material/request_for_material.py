@@ -612,7 +612,7 @@ def make_request_for_purchase(source_name, target_doc=None):
 				["parent", "request_for_material"]
 			],
 			"postprocess": update_item,
-			"condition": lambda doc: (doc.item_code and doc.reject_item==0)
+			"condition": lambda doc: (doc.pur_qty > 0 and doc.reject_item==0)
 		}
 	}, target_doc)
 
