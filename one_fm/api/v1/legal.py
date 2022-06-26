@@ -1,12 +1,11 @@
-import frappe, base64
+import frappe, base64, json, grpc
 from frappe.utils import cint
 from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
 from one_fm.legal.doctype.penalty.penalty import send_email_to_legal
 from frappe import _
-import json
 from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
-import grpc
 from one_fm.api.v1.utils import response
+from one_fm.utils import check_path, create_path
 
 @frappe.whitelist()
 def get_employee_list(shift: str = None, penalty_occurence_time: str = None) -> dict:
@@ -55,9 +54,9 @@ def get_all_shifts():
 
 @frappe.whitelist()
 def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_location, penalty_occurence_time,company_damage, customer_property_damage, asset_damage, other_damages, shift=None, site=None, project=None, site_location=None, penalty_employees=[], penalty_details=[]):
-	try:
+	# try:
 		employee, employee_name, designation = frappe.get_value("Employee", {"user_id": frappe.session.user}, ["name","employee_name", "designation"])
-		
+
 		penalty_issuance = frappe.new_doc("Penalty Issuance")
 		penalty_issuance.penalty_category = penalty_category
 		
@@ -74,19 +73,23 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		penalty_issuance.company_damage = cint(company_damage)
 		penalty_issuance.other_damages = cint(other_damages)
 		penalty_issuance.asset_damage = cint(asset_damage)
-
 		employees = json.loads(penalty_employees)
 		for employee in employees:
-			penalty_issuance.append('employees', employee)
+			penalty_issuance.append('employees', {'employee_id':employee})
 
 		penalty_issuance_details = json.loads(penalty_details)
+		# check and make path for attachments
+		path_name = frappe.utils.cstr(frappe.local.site)+"/public/files/Legal"
+		if not check_path(path_name):
+			create_path(path_name)
+
 		for detail in penalty_issuance_details:
-			if detail["attachments"] and detail["attachment_name"]:
+			if detail.get("attachments") and detail.get("attachment_name"):
 				filename = detail["attachment_name"]
 				attach = detail["attachments"]
 				content = base64.b64decode(attach)
 
-				OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/public/files/Legal/"+filename
+				OUTPUT_IMAGE_PATH = path_name+"/"+filename
 				fh = open(OUTPUT_IMAGE_PATH, "wb")
 				fh.write(content)
 				fh.close()
@@ -107,11 +110,11 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		penalty_issuance.submit()
 		return response("Success", 201, penalty_issuance)
 
-	except Exception as error:
-		return response("Internal Server Error", 500, None, error)
+	# except Exception as error:
+	# 	print(error)
+	# 	return response("Internal Server Error", 500, None, error)@frappe.whitelist()
 
-	
-@frappe.whitelist()
+
 def get_penalties(employee_id: str = None, role: str = None) -> dict:
 
 	if not employee_id:

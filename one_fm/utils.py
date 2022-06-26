@@ -2570,3 +2570,10 @@ def set_expire_magic_link(reference_doctype, reference_docname, link_for):
         'reference_docname': reference_docname, 'link_for': link_for, 'expired': False})
     if magic_link:
         frappe.db.set_value('Magic Link', magic_link, 'expired', True)
+
+
+def check_path(path):
+    return os.path.isdir(path)
+
+def create_path(path):
+    os.mkdir(path)
