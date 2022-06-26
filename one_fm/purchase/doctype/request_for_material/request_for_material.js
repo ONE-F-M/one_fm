@@ -575,70 +575,55 @@ var set_warehouse_filters = function(frm) {
 	});
 }
 
+var set_df_property_required = function(frm, fields, reqd) {
+	fields.forEach((field, i) => {
+		frm.set_df_property(field, 'reqd', reqd);
+	});
+};
+
+var set_df_property_read_only = function(frm, fields, read_only) {
+	fields.forEach((field, i) => {
+		frm.set_df_property(field, 'read_only', read_only);
+	});
+};
+
+var set_employee_from_the_session_user = function(frm) {
+	frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
+		if(r && r.name){
+			frm.set_value('employee', r.name);
+		}
+		else{
+			frappe.msgprint(__('Employee or Employee email not created for the user <b>{0}</b>', [frappe.session.user]))
+		}
+	});
+};
+
 var set_employee_or_project = function(frm) {
 	if(frm.doc.type){
-		frm.set_df_property('department', 'read_only', true);
+		frm.set_df_property('department', 'read_only', false);
+		frm.set_df_property('employee', 'reqd', false);
+		frm.set_df_property('department', 'reqd', false);
+		frm.set_df_property('project', 'reqd', false);
+		frm.set_df_property('customer', 'reqd', (frm.doc.type=='Project')?true:false);
+		frm.set_df_property('site', 'reqd', (frm.doc.type=='Project')?true:false);
 		if(frm.doc.type=='Individual'){
 			frm.set_df_property('employee', 'reqd', true);
-			frm.set_df_property('project', 'reqd', false);
-			frm.set_df_property('department', 'reqd', false);
-			frm.set_df_property('department', 'read_only', false);
-			frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
-				if(r && r.name){
-					frm.set_value('employee', r.name);
-				}
-				else{
-					frappe.throw(__('Employee or Employee email not created for current user'))
-				}
-			});
+			// Check if employee exit for the session user to set employee field
+			set_employee_from_the_session_user(frm);
 		}
 		else if(frm.doc.type=='Department'){
-			frm.set_df_property('employee', 'reqd', false);
 			frm.set_df_property('department', 'reqd', true);
-			frm.set_df_property('department', 'read_only', false);
-			frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
-				if(r && r.name){
-					frm.set_value('employee', r.name);
-				}
-				else{
-					frappe.throw(__('Employee or Employee email not created for current user'))
-				}
-			});
+			// Check if employee exit for the session user to set employee field
+			set_employee_from_the_session_user(frm);
 		}
 		else if(frm.doc.type=='Project'|| frm.doc.type=='Project Mobilization'){
 			frm.set_df_property('project', 'reqd', true);
-			frm.set_df_property('department', 'reqd', false);
-			frm.set_df_property('department', 'read_only', false);
-			frm.set_df_property('customer', 'reqd', (frm.doc.type=='Project')?true:false);
-			frm.set_df_property('site', 'reqd', (frm.doc.type=='Project')?true:false);
 		}
 		else if(frm.doc.type=='Onboarding'){
 			frm.set_df_property('erf', 'reqd', true);
-		}
-		else if(frm.doc.type=='Stock'){
-			frm.set_df_property('department', 'reqd', false);
-			frm.set_df_property('department', 'read_only', false);
-			frm.set_df_property('project', 'reqd', false);
+			frm.set_df_property('department', 'read_only', true);
 		}
 	}
-
-
-	// else if(frm.doc.type){
-	// 	frm.set_df_property('employee', 'reqd', (frm.doc.type=='Individual')?true:false);
-	//	frm.set_df_property('project', 'reqd', (frm.doc.type=='Project Mobilization')?true:false);
-	// 	frm.set_df_property('project', 'reqd', (frm.doc.type=='Project')?true:false);
-	// 	frm.set_df_property('project', 'reqd', (frm.doc.type=='Onboarding')?true:false);
-	// 	if(frm.doc.type=='Individual'){
-	// 		frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'employee_name', function(r) {
-	// 			if(r && r.employee_name){
-	// 				frm.set_value('employee', r.employee_name);
-	// 			}
-	// 			else{
-	// 				frappe.throw(__('Employee or Employee email not created for current user'))
-	// 			}
-	// 		});
-	// 	}
-	// }
 	else{
 		frm.set_df_property('employee', 'reqd', false);
 		frm.set_df_property('project', 'reqd', false);
@@ -720,7 +705,6 @@ frappe.ui.form.on("Request for Material Item", {
 	},
 	create_reservation: (frm, cdt, cdn)=>{
 		let row = locals[cdt][cdn];
-		// frappe.new_doc('Item Reservation', {rfm: row.parent, item_code:row.item_code});
 		if(row.item_code && !row.item_reservation){
 			frappe.db.get_value('Item Reservation', {
 				rfm: frm.doc.name,
@@ -792,11 +776,9 @@ frappe.ui.form.on("Request for Material Item", {
 										row.from_date = r.message.from_date;
 										row.to_date = r.message.to_date;
 										row.reserve_qty = r.message.qty;
-										// frappe.model.set_value(row.doctype, row.name, 'item_reservation', r.message.name);
 										frm.refresh_field('items');
-
 									}
-							    })
+							  })
 							}
 					        d.hide();
 					    }
