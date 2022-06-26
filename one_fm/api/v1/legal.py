@@ -54,7 +54,7 @@ def get_all_shifts():
 
 @frappe.whitelist()
 def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_location, penalty_occurence_time,company_damage, customer_property_damage, asset_damage, other_damages, shift=None, site=None, project=None, site_location=None, penalty_employees=[], penalty_details=[]):
-	# try:
+	try:
 		employee, employee_name, designation = frappe.get_value("Employee", {"user_id": frappe.session.user}, ["name","employee_name", "designation"])
 
 		penalty_issuance = frappe.new_doc("Penalty Issuance")
@@ -110,9 +110,9 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		penalty_issuance.submit()
 		return response("Success", 201, penalty_issuance)
 
-	# except Exception as error:
-	# 	print(error)
-	# 	return response("Internal Server Error", 500, None, error)@frappe.whitelist()
+	except Exception as error:
+		frappe.log_error(error, 'Penalty Issance Error')
+		return response("Internal Server Error", 500, None, error)@frappe.whitelist()
 
 
 def get_penalties(employee_id: str = None, role: str = None) -> dict:
