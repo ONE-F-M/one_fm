@@ -717,8 +717,7 @@ def assign_pm_shift():
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st 
-				WHERE st.start_time >= '12:00:00' 
-				AND  st.start_time < '00:00:00')
+				WHERE st.start_time >= '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
 	for schedule in roster:
 		frappe.enqueue(create_shift_assignment,schedule = schedule, date = date, is_async=True, queue='long')
@@ -727,7 +726,7 @@ def end_previous_shifts(time):
 	if time == "AM":
 		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "00:00"], "start_time": ["<", "12:00"]},['name'], pluck='name')
 	else:
-		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"], "start_time": ["<", "00:00"]},['name'], pluck='name')
+		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"]},['name'], pluck='name')
 
 	shift_assignments = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'], ["shift_type", "IN", shift_type]], fields=['name','start_date'])
 
