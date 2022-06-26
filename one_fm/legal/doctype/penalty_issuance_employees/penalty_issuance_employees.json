@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "creation": "2020-06-13 18:44:10.150405",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -36,7 +37,9 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "employee_id",
    "fetch_from": "employee_id.designation",
+   "fetch_if_empty": 1,
    "fieldname": "designation",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -45,7 +48,8 @@
   }
  ],
  "istable": 1,
- "modified": "2021-07-12 11:18:37.943567",
+ "links": [],
+ "modified": "2022-06-26 15:39:39.557338",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty Issuance Employees",
