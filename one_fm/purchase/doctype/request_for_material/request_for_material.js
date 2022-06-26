@@ -575,18 +575,6 @@ var set_warehouse_filters = function(frm) {
 	});
 }
 
-var set_df_property_required = function(frm, fields, reqd) {
-	fields.forEach((field, i) => {
-		frm.set_df_property(field, 'reqd', reqd);
-	});
-};
-
-var set_df_property_read_only = function(frm, fields, read_only) {
-	fields.forEach((field, i) => {
-		frm.set_df_property(field, 'read_only', read_only);
-	});
-};
-
 var set_employee_from_the_session_user = function(frm) {
 	frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
 		if(r && r.name){
