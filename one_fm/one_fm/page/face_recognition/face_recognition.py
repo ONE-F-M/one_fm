@@ -88,8 +88,8 @@ def verify():
 
 		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
 
-		if not user_within_site_geofence(employee, log_type, latitude, longitude):
-			frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
+		# if not user_within_site_geofence(employee, log_type, latitude, longitude):
+		# 	frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
 
 		# Get user video
 		content_bytes = file.stream.read()
@@ -126,8 +126,8 @@ def user_within_site_geofence(employee, log_type, user_latitude, user_longitude)
 	shift = get_current_shift(employee)
 	date = cstr(getdate())
 	if shift and shift.shift:
-		if frappe.db.exists("Shift Request", {"employee":employee, "from_date": ['>=', date], "to_date": ['<=', date]}):
-			check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, "from_date": ['>=', date], "to_date": ['>=', date]},["check_in_site","check_out_site"])
+		if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
+			check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
 			if log_type == "IN":
 				site = check_in_site
 			else:
@@ -183,38 +183,6 @@ def update_onboarding_employee(employee):
         onboard_employee.enrolled_on = now_datetime()
         onboard_employee.save(ignore_permissions=True)
         frappe.db.commit()
-
-@frappe.whitelist()
-def check_existing():
-	"""API to determine the applicable Log type. 
-	The api checks employee's last lcheckin log type. and determine what next log type needs to be
-
-	Returns:
-		True: The log in was "IN", so his next Log Type should be "OUT".
-		False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
-	"""	
-	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
-	
-	# get current and previous day date.
-	todate = nowdate()
-	prev_date = (datetime.datetime.today() - datetime.timedelta(days=1)).strftime ('%Y-%m-%d')
-
-	if not employee:
-		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
-
-	#get checkin log previous days and current date.
-	logs = frappe.db.sql("""
-			select log_type from `tabEmployee Checkin` where date(time) BETWEEN '{date1}' and '{date2}' and skip_auto_attendance=0 and employee="{employee}"
-			""".format(date1=prev_date, date2=todate, employee=employee), as_dict=1)
-
-	val = [log.log_type for log in logs]
-
-	#For Check IN
-	if not val or (val and val[-1] == "OUT"):
-		return False
-	#For Check OUT
-	else:
-		return True
 
 def create_dataset(video):
 	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"

@@ -6,7 +6,6 @@
 
 frappe.ui.form.on('Request for Material', {
 	setup: function(frm) {
-		// hideItemField(frm);
 		// formatter for material request item
 		frm.set_indicator_formatter('item_code',
 			function(doc) { return (doc.qty<=doc.ordered_qty) ? "green" : "orange"; });
@@ -36,7 +35,7 @@ frappe.ui.form.on('Request for Material', {
 		set_item_field_property(frm);
 	},
 	onload: function(frm) {
-		// hideItemField(frm);
+
 		erpnext.utils.add_item(frm);
 		if(!frm.doc.requested_by){
 			frm.set_value('requested_by', frappe.session.user);
@@ -51,11 +50,9 @@ frappe.ui.form.on('Request for Material', {
 		};
 	},
 	onload_post_render: function(frm) {
-		// hideItemField(frm);
 		frm.get_field("items").grid.set_multiple_add("item_code", "qty");
 	},
 	refresh: function(frm) {
-		// 	hideItemField(frm);
 		frm.events.make_custom_buttons(frm);
 		set_item_field_property(frm);
 		let status = ['Draft', 'Accepted', 'Approved', 'Rejected', 'Transferred'];
@@ -85,19 +82,14 @@ frappe.ui.form.on('Request for Material', {
 
 	},
 	items_on_form_rendered: (frm) => {
-		hideItemField(frm);
 	},
 	before_items_remove: (frm) => {
-		hideItemField(frm);
 	},
 	items_add: (frm) => {
-		hideItemField(frm);
 	},
 	items_remove: (frm) => {
-		hideItemField(frm);
 	},
 	items_move: (frm) => {
-		hideItemField(frm);
 	},
 	// after_save: function(frm){
 	// 	let item_changes =
@@ -429,19 +421,14 @@ frappe.ui.form.on('Request for Material', {
 
 frappe.ui.form.on('Request for Material Item', { // The child table is defined in a DoctType called "Dynamic Link"
 	items_on_form_rendered: (frm) => {
-		hideItemField(frm);
 	},
 	before_items_remove: (frm) => {
-		hideItemField(frm);
 	},
 	items_add: (frm) => {
-		hideItemField(frm);
 	},
 	items_remove: (frm) => {
-		hideItemField(frm);
 	},
 	items_move: (frm) => {
-		hideItemField(frm);
 	},
 });
 
@@ -547,7 +534,7 @@ var set_item_field_property = function(frm) {
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
 	}
 	if(frm.doc.type == 'Stock'){
-		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
+//		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = false;
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = false;
 	}
@@ -588,70 +575,43 @@ var set_warehouse_filters = function(frm) {
 	});
 }
 
+var set_employee_from_the_session_user = function(frm) {
+	frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
+		if(r && r.name){
+			frm.set_value('employee', r.name);
+		}
+		else{
+			frappe.msgprint(__('Employee or Employee email not created for the user <b>{0}</b>', [frappe.session.user]))
+		}
+	});
+};
+
 var set_employee_or_project = function(frm) {
 	if(frm.doc.type){
-		frm.set_df_property('department', 'read_only', true);
+		frm.set_df_property('department', 'read_only', false);
+		frm.set_df_property('employee', 'reqd', false);
+		frm.set_df_property('department', 'reqd', false);
+		frm.set_df_property('project', 'reqd', false);
+		frm.set_df_property('customer', 'reqd', (frm.doc.type=='Project')?true:false);
+		frm.set_df_property('site', 'reqd', (frm.doc.type=='Project')?true:false);
 		if(frm.doc.type=='Individual'){
 			frm.set_df_property('employee', 'reqd', true);
-			frm.set_df_property('project', 'reqd', false);
-			frm.set_df_property('department', 'reqd', false);
-			frm.set_df_property('department', 'read_only', false);
-			frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
-				if(r && r.name){
-					frm.set_value('employee', r.name);
-				}
-				else{
-					frappe.throw(__('Employee or Employee email not created for current user'))
-				}
-			});
+			// Check if employee exit for the session user to set employee field
+			set_employee_from_the_session_user(frm);
 		}
 		else if(frm.doc.type=='Department'){
-			frm.set_df_property('employee', 'reqd', false);
 			frm.set_df_property('department', 'reqd', true);
-			frm.set_df_property('department', 'read_only', false);
-			frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
-				if(r && r.name){
-					frm.set_value('employee', r.name);
-				}
-				else{
-					frappe.throw(__('Employee or Employee email not created for current user'))
-				}
-			});
+			// Check if employee exit for the session user to set employee field
+			set_employee_from_the_session_user(frm);
 		}
 		else if(frm.doc.type=='Project'|| frm.doc.type=='Project Mobilization'){
 			frm.set_df_property('project', 'reqd', true);
-			frm.set_df_property('department', 'reqd', false);
-			frm.set_df_property('department', 'read_only', false);
-			frm.set_df_property('customer', 'reqd', (frm.doc.type=='Project')?true:false);
-			frm.set_df_property('site', 'reqd', (frm.doc.type=='Project')?true:false);
 		}
 		else if(frm.doc.type=='Onboarding'){
 			frm.set_df_property('erf', 'reqd', true);
-		}
-		else if(frm.doc.type=='Stock'){
-			frm.set_df_property('department', 'reqd', false);
-			frm.set_df_property('department', 'read_only', false);
-			frm.set_df_property('project', 'reqd', false);
+			frm.set_df_property('department', 'read_only', true);
 		}
 	}
-
-
-	// else if(frm.doc.type){
-	// 	frm.set_df_property('employee', 'reqd', (frm.doc.type=='Individual')?true:false);
-	//	frm.set_df_property('project', 'reqd', (frm.doc.type=='Project Mobilization')?true:false);
-	// 	frm.set_df_property('project', 'reqd', (frm.doc.type=='Project')?true:false);
-	// 	frm.set_df_property('project', 'reqd', (frm.doc.type=='Onboarding')?true:false);
-	// 	if(frm.doc.type=='Individual'){
-	// 		frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'employee_name', function(r) {
-	// 			if(r && r.employee_name){
-	// 				frm.set_value('employee', r.employee_name);
-	// 			}
-	// 			else{
-	// 				frappe.throw(__('Employee or Employee email not created for current user'))
-	// 			}
-	// 		});
-	// 	}
-	// }
 	else{
 		frm.set_df_property('employee', 'reqd', false);
 		frm.set_df_property('project', 'reqd', false);
@@ -733,7 +693,6 @@ frappe.ui.form.on("Request for Material Item", {
 	},
 	create_reservation: (frm, cdt, cdn)=>{
 		let row = locals[cdt][cdn];
-		// frappe.new_doc('Item Reservation', {rfm: row.parent, item_code:row.item_code});
 		if(row.item_code && !row.item_reservation){
 			frappe.db.get_value('Item Reservation', {
 				rfm: frm.doc.name,
@@ -805,11 +764,9 @@ frappe.ui.form.on("Request for Material Item", {
 										row.from_date = r.message.from_date;
 										row.to_date = r.message.to_date;
 										row.reserve_qty = r.message.qty;
-										// frappe.model.set_value(row.doctype, row.name, 'item_reservation', r.message.name);
 										frm.refresh_field('items');
-
 									}
-							    })
+							  })
 							}
 					        d.hide();
 					    }

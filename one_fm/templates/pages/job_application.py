@@ -6,20 +6,25 @@ from frappe.utils import get_url
 from one_fm.processor import sendemail
 
 def get_context(context):
-    context.parents = [{'route': 'jobs', 'title': _('All Jobs') }]
-    context.title = _("Application")
-    # Get job opening id from url to the context // frappe.form_dict.<args in url>
-    job_opening = frappe.get_doc('Job Opening', frappe.form_dict.job_title)
-    context.job_opening = job_opening
-    context.erf = job_opening.one_fm_erf
-    context.travel, context.rotation_shift, context.night_shift , context.driving_license_required = frappe.get_value("ERF",{"name":context.erf}, ['travel_required', 'shift_working', 'night_shift', 'driving_license_required'])
-    if context.travel != 0:
-        context.travel_type = frappe.get_value("ERF",{"name":context.erf}, ['type_of_travel'])
-    if context.driving_license_required != 0:
-        context.type_of_license = ["Light", "Heavy", "Motor Bike", "Inshaya"]
-    context.visa_type = frappe.get_all("Visa Type", ["name"])
-    # Get Country List to the context to show in the portal
-    context.country_list = frappe.get_all('Country', fields=['name'])
+	context.parents = [{'route': 'jobs', 'title': _('All Jobs') }]
+	context.title = _("Application")
+	# Get job opening id from url to the context // frappe.form_dict.<args in url>
+	job_opening = frappe.get_doc('Job Opening', frappe.form_dict.job_title)
+	context.job_opening = job_opening
+	context.erf = job_opening.one_fm_erf
+	erf_details = frappe.get_value("ERF", {"name":context.erf}, ['travel_required', 'shift_working', 'night_shift', 'driving_license_required'], as_dict=True)
+	if erf_details:
+		context.travel = erf_details.travel_required
+		context.rotation_shift = erf_details.shift_working
+		context.night_shift = erf_details.night_shift
+		context.driving_license_required = erf_details.driving_license_required
+	if context.travel != 0:
+		context.travel_type = frappe.get_value("ERF",{"name":context.erf}, ['type_of_travel'])
+	if context.driving_license_required != 0:
+		context.type_of_license = ["Light", "Heavy", "Motor Bike", "Inshaya"]
+	context.visa_type = frappe.get_all("Visa Type", ["name"])
+	# Get Country List to the context to show in the portal
+	context.country_list = frappe.get_all('Country', fields=['name'])
 
 @frappe.whitelist(allow_guest=True)
 def easy_apply(first_name, second_name, third_name, last_name, nationality, civil_id, applicant_email, applicant_mobile,

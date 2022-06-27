@@ -24,7 +24,11 @@
   "hr_notification_settings_section",
   "remind_employee_checkin_checkout",
   "column_break_17",
-  "remind_supervisor_checkin_checkout"
+  "remind_supervisor_checkin_checkout",
+  "attendance_setting_section",
+  "checkin_deadline",
+  "column_break_23",
+  "issue_penalty"
  ],
  "fields": [
   {
@@ -151,12 +155,35 @@
    "fieldname": "auto_generate_employee_id_on_employee_creation",
    "fieldtype": "Check",
    "label": "Auto Generate Employee ID on Employee Creation"
+  },
+  {
+   "fieldname": "attendance_setting_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Setting"
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Issue Penalty if employee check-in late or Check-out early, without permission.\n",
+   "fieldname": "issue_penalty",
+   "fieldtype": "Check",
+   "label": "Issue Penalty"
+  },
+  {
+   "default": "0",
+   "description": "Mark Employee Absent if Employee doesn't check in by mid-shift.",
+   "fieldname": "checkin_deadline",
+   "fieldtype": "Check",
+   "label": "Checkin Deadline"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-06-13 17:02:06.505030",
+ "modified": "2022-06-19 11:04:00.714463",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
