@@ -31,6 +31,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
    "read_only": 1
@@ -113,6 +114,7 @@
    "fieldname": "employee_id",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Employee ID",
    "read_only": 1
   },
@@ -159,7 +161,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-31 14:01:21.553447",
+ "modified": "2022-06-27 09:35:17.493037",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Checkin Radius Log",
