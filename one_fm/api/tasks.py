@@ -61,13 +61,13 @@ def checkin_checkout_reminder():
 			return
 
 		# Get current date and time
-		date = getdate()
 		now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 
 		# Get list of active shifts
 		shifts_list = get_active_shifts(now_time)
 
 		for shift in shifts_list:
+			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 
 			# Current time == shift start time => Checkin
 			if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
@@ -171,10 +171,10 @@ def checkin_checkout_final_reminder():
 
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
-	date = getdate()
 
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
+		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		# shift_start is equal to now time - notification reminder in mins
 		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
@@ -256,16 +256,11 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 	checkin_subject = _("Please checkin in the next five minutes.")
 	checkin_message = _("""
 					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
-					Submit a Shift Permission if you are plannig to arrive late or is there any issue in checkin or forget to checkin
-					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
 					""")
 	notification_category = "Attendance"
 	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
-	checkout_message = _("""
-		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
-		Submit a Shift Permission if you are plannig to leave early or is there any issue in checkout or forget to checkout
-		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-		""")
+	checkout_message = _("""<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
 	user_id_list = []
@@ -310,10 +305,7 @@ def checkin_checkout_supervisor_reminder():
 		t = shift.supervisor_reminder_shift_start
 		b = strfdelta(shift.start_time, '%H:%M:%S')
 
-		"""
-			Send notification to supervisor of those who haven't checked in and don't have accepted shift permission
-			with permission type Arrive Late/Forget to Checkin/Checkin Issue
-		"""
+		# Send notification to supervisor of those who haven't checked in and don't have accepted Arrive Late shift permission
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
@@ -331,7 +323,7 @@ def checkin_checkout_supervisor_reminder():
 				AND emp_sp.workflow_state="Approved"
 				AND emp_sp.shift_type='{shift_type}'
 				AND emp_sp.date='{date}'
-				AND emp_sp.permission_type IN ("Arrive Late", "Forget to Checkin", "Checkin Issue"))
+				AND emp_sp.permission_type="Arrive Late")
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
@@ -353,8 +345,6 @@ def checkin_checkout_supervisor_reminder():
 					subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
 					action_message = _("""
 					<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
-					Submit a Shift Permission for the employee to give an excuse and not need to penalize
-					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
 					""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkin_time)
 					if action_user is not None:
@@ -366,10 +356,7 @@ def checkin_checkout_supervisor_reminder():
 						if notify_user is not None:
 							send_notification(title, subject, notify_message, category, notify_user)
 
-		"""
-			Send notification to supervisor of those who haven't checked in and don't have accepted shift permission
-			with permission type Leave Early/Forget to Checkout/Checkout Issue
-		"""
+		#Send notification to supervisor of those who haven't checked out and don't have accepted Leave Early shift permission
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time()):
 		 	date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		 	checkin_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
@@ -387,7 +374,7 @@ def checkin_checkout_supervisor_reminder():
 				AND emp_sp.workflow_state="Approved"
 				AND emp_sp.shift_type='{shift_type}'
 				AND emp_sp.date='{date}'
-				AND emp_sp.permission_type IN ("Leave Early", "Forget to Checkout", "Checkout Issue"))
+				AND emp_sp.permission_type="Leave Early")
 				AND tSA.employee
 		 		NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 		 			WHERE
@@ -408,11 +395,9 @@ def checkin_checkout_supervisor_reminder():
 					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
 		 			subject = _('{employee} has not checked in yet.'.format(employee=recipient.employee_name))
 		 			action_message = _("""
-						<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
-						Submit a Shift Permission for the employee to give an excuse and not need to penalize
-	 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-						<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
-						""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
+						 <a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
+						 <br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
+						 """).format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
 		 			if action_user is not None:
 						 send_notification(title, subject, action_message, category, [action_user])
 
@@ -495,6 +480,10 @@ def issue_penalties():
 	"""This function to issue penalty to employee if employee checkin late without Shift Permission to Arrive Late.
 	Also, if employee check out early withou Shift Permission to Leave Early
 	"""
+	# check if issue_penalty is enabled in the setting
+	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'issue_penalty'):
+		return
+
 	#Define the constant
 	penalty_code_late_checkin = "102"
 	penalty_code_early_checkout="103"
@@ -570,6 +559,10 @@ def get_location(shift):
 	return location
 
 def checkin_deadline():
+
+	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'checkin_deadline'):
+		return
+
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	today = now_datetime().strftime("%Y-%m-%d")
 	shifts_list = get_active_shifts(now_time)
@@ -724,8 +717,7 @@ def assign_pm_shift():
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st 
-				WHERE st.start_time >= '12:00:00' 
-				AND  st.start_time < '00:00:00')
+				WHERE st.start_time >= '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
 	for schedule in roster:
 		frappe.enqueue(create_shift_assignment,schedule = schedule, date = date, is_async=True, queue='long')
@@ -734,12 +726,13 @@ def end_previous_shifts(time):
 	if time == "AM":
 		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "00:00"], "start_time": ["<", "12:00"]},['name'], pluck='name')
 	else:
-		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"], "start_time": ["<", "00:00"]},['name'], pluck='name')
+		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"]},['name'], pluck='name')
 
 	shift_assignments = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'], ["shift_type", "IN", shift_type]], fields=['name','start_date'])
 
 	for shift_assignment in shift_assignments:
 		frappe.set_value("Shift Assignment", shift_assignment.name,'end_date',shift_assignment.start_date)
+
 
 def create_shift_assignment(schedule, date):
 	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ], "status":"Active"}) and
