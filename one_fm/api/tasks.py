@@ -871,7 +871,7 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		SELECT amount,amount_based_on_formula,formula FROM `tabSalary Detail`
 		WHERE parenttype="Salary Structure"
 		AND parent=%s
-		AND salary_component="Basic"
+		AND salary_component="Basic Salary"
 		""",(salary_structure), as_dict=1)
 		if basic[0].amount_based_on_formula == 1:
 			formula = basic[0].formula
