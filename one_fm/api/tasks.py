@@ -866,6 +866,11 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		'docstatus': 1,
 		'employee': employee
 	}
+	
+	if frappe.db.get_single_value('HR and Payroll Additional Settings', 'basic_salary_component'):
+		basic_salary_component = frappe.db.get_single_value('HR and Payroll Additional Settings', 'basic_salary_component')
+	else:
+		frappe.throw("Please Add Basic Salary Component in HR and Payroll Additional Settings.")
 
 	salary_structure, base = frappe.get_value("Salary Structure Assignment", filters, ["salary_structure","base"], order_by="from_date desc")
 
@@ -874,8 +879,8 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		SELECT amount,amount_based_on_formula,formula FROM `tabSalary Detail`
 		WHERE parenttype="Salary Structure"
 		AND parent=%s
-		AND salary_component="Basic Salary"
-		""",(salary_structure), as_dict=1)
+		AND salary_component=%s
+		""",(salary_structure, basic_salary_component), as_dict=1)
 		if basic[0].amount_based_on_formula == 1:
 			formula = basic[0].formula
 			percent = formula.replace('base*','')
