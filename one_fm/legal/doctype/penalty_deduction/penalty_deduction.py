@@ -5,7 +5,10 @@
 from __future__ import unicode_literals
 import frappe, erpnext
 from frappe.model.document import Document
-from frappe.utils import getdate
+from frappe.utils import getdate, cint
+from datetime import datetime
+import datetime
+
 
 class PenaltyDeduction(Document):
 	def on_submit(self):
@@ -13,7 +16,10 @@ class PenaltyDeduction(Document):
 
 	def create_additional_salary(self):
 		if frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date'):
-			payroll_date = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
+			date = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
+			#calculate Payroll date, start and end date.
+			payroll_date = datetime.datetime(getdate().year, getdate().month, cint(date)).strftime("%Y-%m-%d")	
+				
 		additional_salary = frappe.new_doc("Additional Salary")
 		additional_salary.employee = self.employee
 		additional_salary.salary_component = "Penalty"
