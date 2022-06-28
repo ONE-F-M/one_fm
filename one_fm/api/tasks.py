@@ -841,8 +841,13 @@ def generate_penalties():
 	# start_date = add_to_date(getdate(), months=-1)
 	# end_date = get_end_date(start_date, 'monthly')['end_date']
 
-	start_date = "2022-05-24"
-	end_date = "2022-06-23"
+	#fetch Payroll date's day
+	date = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
+
+	#calculate Payroll date, start and end date.
+	payroll_date = datetime.datetime(getdate().year, getdate().month, cint(date)).strftime("%Y-%m-%d")
+	start_date = add_to_date(payroll_date, months=-1)
+	end_date = add_to_date(payroll_date, days=-1)
 
 	filters = {
 		'penalty_issuance_time': ['between', (start_date, end_date)],
@@ -866,7 +871,7 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		'docstatus': 1,
 		'employee': employee
 	}
-	
+
 	if frappe.db.get_single_value('HR and Payroll Additional Settings', 'basic_salary_component'):
 		basic_salary_component = frappe.db.get_single_value('HR and Payroll Additional Settings', 'basic_salary_component')
 	else:
