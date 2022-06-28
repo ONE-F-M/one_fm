@@ -76,7 +76,8 @@ def create_employee_checkin_for_shift_permission(shift_permission):
 		args:
 			shift_permission: Object of Shift Permission
 	"""
-	if not not frappe.db.exists('Employee Checkin', {'shift_permission': shift_permission.name}):
+	if not frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin')\
+		and not frappe.db.exists('Employee Checkin', {'shift_permission': shift_permission.name, 'docstatus': 1}):
 		log_type = False
 		if shift_permission.permission_type in ["Arrive Late", "Forget to Checkin", "Checkin Issue"]:
 			log_type = "IN"
@@ -86,7 +87,7 @@ def create_employee_checkin_for_shift_permission(shift_permission):
 			return False
 
 		# Get shift details for the employee
-		shift_details = get_shift_details(shift_permission.employee, getdate(shift_permission.date))
+		shift_details = get_shift_details(shift_permission.shift_type, getdate(shift_permission.date))
 
 		employee_checkin = frappe.new_doc('Employee Checkin')
 		employee_checkin.employee = shift_permission.employee
