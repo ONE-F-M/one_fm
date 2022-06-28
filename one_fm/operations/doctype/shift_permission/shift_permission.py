@@ -66,7 +66,7 @@ class ShiftPermission(Document):
 		message = _("{employee} has applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date))
 		create_notification_log(subject, message, [user], self)
 
-	def on_submit(self):
+	def on_update(self):
 		if self.workflow_state == 'Approved':
 			create_employee_checkin_for_shift_permission(self)
 
