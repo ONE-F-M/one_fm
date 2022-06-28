@@ -3,7 +3,8 @@
 from __future__ import unicode_literals
 import frappe, json, pycountry, random
 from frappe.utils import (
-    get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form
+    get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form,
+    get_first_day, get_last_day
 )
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
@@ -249,13 +250,13 @@ def generate_employee_id(doc):
             country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
     except Exception as e:
         country = ''
-    joining_year = doc.date_of_joining.split('-')[0][-2:].zfill(2)
-    joining_month = doc.date_of_joining.split('-')[1].zfill(2)
     count = len(frappe.db.sql(f"""
         SELECT name FROM tabEmployee
-        WHERE date_of_joining BETWEEN '{doc.date_of_joining[:8]}01' AND '{doc.date_of_joining[:8]}31'""",
+        WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
         as_dict=1))
     doc.reload()
+    joining_year = str(doc.date_of_joining.year)[-2:].zfill(2)
+    joining_month = str(doc.date_of_joining.month).zfill(2)
     doc.db_set("employee_id", f"{joining_year}{joining_month}{str(count).zfill(3)}{country}".upper())
     doc.reload()
 
@@ -573,7 +574,16 @@ def create_onboarding_from_job_offer(job_offer):
                         o_employee.set(od, job_applicant.get('one_fm_'+od))
 
                 #set employee's name in arabic
-                o_employee.set('employee_name_in_arabic',job_applicant.get('one_fm_last_name_in_arabic') +" "+ job_applicant.get('one_fm_first_name_in_arabic'))
+                employee_name_in_arabic = False
+                if job_applicant.get('one_fm_first_name_in_arabic'):
+                    if job_applicant.get('one_fm_last_name_in_arabic'):
+                        employee_name_in_arabic = job_applicant.get('one_fm_lasst_name_in_arabic')
+                    if employee_name_in_arabic:
+                        employee_name_in_arabic += " "+job_applicant.get('one_fm_first_name_in_arabic')
+                    else:
+                        employee_name_in_arabic = job_applicant.get('one_fm_first_name_in_arabic')
+                if employee_name_in_arabic:
+                    o_employee.set('employee_name_in_arabic', employee_name_in_arabic)
 
                 # Set Documents attached in the Job Applicant to Onboard Employee document
                 for applicant_document in job_applicant.one_fm_documents_required:
