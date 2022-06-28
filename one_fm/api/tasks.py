@@ -838,8 +838,11 @@ def generate_payroll():
 			frappe.log_error(frappe.get_traceback())
 
 def generate_penalties():
-	start_date = add_to_date(getdate(), months=-1)
-	end_date = get_end_date(start_date, 'monthly')['end_date']
+	# start_date = add_to_date(getdate(), months=-1)
+	# end_date = get_end_date(start_date, 'monthly')['end_date']
+
+	start_date = "2022-05-24"
+	end_date = "2022-06-23"
 
 	filters = {
 		'penalty_issuance_time': ['between', (start_date, end_date)],
