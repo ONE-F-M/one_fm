@@ -875,6 +875,8 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		'docstatus': 1,
 		'employee': employee
 	}
+	if frappe.db.exists('Employee', {'employee':employee, 'status':'Left'})):
+		return
 
 	if frappe.db.get_single_value('HR and Payroll Additional Settings', 'basic_salary_component'):
 		basic_salary_component = frappe.db.get_single_value('HR and Payroll Additional Settings', 'basic_salary_component')
