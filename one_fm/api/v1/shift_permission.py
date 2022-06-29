@@ -4,7 +4,8 @@ from one_fm.api.notification import create_notification_log
 from one_fm.api.v1.utils import response, validate_date, validate_time
 
 @frappe.whitelist()
-def create_shift_permission(employee_id: str = None, permission_type: str = None, date: str = None, reason: str = None, leaving_time: str = None, arrival_time: str = None) -> dict:
+def create_shift_permission(employee_id: str = None, permission_type: str = None, date: str = None, reason: str = None,
+    leaving_time: str = None, arrival_time: str = None) -> dict:
     """This method creates a shift permission for a given employee.
 
     Args:
@@ -76,9 +77,11 @@ def create_shift_permission(employee_id: str = None, permission_type: str = None
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-        
-        shift, shift_type, shift_assignment, shift_supervisor = get_shift_details(employee, date)
-        if not shift:
+
+        shift_details = get_shift_details(employee, date)
+        if shift_details.found:
+            shift, shift_type, shift_assignment, shift_supervisor = shift_details.data
+        else:
             return response("Resource Not Found", 404, None, "shift not found in employee schedule for {employee}".format(employee=employee))
 
         if not shift_type:
@@ -121,13 +124,15 @@ def get_shift_details(employee, date):
     shift_assignment = None
     shift_supervisor = None
     
-    shift, shift_type = frappe.db.get_value('Employee Schedule', {'employee': employee, 'employee_availability': 'Working', 'date': date, 'roster_type': 'Basic'}, ['shift', 'shift_type']) 
-    
+    employee_schedule = frappe.db.get_value('Employee Schedule', {'employee': employee, 'employee_availability': 'Working', 'date': date, 'roster_type': 'Basic'}, ['shift', 'shift_type'])
+    if not employee_schedule:
+        return frappe._dict({'found':False})
+    shift, shift_type = employee_schedule
     if shift and shift_type:
         shift_supervisor = frappe.db.get_value('Operations Shift', {'name': shift}, ['supervisor'])
         shift_assignment = frappe.db.get_value('Shift Assignment', {'employee': employee, 'start_date': date}, ['name'])
         
-    return shift, shift_type, shift_assignment, shift_supervisor
+    return frappe._dict({'found':True, 'data':[shift, shift_type, shift_assignment, shift_supervisor]})
 
 @frappe.whitelist()
 def list_shift_permission(employee_id: str = None):
