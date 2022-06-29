@@ -1,7 +1,7 @@
 import frappe, ast, base64, time
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
-from one_fm.api.v1.utils import get_current_shift
+from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.v1.utils import response
 from frappe.utils import cstr, getdate
 import grpc
