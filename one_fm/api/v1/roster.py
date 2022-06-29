@@ -584,7 +584,7 @@ def get_current_shift(employee):
 		prev_date = ((datetime.datetime.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).split(" ")[0]
 
 		#fetch the last shift assignment
-		last_shift = frappe.get_list("Shift Assignment",fields=["*"],order_by='creation desc',limit_page_length=1)
+		last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
 
 		#convert to datetime
 		time = time.split(":")
