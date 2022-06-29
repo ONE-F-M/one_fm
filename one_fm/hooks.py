@@ -551,7 +551,7 @@ scheduler_events = {
 		],
 		"0 12 * * *": [
 			'one_fm.api.tasks.assign_pm_shift'
-		],
+		]
 	}
 }
 
