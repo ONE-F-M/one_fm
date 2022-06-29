@@ -30,36 +30,37 @@ def shift_after_insert(doc, method):
 
 #Employee Checkin
 def employee_checkin_validate(doc, method):
-	try:
-		perm_map = {
-			"IN" : "Arrive Late",
-			"OUT": "Leave Early"
-		}
-		existing_perm = None
-		checkin_time = get_datetime(doc.time)
-		shift_actual_timings = get_actual_start_end_datetime_of_shift(doc.employee, get_datetime(doc.time), True)
-		prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
-		if curr_shift:
-			existing_perm = frappe.db.exists("Shift Permission", {"date": curr_shift.start_datetime.strftime('%Y-%m-%d'), "employee": doc.employee, "permission_type": perm_map[doc.log_type], "workflow_state": "Approved"})
-			name, assignment, shift_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": curr_shift.start_datetime.date(), "shift_type": curr_shift.shift_type.name}, ["name","shift", "shift_type"])
-			doc.shift_assignment = name
-			doc.operations_shift = assignment
-			doc.shift_type = shift_type
+	if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin'):
+		try:
+			perm_map = {
+				"IN" : "Arrive Late",
+				"OUT": "Leave Early"
+			}
+			existing_perm = None
+			checkin_time = get_datetime(doc.time)
+			shift_actual_timings = get_actual_start_end_datetime_of_shift(doc.employee, get_datetime(doc.time), True)
+			prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
+			if curr_shift:
+				existing_perm = frappe.db.exists("Shift Permission", {"date": curr_shift.start_datetime.strftime('%Y-%m-%d'), "employee": doc.employee, "permission_type": perm_map[doc.log_type], "workflow_state": "Approved"})
+				name, assignment, shift_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": curr_shift.start_datetime.date(), "shift_type": curr_shift.shift_type.name}, ["name","shift", "shift_type"])
+				doc.shift_assignment = name
+				doc.operations_shift = assignment
+				doc.shift_type = shift_type
 
-		if shift_actual_timings[0] and shift_actual_timings[1]:
-			if existing_perm:
-				perm_doc = frappe.get_doc("Shift Permission", existing_perm)
-				permitted_time = get_datetime(perm_doc.date) + (perm_doc.arrival_time if doc.log_type == "IN" else perm_doc.leaving_time)
-				if doc.log_type == "IN" and (checkin_time <= permitted_time and checkin_time >= curr_shift.start_datetime):
-					doc.time = 	curr_shift.start_datetime
-					doc.skip_auto_attendance = 0
-					doc.shift_permission = existing_perm
-				elif doc.log_type == "OUT" and (checkin_time >= permitted_time and checkin_time <= curr_shift.start_datetime):
-					doc.time = 	curr_shift.end_datetime
-					doc.skip_auto_attendance = 0
-					doc.shift_permission = existing_perm
-	except Exception as e:
-		frappe.throw(frappe.get_traceback())
+			if shift_actual_timings[0] and shift_actual_timings[1]:
+				if existing_perm:
+					perm_doc = frappe.get_doc("Shift Permission", existing_perm)
+					permitted_time = get_datetime(perm_doc.date) + (perm_doc.arrival_time if doc.log_type == "IN" else perm_doc.leaving_time)
+					if doc.log_type == "IN" and (checkin_time <= permitted_time and checkin_time >= curr_shift.start_datetime):
+						doc.time = 	curr_shift.start_datetime
+						doc.skip_auto_attendance = 0
+						doc.shift_permission = existing_perm
+					elif doc.log_type == "OUT" and (checkin_time >= permitted_time and checkin_time <= curr_shift.start_datetime):
+						doc.time = 	curr_shift.end_datetime
+						doc.skip_auto_attendance = 0
+						doc.shift_permission = existing_perm
+		except Exception as e:
+			frappe.throw(frappe.get_traceback())
 
 @frappe.whitelist()
 def checkin_after_insert(doc, method):

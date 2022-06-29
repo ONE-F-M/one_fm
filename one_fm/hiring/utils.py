@@ -3,7 +3,8 @@
 from __future__ import unicode_literals
 import frappe, json, pycountry, random
 from frappe.utils import (
-    get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form
+    get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form,
+    get_first_day, get_last_day
 )
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
@@ -14,7 +15,7 @@ from one_fm.processor import sendemail
 from one_fm.templates.pages.career_history import send_career_history_magic_link
 from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 from one_fm.one_fm.doctype.erf.erf import (
-    set_description_by_performance_profile, set_erf_skills_in_job_opening, set_erf_language_in_job_opening
+    get_description_by_performance_profile, set_erf_skills_in_job_opening, set_erf_language_in_job_opening
 )
 
 
@@ -249,13 +250,13 @@ def generate_employee_id(doc):
             country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
     except Exception as e:
         country = ''
-    joining_year = doc.date_of_joining.split('-')[0][-2:].zfill(2)
-    joining_month = doc.date_of_joining.split('-')[1].zfill(2)
     count = len(frappe.db.sql(f"""
         SELECT name FROM tabEmployee
-        WHERE date_of_joining BETWEEN '{doc.date_of_joining[:8]}01' AND '{doc.date_of_joining[:8]}31'""",
+        WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
         as_dict=1))
     doc.reload()
+    joining_year = str(doc.date_of_joining.year)[-2:].zfill(2)
+    joining_month = str(doc.date_of_joining.month).zfill(2)
     doc.db_set("employee_id", f"{joining_year}{joining_month}{str(count).zfill(3)}{country}".upper())
     doc.reload()
 
@@ -573,7 +574,16 @@ def create_onboarding_from_job_offer(job_offer):
                         o_employee.set(od, job_applicant.get('one_fm_'+od))
 
                 #set employee's name in arabic
-                o_employee.set('employee_name_in_arabic',job_applicant.get('one_fm_last_name_in_arabic') +" "+ job_applicant.get('one_fm_first_name_in_arabic'))
+                employee_name_in_arabic = False
+                if job_applicant.get('one_fm_first_name_in_arabic'):
+                    if job_applicant.get('one_fm_last_name_in_arabic'):
+                        employee_name_in_arabic = job_applicant.get('one_fm_lasst_name_in_arabic')
+                    if employee_name_in_arabic:
+                        employee_name_in_arabic += " "+job_applicant.get('one_fm_first_name_in_arabic')
+                    else:
+                        employee_name_in_arabic = job_applicant.get('one_fm_first_name_in_arabic')
+                if employee_name_in_arabic:
+                    o_employee.set('employee_name_in_arabic', employee_name_in_arabic)
 
                 # Set Documents attached in the Job Applicant to Onboard Employee document
                 for applicant_document in job_applicant.one_fm_documents_required:
@@ -773,24 +783,26 @@ def get_score_out_of_five(score, weight):
     return (score * 5) / weight
 
 def set_job_opening_erf_missing_values(doc, method):
-    if doc.one_fm_erf:
-        erf = frappe.get_doc('ERF', doc.one_fm_erf)
-        doc.designation = erf.designation
-        doc.department = erf.department
-        employee = frappe.db.exists("Employee", {"user_id": erf.owner})
-        doc.one_fm_hiring_manager = employee if employee else ''
-        doc.one_fm_no_of_positions_by_erf = erf.number_of_candidates_required
-        doc.one_fm_job_opening_created = today()
-        doc.one_fm_minimum_experience_required = erf.minimum_experience_required
-        doc.one_fm_performance_profile = erf.performance_profile
-        if not doc.description:
-            description = set_description_by_performance_profile(doc, erf)
-            if description:
-                doc.description = description
-        if not doc.one_fm_designation_skill:
-            set_erf_skills_in_job_opening(doc, erf)
-        if not doc.one_fm_languages:
-            set_erf_language_in_job_opening(doc, erf)
+	if doc.one_fm_erf:
+		erf = frappe.get_doc('ERF', doc.one_fm_erf)
+		doc.designation = erf.designation
+		doc.department = erf.department
+		if not doc.one_fm_hiring_manager:
+			employee = frappe.db.exists("Employee", {"user_id": erf.owner})
+			doc.one_fm_hiring_manager = employee if employee else ''
+		doc.one_fm_no_of_positions_by_erf = erf.number_of_candidates_required
+		if not doc.one_fm_job_opening_created:
+			doc.one_fm_job_opening_created = today()
+		doc.one_fm_minimum_experience_required = erf.minimum_experience_required
+		doc.one_fm_performance_profile = erf.performance_profile
+		if not doc.description:
+			description = get_description_by_performance_profile(doc, erf)
+			if description:
+				doc.description = description
+		if not doc.one_fm_designation_skill:
+			set_erf_skills_in_job_opening(doc, erf)
+		if not doc.one_fm_languages:
+			set_erf_language_in_job_opening(doc, erf)
 
 def get_employee_record_exists_for_job_offer_or_job_applicant(job_offer=False, job_applicant=False, status='Active'):
 	"""
