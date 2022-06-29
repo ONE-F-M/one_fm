@@ -1,7 +1,7 @@
 import frappe, ast, base64, time
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
-from one_fm.api.mobile.roster import get_current_shift
+from one_fm.api.v1.utils import get_current_shift
 from one_fm.api.v1.utils import response
 from frappe.utils import cstr, getdate
 import grpc
@@ -65,8 +65,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
 
 @frappe.whitelist()
-def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None,
-    skip_attendance: str = None, latitude: str = None, longitude: str = None):
+def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None, skip_attendance: int = None, latitude: float = None, longitude: float = None):
     """This method verifies user checking in/checking out.
 
     Args:
@@ -85,13 +84,6 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             error (str): Any error handled.
         }
     """
-    # ensure skip attendance is correctly formated
-    try:
-        skip_attendance = int(skip_attendance) if skip_attendance else 0
-        latitude = float(latitude)
-        longitude = float(longitude)
-    except:
-        return response("Bad Request", 400, None, "skip_attendance must be an integer, latitude and longitude must be float.")
 
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
