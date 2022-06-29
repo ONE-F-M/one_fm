@@ -256,11 +256,16 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 	checkin_subject = _("Please checkin in the next five minutes.")
 	checkin_message = _("""
 					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
-					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Planning to arrive late?</a>&nbsp;
+					Submit a Shift Permission if you are plannig to arrive late or is there any issue in checkin or forget to checkin
+					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					""")
 	notification_category = "Attendance"
 	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
-	checkout_message = _("""<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>""")
+	checkout_message = _("""
+		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
+		Submit a Shift Permission if you are plannig to leave early or is there any issue in checkout or forget to checkout
+		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+		""")
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
 	user_id_list = []
@@ -305,7 +310,10 @@ def checkin_checkout_supervisor_reminder():
 		t = shift.supervisor_reminder_shift_start
 		b = strfdelta(shift.start_time, '%H:%M:%S')
 
-		# Send notification to supervisor of those who haven't checked in and don't have accepted Arrive Late shift permission
+		"""
+			Send notification to supervisor of those who haven't checked in and don't have accepted shift permission
+			with permission type Arrive Late/Forget to Checkin/Checkin Issue
+		"""
 		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time()):
 			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 			checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
@@ -323,7 +331,7 @@ def checkin_checkout_supervisor_reminder():
 				AND emp_sp.workflow_state="Approved"
 				AND emp_sp.shift_type='{shift_type}'
 				AND emp_sp.date='{date}'
-				AND emp_sp.permission_type="Arrive Late")
+				AND emp_sp.permission_type IN ("Arrive Late", "Forget to Checkin", "Checkin Issue"))
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
@@ -345,6 +353,8 @@ def checkin_checkout_supervisor_reminder():
 					subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
 					action_message = _("""
 					<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
+					Submit a Shift Permission for the employee to give an excuse and not need to penalize
+					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
 					""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkin_time)
 					if action_user is not None:
@@ -356,7 +366,10 @@ def checkin_checkout_supervisor_reminder():
 						if notify_user is not None:
 							send_notification(title, subject, notify_message, category, notify_user)
 
-		#Send notification to supervisor of those who haven't checked out and don't have accepted Leave Early shift permission
+		"""
+			Send notification to supervisor of those who haven't checked in and don't have accepted shift permission
+			with permission type Leave Early/Forget to Checkout/Checkout Issue
+		"""
 		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time()):
 		 	date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		 	checkin_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
@@ -374,7 +387,7 @@ def checkin_checkout_supervisor_reminder():
 				AND emp_sp.workflow_state="Approved"
 				AND emp_sp.shift_type='{shift_type}'
 				AND emp_sp.date='{date}'
-				AND emp_sp.permission_type="Leave Early")
+				AND emp_sp.permission_type IN ("Leave Early", "Forget to Checkout", "Checkout Issue"))
 				AND tSA.employee
 		 		NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 		 			WHERE
@@ -395,9 +408,11 @@ def checkin_checkout_supervisor_reminder():
 					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
 		 			subject = _('{employee} has not checked in yet.'.format(employee=recipient.employee_name))
 		 			action_message = _("""
-						 <a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
-						 <br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
-						 """).format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
+						<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
+						Submit a Shift Permission for the employee to give an excuse and not need to penalize
+	 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+						<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
+						""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
 		 			if action_user is not None:
 						 send_notification(title, subject, action_message, category, [action_user])
 

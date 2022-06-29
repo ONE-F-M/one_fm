@@ -321,7 +321,7 @@ def create_job_opening_from_erf(erf):
 	job_opening.one_fm_job_opening_created = today()
 	job_opening.one_fm_minimum_experience_required = erf.minimum_experience_required
 	job_opening.one_fm_performance_profile = erf.performance_profile
-	description = set_description_by_performance_profile(job_opening, erf)
+	description = get_description_by_performance_profile(job_opening, erf)
 	if description:
 		job_opening.description = description
 	set_erf_skills_in_job_opening(job_opening, erf)
@@ -346,7 +346,7 @@ def set_erf_skills_in_job_opening(job_opening, erf):
 			jo_skill.skill = skill.skill
 			jo_skill.one_fm_proficiency = skill.one_fm_proficiency
 
-def set_description_by_performance_profile(job_opening, erf):
+def get_description_by_performance_profile(job_opening, erf):
 	if erf.performance_profile:
 		template = get_job_openig_description_template()
 		okr = frappe.get_doc('OKR Performance Profile', erf.performance_profile)

@@ -167,7 +167,12 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		elif otp_source.lower() == "whatsapp":
 			verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
 		
-		return response("Success", 201, "Password reset instructions sent via {otp_source}".format(otp_source=otp_source))
+		result = {
+			"message": "Password reset instructions sent via {otp_source}".format(otp_source=otp_source),
+			"temp_id": tmp_id
+		}
+
+		return response("Success", 201, result)
 	
 	except Exception as error:
 		return response("Internal Server Error", 500, None, error)
