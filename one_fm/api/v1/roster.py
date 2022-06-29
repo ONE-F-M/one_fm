@@ -567,7 +567,7 @@ def get_handover_posts(shift=None):
 
 
 @frappe.whitelist()
-def get_current_shift():
+def get_current_shift(employee):
 	"""This function is to return employee's current Shift,
 	based on Shift Assignment. 
 
@@ -577,7 +577,6 @@ def get_current_shift():
 	Returns:
 		string: Operation Shift of the assigned shift if it exist.
 	"""
-	employee = "HR-EMP-00001"
 	try:
 		#fetch dates
 		current_datetime = now_datetime().strftime("%Y-%m-%d %H:%M:%S")
@@ -585,7 +584,7 @@ def get_current_shift():
 		prev_date = ((datetime.datetime.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).split(" ")[0]
 
 		#fetch the last shift assignment
-		last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
+		last_shift = frappe.get_list("Shift Assignment",fields=["*"],order_by='creation desc',limit_page_length=1)
 
 		#convert to datetime
 		time = time.split(":")
