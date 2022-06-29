@@ -763,7 +763,7 @@ def end_previous_shifts(time):
 		doc.submit()
 
 def create_shift_assignment(schedule, date):
-	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "end_date": [">=", date ], "status":"Active"}) and
+	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":["<=", date ], "status":"Active"}) and
 			frappe.db.exists('Employee', {'employee':schedule.employee, 'status':'Active'})):
 		try:
 			shift_assignment = frappe.new_doc("Shift Assignment")
