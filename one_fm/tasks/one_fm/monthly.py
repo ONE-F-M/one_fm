@@ -33,7 +33,7 @@ def employee_schedule_monthly():
                 fields=['name', 'employee'])
             for row in employee_schedule:
                 if frappe.db.exists("Employee", {'status':'Active', 'name':row.employee}):
-                    for i in range(1, last_day_of_current_month):
+                    for i in range(1, last_day_of_current_month+1):
                         try:
                             es = frappe.get_doc("Employee Schedule", row.name)
                             es.creation = ''
