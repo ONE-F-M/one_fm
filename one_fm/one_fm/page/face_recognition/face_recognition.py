@@ -283,7 +283,7 @@ def check_existing():
 	prev_date = ((datetime.datetime.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).split(" ")[0]
 
 	#get Employee Schedule
-	last_shift = frappe.get_list("Shift Assignment",fields=["*"],order_by='creation desc',limit_page_length=1)
+	last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee},order_by='creation desc',limit_page_length=1)
 	
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
@@ -295,7 +295,7 @@ def check_existing():
 		if start_date == today or start_date == prev_date:
 			logs = frappe.db.sql("""
 				select log_type from `tabEmployee Checkin` where skip_auto_attendance=0 and employee="{employee}" and shift_assignment="{shift_assignment}"
-				""".format(employee=employee, shift_assignment=last_shift), as_dict=1)
+				""".format(employee=employee, shift_assignment=last_shift[0].name), as_dict=1)
 	else:
 		#get checkin log of today.
 		logs = frappe.db.sql("""
