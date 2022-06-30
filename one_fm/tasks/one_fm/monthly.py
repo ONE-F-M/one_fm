@@ -27,12 +27,13 @@ def employee_schedule_monthly():
         today = getdate()
         last_month_date = add_days(today, -1)
         last_day_of_current_month = calendar.monthrange(today.year, today.month)[1]
-        for p in projects:
-            employee_schedule = frappe.db.sql(f"""SELECT DISTINCT employee, name, date FROM `tabEmployee Schedule` 
-                WHERE project="{p.name}" GROUP BY employee;""", as_dict=1)
-            for row in employee_schedule:
+
+        employee_schedule = frappe.db.sql(f"""SELECT DISTINCT employee, name, project FROM `tabEmployee Schedule` 
+            WHERE GROUP BY employee;""", as_dict=1)
+        for row in employee_schedule:
+            if not row.project in exempt_projects:
                 create_employee_schedule(row, last_day_of_current_month, today)
-            frappe.db.commit()
+        frappe.db.commit()
 
         # RUN SHIFT ASSIGNMENTS
         assign_am_shift()
