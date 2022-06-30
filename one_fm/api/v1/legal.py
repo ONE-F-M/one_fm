@@ -108,7 +108,7 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 
 		penalty_issuance.insert()
 		penalty_issuance.submit()
-		return response("Success", 201, penalty_issuancex)
+		return response("Success", 201, penalty_issuance)
 
 	except Exception as error:
 		frappe.log_error(error, 'Penalty Issance Error')
