@@ -233,7 +233,7 @@ def get_recipients(doc):
 
 @frappe.whitelist()
 def get_employee_user_id(employee):
-	return frappe.get_value("Employee", {"name": employee}, "user_id")
+	return frappe.get_value("Employee", {"name": employee}, ["user_id"])
 
 def get_closest_location(time, location):
 	time = get_datetime(time).strftime("%Y-%m-%d %H:%M")

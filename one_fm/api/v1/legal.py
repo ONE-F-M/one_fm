@@ -115,6 +115,7 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		return response("Internal Server Error", 500, None, error)@frappe.whitelist()
 
 
+@frappe.whitelist()
 def get_penalties(employee_id: str = None, role: str = None) -> dict:
 
 	if not employee_id:
