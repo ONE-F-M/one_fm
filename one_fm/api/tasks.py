@@ -837,7 +837,7 @@ def generate_payroll():
 
 	#fetch Payroll date's day
 	date = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
-	
+
 	#calculate Payroll date, start and end date.
 	payroll_date = datetime.datetime(getdate().year, getdate().month, cint(date)).strftime("%Y-%m-%d")
 	start_date = add_to_date(payroll_date, months=-1)
@@ -893,7 +893,7 @@ def calculate_penalty_amount(employee, start_date, end_date, logs):
 		basic_salary_component = frappe.db.get_single_value('HR and Payroll Additional Settings', 'basic_salary_component')
 	else:
 		frappe.throw("Please Add Basic Salary Component in HR and Payroll Additional Settings.")
-	
+
 	salary_structure, base = frappe.get_value("Salary Structure Assignment", filters, ["salary_structure","base"], order_by="from_date desc")
 
 	if salary_structure:
