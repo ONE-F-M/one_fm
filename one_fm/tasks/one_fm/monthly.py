@@ -29,7 +29,7 @@ def employee_schedule_monthly():
         last_day_of_current_month = calendar.monthrange(today.year, today.month)[1]
 
         employee_schedule = frappe.db.sql(f"""SELECT DISTINCT employee, name, project FROM `tabEmployee Schedule` 
-            WHERE GROUP BY employee;""", as_dict=1)
+            GROUP BY employee;""", as_dict=1)
         for row in employee_schedule:
             if not row.project in exempt_projects:
                 create_employee_schedule(row, last_day_of_current_month, today)
