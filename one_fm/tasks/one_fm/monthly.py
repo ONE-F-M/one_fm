@@ -3,7 +3,7 @@ from frappe.utils import (
     nowdate, getdate, add_days
 )
 from frappe import enqueue
-from one_fm.api.tasks import assign_am_shift
+from one_fm.api.tasks import assign_am_shift, assign_pm_shift
 
 def execute():
     enqueue('one_fm.tasks.one_fm.monthly.employee_schedule_monthly')
