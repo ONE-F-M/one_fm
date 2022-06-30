@@ -255,6 +255,7 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 	title  = "Final Reminder"
 	checkin_subject = _("Please checkin in the next five minutes.")
 	checkin_message = _("""
+					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
 					Submit a Shift Permission if you are plannig to arrive late or is there any issue in checkin or forget to checkin
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					""")
@@ -264,7 +265,7 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
 		Submit a Shift Permission if you are plannig to leave early or is there any issue in checkout or forget to checkout
 		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-		""")	
+		""")
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
 	user_id_list = []
