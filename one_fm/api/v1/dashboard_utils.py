@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import calendar
 import frappe, json
 from frappe import _
@@ -23,7 +23,7 @@ def get_employee_shift(employee_id, date_type='month'):
         _start = date(today.year, 1, 31)
         _end = date(today.year, 12, 31)
 
-    penalty_start_date = date(today.year-1, today.month, today.day+1)
+    penalty_start_date = datetime.now() - timedelta(days=364)
     penalty_end_date = date(today.year, today.month, today.day)
 
     data = {
