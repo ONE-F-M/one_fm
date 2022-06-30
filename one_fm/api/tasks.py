@@ -549,7 +549,7 @@ def get_notification_user(employee, shift, Role):
 		project_manager = get_employee_user_id(project.account_manager)
 	if operations_site.account_supervisor and get_employee_user_id(operations_site.account_supervisor) != operations_shift.owner:
 		site_supervisor = get_employee_user_id(operations_site.account_supervisor)
-	elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owne:
+	elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owner:
 		shift_supervisor = get_employee_user_id(operations_shift.supervisor)
 
 	if Role == "Report To" and reports_to:
