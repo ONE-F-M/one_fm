@@ -92,12 +92,12 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
         allocation_records = get_leave_details(employee, today)
-        leave_balance = allocation_records['leave_allocation'][leave_type]
-        
-        if leave_balance:
+        if allocation_records["leave_allocation"].get(leave_type):
+            leave_balance = allocation_records['leave_allocation'][leave_type]
             return response("Success", 200, int(leave_balance))
         else:
-            return response("Resource Not Found", 404, None, "No leave allocated to {employee}".format(employee=employee_id))
+            return response("Resource Not Found", 404, None, "No {leave_type} allocated to {employee}".format(
+                employee=employee_id, leave_type=leave_type))
             
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
