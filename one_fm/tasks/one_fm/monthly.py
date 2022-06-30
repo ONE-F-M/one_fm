@@ -28,24 +28,26 @@ def employee_schedule_monthly():
         last_month_date = add_days(today, -1)
         last_day_of_current_month = calendar.monthrange(today.year, today.month)[1]
         for p in projects:
-            employee_schedule = frappe.db.get_list("Employee Schedule",
-                filters={'date':str(last_month_date), 'project':p.name},
-                fields=['name', 'employee'])
+            employee_schedule = frappe.db.sql(f"""SELECT DISTINCT employee, name, date FROM `tabEmployee Schedule` 
+                WHERE project="{p.name}" GROUP BY employee;""", as_dict=1)
             for row in employee_schedule:
-                if frappe.db.exists("Employee", {'status':'Active', 'name':row.employee}):
-                    for i in range(1, last_day_of_current_month+1):
-                        try:
-                            es = frappe.get_doc("Employee Schedule", row.name)
-                            es.creation = ''
-                            es.modified_by = ''
-                            es.owner = ''
-                            es.roster_type = 'Basic'
-                            es.employee_availability = 'Working'
-                            es.date = f'{today.year}-{today.month}-{i}'
-                            es.insert()
-                        except Exception as e:
-                            pass
+                create_employee_schedule(row, last_day_of_current_month, today)
             frappe.db.commit()
 
         # RUN SHIFT ASSIGNMENTS
         assign_am_shift()
+
+def create_employee_schedule(row, last_day_of_current_month, today):
+    if frappe.db.exists("Employee", {'status':'Active', 'name':row.employee}):
+        for i in range(1, last_day_of_current_month+1):
+            try:
+                es = frappe.get_doc("Employee Schedule", row.name)
+                es.creation = ''
+                es.modified_by = ''
+                es.owner = ''
+                es.roster_type = 'Basic'
+                es.employee_availability = 'Working'
+                es.date = f'{today.year}-{today.month}-{i}'
+                es.insert()
+            except Exception as e:
+                pass
