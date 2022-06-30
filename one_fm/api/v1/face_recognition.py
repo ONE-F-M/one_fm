@@ -124,7 +124,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         return response("Bad Request", 400, None, "skip_attendance must be of type int.")
 
     if skip_attendance not in [0, 1]:
-        return response("Bad Request", 400, "Invalid skip_attendance. skip_atten must be 0 or 1.")
+        return response("Bad Request", 400, "Invalid skip_attendance. skip_attendance must be 0 or 1.")
 
     if not isinstance(latitude, float):
         return response("Bad Request", 400, None, "latitude must be of type float.")
