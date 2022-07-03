@@ -373,7 +373,7 @@ def supervisor_reminder(shift, today_datetime, now_time):
 	"""
 	if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time()):
 		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-		checkin_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
+		checkout_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
 		recipients = frappe.db.sql("""
 			SELECT DISTINCT emp.name, emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 			WHERE
