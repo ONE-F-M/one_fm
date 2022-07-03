@@ -310,7 +310,7 @@ def checkin_checkout_supervisor_reminder():
 			Send notification to supervisor of those who haven't checked in and don't have accepted shift permission
 			with permission type Arrive Late/Forget to Checkin/Checkin Issue
 		"""
-		supervisor_reminder(shift,today_datetime,now_time)
+		frappe.enqueue(supervisor_reminder,shift = shift,today_datetime = today_datetime ,now_time=now_time, is_async=True, queue='long')
 
 def supervisor_reminder(shift, today_datetime, now_time):
 	title = "Checkin Report"
@@ -373,7 +373,7 @@ def supervisor_reminder(shift, today_datetime, now_time):
 	"""
 	if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time()):
 		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-		checkin_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
+		checkout_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
 		recipients = frappe.db.sql("""
 			SELECT DISTINCT emp.name, emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 			WHERE
@@ -410,8 +410,6 @@ def supervisor_reminder(shift, today_datetime, now_time):
 				subject = _('{employee} has not checked in yet.'.format(employee=recipient.employee_name))
 				action_message = _("""
 					<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
-					Submit a Shift Permission for the employee to give an excuse and not need to penalize
-					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
 					""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
 				if action_user is not None:
@@ -718,7 +716,8 @@ def assign_am_shift():
 				WHERE st.start_time >= '00:00:00' 
 				AND  st.start_time < '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
-	frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
+	for schedule in roster:
+		frappe.enqueue(create_shift_assignment,schedule = schedule, date = date, is_async=True, queue='long')
 
 def assign_pm_shift():
 	date = cstr(getdate())
@@ -733,7 +732,8 @@ def assign_pm_shift():
 				SELECT name from `tabShift Type` st 
 				WHERE st.start_time >= '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
-	frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
+	for schedule in roster:
+		frappe.enqueue(create_shift_assignment,schedule = schedule, date = date, is_async=True, queue='long')
 
 def end_previous_shifts(time):
 	if time == "AM":
@@ -745,10 +745,6 @@ def end_previous_shifts(time):
 
 	for shift_assignment in shift_assignments:
 		frappe.set_value("Shift Assignment", shift_assignment.name,'end_date',shift_assignment.start_date)
-
-def queue_shift_assignment(roster, date):
-	for schedule in roster:
-		create_shift_assignment(schedule, date)
 
 def create_shift_assignment(schedule, date):
 	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":getdate(date), "status":"Active"}) and
@@ -774,7 +770,7 @@ def create_shift_assignment(schedule, date):
 				shift_assignment.check_out_site = check_out_site
 			shift_assignment.submit()
 		except Exception:
-			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
+				frappe.log_error(frappe.get_traceback())
 
 def overtime_shift_assignment():
 	"""
@@ -791,19 +787,16 @@ def overtime_shift_assignment():
 def process_overtime_shift(roster, date, time):
 	for schedule in roster:
 		#Check for employee's shift assignment of the day, if he has any.
-		try:
-			shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
-			if shift_assignment:
-				shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
-				#check if the given shift has ended
-				# Set status inactive before creating new shift
-				if str(shift_end_time) == str(time):
-					frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
-					create_shift_assignment(schedule, date)
-			else:
+		shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
+		if shift_assignment:
+			shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
+			#check if the given shift has ended
+			# Set status inactive before creating new shift
+			if str(shift_end_time) == str(time):
+				frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
 				create_shift_assignment(schedule, date)
-		except Exception as e:
-			pass
+		else:
+			create_shift_assignment(schedule, date)
 
 def update_shift_type():
 	today_datetime = now_datetime()
@@ -855,6 +848,10 @@ def generate_payroll():
 	start_date = add_to_date(payroll_date, months=-1)
 	end_date = add_to_date(payroll_date, days=-1)
 
+	# Hardcoded dates for testing, remove below 2 lines for live
+	#start_date = "2021-08-01"
+	#end_date = "2021-08-31"
+
 	try:
 			create_payroll_entry(start_date, end_date)
 	except Exception:
@@ -866,11 +863,9 @@ def generate_penalties():
 
 	#fetch Payroll date's day
 	date = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
-	year = getdate().year - 1 if getdate().day < cint(date) and  getdate().month == 1 else getdate().year
-	month = getdate().month if getdate().day >= cint(date) else getdate().month - 1
 
 	#calculate Payroll date, start and end date.
-	payroll_date = datetime.datetime(year, month, cint(date)).strftime("%Y-%m-%d")
+	payroll_date = datetime.datetime(getdate().year, getdate().month, cint(date)).strftime("%Y-%m-%d")
 	start_date = add_to_date(payroll_date, months=-1)
 	end_date = add_to_date(payroll_date, days=-1)
 
