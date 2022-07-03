@@ -82,7 +82,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
 def get_weekly_staff_roster(start_date, end_date):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
-
+	
 		roster = frappe.db.sql("""
 			SELECT shift, employee, date, employee_availability, post_type
 			FROM `tabEmployee Schedule`
@@ -167,7 +167,7 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 			for post in roster:
 				post.update({"count": 1})
 			return roster
-
+		
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
@@ -353,7 +353,7 @@ def get_assigned_projects(employee_id):
 		return []
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-
+	
 
 @frappe.whitelist()
 def get_assigned_sites(employee_id, project=None):
@@ -372,10 +372,10 @@ def get_assigned_sites(employee_id, project=None):
 			filters.update({"account_supervisor": employee_id})
 			return frappe.get_list("Operations Site", filters, limit_page_length=9999, order_by="name asc")
 		return []
-
+	
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-
+	
 
 @frappe.whitelist()
 def get_assigned_shifts(employee_id, project=None, site=None):
@@ -397,7 +397,7 @@ def get_assigned_shifts(employee_id, project=None, site=None):
 			filters.update({"supervisor": employee_id})
 			return frappe.get_list("Operations Shift", filters, limit_page_length=9999, order_by="name asc")
 		return []
-
+	
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
@@ -406,7 +406,7 @@ def get_assigned_shifts(employee_id, project=None, site=None):
 def get_departments():
 	try:
 		return frappe.get_list("Department",{"is_group": 0}, limit_page_length=9999, order_by="name asc")
-
+	
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
@@ -475,7 +475,7 @@ def schedule_staff(employee, shift, post_type, start_date, end_date=None, never=
 					roster = frappe.new_doc("Employee Schedule")
 					roster.employee = employee
 					roster.date = cstr(date.date())
-
+				
 				if day_off and date.date().strftime('%A') == day_off:
 					roster.employee_availability = "Day Off"				
 				else:
@@ -570,8 +570,10 @@ def get_handover_posts(shift=None):
 def get_current_shift(employee):
 	"""This function is to return employee's current Shift,
 	based on Shift Assignment. 
+
 	Args:
 		employee (str): Employee's ERP ID
+
 	Returns:
 		string: Operation Shift of the assigned shift if it exist.
 	"""
@@ -587,7 +589,7 @@ def get_current_shift(employee):
 		#convert to datetime
 		time = time.split(":")
 		time = datetime.timedelta(hours=cint(time[0]), minutes=cint(time[1]), seconds=cint(time[2]))
-
+		
 		if len(last_shift) > 0:
 			shift = last_shift[0]
 			start_date = (shift.start_date).strftime("%Y-%m-%d")
@@ -595,11 +597,11 @@ def get_current_shift(employee):
 			#start date could be previous day if night shift
 			if start_date == date or start_date == prev_date:
 				start_time, end_time ,before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["start_time", "end_time","begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
-
+				
 				#include early entry and late exit time
 				start_time = start_time - datetime.timedelta(minutes=before_time)
 				end_time = end_time + datetime.timedelta(minutes=after_time)
-
+				
 				#if start time is larger than end time, from either afternoon, evening or night shift.
 				if start_time > end_time:
 					if start_time <= time >= end_time or start_time >= time <= end_time:
@@ -618,4 +620,22 @@ def get_report_comments(report_name):
 		comments = frappe.get_list("Comment", {"reference_doctype": "Shift Report", "reference_name": report_name, "comment_type": "Comment"}, "*")
 		return comments
 	except Exception as e:
-		return frappe.utils.response.report_error(e.http_status_code) 
+either afternoon, evening or night shift.
+				if start_time > end_time:
+					if start_time <= time >= end_time or start_time >= time <= end_time:
+						return shift
+				else:
+					if start_time <= time <= end_time:
+						return shift
+	except Exception as e:
+		print(frappe.get_traceback())
+		return frappe.utils.response.report_error(e.http_status_code)
+
+
+@frappe.whitelist()
+def get_report_comments(report_name):
+	try:
+		comments = frappe.get_list("Comment", {"reference_doctype": "Shift Report", "reference_name": report_name, "comment_type": "Comment"}, "*")
+		return comments
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
