@@ -137,7 +137,7 @@ def get_current_shift(employee):
 			return shifts[0].shift
 	except Exception as e:
 		print(frappe.get_traceback())
-		return frappe.utils.response.report_error(e.http_status_code)
+		return frappe.utils.response.report_error(e)
 
 
 @frappe.whitelist(allow_guest=True)
