@@ -12,7 +12,7 @@ import face_recognition
 import json
 from imutils import face_utils, paths
 from one_fm.api.doc_events import haversine
-from one_fm.api.mobile.roster import get_current_shift
+from one_fm.api.v1.roster import get_current_shift
 
 
 class NumpyArrayEncoder(JSONEncoder):
