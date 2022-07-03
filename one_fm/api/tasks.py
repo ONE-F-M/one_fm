@@ -863,9 +863,12 @@ def generate_penalties():
 
 	#fetch Payroll date's day
 	date = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
+	year = getdate().year - 1 if getdate().day < cint(date) and  getdate().month == 1 else getdate().year
+	month = getdate().month if getdate().day >= cint(date) else getdate().month - 1
 
 	#calculate Payroll date, start and end date.
-	payroll_date = datetime.datetime(getdate().year, getdate().month, cint(date)).strftime("%Y-%m-%d")
+	
+	payroll_date = datetime.datetime(year, month, cint(date)).strftime("%Y-%m-%d")
 	start_date = add_to_date(payroll_date, months=-1)
 	end_date = add_to_date(payroll_date, days=-1)
 
