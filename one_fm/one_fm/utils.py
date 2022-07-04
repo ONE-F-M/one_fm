@@ -414,7 +414,8 @@ def create_role_if_not_exists(roles, desk_access=True):
 			roles: list of Name of the Role, Text
 			desk_access: Boolean for Desk Access
 	'''
-	roles = json.loads(roles)
+	if not isinstance(roles, list):
+		roles = json.loads(roles)
 	for role in roles:
 		if not frappe.db.exists("Role", {"role_name": role}):
 			doc = frappe.new_doc("Role")
