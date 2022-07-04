@@ -226,7 +226,6 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             proof_doc_json = json.loads(proof_document)
             attachment = proof_doc_json['attachment']
             attachment_name = proof_doc_json['attachment_name']
-            print(attachment_name)
             if not attachment or not attachment_name:
                 return response('proof_document key requires attachment and attachment_name', {}, 400)
 
