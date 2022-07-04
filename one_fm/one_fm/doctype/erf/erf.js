@@ -49,7 +49,7 @@ frappe.ui.form.on('ERF', {
 				__('Set a Date With {0} For a Quick Workshop',[frm.doc.__onload.okr_workshop_with_full_name]))
 		}
 		if (frm.doc.docstatus == 1 && frm.doc.__onload && 'erf_approver' in frm.doc.__onload){
-			if(frappe.session.user==frm.doc.__onload.erf_approver && frm.doc.status == "Draft"){
+			if(frm.doc.__onload.erf_approver.includes(frappe.session.user) && frm.doc.status == "Draft"){
 				frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_decline_erf(frm, 'Accepted', false)).addClass('btn-primary');
 				frm.add_custom_button(__('Decline'), () => frm.events.decline_erf(frm, 'Declined')).addClass('btn-danger');
 			}

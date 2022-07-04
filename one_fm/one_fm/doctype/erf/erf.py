@@ -7,7 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from frappe.utils import today, get_url, getdate
-from frappe.utils.user import get_user_fullname
+from frappe.utils.user import get_user_fullname, get_users_with_role
 from frappe import _
 from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
 from one_fm.api.notification import create_notification_log
@@ -19,12 +19,7 @@ class ERF(Document):
 			self.okr_workshop_with = frappe.db.get_value('Hiring Settings', None, 'hr_for_a_quick_workshop')
 		if self.okr_workshop_with:
 			self.set_onload('okr_workshop_with_full_name', get_user_fullname(self.okr_workshop_with))
-
-		erf_approver = frappe.db.get_value('Hiring Settings', None, 'erf_approver')
-		if self.reason_for_request == 'UnPlanned':
-			unplanned_erf_approver = frappe.db.get_value('Hiring Settings', None, 'unplanned_erf_approver')
-			erf_approver = unplanned_erf_approver if unplanned_erf_approver else erf_approver
-		self.set_onload('erf_approver', erf_approver)
+		self.set_onload('erf_approver', get_erf_approver(self.reason_for_request))
 
 	def validate(self):
 		if not self.erf_requested_by:
@@ -174,14 +169,10 @@ class ERF(Document):
 			frappe.throw(_('Submit to HR Manager to fill Salary Compensation Budget and HR Details!'))
 
 	def notify_approver(self):
-		erf_approver = False
-		if self.reason_for_request == "UnPlanned":
-			erf_approver = frappe.db.get_value('Hiring Settings', None, 'unplanned_erf_approver')
-		else:
-			erf_approver = frappe.db.get_value('Hiring Settings', None, 'erf_approver')
-		if erf_approver:
-			send_email(self, [erf_approver])
-			frappe.msgprint(_('{0}, Will Notified By Email.').format(frappe.db.get_value('User', erf_approver, 'full_name')))
+		erf_approver = get_erf_approver(self.reason_for_request)
+		if erf_approver and len(erf_approver) > 0:
+			send_email(self, erf_approver)
+			frappe.msgprint(_('ERF Approver Will Notified By Email.'))
 
 	def on_update_after_submit(self):
 		if frappe.db.get_value('Hiring Settings', None, 'close_erf_automatically'):
@@ -308,6 +299,9 @@ class ERF(Document):
 			create_job_opening_from_erf(self)
 		self.reload()
 
+def get_erf_approver(reason_for_request):
+	erf_approver_role = 'Unplanned ERF Approver' if reason_for_request == 'UnPlanned' else 'ERF Approver'
+	return get_users_with_role(erf_approver_role)
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
