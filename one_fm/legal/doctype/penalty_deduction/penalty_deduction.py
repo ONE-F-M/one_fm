@@ -17,8 +17,11 @@ class PenaltyDeduction(Document):
 	def create_additional_salary(self):
 		if frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date'):
 			date = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
+			year = getdate().year - 1 if getdate().day < cint(date) and  getdate().month == 1 else getdate().year
+			month = getdate().month if getdate().day >= cint(date) else getdate().month - 1
+
 			#calculate Payroll date, start and end date.
-			payroll_date = datetime.datetime(getdate().year, getdate().month, cint(date)).strftime("%Y-%m-%d")	
+			payroll_date = datetime.datetime(year, month, cint(date)-1).strftime("%Y-%m-%d")	
 				
 		additional_salary = frappe.new_doc("Additional Salary")
 		additional_salary.employee = self.employee
