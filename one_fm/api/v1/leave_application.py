@@ -74,8 +74,8 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
 
-    if not leave_type:
-        return response("Bad Request", 400, None, "leave_type required.")
+    # if not leave_type:
+    #     return response("Bad Request", 400, None, "leave_type required.")
     
     if not isinstance(employee_id, str):
         return response("Bad Request", 400, None, "employee_id must be of type str.")
@@ -93,12 +93,21 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
         
         allocation_records = get_leave_details(employee, today)
         leave_type = leave_type.title()
-        if allocation_records["leave_allocation"].get(leave_type):
-            leave_balance = allocation_records['leave_allocation'][leave_type]['remaining_leaves']
-            return response("Success", 200, int(leave_balance))
+        if allocation_records["leave_allocation"]:
+            if leave_type:
+                if allocation_records["leave_allocation"].get(leave_type):
+                    leave_balance = allocation_records['leave_allocation'][leave_type]
+                    leave_balance['leave_type'] = leave_type
+                    return response("Success", 200, leave_balance)
+                else:
+                    response("Resource Not Found", 404, None, "No {leave_type} allocated to {employee}".format(
+                        employee=employee_id, leave_type=leave_type))
+            else:
+                leave_balance = allocation_records['leave_allocation']
+                return response("Success", 200, leave_balance)
         else:
-            return response("Resource Not Found", 404, None, "No {leave_type} allocated to {employee}".format(
-                employee=employee_id, leave_type=leave_type))
+            return response("Resource Not Found", 404, None, "No allocated to {employee}".format(
+                employee=employee_id))
             
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
