@@ -218,10 +218,10 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         import base64, json
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
-
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-        
+
+        employee_doc = frappe.get_doc("Employee", employee)
         leave_approver = get_leave_approver(employee)
         
         if not leave_approver:
@@ -235,7 +235,6 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             proof_doc_json = json.loads(proof_document)
             attachment = proof_doc_json['attachment']
             attachment_name = proof_doc_json['attachment_name']
-
             if not attachment or not attachment_name:
                 return response('proof_document key requires attachment and attachment_name', {}, 400)
 
@@ -243,26 +242,16 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             content = base64.b64decode(attachment)
             filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
 
-            Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}").mkdir(parents=True, exist_ok=True)
-            OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}/{filename}"
+            Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+            OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
             with open(OUTPUT_FILE_PATH, "wb") as fh:
                 fh.write(content)
 
-            attachment_path = f"/files/leave-application/{frappe.session.user}/{filename}"
-
+            attachment_path = f"/files/leave-application/{employee_doc.user_id}/{filename}"
 
         # Approve leave application for "Sick Leave"
-        if str(leave_type).lower() == "sick leave":
-            doc = new_leave_application(employee, from_date, to_date, leave_type, "Approved", reason, leave_approver)
-        if leave_type == "Sick Leave":
-            doc = new_leave_application(employee, from_date, to_date, leave_type, "Approved", reason, leave_approver, attachment_path)
-            doc.submit()
-            frappe.db.commit()
-            return response("Success", 201, doc)
-
-        else:
-            doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
-            return response("Success", 201, doc)
+        doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
+        return response("Success", 201, doc)
     
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
@@ -278,9 +267,8 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.status=status
     leave.leave_approver = leave_approver
     if attachment_path:
-        leave.proof_document = attachment_path
+        leave.proof_document = frappe.utils.get_url()+attachment_path
     leave.save()
-    frappe.db.commit()
     return leave.as_dict()
 
 
