@@ -16,7 +16,7 @@ status_map = {
 	"On Leave": "L",
 	"Present": "P",
 	"Work From Home": "WFH",
-    "Unmarked": "-"
+    "Unmarked": " "
 	}
 
 day_abbr = [
@@ -37,21 +37,15 @@ def execute(filters=None):
 
 	conditions, filters = get_conditions(filters)
 	columns, days = get_columns(filters)
-	if filters.group_by == "Post Type":
-		att_map = get_attendance_list_post(conditions, filters)
-		#print(att_map)
-	else:
-		att_map = get_attendance_list(conditions, filters)
-
-	#print(att_map)  
-	if not att_map:
-		return columns, [], None, None
-
+	
+	att_map = get_attendance_list(conditions, filters)
 	if filters.group_by:
 		if filters.group_by == "Post Type":
-		    emp_map, group_by_parameters = get_employee_details_post(filters.company,filters["month"],filters["year"])
+			att_map = get_attendance_list_post(conditions, filters)
+			emp_map, group_by_parameters = get_employee_details_post(filters.company,filters["month"],filters["year"])
 		else:
-		    emp_map, group_by_parameters = get_employee_details(filters.group_by, filters.company)
+			emp_map, group_by_parameters = get_employee_details(filters.group_by, filters.company)		
+		
 		holiday_list = []
 		for parameter in group_by_parameters:
 			h_list = [emp_map[parameter][d]["holiday_list"] for d in emp_map[parameter] if emp_map[parameter][d]["holiday_list"]]
@@ -59,12 +53,15 @@ def execute(filters=None):
 	else:
 		emp_map = get_employee_details(filters.group_by, filters.company)
 		holiday_list = [emp_map[d]["holiday_list"] for d in emp_map if emp_map[d]["holiday_list"]]
+	
+	if not att_map:
+		return columns, [], None, None
 
 	#print(emp_map)
 	default_holiday_list = frappe.get_cached_value('Company',  filters.get("company"),  "default_holiday_list")
 	holiday_list.append(default_holiday_list)
 	holiday_list = list(set(holiday_list))
-	holiday_map = get_holiday(holiday_list, filters["month"])
+	holiday_map = get_holiday(holiday_list, filters["month"], filters["year"])
 
 	data = []
 
@@ -176,8 +173,6 @@ def add_data_post(parameter, employee_map, att_map, filters, holiday_map, condit
 			else:
 				if day_off:
 				    status = day_off.get(emp).get(day + 1)
-				if not status:
-				    status = "Unmarked"
 
 			if status is None and holiday_map:
 				emp_holiday_list = emp_det.holiday_list if emp_det.holiday_list else default_holiday_list
@@ -273,8 +268,6 @@ def add_data(employee_map, att_map, filters, holiday_map, conditions, default_ho
 			if not status:
 				if day_off:
 				    status = day_off.get(emp).get(day + 1)
-				if not status:
-				    status = "Unmarked"
 
 			if status is None and holiday_map:
 				emp_holiday_list = emp_det.holiday_list if emp_det.holiday_list else default_holiday_list
@@ -469,12 +462,12 @@ def get_employee_details(group_by, company):
 	else:
 		return emp_map, group_by_parameters
 
-def get_holiday(holiday_list, month):
+def get_holiday(holiday_list, month, year):
 	holiday_map = frappe._dict()
 	for d in holiday_list:
 		if d:
 			holiday_map.setdefault(d, frappe.db.sql('''select day(holiday_date), weekly_off from `tabHoliday`
-				where parent=%s and month(holiday_date)=%s''', (d, month)))
+				where parent=%s and month(holiday_date)=%s and year(holiday_date)=%s''', (d, month, year)))
 
 	return holiday_map
 
