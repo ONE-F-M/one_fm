@@ -7,3 +7,4 @@ one_fm.patches.v1_0.delete_interview_doctype
 one_fm.patches.v1_0.delete_unused_interview_related_cutom_fields
 one_fm.patches.v0_12.fix_payroll_duplicate_iban_number_2
 one_fm.patches.v0_12.resize_customer_image_for_website
+one_fm.patches.v1_0.add_erf_approver_role
