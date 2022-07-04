@@ -12,7 +12,7 @@ frappe.ui.form.on('Accounts Additional Settings', {
 	create_collection_officer_role: function(frm) {
 		frappe.call({
 			method: 'one_fm.one_fm.utils.create_role_if_not_exists',
-			args: {'role': 'Collection Officer'},
+			args: {'roles': ['Collection Officer']},
 			callback: function(r) {
 				if(!r.exc){
 					frm.reload_doc();

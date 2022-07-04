@@ -8,6 +8,7 @@ from frappe.integrations.offsite_backup_utils import get_latest_backup_file, sen
 from one_fm.api.notification import create_notification_log
 from frappe.utils.user import get_users_with_role
 from erpnext.hr.utils import get_holidays_for_employee
+import json
 
 @frappe.whitelist()
 def employee_grade_validate(doc, method):
@@ -406,17 +407,19 @@ def get_workflow_sates(doctype):
     return workflow_states
 
 @frappe.whitelist()
-def create_role_if_not_exists(role, desk_access=True):
-    '''
-        Method is used to create Role.
-        args:
-            role: Name of the Role, Text
-            desk_access: Boolean for Desk Access
-    '''
-    if not frappe.db.exists("Role", {"role_name": role}):
-        doc = frappe.new_doc("Role")
-        doc.update({
-            "role_name": role,
-            "desk_access": desk_access
-        })
-        doc.insert(ignore_permissions=True)
+def create_role_if_not_exists(roles, desk_access=True):
+	'''
+		Method is used to create Role.
+		args:
+			roles: list of Name of the Role, Text
+			desk_access: Boolean for Desk Access
+	'''
+	roles = json.loads(roles)
+	for role in roles:
+		if not frappe.db.exists("Role", {"role_name": role}):
+			doc = frappe.new_doc("Role")
+			doc.update({
+				"role_name": role,
+				"desk_access": desk_access
+			})
+			doc.insert(ignore_permissions=True)
