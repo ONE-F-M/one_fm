@@ -183,7 +183,6 @@ def enrollment_reset(employee_id: str = None) -> dict:
         if get_employee.status:
             employee = frappe.get_doc("Employee", get_employee.message)
             employee.db_set("enrolled", 0)
-            employee.db_set("fcm_token", '')
             return response(message='Enrollment reset successful, re-enrollment can be done by logging off the app then click register',
                 status_code=200, data={'status':True}, error=None)
         else:
