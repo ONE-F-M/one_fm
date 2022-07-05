@@ -17,4 +17,3 @@ def before_insert(doc, events):
     else:
         doc.start_datetime = f"{doc.start_date} {shift.end_time}"
 
-    print(doc.as_dict())
