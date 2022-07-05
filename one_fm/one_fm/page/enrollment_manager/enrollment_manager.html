@@ -1,0 +1,17 @@
+<form id="enrollment-form">
+    <h3>This form is used to check employee enrollment status as well as reset enrollment.</h3>
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label for="employee_id">Please enter employee ID (e.g: 20200101XO123)</label>
+            <input type="text" class="form-control" id="employee_id" placeholder="">
+        </div>
+        <div class="form-group col-md-6">
+            <label for="action_type">Action Type</label>
+            <select id="action_type" class="form-control">
+                <option value="status" selected>Check Enrollment Status</option>
+                <option value="reset">Reset Enrollment</option>
+            </select>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>

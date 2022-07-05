@@ -162,10 +162,10 @@ def enrollment_status(employee_id: str = None) -> dict:
     try:
         get_employee = get_employee_by_id(employee_id)
         if get_employee.status:
-            employee = frappe.get_doc("Employee", get_employee.message)
-            if employee.enrolled and employee.fcm_token:
-                return response(message='Employee is enrolled on the mobile app.', status_code=200, data={'enrolled':True}, error=None)
-            return response(message='Employee not enrolled.', status_code=get_employee.http_status_code, data={'enrolled':False}, error=None)
+            employee = frappe.get_doc("Employee", get_employee.message.name)
+            if employee.enrolled:
+                return response(message=f"Employee <b>{employee.employee_name}</b> is enrolled on the mobile app.", status_code=200, data={'enrolled':True}, error=None)
+            return response(message=f"Employee <b>{employee.employee_name}</b> is not enrolled.", status_code=200, data={'enrolled':False}, error=None)
         else:
             return response(message=get_employee.message, status_code=get_employee.http_status_code, data={'status':False}, error=None)
     except Exception as e:
@@ -181,9 +181,9 @@ def enrollment_reset(employee_id: str = None) -> dict:
     try:
         get_employee = get_employee_by_id(employee_id)
         if get_employee.status:
-            employee = frappe.get_doc("Employee", get_employee.message)
+            employee = frappe.get_doc("Employee", get_employee.message.name)
             employee.db_set("enrolled", 0)
-            return response(message='Enrollment reset successful, re-enrollment can be done by logging off the app then click register',
+            return response(message=f"Enrollment reset successful for <b>{employee.employee_name}</b>, re-enrollment can be done by logging off the app then click register button.",
                 status_code=200, data={'status':True}, error=None)
         else:
             return response(message=get_employee.message, status_code=get_employee.http_status_code,
@@ -201,7 +201,7 @@ def get_employee_by_id(employee_id):
     try:
         employee = frappe.get_value("Employee", {"employee_id": employee_id}, ["name"], as_dict=1)
         if employee:
-            return frappe._dict({'status': True, 'message': employee.name})
+            return frappe._dict({'status': True, 'message': employee})
         return frappe._dict({'status': False, 'message': f'Employee with ID {employee_id} does not exist', 'http_status_code':404})
     except Exception as e:
         frappe._dict({'status': False, 'message': str(e), 'http_status_code':500})
