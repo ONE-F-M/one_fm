@@ -27,7 +27,7 @@ app_include_js = [
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
-# web_include_js = "/assets/one_fm/js/one_fm.js"
+web_include_js = "/assets/one_fm/js/web/one_fm.js"
 
 # include js in page
 page_js = {

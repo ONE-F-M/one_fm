@@ -115,6 +115,7 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		return response("Internal Server Error", 500, None, error)@frappe.whitelist()
 
 
+@frappe.whitelist()
 def get_penalties(employee_id: str = None, role: str = None) -> dict:
 
 	if not employee_id:
@@ -239,25 +240,12 @@ def accept_penalty(employee_id: str = None, file: str = None, docname: str = Non
 				penalty_doc.verified = 1		
 				penalty_doc.workflow_state = "Penalty Accepted"
 			penalty_doc.save(ignore_permissions=True)
-			
-			file_doc = frappe.get_doc({
-				"doctype": "File",
-				"file_url": "/private/files/"+employee_id+".png",
-				"file_name": employee_id+".png",
-				"attached_to_doctype": "Penalty",
-				"attached_to_name": docname,
-				"folder": "Home/Attachments",
-				"is_private": 1
-			})
-			file_doc.flags.ignore_permissions = True
-			file_doc.insert()
-
+			# upload image if available
 			frappe.db.commit()
-
 			return response("Success", 201, penalty_doc.as_dict())
 		
 		else:
-			return response("Unauthorized", 401, None, "Face not recognized.")
+			return response("Unauthorized", 401, None, "Face not recognized. Please try again.")
 
 	except Exception as error:
 		return response("Internal Server Error", 500, None, error)

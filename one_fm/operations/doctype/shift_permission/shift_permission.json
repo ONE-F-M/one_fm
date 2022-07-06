@@ -20,6 +20,9 @@
   "section_break_12",
   "arrival_time",
   "leaving_time",
+  "latitude",
+  "longitude",
+  "section_break_17",
   "reason",
   "amended_from"
  ],
@@ -136,11 +139,27 @@
    "in_list_view": 1,
    "label": "Employee Name",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.permission_type == \"Checkin Issue\" || doc.permission_type == \"Checkout Issue\"",
+   "fieldname": "latitude",
+   "fieldtype": "Float",
+   "label": "Latitude"
+  },
+  {
+   "depends_on": "eval:doc.permission_type == \"Checkin Issue\" || doc.permission_type == \"Checkout Issue\"",
+   "fieldname": "longitude",
+   "fieldtype": "Float",
+   "label": "Longitude"
+  },
+  {
+   "fieldname": "section_break_17",
+   "fieldtype": "Section Break"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-21 09:46:03.607107",
+ "modified": "2022-07-05 11:34:44.996887",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
