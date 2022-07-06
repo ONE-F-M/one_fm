@@ -717,8 +717,7 @@ def assign_am_shift():
 				WHERE st.start_time >= '00:00:00' 
 				AND  st.start_time < '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
-	frappe.enqueue(
-  , roster = roster, date = date, is_async=True, queue='long')
+	frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
 
 def assign_pm_shift():
 	date = cstr(getdate())
