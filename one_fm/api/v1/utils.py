@@ -137,7 +137,7 @@ def get_current_shift(employee):
 			return shifts[0].shift
 	except Exception as e:
 		print(frappe.get_traceback())
-		return frappe.utils.response.report_error(e.http_status_code)
+		return frappe.utils.response.report_error(e)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -150,3 +150,58 @@ def get_mobile_version():
         return response(message='Successful', status_code=200, data={'version':version}, error=None)
     except Exception as e:
         return response(message='Failed', status_code=500, data={}, error=str(e))
+
+
+@frappe.whitelist()
+def enrollment_status(employee_id: str = None) -> dict:
+    """
+        Check if an employee is enrolled on the mobile app
+    :param employee:
+    :return: True or False
+    """
+    try:
+        get_employee = get_employee_by_id(employee_id)
+        if get_employee.status:
+            employee = frappe.get_doc("Employee", get_employee.message.name)
+            if employee.enrolled:
+                return response(message=f"Employee <b>{employee.employee_name}</b> is enrolled on the mobile app.", status_code=200, data={'enrolled':True}, error=None)
+            return response(message=f"Employee <b>{employee.employee_name}</b> is not enrolled.", status_code=200, data={'enrolled':False}, error=None)
+        else:
+            return response(message=get_employee.message, status_code=get_employee.http_status_code, data={'status':False}, error=None)
+    except Exception as e:
+        return response(message='Failed', status_code=500, data={}, error=str(e))
+
+@frappe.whitelist()
+def enrollment_reset(employee_id: str = None) -> dict:
+    """
+    Check if an employee is enrolled on the mobile app
+    :param employee:
+    :return: True or False
+    """
+    try:
+        get_employee = get_employee_by_id(employee_id)
+        if get_employee.status:
+            employee = frappe.get_doc("Employee", get_employee.message.name)
+            employee.db_set("enrolled", 0)
+            return response(message=f"Enrollment reset successful for <b>{employee.employee_name}</b>, re-enrollment can be done by logging off the app then click register button.",
+                status_code=200, data={'status':True}, error=None)
+        else:
+            return response(message=get_employee.message, status_code=get_employee.http_status_code,
+                data={'status':False}, error=None)
+    except Exception as e:
+        return response(message='Failed', status_code=500, data={}, error=str(e))
+
+@frappe.whitelist()
+def get_employee_by_id(employee_id):
+    """
+    Get employee pk by employee id
+    :param employee_id:
+    :return:
+    """
+    try:
+        employee = frappe.get_value("Employee", {"employee_id": employee_id}, ["name"], as_dict=1)
+        if employee:
+            return frappe._dict({'status': True, 'message': employee})
+        return frappe._dict({'status': False, 'message': f'Employee with ID {employee_id} does not exist', 'http_status_code':404})
+    except Exception as e:
+        frappe._dict({'status': False, 'message': str(e), 'http_status_code':500})

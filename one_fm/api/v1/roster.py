@@ -82,7 +82,6 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
 def get_weekly_staff_roster(start_date, end_date):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
-
 		roster = frappe.db.sql("""
 			SELECT shift, employee, date, employee_availability, post_type
 			FROM `tabEmployee Schedule`
@@ -587,7 +586,6 @@ def get_current_shift(employee):
 		#convert to datetime
 		time = time.split(":")
 		time = datetime.timedelta(hours=cint(time[0]), minutes=cint(time[1]), seconds=cint(time[2]))
-
 		if len(last_shift) > 0:
 			shift = last_shift[0]
 			start_date = (shift.start_date).strftime("%Y-%m-%d")
@@ -595,7 +593,6 @@ def get_current_shift(employee):
 			#start date could be previous day if night shift
 			if start_date == date or start_date == prev_date:
 				start_time, end_time ,before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["start_time", "end_time","begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
-
 				#include early entry and late exit time
 				start_time = start_time - datetime.timedelta(minutes=before_time)
 				end_time = end_time + datetime.timedelta(minutes=after_time)
@@ -619,3 +616,4 @@ def get_report_comments(report_name):
 		return comments
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code) 
+

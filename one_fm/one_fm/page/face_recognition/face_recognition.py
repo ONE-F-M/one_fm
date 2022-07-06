@@ -287,7 +287,7 @@ def check_existing():
 	
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
-	
+
 	shift = get_current_shift(employee)
 	#if employee schedule is linked with the previous Checkin doc
 	
