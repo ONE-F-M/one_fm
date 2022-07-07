@@ -169,10 +169,10 @@ def enrollment_status(employee_id: str = None) -> dict:
         else:
             return response(message=get_employee.message, status_code=get_employee.http_status_code, data={'status':False}, error=None)
     except Exception as e:
-        return response(message='Failed', status_code=500, data={}, error=str(e))
+        return response(message=str(e), status_code=500, data={'status':False}, error=str(e))
 
 @frappe.whitelist()
-def enrollment_reset(employee_id: str = None) -> dict:
+def update_employee(employee_id, field, value):
     """
     Check if an employee is enrolled on the mobile app
     :param employee:
@@ -182,14 +182,22 @@ def enrollment_reset(employee_id: str = None) -> dict:
         get_employee = get_employee_by_id(employee_id)
         if get_employee.status:
             employee = frappe.get_doc("Employee", get_employee.message.name)
-            employee.db_set("enrolled", 0)
-            return response(message=f"Enrollment reset successful for <b>{employee.employee_name}</b>, re-enrollment can be done by logging off the app then click register button.",
-                status_code=200, data={'status':True}, error=None)
+            if (field=='cell_number' and employee.user_id):
+                cell_number = int(value)
+                cell_number = str(cell_number)
+                employee.db_set(field, cell_number)
+                user_id = frappe.get_doc("User", employee.user_id)
+                user_id.db_set('mobile_no', employee.cell_number)
+                user_id.db_set('phone', employee.cell_number)
+            else:
+                employee.db_set(field, value)
+            return response(message=f"Employee <b>{employee.employee_name} -  {field}</b> updated successfully.",
+                            status_code=200, data={'status':True}, error=None)
         else:
             return response(message=get_employee.message, status_code=get_employee.http_status_code,
                 data={'status':False}, error=None)
     except Exception as e:
-        return response(message='Failed', status_code=500, data={}, error=str(e))
+        return response(message=str(e), status_code=200, data={'status':False}, error=str(e))
 
 @frappe.whitelist()
 def get_employee_by_id(employee_id):
