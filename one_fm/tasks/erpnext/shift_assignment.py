@@ -1,8 +1,6 @@
 import frappe
 from frappe.utils import add_days
 
-
-
 def before_insert(doc, events):
     """
         Before insert events to execute
@@ -15,5 +13,4 @@ def before_insert(doc, events):
     if shift.end_time.total_seconds() < shift.start_time.total_seconds():
         doc.end_datetime = f"{add_days(doc.start_date, 1)} {shift.end_time}"
     else:
-        doc.start_datetime = f"{doc.start_date} {shift.end_time}"
-
+        doc.end_datetime = f"{doc.start_date} {shift.end_time}"

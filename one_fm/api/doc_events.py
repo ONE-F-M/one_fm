@@ -5,6 +5,7 @@ import frappe, erpnext
 from frappe import _
 from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
+from one_fm.api.v1.roster import get_current_shift
 from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 import datetime
@@ -38,16 +39,16 @@ def employee_checkin_validate(doc, method):
 			}
 			existing_perm = None
 			checkin_time = get_datetime(doc.time)
-			shift_actual_timings = get_actual_start_end_datetime_of_shift(doc.employee, get_datetime(doc.time), True)
-			prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
-			if curr_shift:
-				existing_perm = frappe.db.exists("Shift Permission", {"date": curr_shift.start_datetime.strftime('%Y-%m-%d'), "employee": doc.employee, "permission_type": perm_map[doc.log_type], "workflow_state": "Approved"})
-				name, assignment, shift_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": curr_shift.start_datetime.date(), "shift_type": curr_shift.shift_type.name}, ["name","shift", "shift_type"])
-				doc.shift_assignment = name
-				doc.operations_shift = assignment
-				doc.shift_type = shift_type
+			curr_shift = get_current_shift(doc.employee)
+			last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":doc.employee},order_by='creation desc',limit_page_length=1)
+			if curr_shift and last_shift:
+				start_date = (curr_shift.start_date).strftime("%Y-%m-%d")
+				existing_perm = frappe.db.exists("Shift Permission", {"date": start_date, "employee": doc.employee, "permission_type": perm_map[doc.log_type], "workflow_state": "Approved"})
+				doc.shift_assignment = last_shift[0].name
+				doc.operations_shift = last_shift[0].shift
+				doc.shift_type = last_shift[0].shift_type
 
-			if shift_actual_timings[0] and shift_actual_timings[1]:
+			if last_shift and last_shift[0].start_datetime and last_shift[0].end_datetime:
 				if existing_perm:
 					perm_doc = frappe.get_doc("Shift Permission", existing_perm)
 					permitted_time = get_datetime(perm_doc.date) + (perm_doc.arrival_time if doc.log_type == "IN" else perm_doc.leaving_time)
