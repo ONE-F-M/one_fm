@@ -50,10 +50,10 @@ def validate_approver(self):
 @frappe.whitelist()
 def fetch_approver(employee):
 	if employee:
-		if frappe.db.exists("Employee", employee,["reports_to"]):
-			report_to = frappe.get_value("Employee", employee,["reports_to"])
-			return frappe.get_value("Employee", report_to, "user_id")
-			
+		reports_to = frappe.get_value("Employee", employee,["reports_to"])
+		if reports_to:
+			return frappe.get_value("Employee", reports_to, "user_id")
+
 		shift, department = frappe.get_value("Employee", employee, ["shift","department"])
 		if shift:
 			shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")
