@@ -1,0 +1,28 @@
+{
+ "content": null,
+ "creation": "2022-07-04 23:38:14.121531",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2022-07-04 23:38:31.108918",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "enrollment-manager",
+ "owner": "Administrator",
+ "page_name": "Employee Management",
+ "roles": [
+  {
+   "role": "Shift Supervisor"
+  },
+  {
+   "role": "Site Supervisor"
+  },
+  {
+   "role": "HR User"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0
+}

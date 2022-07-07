@@ -1,14 +1,14 @@
-frappe.pages['enrollment-manager'].on_page_load = function(wrapper) {
+frappe.pages['employee_management'].on_page_load = function(wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: 'Enrollment Manager',
+		title: 'Employee Management',
 		single_column: true
 	});
 
-	$(wrapper).find('.layout-main-section').empty().append(frappe.render_template('enrollment_manager'));
+	$(wrapper).find('.layout-main-section').empty().append(frappe.render_template('employee_management'));
     // Add event listener
 
-    $('#enrollment-form').on('submit', function (e) {
+    $('#update-form').on('submit', function (e) {
         e.preventDefault();
         processForm()
     })
@@ -18,12 +18,7 @@ frappe.pages['enrollment-manager'].on_page_load = function(wrapper) {
 const processForm = () => {
     let employee_id = $('#employee_id')[0].value;
     let action_type = $('#action_type')[0].value;
-    let api = '';
-    if (action_type === 'status'){
-        api = 'enrollment_status';
-    } else {
-        api = 'enrollment_reset';
-    }
+    let api = actions[action_type];
     console.log(api)
 
     // make api call
@@ -43,5 +38,9 @@ const processForm = () => {
     })
 }
 
-
+const actions = {
+    status: 'enrollment_status',
+    enrolled: 'update_employee',
+    phone: 'update_employee',
+}
 
