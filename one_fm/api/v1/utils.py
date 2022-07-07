@@ -169,7 +169,7 @@ def enrollment_status(employee_id: str = None) -> dict:
         else:
             return response(message=get_employee.message, status_code=get_employee.http_status_code, data={'status':False}, error=None)
     except Exception as e:
-        return response(message='Failed', status_code=500, data={}, error=str(e))
+        return response(message=str(e), status_code=500, data={'status':False}, error=str(e))
 
 @frappe.whitelist()
 def update_employee(employee_id, field, value):
@@ -182,18 +182,26 @@ def update_employee(employee_id, field, value):
         get_employee = get_employee_by_id(employee_id)
         if get_employee.status:
             employee = frappe.get_doc("Employee", get_employee.message.name)
-            employee.db_set(field, value)
             if (field=='cell_number' and employee.user_id):
-                user_id = frappe.get_doc("User", employee.user_id)
-                user_id.db_set('mobile_no', employee.cell_number)
-                user_id.db_set('phone', employee.cell_number)
+                cell_number = int(value)
+                cell_number = str(cell_number)
+                if (cell_number.startswith('965') and (len(cell_number)==11)):
+                    employee.db_set(field, cell_number)
+                    user_id = frappe.get_doc("User", employee.user_id)
+                    user_id.db_set('mobile_no', employee.cell_number)
+                    user_id.db_set('phone', employee.cell_number)
+                else:
+                    return response(message=f"Employee <b>{employee.employee_name}</b> phone number: {value} must start with '965' and must be 11 characters long.",
+                                    status_code=200, data={'status':False}, error=None)
+            else:
+                employee.db_set(field, value)
             return response(message=f"Employee <b>{employee.employee_name} -  {field}</b> updated successfully.",
-                status_code=200, data={'status':True}, error=None)
+                            status_code=200, data={'status':True}, error=None)
         else:
             return response(message=get_employee.message, status_code=get_employee.http_status_code,
                 data={'status':False}, error=None)
     except Exception as e:
-        return response(message='Failed', status_code=500, data={}, error=str(e))
+        return response(message=str(e), status_code=200, data={'status':False}, error=str(e))
 
 @frappe.whitelist()
 def get_employee_by_id(employee_id):

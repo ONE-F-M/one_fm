@@ -59,7 +59,6 @@ const inputDialog = (api, field, title, argsObject) => {
         primary_action(values) {
             argsObject.field = field;
             argsObject.value = values[field];
-            console.log(argsObject)
             makeCall(api, argsObject);
             d.hide();
         }
@@ -71,7 +70,6 @@ const inputDialog = (api, field, title, argsObject) => {
 const makeCall = (api, argsObject) => {
     frappe.confirm('Are you sure you want to proceed?',
         () => {
-        console.log("one_fm.api.v1.utils."+api)
             frappe.call({
                 method: "one_fm.api.v1.utils."+api, //dotted path to server method
                 args: argsObject,
