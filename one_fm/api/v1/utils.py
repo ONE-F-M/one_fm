@@ -185,14 +185,10 @@ def update_employee(employee_id, field, value):
             if (field=='cell_number' and employee.user_id):
                 cell_number = int(value)
                 cell_number = str(cell_number)
-                if (cell_number.startswith('965') and (len(cell_number)==11)):
-                    employee.db_set(field, cell_number)
-                    user_id = frappe.get_doc("User", employee.user_id)
-                    user_id.db_set('mobile_no', employee.cell_number)
-                    user_id.db_set('phone', employee.cell_number)
-                else:
-                    return response(message=f"Employee <b>{employee.employee_name}</b> phone number: {value} must start with '965' and must be 11 characters long.",
-                                    status_code=200, data={'status':False}, error=None)
+                employee.db_set(field, cell_number)
+                user_id = frappe.get_doc("User", employee.user_id)
+                user_id.db_set('mobile_no', employee.cell_number)
+                user_id.db_set('phone', employee.cell_number)
             else:
                 employee.db_set(field, value)
             return response(message=f"Employee <b>{employee.employee_name} -  {field}</b> updated successfully.",
