@@ -15,7 +15,6 @@ function set_approver(frm){
                 'employee':frm.doc.employee
             },
             callback: function(r) {
-                console.log(r.message)
                 if(r.message){
                     frm.set_value("approver",r.message)
                 }
