@@ -740,7 +740,8 @@ def end_previous_shifts(time):
 	else:
 		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"]},['name'], pluck='name')
 
-	shift_assignments = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'], ["shift_type", "IN", shift_type]], fields=['name','start_date'])
+	shift_assignments = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'],
+					["shift_type", "IN", shift_type], ["docstatus", "=", 1]], fields=['name','start_date'])
 
 	for shift_assignment in shift_assignments:
 		frappe.set_value("Shift Assignment", shift_assignment.name,'end_date',shift_assignment.start_date)
