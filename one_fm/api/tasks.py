@@ -408,9 +408,11 @@ def supervisor_reminder(shift, today_datetime, now_time):
 			for recipient in recipients:
 				action_user, Role = get_action_user(recipient.name,recipient.shift)
 				#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
-				subject = _('{employee} has not checked in yet.'.format(employee=recipient.employee_name))
+				subject = _('{employee} has not checked out yet.'.format(employee=recipient.employee_name))
 				action_message = _("""
 					<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
+					Submit a Shift Permission for the employee to give an excuse and not need to penalize
+					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
 					""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
 				if action_user is not None:
@@ -710,11 +712,11 @@ def assign_am_shift():
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
 			ES.date = '{date}'
-			AND ES.employee_availability = "Working" 
+			AND ES.employee_availability = "Working"
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
-				SELECT name from `tabShift Type` st 
-				WHERE st.start_time >= '00:00:00' 
+				SELECT name from `tabShift Type` st
+				WHERE st.start_time >= '00:00:00'
 				AND  st.start_time < '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
 	frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
@@ -726,10 +728,10 @@ def assign_pm_shift():
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
 			ES.date = '{date}'
-			AND ES.employee_availability = "Working" 
+			AND ES.employee_availability = "Working"
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
-				SELECT name from `tabShift Type` st 
+				SELECT name from `tabShift Type` st
 				WHERE st.start_time >= '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
 	frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
@@ -875,7 +877,7 @@ def generate_penalties():
 	month = getdate().month if getdate().day >= cint(date) else getdate().month - 1
 
 	#calculate Payroll date, start and end date.
-	
+
 	payroll_date = datetime.datetime(year, month, cint(date)).strftime("%Y-%m-%d")
 	start_date = add_to_date(payroll_date, months=-1)
 	end_date = add_to_date(payroll_date, days=-1)
