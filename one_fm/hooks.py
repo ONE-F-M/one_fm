@@ -89,11 +89,13 @@ doctype_js = {
 	"Attendance Request": "public/js/doctype_js/attendance_request.js",
 	"Shift Request": "public/js/doctype_js/shift_request.js",
 	"Shift Assignment": "public/js/doctype_js/shift_assignment.js",
+	"Employee Checkin": "public/js/doctype_js/employee_checkin.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
 	"Job Offer": "public/js/doctype_js/job_offer_list.js",
-	"Issue": "public/js/doctype_list_js/issue_list.js"
+	"Issue": "public/js/doctype_list_js/issue_list.js",
+	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
