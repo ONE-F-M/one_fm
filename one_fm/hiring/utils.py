@@ -271,7 +271,7 @@ def generate_employee_id(doc):
 		count = count + 1
 		serial_number = str(count).zfill(3)
 		
-	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{1 if doc.employment_type=='Full-time' else 0}{doc.date_of_birth.strftime('%y')}".upper())
+	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{1 if doc.under_company_residency else 0}{doc.date_of_birth.strftime('%y')}".upper())
 	doc.reload()
 
 
