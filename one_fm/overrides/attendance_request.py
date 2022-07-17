@@ -33,6 +33,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 			for attendance in attendance_list:
 				attendance_obj = frappe.get_doc("Attendance", attendance["name"])
 				attendance_obj.cancel()
+
 	def on_update(self):
 		self.send_notification()
 
@@ -49,10 +50,10 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	def check_attendance(self, attendance_date):
 		"""check if attendance exist"""
-		if(frappe.db.exists("Attendance",
-			{'employee':self.employee, 'docstatus':1, 'attendance_date':attendance_date})):
-			attendance = frappe.db.get_list("Attendance",
-				{'employee':self.employee, 'docstatus':1, 'attendance_date':attendance_date})[0].name
+		attendance = frappe.db.exists("Attendance",
+			{'employee':self.employee, 'docstatus':1, 'attendance_date':attendance_date}
+		)
+		if attendance:
 			return frappe.get_doc("Attendance", attendance)
 		return False
 
