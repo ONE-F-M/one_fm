@@ -5273,5 +5273,179 @@
   ],
   "workflow_name": "Shift Request",
   "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Attendance Request",
+  "is_active": 1,
+  "modified": "2022-07-17 20:27:22.476944",
+  "name": "Attendance Request",
+  "override_status": 0,
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "Employee",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Attendance Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Draft",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Shift Supervisor",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Attendance Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending Approval",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Shift Supervisor",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Attendance Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Shift Supervisor",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Attendance Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Shift Supervisor",
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Attendance Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Cancelled",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Shift Supervisor",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Attendance Request",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Update Request",
+    "update_field": null,
+    "update_value": null
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Send to Supervisor",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "condition": null,
+    "next_state": "Pending Approval",
+    "parent": "Attendance Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Shift Supervisor",
+    "condition": null,
+    "next_state": "Approved",
+    "parent": "Attendance Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending Approval"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Shift Supervisor",
+    "condition": null,
+    "next_state": "Rejected",
+    "parent": "Attendance Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending Approval"
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Shift Supervisor",
+    "condition": null,
+    "next_state": "Cancelled",
+    "parent": "Attendance Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Approved"
+   },
+   {
+    "action": "Update Request",
+    "allow_self_approval": 1,
+    "allowed": "Shift Supervisor",
+    "condition": "doc.update_request",
+    "next_state": "Update Request",
+    "parent": "Attendance Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Approved"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Shift Supervisor",
+    "condition": null,
+    "next_state": "Approved",
+    "parent": "Attendance Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Update Request"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Shift Supervisor",
+    "condition": null,
+    "next_state": "Cancelled",
+    "parent": "Attendance Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Update Request"
+   }
+  ],
+  "workflow_name": "Attendance Request",
+  "workflow_state_field": "workflow_state"
  }
 ]

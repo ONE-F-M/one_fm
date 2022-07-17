@@ -458,5 +458,15 @@
   "parentfield": null,
   "parenttype": null,
   "workflow_action_name": "Update Request"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2022-07-17 13:45:15.454716",
+  "name": "Send to Supervisor",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "workflow_action_name": "Send to Supervisor"
  }
 ]
