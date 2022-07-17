@@ -229,15 +229,16 @@ def create_employee_user_from_employee_id(doc):
 				'date_of_birth':doc.date_of_birth,
 				'send_welcome_email': 0,
 				'enabled':1,
+				'role_profile_name': "Only Employee",
+				'user_type':"System User",
 			})
 			user.insert(ignore_permissions=True)
-			user.add_roles("Employee", "Employee Self Service")
 			doc.db_set("user_id", user.name)
 			doc.db_set("create_user_permission", 1)
 			doc.reload()
-			pass
 	except Exception as e:
 		frappe.log_error(str(e), 'CREATE USER')
+
 
 def generate_employee_id(doc):
     """

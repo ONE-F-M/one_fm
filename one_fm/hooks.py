@@ -336,7 +336,9 @@ doc_events = {
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
-
+	"User": {
+		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
