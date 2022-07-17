@@ -229,36 +229,51 @@ def create_employee_user_from_employee_id(doc):
 				'date_of_birth':doc.date_of_birth,
 				'send_welcome_email': 0,
 				'enabled':1,
+				'role_profile_name': "Only Employee",
+				'user_type':"System User",
 			})
 			user.insert(ignore_permissions=True)
-			user.add_roles("Employee", "Employee Self Service")
 			doc.db_set("user_id", user.name)
 			doc.db_set("create_user_permission", 1)
 			doc.reload()
-			pass
 	except Exception as e:
 		frappe.log_error(str(e), 'CREATE USER')
 
+
 def generate_employee_id(doc):
-    """
-        Generate employee ID
-    """
-    try:
-        if not doc.one_fm_place_of_birth:
-            country = ''
-        else:
-            country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
-    except Exception as e:
-        country = ''
-    count = len(frappe.db.sql(f"""
-        SELECT name FROM tabEmployee
-        WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
-        as_dict=1))
-    doc.reload()
-    joining_year = str(doc.date_of_joining.year)[-2:].zfill(2)
-    joining_month = str(doc.date_of_joining.month).zfill(2)
-    doc.db_set("employee_id", f"{joining_year}{joining_month}{str(count).zfill(3)}{country}".upper())
-    doc.reload()
+	"""
+	Generate employee ID
+	"""
+	try:
+		if doc.one_fm_place_of_birth:
+			country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
+		elif doc.place_of_issue:
+			country = pycountry.countries.search_fuzzy(doc.place_of_issue)[0].alpha_2
+		else:
+			country = ''
+	except Exception as e:
+		country = ''
+	
+	count = len(frappe.db.sql(f"""
+		SELECT name FROM tabEmployee
+		WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
+		as_dict=1))
+		
+	if count == 0:
+		count = count + 1
+		
+	doc.reload()
+	joining_year = str(doc.date_of_joining.year)[-2:].zfill(2)
+	joining_month = str(doc.date_of_joining.month).zfill(2)
+	serial_number = str(count).zfill(3)
+	
+	while frappe.db.get_list("Employee", {"employee_id": ["LIKE", f"{joining_year}{joining_month}{serial_number}%"]}):
+		count = count + 1
+		serial_number = str(count).zfill(3)
+		
+	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{1 if doc.employment_type=='Full-time' else 0}{doc.date_of_birth.strftime('%y')}".upper())
+	doc.reload()
+
 
 def create_leave_policy_assignment(doc):
     '''
