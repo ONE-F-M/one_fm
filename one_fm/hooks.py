@@ -640,9 +640,10 @@ fixtures = [
 # Overriding Whitelisted Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
-# }
+override_whitelisted_methods = {
+	"erpnext.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.mobile.Leave_application.fetch_leave_approver"
+	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
+}
 ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation

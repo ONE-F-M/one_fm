@@ -213,7 +213,7 @@
    "select": 0,
    "set_user_permissions": 0,
    "share": 1,
-   "submit": 0,
+   "submit": 1,
    "write": 1
   },
   {
@@ -457,6 +457,30 @@
  ],
  "doctype": "Leave Application",
  "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2022-07-17 11:30:16.830953",
+   "default_value": null,
+   "doc_type": "Leave Application",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "status",
+   "idx": 0,
+   "modified": "2022-07-17 11:30:16.830953",
+   "modified_by": "Administrator",
+   "name": "Leave Application-status-default",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "default",
+   "property_type": "Text",
+   "row_name": null,
+   "value": "Open"
+  },
   {
    "_assign": null,
    "_comments": null,
