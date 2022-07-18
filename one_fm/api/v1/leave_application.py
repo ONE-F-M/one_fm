@@ -6,6 +6,8 @@ import datetime
 import collections
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
+from one_fm.api.v1.roster import get_current_shift
+from one_fm.api.tasks import get_action_user
 
 @frappe.whitelist()
 def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
@@ -277,8 +279,8 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     frappe.db.commit()
     return leave.as_dict()
 
-
-def get_leave_approver(employee: str) -> str:
+@frappe.whitelist()
+def fetch_leave_approver(employee: str) -> str:
     """This function fetches the leave approver for a given employee.
     The leave approver is fetched  either Report_to or Leave Approver. 
     But, if both don't exist, Operation manager is the Leave Approver.
@@ -290,17 +292,10 @@ def get_leave_approver(employee: str) -> str:
         str: user id of leave approver
     """
 
-    leave_approver, reports_to = frappe.db.get_value("Employee", employee, ["leave_approver", "reports_to"])
-    if not leave_approver:
-        if reports_to:
-            return frappe.db.get_value('Employee', {'name': reports_to}, ['user_id'])
-        else:
-            #if not, return the 'Operational Manager' as the leave approver. But, check if employee himself is not a leave manager.
-            operation_manager_name, operation_manager_user_id = frappe.db.get_value('Employee', {'Designation': "Operation Manager"}, ['name','user_id'])
-            if operation_manager_name != employee:
-                return operation_manager_user_id
+    employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
+    approver, Role = get_action_user(employee,employee_shift[0].shift)
     
-    return leave_approver
+    return approver
 
 
 def proof_document_required_for_leave_type(leave_type):
