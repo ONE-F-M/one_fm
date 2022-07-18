@@ -329,6 +329,9 @@ doc_events = {
 			"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
 		],
+		"on_update_after_submit":[
+			"one_fm.api.doc_methods.shift_request.on_update_after_submit",
+		],
 	},
 	"Shift Assignment":{
 		"before_insert":[
