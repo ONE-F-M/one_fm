@@ -15,6 +15,11 @@ class Contracts(Document):
 		if self.overtime_rate == 0:
 			frappe.msgprint(_("Overtime rate not set."), alert=True, indicator='orange')
 
+	def before_submit(self):
+		# check if items and poc exists
+		if not (self.items and self.poc):
+			frappe.throw(_("Contracts Items and POC must be set before document is submitted"))
+
 	def calculate_contract_duration(self):
 		duration_in_days = date_diff(self.end_date, self.start_date)
 		self.duration_in_days = cstr(duration_in_days)
