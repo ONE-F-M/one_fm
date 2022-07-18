@@ -27,7 +27,7 @@ def login(client_id, grant_type, employee_id, password):
 		Access token, refresh token, Enrollment status for checkin, Employee Id, Employee name, Employee image, Employee/Supervisor flag. 
 	"""
 	try:
-		site = "http://localhost:8000"
+		site = "https://"+frappe.utils.cstr(frappe.local.site)
 		# username = frappe.get_value("Employee", employee_id, "user_id")
 		username =  frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
 		if not username:
