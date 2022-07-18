@@ -99,7 +99,7 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason, p
     from pathlib import Path
     import hashlib
     #get Leave Approver of the employee.
-    leave_approver = get_leave_approver(employee)
+    leave_approver = fetch_leave_approver(employee)
     from_date = getdate(from_date)
     to_date = getdate(to_date)
     #check if leave exist and overlaps with the given date (StartDate1 <= EndDate2) and (StartDate2 <= EndDate1)
