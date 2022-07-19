@@ -311,7 +311,7 @@ def checkin_checkout_supervisor_reminder():
 def supervisor_reminder(shift, today_datetime, now_time):
 	title = "Checkin Report"
 	category = "Attendance"
-	if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time()):
+	if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())):
 		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
 		recipients = frappe.db.sql("""
@@ -367,7 +367,7 @@ def supervisor_reminder(shift, today_datetime, now_time):
 		Send notification to supervisor of those who haven't checked in and don't have accepted shift permission
 		with permission type Leave Early/Forget to Checkout/Checkout Issue
 	"""
-	if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time()):
+	if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_end_start))).time())):
 		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		checkout_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
 
