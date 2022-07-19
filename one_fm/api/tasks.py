@@ -177,7 +177,7 @@ def checkin_checkout_final_reminder():
 		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		# shift_start is equal to now time - notification reminder in mins
 		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
-		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time()):
+		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
@@ -211,7 +211,7 @@ def checkin_checkout_final_reminder():
 
 		# shift_end is equal to now time - notification reminder in mins
 		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
-		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time()):
+		if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
 			recipients = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 				WHERE
@@ -260,12 +260,8 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					""")
 	notification_category = "Attendance"
-	checkout_subject = _("Final Reminder: Please checkout in the next five minutes.")
-	checkout_message = _("""
-		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
-		Submit a Shift Permission if you are plannig to leave early or is there any issue in checkout or forget to checkout
-		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-		""")
+	checkout_subject = _("Please checkout in the next five minutes.")
+	checkout_message = _("""<a class="btn btn-danger" href="/desk#face-recognition">Check Out</a>""")
 	Notification_title = "Final Reminder"
 	Notification_body = "Please checkin in the next five minutes."
 	user_id_list = []
@@ -443,7 +439,8 @@ def send_notification(title, subject, message, category, recipients):
 def get_active_shifts(now_time):
 	return frappe.db.sql("""
 		SELECT
-			name, start_time, end_time,
+			name, start_time, end_time, 
+			has_split_shift, first_shift_end_time, second_shift_start_time,
 			notification_reminder_after_shift_start, late_entry_grace_period,
 			notification_reminder_after_shift_end, allow_check_out_after_shift_end_time,
 			supervisor_reminder_shift_start, supervisor_reminder_start_ends, deadline
