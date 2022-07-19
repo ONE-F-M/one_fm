@@ -251,14 +251,8 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
 
             attachment_path = f"/files/leave-application/{employee_doc.user_id}/{filename}"
 
-        # Approve leave application for "Sick Leave"
-        if str(leave_type).lower() == "sick leave":
-            doc = new_leave_application(employee, from_date, to_date, leave_type, "Approved", reason, leave_approver, attachment_path)
-            return response("Success", 201, doc)
-
-        else:
-            doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
-            return response("Success", 201, doc)
+        doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
+        return response("Success", 201, doc)
     
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
