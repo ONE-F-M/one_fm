@@ -1122,9 +1122,10 @@ function render_roster(res, page, isOt) {
 	</tr>`;
 	$rosterMonthbody.append(emp_row_wrapper);
 	for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
-		let { employee_name, employee, date } = employees_data[employee_key];
+		// let { employee_name, employee, date } = employees_data[employee_key];
+		let employee = employees_data[employee_key][0]['employee']
 		let emp_row = `
-		<tr data-name="${employee_key}">
+		<tr data-name="${employee}">
 			<td class="sticky">
 				<label class="checkboxcontainer simplecheckbox">
 					<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
@@ -1254,11 +1255,11 @@ function render_roster(res, page, isOt) {
 				}
 				i++;
 				start_date.add(1, 'days');
-				$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
+				$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee}"]`).append(sch);
 
 			}
 		}
-		$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i - 1]['employee_name']}"]`).append(`<td>${j}</td>`);
+		$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i - 1]['employee']}"]`).append(`<td>${j}</td>`);
 
 	}
 	let c2 = performance.now();
