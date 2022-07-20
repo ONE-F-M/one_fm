@@ -581,7 +581,6 @@ def checkin_deadline():
 		return
 
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
-	today = now_datetime().strftime("%Y-%m-%d")
 	shifts_list = get_active_shifts(now_time)
 	#penalty_code = "106"
 
@@ -628,7 +627,7 @@ def checkin_deadline():
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
 
 				for employee in employees:
-					frappe.enqueue(mark_attendance, employee=employee, attendance_date=today, status='Absent', shift=shift.name,  is_async=True, queue='long')
+					frappe.enqueue(mark_attendance, employee=employee, attendance_date=date, status='Absent', shift=shift.name,  is_async=True, queue='long')
 					# op_shift =  frappe.get_doc("Operations Shift", {"shift_type":shift.name})
 					# action_user, Role = get_action_user(employee,op_shift.name)
 					# if Role:
