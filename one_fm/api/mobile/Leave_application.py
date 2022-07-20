@@ -133,14 +133,7 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason, p
 
                 attachment_path = f"/files/leave-application/{frappe.session.user}/{filename}"
 
-            #if sick leave, automatically accept the leave application
-            if leave_type == "Sick Leave":
-                doc = new_leave_application(employee,from_date,to_date,leave_type,"Approved",reason,leave_approver, attachment_path)
-                doc.submit()
-                frappe.db.commit()
-            #else keep it open and that sends the approval notification to the 'leave approver'.
-            else:
-                doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,leave_approver, attachment_path)
+            doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,leave_approver, attachment_path)
             return response('Success',doc, 201)
         except Exception as e:
             frappe.log_error(frappe.get_traceback())
