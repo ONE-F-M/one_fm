@@ -90,8 +90,6 @@ class EmployeeUniform(Document):
 	def validate_issue(self):
 		if self.type == "Issue":
 			self.validate_issued_no_of_items()
-			if not self.warehouse:
-				self.warehouse = frappe.db.get_value("Uniform Management Settings", None, 'new_uniform_warehouse')
 
 	def validate_issued_no_of_items(self):
 		if self.designation:
@@ -109,10 +107,6 @@ class EmployeeUniform(Document):
 			if not self.reason_for_return:
 				frappe.throw(_("Reason for Return required in Employee Uniform"))
 			self.validate_item_return_before_expiry()
-			if not self.warehouse:
-				self.warehouse = frappe.db.get_value("Uniform Management Settings", None, 'used_uniform_warehouse')
-				if self.reason_for_return == "Item Exchange":
-					self.warehouse = frappe.db.get_value("Uniform Management Settings", None, 'new_uniform_warehouse')
 
 	def validate_item_return_before_expiry(self):
 		if self.reason_for_return in ['Item Expired']:

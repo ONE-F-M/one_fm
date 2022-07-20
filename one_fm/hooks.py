@@ -89,11 +89,13 @@ doctype_js = {
 	"Attendance Request": "public/js/doctype_js/attendance_request.js",
 	"Shift Request": "public/js/doctype_js/shift_request.js",
 	"Shift Assignment": "public/js/doctype_js/shift_assignment.js",
+	"Employee Checkin": "public/js/doctype_js/employee_checkin.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
 	"Job Offer": "public/js/doctype_js/job_offer_list.js",
-	"Issue": "public/js/doctype_list_js/issue_list.js"
+	"Issue": "public/js/doctype_list_js/issue_list.js",
+	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -327,6 +329,9 @@ doc_events = {
 			"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
 		],
+		"on_update_after_submit":[
+			"one_fm.api.doc_methods.shift_request.on_update_after_submit",
+		],
 	},
 	"Shift Assignment":{
 		"before_insert":[
@@ -336,7 +341,9 @@ doc_events = {
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
-
+	"User": {
+		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -636,9 +643,10 @@ fixtures = [
 # Overriding Whitelisted Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
-# }
+override_whitelisted_methods = {
+	"erpnext.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.mobile.Leave_application.fetch_leave_approver"
+	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
+}
 ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation

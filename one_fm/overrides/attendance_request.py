@@ -10,6 +10,7 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
 from erpnext.hr.doctype.employee.employee import is_holiday
 from erpnext.hr.utils import validate_active_employee, validate_dates
 from erpnext.hr.doctype.attendance_request.attendance_request import AttendanceRequest
+from frappe.model.workflow import apply_workflow
 
 
 class AttendanceRequestOverride(AttendanceRequest):
@@ -24,17 +25,27 @@ class AttendanceRequestOverride(AttendanceRequest):
 		self.create_attendance()
 
 	def on_cancel(self):
+		self.cancel_requested_attendance()
+
+	def cancel_requested_attendance(self):
 		attendance_list = frappe.get_list(
 			"Attendance", {"employee": self.employee, "attendance_request": self.name}
 		)
-		self.db_set("workflow_state", 'Cancelled')
-		self.reload()
 		if attendance_list:
 			for attendance in attendance_list:
 				attendance_obj = frappe.get_doc("Attendance", attendance["name"])
 				attendance_obj.cancel()
+
 	def on_update(self):
 		self.send_notification()
+
+	def on_update_after_submit(self):
+		self.send_notification()
+		if self.update_request:
+			if self.workflow_state == 'Approved':
+				self.create_attendance()
+			if self.workflow_state == 'Update Request':
+				self.cancel_requested_attendance()
 
 	def check_shift_assignment(self, attendance_date):
 		"""
@@ -49,10 +60,10 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	def check_attendance(self, attendance_date):
 		"""check if attendance exist"""
-		if(frappe.db.exists("Attendance",
-			{'employee':self.employee, 'docstatus':1, 'attendance_date':attendance_date})):
-			attendance = frappe.db.get_list("Attendance",
-				{'employee':self.employee, 'docstatus':1, 'attendance_date':attendance_date})[0].name
+		attendance = frappe.db.exists("Attendance",
+			{'employee':self.employee, 'docstatus':1, 'attendance_date':attendance_date}
+		)
+		if attendance:
 			return frappe.get_doc("Attendance", attendance)
 		return False
 
@@ -113,7 +124,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 
 	def send_notification(self):
-		if self.workflow_state in ['Pending Approval', 'Rejected', 'Approved']:
+		if self.workflow_state in ['Pending Approval', 'Rejected', 'Approved', 'Update Request', 'Cancelled']:
 			send_workflow_action_email([self.get_reports_to()], self)
 
 
@@ -163,7 +174,7 @@ def validate_future_dates(doc, from_date, to_date):
 	elif (getdate(from_date) > getdate(nowdate()) or (getdate(to_date) > getdate(nowdate()))) and (not doc.future_request):
 		frappe.throw(_("Future dates not allowed"))
 	elif ((getdate(from_date) < getdate(nowdate())) or (getdate(from_date) < getdate(nowdate()))) and (doc.future_request):
-		frappe.throw(_("Past dates not allowed"))
+		frappe.throw(_("Past dates not allowed for future request"))
 	elif date_of_joining and getdate(from_date) < getdate(date_of_joining):
 		frappe.throw(_("From date can not be less than employee's joining date"))
 	elif relieving_date and getdate(to_date) > getdate(relieving_date):
@@ -189,3 +200,14 @@ def send_workflow_action_email(recipients, doc):
 		}
 		email_args.update(common_args)
 		frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+
+@frappe.whitelist()
+def update_request(attendance_request, from_date, to_date):
+	from_date = getdate(from_date)
+	to_date = getdate(to_date)
+	attendance_request_obj = frappe.get_doc('Attendance Request', attendance_request)
+	validate_future_dates(attendance_request_obj, from_date, to_date)
+	attendance_request_obj.db_set("from_date", from_date)
+	attendance_request_obj.db_set("to_date", to_date)
+	attendance_request_obj.db_set("update_request", True)
+	apply_workflow(attendance_request_obj, "Update Request")
