@@ -50,7 +50,7 @@ class ERF(Document):
 		hrm_to_submit = frappe.db.get_value('Hiring Settings', None, 'hrm_to_fill_hr_and_salary_compensation')
 		if hrm_to_submit:
 			send_email(self, [hrm_to_submit])
-			frappe.msgprint(_('{0}, Will Notified By Email.').format(frappe.db.get_value('User', hrm_to_submit, 'full_name')))
+			frappe.msgprint(_('{0}, will be notified via email.').format(frappe.db.get_value('User', hrm_to_submit, 'full_name')))
 
 	def after_insert(self):
 		frappe.db.set_value(self.doctype, self.name, 'erf_code', self.name)
