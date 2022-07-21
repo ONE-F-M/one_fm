@@ -839,6 +839,15 @@ def mark_auto_attendance(shift_type):
 	doc = frappe.get_doc("Shift Type", shift_type.name)
 	doc.process_auto_attendance()
 
+def update_attendance_split_shift():
+	doc = frappe.get_doc("Attendance", "HR-ATT-2022-01142")
+	if doc.status == "Present" and doc.shift and frappe.db.exists("Shift Type", {"name": doc.shift, "has_split_shift":1}):
+		employee_checkin = frappe.db.sql(""" Select EC.name, EC.time from `tabEmployee Checkin` as EC, `tabShift Assignment` as SA
+							where EC.employee = %s
+							AND SA.shift_type = %s
+							AND SA.start_date = %s
+							AND EC.time BETWEEN SA.start_datetime and SA.end_datetime""", (doc.employee, doc.shift, doc.attendance_date))
+		print(employee_checkin)
 
 def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
