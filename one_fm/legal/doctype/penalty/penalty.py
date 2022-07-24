@@ -7,7 +7,7 @@ import frappe
 from frappe.model.document import Document
 import base64
 from frappe import _
-import face_recognition
+# import face_recognition
 from one_fm.api.notification import create_notification_log
 from one_fm.processor import sendemail
 from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datetime
@@ -216,27 +216,27 @@ def upload_image(base64image, OUTPUT_IMAGE_PATH):
 		frappe.log_error(frappe.get_traceback())
 		raise exc
 
-def match_encodings(encodings, face_data):
-	try:
-		# loop over the facial embeddings
-		for encoding in encodings:
-			# attempt to match each face in the input image to our known
-			# encodings
-			matches = face_recognition.compare_faces(
-				face_data["encodings"], encoding)
-			print(matches)
-			# check to see if we have found a match
-			if True in matches:
-				# find the indexes of all matched faces
-				matchedIdxs = [i for (i, b) in enumerate(matches) if b]
-				print(matchedIdxs)
-				return True if ((len(matchedIdxs) / len(matches)) * 100 > 80) else False
-			else:
-				return False
-		else:
-			return False
-	except Exception as e:
-		print(frappe.get_traceback())
+# def match_encodings(encodings, face_data):
+# 	try:
+# 		# loop over the facial embeddings
+# 		for encoding in encodings:
+# 			# attempt to match each face in the input image to our known
+# 			# encodings
+# 			matches = face_recognition.compare_faces(
+# 				face_data["encodings"], encoding)
+# 			print(matches)
+# 			# check to see if we have found a match
+# 			if True in matches:
+# 				# find the indexes of all matched faces
+# 				matchedIdxs = [i for (i, b) in enumerate(matches) if b]
+# 				print(matchedIdxs)
+# 				return True if ((len(matchedIdxs) / len(matches)) * 100 > 80) else False
+# 			else:
+# 				return False
+# 		else:
+# 			return False
+# 	except Exception as e:
+# 		print(frappe.get_traceback())
 
 @frappe.whitelist()
 def get_permission_query_conditions(user):
