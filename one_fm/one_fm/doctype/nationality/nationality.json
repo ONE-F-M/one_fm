@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_rename": 1,
  "autoname": "field:nationality_english",
  "creation": "2019-12-19 13:27:21.994538",
  "doctype": "DocType",
@@ -34,7 +35,7 @@
   }
  ],
  "links": [],
- "modified": "2021-02-08 17:27:45.172739",
+ "modified": "2022-07-25 12:33:45.904821",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Nationality",
