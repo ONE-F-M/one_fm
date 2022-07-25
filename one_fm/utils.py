@@ -1877,10 +1877,14 @@ def create_roster_post_actions():
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
         if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.post_type == ps.post_type for es in employee_schedules):
-            post_types_not_filled_set.add(ps.post_type)
+            if ps.post_type:
+                post_types_not_filled_set.add(ps.post_type)
 
     # Convert set to tuple for passing it in the sql query as a parameter
     post_types_not_filled = tuple(post_types_not_filled_set)
+
+    if not post_types_not_filled:
+        return
 
     # Fetch supervisor and post types in his/her shift
     result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.post_type)
