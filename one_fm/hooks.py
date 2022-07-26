@@ -257,7 +257,6 @@ doc_events = {
 	"Attendance": {
 		"on_submit": [
 			"one_fm.api.tasks.update_shift_details_in_attendance",
-			"one_fm.api.tasks.update_attendance_split_shift",
 			"one_fm.api.doc_events.create_additional_salary_for_overtime",
 			"one_fm.one_fm.utils.manage_attendance_on_holiday"
 		],

@@ -574,13 +574,6 @@ def get_location(shift):
 				loc.name in (SELECT site_location FROM `tabOperations Site` where name=%s)
 			""",site, as_dict=1)
 	return location
-def test():
-	shift = frappe.get_doc("Shift Type", '"Morning Head Office"')
-	date =  getdate()
-	if shift.has_split_shift == 1:
-		start_time_1 = datetime.datetime.combine(date,shift.start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time)).time())
-		start_time_2 = datetime.datetime.combine(date,shift.second_shift_start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time)).time())
-		print(start_time_1)
 
 def checkin_deadline():
 
@@ -602,9 +595,11 @@ def checkin_deadline():
 		# 	penalty_location ="0,0"
 		# shift_start is equal to now time + deadline
 		if shift.deadline!=0:
-			if shift.has_split_shift == 1 and (now_time == shift.start_time + ((shift.first_shift_end_time - shift.start_time)/2) or now_time == shift.second_shift_start_time + ((shift.end_time -shift.second_shift_start_time)/2)):
-				start_time_1 = dt.combine(date,shift.start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time)))
-				start_time_2 = dt.combine(date,shift.second_shift_start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time)))
+			recipients = []
+			#if shift.has_split_shift == 1 and (now_time == shift.start_time + ((shift.first_shift_end_time - shift.start_time)/2) or now_time == shift.second_shift_start_time + ((shift.end_time -shift.second_shift_start_time)/2)):
+			if shift.has_split_shift == 1:
+				start_time_1 = datetime.datetime.strptime(cstr(date)+" "+cstr(shift.start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
+				start_time_2 = datetime.datetime.strptime(cstr(date)+" "+cstr(shift.second_shift_start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
 				recipients = frappe.db.sql("""
 					SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 					WHERE
@@ -626,16 +621,15 @@ def checkin_deadline():
 						empChkin.log_type="IN"
 					AND empChkin.skip_auto_attendance=0
 					AND date(empChkin.time)='{date}'
-					OR empChkin.time BETWEEN {start_time_1} and {now_time}
-					OR empChkin.time BETWEEN {start_time_2} and {now_time}
+					AND empChkin.time BETWEEN '{start_time_1}' and '{now_time}'
+					OR empChkin.time BETWEEN '{start_time_2}' and '{now_time}'
 					AND empChkin.shift_type='{shift_type}')
 					AND tSA.start_date
 					NOT IN(SELECT holiday_date from `tabHoliday` h
 					WHERE
 						h.parent = emp.holiday_list
 					AND h.holiday_date = '{date}')
-				""".format(date=cstr(date), shift_type=shift.name, 
-				start_time_1 = start_time_1, start_time_2 = start_time_2, now_time = now_time), as_list=1)
+				""".format(date=cstr(date), shift_type=shift.name, start_time_1 = start_time_1, start_time_2 = start_time_2, now_time = now_time), as_list=1)
 
 			elif now_time == shift.start_time + ((shift.end_time - shift.start_time)/2):
 				recipients = frappe.db.sql("""
@@ -881,22 +875,6 @@ def process_attendance():
 def mark_auto_attendance(shift_type):
 	doc = frappe.get_doc("Shift Type", shift_type.name)
 	doc.process_auto_attendance()
-
-def update_attendance_split_shift():
-	doc = frappe.get_doc("Attendance", "HR-ATT-2022-01142")
-	if doc.status == "Present" and doc.shift and frappe.db.exists("Shift Type", {"name": doc.shift, "has_split_shift":1}):
-		employee_checkin = frappe.db.sql(""" Select EC.name, EC.time, EC.log_type from `tabEmployee Checkin` as EC, `tabShift Assignment` as SA
-							where EC.employee = %s
-							AND SA.shift_type = %s
-							AND SA.start_date = %s
-							AND EC.time BETWEEN SA.start_datetime and SA.end_datetime
-							AND SA.shift_type IN(
-								SELECT name from `tabShift Type`
-								WHERE has_split_shift = 1
-							)""", (doc.employee, doc.shift, doc.attendance_date), as_dict=True)
-		print(employee_checkin)
-		
-		
 
 def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):

@@ -290,7 +290,7 @@ def create_leave_policy_assignment(doc):
         assignment.effective_from = doc.date_of_joining
         assignment.effective_to = add_years(doc.date_of_joining, 1)
         assignment.carry_forward = True
-        assignment.leaves_allocated = True # Since Leaves will be allocated from ONE FM Scheduler
+        # assignment.leaves_allocated = True # Since Leaves will be allocated from ONE FM Scheduler
         assignment.save()
         assignment.submit()
 
