@@ -13,7 +13,7 @@ def shift_request_submit(self):
 		self.db_set("status", self.workflow_state)
 
 	if self.from_date == getdate():
-		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}):
+		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date], "docstatus": 1}):
 			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}, "status" , "Inactive")
 		if self.workflow_state == 'Approved':
 			create_shift_assignment_from_request(self)
