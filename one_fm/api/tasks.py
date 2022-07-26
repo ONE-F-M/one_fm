@@ -581,23 +581,17 @@ def checkin_deadline():
 		return
 
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
-	today = now_datetime().strftime("%Y-%m-%d")
 	shifts_list = get_active_shifts(now_time)
-	#penalty_code = "106"
-
+	
+	frappe.enqueue(mark_deadline_attendance, shift_list=shift_list, now_time = now_time, is_async=True, queue='long'))
+	
+def mark_deadline_attendance(shifts_list, now_time):
 	for shift in shifts_list:
 		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-		# location = get_location(shift.name)
 
-		# if location:
-		# 	penalty_location = str(location[0].latitude)+","+str(location[0].longitude)
-		# else:
-		# 	penalty_location ="0,0"
-		# shift_start is equal to now time + deadline
-		if shift.deadline!=0:
+		if shift.deadline==1:
 			recipients = []
-			#if shift.has_split_shift == 1 and (now_time == shift.start_time + ((shift.first_shift_end_time - shift.start_time)/2) or now_time == shift.second_shift_start_time + ((shift.end_time -shift.second_shift_start_time)/2)):
-			if shift.has_split_shift == 1:
+			if shift.has_split_shift == 1 and (now_time == shift.start_time + ((shift.first_shift_end_time - shift.start_time)/2) or now_time == shift.second_shift_start_time + ((shift.end_time -shift.second_shift_start_time)/2)):
 				start_time_1 = datetime.datetime.strptime(cstr(date)+" "+cstr(shift.start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
 				start_time_2 = datetime.datetime.strptime(cstr(date)+" "+cstr(shift.second_shift_start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
 				recipients = frappe.db.sql("""
@@ -665,14 +659,7 @@ def checkin_deadline():
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
 
 				for employee in employees:
-					frappe.enqueue(mark_attendance, employee=employee, attendance_date=today, status='Absent', shift=shift.name,  is_async=True, queue='long')
-					# op_shift =  frappe.get_doc("Operations Shift", {"shift_type":shift.name})
-					# action_user, Role = get_action_user(employee,op_shift.name)
-					# if Role:
-					# 	issuing_user = get_notification_user(employee,op_shift.name,Role) if get_notification_user(employee,op_shift.name,Role) else get_employee_user_id(frappe.get_value("Employee",{"name":employee},['reports_to']))
-					# 	curr_shift = get_current_shift(employee)
-					# 	issue_penalty(employee, today, penalty_code, curr_shift.shift, issuing_user, penalty_location)
-					# 	mark_attendance(employee, today, 'Absent', shift.name)
+					mark_attendance(employee=employee, attendance_date=date, status='Absent', shift=shift.name)
 
 			frappe.db.commit()
 
