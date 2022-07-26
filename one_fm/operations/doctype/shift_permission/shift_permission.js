@@ -14,7 +14,7 @@ frappe.ui.form.on('Shift Permission', {
 });
 
 function get_shift_assignment(frm){
-	let {employee} = frm.doc;
+	let {employee, emp_name, start_date} = frm.doc;
 	if(employee != undefined){
 		frappe.call({
             method: 'one_fm.operations.doctype.shift_permission.shift_permission.fetch_approver',
@@ -22,10 +22,15 @@ function get_shift_assignment(frm){
                 'employee':employee
             },
             callback: function(r) {
-                if(r.message){
+				let val = r.message
+                if(val && val.includes(null) != true){
 					let [name, approver, shift, shift_type] = r.message;
 					set_shift_details(frm, name, approver, shift, shift_type);			
                 }
+				else{
+					frappe.msgprint(__(`No shift assigned to ${emp_name}. Please check again.`));				
+					set_shift_details(frm, undefined, undefined, undefined, undefined);
+				}
             }
         });
 	}
