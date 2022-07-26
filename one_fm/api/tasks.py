@@ -585,7 +585,7 @@ def checkin_deadline():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
 	
-	frappe.enqueue(mark_deadline_attendance, shift_list=shift_list, now_time = now_time, is_async=True, queue='long'))
+	frappe.enqueue(mark_deadline_attendance, shift_list=shift_list, now_time = now_time, is_async=True, queue='long')
 	
 def mark_deadline_attendance(shifts_list, now_time):
 	for shift in shifts_list:
