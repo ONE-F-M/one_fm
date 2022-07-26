@@ -14,28 +14,24 @@ frappe.ui.form.on('Shift Permission', {
 });
 
 function get_shift_assignment(frm){
-	let {employee, emp_name, start_date, permission_type} = frm.doc;
-	if(employee != undefined && date != undefined && permission_type != ''){
-		frappe.db.get_value("Shift Assignment", {start_date, employee}, "*")
-		.then(res => {
-			if(Object.keys(res).length === 0 && res.constructor === Object){
-				frappe.msgprint(__(`No shift assigned to ${emp_name} on ${moment(date).format("DD-MM-YYYY")}. Please check again.`));				
-				set_shift_details(frm, undefined, undefined, undefined, undefined);
-			}
-			else{
-				let {name, shift, shift_type} = res.message;
-				frappe.db.get_value("Operations Shift", shift, ["supervisor", "supervisor_name"])
-				.then(res => {
-					let {supervisor, supervisor_name} = res.message;
-					set_shift_details(frm, name, supervisor, shift, shift_type);			
-				});
-			}
-		})
+	let {employee} = frm.doc;
+	if(employee != undefined){
+		frappe.call({
+            method: 'one_fm.operations.doctype.shift_permission.shift_permission.fetch_approver',
+            args:{
+                'employee':employee
+            },
+            callback: function(r) {
+                if(r.message){
+					let [name, approver, shift, shift_type] = r.message;
+					set_shift_details(frm, name, approver, shift, shift_type);			
+                }
+            }
+        });
 	}
 }
 
 function set_shift_details(frm, name, supervisor, shift, shift_type){
-
 	frappe.model.set_value(frm.doctype, frm.docname, "assigned_shift", name);
 	frappe.model.set_value(frm.doctype, frm.docname, "shift_supervisor", supervisor);
 	frappe.model.set_value(frm.doctype, frm.docname, "shift", shift);
