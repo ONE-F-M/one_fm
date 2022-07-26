@@ -9,6 +9,7 @@ from frappe.utils import getdate
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from erpnext.hr.doctype.shift_assignment.shift_assignment import get_shift_details
+from one_fm.api.tasks import get_action_user
 
 class ShiftPermission(Document):
 	def validate(self):
@@ -99,3 +100,12 @@ def create_employee_checkin_for_shift_permission(shift_permission):
 		employee_checkin.shift_assignment = shift_permission.assigned_shift
 		employee_checkin.shift_permission = shift_permission.name
 		employee_checkin.save(ignore_permissions=True)
+
+@frappe.whitelist()
+def fetch_approver(employee):
+	if employee:
+		employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
+		if employee_shift:
+			approver, Role = get_action_user(employee,employee_shift[0].shift)
+		if approver:	
+			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
