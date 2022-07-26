@@ -102,6 +102,7 @@
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -134,9 +135,10 @@
             <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 pl-0 pr-0 ">
                 <div class="d-lg-flex custommobheight d-flex align-items-center ml20 mainclassfilter ">
                     <label class="checkboxcontainer simplecheckbox"><span
-                            class="lightgrey font16 customfontweight fontw400">Select All</span><input type="checkbox"
-                            name="staffselectallcheckbox" class="staffselectallcheckbox"><span
-                            class="checkmark"></span></label>
+                            class="lightgrey font16 customfontweight fontw400">Select All</span>
+                        <input type="checkbox" name="staffselectallcheckbox" class="staffselectallcheckbox">
+                        <span class="checkmark"></span>
+                    </label>
 
                     <a class="ml16 unassignedbtn d-none" data-target="#userunassigned" data-toggle="modal">
                         <i class="fas fa-user-times"></i>
@@ -432,6 +434,13 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="pl20 plsm-0">
+                                    <div class="form-group mb-0">
+                                            <button class="btn btn-primary" id="edit-employee-btn">
+                                                Edit <i class="fa fa-edit"></i>
+                                            </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="restabbar pl20 plsm-0">
@@ -462,10 +471,11 @@
                     <div
                         class="d-lg-flex lightbluedtbg borderradius4 pt8 pb8 pl20 pr20 justify-content-md-between align-items-md-center ipadclassremove">
                         <div class="d-lg-flex d-md-flex align-items-center mainclassfilter heightipad">
-                            <label class="checkboxcontainer simplecheckbox"><span
-                                    class="lightgrey font16 customfontweight fontw400">Select All</span><input
-                                    type="checkbox" class="staffselectallcheckbox"><span
-                                    class="checkmark"></span></label>
+                            <label class="checkboxcontainer simplecheckbox">
+                                <span class="lightgrey font16 customfontweight fontw400">Select All</span>
+                                <input type="checkbox" class="staffselectallcheckbox">
+                                <span class="checkmark"></span>
+                            </label>
                             <a class="ml10 customiconhover unassignedbtn d-none" data-target="#userunassigned"
                                 data-toggle="modal">
                                 <i class="fas fa-user-times"></i>
@@ -477,6 +487,10 @@
                                 <!-- data-toggle="modal"data-target="#cardeditusermodal"> -->
                                 <i class="fas fa-edit"></i>
                             </a>
+<!--                            <a class="ml10 customiconhover mobile-edit d-none">-->
+<!--                                &lt;!&ndash; data-toggle="modal"data-target="#cardeditusermodal"> &ndash;&gt;-->
+<!--                                <i class="fas fa-phone"></i>-->
+<!--                            </a>-->
                         </div>
                         <div
                             class="d-lg-flex d-md-flex align-items-center justify-content-md-end ipadpadd mt-0 mt-md-2 mt-lg-0">
@@ -702,6 +716,8 @@
 <div id="sidenav-backdrop"></div>
 <div class="drawer-backdrop" id="drawershow"></div>
 <script>
+
+
     $("#page-roster").find(".redirect_route").on("click", function (e) {
         let template = $(this).attr("data-route");
         $("#page-roster").empty().append(frappe.render_template(template));
@@ -915,9 +931,22 @@
         staff_edit_dialog();
     });
 
+<!--    $(".mobile-edit").on("click", function () {-->
+<!--        editMobileNumber();-->
+<!--    });-->
+
+    $("#edit-employee-btn").on("click", function () {
+        editSingleEmployeeData();
+    });
+
     $("#inputtextsearch").keypress(function (event) {
         if (event.which == 13) {
             search_staff();
         }
     });
+
+    // Update mobile number
+    //WINDOW READYS
+
+
 </script>
