@@ -190,6 +190,7 @@ doc_events = {
 		"validate":"one_fm.hiring.utils.set_employee_name",
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
+		"before_insert": "one_fm.hiring.utils.employee_before_insert",
 		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti"
 	},
 	"Employee Grade": {
