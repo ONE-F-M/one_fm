@@ -40,7 +40,7 @@ def get_data(filters):
 			AND es.employee_availability='Working'
 			AND con_item.item_code=pt.sale_item
 			AND es.date BETWEEN "{filters.year}-{filters.month}-01" AND "{filters.year}-{filters.month}-31"
-			GROUP BY con.project
+			GROUP BY con_item.item_code
 			
 			UNION 
 			
@@ -54,29 +54,32 @@ def get_data(filters):
 			AND ps.post_status='Planned'
 			AND con_item.item_code=pt.sale_item
 			AND ps.date BETWEEN "{filters.year}-{filters.month}-01" AND "{filters.year}-{filters.month}-31"
-			GROUP BY con.project
+			GROUP BY con_item.item_code
 		"""
 		data = frappe.db.sql(query, as_dict=1)
-		if len(data) == 2:
-			data[0].projection = data[0].projection/data[1].projection
-			data[0].projection_rate = data[0].rate*data[0].projection
-
-			# Compute live projection
-			if use_attendance:
-				attendance_data = get_live_attendance_query(contracts, filters, to_date)
-				if attendance_data:
-					if add_schedule:
-						schedule_data = get_live_schedule_query(contracts, filters, live_today)
-						if schedule_data:
-							attendance_data[0].attendance += schedule_data[0].projection
-					data[0].live_projection = attendance_data[0].attendance/data[1].projection
-			else:
-				data[0].live_projection = data[0].projection
-
-			data[0].live_projection_rate = data[0].live_projection * data[0].rate
-			results.append(data[0])
-		data = None
-
+		# if len(data) == 2:
+		# 	data[0].projection = data[0].projection/data[1].projection
+		# 	data[0].projection_rate = data[0].rate*data[0].projection
+		#
+		# 	# Compute live projection
+		# 	if use_attendance:
+		# 		attendance_data = get_live_attendance_query(contracts, filters, to_date)
+		# 		if attendance_data:
+		# 			if add_schedule:
+		# 				schedule_data = get_live_schedule_query(contracts, filters, live_today)
+		# 				if schedule_data:
+		# 					attendance_data[0].attendance += schedule_data[0].projection
+		# 			data[0].live_projection = attendance_data[0].attendance/data[1].projection
+		# 		data[0].live_projection = data[0].projection
+		# 	else:
+		# 		data[0].live_projection = data[0].projection
+		#
+		# 	data[0].live_projection_rate = data[0].live_projection * data[0].rate
+		# 	results.append(data[0])
+		# data = None
+		if contracts.name == 'Wafra Real Estate Company-Wafra Living-2021-08-01':
+			print(data)
+		results += data
 	return results
 
 
