@@ -43,7 +43,7 @@ def get_salary_slip_list(employee_id: str = None) -> dict:
         if not salary_list or len(salary_list) == 0:
             return response("Resource not found", 404, None, "No salary slips found for user {employee_id}".format(employee_id=employee_id))
         
-        return response("Success", 200, salary_list)
+        return response("Success", 200, []) #salary_list)
     
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
