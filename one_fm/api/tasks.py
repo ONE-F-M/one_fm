@@ -353,10 +353,11 @@ def supervisor_reminder(shift, today_datetime, now_time):
 				#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
 				subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
 				action_message = _("""
-				<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
 				Submit a Shift Permission for the employee to give an excuse and not need to penalize
 				<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-				<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
+				<br/><br/>
+				Issue penalty for the employee
+				<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
 				""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkin_time)
 				if action_user is not None:
 					send_notification(title, subject, action_message, category, [action_user])
@@ -410,10 +411,11 @@ def supervisor_reminder(shift, today_datetime, now_time):
 				#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
 				subject = _('{employee} has not checked out yet.'.format(employee=recipient.employee_name))
 				action_message = _("""
-					<a class="btn btn-success checkin" id='{employee}_{time}'>Approve</a>
 					Submit a Shift Permission for the employee to give an excuse and not need to penalize
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-					<br><br><div class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>
+					<br/><br/>
+					Issue penalty for the employee
+					<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
 					""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
 				if action_user is not None:
 						send_notification(title, subject, action_message, category, [action_user])
@@ -443,7 +445,7 @@ def send_notification(title, subject, message, category, recipients):
 def get_active_shifts(now_time):
 	return frappe.db.sql("""
 		SELECT
-			name, start_time, end_time, 
+			name, start_time, end_time,
 			has_split_shift, first_shift_end_time, second_shift_start_time,
 			notification_reminder_after_shift_start, late_entry_grace_period,
 			notification_reminder_after_shift_end, allow_check_out_after_shift_end_time,
@@ -582,59 +584,84 @@ def checkin_deadline():
 
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
-	#penalty_code = "106"
-
+	
+	frappe.enqueue(mark_deadline_attendance, shift_list=shift_list, now_time = now_time, is_async=True, queue='long')
+	
+def mark_deadline_attendance(shifts_list, now_time):
 	for shift in shifts_list:
-		# location = get_location(shift.name)
+		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 
-		# if location:
-		# 	penalty_location = str(location[0].latitude)+","+str(location[0].longitude)
-		# else:
-		# 	penalty_location ="0,0"
-		# shift_start is equal to now time + deadline
-		if shift.deadline!=0 and strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.deadline))).time()):
-			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
-				WHERE
-					tSA.employee = emp.name
-				AND tSA.start_date='{date}'
-				AND tSA.shift_type='{shift_type}'
-				AND tSA.docstatus=1
-				AND tSA.employee
-				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
-            	WHERE
-					emp_sp.employee=emp.name
-				AND emp_sp.workflow_state="Approved"
-				AND emp_sp.shift_type='{shift_type}'
-				AND emp_sp.date='{date}'
-				AND emp_sp.permission_type="Arrive Late")
-				AND tSA.employee
-				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
-				WHERE
-					empChkin.log_type="IN"
-				AND empChkin.skip_auto_attendance=0
-				AND date(empChkin.time)='{date}'
-				AND empChkin.shift_type='{shift_type}')
-				AND tSA.start_date
-				NOT IN(SELECT holiday_date from `tabHoliday` h
-				WHERE
-					h.parent = emp.holiday_list
-				AND h.holiday_date = '{date}')
-			""".format(date=cstr(date), shift_type=shift.name), as_list=1)
+		if shift.deadline==1:
+			recipients = []
+			if shift.has_split_shift == 1 and (now_time == shift.start_time + ((shift.first_shift_end_time - shift.start_time)/2) or now_time == shift.second_shift_start_time + ((shift.end_time -shift.second_shift_start_time)/2)):
+				start_time_1 = datetime.datetime.strptime(cstr(date)+" "+cstr(shift.start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
+				start_time_2 = datetime.datetime.strptime(cstr(date)+" "+cstr(shift.second_shift_start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
+				recipients = frappe.db.sql("""
+					SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
+					WHERE
+						tSA.employee = emp.name
+					AND tSA.start_date='{date}'
+					AND tSA.shift_type='{shift_type}'
+					AND tSA.docstatus=1
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+					WHERE
+						emp_sp.employee=emp.name
+					AND emp_sp.workflow_state="Approved"
+					AND emp_sp.shift_type='{shift_type}'
+					AND emp_sp.date='{date}'
+					AND emp_sp.permission_type="Arrive Late")
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
+					WHERE
+						empChkin.log_type="IN"
+					AND empChkin.skip_auto_attendance=0
+					AND date(empChkin.time)='{date}'
+					AND empChkin.time BETWEEN '{start_time_1}' and '{now_time}'
+					OR empChkin.time BETWEEN '{start_time_2}' and '{now_time}'
+					AND empChkin.shift_type='{shift_type}')
+					AND tSA.start_date
+					NOT IN(SELECT holiday_date from `tabHoliday` h
+					WHERE
+						h.parent = emp.holiday_list
+					AND h.holiday_date = '{date}')
+				""".format(date=cstr(date), shift_type=shift.name, start_time_1 = start_time_1, start_time_2 = start_time_2, now_time = now_time), as_list=1)
+
+			elif now_time == shift.start_time + ((shift.end_time - shift.start_time)/2):
+				recipients = frappe.db.sql("""
+					SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
+					WHERE
+						tSA.employee = emp.name
+					AND tSA.start_date='{date}'
+					AND tSA.shift_type='{shift_type}'
+					AND tSA.docstatus=1
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+					WHERE
+						emp_sp.employee=emp.name
+					AND emp_sp.workflow_state="Approved"
+					AND emp_sp.shift_type='{shift_type}'
+					AND emp_sp.date='{date}'
+					AND emp_sp.permission_type="Arrive Late")
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
+					WHERE
+						empChkin.log_type="IN"
+					AND empChkin.skip_auto_attendance=0
+					AND date(empChkin.time)='{date}'
+					AND empChkin.shift_type='{shift_type}')
+					AND tSA.start_date
+					NOT IN(SELECT holiday_date from `tabHoliday` h
+					WHERE
+						h.parent = emp.holiday_list
+					AND h.holiday_date = '{date}')
+				""".format(date=cstr(date), shift_type=shift.name), as_list=1)	
 
 			if len(recipients) > 0:
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
 
 				for employee in employees:
-					frappe.enqueue(mark_attendance, employee=employee, attendance_date=date, status='Absent', shift=shift.name,  is_async=True, queue='long')
-					# op_shift =  frappe.get_doc("Operations Shift", {"shift_type":shift.name})
-					# action_user, Role = get_action_user(employee,op_shift.name)
-					# if Role:
-					# 	issuing_user = get_notification_user(employee,op_shift.name,Role) if get_notification_user(employee,op_shift.name,Role) else get_employee_user_id(frappe.get_value("Employee",{"name":employee},['reports_to']))
-					# 	curr_shift = get_current_shift(employee)
-					# 	issue_penalty(employee, today, penalty_code, curr_shift.shift, issuing_user, penalty_location)
-					# 	mark_attendance(employee, today, 'Absent', shift.name)
+					mark_attendance(employee=employee, attendance_date=date, status='Absent', shift=shift.name)
 
 			frappe.db.commit()
 
@@ -837,7 +864,6 @@ def process_attendance():
 def mark_auto_attendance(shift_type):
 	doc = frappe.get_doc("Shift Type", shift_type.name)
 	doc.process_auto_attendance()
-
 
 def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):

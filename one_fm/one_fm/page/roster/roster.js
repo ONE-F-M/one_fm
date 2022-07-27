@@ -8,6 +8,10 @@ frappe.pages['roster'].on_page_load = function (wrapper) {
 	$('#page-roster').empty().append(frappe.render_template('roster'));
 
 	load_js(page);
+
+	$(".mobile-edit").on("click", function () {
+        console.log("update mobile number");
+    })
 };
 
 // Initializes the page with default values 
@@ -2030,6 +2034,7 @@ function assignedfilter(value1) {
 		// $(".unassignedbtn").removeClass("d-none");
 		// $(".assignedbtn").addClass("d-none");
 		$(".editbtn").removeClass("d-none");
+		$(".mobile-edit").removeClass("d-none");
 		$(".mainclassfilter").removeClass("d-none");
 		$(".allfilters").addClass("d-none");
 	}
@@ -2037,6 +2042,7 @@ function assignedfilter(value1) {
 		// $(".unassignedbtn").addClass("d-none");
 		// $(".assignedbtn").removeClass("d-none");
 		$(".editbtn").removeClass("d-none");
+		$(".mobile-edit").removeClass("d-none");
 		$(".mainclassfilter").removeClass("d-none");
 		$(".allfilters").addClass("d-none");
 	}
@@ -2044,6 +2050,7 @@ function assignedfilter(value1) {
 		// $(".unassignedbtn").addClass("d-none");
 		// $(".assignedbtn").addClass("d-none");
 		$(".editbtn").addClass("d-none");
+		$(".mobile-edit").addClass("d-none");
 	}
 }
 //function for assign dropdown filter
@@ -3131,4 +3138,185 @@ function dayoff(page) {
 		}
 	});
 	d.show();
+}
+
+// Edit mobile number
+function editMobileNumber(){
+    employees_pk = $(".datatablecjeckbox:checked").map(function () {
+        return $(this).attr("data-employee-id");
+    }).get();
+	const table_fields = [
+        {
+            fieldname: "employee", fieldtype: "Link",
+            in_list_view: 1, label: "Employee",
+            options: "Employee", reqd: 1
+        },
+        {
+            fieldname: "employee_id", fieldtype: "Data",
+            in_list_view: 1, label: "Employee ID", reqd:1,
+            read_only: 1, depends_on: "employee",
+            fetch_from: "employee.employee_id"
+        },
+        {
+            fieldname: "employee_name", fieldtype: "Data",
+            in_list_view: 1, label: "Name", reqd:1,
+            read_only: 1, depends_on: "employee",
+            fetch_from: "employee.employee_name"
+        }
+    ];
+
+    let d = new frappe.ui.Dialog({
+        title: 'Enter details',
+        fields: [
+            {
+                label: 'First Name',
+                fieldname: 'first_name',
+                fieldtype: 'Data'
+            },
+            {
+                label: 'Last Name',
+                fieldname: 'last_name',
+                fieldtype: 'Data'
+            },
+            {
+                fieldname: "employees",
+                fieldtype: "Table",
+                label: "Employees",
+//                cannot_add_rows: true,
+                cannot_delete_rows: true,
+                in_place_edit: true,
+                reqd: 1,
+                data: [],
+                fields: table_fields
+            }
+        ],
+        primary_action_label: 'Submit',
+        primary_action(values) {
+            console.log(values);
+            d.hide();
+        }
+    });
+
+    d.show();
+
+    employees_pk.forEach((item, i) => {
+        d.fields_dict.employees.df.data.push(
+            { employee: item}
+        );
+    });
+    d.fields_dict.employees.grid.refresh();
+}
+
+
+function editSingleEmployeeData(){
+    let d = new frappe.ui.Dialog({
+        title: 'Update Employee Record',
+        fields: [
+            {
+                label: 'Employee',
+                fieldname: 'employee',
+                fieldtype: 'Link',
+                options: "Employee",
+                reqd:1,
+                change: function (x) {
+                    employee_pk = d.fields_dict.employee.value;
+                    frappe.xcall('one_fm.one_fm.page.roster.roster.get_employee_detail', { employee_pk })
+                        .then(res => {
+                            d.fields_dict.employee_id.value = res.employee_id;
+                            d.fields_dict.employee_name.value = res.employee_name;
+                            d.fields_dict.enrolled.value = res.enrolled;
+                            d.fields_dict.cell_number.value = res.cell_number;
+                            d.fields_dict.employee_id.refresh();
+                            d.fields_dict.employee_name.refresh();
+                            d.fields_dict.enrolled.refresh();
+                            d.fields_dict.cell_number.refresh();
+                        });
+
+
+                }
+            },
+            {
+                label: 'Employee ID',
+                fieldname: 'employee_id',
+                fieldtype: 'Data',
+                depends_on: 'employee',
+                read_only: 1
+            },
+            {
+                label: 'Employee Name',
+                fieldname: 'employee_name',
+                fieldtype: 'Data',
+                depends_on: 'employee',
+                read_only: 1
+            },
+
+            {
+               fieldname: "column_break0",
+               fieldtype: "Column Break"
+            },
+            {
+                label: 'Phone Number',
+                fieldname: 'cell_number',
+                fieldtype: 'Data',
+                depends_on: 'employee',
+                read_only: 1
+            },
+            {
+                label: 'Enrolled',
+                fieldname: 'enrolled',
+                fieldtype: 'Data',
+                depends_on: 'employee',
+                read_only: 1
+            },
+            {
+                label: '<i style="color:red">Action</i>',
+                fieldname: 'action_type',
+                fieldtype: 'Select',
+                depends_on: 'employee',
+                options: ["Update Phone Number", "Reset Enrollment"],
+                reqd: 1,
+            },
+            {
+                label: 'New Phone Number',
+                fieldname: 'new_phone_number',
+                fieldtype: 'Data',
+                depends_on: "eval:doc.action_type=='Update Phone Number'",
+                options: ""
+            },
+
+        ],
+        primary_action_label: 'Submit',
+        primary_action(values) {
+            // action to perform if Yes is selected
+            d.hide();
+            makeCall(values);
+        }
+    });
+
+    d.show();
+}
+
+
+function makeCall(argsObject){
+    frappe.confirm('Are you sure you want to proceed?',
+        () => {
+            let postvalue = {employee_id: argsObject.employee_id};
+            if (argsObject.action_type === 'Update Phone Number') {
+                postvalue.field = 'cell_number';
+                postvalue.value = argsObject.new_phone_number;
+            } else {
+                postvalue.field = 'enrolled';
+                postvalue.value = 0;
+            }
+            frappe.call({
+                method: "one_fm.api.v1.utils.update_employee", //dotted path to server method
+                args: postvalue,
+                callback: function(r) {
+                    // code snippet
+                    frappe.msgprint(r.message);
+                }
+            });
+        }, () => {
+            // action to perform if No is selected
+    })
 }
