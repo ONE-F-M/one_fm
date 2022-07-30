@@ -783,6 +783,7 @@ def calculate_interview_feedback_average_rating(doc, method):
     total_score = 0
     total_questions = 0
     for d in doc.interview_question_assessment:
+        d.weight = d.weight if d.weight else 0
         if d.weight > 0 and d.score:
             total_score += get_score_out_of_five(d.score, d.weight)
             total_questions += 1
