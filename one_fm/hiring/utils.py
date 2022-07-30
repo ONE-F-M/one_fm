@@ -210,6 +210,11 @@ def employee_after_insert(doc, method):
 	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
 		create_employee_user_from_employee_id(doc)
 
+def employee_before_insert(doc, method):
+    # check for nationality, then set residency
+    if doc.one_fm_nationality != "Kuwaiti":
+        doc.under_company_residency = 1
+
 
 def create_employee_user_from_employee_id(doc):
 	"""
