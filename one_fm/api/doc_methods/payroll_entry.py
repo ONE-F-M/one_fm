@@ -7,7 +7,7 @@ import openpyxl as xl
 import time
 from copy import copy
 from pathlib import Path
-from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_filter_condition, get_joining_relieving_condition, get_emp_list, remove_payrolled_employees, get_sal_struct
+from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_sal_struct
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
