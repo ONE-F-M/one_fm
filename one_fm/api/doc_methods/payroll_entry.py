@@ -7,7 +7,7 @@ import openpyxl as xl
 import time
 from copy import copy
 from pathlib import Path
-from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_filter_condition, get_joining_relieving_condition, get_emp_list, remove_payrolled_employees
+from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_filter_condition, get_joining_relieving_condition, get_emp_list, remove_payrolled_employees, get_sal_struct
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
@@ -72,7 +72,7 @@ def fill_employee_details(self):
 		return self.validate_employee_attendance()
 
 @frappe.whitelist()
-def get_emp_list(self):
+def get_employee_list(self):
 	"""
 	Returns list of active employees based on selected criteria
 	and for which salary structure exists
@@ -81,7 +81,10 @@ def get_emp_list(self):
 	filters = self.make_filters()
 	cond = get_filter_condition(filters)
 	cond += get_joining_relieving_condition(self.start_date, self.end_date)
-
+	
+	payroll_date = getdate().day
+	project = frappe.get_list("Project", {"payroll_from_date" :payroll_date, "payroll_frequency": self.payroll_frequency},["name"], pluck="name")
+	print(project)
 	condition = ""
 	if self.payroll_frequency:
 		condition = """and payroll_frequency = '%(payroll_frequency)s'""" % {
@@ -94,10 +97,36 @@ def get_emp_list(self):
 	if sal_struct:
 		cond += "and t2.salary_structure IN %(sal_struct)s "
 		cond += "and t2.payroll_payable_account = %(payroll_payable_account)s "
-		cond += "and %(from_date)s >= t2.from_date"
-		emp_list = get_emp_list(sal_struct, cond, self.end_date, self.payroll_payable_account)
+		cond += "and %(from_date)s >= t2.from_date "
+		cond += "and t1.project IN %(project)s"
+		emp_list = get_emp_lists(sal_struct, cond, self.end_date, self.payroll_payable_account, project)
 		emp_list = remove_payrolled_employees(emp_list, self.start_date, self.end_date)
 		return emp_list
+
+@frappe.whitelist()
+def get_emp_lists(sal_struct, cond, end_date, payroll_payable_account, project):
+	print(cond)
+	return frappe.db.sql(
+		"""
+			select
+				distinct t1.name as employee, t1.employee_name, t1.department, t1.designation
+			from
+				`tabEmployee` t1, `tabSalary Structure Assignment` t2
+			where
+				t1.name = t2.employee
+				and t2.docstatus = 1
+				and t1.status != 'Inactive'
+		%s order by t2.from_date desc
+		"""
+		% cond,
+		{
+			"sal_struct": tuple(sal_struct),
+			"from_date": end_date,
+			"payroll_payable_account": payroll_payable_account,
+			"project": tuple(project)
+		},
+		 as_dict=True,
+	)
 
 @frappe.whitelist()
 def set_bank_details(self, employee_details):
