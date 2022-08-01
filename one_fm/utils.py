@@ -13,7 +13,7 @@ from frappe.utils.csvutils import read_csv_content
 from frappe.utils import (
     cint, cstr, flt, rounded,  nowdate, comma_and, date_diff, getdate,
     formatdate ,get_url, get_datetime, add_to_date, time_diff, get_time,
-    time_diff_in_hours
+    time_diff_in_hours, get_site_base_path
 )
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
@@ -535,7 +535,20 @@ def create_gp_letter_request():
             gp_letter_doc.gp_letter_request_reference = doc.name
             gp_letter_doc.save(ignore_permissions = True)
 
+@frappe.whitelist()
+def get_start_end_date(day, frequency):
+    if day and frequency:
+        if frequency == "Monthly":
+            one_month = 1
+        year = getdate().year - 1 if getdate().day < cint(day) and  getdate().month == 1 else getdate().year
+        month = getdate().month if getdate().day >= cint(day) else getdate().month - one_month
 
+        #calculate Payroll date, start and end date.
+
+        date = datetime(year, month, cint(day)).strftime("%Y-%m-%d")
+        start_date = add_to_date(date, months=-(one_month))
+        end_date = add_to_date(date, days=-1)
+    return start_date, end_date
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_submit(doc, method):
