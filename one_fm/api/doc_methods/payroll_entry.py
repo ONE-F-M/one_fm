@@ -84,7 +84,7 @@ def get_employee_list(self):
 	
 	payroll_date = getdate().day
 	project = frappe.get_list("Project", {"payroll_from_date" :payroll_date, "payroll_frequency": self.payroll_frequency},["name"], pluck="name")
-	print(project)
+
 	condition = ""
 	if self.payroll_frequency:
 		condition = """and payroll_frequency = '%(payroll_frequency)s'""" % {
