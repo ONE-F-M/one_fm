@@ -52,3 +52,5 @@ def create_employee_schedule(row, last_day_of_current_month, today):
                 es.insert()
             except Exception as e:
                 pass
+
+        frappe.db.commit()
