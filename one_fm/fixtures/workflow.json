@@ -297,16 +297,16 @@
   "doctype": "Workflow",
   "document_type": "Leave Application",
   "is_active": 1,
-  "modified": "2021-10-07 15:21:48.515863",
+  "modified": "2022-08-03 15:01:59.953677",
   "name": "Leave Application",
   "override_status": 0,
-  "parent": null,
+  "parent": "Leave Application",
   "parentfield": null,
   "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Leave Approver",
+    "allow_edit": "Employee",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -314,7 +314,7 @@
     "parent": "Leave Application",
     "parentfield": "states",
     "parenttype": "Workflow",
-    "state": "Draft",
+    "state": "Open",
     "update_field": null,
     "update_value": null
    },
@@ -323,7 +323,7 @@
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
-    "next_action_email_template": null,
+    "next_action_email_template": "",
     "parent": "Leave Application",
     "parentfield": "states",
     "parenttype": "Workflow",
@@ -336,7 +336,7 @@
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
-    "next_action_email_template": null,
+    "next_action_email_template": "",
     "parent": "Leave Application",
     "parentfield": "states",
     "parenttype": "Workflow",
@@ -368,7 +368,7 @@
     "parent": "Leave Application",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Draft"
+    "state": "Open"
    },
    {
     "action": "Reject",
@@ -379,7 +379,7 @@
     "parent": "Leave Application",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Draft"
+    "state": "Open"
    }
   ],
   "workflow_name": "Leave Application",
