@@ -108,5 +108,6 @@ def fetch_approver(employee):
 		employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
 		if employee_shift:
 			approver = get_reports_to_employee_name(employee)
-		if approver:
 			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
+
+		frappe.throw("No approver found for {employee}".format(employee=employee))
