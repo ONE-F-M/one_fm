@@ -90,6 +90,7 @@ doctype_js = {
 	"Shift Request": "public/js/doctype_js/shift_request.js",
 	"Shift Assignment": "public/js/doctype_js/shift_assignment.js",
 	"Employee Checkin": "public/js/doctype_js/employee_checkin.js",
+	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -190,6 +191,7 @@ doc_events = {
 		"validate":"one_fm.hiring.utils.set_employee_name",
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
+		"before_insert": "one_fm.hiring.utils.employee_before_insert",
 		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti"
 	},
 	"Employee Grade": {
@@ -406,6 +408,7 @@ override_doctype_class = {
     "Leave Policy Assignment": "one_fm.overrides.leave_policy_assignment.LeavePolicyAssignmentOverride",
 	"Attendance Request": "one_fm.overrides.attendance_request.AttendanceRequestOverride",
 	"Shift Type": "one_fm.overrides.shift_type.ShiftTypeOverride",
+	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
 }
 
 
@@ -441,6 +444,7 @@ scheduler_events = {
 	"weekly": [
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_sites_followup',
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_penalty',
+		'one_fm.tasks.one_fm.monthly.employee_schedule_monthly',
   ],
 
 	"monthly": [

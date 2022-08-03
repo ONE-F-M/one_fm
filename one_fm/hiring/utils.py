@@ -210,6 +210,11 @@ def employee_after_insert(doc, method):
 	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
 		create_employee_user_from_employee_id(doc)
 
+def employee_before_insert(doc, method):
+    # check for nationality, then set residency
+    if doc.one_fm_nationality != "Kuwaiti":
+        doc.under_company_residency = 1
+
 
 def create_employee_user_from_employee_id(doc):
 	"""
@@ -783,6 +788,7 @@ def calculate_interview_feedback_average_rating(doc, method):
     total_score = 0
     total_questions = 0
     for d in doc.interview_question_assessment:
+        d.weight = d.weight if d.weight else 0
         if d.weight > 0 and d.score:
             total_score += get_score_out_of_five(d.score, d.weight)
             total_questions += 1
