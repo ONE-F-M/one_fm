@@ -1,8 +1,8 @@
 frappe
 scipy
-face_recognition
-imutils
-opencv-contrib-python-headless
+# face_recognition
+# imutils
+# opencv-contrib-python-headless
 datefinder
 google_trans_new
 firebase-admin

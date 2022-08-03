@@ -1,15 +1,15 @@
 {
  "content": null,
- "creation": "2022-07-04 23:38:14.121531",
+ "creation": "2022-07-07 02:13:56.152380",
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2022-07-04 23:38:31.108918",
+ "modified": "2022-07-07 02:13:56.152380",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "enrollment-manager",
+ "name": "employee-management",
  "owner": "Administrator",
- "page_name": "enrollment-manager",
+ "page_name": "employee-management",
  "roles": [
   {
    "role": "Shift Supervisor"
@@ -24,5 +24,6 @@
  "script": null,
  "standard": "Yes",
  "style": null,
- "system_page": 0
+ "system_page": 0,
+ "title": "Employee Management"
 }

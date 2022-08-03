@@ -602,30 +602,6 @@
  {
   "docstatus": 0,
   "doctype": "Workflow State",
-  "icon": "ok-sign",
-  "modified": "2019-11-24 17:45:54.559872",
-  "name": "Approved",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "style": "Success",
-  "workflow_state_name": "Approved"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "remove",
-  "modified": "2019-11-24 17:45:54.565144",
-  "name": "Rejected",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "style": "Danger",
-  "workflow_state_name": "Rejected"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
   "icon": "",
   "modified": "2020-05-04 10:32:22.125042",
   "name": "Approved by Management",
@@ -914,18 +890,6 @@
  {
   "docstatus": 0,
   "doctype": "Workflow State",
-  "icon": "question-sign",
-  "modified": "2019-11-24 17:45:54.553915",
-  "name": "Pending",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "style": "",
-  "workflow_state_name": "Pending"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
   "icon": "",
   "modified": "2020-10-28 21:38:33.140798",
   "name": "Draft",
@@ -1059,30 +1023,6 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2022-01-13 01:23:19.809607",
-  "name": "Active",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "style": "",
-  "workflow_state_name": "Active"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
-  "modified": "2022-01-13 01:24:07.135618",
-  "name": "Inactive",
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
-  "style": "",
-  "workflow_state_name": "Inactive"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2022-05-15 10:32:50.061096",
   "name": "Awaiting Employee Received Copy",
   "parent": null,
@@ -1090,5 +1030,53 @@
   "parenttype": null,
   "style": "",
   "workflow_state_name": "Awaiting Employee Received Copy"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "question-sign",
+  "modified": "2022-06-11 11:29:08.626857",
+  "name": "Pending",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "",
+  "workflow_state_name": "Pending"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "ok-sign",
+  "modified": "2022-06-11 11:29:08.632934",
+  "name": "Approved",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Success",
+  "workflow_state_name": "Approved"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "remove",
+  "modified": "2022-06-11 11:29:08.636686",
+  "name": "Rejected",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "Danger",
+  "workflow_state_name": "Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2022-07-14 13:47:32.317863",
+  "name": "Update Request",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "style": "",
+  "workflow_state_name": "Update Request"
  }
 ]

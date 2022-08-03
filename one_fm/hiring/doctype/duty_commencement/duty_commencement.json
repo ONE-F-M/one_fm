@@ -15,12 +15,13 @@
   "civil_id",
   "passport_number",
   "posting_date",
-  "column_break_5",
   "job_applicant",
+  "reports_to",
+  "column_break_5",
   "job_offer",
+  "estimated_date_of_joining",
   "date_of_joining",
   "designation",
-  "reports_to",
   "project",
   "operations_site",
   "operations_shift",
@@ -214,7 +215,6 @@
    "label": "Total Salary"
   },
   {
-   "fetch_from": "job_offer.estimated_date_of_joining",
    "fetch_if_empty": 1,
    "fieldname": "date_of_joining",
    "fieldtype": "Date",
@@ -272,11 +272,18 @@
    "label": "Employee",
    "options": "Employee",
    "read_only": 1
+  },
+  {
+   "fetch_from": "job_offer.estimated_date_of_joining",
+   "fieldname": "estimated_date_of_joining",
+   "fieldtype": "Date",
+   "label": "Estimated Date of Joining in Job Offer",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-12-21 13:13:30.440487",
+ "modified": "2022-07-14 13:32:34.261054",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Duty Commencement",

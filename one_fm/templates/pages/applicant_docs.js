@@ -10,6 +10,43 @@ var civil_id_reqd = $('#First_Name').attr('civil_id_reqd');
 
 var applicant_name = $('#First_Name').attr('data');
 
+const TOTAL_FORM_FIELDS = 22;
+
+// List of fields relevant to CIVIL ID's front side text
+const CIVIL_ID_FRONT_TEXT_FIELDS = [
+  'First_Name',
+  'Second_Name',
+  'Third_Name',
+  'Last_Name',
+  'First_Arabic_Name',
+  'Second_Arabic_Name',
+  'Third_Arabic_Name',
+  'Last_Arabic_Name',
+  'Gender',
+  'Civil_ID_No',
+  'Country_Code',
+  'Date_Of_Birth',
+  'Expiry_Date',
+]
+
+// List of fields relevant to CIVIL ID's back side text
+const CIVIL_ID_BACK_TEXT_FIELDS = [
+  'PACI_No',
+  'Sponsor_Name'
+]
+
+// List of fields relevant to passport front side text
+const PASSPORT_FRONT_TEXT_FIELDS = [
+  'Passport_Number',
+  'Passport_Date_of_Issue',
+  'Passport_Date_of_Expiry'
+]
+
+// List of fields relevant to passport back side text
+const PASSPORT_BACK_TEXT_FIELDS = [
+  'Passport_Place_of_Issue'
+]
+
 var front_cid_filepath = "";
 var back_cid_filepath = "";
 var front_passport_filepath = "";
@@ -133,6 +170,7 @@ function send_request(method, data, token, type){
             console.log(r.message)
             fill_form(r.message,request.type, token);
           } catch (e) {
+            console.log(e)
             $("#cover-spin").hide();
             $('#finalForm').css('display', 'block');
             r = request.responseText;
@@ -203,6 +241,9 @@ function fill_form(data, type,token){
     alert("Sorry! Some Error Occured during uploading" + type);
   }
   else {
+
+    let total_fill_counter = 0;
+
     if(type == "Civil ID"){
       input_data(data,'front_text','First_Name');
       input_data(data,'front_text','Second_Name');
@@ -229,17 +270,48 @@ function fill_form(data, type,token){
       if(is_kuwaiti==0){
         input_data(data,'back_text','Sponsor_Name');
       }
+      
+      let front_side_cid_filled_fields_count = count_filled_fields(data, 'front_text', CIVIL_ID_FRONT_TEXT_FIELDS);
+      let back_side_cid_filled_fields_count = count_filled_fields(data, 'back_text', CIVIL_ID_BACK_TEXT_FIELDS);
+
+      total_fill_counter += (front_side_cid_filled_fields_count + back_side_cid_filled_fields_count);
     }
     else if(type == "Passport"){
       front_passport_filepath = input_filepath(data, 'front_text', 'Passport_Front',token)
       back_passport_filepath = input_filepath(data, 'back_text', 'Passport_Back',token)
+      input_data(data,'front_text','Passport_Number');
       input_data(data,'front_text','Passport_Date_of_Issue');
       input_data(data,'front_text','Passport_Date_of_Expiry');
       input_data(data,'back_text','Passport_Place_of_Issue');
+
+      let front_side_pp_filled_fields_count = count_filled_fields(data, 'front_text', PASSPORT_FRONT_TEXT_FIELDS);
+      let back_side_pp_filled_fields_count = count_filled_fields(data, 'back_text', PASSPORT_BACK_TEXT_FIELDS);
+
+      total_fill_counter += (front_side_pp_filled_fields_count + back_side_pp_filled_fields_count);
     }
+
+    if (total_fill_counter < TOTAL_FORM_FIELDS){
+      frappe.msgprint({
+        title: __("Could not obtain all information"),
+        indicator: "orange",
+        message: __("Some fields in the below form may be empty. Please fill them out correctly."),
+      });
+    }
+
   }
 };
 
+function count_filled_fields(data, text_side, list_of_keys){
+  let fill_counter = 0;
+
+  list_of_keys.forEach(field => {
+    if(data[text_side][field]){
+      fill_counter++;
+    }
+  });
+
+  return fill_counter;
+}
 
 function input_filepath(Data, key1, key2,token){
   if(Data[key1][key2]!= undefined){

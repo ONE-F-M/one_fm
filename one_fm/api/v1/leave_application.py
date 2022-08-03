@@ -6,6 +6,8 @@ import datetime
 import collections
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
+from one_fm.api.v1.roster import get_current_shift
+from one_fm.api.tasks import get_action_user
 
 @frappe.whitelist()
 def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
@@ -222,7 +224,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         employee_doc = frappe.get_doc("Employee", employee)
-        leave_approver = get_leave_approver(employee)
+        leave_approver = fetch_leave_approver(employee)
         
         if not leave_approver:
             return response("Resource Not Found", 404, None, "No leave approver found for {employee}.".format(employee=employee_id))
@@ -249,7 +251,6 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
 
             attachment_path = f"/files/leave-application/{employee_doc.user_id}/{filename}"
 
-        # Approve leave application for "Sick Leave"
         doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
         return response("Success", 201, doc)
     
@@ -269,10 +270,11 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     if attachment_path:
         leave.proof_document = frappe.utils.get_url()+attachment_path
     leave.save()
+    frappe.db.commit()
     return leave.as_dict()
 
-
-def get_leave_approver(employee: str) -> str:
+@frappe.whitelist()
+def fetch_leave_approver(employee: str) -> str:
     """This function fetches the leave approver for a given employee.
     The leave approver is fetched  either Report_to or Leave Approver. 
     But, if both don't exist, Operation manager is the Leave Approver.
@@ -284,17 +286,10 @@ def get_leave_approver(employee: str) -> str:
         str: user id of leave approver
     """
 
-    leave_approver, reports_to = frappe.db.get_value("Employee", employee, ["leave_approver", "reports_to"])
-    if not leave_approver:
-        if reports_to:
-            return frappe.db.get_value('Employee', {'name': reports_to}, ['user_id'])
-        else:
-            #if not, return the 'Operational Manager' as the leave approver. But, check if employee himself is not a leave manager.
-            operation_manager_name, operation_manager_user_id = frappe.db.get_value('Employee', {'Designation': "Operation Manager"}, ['name','user_id'])
-            if operation_manager_name != employee:
-                return operation_manager_user_id
+    employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
+    approver, Role = get_action_user(employee,employee_shift[0].shift)
     
-    return leave_approver
+    return approver
 
 
 def proof_document_required_for_leave_type(leave_type):

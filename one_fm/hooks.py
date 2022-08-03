@@ -89,11 +89,14 @@ doctype_js = {
 	"Attendance Request": "public/js/doctype_js/attendance_request.js",
 	"Shift Request": "public/js/doctype_js/shift_request.js",
 	"Shift Assignment": "public/js/doctype_js/shift_assignment.js",
+	"Employee Checkin": "public/js/doctype_js/employee_checkin.js",
+	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
 	"Job Offer": "public/js/doctype_js/job_offer_list.js",
-	"Issue": "public/js/doctype_list_js/issue_list.js"
+	"Issue": "public/js/doctype_list_js/issue_list.js",
+	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -188,6 +191,7 @@ doc_events = {
 		"validate":"one_fm.hiring.utils.set_employee_name",
 		"before_validate": "one_fm.api.doc_events.employee_before_validate",
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
+		"before_insert": "one_fm.hiring.utils.employee_before_insert",
 		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti"
 	},
 	"Employee Grade": {
@@ -327,6 +331,9 @@ doc_events = {
 			"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
 		],
+		"on_update_after_submit":[
+			"one_fm.api.doc_methods.shift_request.on_update_after_submit",
+		],
 	},
 	"Shift Assignment":{
 		"before_insert":[
@@ -336,7 +343,9 @@ doc_events = {
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
-
+	"User": {
+		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -397,7 +406,9 @@ website_route_rules = [
 
 override_doctype_class = {
     "Leave Policy Assignment": "one_fm.overrides.leave_policy_assignment.LeavePolicyAssignmentOverride",
-	"Attendance Request": "one_fm.overrides.attendance_request.AttendanceRequestOverride"
+	"Attendance Request": "one_fm.overrides.attendance_request.AttendanceRequestOverride",
+	"Shift Type": "one_fm.overrides.shift_type.ShiftTypeOverride",
+	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
 }
 
 
@@ -433,6 +444,7 @@ scheduler_events = {
 	"weekly": [
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_sites_followup',
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_penalty',
+		'one_fm.tasks.one_fm.monthly.employee_schedule_monthly',
   ],
 
 	"monthly": [
@@ -635,9 +647,10 @@ fixtures = [
 # Overriding Whitelisted Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
-# }
+override_whitelisted_methods = {
+	"erpnext.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.mobile.Leave_application.fetch_leave_approver"
+	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
+}
 ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation

@@ -9,7 +9,6 @@ from erpnext.stock.utils import update_included_uom_in_report
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
-	filters['warehouse'] = frappe.db.get_value('Uniform Management Settings', None, "new_uniform_warehouse")
 	include_uom = filters.get("include_uom")
 	columns = get_columns()
 	bin_list = get_bin_list(filters)
@@ -99,6 +98,7 @@ def get_bin_list(filters):
 		ordered_qty, reserved_qty, reserved_qty_for_production, reserved_qty_for_sub_contract, projected_qty
 		from tabBin bin {conditions} order by item_code, warehouse
 		""".format(conditions=" where " + " and ".join(conditions) if conditions else ""), as_dict=1)
+
 	used_warehouse_bin_list = get_used_uniform_qty()
 	for bin in bin_list:
 		if used_warehouse_bin_list:
@@ -108,21 +108,8 @@ def get_bin_list(filters):
 	return bin_list
 
 def get_used_uniform_qty(item_code=None):
-	warehouse = frappe.db.get_value('Uniform Management Settings', None, "used_uniform_warehouse")
-	if warehouse:
-		conditions = []
-		warehouse_details = frappe.db.get_value("Warehouse", warehouse, ["lft", "rgt"], as_dict=1)
-		if warehouse_details:
-			conditions.append(" exists (select name from `tabWarehouse` wh \
-				where wh.lft >= %s and wh.rgt <= %s and bin.warehouse = wh.name)"%(warehouse_details.lft,
-				warehouse_details.rgt))
-
-		bin_list = frappe.db.sql("""select item_code, warehouse, actual_qty
-			from tabBin bin {conditions} order by item_code, warehouse
-			""".format(conditions=" where " + " and ".join(conditions) if conditions else ""), as_dict=1)
-		return bin_list
-	else:
-		return False
+	# TODO:
+	return False
 
 def get_item_map(item_code, include_uom):
 	"""Optimization: get only the item doc and re_order_levels table"""

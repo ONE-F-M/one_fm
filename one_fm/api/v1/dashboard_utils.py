@@ -38,26 +38,26 @@ def get_employee_shift(employee_id, date_type='month'):
     try:
         employee = frappe.get_doc('Employee', employee_id)
         shift_assignment =  frappe.db.get_list('Shift Assignment',
-                                               filters=[
-                                                   ['employee', '=', employee.name],
-                                               ],
-                                               fields=['name', 'employee', 'site', 'shift_type'],
-                                               order_by='modified desc',
-                                               limit=1,
-                                               )
+           filters=[
+               ['employee', '=', employee.name],
+           ],
+           fields=['name', 'employee', 'site', 'shift_type'],
+           order_by='modified desc',
+           limit=1,
+           )
         if(len(shift_assignment)):
             site = frappe.get_doc("Operations Site", shift_assignment[0].site)
             shift_location = frappe.get_doc("Location", site.site_location)
             shift_type = frappe.get_doc('Shift Type', shift_assignment[0].shift_type)
             days_worked = frappe.db.get_list('Attendance',
-                                             filters=[
-                                                 ['employee', '=', employee.name],
-                                                 ['status', '=', 'Present'],
-                                                 ['attendance_date', 'BETWEEN', [_start, _end]],
-                                             ],
-                                             fields=['COUNT(*) as count', 'name', 'employee', 'status', 'attendance_date'],
-                                             order_by='modified desc',
-                                             )[0].count
+                filters=[
+                 ['employee', '=', employee.name],
+                 ['status', '=', 'Present'],
+                 ['attendance_date', 'BETWEEN', [_start, _end]],
+                ],
+                fields=['COUNT(*) as count', 'name', 'employee', 'status', 'attendance_date'],
+                order_by='modified desc',
+                )[0].count
             penalties = frappe.db.sql(f"""
 				SELECT COUNT(*) as count
 				FROM `tabPenalty` p
@@ -74,7 +74,7 @@ def get_employee_shift(employee_id, date_type='month'):
                 201,
                 {
                     'employee': employee.name,
-                    'leave_balance':leave_balance,
+                    'leave_balance': 0, #leave_balance,
                     'penalties': penalties,
                     'days_worked':days_worked,
                     'shift_time_from': shift_type.start_time,

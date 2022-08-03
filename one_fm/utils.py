@@ -795,39 +795,43 @@ def get_leave_type_details():
     return leave_type_details
 
 def create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date):
-    ''' Creates leave allocation for the given employee in the provided leave policy '''
-    leave_type = policy_detail.leave_type
-    new_leaves_allocated = policy_detail.annual_allocation
-    carry_forward = 0
-    if leave_type_details.get(leave_type).is_carry_forward:
-        carry_forward = 1
+	''' Creates leave allocation for the given employee in the provided leave policy '''
+	leave_type = policy_detail.leave_type
+	new_leaves_allocated = policy_detail.annual_allocation
+	carry_forward = 0
+	if leave_type_details.get(leave_type).is_carry_forward:
+		carry_forward = 1
 
-    # Earned Leaves and Compensatory Leaves are allocated by scheduler, initially allocate 0
-    if leave_type_details.get(leave_type).is_earned_leave == 1 or leave_type_details.get(leave_type).is_compensatory == 1:
-        new_leaves_allocated = 0
+	# Earned Leaves and Compensatory Leaves are allocated by scheduler, initially allocate 0
+	if leave_type_details.get(leave_type).is_earned_leave == 1 or leave_type_details.get(leave_type).is_compensatory == 1:
+		new_leaves_allocated = 0
 
-    # Annual Leave allocated by scheduler, initially allocate 0
-    if leave_type_details.get(leave_type).one_fm_is_paid_annual_leave == 1:
-        default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
-        new_leaves_allocated = default_annual_leave_balance/365
+	# Annual Leave allocated by scheduler, initially allocate 0
+	if leave_type_details.get(leave_type).one_fm_is_paid_annual_leave == 1:
+		default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
+		new_leaves_allocated = default_annual_leave_balance/365
 
-    allocate_leave = True
-    # Hajj Leave is allocated for employees who do not perform hajj before
-    if leave_type_details.get(leave_type).one_fm_is_hajj_leave == 1 and employee.went_to_hajj:
-        allocate_leave = False
+	allocate_leave = True
+	# Hajj Leave is allocated for employees who do not perform hajj before
+	if leave_type_details.get(leave_type).one_fm_is_hajj_leave == 1 and employee.went_to_hajj:
+		allocate_leave = False
 
-    if allocate_leave:
-        allocation = frappe.get_doc(dict(
-            doctype="Leave Allocation",
-            employee=employee.name,
-            leave_type=leave_type,
-            from_date=from_date,
-            to_date=to_date,
-            new_leaves_allocated=new_leaves_allocated,
-            carry_forward=carry_forward
-        ))
-        allocation.save(ignore_permissions = True)
-        allocation.submit()
+	if allocate_leave:
+		allocation = frappe.get_doc(dict(
+			doctype="Leave Allocation",
+			employee=employee.name,
+			leave_type=leave_type,
+			from_date=from_date,
+			to_date=to_date,
+			new_leaves_allocated=new_leaves_allocated,
+			carry_forward=carry_forward
+		))
+		try:
+			allocation.save(ignore_permissions = True)
+			allocation.submit()
+		except Exception as e:
+			frappe.log_error(str(e), 'Leave allocation builder exception against {0}/{1}'.format(employee.name, leave_type))
+
 
 def increase_daily_leave_balance():
     '''
@@ -1877,10 +1881,14 @@ def create_roster_post_actions():
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
         if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.post_type == ps.post_type for es in employee_schedules):
-            post_types_not_filled_set.add(ps.post_type)
+            if ps.post_type:
+                post_types_not_filled_set.add(ps.post_type)
 
     # Convert set to tuple for passing it in the sql query as a parameter
     post_types_not_filled = tuple(post_types_not_filled_set)
+
+    if not post_types_not_filled:
+        return
 
     # Fetch supervisor and post types in his/her shift
     result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.post_type)

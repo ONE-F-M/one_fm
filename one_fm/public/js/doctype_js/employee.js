@@ -1,5 +1,6 @@
 frappe.ui.form.on('Employee', {
 	refresh: function(frm) {
+		hideFields(frm);
 		frm.trigger('set_queries');
 		set_mandatory(frm);
 	},
@@ -51,4 +52,10 @@ let toggle_required = (frm, state) => {
 	'last_name_in_arabic'].forEach((item, i) => {
 		frm.toggle_reqd(item, state);
 	});
+}
+
+
+// Hide un-needed fields
+const hideFields = frm => {
+    $("[data-doctype='Employee Checkin']").hide();
 }

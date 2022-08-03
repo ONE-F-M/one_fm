@@ -39,7 +39,8 @@ frappe.query_reports["Accommodation Checkin Checkout Report"] = {
 			"fieldname":"employee",
 			"label": __("Employee"),
 			"fieldtype": "Link",
-			"options": "Employee"
+			"options": "Employee",
+			"ignore_user_permissions": 1
 		},
 		{
 			"fieldname":"employee_id",

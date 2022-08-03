@@ -7,6 +7,11 @@ frappe.ui.form.on('Employee Uniform', {
 			frappe.meta.get_docfield("Employee Uniform Item", 'returned', frm.doc.name).hidden = true;
 			// frappe.meta.get_docfield("Employee Uniform Item", 'quantity', frm.doc.name).label = 'Return Qty';
 		}
+		frm.set_query("warehouse", function() {
+			return {
+				filters: {'is_uniform_warehouse': true}
+			}
+		});
 	},
 	employee: function(frm) {
 		set_uniform_details(frm);
@@ -14,14 +19,13 @@ frappe.ui.form.on('Employee Uniform', {
 	},
 	type: function(frm) {
 		set_uniform_details(frm);
-		set_warehouse(frm);
 		if(frm.doc.type == "Return"){
 			frappe.meta.get_docfield("Employee Uniform Item", 'returned', frm.doc.name).hidden = true;
 			// frappe.meta.get_docfield("Employee Uniform Item", 'quantity', frm.doc.name).label = 'Return Qty';
 		}
 	},
 	reason_for_return: function(frm) {
-		set_warehouse(frm);
+
 	},
 	get_item_data: function(frm, item) {
 		if (!item.item || frm.doc.type=='Return') return;
@@ -51,35 +55,6 @@ frappe.ui.form.on('Employee Uniform', {
 		});
 	},
 });
-
-var set_warehouse = function(frm) {
-	frm.set_df_property('warehouse', 'label', "Warehouse");
-	if(frm.doc.type == "Issue"){
-		frm.set_df_property('warehouse', 'label', "Issue From");
-		frappe.db.get_value('Uniform Management Settings', "", 'new_uniform_warehouse', function(r) {
-			if(r && r.new_uniform_warehouse){
-				frm.set_value('warehouse', r.new_uniform_warehouse);
-			}
-		});
-	}
-	else if(frm.doc.type == "Return"){
-		frm.set_df_property('warehouse', 'label', "Return To");
-		if(frm.doc.reason_for_return && frm.doc.reason_for_return == "Item Exchange"){
-			frappe.db.get_value('Uniform Management Settings', "", 'new_uniform_warehouse', function(r) {
-				if(r && r.new_uniform_warehouse){
-					frm.set_value('warehouse', r.new_uniform_warehouse);
-				}
-			});
-		}
-		else{
-			frappe.db.get_value('Uniform Management Settings', "", 'used_uniform_warehouse', function(r) {
-				if(r && r.used_uniform_warehouse){
-					frm.set_value('warehouse', r.used_uniform_warehouse);
-				}
-			});
-		}
-	}
-};
 
 frappe.ui.form.on('Employee Uniform Item', {
 	uniforms_add: function(frm, cdt, cdn) {

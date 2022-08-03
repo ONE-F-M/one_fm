@@ -26,6 +26,19 @@ frappe.query_reports["Uniform Details"] = {
 			"label": __("Item Group"),
 			"fieldtype": "Link",
 			"options": "Item Group"
-		}
+		},
+		{
+			"fieldname":"warehouse",
+			"label": __("Warehouse"),
+			"fieldtype": "Link",
+			"options": "Warehouse",
+			"get_query": function() {
+				return {
+						filters:{
+							is_uniform_warehouse: true
+						}
+				}
+			}
+		},
 	]
 }
