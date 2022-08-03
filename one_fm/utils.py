@@ -2594,13 +2594,14 @@ def create_path(path):
 
 
 
-def send_workflow_action_email(recipients, doc):
+@frappe.whitelist()
+def send_workflow_action_email(doc, method):
+    recipients = [doc.get("approver")]
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
         workflow, get_doc_workflow_state(doc), doc
     )
     user_data_map = get_users_next_action_data(next_possible_transitions, doc)
-
 
     common_args = get_common_email_args(doc)
     message = common_args.pop("message", None)
@@ -2619,10 +2620,10 @@ def workflow_approve_reject(doc, recipients=None):
     if not recipients:
         recipients = [doc.owner]
     email_args = {
+        "subject": f"{doc.doctype} - {doc.workflow_state}",
         "recipients": recipients,
         "reference_name": doc.name,
         "reference_doctype": doc.doctype,
-        "message": f"Your {doc.doctype} has been {doc.workflow_state}"
+        "message": f"Your {doc.doctype} {doc.title} has been {doc.workflow_state}"
     }
-    email_args.update(common_args)
     frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)

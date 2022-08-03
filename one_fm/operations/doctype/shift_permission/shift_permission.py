@@ -11,6 +11,7 @@ from one_fm.api.notification import create_notification_log, get_employee_user_i
 from erpnext.hr.doctype.shift_assignment.shift_assignment import get_shift_details
 from one_fm.api.tasks import get_action_user
 from one_fm.api.utils import get_reports_to_employee_name
+from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 
 class ShiftPermission(Document):
 	def validate(self):
@@ -71,6 +72,13 @@ class ShiftPermission(Document):
 	def on_update(self):
 		if self.workflow_state == 'Approved':
 			create_employee_checkin_for_shift_permission(self)
+			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
+
+		if self.workflow_state == 'Pending':
+			send_workflow_action_email([get_employee_user_id(self.shift_supervisor)], self)
+
+		if self.workflow_state in ['Rejected']:
+			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
 
 def create_employee_checkin_for_shift_permission(shift_permission):
 	"""
