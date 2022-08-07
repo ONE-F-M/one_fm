@@ -947,6 +947,6 @@ def search_staff(key, search_term):
 
 @frappe.whitelist()
 def get_employee_detail(employee_pk):
-	if employee_id:
+	if employee_pk:
 		pk, employee_id, employee_name, enrolled, cell_number = frappe.db.get_value("Employee", employee_pk, ["name", "employee_id", "employee_name", "enrolled", "cell_number"])
 		return {'pk':pk, 'employee_id': employee_id, 'employee_name': employee_name, 'enrolled': enrolled, "cell_number": cell_number}
