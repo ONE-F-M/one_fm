@@ -8,6 +8,7 @@ from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import get_action_user
+from frappe.utils import cint
 
 @frappe.whitelist()
 def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
@@ -252,6 +253,10 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             attachment_path = f"/files/leave-application/{employee_doc.user_id}/{filename}"
 
         doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
+        
+        if attachment_path:
+            upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
+        
         return response("Success", 201, doc)
     
     except Exception as error:
@@ -297,3 +302,18 @@ def proof_document_required_for_leave_type(leave_type):
         return True
 
     return False
+
+def upload_file(doc, fieldname, filename, file_url, content, is_private):
+    ret= frappe.get_doc({
+			"doctype": "File",
+			"attached_to_doctype": doc.doctype,
+			"attached_to_name": doc.name,
+			"attached_to_field": fieldname,
+			"file_name": filename,
+			"file_url": file_url,
+			"is_private": cint(is_private),
+			"content": content
+		})
+    ret.save()
+    frappe.db.commit()
+    return ret
