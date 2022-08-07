@@ -223,3 +223,59 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
     #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
     response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
     return response
+
+@frappe.whitelist()
+def push_notification_rest_api_for_leave_application(employee_id, title, body, supervisor_button):
+    """ 
+    This function is used to send notification through Firebase CLoud Message. 
+    It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
+    
+    Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message"
+
+    serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
+    Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
+    """
+    serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
+    token, os = frappe.db.get_value("Employee", {"name": employee_id}, ["fcm_token", "device_os"])
+    deviceToken = token
+    device_os = os
+
+    headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'key=' + serverToken,
+        }
+
+    #Body in json form defining a message payload to send through API. 
+    # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
+    if device_os == "android":
+         body = {       
+            "to":deviceToken,
+            "data": {
+                "title": title,
+                "body" : body,
+                "showButtonCheckIn": False,
+                "showButtonCheckOut": False,
+                "showButtonArrivingLate": False
+                }
+            }
+    else:
+        body = {       
+            "to":deviceToken,
+            "data": {
+                "title": title,
+                "body" : body,
+                "showButtonCheckIn": False,
+                "showButtonCheckOut": False,
+                "showButtonArrivingLate": False
+                },
+            "notification": {
+                "body": body,
+                "title": title,
+                "badge": 0,
+                "click_action": "oneFmNotificationCategory1"
+                },
+                "mutable_content": True
+            }
+    #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
+    response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
+    return response
