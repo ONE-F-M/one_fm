@@ -38,6 +38,7 @@ from frappe.desk.form import assign_to
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from frappe.core.doctype.user.user import extract_mentions
 from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
+from one_fm.api.api import push_notification_rest_api_for_leave_application
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -542,6 +543,18 @@ def leave_appillication_on_submit(doc, method):
     if doc.status == "Approved":
         leave_appillication_paid_sick_leave(doc, method)
         update_employee_hajj_status(doc, method)
+        notify_employee(doc, method)
+
+@frappe.whitelist()
+def notify_employee(doc, method):
+    if doc.workflow_state in ["Approved","Rejected", "Cancelled"]:
+        if doc.total_leave_days == 1:
+            date = cstr(doc.from_date)
+        else:
+            date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
+        
+        message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
+        push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, False)
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_cancel(doc, method):
