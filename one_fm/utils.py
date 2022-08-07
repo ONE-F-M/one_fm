@@ -26,7 +26,7 @@ from dateutil.relativedelta import relativedelta
 from frappe.utils import (
     cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
     comma_or, get_fullname, add_years, add_months, add_days,
-    nowdate,get_first_day,get_last_day, today
+    nowdate,get_first_day,get_last_day, today, now_datetime
 )
 import datetime
 from datetime import datetime, time
@@ -38,6 +38,7 @@ from frappe.desk.form import assign_to
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from frappe.core.doctype.user.user import extract_mentions
 from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
+from six import string_types
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -2585,3 +2586,37 @@ def check_path(path):
 
 def create_path(path):
     os.mkdir(path)
+
+@frappe.whitelist()
+def notify_live_user(company, message, users=False):
+	'''
+		A method to send live notification to all or 20 number of live users
+		args:
+			company: the name of comapny to update last notification details to the company record
+			message: notification message content
+			users: list of users (optional), leave blank to send notification to all the live users
+	'''
+
+	if 'System Manager' in frappe.get_roles(frappe.session.user):
+		event = 'eval_js'
+		publish_message = "frappe.msgprint({message: '"+message+"', indicator: 'blue', 'title': 'Alert!'})"
+		last_notified = "All"
+
+		if isinstance(users, string_types):
+			users = json.loads(users)
+		if users:
+			last_notified =  ', '.join(['{}'.format(user) for user in users])
+			if len(users) <= 20:
+				for user in users:
+					frappe.publish_realtime(event=event, message=publish_message, user=user)
+			else:
+				frappe.throw(__("You can send live notification to all or less than 21 users!"))
+		else:
+			frappe.publish_realtime(event=event, message=publish_message)
+
+		frappe.db.set_value("Company", company, "last_notification_send_on", now_datetime())
+		frappe.db.set_value("Company", company, "last_notification_send_by", frappe.session.user)
+		frappe.db.set_value("Company", company, "last_notification_message", message)
+		frappe.db.set_value("Company", company, "last_notified", last_notified)
+	else:
+		frappe.throw(__("System Manger can only send the notification!!"))
