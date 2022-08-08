@@ -624,6 +624,10 @@ def get_leave_payment_breakdown(leave_type):
     leave_type_doc = frappe.get_doc("Leave Type", leave_type)
     return leave_type_doc.one_fm_leave_payment_breakdown if leave_type_doc.one_fm_leave_payment_breakdown else False
 
+def validate_sick_leave_date(doc, method):
+    if doc.leave_type == "Sick Leave" and doc.posting_date != doc.from_date:
+        frappe.throw("From Date cannot be other than Today.")
+
 def validate_leave_type_for_one_fm_paid_leave(doc, method):
     if doc.is_lwp:
         doc.one_fm_is_paid_sick_leave = False

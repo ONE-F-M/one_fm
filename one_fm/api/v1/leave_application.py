@@ -8,7 +8,7 @@ from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import get_action_user
-from frappe.utils import cint
+from frappe.utils import cint, cstr, getdate
 
 @frappe.whitelist()
 def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
@@ -215,6 +215,9 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
     if proof_document_required_for_leave_type(leave_type) and not proof_document:
         return response('Leave type requires a proof_document.', {}, 400)
     
+    if leave_type == "Sick Leave" and from_date != cstr(getdate()):
+        return response('From Date cannot be other than today.', {}, 400)
+
     try:
         from pathlib import Path
         import hashlib
