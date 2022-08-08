@@ -335,6 +335,7 @@ doc_events = {
 		"on_update_after_submit":[
 			"one_fm.api.doc_methods.shift_request.on_update_after_submit",
 		],
+		"on_update": "one_fm.api.doc_methods.shift_request.on_update",
 	},
 	"Shift Assignment":{
 		"before_insert":[

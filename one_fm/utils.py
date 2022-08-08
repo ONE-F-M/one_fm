@@ -38,7 +38,12 @@ from frappe.desk.form import assign_to
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from frappe.core.doctype.user.user import extract_mentions
 from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
+from frappe.workflow.doctype.workflow_action.workflow_action import (
+    get_common_email_args, deduplicate_actions, get_next_possible_transitions,
+    get_doc_workflow_state, get_workflow_name, get_users_next_action_data
+)
 from six import string_types
+
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -2586,6 +2591,42 @@ def check_path(path):
 
 def create_path(path):
     os.mkdir(path)
+
+
+@frappe.whitelist()
+def send_workflow_action_email(doc, method):
+    recipients = [doc.get("approver")]
+    workflow = get_workflow_name(doc.get("doctype"))
+    next_possible_transitions = get_next_possible_transitions(
+        workflow, get_doc_workflow_state(doc), doc
+    )
+    user_data_map = get_users_next_action_data(next_possible_transitions, doc)
+
+    common_args = get_common_email_args(doc)
+    message = common_args.pop("message", None)
+    for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
+        email_args = {
+            "recipients": recipients,
+            "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message},
+            "reference_name": doc.name,
+            "reference_doctype": doc.doctype,
+        }
+        email_args.update(common_args)
+        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+
+
+def workflow_approve_reject(doc, recipients=None):
+    if not recipients:
+        recipients = [doc.owner]
+    email_args = {
+        "subject": f"{doc.doctype} - {doc.workflow_state}",
+        "recipients": recipients,
+        "reference_name": doc.name,
+        "reference_doctype": doc.doctype,
+        "message": f"Your {doc.doctype} {doc.title} has been {doc.workflow_state}"
+    }
+    frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+
 
 @frappe.whitelist()
 def notify_live_user(company, message, users=False):
