@@ -10,7 +10,6 @@ def response(code, title, msg, data=None):
 
 
 def get_reports_to_employee_name(employee):
-    reports_to = None
     reports_to = frappe.db.get_value('Employee', employee, 'reports_to')
     if not reports_to:
         shift = frappe.db.get_list("Shift Assignment", filters={'employee':employee},
