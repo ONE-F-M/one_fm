@@ -3221,6 +3221,7 @@ function editSingleEmployeeData(){
                 ignore_user_permissions: 1,
                 change: function (x) {
                     employee_pk = d.fields_dict.employee.value;
+                    if(employee_pk){
                     frappe.xcall('one_fm.one_fm.page.roster.roster.get_employee_detail', { employee_pk })
                         .then(res => {
                             d.fields_dict.employee_id.value = res.employee_id;
@@ -3233,7 +3234,7 @@ function editSingleEmployeeData(){
                             d.fields_dict.cell_number.refresh();
                         });
 
-
+                    }
                 }
             },
             {
