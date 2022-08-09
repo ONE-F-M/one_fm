@@ -38,12 +38,12 @@ from frappe.desk.form import assign_to
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from frappe.core.doctype.user.user import extract_mentions
 from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
+from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_common_email_args, deduplicate_actions, get_next_possible_transitions,
     get_doc_workflow_state, get_workflow_name, get_users_next_action_data
 )
 from six import string_types
-
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -548,6 +548,18 @@ def leave_appillication_on_submit(doc, method):
     if doc.status == "Approved":
         leave_appillication_paid_sick_leave(doc, method)
         update_employee_hajj_status(doc, method)
+        notify_employee(doc, method)
+
+@frappe.whitelist()
+def notify_employee(doc, method):
+    if doc.workflow_state in ["Approved","Rejected", "Cancelled"]:
+        if doc.total_leave_days == 1:
+            date = cstr(doc.from_date)
+        else:
+            date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
+        
+        message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
+        push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, False)
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_cancel(doc, method):
@@ -616,6 +628,10 @@ def create_additional_salary(salary, daily_rate, payment_days, leave_application
 def get_leave_payment_breakdown(leave_type):
     leave_type_doc = frappe.get_doc("Leave Type", leave_type)
     return leave_type_doc.one_fm_leave_payment_breakdown if leave_type_doc.one_fm_leave_payment_breakdown else False
+
+def validate_sick_leave_date(doc, method):
+    if doc.leave_type == "Sick Leave" and doc.posting_date != doc.from_date:
+        frappe.throw("From Date cannot be other than Today.")
 
 def validate_leave_type_for_one_fm_paid_leave(doc, method):
     if doc.is_lwp:
