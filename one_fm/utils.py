@@ -637,7 +637,7 @@ def validate_sick_leave_date(doc, method):
 @frappe.whitelist()
 def check_if_backdate_allowed(leave_type, from_date):
     if frappe.db.get_single_value("HR Settings", "restrict_backdated_leave_application"):
-        if leave_type == "Sick Leave"  and from_date != getdate():
+        if leave_type == "Sick Leave"  and from_date != cstr(getdate()):
             allowed_role = frappe.db.get_single_value(
                 "HR Settings", "role_allowed_to_create_backdated_leave_application"
             )
