@@ -2,15 +2,11 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_days, date_diff, getdate, nowdate
-from frappe.workflow.doctype.workflow_action.workflow_action import (
-	get_common_email_args, deduplicate_actions, get_next_possible_transitions,
-	get_doc_workflow_state, get_workflow_name, get_users_next_action_data
-)
-
 from erpnext.hr.doctype.employee.employee import is_holiday
 from erpnext.hr.utils import validate_active_employee, validate_dates
 from erpnext.hr.doctype.attendance_request.attendance_request import AttendanceRequest
 from frappe.model.workflow import apply_workflow
+from one_fm.utils import send_workflow_action_email
 
 
 class AttendanceRequestOverride(AttendanceRequest):
@@ -183,25 +179,6 @@ def validate_future_dates(doc, from_date, to_date):
 		frappe.throw(_("To date can not greater than employee's relieving date"))
 
 
-def send_workflow_action_email(recipients, doc):
-	workflow = get_workflow_name(doc.get("doctype"))
-	next_possible_transitions = get_next_possible_transitions(
-		workflow, get_doc_workflow_state(doc), doc
-	)
-	user_data_map = get_users_next_action_data(next_possible_transitions, doc)
-
-
-	common_args = get_common_email_args(doc)
-	message = common_args.pop("message", None)
-	for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
-		email_args = {
-			"recipients": recipients,
-			"args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message},
-			"reference_name": doc.name,
-			"reference_doctype": doc.doctype,
-		}
-		email_args.update(common_args)
-		frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
 
 @frappe.whitelist()
 def update_request(attendance_request, from_date, to_date):

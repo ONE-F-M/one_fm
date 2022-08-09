@@ -3218,6 +3218,7 @@ function editSingleEmployeeData(){
                 fieldtype: 'Link',
                 options: "Employee",
                 reqd:1,
+                ignore_user_permissions: 1,
                 change: function (x) {
                     employee_pk = d.fields_dict.employee.value;
                     frappe.xcall('one_fm.one_fm.page.roster.roster.get_employee_detail', { employee_pk })

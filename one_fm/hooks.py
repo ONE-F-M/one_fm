@@ -91,6 +91,7 @@ doctype_js = {
 	"Shift Assignment": "public/js/doctype_js/shift_assignment.js",
 	"Employee Checkin": "public/js/doctype_js/employee_checkin.js",
 	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
+	"Company" : "public/js/doctype_js/company.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -335,6 +336,7 @@ doc_events = {
 		"on_update_after_submit":[
 			"one_fm.api.doc_methods.shift_request.on_update_after_submit",
 		],
+		"on_update": "one_fm.api.doc_methods.shift_request.on_update",
 	},
 	"Shift Assignment":{
 		"before_insert":[
