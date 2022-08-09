@@ -22,11 +22,11 @@ frappe.ui.form.on('HR and Payroll Additional Settings', {
 					if (r.message.length > 1){
 						message = `${r.message.length} projects not configured in the cycle but linked in employee record:
 						<ul style="padding-left: 20px; padding-top: 5px;">
-							${r.message.map(d => `<li>${d}</li>`).join('')}
+							${r.message.map(d => `<li>${d.project}</li>`).join('')}
 						</ul>`
 					}
 					else{
-						message = `Project ${r.message.map(d => `${d}`).join('')} is not configured in the payroll cycle`
+						message = `Project ${r.message.map(d => `${d.project}`).join('')} is not configured in the payroll cycle`
 					}
 				}
 				frappe.msgprint(message);
