@@ -630,8 +630,22 @@ def get_leave_payment_breakdown(leave_type):
     return leave_type_doc.one_fm_leave_payment_breakdown if leave_type_doc.one_fm_leave_payment_breakdown else False
 
 def validate_sick_leave_date(doc, method):
-    if doc.leave_type == "Sick Leave" and doc.posting_date != doc.from_date:
-        frappe.throw("From Date cannot be other than Today.")
+    if doc.leave_type and doc.from_date:
+        if not check_if_backdate_allowed(doc.leave_type, doc.from_date):
+            frappe.throw("You are not allowed to apply for later or previous date.")
+
+@frappe.whitelist()
+def check_if_backdate_allowed(leave_type, from_date):
+    if frappe.db.get_single_value("HR Settings", "restrict_backdated_leave_application"):
+        if leave_type == "Sick Leave"  and from_date != getdate():
+            allowed_role = frappe.db.get_single_value(
+                "HR Settings", "role_allowed_to_create_backdated_leave_application"
+            )
+            user = frappe.get_doc("User", frappe.session.user)
+            user_roles = [d.role for d in user.roles]
+            if allowed_role and allowed_role not in user_roles:
+                return False
+    return True
 
 def validate_leave_type_for_one_fm_paid_leave(doc, method):
     if doc.is_lwp:
