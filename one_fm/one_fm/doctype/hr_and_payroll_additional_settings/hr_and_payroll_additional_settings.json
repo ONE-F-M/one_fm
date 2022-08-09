@@ -21,7 +21,7 @@
   "default_payroll_start_day",
   "default_payroll_end_day",
   "project_payroll_cycle",
-  "get_projects_not_set_in_payroll_cycle_but_assigned_in_employee",
+  "get_projects_not_configured_in_payroll_cycle",
   "overtime_additional_salary_section",
   "overtime_additional_salary_component",
   "working_day_overtime_rate",
@@ -234,15 +234,15 @@
    "read_only": 1
   },
   {
-   "fieldname": "get_projects_not_set_in_payroll_cycle_but_assigned_in_employee",
+   "fieldname": "get_projects_not_configured_in_payroll_cycle",
    "fieldtype": "Button",
-   "label": "Get Projects Not Set in Payroll Cycle But Assigned in Employee"
+   "label": "Show Projects Not Configured in Payroll Cycle But Linked in Employee"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-08-09 09:04:29.007402",
+ "modified": "2022-08-09 20:06:57.159175",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",

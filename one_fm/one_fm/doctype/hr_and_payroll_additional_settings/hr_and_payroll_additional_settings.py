@@ -6,13 +6,13 @@ from frappe.model.document import Document
 
 class HRandPayrollAdditionalSettings(Document):
 	@frappe.whitelist()
-	def get_projects_not_set_in_payroll_cycle_but_assigned_in_employee(self):
+	def get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(self):
 		project_list = ', '.join(['"{}"'.format(payroll_cycle.project) for payroll_cycle in self.project_payroll_cycle])
 		if not project_list:
 			project_list = "''"
-		return get_projects_not_set_in_payroll_cycle_but_linked_in_employee(project_list)
+		return get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(project_list)
 
-def get_projects_not_set_in_payroll_cycle_but_linked_in_employee(project_list):
+def get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(project_list):
 	'''
 		Method to get list of projects not set in payroll cycle but linked in employee
 		args:

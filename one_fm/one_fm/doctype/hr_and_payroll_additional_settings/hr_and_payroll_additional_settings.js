@@ -12,10 +12,10 @@ frappe.ui.form.on('HR and Payroll Additional Settings', {
 		}
 		frm.set_value('default_payroll_end_day', payroll_end_day);
 	},
-	get_projects_not_set_in_payroll_cycle_but_assigned_in_employee: function(frm) {
+	get_projects_not_configured_in_payroll_cycle: function(frm) {
 		frappe.call({
 			doc: frm.doc,
-			method: 'get_projects_not_set_in_payroll_cycle_but_assigned_in_employee',
+			method: 'get_projects_not_configured_in_payroll_cycle_but_linked_in_employee',
 			callback: function(r) {
 				var message = "There is no project linked in employee but not configured"
 				if(r && r.message && r.message.length > 0){
