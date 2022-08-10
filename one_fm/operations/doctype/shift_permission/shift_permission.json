@@ -14,6 +14,7 @@
   "section_break_5",
   "assigned_shift",
   "shift_supervisor",
+  "approver_name",
   "column_break_9",
   "shift",
   "shift_type",
@@ -89,8 +90,9 @@
   {
    "fieldname": "shift_supervisor",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_list_view": 1,
-   "label": "Shift Supervisor",
+   "label": "Approver",
    "options": "Employee",
    "read_only": 1
   },
@@ -155,11 +157,19 @@
   {
    "fieldname": "section_break_17",
    "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "shift_supervisor.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "approver_name",
+   "fieldtype": "Data",
+   "label": "Approver Name",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-07-05 11:34:44.996887",
+ "modified": "2022-08-03 13:55:38.831535",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",

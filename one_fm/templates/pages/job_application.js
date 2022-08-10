@@ -155,7 +155,7 @@ job_application = Class.extend({
       if($("#visa input[type='radio']:checked").val() == 'yes'){
         $(".visa_type").removeClass('hide');
       }
-      else if($("#license input[type='radio']:checked").val() == 'no'){
+      else if($("#visa input[type='radio']:checked").val() == 'no'){
         if(!$(".visa_type").hasClass('hide')){
           $(".visa_type").addClass('hide');
         }
