@@ -321,3 +321,16 @@ def upload_file(doc, fieldname, filename, file_url, content, is_private):
     ret.save()
     frappe.db.commit()
     return ret
+
+@frappe.whitelist()
+def leave_approver_action(docname: str,status: str) -> dict:
+    try:
+        doc = frappe.get_doc("Leave Application",{"name":docname})
+        doc.status = status
+        doc.submit()
+        frappe.db.commit()
+        return response("Success", 201, doc)
+        #return response('Leave Application was'+status,doc, 201)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback())
+        frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
