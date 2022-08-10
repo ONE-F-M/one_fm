@@ -121,7 +121,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	def send_notification(self):
 		if self.workflow_state in ['Pending Approval', 'Rejected', 'Approved', 'Update Request', 'Cancelled']:
-			send_workflow_action_email([self.get_reports_to()], self)
+			send_workflow_action_email(self, [self.get_reports_to()])
 
 
 	def validate_if_attendance_not_applicable(self, attendance_date):
