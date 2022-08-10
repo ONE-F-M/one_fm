@@ -75,7 +75,7 @@ class ShiftPermission(Document):
 			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
 
 		if self.workflow_state == 'Pending':
-			send_workflow_action_email([get_employee_user_id(self.shift_supervisor)], self)
+			send_workflow_action_email(self, recipients=[get_employee_user_id(self.shift_supervisor)])
 
 		if self.workflow_state in ['Rejected']:
 			workflow_approve_reject(self, [get_employee_user_id(self.employee)])

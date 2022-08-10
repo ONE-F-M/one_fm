@@ -25,8 +25,8 @@ def on_update(doc, event):
 	if doc.workflow_state in ['Approved', 'Rejected']:
 		workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])
 
-	if doc.workflow_state == 'Pending':
-		send_workflow_action_email([doc.approver], doc)
+	if doc.workflow_state == 'Draft':
+		send_workflow_action_email(doc,[doc.approver])
 
 def shift_request_cancel(self):
 	'''
