@@ -2624,8 +2624,7 @@ def create_path(path):
 
 
 @frappe.whitelist()
-def send_workflow_action_email(doc, method):
-    recipients = [doc.get("approver")]
+def send_workflow_action_email(doc, recipients):
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
         workflow, get_doc_workflow_state(doc), doc
@@ -2634,15 +2633,25 @@ def send_workflow_action_email(doc, method):
 
     common_args = get_common_email_args(doc)
     message = common_args.pop("message", None)
-    for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
+    if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,
-            "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message},
+            "args": {"message": message},
             "reference_name": doc.name,
             "reference_doctype": doc.doctype,
         }
         email_args.update(common_args)
         frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+    else:
+        for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
+            email_args = {
+                "recipients": recipients,
+                "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message},
+                "reference_name": doc.name,
+                "reference_doctype": doc.doctype,
+            }
+            email_args.update(common_args)
+            frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
 
 
 def workflow_approve_reject(doc, recipients=None):
