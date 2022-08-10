@@ -647,6 +647,18 @@ def check_if_backdate_allowed(leave_type, from_date):
                 return False
     return True
 
+@frappe.whitelist()
+def enable_edit_leave_application(doc):
+    if frappe.db.get_single_value("HR Settings", "restrict_backdated_leave_application"):
+        allowed_role = frappe.db.get_single_value(
+            "HR Settings", "role_allowed_to_create_backdated_leave_application"
+        )
+        user = frappe.get_doc("User", frappe.session.user)
+        user_roles = [d.role for d in user.roles]
+        if allowed_role and allowed_role not in user_roles:
+            return False
+    return True
+
 def validate_leave_type_for_one_fm_paid_leave(doc, method):
     if doc.is_lwp:
         doc.one_fm_is_paid_sick_leave = False

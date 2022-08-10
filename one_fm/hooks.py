@@ -92,6 +92,7 @@ doctype_js = {
 	"Employee Checkin": "public/js/doctype_js/employee_checkin.js",
 	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
 	"Company" : "public/js/doctype_js/company.js",
+	"Leave Application" : "public/js/doctype_js/leave_application.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
