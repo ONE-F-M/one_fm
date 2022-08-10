@@ -26,7 +26,7 @@ from dateutil.relativedelta import relativedelta
 from frappe.utils import (
     cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
     comma_or, get_fullname, add_years, add_months, add_days,
-    nowdate,get_first_day,get_last_day, today
+    nowdate,get_first_day,get_last_day, today, now_datetime
 )
 import datetime
 from datetime import datetime, time
@@ -38,6 +38,12 @@ from frappe.desk.form import assign_to
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from frappe.core.doctype.user.user import extract_mentions
 from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
+from one_fm.api.api import push_notification_rest_api_for_leave_application
+from frappe.workflow.doctype.workflow_action.workflow_action import (
+    get_common_email_args, deduplicate_actions, get_next_possible_transitions,
+    get_doc_workflow_state, get_workflow_name, get_users_next_action_data
+)
+from six import string_types
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -542,6 +548,18 @@ def leave_appillication_on_submit(doc, method):
     if doc.status == "Approved":
         leave_appillication_paid_sick_leave(doc, method)
         update_employee_hajj_status(doc, method)
+        notify_employee(doc, method)
+
+@frappe.whitelist()
+def notify_employee(doc, method):
+    if doc.workflow_state in ["Approved","Rejected", "Cancelled"]:
+        if doc.total_leave_days == 1:
+            date = cstr(doc.from_date)
+        else:
+            date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
+        
+        message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
+        push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, False)
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_cancel(doc, method):
@@ -610,6 +628,24 @@ def create_additional_salary(salary, daily_rate, payment_days, leave_application
 def get_leave_payment_breakdown(leave_type):
     leave_type_doc = frappe.get_doc("Leave Type", leave_type)
     return leave_type_doc.one_fm_leave_payment_breakdown if leave_type_doc.one_fm_leave_payment_breakdown else False
+
+def validate_sick_leave_date(doc, method):
+    if doc.leave_type and doc.from_date:
+        if not check_if_backdate_allowed(doc.leave_type, doc.from_date):
+            frappe.throw("You are not allowed to apply for later or previous date.")
+
+@frappe.whitelist()
+def check_if_backdate_allowed(leave_type, from_date):
+    if frappe.db.get_single_value("HR Settings", "restrict_backdated_leave_application"):
+        if leave_type == "Sick Leave"  and from_date != cstr(getdate()):
+            allowed_role = frappe.db.get_single_value(
+                "HR Settings", "role_allowed_to_create_backdated_leave_application"
+            )
+            user = frappe.get_doc("User", frappe.session.user)
+            user_roles = [d.role for d in user.roles]
+            if allowed_role and allowed_role not in user_roles:
+                return False
+    return True
 
 def validate_leave_type_for_one_fm_paid_leave(doc, method):
     if doc.is_lwp:
@@ -2585,3 +2621,73 @@ def check_path(path):
 
 def create_path(path):
     os.mkdir(path)
+
+
+@frappe.whitelist()
+def send_workflow_action_email(doc, method):
+    recipients = [doc.get("approver")]
+    workflow = get_workflow_name(doc.get("doctype"))
+    next_possible_transitions = get_next_possible_transitions(
+        workflow, get_doc_workflow_state(doc), doc
+    )
+    user_data_map = get_users_next_action_data(next_possible_transitions, doc)
+
+    common_args = get_common_email_args(doc)
+    message = common_args.pop("message", None)
+    for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
+        email_args = {
+            "recipients": recipients,
+            "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message},
+            "reference_name": doc.name,
+            "reference_doctype": doc.doctype,
+        }
+        email_args.update(common_args)
+        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+
+
+def workflow_approve_reject(doc, recipients=None):
+    if not recipients:
+        recipients = [doc.owner]
+    email_args = {
+        "subject": f"{doc.doctype} - {doc.workflow_state}",
+        "recipients": recipients,
+        "reference_name": doc.name,
+        "reference_doctype": doc.doctype,
+        "message": f"Your {doc.doctype} {doc.title} has been {doc.workflow_state}"
+    }
+    frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+
+
+@frappe.whitelist()
+def notify_live_user(company, message, users=False):
+	'''
+		A method to send live notification to all or 20 number of live users
+		args:
+			company: the name of comapny to update last notification details to the company record
+			message: notification message content
+			users: list of users (optional), leave blank to send notification to all the live users
+	'''
+
+	if 'System Manager' in frappe.get_roles(frappe.session.user):
+		event = 'eval_js'
+		publish_message = "frappe.msgprint({message: '"+message+"', indicator: 'blue', 'title': 'Alert!'})"
+		last_notified = "All"
+
+		if isinstance(users, string_types):
+			users = json.loads(users)
+		if users:
+			last_notified =  ', '.join(['{}'.format(user) for user in users])
+			if len(users) <= 20:
+				for user in users:
+					frappe.publish_realtime(event=event, message=publish_message, user=user)
+			else:
+				frappe.throw(__("You can send live notification to all or less than 21 users!"))
+		else:
+			frappe.publish_realtime(event=event, message=publish_message)
+
+		frappe.db.set_value("Company", company, "last_notification_send_on", now_datetime())
+		frappe.db.set_value("Company", company, "last_notification_send_by", frappe.session.user)
+		frappe.db.set_value("Company", company, "last_notification_message", message)
+		frappe.db.set_value("Company", company, "last_notified", last_notified)
+	else:
+		frappe.throw(__("System Manger can only send the notification!!"))

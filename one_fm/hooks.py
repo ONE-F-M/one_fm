@@ -91,6 +91,7 @@ doctype_js = {
 	"Shift Assignment": "public/js/doctype_js/shift_assignment.js",
 	"Employee Checkin": "public/js/doctype_js/employee_checkin.js",
 	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
+	"Company" : "public/js/doctype_js/company.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -179,6 +180,7 @@ doc_events = {
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
 		"validate": [
+			"one_fm.utils.validate_sick_leave_date",
 			"one_fm.utils.validate_hajj_leave",
 			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
 		],
@@ -334,6 +336,7 @@ doc_events = {
 		"on_update_after_submit":[
 			"one_fm.api.doc_methods.shift_request.on_update_after_submit",
 		],
+		"on_update": "one_fm.api.doc_methods.shift_request.on_update",
 	},
 	"Shift Assignment":{
 		"before_insert":[
