@@ -169,7 +169,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-03 13:55:38.831535",
+ "modified": "2022-08-11 09:16:52.672208",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
@@ -204,5 +204,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "emp_name",
  "track_changes": 1
 }
