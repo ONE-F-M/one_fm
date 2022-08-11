@@ -58,6 +58,30 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
     
     except Exception as error:
        return response("Internal Server Error", 500, None, error)
+    
+@frappe.whitelist()
+def approver_leave() -> dict:
+    """This method gets the list of leave application, where the current user is the leave approver.
+
+    Returns:
+        dict: {
+            message (str): Brief message indicating the response,
+			status_code (int): Status code of response.
+            data (dict): list of leave application,
+            error (str): Any error handled.
+        }
+    """
+    
+    try:    
+        leave_data = frappe.get_all("Leave Application", filters={'leave_approver':frappe.session.user}, fields=["name","leave_type", "status","from_date", "total_leave_days"] )
+        
+        if leave_data:
+            return response("Success", 200, leave_data)
+        else:
+            return response("Resource Not Found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
+    
+    except Exception as error:
+       return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
@@ -321,3 +345,16 @@ def upload_file(doc, fieldname, filename, file_url, content, is_private):
     ret.save()
     frappe.db.commit()
     return ret
+
+@frappe.whitelist()
+def leave_approver_action(docname: str,status: str) -> dict:
+    try:
+        doc = frappe.get_doc("Leave Application",{"name":docname})
+        doc.status = status
+        doc.submit()
+        frappe.db.commit()
+        return response("Success", 201, doc)
+        #return response('Leave Application was'+status,doc, 201)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback())
+        frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
