@@ -5,9 +5,10 @@ from datetime import date
 import datetime
 import collections
 import base64, json
-from frappe.utils import getdate
+from frappe.utils import getdate, cstr
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import get_action_user
+from one_fm.api.api import push_notification_rest_api_for_leave_application
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -213,6 +214,16 @@ def notify_leave_approver(doc):
             # for email
             "subject": email_template.subject
         })
+        employee_id = frappe.get_value("Employee", {"user_id":doc.leave_approver}, ["name"])
+        
+        if doc.total_leave_days == 1:
+            date = "for "+cstr(doc.from_date)
+        else:
+            date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
+
+        push_notication_message = doc.employee_name+" has applied for "+doc.leave_type+" "+date+". Kindly, take action."
+        push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, False)
+
 
 def proof_document_required_for_leave_type(leave_type):
     if int(frappe.db.get_value("Leave Type", {'name': leave_type}, "is_proof_document_required")):

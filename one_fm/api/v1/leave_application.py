@@ -78,7 +78,7 @@ def approver_leave() -> dict:
         if leave_data:
             return response("Success", 200, leave_data)
         else:
-            return response("Resource Not Found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
+            return response("Resource Not Found", 404, None, "No leave data found")
     
     except Exception as error:
        return response("Internal Server Error", 500, None, error)
@@ -347,9 +347,9 @@ def upload_file(doc, fieldname, filename, file_url, content, is_private):
     return ret
 
 @frappe.whitelist()
-def leave_approver_action(docname: str,status: str) -> dict:
+def leave_approver_action(leave_id: str,status: str) -> dict:
     try:
-        doc = frappe.get_doc("Leave Application",{"name":docname})
+        doc = frappe.get_doc("Leave Application",{"name":leave_id})
         doc.status = status
         doc.submit()
         frappe.db.commit()
