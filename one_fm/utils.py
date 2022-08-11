@@ -559,7 +559,7 @@ def notify_employee(doc, method):
             date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
         
         message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
-        push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, False)
+        push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, doc.name)
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_cancel(doc, method):

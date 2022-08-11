@@ -222,7 +222,7 @@ def notify_leave_approver(doc):
             date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
 
         push_notication_message = doc.employee_name+" has applied for "+doc.leave_type+" "+date+". Kindly, take action."
-        push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, False)
+        push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, doc.name)
 
 
 def proof_document_required_for_leave_type(leave_type):
