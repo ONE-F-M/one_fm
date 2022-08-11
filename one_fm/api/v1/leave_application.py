@@ -78,7 +78,7 @@ def approver_leave() -> dict:
         if leave_data:
             return response("Success", 200, leave_data)
         else:
-            return response("Resource Not Found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
+            return response("Resource Not Found", 404, None, "No leave data found")
     
     except Exception as error:
        return response("Internal Server Error", 500, None, error)
