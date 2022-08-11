@@ -461,39 +461,39 @@ def get_active_shifts(now_time):
 
 @frappe.whitelist()
 def get_action_user(employee, shift):
-		"""
-				Shift > Site > Project > Reports to
-		"""
+	"""
+			Shift > Site > Project > Reports to
+	"""
+	action_user = None
+	operations_shift = frappe.get_doc("Operations Shift", shift)
+	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
+	project = frappe.get_doc("Project", operations_site.project)
+	report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
 
-		operations_shift = frappe.get_doc("Operations Shift", shift)
-		operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-		project = frappe.get_doc("Project", operations_site.project)
-		report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
+	if report_to:
+		action_user = get_employee_user_id(report_to)
+		Role = "Report To"
+	else:
+		if operations_shift.supervisor:
+			shift_supervisor = get_employee_user_id(operations_shift.supervisor)
+			if shift_supervisor != operations_shift.owner:
+				action_user = shift_supervisor
+				Role = "Shift Supervisor"
 
-		if report_to:
-			action_user = get_employee_user_id(report_to)
-			Role = "Report To"
-		else:
-			if operations_shift.supervisor:
-				shift_supervisor = get_employee_user_id(operations_shift.supervisor)
-				if shift_supervisor != operations_shift.owner:
-					action_user = shift_supervisor
-					Role = "Shift Supervisor"
+		elif operations_site.account_supervisor:
+			site_supervisor = get_employee_user_id(operations_site.account_supervisor)
+			if site_supervisor != operations_shift.owner:
+				action_user = site_supervisor
+				Role = "Site Supervisor"
 
-			elif operations_site.account_supervisor:
-				site_supervisor = get_employee_user_id(operations_site.account_supervisor)
-				if site_supervisor != operations_shift.owner:
-					action_user = site_supervisor
-					Role = "Site Supervisor"
+		elif operations_site.project:
+			if project.account_manager:
+				project_manager = get_employee_user_id(project.account_manager)
+				if project_manager != operations_shift.owner:
+					action_user = project_manager
+					Role = "Project Manager"
 
-			elif operations_site.project:
-				if project.account_manager:
-					project_manager = get_employee_user_id(project.account_manager)
-					if project_manager != operations_shift.owner:
-						action_user = project_manager
-						Role = "Project Manager"
-
-		return action_user, Role
+	return action_user, Role
 
 def issue_penalties():
 	"""This function to issue penalty to employee if employee checkin late without Shift Permission to Arrive Late.
