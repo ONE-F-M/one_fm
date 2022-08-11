@@ -347,9 +347,9 @@ def upload_file(doc, fieldname, filename, file_url, content, is_private):
     return ret
 
 @frappe.whitelist()
-def leave_approver_action(docname: str,status: str) -> dict:
+def leave_approver_action(leave_id: str,status: str) -> dict:
     try:
-        doc = frappe.get_doc("Leave Application",{"name":docname})
+        doc = frappe.get_doc("Leave Application",{"name":leave_id})
         doc.status = status
         doc.submit()
         frappe.db.commit()
