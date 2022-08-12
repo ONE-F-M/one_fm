@@ -18,6 +18,9 @@
   "date_of_joining",
   "boarding_status",
   "erf",
+  "shift_working_html",
+  "shift_working",
+  "default_shift",
   "notify_users_by_email",
   "applicant_is_overseas_or_local",
   "is_transferable",
@@ -1049,6 +1052,7 @@
    "fieldname": "reports_to",
    "fieldtype": "Link",
    "label": "Reports To",
+   "mandatory_depends_on": "eval:doc.shift_working==0",
    "options": "Employee"
   },
   {
@@ -1442,12 +1446,32 @@
    "fieldtype": "Select",
    "label": "Salary Mode",
    "options": "\nBank\nCash\nCheque"
+  },
+  {
+   "fieldname": "shift_working_html",
+   "fieldtype": "HTML",
+   "label": "Shift Working Html"
+  },
+  {
+   "default": "0",
+   "fieldname": "shift_working",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Shift Working"
+  },
+  {
+   "fetch_from": "erf.default_shift",
+   "fetch_if_empty": 1,
+   "fieldname": "default_shift",
+   "fieldtype": "Link",
+   "label": "Default Shift",
+   "options": "Shift Type"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-20 12:46:36.073212",
+ "modified": "2022-08-12 09:20:34.960853",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
