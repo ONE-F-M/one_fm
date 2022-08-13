@@ -14,7 +14,6 @@ frappe.ui.form.on('Employee', {
         set_shift_working_btn(frm);
         filterDefaultShift(frm);
         setProjects(frm);
-        setProjects(frm);
     },
 	set_queries: frm => {
 		// set bank account query
