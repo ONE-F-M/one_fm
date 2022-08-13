@@ -19,6 +19,8 @@ class ShiftPermission(Document):
 		self.check_shift_details_value()
 		self.validate_date()
 		self.validate_record()
+		if not self.title:
+			self.title = self.emp_name
 
 	def check_permission_type(self):
 		if self.permission_type == "Arrive Late":

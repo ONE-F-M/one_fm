@@ -6,6 +6,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "title",
   "employee",
   "date",
   "column_break_3",
@@ -165,11 +166,19 @@
    "fieldtype": "Data",
    "label": "Approver Name",
    "read_only": 1
+  },
+  {
+   "fetch_from": "emp_name",
+   "fetch_if_empty": 1,
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-11 09:16:52.672208",
+ "modified": "2022-08-13 14:38:28.377730",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
@@ -204,6 +213,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "emp_name",
+ "title_field": "title",
  "track_changes": 1
 }
