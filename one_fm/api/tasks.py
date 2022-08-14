@@ -315,8 +315,9 @@ def checkin_checkout_supervisor_reminder():
 def supervisor_reminder(shift, today_datetime, now_time):
 	title = "Checkin Report"
 	category = "Attendance"
+	date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
+	now_date = getdate()
 	if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())):
-		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
 		recipients = frappe.db.sql("""
 			SELECT DISTINCT emp.name, emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
@@ -373,7 +374,6 @@ def supervisor_reminder(shift, today_datetime, now_time):
 		with permission type Leave Early/Forget to Checkout/Checkout Issue
 	"""
 	if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_end_start))).time())):
-		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		checkout_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
 
 		recipients = frappe.db.sql("""
@@ -396,14 +396,14 @@ def supervisor_reminder(shift, today_datetime, now_time):
 				WHERE
 					empChkin.log_type="OUT"
 					AND empChkin.skip_auto_attendance=0
-					AND date(empChkin.time)='{date}'
+					AND date(empChkin.time)='{now_date}'
 					AND empChkin.shift_type='{shift_type}')
 			AND tSA.start_date
 			NOT IN(SELECT holiday_date from `tabHoliday` h
 			WHERE
 				h.parent = emp.holiday_list
 			AND h.holiday_date = '{date}')
-		""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+		""".format(date=cstr(date), shift_type=shift.name, now_date=now_date), as_dict=1)
 
 		if len(recipients) > 0:
 			for recipient in recipients:
