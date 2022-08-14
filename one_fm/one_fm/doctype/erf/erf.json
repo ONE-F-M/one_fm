@@ -24,6 +24,8 @@
   "erf_initiation",
   "erf_finalized",
   "work_section",
+  "day_off_category",
+  "number_of_days_off",
   "working_days",
   "off_days",
   "vacation_days",
@@ -35,6 +37,7 @@
   "type_of_travel",
   "shift_working_html",
   "shift_working",
+  "default_shift",
   "night_shift_html",
   "night_shift",
   "shift_hours_html",
@@ -230,15 +233,15 @@
    "description": "30 Days Month",
    "fieldname": "working_days",
    "fieldtype": "Int",
-   "label": "Working Days In a Month",
-   "reqd": 1
+   "hidden": 1,
+   "label": "Working Days In a Month"
   },
   {
    "description": "30 Days Month",
    "fieldname": "off_days",
    "fieldtype": "Int",
-   "label": "Off Days In a Month",
-   "read_only": 1
+   "hidden": 1,
+   "label": "Off Days In a Month"
   },
   {
    "default": "30",
@@ -839,11 +842,31 @@
    "fieldtype": "Currency",
    "label": "Base",
    "permlevel": 1
+  },
+  {
+   "default": "Monthly",
+   "fieldname": "day_off_category",
+   "fieldtype": "Select",
+   "label": "Day Off Category",
+   "options": "Monthly\nWeekly",
+   "reqd": 1
+  },
+  {
+   "fieldname": "number_of_days_off",
+   "fieldtype": "Int",
+   "label": "Number of Days Off"
+  },
+  {
+   "depends_on": "eval:doc.shift_working==0",
+   "fieldname": "default_shift",
+   "fieldtype": "Link",
+   "label": "Default Shift",
+   "options": "Shift Type"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-05-26 11:14:33.133102",
+ "modified": "2022-08-10 16:27:22.799213",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
