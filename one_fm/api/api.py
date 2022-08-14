@@ -225,12 +225,12 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
     return response
 
 @frappe.whitelist()
-def push_notification_rest_api_for_leave_application(employee_id, title, body, supervisor_button):
+def push_notification_rest_api_for_leave_application(employee_id, title, body, leave_id):
     """ 
     This function is used to send notification through Firebase CLoud Message. 
     It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
     
-    Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message"
+    Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message", leave_id: Leave Application ID
 
     serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
     Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
@@ -255,7 +255,8 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, s
                 "body" : body,
                 "showButtonCheckIn": False,
                 "showButtonCheckOut": False,
-                "showButtonArrivingLate": False
+                "showButtonArrivingLate": False,
+                "type": leave_id
                 }
             }
     else:
@@ -266,7 +267,8 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, s
                 "body" : body,
                 "showButtonCheckIn": False,
                 "showButtonCheckOut": False,
-                "showButtonArrivingLate": False
+                "showButtonArrivingLate": False,
+                "type": leave_id
                 },
             "notification": {
                 "body": body,
