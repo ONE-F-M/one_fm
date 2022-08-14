@@ -4,7 +4,7 @@ import frappe
 def execute():
     frappe.enqueue(update_workflowstate, queue='long')
 
-#This Function is patch to update the Notification log with category, title and body. 
+#This Function is patch to update the Workflow State from ''Draft' to 'Open'. 
 def update_workflowstate():
     leave_list = frappe.get_list("Leave Application", {"workflow_state":"Draft"},["name"])
     for leave in leave_list:
