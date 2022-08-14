@@ -1470,11 +1470,7 @@ def validate_job_applicant(doc, method):
             frappe.throw("Please List All Children in the Table.")
 
 def set_erf_days_off_details(doc):
-    if doc.one_fm_erf:
-        off_days = frappe.db.get_value('ERF', doc.one_fm_erf, 'off_days')
-        if off_days and off_days > 0:
-            doc.number_of_days_off = off_days
-            doc.day_off_category = 'Monthly'
+    pass
 
 def validate_pam_file_number_and_pam_designation(doc, method):
     if doc.one_fm_erf:
@@ -1717,10 +1713,9 @@ def set_other_benefits_to_terms(job_offer, erf):
 
     hours = erf.shift_hours if erf.shift_hours else 9
     vacation_days = erf.vacation_days if erf.vacation_days else 30
-    off_days = erf.off_days if erf.off_days else 4
     terms = job_offer.append('offer_terms')
     terms.offer_term = 'Working Hours'
-    terms.value = str(hours)+' hours a day, (Subject to Operational Requirements), '+str(off_days)+' days off per month'
+    terms.value = str(hours)+' hours a day, (Subject to Operational Requirements), '+str(erf.number_of_days_off)+' days off per '+str(erf.day_off_category)
     terms = job_offer.append('offer_terms')
     terms.offer_term = 'Annual Leave'
     terms.value = '('+str(vacation_days)+') days paid leave, as per Kuwait Labor Law (Private Sector)'
