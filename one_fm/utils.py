@@ -559,7 +559,7 @@ def notify_employee(doc, method):
             date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
         
         message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
-        push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, False)
+        push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, doc.name)
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_cancel(doc, method):
@@ -645,6 +645,18 @@ def check_if_backdate_allowed(leave_type, from_date):
             user_roles = [d.role for d in user.roles]
             if allowed_role and allowed_role not in user_roles:
                 return False
+    return True
+
+@frappe.whitelist()
+def enable_edit_leave_application(doc):
+    if frappe.db.get_single_value("HR Settings", "restrict_backdated_leave_application"):
+        allowed_role = frappe.db.get_single_value(
+            "HR Settings", "role_allowed_to_create_backdated_leave_application"
+        )
+        user = frappe.get_doc("User", frappe.session.user)
+        user_roles = [d.role for d in user.roles]
+        if allowed_role and allowed_role not in user_roles:
+            return False
     return True
 
 def validate_leave_type_for_one_fm_paid_leave(doc, method):

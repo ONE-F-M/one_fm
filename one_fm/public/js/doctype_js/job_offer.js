@@ -3,6 +3,8 @@ frappe.ui.form.on('Job Offer', {
     if(frm.is_new()){
       frm.set_value('offer_date', frappe.datetime.now_date());
     }
+    set_shift_working_btn(frm);
+    filterDefaultShift(frm);
     check_and_info_offer_terms(frm, false);
     frm.remove_custom_button("Create Employee");
     if (frm.doc.status == 'Accepted' && frm.doc.docstatus === 1){
@@ -60,6 +62,10 @@ frappe.ui.form.on('Job Offer', {
   },
   validate: function(frm) {
     // check_and_info_offer_terms(frm);
+  },
+  shift_working: function(frm) {
+  		set_shift_working_btn(frm);
+  		filterDefaultShift(frm);
   },
   one_fm_provide_accommodation_by_company: function(frm) {
     // check_and_info_offer_terms(frm, 'one_fm_provide_accommodation_by_company');
@@ -284,4 +290,48 @@ var set_offer_terms = function(frm, terms_list) {
     frappe.model.set_value(offer_term.doctype, offer_term.name, 'value', item['value']);
   });
   frm.refresh_field('offer_terms');
+}
+
+var set_shift_working_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.shift_working, 'shift_working_html', 'shift_working', 'Will The Employee Work In Shifts?');
+};
+
+var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
+	var $wrapper = frm.fields_dict[html_field].$wrapper;
+	var selected = 'btn-primary';
+	var field_btn_html = field_name+'_btn_html';
+	var field_html = `<div><label class="control-label" style="padding-right: 0px;">${label}</label></div><div>
+		<button class="btn btn-default btn-xs ${val ? selected: ''} ${field_btn_html}" type="button" data='Yes'>Yes</button>
+		<button class="btn btn-default btn-xs ${!val ? selected: ''} ${field_btn_html}" type="button" data='No'>No</button>
+	</div>`;
+	$wrapper
+		.html(field_html);
+	$wrapper.on('click', '.'+field_btn_html, function() {
+		if(frm.doc.docstatus == 0){
+			var $btn = $(this);
+			$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
+			$btn.addClass('btn-primary');
+			if(field_name == 'open_to_different'){
+				frm.set_value(field_name, $btn.attr('data'));
+			}
+			else{
+				frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
+			}
+		}
+	});
+};
+
+
+const filterDefaultShift = (frm) => {
+    let state = 0;
+    if (frm.doc.shift_working==1) {
+        state=1;
+    }
+    frm.set_query('default_shift', () => {
+        return {
+            filters: {
+                shift_work: state
+            }
+        }
+    })
 }
