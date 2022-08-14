@@ -6,4 +6,4 @@ def execute():
 
 #This Function is patch to update the Notification log with category, title and body. 
 def update_workflowstate():
-    frappe.db.sql("""UPDATE `tabLeave Application` SET workflow state='Open' WHERE workflow state='Draft';""")
+    frappe.db.sql("""UPDATE `tabLeave Application` SET workflow_state='Open' WHERE workflow_state='Draft';""")
