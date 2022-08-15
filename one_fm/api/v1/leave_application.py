@@ -4,6 +4,7 @@ from erpnext.hr.doctype.leave_application.leave_application import get_leave_bal
 from datetime import date
 import datetime
 import collections
+from one_fm.api.api import upload_file
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
 from one_fm.api.v1.roster import get_current_shift
@@ -337,21 +338,6 @@ def proof_document_required_for_leave_type(leave_type):
         return True
 
     return False
-
-def upload_file(doc, fieldname, filename, file_url, content, is_private):
-    ret= frappe.get_doc({
-			"doctype": "File",
-			"attached_to_doctype": doc.doctype,
-			"attached_to_name": doc.name,
-			"attached_to_field": fieldname,
-			"file_name": filename,
-			"file_url": file_url,
-			"is_private": cint(is_private),
-			"content": content
-		})
-    ret.save()
-    frappe.db.commit()
-    return ret
 
 @frappe.whitelist()
 def leave_approver_action(leave_id: str,status: str) -> dict:
