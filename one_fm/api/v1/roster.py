@@ -575,7 +575,7 @@ def get_current_shift(employee):
 		string: Operation Shift of the assigned shift if it exist.
 	"""
 	try:
-		#fetch dates
+		#fetch datetime
 		current_datetime = now_datetime()
 
 		#fetch the last shift assignment
@@ -585,15 +585,14 @@ def get_current_shift(employee):
 			shift = last_shift[0]
 			start_datetime = shift.start_datetime
 			end_datetime = shift.end_datetime
+			before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
 			
-			#start date could be previous day if night shift
-			if start_datetime or end_datetime:
-				before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
+			if start_datetime or end_datetime:	
 				#include early entry and late exit time
 				start_time = start_datetime - datetime.timedelta(minutes=before_time)
 				end_time = end_datetime + datetime.timedelta(minutes=after_time)
 				
-				#if start time is larger than end time, from either afternoon, evening or night shift.
+				#Check if current time is within the shift start and end time.  
 				if start_time <= current_datetime <= end_time:
 					return shift
 	except Exception as e:
