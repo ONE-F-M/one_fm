@@ -1,7 +1,7 @@
 import frappe, base64
 from frappe import _
 import pandas as pd
-from frappe.utils import cstr
+from frappe.utils import cstr, cint
 from frappe.model.rename_doc import rename_doc
 import requests
 import firebase_admin
@@ -77,6 +77,22 @@ def get_user_details():
         return user_details
     except Exception as e:
         print(frappe.get_traceback())
+
+@frappe.whitelist()
+def upload_file(doc, fieldname, filename, file_url, content, is_private):
+    doc = frappe.get_doc({
+			"doctype": "File",
+			"attached_to_doctype": doc.doctype,
+			"attached_to_name": doc.name,
+			"attached_to_field": fieldname,
+			"file_name": filename,
+			"file_url": file_url,
+			"is_private": cint(is_private),
+			"content": content
+		})
+    doc.save()
+    frappe.db.commit()
+    return doc
 
 @frappe.whitelist()
 def get_user_roles():
