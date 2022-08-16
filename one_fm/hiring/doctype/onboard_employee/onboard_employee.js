@@ -11,7 +11,13 @@ frappe.ui.form.on('Onboard Employee', {
 		}
 		set_filters(frm);
 		create_custom_buttons(frm);
+		filterDefaultShift(frm);
+		set_shift_working_btn(frm);
 	},
+    shift_working: function(frm) {
+        set_shift_working_btn(frm);
+        filterDefaultShift(frm);
+    },
 	is_g2g_fees_needed: function(frm) {
 		if(!frm.doc.is_g2g_fees_needed){
 			frm.set_value('g2g_fee_amount', 0);
@@ -354,3 +360,47 @@ var get_progress_details = function(frm, doctype, progress, docstatus) {
 		</div>
 	</div></div>`
 };
+
+var set_shift_working_btn = function(frm) {
+	yes_no_html_buttons(frm, frm.doc.shift_working, 'shift_working_html', 'shift_working', 'Will The Employee Work In Shifts?');
+};
+
+var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
+	var $wrapper = frm.fields_dict[html_field].$wrapper;
+	var selected = 'btn-primary';
+	var field_btn_html = field_name+'_btn_html';
+	var field_html = `<div><label class="control-label" style="padding-right: 0px;">${label}</label></div><div>
+		<button class="btn btn-default btn-xs ${val ? selected: ''} ${field_btn_html}" type="button" data='Yes'>Yes</button>
+		<button class="btn btn-default btn-xs ${!val ? selected: ''} ${field_btn_html}" type="button" data='No'>No</button>
+	</div>`;
+	$wrapper
+		.html(field_html);
+	$wrapper.on('click', '.'+field_btn_html, function() {
+		if(frm.doc.docstatus == 0){
+			var $btn = $(this);
+			$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
+			$btn.addClass('btn-primary');
+			if(field_name == 'open_to_different'){
+				frm.set_value(field_name, $btn.attr('data'));
+			}
+			else{
+				frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
+			}
+		}
+	});
+};
+
+
+const filterDefaultShift = (frm) => {
+    let state = 0;
+    if (frm.doc.shift_working==1) {
+        state=1;
+    }
+    frm.set_query('default_shift', () => {
+        return {
+            filters: {
+                shift_work: state
+            }
+        }
+    })
+}
