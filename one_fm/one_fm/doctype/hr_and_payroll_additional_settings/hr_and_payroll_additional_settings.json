@@ -13,6 +13,7 @@
   "payroll_date",
   "holiday_additional_salary_component",
   "maximum_salary_deduction_percentage",
+  "include_day_off_in_total_working_days",
   "column_break_7",
   "default_bank",
   "exclude_salary_component",
@@ -237,12 +238,19 @@
    "fieldname": "get_projects_not_configured_in_payroll_cycle",
    "fieldtype": "Button",
    "label": "Show Projects Not Configured in Payroll Cycle But Linked in Employee"
+  },
+  {
+   "default": "0",
+   "description": "If checked, Total no. of Working Days will include day off, and this will reduce the value of Salary Per Day",
+   "fieldname": "include_day_off_in_total_working_days",
+   "fieldtype": "Check",
+   "label": "Include day off in Total no. of Working Days"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-08-09 20:06:57.159175",
+ "modified": "2022-08-16 10:18:43.161493",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",

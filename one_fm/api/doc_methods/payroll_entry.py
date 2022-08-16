@@ -57,7 +57,7 @@ def fill_employee_details(self, project_list=False):
 	employees = get_emp_list(self, project_list)
 
 	# Custom method to fetch Bank Details and update employee list
-	set_bank_details(self, employees)
+	# set_bank_details(self, employees)
 
 	if not employees:
 		error_msg = _("No employees found for the mentioned criteria:<br>Company: {0}<br> Currency: {1}<br>Payroll Payable Account: {2}").format(
@@ -272,7 +272,7 @@ def auto_create_payroll_entry():
 	default_payroll_start_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')
 	default_start_date, default_end_date = get_payroll_start_end_date_by_start_day(default_payroll_start_day)
 
-	# Fetch employee having project link but not set in payroll configuration and set the payroll cycle as default
+	# Fetch employee having project link but project not added in payroll configuration, then take default payroll cycle
 	payroll_configured_project_list = ', '.join(['"{}"'.format(project.project) for project in payroll_configured_projects])
 	projects_not_configured_in_payroll_cycle = get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(payroll_configured_project_list)
 	if projects_not_configured_in_payroll_cycle:
