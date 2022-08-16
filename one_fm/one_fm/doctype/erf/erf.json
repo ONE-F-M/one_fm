@@ -857,7 +857,7 @@
    "label": "Number of Days Off"
   },
   {
-   "depends_on": "eval:doc.shift_working==0",
+   "depends_on": "",
    "fieldname": "default_shift",
    "fieldtype": "Link",
    "label": "Default Shift",
