@@ -4,6 +4,7 @@ from erpnext.hr.doctype.leave_application.leave_application import get_leave_bal
 from datetime import date
 import datetime
 import collections
+from one_fm.api.api import upload_file
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
 from one_fm.api.v1.roster import get_current_shift
@@ -50,11 +51,42 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
                 return response("Resource Not Found", 404, None, "No leaves found for {employee_id}".format(employee_id=employee_id))
         
         elif leave_id:
-            leave_data = frappe.get_doc("Leave Application", leave_id)
-            if leave_data:
-                return response("Success", 200, leave_data.as_dict())
+            leave_details = frappe.get_doc("Leave Application", leave_id)
+            if leave_details.leave_approver == frappe.session.user:
+                is_leave_approver = 1
+            else:
+                is_leave_approver = 0
+            data = leave_details.as_dict()
+            data.update({"is_leave_approver":is_leave_approver})
+
+            if leave_details:
+                return response("Success", 200, data)
             else:
                 return response("Resource Not Found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
+    
+    except Exception as error:
+       return response("Internal Server Error", 500, None, error)
+    
+@frappe.whitelist()
+def approver_leave() -> dict:
+    """This method gets the list of leave application, where the current user is the leave approver.
+
+    Returns:
+        dict: {
+            message (str): Brief message indicating the response,
+			status_code (int): Status code of response.
+            data (dict): list of leave application,
+            error (str): Any error handled.
+        }
+    """
+    
+    try:    
+        leave_data = frappe.get_all("Leave Application", filters={'leave_approver':frappe.session.user}, fields=["name","leave_type", "status","from_date", "total_leave_days"] )
+        
+        if leave_data:
+            return response("Success", 200, leave_data)
+        else:
+            return response("Resource Not Found", 404, None, "No leave data found")
     
     except Exception as error:
        return response("Internal Server Error", 500, None, error)
@@ -307,17 +339,15 @@ def proof_document_required_for_leave_type(leave_type):
 
     return False
 
-def upload_file(doc, fieldname, filename, file_url, content, is_private):
-    ret= frappe.get_doc({
-			"doctype": "File",
-			"attached_to_doctype": doc.doctype,
-			"attached_to_name": doc.name,
-			"attached_to_field": fieldname,
-			"file_name": filename,
-			"file_url": file_url,
-			"is_private": cint(is_private),
-			"content": content
-		})
-    ret.save()
-    frappe.db.commit()
-    return ret
+@frappe.whitelist()
+def leave_approver_action(leave_id: str,status: str) -> dict:
+    try:
+        doc = frappe.get_doc("Leave Application",{"name":leave_id})
+        doc.status = status
+        doc.submit()
+        frappe.db.commit()
+        return response("Success", 201, doc)
+        #return response('Leave Application was'+status,doc, 201)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback())
+        frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
