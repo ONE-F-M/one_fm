@@ -26,8 +26,6 @@
   "work_section",
   "day_off_category",
   "number_of_days_off",
-  "working_days",
-  "off_days",
   "vacation_days",
   "governorate",
   "location_of_work",
@@ -228,20 +226,6 @@
    "fieldname": "work_section",
    "fieldtype": "Section Break",
    "label": "Basic Work Details"
-  },
-  {
-   "description": "30 Days Month",
-   "fieldname": "working_days",
-   "fieldtype": "Int",
-   "hidden": 1,
-   "label": "Working Days In a Month"
-  },
-  {
-   "description": "30 Days Month",
-   "fieldname": "off_days",
-   "fieldtype": "Int",
-   "hidden": 1,
-   "label": "Off Days In a Month"
   },
   {
    "default": "30",
@@ -866,7 +850,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-10 16:27:22.799213",
+ "modified": "2022-08-14 10:42:16.739582",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
