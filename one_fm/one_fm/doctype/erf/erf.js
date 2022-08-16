@@ -229,6 +229,7 @@ frappe.ui.form.on('ERF', {
 	},
 	shift_working: function(frm) {
 		set_shift_working_btn(frm);
+		filterDefaultShift(frm);
 	},
 	night_shift: function(frm) {
 		set_night_shift_btn(frm);
@@ -1027,12 +1028,17 @@ const loadJobOpening = frm => {
 	})
 }
 
-const filterDefaultShift = frm => {
+const filterDefaultShift = (frm) => {
+    let state = 0;
+    if (frm.doc.shift_working==1) {
+        state=1;
+    }
     frm.set_query('default_shift', () => {
         return {
             filters: {
-                shift_work: 0
+                shift_work: state
             }
         }
     })
 }
+
