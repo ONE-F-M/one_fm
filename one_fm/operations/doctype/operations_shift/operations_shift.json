@@ -130,7 +130,7 @@
   }
  ],
  "links": [],
- "modified": "2021-09-05 18:01:56.381947",
+ "modified": "2022-08-13 19:59:28.622519",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",
@@ -150,6 +150,7 @@
   }
  ],
  "quick_entry": 1,
+ "search_fields": "site, project",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1
