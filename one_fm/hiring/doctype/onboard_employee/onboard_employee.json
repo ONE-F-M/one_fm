@@ -18,6 +18,9 @@
   "date_of_joining",
   "boarding_status",
   "erf",
+  "shift_working_html",
+  "shift_working",
+  "default_shift",
   "notify_users_by_email",
   "applicant_is_overseas_or_local",
   "is_transferable",
@@ -28,9 +31,9 @@
   "department",
   "designation",
   "employee_grade",
-  "project",
-  "operations_site",
   "operations_shift",
+  "operations_site",
+  "project",
   "day_off_category",
   "number_of_days_off",
   "leave_policy",
@@ -288,11 +291,12 @@
   {
    "allow_on_submit": 1,
    "fetch_from": "job_offer.project",
+   "fetch_if_empty": 1,
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
    "options": "Project",
-   "read_only": 1
+   "reqd": 1
   },
   {
    "fieldname": "amended_from",
@@ -1049,6 +1053,7 @@
    "fieldname": "reports_to",
    "fieldtype": "Link",
    "label": "Reports To",
+   "mandatory_depends_on": "eval:doc.shift_working==0",
    "options": "Employee"
   },
   {
@@ -1180,18 +1185,23 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.shift_working==1",
    "fetch_from": "job_offer.operations_shift",
    "fieldname": "operations_shift",
    "fieldtype": "Link",
    "label": "Operations Shift",
+   "mandatory_depends_on": "eval:doc.shift_working==1",
    "options": "Operations Shift"
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.shift_working==1",
    "fetch_from": "job_offer.operations_site",
+   "fetch_if_empty": 1,
    "fieldname": "operations_site",
    "fieldtype": "Link",
    "label": "Operations Site",
+   "mandatory_depends_on": "eval:doc.shift_working==1",
    "options": "Operations Site"
   },
   {
@@ -1442,12 +1452,34 @@
    "fieldtype": "Select",
    "label": "Salary Mode",
    "options": "\nBank\nCash\nCheque"
+  },
+  {
+   "fieldname": "shift_working_html",
+   "fieldtype": "HTML",
+   "label": "Shift Working Html"
+  },
+  {
+   "default": "0",
+   "fieldname": "shift_working",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Shift Working"
+  },
+  {
+   "depends_on": "eval:doc.shift_working==0",
+   "fetch_from": "erf.default_shift",
+   "fetch_if_empty": 1,
+   "fieldname": "default_shift",
+   "fieldtype": "Link",
+   "label": "Default Shift",
+   "mandatory_depends_on": "eval:doc.shift_working==0",
+   "options": "Shift Type"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-20 12:46:36.073212",
+ "modified": "2022-08-16 15:05:12.226647",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

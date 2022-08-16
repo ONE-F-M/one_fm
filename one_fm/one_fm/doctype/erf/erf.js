@@ -20,6 +20,7 @@ frappe.ui.form.on('ERF', {
 			};
 		});
 
+        filterDefaultShift(frm);
 		set_shift_working_btn(frm);
 		set_driving_license_required_btn(frm);
 		set_is_uniform_needed_for_this_job_btn(frm);
@@ -228,6 +229,7 @@ frappe.ui.form.on('ERF', {
 	},
 	shift_working: function(frm) {
 		set_shift_working_btn(frm);
+		filterDefaultShift(frm);
 	},
 	night_shift: function(frm) {
 		set_night_shift_btn(frm);
@@ -1025,3 +1027,18 @@ const loadJobOpening = frm => {
 		}
 	})
 }
+
+const filterDefaultShift = (frm) => {
+    let state = 0;
+    if (frm.doc.shift_working==1) {
+        state=1;
+    }
+    frm.set_query('default_shift', () => {
+        return {
+            filters: {
+                shift_work: state
+            }
+        }
+    })
+}
+
