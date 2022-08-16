@@ -838,19 +838,21 @@
   {
    "fieldname": "number_of_days_off",
    "fieldtype": "Int",
-   "label": "Number of Days Off"
+   "label": "Number of Days Off",
+   "reqd": 1
   },
   {
-   "depends_on": "",
+   "depends_on": "eval:doc.shift_working==0",
    "fieldname": "default_shift",
    "fieldtype": "Link",
    "label": "Default Shift",
+   "mandatory_depends_on": "eval:doc.shift_working==0",
    "options": "Shift Type"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-14 10:42:16.739582",
+ "modified": "2022-08-16 14:47:40.696719",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
