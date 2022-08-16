@@ -315,8 +315,9 @@ def checkin_checkout_supervisor_reminder():
 def supervisor_reminder(shift, today_datetime, now_time):
 	title = "Checkin Report"
 	category = "Attendance"
+	date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
+	now_date = getdate()
 	if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())):
-		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
 		recipients = frappe.db.sql("""
 			SELECT DISTINCT emp.name, emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
@@ -373,7 +374,6 @@ def supervisor_reminder(shift, today_datetime, now_time):
 		with permission type Leave Early/Forget to Checkout/Checkout Issue
 	"""
 	if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_end_start))).time())):
-		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
 		checkout_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
 
 		recipients = frappe.db.sql("""
@@ -396,14 +396,14 @@ def supervisor_reminder(shift, today_datetime, now_time):
 				WHERE
 					empChkin.log_type="OUT"
 					AND empChkin.skip_auto_attendance=0
-					AND date(empChkin.time)='{date}'
+					AND date(empChkin.time)='{now_date}'
 					AND empChkin.shift_type='{shift_type}')
 			AND tSA.start_date
 			NOT IN(SELECT holiday_date from `tabHoliday` h
 			WHERE
 				h.parent = emp.holiday_list
 			AND h.holiday_date = '{date}')
-		""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+		""".format(date=cstr(date), shift_type=shift.name, now_date=now_date), as_dict=1)
 
 		if len(recipients) > 0:
 			for recipient in recipients:
@@ -461,39 +461,39 @@ def get_active_shifts(now_time):
 
 @frappe.whitelist()
 def get_action_user(employee, shift):
-		"""
-				Shift > Site > Project > Reports to
-		"""
+	"""
+			Shift > Site > Project > Reports to
+	"""
+	action_user = None
+	operations_shift = frappe.get_doc("Operations Shift", shift)
+	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
+	project = frappe.get_doc("Project", operations_site.project)
+	report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
 
-		operations_shift = frappe.get_doc("Operations Shift", shift)
-		operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-		project = frappe.get_doc("Project", operations_site.project)
-		report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
+	if report_to:
+		action_user = get_employee_user_id(report_to)
+		Role = "Report To"
+	else:
+		if operations_shift.supervisor:
+			shift_supervisor = get_employee_user_id(operations_shift.supervisor)
+			if shift_supervisor != operations_shift.owner:
+				action_user = shift_supervisor
+				Role = "Shift Supervisor"
 
-		if report_to:
-			action_user = get_employee_user_id(report_to)
-			Role = "Report To"
-		else:
-			if operations_shift.supervisor:
-				shift_supervisor = get_employee_user_id(operations_shift.supervisor)
-				if shift_supervisor != operations_shift.owner:
-					action_user = shift_supervisor
-					Role = "Shift Supervisor"
+		elif operations_site.account_supervisor:
+			site_supervisor = get_employee_user_id(operations_site.account_supervisor)
+			if site_supervisor != operations_shift.owner:
+				action_user = site_supervisor
+				Role = "Site Supervisor"
 
-			elif operations_site.account_supervisor:
-				site_supervisor = get_employee_user_id(operations_site.account_supervisor)
-				if site_supervisor != operations_shift.owner:
-					action_user = site_supervisor
-					Role = "Site Supervisor"
+		elif operations_site.project:
+			if project.account_manager:
+				project_manager = get_employee_user_id(project.account_manager)
+				if project_manager != operations_shift.owner:
+					action_user = project_manager
+					Role = "Project Manager"
 
-			elif operations_site.project:
-				if project.account_manager:
-					project_manager = get_employee_user_id(project.account_manager)
-					if project_manager != operations_shift.owner:
-						action_user = project_manager
-						Role = "Project Manager"
-
-		return action_user, Role
+	return action_user, Role
 
 def issue_penalties():
 	"""This function to issue penalty to employee if employee checkin late without Shift Permission to Arrive Late.
@@ -770,7 +770,11 @@ def end_previous_shifts(time):
 		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"]},['name'], pluck='name')
 
 	shift_assignments = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'],
-					["shift_type", "IN", shift_type], ["docstatus", "=", 1]], fields=['name','start_date'])
+					["shift_type", "IN", shift_type], ["docstatus", "=", 1],["roster_type", "IN", "Basic"]], fields=['name','start_date'])
+	
+	overtime_shift = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'],
+					["roster_type", "IN", "Over-Time"], ["docstatus", "=", 1]], fields=['name','start_date'])
+	shift_assignments = shift_assignments + overtime_shift
 
 	for shift_assignment in shift_assignments:
 		frappe.set_value("Shift Assignment", shift_assignment.name,'end_date',shift_assignment.start_date)

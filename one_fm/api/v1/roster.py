@@ -575,35 +575,26 @@ def get_current_shift(employee):
 		string: Operation Shift of the assigned shift if it exist.
 	"""
 	try:
-		#fetch dates
-		current_datetime = now_datetime().strftime("%Y-%m-%d %H:%M:%S")
-		date, time = current_datetime.split(" ")
-		prev_date = ((datetime.datetime.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).split(" ")[0]
+		#fetch datetime
+		current_datetime = now_datetime()
 
 		#fetch the last shift assignment
 		last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
 
-		#convert to datetime
-		time = time.split(":")
-		time = datetime.timedelta(hours=cint(time[0]), minutes=cint(time[1]), seconds=cint(time[2]))
 		if len(last_shift) > 0:
 			shift = last_shift[0]
-			start_date = (shift.start_date).strftime("%Y-%m-%d")
-
-			#start date could be previous day if night shift
-			if start_date == date or start_date == prev_date:
-				start_time, end_time ,before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["start_time", "end_time","begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
+			start_datetime = shift.start_datetime
+			end_datetime = shift.end_datetime
+			before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
+			
+			if start_datetime and end_datetime:	
 				#include early entry and late exit time
-				start_time = start_time - datetime.timedelta(minutes=before_time)
-				end_time = end_time + datetime.timedelta(minutes=after_time)
-
-				#if start time is larger than end time, from either afternoon, evening or night shift.
-				if start_time > end_time:
-					if start_time <= time >= end_time or start_time >= time <= end_time:
-						return shift
-				else:
-					if start_time <= time <= end_time:
-						return shift
+				start_time = start_datetime - datetime.timedelta(minutes=before_time)
+				end_time = end_datetime + datetime.timedelta(minutes=after_time)
+				
+				#Check if current time is within the shift start and end time.  
+				if start_time <= current_datetime <= end_time:
+					return shift
 	except Exception as e:
 		print(frappe.get_traceback())
 		return frappe.utils.response.report_error(e.http_status_code)
