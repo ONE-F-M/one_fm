@@ -10,9 +10,13 @@ def execute(filters=None):
 
 def get_data(filters):
 	print(filters)
-	conditions = ""
+	conditions = " WHERE 1=1 "
 	if filters.accommodation:
-		conditions += " WHERE accommodation = %s" % (filters.accommodation)
+		conditions += " AND accommodation = '%s'" % (filters.accommodation)
+
+	# if filters.nationality:
+	# 	conditions += " AND nationality = '%s'" % (filters.nationality)
+
 	results = frappe.db.sql(f"""
 		SELECT DISTINCT * FROM `tabBed`
 		{conditions}

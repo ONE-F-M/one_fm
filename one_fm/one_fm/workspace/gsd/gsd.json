@@ -233,7 +233,7 @@
   },
   {
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "label": "Accommodation Nationalities",
    "link_to": "Accommodation Nationalities",
    "link_type": "Report",
@@ -468,7 +468,7 @@
    "type": "Link"
   }
  ],
- "modified": "2022-08-21 14:58:16.239944",
+ "modified": "2022-08-21 15:01:34.497814",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "GSD",
