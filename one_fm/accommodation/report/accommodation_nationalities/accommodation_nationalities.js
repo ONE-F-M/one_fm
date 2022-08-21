@@ -4,6 +4,11 @@
 
 frappe.query_reports["Accommodation Nationalities"] = {
 	"filters": [
-
+        {
+            "fieldname": "accommodation",
+            "label": __("Accommodation"),
+            "fieldtype": "Link",
+            "options": "Accommodation"
+        },
 	]
 };

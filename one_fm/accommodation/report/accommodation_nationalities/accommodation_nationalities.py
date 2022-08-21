@@ -8,10 +8,19 @@ def execute(filters=None):
 	columns, data = [], []
 	return get_columns(), get_data(filters)
 
-def get_data(filters=None):
-	results = frappe.db.sql("""
+def get_data(filters):
+	print(filters)
+	conditions = ""
+	if filters.accommodation:
+		conditions += " WHERE accommodation = %s" % (filters.accommodation)
+	results = frappe.db.sql(f"""
 		SELECT DISTINCT * FROM `tabBed`
+		{conditions}
 	""", as_dict=1)
+
+	accommodation_dict = {}
+	for row in frappe.db.get_list("Accommodation", fields=['name', 'accommodation']):
+		accommodation_dict[row.name] = row.accommodation
 
 	# prepare hashmap
 	hashmap = {}
@@ -45,7 +54,8 @@ def get_data(filters=None):
 							_space['total'] += 1
 						else:
 							_space['total'] = 1
-						_space['remarks'] = row.remarks
+						_space['remarks'] = row.gender
+						_space['space_type'] = row.accommodation_space_type
 					else:
 						# NO SPACE
 						accommodation[row.floor][row.accommodation_unit][row.accommodation_space] = {
@@ -74,7 +84,8 @@ def get_data(filters=None):
 							_space['total'] += 1
 						else:
 							_space['total'] = 1
-						_space['remarks'] = row.remarks
+						_space['remarks'] = row.gender
+						_space['space_type'] = row.accommodation_space_type
 				else:
 					# NO UNIT
 					accommodation[row.floor][row.accommodation_unit] = {
@@ -100,7 +111,8 @@ def get_data(filters=None):
 						_unit['total'] += 1
 					else:
 						_unit['total'] = 1
-					_unit['remarks'] = row.remarks
+					_unit['remarks'] = row.gender
+					_unit['space_type'] = row.accommodation_space_type
 			else:
 				# NO FLOOR
 				accommodation[row.floor] = {
@@ -129,7 +141,8 @@ def get_data(filters=None):
 					_floor['total'] += 1
 				else:
 					_floor['total'] = 1
-				_floor['remarks'] = row.remarks
+				_floor['remarks'] = row.gender
+				_floor['space_type'] = row.accommodation_space_type
 		else:
 			# ADD NEW ACCOMMODATION
 			hashmap[row.accommodation] = {
@@ -148,26 +161,34 @@ def get_data(filters=None):
 				_space['empty'] = 1
 				_space['actual'] = 0
 			_space['total'] = 1
-			_space['remarks'] = row.remarks
+			_space['gender'] = row.gender
+			_space['space_type'] = row.accommodation_space_type
 
-	print(hashmap)
-	return results
+	# structure data
+	data = []
+	for accommodation, floors in hashmap.items():
+		for floor, units in floors.items():
+			for unit, spaces in units.items():
+				for space, others in spaces.items():
+					data.append({**{
+						'accommodation': accommodation_dict.get(accommodation),
+						'floor': floor,
+						'accommodation_unit':unit,
+						'room':space,
+					}, **others})
+
+
+
+	return data
 
 def get_columns():
 	return [
-			{
-				'fieldname': 'name',
-				'label': _('Name'),
-				'fieldtype': 'Link',
-				'options': 'Bed',
-				'width': 120
-			},
 			{
 				'fieldname': 'accommodation',
 				'label': _('Accommodation'),
 				'fieldtype': 'Link',
 				'options': 'Accommodation',
-				'width': 80
+				'width': 120
 			},
 			{
 				'fieldname': 'floor',
@@ -179,36 +200,30 @@ def get_columns():
 			{
 				'fieldname': 'accommodation_unit',
 				'label': _('Flat'),
-				'fieldtype': 'Accommodation unit',
+				'fieldtype':'Link',
+				'options': 'Accommodation Unit',
 				'width': 100,
 			},
 			{
-				'fieldname': 'accommodation_space_type',
-				'label': _('Bedtype'),
+				'fieldname': 'space_type',
+				'label': _('Space Type'),
 				'fieldtype': 'Link',
 				'width': 100,
 				'options': "Accommodation Space Type",
 			},
-			{
-				'fieldname': 'bed_space_type',
-				'label': _('Type'),
-				'fieldtype': 'Data',
-				'width': 80,
-			},
-			{
-				'fieldname': 'accommodation_space',
-				'label': _('Room'),
-				'fieldtype': 'Link',
-				'width': 100,
-				'options': "Accommodation Space",
-			},
-			{
-				'fieldname': 'nationality',
-				'label': _('Nationality'),
-				'fieldtype': 'Link',
-				'width': 100,
-				'options': 'Nationality'
-			}
+		   {
+			   'fieldname': 'room',
+			   'label': _('Room'),
+			   'fieldtype': 'Link',
+			   'width': 100,
+			   'options': "Accommodation Space",
+		   },
+			   {
+				   'fieldname': 'gender',
+				   'label': _('Gender'),
+				   'fieldtype': 'Data',
+				   'width': 80,
+			   }
 		]+ [
 			{
 				'fieldname': i.nationality.lower().replace(' ', '-'),
@@ -219,8 +234,8 @@ def get_columns():
 			} for i in frappe.db.sql("SELECT DISTINCT nationality FROM `tabBed`", as_dict=1) if i.nationality
 		]+[
 			{
-				'fieldname': 'occupancy',
-				'label': _('Occupancy'),
+				'fieldname': 'actual',
+				'label': _('Occupied'),
 				'fieldtype': 'Int',
 				'width': 80,
 			},
@@ -231,9 +246,9 @@ def get_columns():
 				'width': 80,
 			},
 			{
-				'fieldname': 'remarks',
-				'label': _('Remarks'),
-				'fieldtype': 'Data',
+				'fieldname': 'total',
+				'label': _('Total'),
+				'fieldtype': 'Int',
 				'width': 80,
 			}
 		]
