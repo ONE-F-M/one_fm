@@ -585,7 +585,7 @@ def checkin_deadline():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
 	
-	frappe.enqueue(mark_deadline_attendance, shift_list=shift_list, now_time = now_time, is_async=True, queue='long')
+	frappe.enqueue(mark_deadline_attendance, shifts_list=shifts_list, now_time = now_time, is_async=True, queue='long')
 	
 def mark_deadline_attendance(shifts_list, now_time):
 	for shift in shifts_list:
@@ -611,6 +611,13 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND emp_sp.shift_type='{shift_type}'
 					AND emp_sp.date='{date}'
 					AND emp_sp.permission_type="Arrive Late")
+					
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabAttendance Request` emp_atr
+						WHERE emp_atr.from_date <= '{date}' AND emp_atr.to_date >= '{date}'
+					 	AND emp_atr.workflow_state='Approved
+					)
+					
 					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
@@ -643,6 +650,13 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND emp_sp.shift_type='{shift_type}'
 					AND emp_sp.date='{date}'
 					AND emp_sp.permission_type="Arrive Late")
+					
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabAttendance Request` emp_atr
+						WHERE emp_atr.from_date <= '{date}' AND emp_atr.to_date >= '{date}'
+					 	AND emp_atr.workflow_state='Approved
+					)
+					
 					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
