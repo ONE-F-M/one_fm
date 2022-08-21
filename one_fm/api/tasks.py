@@ -87,6 +87,13 @@ def checkin_checkout_reminder():
 					AND emp_sp.date='{date}'
 					AND emp_sp.permission_type="Arrive Late")
 					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+					WHERE
+						att_req.employee="HR-EMP-00001"
+					AND att_req.workflow_state='Approved'
+					AND att_req.reason='Work From Home'
+					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
 						empChkin.log_type="IN"
@@ -194,6 +201,13 @@ def checkin_checkout_final_reminder():
 				AND emp_sp.date='{date}'
 				AND emp_sp.permission_type="Arrive Late")
 				AND tSA.employee
+				NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+				WHERE
+					att_req.employee="HR-EMP-00001"
+				AND att_req.workflow_state='Approved'
+				AND att_req.reason='Work From Home'
+				AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
 					empChkin.log_type="IN"
@@ -227,6 +241,13 @@ def checkin_checkout_final_reminder():
 				AND emp_sp.shift_type='{shift_type}'
 				AND emp_sp.date='{date}'
 				AND emp_sp.permission_type="Leave Early")
+				AND tSA.employee
+				NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+				WHERE
+					att_req.employee="HR-EMP-00001"
+				AND att_req.workflow_state='Approved'
+				AND att_req.reason='Work From Home'
+				AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
@@ -335,6 +356,13 @@ def supervisor_reminder(shift, today_datetime, now_time):
 			AND emp_sp.date='{date}'
 			AND emp_sp.permission_type IN ("Arrive Late", "Forget to Checkin", "Checkin Issue"))
 			AND tSA.employee
+			NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+			WHERE
+				att_req.employee="HR-EMP-00001"
+			AND att_req.workflow_state='Approved'
+			AND att_req.reason='Work From Home'
+			AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+			AND tSA.employee
 			NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
 					empChkin.log_type="IN"
@@ -391,6 +419,13 @@ def supervisor_reminder(shift, today_datetime, now_time):
 			AND emp_sp.shift_type='{shift_type}'
 			AND emp_sp.date='{date}'
 			AND emp_sp.permission_type IN ("Leave Early", "Forget to Checkout", "Checkout Issue"))
+			AND tSA.employee
+			NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+			WHERE
+				att_req.employee="HR-EMP-00001"
+			AND att_req.workflow_state='Approved'
+			AND att_req.reason='Work From Home'
+			AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
 			AND tSA.employee
 			NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
@@ -612,6 +647,13 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND emp_sp.date='{date}'
 					AND emp_sp.permission_type="Arrive Late")
 					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+					WHERE
+						att_req.employee="HR-EMP-00001"
+					AND att_req.workflow_state='Approved'
+					AND att_req.reason='Work From Home'
+					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
 						empChkin.log_type="IN"
@@ -643,6 +685,13 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND emp_sp.shift_type='{shift_type}'
 					AND emp_sp.date='{date}'
 					AND emp_sp.permission_type="Arrive Late")
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+					WHERE
+						att_req.employee="HR-EMP-00001"
+					AND att_req.workflow_state='Approved'
+					AND att_req.reason='Work From Home'
+					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
 					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
