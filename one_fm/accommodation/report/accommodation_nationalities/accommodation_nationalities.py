@@ -41,7 +41,10 @@ def get_data(filters=None):
 							else:
 								_space['empty'] = 1
 
-						_space['total'] = +1
+						if(_space.get('total')):
+							_space['total'] += 1
+						else:
+							_space['total'] = 1
 						_space['remarks'] = row.remarks
 					else:
 						# NO SPACE
@@ -66,7 +69,11 @@ def get_data(filters=None):
 								_space['empty'] += 1
 							else:
 								_space['empty'] = 1
-						_space['total'] = 1
+
+						if(_space.get('total')):
+							_space['total'] += 1
+						else:
+							_space['total'] = 1
 						_space['remarks'] = row.remarks
 				else:
 					# NO UNIT
@@ -85,11 +92,14 @@ def get_data(filters=None):
 						else:
 							_unit['actual'] = 1
 					else:
-						if(_space.get('empty')):
-							_space['empty'] += 1
+						if(_unit.get('empty')):
+							_unit['empty'] += 1
 						else:
-							_space['empty'] = 1
-					_unit['total'] = 1
+							_unit['empty'] = 1
+					if(_unit.get('total')):
+						_unit['total'] += 1
+					else:
+						_unit['total'] = 1
 					_unit['remarks'] = row.remarks
 			else:
 				# NO FLOOR
@@ -115,7 +125,10 @@ def get_data(filters=None):
 					else:
 						_floor['empty'] = 1
 
-				_floor['total'] = 1
+				if(_floor.get('total')):
+					_floor['total'] += 1
+				else:
+					_floor['total'] = 1
 				_floor['remarks'] = row.remarks
 		else:
 			# ADD NEW ACCOMMODATION
