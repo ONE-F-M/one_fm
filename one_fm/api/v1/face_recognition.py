@@ -231,7 +231,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                     site = check_out_site
             else:
                 site = frappe.get_value("Operations Shift", shift.shift, "site")
-                 
+                
             location = frappe.db.sql("""
                 SELECT loc.latitude, loc.longitude, loc.geofence_radius
                 FROM `tabLocation` as loc
