@@ -89,7 +89,7 @@ def checkin_checkout_reminder():
 					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
 					WHERE
-						att_req.employee="HR-EMP-00001"
+						att_req.employee=emp.name
 					AND att_req.workflow_state='Approved'
 					AND att_req.reason='Work From Home'
 					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
@@ -203,7 +203,7 @@ def checkin_checkout_final_reminder():
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabAttendance Request` att_req
 				WHERE
-					att_req.employee="HR-EMP-00001"
+					att_req.employee=emp.name
 				AND att_req.workflow_state='Approved'
 				AND att_req.reason='Work From Home'
 				AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
@@ -244,7 +244,7 @@ def checkin_checkout_final_reminder():
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabAttendance Request` att_req
 				WHERE
-					att_req.employee="HR-EMP-00001"
+					att_req.employee=emp.name
 				AND att_req.workflow_state='Approved'
 				AND att_req.reason='Work From Home'
 				AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
@@ -358,7 +358,7 @@ def supervisor_reminder(shift, today_datetime, now_time):
 			AND tSA.employee
 			NOT IN(SELECT employee FROM `tabAttendance Request` att_req
 			WHERE
-				att_req.employee="HR-EMP-00001"
+				att_req.employee=emp.name
 			AND att_req.workflow_state='Approved'
 			AND att_req.reason='Work From Home'
 			AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
@@ -422,7 +422,7 @@ def supervisor_reminder(shift, today_datetime, now_time):
 			AND tSA.employee
 			NOT IN(SELECT employee FROM `tabAttendance Request` att_req
 			WHERE
-				att_req.employee="HR-EMP-00001"
+				att_req.employee=emp.name
 			AND att_req.workflow_state='Approved'
 			AND att_req.reason='Work From Home'
 			AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
@@ -649,7 +649,7 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
 					WHERE
-						att_req.employee="HR-EMP-00001"
+						att_req.employee=emp.name
 					AND att_req.workflow_state='Approved'
 					AND att_req.reason='Work From Home'
 					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
@@ -688,7 +688,7 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
 					WHERE
-						att_req.employee="HR-EMP-00001"
+						att_req.employee=emp.name
 					AND att_req.workflow_state='Approved'
 					AND att_req.reason='Work From Home'
 					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
