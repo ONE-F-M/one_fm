@@ -923,7 +923,7 @@ def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
 		site, project, shift, post_type, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "start_datetime","end_datetime", "roster_type"])
 		condition += "project = '"+project+"', site = '"+site+"', operations_shift = '"+shift+"', post_type = '"+post_type+"', roster_type = '"+roster_type+"'"
-		if frappe.db.exists("Attendance Request", {"employee": doc.employee, "from_date":["<=",doc.attendance_date],"to_date":[">=",doc.attendance_date],"workflow_state":"Approved"}) or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
+		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
 			condition += ", in_time = '"+cstr(start_datetime)+"', out_time= '"+cstr(end_datetime)+"'"
 	
 	return frappe.db.sql("""UPDATE `tabAttendance` set {condition} where name = '{name}'""".format(condition=condition, name = doc.name))
