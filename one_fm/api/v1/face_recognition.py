@@ -175,6 +175,12 @@ def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latit
     frappe.db.commit()
     return checkin.as_dict()
 
+def check_employee_non_shift(employee):
+    shift_working, employement_type = frappe.get_value("Employee", employee, ["shift_working","employment_type"])
+    if shift_working==0 and employement_type!="Contract": 
+        return True
+    return False
+
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
 
@@ -205,26 +211,35 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         shift = get_current_shift(employee)
+        site = None
         if not shift or len(shift) == 0:
-            return response("Resource Not Found", 400, None, "User not assigned to a shift.")
-
-        if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
-            check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
-            if log_type == "IN":
-                site = check_in_site
+            if check_employee_non_shift(employee):
+                location = frappe.db.sql("""
+                    SELECT loc.latitude, loc.longitude, loc.geofence_radius
+                    FROM `tabLocation` as loc
+                    WHERE
+                        loc.name in(SELECT checkin_location FROM `tabEmployee` where name=%(employee)s)
+                """, {'employee': employee}, as_dict=1)
             else:
-                site = check_out_site
+                return response("Resource Not Found", 400, None, "User not assigned to a shift.")
         else:
-            site = frappe.get_value("Operations Shift", shift.shift, "site")
-                
-        location = frappe.db.sql("""
-            SELECT loc.latitude, loc.longitude, loc.geofence_radius
-            FROM `tabLocation` as loc
-            WHERE
-                loc.name in(SELECT site_location FROM `tabOperations Site` where name=%(site)s)
-        """, {'site': site}, as_dict=1)
+            if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
+                check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
+                if log_type == "IN":
+                    site = check_in_site
+                else:
+                    site = check_out_site
+            else:
+                site = frappe.get_value("Operations Shift", shift.shift, "site")
+                 
+            location = frappe.db.sql("""
+                SELECT loc.latitude, loc.longitude, loc.geofence_radius
+                FROM `tabLocation` as loc
+                WHERE
+                    loc.name in(SELECT site_location FROM `tabOperations Site` where name=%(site)s)
+            """, {'site': site}, as_dict=1)
 
-        if not location:
+        if not location and site:
             return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
 
         result=location[0]
@@ -234,7 +249,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if distance > float(result.geofence_radius):
             result['user_within_geofence_radius'] = False
 
-        result['site_name']=site
+        result['site_name'] = site if site else "Home"
+        
         # log to checkin radius log
         data = result.copy()
         data = {
