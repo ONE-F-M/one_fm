@@ -557,7 +557,8 @@ scheduler_events = {
 			'one_fm.api.tasks.generate_payroll'
 		],
 		"1 23 1-31 * *": [
-			'one_fm.tasks.one_fm.daily.mark_future_attendance_request'
+			'one_fm.tasks.one_fm.daily.mark_future_attendance_request',
+			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
 		"30 0 1 * *": [
 			'one_fm.tasks.one_fm.monthly.execute'

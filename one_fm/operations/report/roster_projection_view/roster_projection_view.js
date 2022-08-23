@@ -32,7 +32,24 @@ frappe.query_reports["Roster Projection View"] = {
             "options": [2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033],
             "reqd": 1,
             "default": Number(frappe.datetime.get_today().split('-')[0])
-        },
+        }
 
-	]
+	],
+	"formatter": function (value, row, column, data, default_formatter) {
+        if(window.location.href.includes('prepared_report_name')){
+            let message = $('.form-message.text-muted.small');
+            message[0].style.display = 'block';
+            message[0].innerHTML = `<span style="color:blue;">
+                <b>NOTE:</b><br />
+                1) Projection Data is based on Roster Data only and is a snapshot from the first of the month. Any Roster Changes that Occurred After the First Day of the Month does not reflect in the Projection Column.<br>
+                2) Live Projection Data is Real Live Data of the Roster and Actual attendance. As well the attendance data is based on the Day before yesterday's Attendance and Yesterdays's Roster.
+            </span>
+            `;
+        }
+
+        return value
+	}
 };
+
+
+
