@@ -409,7 +409,9 @@
    "fieldtype": "Table",
    "label": "Salary Details",
    "options": "ERF Salary Detail",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1,
+   "read_only_depends_on": "eval:parent.employment_type!=\"Contract\""
   },
   {
    "depends_on": "eval:doc.employment_type!=\"Contract\"",
