@@ -9,7 +9,7 @@ from frappe import _
 from frappe.utils import now_datetime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today
 from one_fm.api.doc_events import get_employee_user_id
 from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
-from one_fm.api.doc_methods.payroll_entry import create_payroll_entry
+from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
 from erpnext.hr.doctype.attendance.attendance import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
@@ -584,9 +584,9 @@ def checkin_deadline():
 
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
-	
+
 	frappe.enqueue(mark_deadline_attendance, shift_list=shift_list, now_time = now_time, is_async=True, queue='long')
-	
+
 def mark_deadline_attendance(shifts_list, now_time):
 	for shift in shifts_list:
 		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
@@ -655,7 +655,7 @@ def mark_deadline_attendance(shifts_list, now_time):
 					WHERE
 						h.parent = emp.holiday_list
 					AND h.holiday_date = '{date}')
-				""".format(date=cstr(date), shift_type=shift.name), as_list=1)	
+				""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 
 			if len(recipients) > 0:
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
@@ -873,25 +873,13 @@ def update_shift_details_in_attendance(doc, method):
 			where name = %s """, (project, site, shift, post_type, post_abbrv, roster_type, doc.name))
 
 def generate_payroll():
-	# start_date = add_to_date(getdate(), months=-1)
-	# end_date = get_end_date(start_date, 'monthly')['end_date']
-
-	#fetch Payroll date's day
-	date = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
-
-	#calculate Payroll date, start and end date.
-	payroll_date = datetime.datetime(getdate().year, getdate().month, cint(date)).strftime("%Y-%m-%d")
-	start_date = add_to_date(payroll_date, months=-1)
-	end_date = add_to_date(payroll_date, days=-1)
-
-	# Hardcoded dates for testing, remove below 2 lines for live
-	#start_date = "2021-08-01"
-	#end_date = "2021-08-31"
-
+	'''
+		Method to generate payroll on 24th of each month(method calling form cron job for 24th in hooks.py)
+	'''
 	try:
-			create_payroll_entry(start_date, end_date)
+		auto_create_payroll_entry()
 	except Exception:
-			frappe.log_error(frappe.get_traceback())
+		frappe.log_error(frappe.get_traceback())
 
 def generate_penalties():
 	# start_date = add_to_date(getdate(), months=-1)

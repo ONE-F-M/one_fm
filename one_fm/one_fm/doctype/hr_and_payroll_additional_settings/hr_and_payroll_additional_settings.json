@@ -9,16 +9,20 @@
   "holiday_compensatory_leave_type",
   "auto_generate_employee_id_on_employee_creation",
   "auto_create_erpnext_user_on_employee_creation_using_employee_id",
-  "attendance_settings_section",
-  "validate_shift_permission_on_employee_checkin",
   "payroll_settings_section",
   "payroll_date",
   "holiday_additional_salary_component",
   "maximum_salary_deduction_percentage",
+  "include_day_off_in_total_working_days",
   "column_break_7",
   "default_bank",
   "exclude_salary_component",
   "basic_salary_component",
+  "payroll_cycle_settings_section",
+  "default_payroll_start_day",
+  "default_payroll_end_day",
+  "project_payroll_cycle",
+  "get_projects_not_configured_in_payroll_cycle",
   "overtime_additional_salary_section",
   "overtime_additional_salary_component",
   "working_day_overtime_rate",
@@ -29,7 +33,8 @@
   "remind_employee_checkin_checkout",
   "column_break_17",
   "remind_supervisor_checkin_checkout",
-  "attendance_setting_section",
+  "attendance_settings_section",
+  "validate_shift_permission_on_employee_checkin",
   "checkin_deadline",
   "column_break_23",
   "issue_penalty"
@@ -161,11 +166,6 @@
    "label": "Auto Generate Employee ID on Employee Creation"
   },
   {
-   "fieldname": "attendance_setting_section",
-   "fieldtype": "Section Break",
-   "label": "Attendance Setting"
-  },
-  {
    "fieldname": "column_break_23",
    "fieldtype": "Column Break"
   },
@@ -207,12 +207,50 @@
    "fieldname": "validate_shift_permission_on_employee_checkin",
    "fieldtype": "Check",
    "label": "Validate Shift Permission on Employee Checkin"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "payroll_cycle_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Monthly Payroll Cycle Settings"
+  },
+  {
+   "allow_bulk_edit": 1,
+   "fieldname": "project_payroll_cycle",
+   "fieldtype": "Table",
+   "label": "Project Payroll Cycle",
+   "options": "Project Payroll Cycle"
+  },
+  {
+   "description": "Day of the month in which payroll start date will define",
+   "fieldname": "default_payroll_start_day",
+   "fieldtype": "Select",
+   "label": "Default Payroll Start Day",
+   "options": "\nMonth Start\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\nMonth End"
+  },
+  {
+   "fieldname": "default_payroll_end_day",
+   "fieldtype": "Data",
+   "label": "Default Payroll End Day",
+   "read_only": 1
+  },
+  {
+   "fieldname": "get_projects_not_configured_in_payroll_cycle",
+   "fieldtype": "Button",
+   "label": "Show Projects Not Configured in Payroll Cycle But Linked in Employee"
+  },
+  {
+   "default": "0",
+   "description": "If checked, Total no. of Working Days will include day off, and this will reduce the value of Salary Per Day",
+   "fieldname": "include_day_off_in_total_working_days",
+   "fieldtype": "Check",
+   "label": "Include day off in Total no. of Working Days"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-06-28 12:11:55.867100",
+ "modified": "2022-08-16 10:18:43.161493",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
