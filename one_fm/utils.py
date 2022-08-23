@@ -1687,6 +1687,8 @@ def set_erf_details(job_offer, erf):
     if not job_offer.designation:
         job_offer.designation = erf.designation
     job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
+    if erf.employment_type:
+        job_offer.employment_type = erf.employment_type
     job_offer.one_fm_provide_transportation_by_company = erf.provide_transportation_by_company
     set_salary_details(job_offer, erf)
     set_other_benefits_to_terms(job_offer, erf)
@@ -1694,13 +1696,21 @@ def set_erf_details(job_offer, erf):
 def set_salary_details(job_offer, erf):
     job_offer.one_fm_provide_salary_advance = erf.provide_salary_advance
     total_amount = 0
-    job_offer.base = erf.base
-    for salary in erf.salary_details:
-        total_amount += salary.amount
-        salary_details = job_offer.append('one_fm_salary_details')
-        salary_details.salary_component = salary.salary_component
-        salary_details.amount = salary.amount
-    job_offer.one_fm_job_offer_total_salary = total_amount
+    if erf.employment_type!= 'Contract':
+        job_offer.base = erf.base
+        for salary in erf.salary_details:
+            total_amount += salary.amount
+            salary_details = job_offer.append('one_fm_salary_details')
+            salary_details.salary_component = salary.salary_component
+            salary_details.amount = salary.amount
+        job_offer.one_fm_job_offer_total_salary = total_amount
+    else:
+        job_offer.hourly_rate = erf.hourly_rate
+        job_offer.salary_component = erf.salary_component
+        for salary in erf.salary_details:
+            salary_details = job_offer.append('one_fm_salary_details')
+            salary_details.salary_component = salary.salary_component
+            salary_details.amount = salary.amount
 
 def set_other_benefits_to_terms(job_offer, erf):
     # if erf.other_benefits:

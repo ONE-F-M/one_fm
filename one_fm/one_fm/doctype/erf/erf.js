@@ -915,12 +915,14 @@ var validate_total_required_candidates = function (frm, cdt, cdn) {
 
 var calculate_salary_per_person = function (frm) {
   let total = 0;
-  if(frm.doc.salary_details){
-    frm.doc.salary_details.forEach(function(salary_detail) {
-      total += salary_detail.amount;
-    });
+  if(frm.doc.employment_type!='Contract'){
+	if(frm.doc.salary_details){
+		frm.doc.salary_details.forEach(function(salary_detail) {
+		total += salary_detail.amount;
+		});
+	}
+	frm.set_value('salary_per_person', total);
   }
-  frm.set_value('salary_per_person', total);
 };
 
 var calculate_total_cost_in_salary = function (frm) {
