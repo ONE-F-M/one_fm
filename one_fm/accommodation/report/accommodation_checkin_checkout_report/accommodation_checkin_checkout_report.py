@@ -35,6 +35,7 @@ def get_columns(filters):
 
 	return columns
 
+
 def get_conditions(filters):
 	conditions = ""
 	fields = ['accommodation', 'accommodation_unit', 'accommodation_space', 'bed', 'employee', 'employee_id', 'tenant_category']
