@@ -62,7 +62,7 @@ class ShiftPermission(Document):
 			frappe.throw(message)
 
 	def after_insert(self):
-		self.send_notification()
+		pass
 
 	def send_notification(self):
 		date = getdate(self.date).strftime('%d-%m-%Y')
