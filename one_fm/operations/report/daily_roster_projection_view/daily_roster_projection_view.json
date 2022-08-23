@@ -10,7 +10,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": "ONEFM",
- "modified": "2022-08-23 14:50:14.570413",
+ "modified": "2022-08-23 15:45:56.447969",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Daily Roster Projection View",
@@ -21,13 +21,16 @@
  "report_type": "Script Report",
  "roles": [
   {
-   "role": "HR Manager"
+   "role": "Operations Manager"
   },
   {
    "role": "Finance Manager"
   },
   {
    "role": "Finance User"
+  },
+  {
+   "role": "Projects Manager"
   }
  ]
 }
