@@ -9,7 +9,7 @@ from one_fm.api.doc_methods.payroll_entry import (
 	validate_employee_attendance, get_count_holidays_of_employee, get_count_employee_attendance, fill_employee_details
 )
 from one_fm.api.doc_methods.salary_slip import (
-	get_working_days_details, get_unmarked_days_based_on_doj_or_relieving
+	get_working_days_details, get_unmarked_days_based_on_doj_or_relieving, get_unmarked_days
 )
 from one_fm.api.doc_methods.item_price import validate,check_duplicates
 from erpnext.hr.doctype.leave_application.leave_application import LeaveApplication
@@ -30,6 +30,7 @@ PayrollEntry.get_count_employee_attendance = get_count_employee_attendance
 PayrollEntry.fill_employee_details = fill_employee_details
 SalarySlip.get_working_days_details = get_working_days_details
 SalarySlip.get_unmarked_days_based_on_doj_or_relieving = get_unmarked_days_based_on_doj_or_relieving
+SalarySlip.get_unmarked_days = get_unmarked_days
 ItemPrice.validate = validate
 ItemPrice.check_duplicates = check_duplicates
 LeaveApplication.notify_leave_approver = notify_leave_approver

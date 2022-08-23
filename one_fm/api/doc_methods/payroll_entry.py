@@ -57,7 +57,7 @@ def fill_employee_details(self, project_list=False):
 	employees = get_emp_list(self, project_list)
 
 	# Custom method to fetch Bank Details and update employee list
-	# set_bank_details(self, employees)
+	set_bank_details(self, employees)
 
 	if not employees:
 		error_msg = _("No employees found for the mentioned criteria:<br>Company: {0}<br> Currency: {1}<br>Payroll Payable Account: {2}").format(
