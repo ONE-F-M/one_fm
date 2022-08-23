@@ -87,6 +87,13 @@ def checkin_checkout_reminder():
 					AND emp_sp.date='{date}'
 					AND emp_sp.permission_type="Arrive Late")
 					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+					WHERE
+						att_req.employee=emp.name
+					AND att_req.workflow_state='Approved'
+					AND att_req.reason='Work From Home'
+					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
 						empChkin.log_type="IN"
@@ -194,6 +201,13 @@ def checkin_checkout_final_reminder():
 				AND emp_sp.date='{date}'
 				AND emp_sp.permission_type="Arrive Late")
 				AND tSA.employee
+				NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+				WHERE
+					att_req.employee=emp.name
+				AND att_req.workflow_state='Approved'
+				AND att_req.reason='Work From Home'
+				AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
 					empChkin.log_type="IN"
@@ -227,6 +241,13 @@ def checkin_checkout_final_reminder():
 				AND emp_sp.shift_type='{shift_type}'
 				AND emp_sp.date='{date}'
 				AND emp_sp.permission_type="Leave Early")
+				AND tSA.employee
+				NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+				WHERE
+					att_req.employee=emp.name
+				AND att_req.workflow_state='Approved'
+				AND att_req.reason='Work From Home'
+				AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
 				AND tSA.employee
 				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
@@ -335,6 +356,13 @@ def supervisor_reminder(shift, today_datetime, now_time):
 			AND emp_sp.date='{date}'
 			AND emp_sp.permission_type IN ("Arrive Late", "Forget to Checkin", "Checkin Issue"))
 			AND tSA.employee
+			NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+			WHERE
+				att_req.employee=emp.name
+			AND att_req.workflow_state='Approved'
+			AND att_req.reason='Work From Home'
+			AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+			AND tSA.employee
 			NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
 					empChkin.log_type="IN"
@@ -391,6 +419,13 @@ def supervisor_reminder(shift, today_datetime, now_time):
 			AND emp_sp.shift_type='{shift_type}'
 			AND emp_sp.date='{date}'
 			AND emp_sp.permission_type IN ("Leave Early", "Forget to Checkout", "Checkout Issue"))
+			AND tSA.employee
+			NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+			WHERE
+				att_req.employee=emp.name
+			AND att_req.workflow_state='Approved'
+			AND att_req.reason='Work From Home'
+			AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
 			AND tSA.employee
 			NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 				WHERE
@@ -612,6 +647,13 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND emp_sp.date='{date}'
 					AND emp_sp.permission_type="Arrive Late")
 					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+					WHERE
+						att_req.employee=emp.name
+					AND att_req.workflow_state='Approved'
+					AND att_req.reason='Work From Home'
+					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
 						empChkin.log_type="IN"
@@ -643,6 +685,13 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND emp_sp.shift_type='{shift_type}'
 					AND emp_sp.date='{date}'
 					AND emp_sp.permission_type="Arrive Late")
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+					WHERE
+						att_req.employee=emp.name
+					AND att_req.workflow_state='Approved'
+					AND att_req.reason='Work From Home'
+					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
 					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
@@ -870,11 +919,14 @@ def mark_auto_attendance(shift_type):
 	doc.process_auto_attendance()
 
 def update_shift_details_in_attendance(doc, method):
+	condition = ""
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
-		site, project, shift, post_type, post_abbrv, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "post_abbrv", "roster_type"])
-		frappe.db.sql("""update `tabAttendance`
-			set project = %s, site = %s, operations_shift = %s, post_type = %s, post_abbrv = %s, roster_type = %s
-			where name = %s """, (project, site, shift, post_type, post_abbrv, roster_type, doc.name))
+		site, project, shift, post_type, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "start_datetime","end_datetime", "roster_type"])
+		condition += "project = '"+project+"', site = '"+site+"', operations_shift = '"+shift+"', post_type = '"+post_type+"', roster_type = '"+roster_type+"'"
+		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
+			condition += ", in_time = '"+cstr(start_datetime)+"', out_time= '"+cstr(end_datetime)+"'"
+	
+	return frappe.db.sql("""UPDATE `tabAttendance` set {condition} where name = '{name}'""".format(condition=condition, name = doc.name))
 
 def generate_payroll():
 	# start_date = add_to_date(getdate(), months=-1)
