@@ -156,7 +156,8 @@ def update_payroll_entry_details(salary_slip):
                 `tabPayroll Employee Detail`
             set
                 justification_needed_on_deduction = %(justification_needed_on_deduction)s,
-                payment_amount = %(payment_amount)s
+                payment_amount = %(payment_amount)s,
+                working_days = %(working_days)s
             where
 				parenttype = 'Payroll Entry' and parent = %(payroll_entry)s
 				and employee = %(employee)s
@@ -165,7 +166,8 @@ def update_payroll_entry_details(salary_slip):
 			{
 				'justification_needed_on_deduction': salary_slip.justification_needed_on_deduction,
                 'payment_amount': salary_slip.net_pay,
+                'working_days': salary_slip.total_working_days,
 				'payroll_entry': salary_slip.payroll_entry,
-				'employee': salary_slip.employee
+				'employee': salary_slip.employee,
 			}
 		)

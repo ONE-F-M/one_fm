@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+from datetime import datetime
 import frappe
 from frappe import _
 
@@ -33,6 +34,7 @@ def get_columns(filters):
 	columns.append(_("Employee Status") + ":Data:180")
 
 	return columns
+
 
 def get_conditions(filters):
 	conditions = ""
@@ -68,6 +70,7 @@ def get_data(filters):
 			pass
 		else:
 			row = [
+				acc.employee,
 				acc.accommodation,
 				acc.accommodation_unit,
 				acc.accommodation_space,
@@ -76,7 +79,7 @@ def get_data(filters):
 				acc.full_name,
 				acc.civil_id,
 				acc.checkin_checkout_date_time,
-				acc.name
+				acc.name,
 			]
 			if not current_list_only:
 				row +=[
@@ -92,4 +95,28 @@ def get_data(filters):
 			]
 			data.append(row)
 
+	leave_data = get_leave_data()
+	if leave_data:
+		for i in data:
+			if leave_data.get(i[0]):
+				i[-1] = f"<i style='color:red'>{leave_data.get(i[0])}</i>"
+			i.remove(i[0])
 	return data
+
+
+def get_leave_data():
+	query = frappe.db.get_list(
+		"Leave Application",
+		filters={
+			'from_date': ['<=', datetime.today().date()],
+			'to_date': ['>=', datetime.today().date()],
+			'workflow_state':'Approved'
+		},
+		fields = ['employee', 'leave_type',]
+	)
+
+	result_dict = {}
+	for i in query:
+		result_dict[i.employee] = i.leave_type
+
+	return result_dict
