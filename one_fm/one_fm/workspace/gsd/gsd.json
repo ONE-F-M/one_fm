@@ -466,9 +466,26 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Roster",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Daily Roster Projection View",
+   "link_to": "Daily Roster Projection View",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2022-08-21 15:01:34.497814",
+ "modified": "2022-08-23 14:49:11.983405",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "GSD",

@@ -379,7 +379,7 @@ def send_applicant_doc_magic_link(job_applicant, applicant_name, designation):
         # Email Magic Link to the Applicant
         subject = "Fill More Details"
         url_prefix = "/applicant_docs?magic_link="
-        msg = "<b>Fill more details like your passport detaisl by clciking on the magic link below</b>\
+        msg = "<b>Please fill more information like your passport detail by clicking on the magic link below</b>\
             <br/>Applicant ID: {0}<br/>Applicant Name: {1}<br/>Designation: {2}</br>".format(job_applicant, applicant_name, designation)
         send_magic_link('Job Applicant', job_applicant, 'Job Applicant', [applicant_email], url_prefix, msg, subject)
     else:

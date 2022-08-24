@@ -12,7 +12,7 @@ $(document).ready(function() {
 career_history = Class.extend({
   init: function(){
     var me = this;
-    $('.submit-btn').hide();
+//    $('.submit-btn').hide();
     $('.next-btn').hide();
     $('.main_section').hide();
     $('.back-btn').hide();
