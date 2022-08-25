@@ -671,4 +671,4 @@ jenv = {
     ]
 }
 
-# after_migrate = "one_fm.patches.v1_0.rename_posttype_to_operationsrole.execute"
+after_migrate = "one_fm.patches.v1_0.rename_posttype_to_operationsrole.execute"
