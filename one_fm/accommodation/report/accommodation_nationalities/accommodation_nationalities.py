@@ -9,8 +9,7 @@ def execute(filters=None):
 	return get_columns(), get_data(filters)
 
 def get_data(filters):
-	print(filters)
-	conditions = " WHERE 1=1 "
+	conditions = " "
 	if filters.accommodation:
 		conditions += " AND accommodation = '%s'" % (filters.accommodation)
 
@@ -18,7 +17,14 @@ def get_data(filters):
 	# 	conditions += " AND nationality = '%s'" % (filters.nationality)
 
 	results = frappe.db.sql(f"""
-		SELECT DISTINCT * FROM `tabBed`
+		SELECT DISTINCT * FROM `tabBed` WHERE disabled=0 AND status IN (
+			'Booked',
+			'Temporarily Booked',
+			'Occupied',
+			'Occupied Temporarily',
+			'Under Maintenance',
+			'Blocked'
+		)
 		{conditions}
 	""", as_dict=1)
 
