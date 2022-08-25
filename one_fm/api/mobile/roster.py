@@ -8,9 +8,9 @@ from frappe.client import attach_file
 from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view#, get_roster_view as _get_roster_view
 
 # @frappe.whitelist()
-# def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, post_type=None):
+# def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, operations_role=None):
 # 	try:
-# 		return _get_roster_view(start_date, end_date, all, assigned, scheduled, project, site, shift, department, post_type)
+# 		return _get_roster_view(start_date, end_date, all, assigned, scheduled, project, site, shift, department, operations_role)
 # 	except Exception as e:
 # 		return frappe.utils.response.report_error(e.http_status_code)
 
@@ -29,7 +29,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
 		if department:
 			filters.update({'department': department})	
 
-		fields = ["employee", "employee_name", "date", "post_type", "post_abbrv", "employee_availability", "shift"]
+		fields = ["employee", "employee_name", "date", "operations_role", "post_abbrv", "employee_availability", "shift"]
 		user, user_roles, user_employee = get_current_user_details()
 		print(user_roles)
 		if "Operations Manager" in user_roles or "Projects Manager" in user_roles:
@@ -41,7 +41,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
 			filters.update({"project": ("in", assigned_projects)})
 			roster = frappe.get_all("Employee Schedule", filters, fields)
 			master_data = []
-			for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['post_type'])):
+			for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['operations_role'])):
 				employees = list(group)
 				master_data.append({"employees": employees, "post": key[0], "count": len(employees)})
 			return master_data
@@ -55,7 +55,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
 			roster = frappe.get_all("Employee Schedule", filters, fields)
 			print(roster)
 			master_data = []
-			for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['post_type'])):
+			for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['operations_role'])):
 				employees = list(group)
 				master_data.append({"employees": employees, "post": key[0], "count": len(employees)})
 			return master_data
@@ -69,7 +69,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
 
 			roster = frappe.get_all("Employee Schedule", filters, fields)
 			master_data = []
-			for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['post_type'])):
+			for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['operations_role'])):
 				employees = list(group)
 				master_data.append({"employees": employees, "post": key[0], "count": len(employees)})
 			return master_data
@@ -84,7 +84,7 @@ def get_weekly_staff_roster(start_date, end_date):
 		user, user_roles, user_employee = get_current_user_details()
 	
 		roster = frappe.db.sql("""
-			SELECT shift, employee, date, employee_availability, post_type
+			SELECT shift, employee, date, employee_availability, operations_role
 			FROM `tabEmployee Schedule`
 			WHERE employee="{emp}"
 			AND date BETWEEN date("{start_date}") AND date("{end_date}")
@@ -118,7 +118,7 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 		if department:
 			filters.update({'department': department})	
 
-		fields = ["post", "post_status", "date", "post_type",  "shift"]
+		fields = ["post", "post_status", "date", "operations_role",  "shift"]
 		user, user_roles, user_employee = get_current_user_details()
 
 		if "Operations Manager" in user_roles or "Projects Manager" in user_roles:
@@ -144,7 +144,7 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 			print(roster)
 
 			master_data = []
-			# for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['post_type'])):
+			# for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['operations_role'])):
 			# 	employees = list(group)
 			# 	master_data.append({"employees": employees, "post": key[0], "count": len(employees)})
 
@@ -161,7 +161,7 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 
 			roster = frappe.get_all("Post Schedule", filters, fields)
 			print(roster)
-			# for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['post_type'])):
+			# for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['operations_role'])):
 			# 	employees = list(group)
 			# 	master_data.append({"employees": employees, "post": key[0], "count": len(employees)})
 			for post in roster:
@@ -173,7 +173,7 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 
 
 # @frappe.whitelist()
-# def edit_post(post_type, shift, post_status, date_list, paid=0, repeat=None):
+# def edit_post(operations_role, shift, post_status, date_list, paid=0, repeat=None):
 # 	"""
 # 		post_status: Post Off/Suspend Post/Cancel Post
 # 		date_list: List of dates
@@ -183,11 +183,11 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 # 	try:
 # 		date_list = json.loads(date_list)
 # 		for date in date_list:
-# 			if frappe.db.exists("Post Schedule", {"date": date, "post_type": post_type, "shift": shift}):
-# 				post_schedule = frappe.get_doc("Post Schedule", {"date": date, "post_type": post_type, "shift": shift})
+# 			if frappe.db.exists("Post Schedule", {"date": date, "operations_role": operations_role, "shift": shift}):
+# 				post_schedule = frappe.get_doc("Post Schedule", {"date": date, "operations_role": operations_role, "shift": shift})
 # 			else:
 # 				post_schedule = frappe.new_doc("Post Schedule")
-# 				post_schedule.post = post_type
+# 				post_schedule.post = operations_role
 # 				post_schedule.date = date
 # 			post_schedule.post_status = post_status
 # 			if cint(paid):
@@ -295,7 +295,7 @@ def create_day_off(employee, date):
 		roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date": date})
 		roster.shift = None
 		roster.shift_type = None
-		roster.post_type = None
+		roster.operations_role = None
 		roster.post_abbrv = None
 		roster.site = None
 		roster.project = None
@@ -335,7 +335,7 @@ def get_unscheduled_employees(date, shift):
 def get_assigned_employees(shift, date, limit_start=None, limit_page_length=20):
 	try:
 		#Todo add date range
-		return frappe.get_list("Employee Schedule", fields=["employee", "employee_name", "post_type"], filters={"shift": shift, "date": date}, order_by="employee_name asc",
+		return frappe.get_list("Employee Schedule", fields=["employee", "employee_name", "operations_role"], filters={"shift": shift, "date": date}, order_by="employee_name asc",
 			limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
@@ -412,12 +412,12 @@ def get_departments():
 
 
 @frappe.whitelist()
-def get_post_types(shift=None):
+def get_operations_roles(shift=None):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
 
 		if shift is None and ("Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles):
-			return frappe.get_list("Post Type", limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Operations Role", limit_page_length=9999, order_by="name asc")
 
 		if "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles or "Shift Supervisor" in user_roles:
 			return frappe.get_list("Operations Post",{"site_shift": shift}, "post_template", limit_page_length=9999, order_by="name asc")
@@ -461,10 +461,10 @@ def unschedule_staff(employee, start_date, end_date=None, never_end=0):
 
 
 @frappe.whitelist()
-def schedule_staff(employee, shift, post_type, start_date, end_date=None, never=0, day_off=None):
+def schedule_staff(employee, shift, operations_role, start_date, end_date=None, never=0, day_off=None):
 	try:
 		print(getdate(start_date).strftime('%A'))
-		# print(employee, shift, post_type, start_date, end_date=None, never=0, day_off=None)
+		# print(employee, shift, operations_role, start_date, end_date=None, never=0, day_off=None)
 		if never:
 			end_date = cstr(getdate().year) + '-12-31'
 			print(end_date)
@@ -481,7 +481,7 @@ def schedule_staff(employee, shift, post_type, start_date, end_date=None, never=
 				else:
 					roster.employee_availability = "Working"
 					roster.shift = shift
-					roster.post_type = post_type
+					roster.operations_role = operations_role
 				print(roster.as_dict())
 				roster.save(ignore_permissions=True)
 			return True
@@ -498,8 +498,8 @@ def schedule_staff(employee, shift, post_type, start_date, end_date=None, never=
 				else:
 					roster.employee_availability = "Working"
 					roster.shift = shift
-					roster.post_type = post_type
-					roster.post_type = post_type
+					roster.operations_role = operations_role
+					roster.operations_role = operations_role
 				print(roster.as_dict())
 				roster.save(ignore_permissions=True)
 			return True

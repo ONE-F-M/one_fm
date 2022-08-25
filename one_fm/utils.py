@@ -1914,37 +1914,37 @@ def create_roster_post_actions():
     # end date to be 14 days after start date
     end_date = add_to_date(start_date, days=14)
 
-    post_types_not_filled_set = set()
+    operations_roles_not_filled_set = set()
 
     # Fetch post schedules in the date range that are active
-    post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "post_type", "post"], order_by="date asc")
+    post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "operations_role", "post"], order_by="date asc")
     # Fetch employee schedules for employees who are working
-    employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "post_type"], order_by="date asc")
+    employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "operations_role"], order_by="date asc")
 
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
-        if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.post_type == ps.post_type for es in employee_schedules):
-            if ps.post_type:
-                post_types_not_filled_set.add(ps.post_type)
+        if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
+            if ps.operations_role:
+                operations_roles_not_filled_set.add(ps.operations_role)
 
     # Convert set to tuple for passing it in the sql query as a parameter
-    post_types_not_filled = tuple(post_types_not_filled_set)
+    operations_roles_not_filled = tuple(operations_roles_not_filled_set)
 
-    if not post_types_not_filled:
+    if not operations_roles_not_filled:
         return
 
     # Fetch supervisor and post types in his/her shift
-    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.post_type)
+    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.operations_role)
             from `tabPost Schedule` ps
             join `tabOperations Shift` sh on sh.name = ps.shift
             join `tabEmployee` sv on sh.supervisor=sv.employee
-            where ps.post_type in {post_types}
-            group by sv.employee""".format(post_types=post_types_not_filled))
+            where ps.operations_role in {operations_roles}
+            group by sv.employee""".format(operations_roles=operations_roles_not_filled))
 
     # For each supervisor, create post actions to fill post type specifying the post types not filled
     for res in result:
         supervisor = res[0]
-        post_types = res[1].split(",")
+        operations_roles = res[1].split(",")
 
         roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
         roster_post_actions_doc.start_date = start_date
@@ -1953,9 +1953,9 @@ def create_roster_post_actions():
         roster_post_actions_doc.action_type = "Fill Post Type"
         roster_post_actions_doc.supervisor = supervisor
 
-        for post_type in post_types:
-            roster_post_actions_doc.append('post_types_not_filled', {
-                'post_type': post_type
+        for operations_role in operations_roles:
+            roster_post_actions_doc.append('operations_roles_not_filled', {
+                'operations_role': operations_role
             })
 
         roster_post_actions_doc.save()
@@ -1991,17 +1991,17 @@ def generate_roster_report():
     """
 
     for date in pd.date_range(start=start_date, end=end_date):
-        active_posts = len(frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["post_type"]))
+        active_posts = len(frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["operations_role"]))
         posts_off = len(frappe.db.get_list("Post Schedule", {'post_status': 'Post Off', 'date': date}))
 
         posts_filled_count = 0
         posts_not_filled_count = 0
 
-        post_types = frappe.db.get_list("Post Schedule", ["distinct post_type", "post_abbrv"])
-        for post_type in post_types:
+        operations_roles = frappe.db.get_list("Post Schedule", ["distinct operations_role", "post_abbrv"])
+        for operations_role in operations_roles:
             # For each post type, get all post schedules and employee schedules assigned to the post type
-            posts_count = len(frappe.db.get_list("Post Schedule", {'post_type': post_type.post_type, 'date': date, 'post_status': 'Planned'}))
-            posts_fill_count = len(frappe.db.get_list("Employee Schedule", {'post_type': post_type.post_type, 'date': date, 'employee_availability': 'Working'}))
+            posts_count = len(frappe.db.get_list("Post Schedule", {'operations_role': operations_role.operations_role, 'date': date, 'post_status': 'Planned'}))
+            posts_fill_count = len(frappe.db.get_list("Employee Schedule", {'operations_role': operations_role.operations_role, 'date': date, 'employee_availability': 'Working'}))
 
             # Compare count of post schedule vs employee schedule for the given post type, compute post filled/not filled count
             if posts_count == posts_fill_count:

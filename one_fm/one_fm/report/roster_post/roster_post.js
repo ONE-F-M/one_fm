@@ -51,12 +51,12 @@ frappe.query_reports["Roster Post"] = {
 	"onload": function(report) {
 		report.page.add_inner_button(__("View post types not filled"), function() {
 			frappe.call({
-				method: "one_fm.one_fm.report.roster_post.roster_post.get_post_types_not_filled", 
+				method: "one_fm.one_fm.report.roster_post.roster_post.get_operations_roles_not_filled",
 				callback: function(r){
-					var post_types = r.message;
+					var operations_roles = r.message;
 					message = "<div><b>Post types not filled: </b><br><ul>";
-					for(let i=0;i<post_types.length;i++){
-						message += "<li>"+ post_types[i] + "</li>"
+					for(let i=0;i<operations_roles.length;i++){
+						message += "<li>"+ operations_roles[i] + "</li>"
 					}
 					message += "</ul></div>";
 					frappe.msgprint(message)

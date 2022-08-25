@@ -20,13 +20,13 @@ def mark_attendance_and_link_log(logs, attendance_status, attendance_date, worki
 	:param attendance_date: Date of the attendance to be created.
 	:param working_hours: (optional)Number of working hours for the given date.
 	"""
-	project = post_type = None
+	project = operations_role = None
 	log_names = [x.name for x in logs]
 	employee = logs[0].employee
-	shift_assignment = frappe.get_list("Shift Assignment", {"employee":employee, 'start_date': ['<=', attendance_date], "shift_type":shift}, ["project", "post_type"])
+	shift_assignment = frappe.get_list("Shift Assignment", {"employee":employee, 'start_date': ['<=', attendance_date], "shift_type":shift}, ["project", "operations_role"])
 	if shift_assignment:
 		project = shift_assignment[0].project
-		post_type = shift_assignment[0].post_type
+		operations_role = shift_assignment[0].operations_role
 	if attendance_status == 'Skip':
 		frappe.db.sql("""update `tabEmployee Checkin`
 			set skip_auto_attendance = %s
@@ -49,7 +49,7 @@ def mark_attendance_and_link_log(logs, attendance_status, attendance_date, worki
 				#'out_time': out_time,
 				'operations_shift':operations_shift,
 				'project': project,
-				'post_type': post_type
+				'operations_role': operations_role
 			}
 			attendance = frappe.get_doc(doc_dict).insert()
 			attendance.submit()

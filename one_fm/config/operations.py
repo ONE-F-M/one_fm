@@ -26,9 +26,9 @@ def get_data():
 				},
                 {
 					"type": "doctype",
-					"name": "Post Type",
+					"name": "Operations Role",
 					"onboard": 1,
-					"label": _("Post Type")
+					"label": _("Operations Role")
 				},
                 {
 					"type": "doctype",

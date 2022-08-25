@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "format:{post_name}-{gender}|{site_shift}",
  "creation": "2020-05-02 16:31:15.111264",
  "doctype": "DocType",
@@ -44,14 +45,20 @@
    "options": "Post Designations"
   },
   {
+   "depends_on": "post_template",
+   "fetch_from": "post_template.shift",
+   "fetch_if_empty": 1,
    "fieldname": "site_shift",
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Shift",
-   "options": "Operations Shift"
+   "options": "Operations Shift",
+   "read_only": 1
   },
   {
-   "fetch_from": "site_shift.site",
+   "depends_on": "post_template",
+   "fetch_from": "post_template.site",
+   "fetch_if_empty": 1,
    "fieldname": "site",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -99,11 +106,13 @@
   {
    "fieldname": "post_template",
    "fieldtype": "Link",
-   "label": "Post Type",
-   "options": "Post Type"
+   "label": "Operations Role",
+   "options": "Operations Role"
   },
   {
-   "fetch_from": "site_shift.project",
+   "depends_on": "post_template",
+   "fetch_from": "post_template.project",
+   "fetch_if_empty": 1,
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
@@ -142,7 +151,8 @@
    "label": "Day Off Priority"
   }
  ],
- "modified": "2021-05-06 10:55:03.703840",
+ "links": [],
+ "modified": "2022-08-25 09:18:41.208943",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",

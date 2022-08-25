@@ -17,12 +17,12 @@ class EmployeeSchedule(Document):
 			frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be scheduled.")
 
 @frappe.whitelist()
-def get_post_types(doctype, txt, searchfield, start, page_len, filters):
+def get_operations_roles(doctype, txt, searchfield, start, page_len, filters):
 	shift = filters.get('shift')
-	post_types = frappe.db.sql("""
+	operations_roles = frappe.db.sql("""
 		SELECT DISTINCT post_template
 		FROM `tabOperations Post`
 		WHERE site_shift="{shift}"
 	""".format(shift=shift))
-	print(post_types)
-	return post_types
+	print(operations_roles)
+	return operations_roles

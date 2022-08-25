@@ -12,11 +12,11 @@ import pandas as pd
 
 class OperationsPost(Document):
 	def after_insert(self):
-		post_abbrv = frappe.db.get_value("Post Type", self.post_template, ["post_abbrv"])
+		post_abbrv = frappe.db.get_value("Operations Role", self.post_template, ["post_abbrv"])
 		if frappe.db.exists("Contracts", {'project': self.project}):
 			start_date, end_date = frappe.db.get_value("Contracts", {'project': self.project}, ["start_date", "end_date"])
 			if start_date and end_date:
-				frappe.enqueue(set_post_active, post=self, post_type=self.post_template, post_abbrv=post_abbrv, shift=self.site_shift, site=self.site, project=self.project, start_date=start_date, end_date=end_date, is_async=True, queue="long")
+				frappe.enqueue(set_post_active, post=self, operations_role=self.post_template, post_abbrv=post_abbrv, shift=self.site_shift, site=self.site, project=self.project, start_date=start_date, end_date=end_date, is_async=True, queue="long")
 	
 	def validate(self):
 		if not self.post_name:
@@ -38,11 +38,11 @@ class OperationsPost(Document):
 		
 
 @frappe.whitelist()
-def set_post_active(post, post_type, post_abbrv, shift, site, project, start_date, end_date):
+def set_post_active(post, operations_role, post_abbrv, shift, site, project, start_date, end_date):
 	for date in	pd.date_range(start=start_date, end=end_date):
 		sch = frappe.new_doc("Post Schedule")
 		sch.post = post.name
-		sch.post_type = post_type
+		sch.operations_role = operations_role
 		sch.post_abbrv = post_abbrv
 		sch.shift = shift
 		sch.site = site

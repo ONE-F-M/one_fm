@@ -1053,11 +1053,11 @@ function get_roster_data(page, isOt) {
 		employee_search_id = page.employee_search_id;
 	}
 	let {start_date, end_date} = page;
-	let { project, site, shift, department, post_type, designation } = page.filters;
+	let { project, site, shift, department, operations_role, designation } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	if (project || site || shift || department || post_type || designation){
+	if (project || site || shift || department || operations_role || designation){
 		$('#cover-spin').show(0);
-		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, post_type, designation, isOt, limit_start, limit_page_length })
+		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, operations_role, designation, isOt, limit_start, limit_page_length })
 			.then(res => {
 				let a2 = performance.now();
 				console.log("REQ TIME", a2 - a1);
@@ -1069,23 +1069,23 @@ function get_roster_data(page, isOt) {
 // Function responsible for Rendering the Table
 // Renders on get_roster_data function
 function render_roster(res, page, isOt) {
-	let { post_types_data, employees_data, total } = res;
+	let { operations_roles_data, employees_data, total } = res;
 	page.pagination.total = total;
 
 	let b1 = performance.now();
 	let $rosterMonth = isOt ? $('.rosterOtMonth') : $('.rosterMonth');
 	let $rosterMonthbody = isOt ? $('.rosterOtMonth').find('#calenderviewtable tbody') : $('.rosterMonth').find('#calenderviewtable tbody');
 	$rosterMonthbody.empty();
-	for (post_type_name in post_types_data) {
+	for (operations_role_name in operations_roles_data) {
 		let pt_row = `
-		<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
+		<tr class="colorclass scheduledStaff" data-name="${operations_role_name}">
 			<td class="sticky">
 				<div class="d-flex">
 					<div class="font16 paddingdiv cursorpointer orangecolor">
 						<i class="fa fa-plus" aria-hidden="true"></i>
 					</div>
 					<div class="font16 paddingdiv borderleft cursorpointer">
-						${post_type_name}
+						${operations_role_name}
 					</div>
 				</div>
 			</td>
@@ -1099,19 +1099,19 @@ function render_roster(res, page, isOt) {
 		let day = start_date;
 		while (day <= end_date) {
 			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
-			let { date, post_type, count, highlight } = post_types_data[post_type_name][i];
+			let { date, operations_role, count, highlight } = operations_roles_data[operations_role_name][i];
 			let pt_count = `
 			<td class="${highlight}">
-				<div class="text-center" data-selectid="${post_type + "|" + date}">${count}</div>
+				<div class="text-center" data-selectid="${operations_role + "|" + date}">${count}</div>
 			</td>`;
-			$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_type)}']`).append(pt_count);
+			$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(operations_role)}']`).append(pt_count);
 			i++;
 			start_date.add(1, 'days');
 		}
-		$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_types_data[post_type_name][i - 1]["post_type"])}']`).append(`<td></td>`);
+		$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(operations_roles_data[operations_role_name][i - 1]["operations_role"])}']`).append(`<td></td>`);
 	}
 	let b2 = performance.now();
-	console.log("POST TYPE TIME", b2 - b1);
+	console.log("Operations Role TIME", b2 - b1);
 
 	let c1 = performance.now();
 
@@ -1179,7 +1179,7 @@ function render_roster(res, page, isOt) {
 				'Half Day': 'HD',
 				'On Leave': 'OL'
 			};
-			let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot } = employees_data[employee_key][i];
+			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot } = employees_data[employee_key][i];
 			//OT schedule view
 			if (isOt) {
 				if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
@@ -1187,14 +1187,14 @@ function render_roster(res, page, isOt) {
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip" 
-							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Over-Time' && day_off_ot==1){
 					j++;
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip" 
-							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if (employee_availability && !post_abbrv) {
 					sch = `
@@ -1220,21 +1220,21 @@ function render_roster(res, page, isOt) {
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip" 
-							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
 					j++;
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip" 
-							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
+							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Basic' && day_off_ot==1){
 					j++;
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip" 
-							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}
 				else if (employee_availability && !post_abbrv) {
@@ -1288,12 +1288,12 @@ function get_roster_week_data(page, isOt) {
 		employee_search_name = page.employee_search_name;
 	}
 	let { start_date, end_date } = page;
-	let { project, site, shift, department, post_type } = page.filters;
+	let { project, site, shift, department, operations_role } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
 	console.log(limit_start, limit_page_length);
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_name, project, site, shift, department, post_type, isOt, limit_start, limit_page_length })
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_name, project, site, shift, department, operations_role, isOt, limit_start, limit_page_length })
 		.then(res => {
-			let { post_types_data, employees_data, total } = res;
+			let { operations_roles_data, employees_data, total } = res;
 			page.pagination.total = total;
 			// $('.rosterWeek').find('#calenderweekviewtable tbody').empty();
 			let $rosterWeek;
@@ -1301,16 +1301,16 @@ function get_roster_week_data(page, isOt) {
 			else $rosterWeek = $('.rosterWeek');
 			let $rosterWeekbody = $rosterWeek.find('#calenderweekviewtable tbody');
 			$rosterWeekbody.empty();
-			for (post_type_name in post_types_data) {
+			for (operations_role_name in operations_roles_data) {
 				let pt_row = `
-			<tr class="colorclass scheduledStaff" data-name="${post_type_name}">
+			<tr class="colorclass scheduledStaff" data-name="${operations_role_name}">
 				<td class="sticky">
 					<div class="d-flex">
 						<div class="font16 paddingdiv cursorpointer orangecolor">
 							<i class="fa fa-plus" aria-hidden="true"></i>
 						</div>
 						<div class="font16 paddingdiv borderleft cursorpointer">
-							${post_type_name}
+							${operations_role_name}
 						</div>
 					</div>
 				</td>
@@ -1324,17 +1324,17 @@ function get_roster_week_data(page, isOt) {
 				let day = start_date;
 				while (day <= end_date) {
 					// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
-					let { date, post_type, count, highlight } = post_types_data[post_type_name][i];
+					let { date, operations_role, count, highlight } = operations_roles_data[operations_role_name][i];
 					console.log(count, typeof (count));
 					let pt_count = `
 				<td class="${highlight}">
-					<div class="text-center" data-selectid="${post_type + "|" + date}">${count}</div>
+					<div class="text-center" data-selectid="${operations_role + "|" + date}">${count}</div>
 				</td>`;
-					$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_type)}"]`).append(pt_count);
+					$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(operations_role)}"]`).append(pt_count);
 					i++;
 					start_date.add(1, 'days');
 				}
-				$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_types_data[post_type_name][i - 1]['post_type'])}"]`).append(`<td></td>`);
+				$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(operations_roles_data[operations_role_name][i - 1]['operations_role'])}"]`).append(`<td></td>`);
 			}
 			let emp_row_wrapper = `
 		<tr class="collapse tableshowclass show">
@@ -1384,14 +1384,14 @@ function get_roster_week_data(page, isOt) {
 						'Annual Leave': 'AL',
 						'Emergency Leave': 'EL'
 					};
-					let { employee, employee_name, date, post_type, post_abbrv, employee_availability, shift } = employees_data[employee_key][i];
+					let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift } = employees_data[employee_key][i];
 
 					if (employee_availability && post_abbrv) {
 						j++;
 						sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date + "|" + post_type + "|" + shift + "|" + employee_availability}">${post_abbrv}</div>
+							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}</div>
 					</td>`;
 					} else if (employee_availability && !post_abbrv) {
 						sch = `
@@ -1433,12 +1433,12 @@ function get_post_data(page) {
 	classgrt = [];
 	classgrtw = [];
 	let { start_date, end_date } = page;
-	let { project, site, shift, department, post_type } = page.filters;
+	let { project, site, shift, department, operations_role } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	if (project || site || shift || department || post_type){
+	if (project || site || shift || department || operations_role){
 		$('#cover-spin').show(0);
-		// console.log(start_date, end_date, project, site, shift, post_type,limit_start, limit_page_length);
-		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, post_type, limit_start, limit_page_length })
+		// console.log(start_date, end_date, project, site, shift, operations_role,limit_start, limit_page_length);
+		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 			.then(res => {
 				// console.log(res);
 				$('#cover-spin').hide();
@@ -1478,7 +1478,7 @@ function get_post_data(page) {
 							'Cancelled': 'redboxcolor'
 						};
 
-						let { project, site, shift, date, post_status, post_type, post, name } = res["post_data"][post_name][i];
+						let { project, site, shift, date, post_status, operations_role, post, name } = res["post_data"][post_name][i];
 						if (name) {
 							schedule = `
 						<td>
@@ -1491,7 +1491,7 @@ function get_post_data(page) {
 								data-name="${name}"
 								data-post="${post}"
 								data-post_status="${post_status}"
-								data-post-type="${post_type}">
+								data-post-type="${operations_role}">
 							</div>
 						</td>`;
 						}
@@ -1524,10 +1524,10 @@ function get_post_week_data(page) {
 	classgrt = [];
 	classgrtw = [];
 	let { start_date, end_date } = page;
-	let { project, site, shift, post_type } = page.filters;
+	let { project, site, shift, operations_role } = page.filters;
 	// console.log(page.start_date, page.end_date);
 	let { limit_start, limit_page_length } = page.pagination;
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, post_type, limit_start, limit_page_length })
+	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 		.then(res => {
 			// console.log(res);
 			page.pagination.total = res.total;
@@ -1566,7 +1566,7 @@ function get_post_week_data(page) {
 						'Cancelled': 'redboxcolor'
 					};
 
-					let { project, site, shift, date, post_status, post_type, post, name } = res["post_data"][post_name][i];
+					let { project, site, shift, date, post_status, operations_role, post, name } = res["post_data"][post_name][i];
 					if (name) {
 						schedule = `
 					<td>
@@ -1579,7 +1579,7 @@ function get_post_week_data(page) {
 							data-name="${name}"
 							data-post="${post}"
 							data-post_status="${post_status}"
-							data-post-type="${post_type}">
+							data-post-type="${operations_role}">
 						</div>
 					</td>`;
 					}
@@ -1624,7 +1624,7 @@ function setup_filters(page) {
 			get_sites(page);
 			get_shifts(page);
 			get_departments(page);
-			get_post_types(page);
+			get_operations_roles(page);
 			get_designations(page);
 		})
 		.then(r => {
@@ -1705,19 +1705,19 @@ function get_shifts(page) {
 		});
 }
 
-function get_post_types(page) {
+function get_operations_roles(page) {
 	let { employee_id, shift } = page;
-	frappe.xcall('one_fm.api.mobile.roster.get_post_types', { employee_id, shift })
+	frappe.xcall('one_fm.api.mobile.roster.get_operations_roles', { employee_id, shift })
 		.then(res => {
 			let parent = $('[data-page-route="roster"] #rosteringpostselect');
-			let post_type_data = [];
+			let operations_role_data = [];
 			res.forEach(element => {
 				let { name } = element;
-				post_type_data.push({ 'id': name, 'text': name });
+				operations_role_data.push({ 'id': name, 'text': name });
 			});
-			parent.select2({ data: post_type_data });
+			parent.select2({ data: operations_role_data });
 			$(parent).on('select2:select', function (e) {
-				page.filters.post_type = $(this).val();
+				page.filters.operations_role = $(this).val();
 				let element = get_wrapper_element().slice(1);
 				console.log("4");
 
@@ -1910,7 +1910,7 @@ const search_staff = () => {
 function GetHeaders(IsMonthSet, element) {
 
 	var thHTML = "";
-	var thStartHTML = `<th class="sticky vertical-sticky" style="max-width: 238px !important; min-width: 238px !important;">Post Type / Days</th>`;
+	var thStartHTML = `<th class="sticky vertical-sticky" style="max-width: 238px !important; min-width: 238px !important;">Operations Role / Days</th>`;
 	var thEndHTML = `<th class="vertical-sticky">Total</th>`;
 	element = get_wrapper_element(element);
 	var selectedMonth;
@@ -2327,7 +2327,7 @@ function setup_staff_filters(page) {
 		shift: '',
 		department: '',
 		designation: '',
-		post_type: '',
+		operations_role: '',
 		employee_search_name: '',
 		employee_search_id: ''
 	};
@@ -2510,7 +2510,7 @@ function update_staff_view() {
 //function for dynamic set calender header data on right calender
 function GetWeekHeaders(IsMonthSet, element) {
 	var thHTML = "";
-	var thStartHTML = `<th class="sticky vertical-sticky">Post Type / Days</th>`;
+	var thStartHTML = `<th class="sticky vertical-sticky">Operations Role / Days</th>`;
 	var thEndHTML = `<th class="vertical-sticky">Total</th>`;
 	var selectedMonth;
 	element = get_wrapper_element(element);
@@ -2807,7 +2807,7 @@ function change_post(page) {
 		'title': 'Change Post',
 		'fields': [
 			{
-				'label': 'Choose Post Type', 'fieldname': 'post_type', 'fieldtype': 'Link', 'options': 'Post Type', 'reqd': 1, get_query: function () {
+				'label': 'Choose Operations Role', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'options': 'Operations Role', 'reqd': 1, get_query: function () {
 					// return {
 					// 	// "filters": { 
 					// 	// 	"project_type": "External"							
@@ -2858,9 +2858,9 @@ function schedule_change_post(page) {
 			{ 'label': 'Site', 'fieldname': 'site', 'fieldtype': 'Link', 'options': 'Operations Site', 'read_only': 1 },
 			{ 'label': 'Project', 'fieldname': 'project', 'fieldtype': 'Link', 'options': 'Project', 'read_only': 1 },
 			{
-				'label': 'Choose Post Type', 'fieldname': 'post_type', 'fieldtype': 'Link', 'reqd': 1, 'options': 'Post Type', get_query: function () {
+				'label': 'Choose Operations Role', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'reqd': 1, 'options': 'Operations Role', get_query: function () {
 					return {
-						query: "one_fm.one_fm.page.roster.roster.get_filtered_post_types",
+						query: "one_fm.one_fm.page.roster.roster.get_filtered_operations_roles",
 						filters: { "shift": d.get_value('shift') }
 					};
 				}
@@ -2895,7 +2895,7 @@ function schedule_change_post(page) {
 		],
 		primary_action: function () {
 
-			let { shift, site, post_type, project, start_date, project_end_date, keep_days_off, day_off_ot, end_date, request_employee_schedule } = d.get_values();
+			let { shift, site, operations_role, project, start_date, project_end_date, keep_days_off, day_off_ot, end_date, request_employee_schedule } = d.get_values();
 			$('#cover-spin').show(0);
 			let element = get_wrapper_element();
 			if (element == ".rosterOtMonth") {
@@ -2915,7 +2915,7 @@ function schedule_change_post(page) {
 				frappe.throw()
 			}
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-				{ employees, shift, post_type, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date })
+				{ employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date })
 				.then(res => {
 					d.hide();
 					$('#cover-spin').hide();

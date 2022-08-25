@@ -112,7 +112,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 					attendance.shift = check_shift_assignment.shift_type
 					attendance.project = check_shift_assignment.project
 					attendance.site = check_shift_assignment.site
-					attendance.post_type = check_shift_assignment.post_type
+					attendance.operations_role = check_shift_assignment.operations_role
 					attendance.save(ignore_permissions=True)
 					attendance.submit()
 		except Exception as e:

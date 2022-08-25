@@ -670,3 +670,5 @@ jenv = {
         # "xmul:one_fm.jinja.methods.xmultiply"
     ]
 }
+
+# after_migrate = "one_fm.patches.v1_0.rename_posttype_to_operationsrole.execute"

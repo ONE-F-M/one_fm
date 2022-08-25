@@ -13,7 +13,7 @@
   "action_type",
   "supervisor",
   "supervisor_name",
-  "post_types_not_filled"
+  "operations_roles_not_filled"
  ],
  "fields": [
   {
@@ -60,7 +60,7 @@
    "label": "Actions"
   },
   {
-   "fieldname": "post_types_not_filled",
+   "fieldname": "operations_roles_not_filled",
    "fieldtype": "Table",
    "label": "Post Types Not Filled",
    "options": "Post Types Not Filled",

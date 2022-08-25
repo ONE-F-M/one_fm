@@ -144,12 +144,12 @@ class RosterProjection(object):
 def get_item_projection(item, project, date):
 
 	# Get post types with sale item as item code
-	post_type_list = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': item.item_code})
+	operations_role_list = frappe.db.get_list("Operations Role", pluck='name', filters={'sale_item': item.item_code})
 	
 	# Get employee schedules
 	es_filters = {
 			'project': project,
-			'post_type': ['in', post_type_list],
+			'operations_role': ['in', operations_role_list],
 			'employee_availability': 'Working',
 			'date': date
 		}
@@ -162,11 +162,11 @@ def get_item_projection(item, project, date):
 def get_item_live_projection(item, project, date):
 	
 	# Get post types with sale item as item code
-	post_type_list = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': item.item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
+	operations_role_list = frappe.db.get_list("Operations Role", pluck='name', filters={'sale_item': item.item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
 
 	attendance_filters = {
 		'attendance_date': date,
-		'post_type': ['in', post_type_list],
+		'operations_role': ['in', operations_role_list],
 		'project': project,
 		'status': "Present"
 	}
