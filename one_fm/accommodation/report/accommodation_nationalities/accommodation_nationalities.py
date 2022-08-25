@@ -17,14 +17,7 @@ def get_data(filters):
 	# 	conditions += " AND nationality = '%s'" % (filters.nationality)
 
 	results = frappe.db.sql(f"""
-		SELECT DISTINCT * FROM `tabBed` WHERE disabled=0 AND status IN (
-			'Booked',
-			'Temporarily Booked',
-			'Occupied',
-			'Occupied Temporarily',
-			'Under Maintenance',
-			'Blocked'
-		)
+		SELECT DISTINCT * FROM `tabBed` WHERE 1=1 
 		{conditions}
 	""", as_dict=1)
 
@@ -45,7 +38,13 @@ def get_data(filters):
 					# CHECK FOR SPACE
 					if accommodation[row.floor][row.accommodation_unit].get(row.accommodation_space):
 						_space = accommodation[row.floor][row.accommodation_unit][row.accommodation_space]
-						if row.nationality:
+						if row.nationality and not row.disabled and row.status in [
+							'Booked',
+							'Temporarily Booked',
+							'Occupied',
+							'Occupied Temporarily',
+							'Under Maintenance',
+							'Blocked']:
 							if _space.get(row.nationality.lower().replace(' ', '-')):
 								_space[row.nationality.lower().replace(' ', '-')] += 1
 							else:
@@ -72,7 +71,13 @@ def get_data(filters):
 							'type':row.bed_space_type, 'gender':row.gender
 						}
 						_space = accommodation[row.floor][row.accommodation_unit][row.accommodation_space]
-						if (row.nationality):
+						if (row.nationality and not row.disabled and row.status in [
+						'Booked',
+						'Temporarily Booked',
+						'Occupied',
+						'Occupied Temporarily',
+						'Under Maintenance',
+						'Blocked']):
 							if _space.get(row.nationality.lower().replace(' ', '-')):
 								_space[row.nationality.lower().replace(' ', '-')] += 1
 
@@ -102,7 +107,13 @@ def get_data(filters):
 						row.accommodation_space: {'type':row.bed_space_type, 'gender':row.gender},
 					}
 					_unit = accommodation[row.floor][row.accommodation_unit][row.accommodation_space]
-					if (row.nationality):
+					if (row.nationality and not row.disabled and row.status in [
+						'Booked',
+						'Temporarily Booked',
+						'Occupied',
+						'Occupied Temporarily',
+						'Under Maintenance',
+						'Blocked']):
 						if _unit.get(row.nationality.lower().replace(' ', '-')):
 							_unit[row.nationality.lower().replace(' ', '-')] += 1
 
@@ -131,7 +142,13 @@ def get_data(filters):
 					}
 				}
 				_floor = accommodation[row.floor][row.accommodation_unit][row.accommodation_space]
-				if (row.nationality):
+				if (row.nationality and not row.disabled and row.status in [
+					'Booked',
+					'Temporarily Booked',
+					'Occupied',
+					'Occupied Temporarily',
+					'Under Maintenance',
+					'Blocked']):
 					if _floor.get(row.nationality.lower().replace(' ', '-')):
 						_floor[row.nationality.lower().replace(' ', '-')] += 1
 
@@ -163,7 +180,13 @@ def get_data(filters):
 				}
 			}
 			_space = hashmap[row.accommodation][row.floor][row.accommodation_unit][row.accommodation_space]
-			if (row.nationality):
+			if (row.nationality and not row.disabled and row.status in [
+				'Booked',
+				'Temporarily Booked',
+				'Occupied',
+				'Occupied Temporarily',
+				'Under Maintenance',
+				'Blocked']):
 				_space[row.nationality.lower().replace(' ', '-')] = 1
 				_space['actual'] = 1
 				_space['empty'] = 0
