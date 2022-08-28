@@ -40,7 +40,9 @@ frappe.ui.form.on('Operations Post', {
 	},
 	site_shift: (frm) => {
 	    if (frm.doc.site_shift) {
+            frm.set_value('post_template', '');
             frm.trigger('set_site_query');
+
 	    }
 	},
 	set_site_query: (frm) => {

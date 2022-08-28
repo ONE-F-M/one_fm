@@ -8,18 +8,17 @@
  "field_order": [
   "handover",
   "post_name",
-  "post_template",
-  "column_break_4",
   "site_shift",
   "site",
   "project",
-  "section_break_6",
+  "post_template",
+  "column_break_4",
   "priority_level",
   "allow_staff_rotation",
   "day_off_priority",
-  "column_break_10",
   "post_location",
   "gender",
+  "section_break_6",
   "section_break_12",
   "post_description",
   "section_break_14",
@@ -45,8 +44,6 @@
    "options": "Post Designations"
   },
   {
-   "fetch_from": "post_template.shift",
-   "fetch_if_empty": 1,
    "fieldname": "site_shift",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -105,7 +102,8 @@
    "fieldname": "post_template",
    "fieldtype": "Link",
    "label": "Operations Role",
-   "options": "Operations Role"
+   "options": "Operations Role",
+   "reqd": 1
   },
   {
    "depends_on": "site_shift",
@@ -132,10 +130,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "0",
    "fieldname": "allow_staff_rotation",
    "fieldtype": "Check",
@@ -150,7 +144,7 @@
   }
  ],
  "links": [],
- "modified": "2022-08-28 12:48:03.774322",
+ "modified": "2022-08-28 13:26:52.855216",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",
