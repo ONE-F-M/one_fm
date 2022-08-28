@@ -45,19 +45,17 @@
    "options": "Post Designations"
   },
   {
-   "depends_on": "post_template",
    "fetch_from": "post_template.shift",
    "fetch_if_empty": 1,
    "fieldname": "site_shift",
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Shift",
-   "options": "Operations Shift",
-   "read_only": 1
+   "options": "Operations Shift"
   },
   {
-   "depends_on": "post_template",
-   "fetch_from": "post_template.site",
+   "depends_on": "site_shift",
+   "fetch_from": "site_shift.site",
    "fetch_if_empty": 1,
    "fieldname": "site",
    "fieldtype": "Link",
@@ -110,8 +108,8 @@
    "options": "Operations Role"
   },
   {
-   "depends_on": "post_template",
-   "fetch_from": "post_template.project",
+   "depends_on": "site_shift",
+   "fetch_from": "site_shift.project",
    "fetch_if_empty": 1,
    "fieldname": "project",
    "fieldtype": "Link",
@@ -152,7 +150,7 @@
   }
  ],
  "links": [],
- "modified": "2022-08-25 09:18:41.208943",
+ "modified": "2022-08-28 12:48:03.774322",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",
