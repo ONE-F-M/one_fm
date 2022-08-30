@@ -34,7 +34,7 @@ career_history = Class.extend({
   on_change_promotion: function(company_no, promotion_no) {
     var me = this;
     $(`.promotion_select_${company_no}${promotion_no}`).on("change", function(){
-      var promotion_select = $(`.promotion_select_${company_no}${promotion_no}`).val()
+      var promotion_select = $(`.promotion_select_${company_no}${promotion_no}`).val();
       var promotion_details_html = "";
       var promotion_details_next_job_title_html = `<div class="my-5 col-lg-12 col-md-12">
           <label class="form-label">So, tell us what position you got promoted to first.</label>
@@ -83,7 +83,9 @@ career_history = Class.extend({
   },
   set_promotion_section_html: function(company_no, promotion_no) {
     var next_promotion_details_html = `<div class="mx-auto col-lg-12 col-md-12 mb-12 promotion_section_${company_no}${promotion_no}">
-        <label  class="form-label">Did you get any promotion or salary increase?</label>
+        <label  class="form-label">${promotion_no>1 ?
+            'So {{job_applicant.applicant_name}}, after your promotion/salary increase did you get another promotion or salary increase?':
+            'Did you get any promotion or salary increase?'}</label>
           <select class="custom-select promotion_select_${company_no}${promotion_no}">
             <option value="0">No, I did not get any promotion or salary increase</option>
             <option value="1">Yes, I got a promotion with a salary increase</option>
@@ -166,7 +168,7 @@ career_history = Class.extend({
     }
     var company_section_html = `
     <div class="section_${company_no}">
-    <h3 class="mx-auto">So {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
+    <h3 class="mx-auto">Hello, {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
 		<div class="row mx-auto col-lg-12 col-md-12 mb-3 company_${company_no} border-top">
 		  	<div class="my-3 col-lg-12 col-md-12">
 				<label class="form-label">What was the company's name? </label>
