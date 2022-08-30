@@ -9,7 +9,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
         'project': project,
 		'status': 'Present'
 	}
-    logs = frappe.db.get_list('Attendance', fields="employee,working_hours,attendance_date,site,project,post_type,operations_shift", filters=filters, order_by="employee,attendance_date")   
+    logs = frappe.db.get_list('Attendance', fields="employee,working_hours,attendance_date,site,project,operations_role,operations_shift", filters=filters, order_by="employee,attendance_date")   
     for key, group in itertools.groupby(logs, key=lambda x: (x['employee'])):
         attendances = list(group)
         timesheet = frappe.new_doc("Timesheet")
@@ -27,7 +27,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             #Get end time from last employee checkin of that day of log type OUT
             end = frappe.get_list("Employee Checkin", {"employee": key, "time": ['between', (date, date)], "log_type": "OUT"}, "time", order_by="time desc")[0].time
             #Get the sale item of post type
-            item = frappe.get_value("Post Type", attendance.post_type, 'sale_item')
+            item = frappe.get_value("Operations Role", attendance.operations_role, 'sale_item')
             gender = frappe.get_value("Operations Post", post, 'gender')
             shift_hours = frappe.get_value("Operations Shift", attendance.operations_shift, ['duration'])
             #pass gender, shift hour, dayoffs, uom
@@ -109,7 +109,7 @@ def set_billing_hours(project, from_time, to_time, shift_hour):
 
 def add_time_log(timesheet, attendance, start, end, post, billable, billing_hours, billing_rate):
     timesheet.append("time_logs", {
-        "activity_type": attendance.post_type,
+        "activity_type": attendance.operations_role,
         "from_time": start,
         "to_time": end,
         "project": attendance.project,

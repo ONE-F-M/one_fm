@@ -64,7 +64,7 @@ frappe.query_reports["Post Attendance Sheet"] = {
 			"fieldname":"group_by",
 			"label": __("Group By"),
 			"fieldtype": "Select",
-			"options": ["","Branch","Grade","Department","Designation","Post Type"]
+			"options": ["","Branch","Grade","Department","Designation","Operations Role"]
 		},
 		{
 			"fieldname":"summarized_view",

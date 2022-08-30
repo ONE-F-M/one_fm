@@ -842,12 +842,12 @@ def create_shift_assignment(schedule, date):
 			shift_assignment.employee = schedule.employee
 			shift_assignment.employee_name = schedule.employee_name
 			shift_assignment.department = schedule.department
-			shift_assignment.post_type = schedule.post_type
+			shift_assignment.operations_role = schedule.operations_role
 			shift_assignment.shift = schedule.shift
 			shift_assignment.site = schedule.site
 			shift_assignment.project = schedule.project
 			shift_assignment.shift_type = schedule.shift_type
-			shift_assignment.post_type = schedule.post_type
+			shift_assignment.operations_role = schedule.operations_role
 			shift_assignment.post_abbrv = schedule.post_abbrv
 			shift_assignment.roster_type = schedule.roster_type
 			if frappe.db.exists("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]}):
@@ -921,8 +921,8 @@ def mark_auto_attendance(shift_type):
 def update_shift_details_in_attendance(doc, method):
 	condition = ""
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
-		site, project, shift, post_type, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "post_type", "start_datetime","end_datetime", "roster_type"])
-		condition += "project = '"+project+"', site = '"+site+"', operations_shift = '"+shift+"', post_type = '"+post_type+"', roster_type = '"+roster_type+"'"
+		site, project, shift, operations_role, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "operations_role", "start_datetime","end_datetime", "roster_type"])
+		condition += "project = '"+project+"', site = '"+site+"', operations_shift = '"+shift+"', operations_role = '"+operations_role+"', roster_type = '"+roster_type+"'"
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
 			condition += ", in_time = '"+cstr(start_datetime)+"', out_time= '"+cstr(end_datetime)+"'"
 	

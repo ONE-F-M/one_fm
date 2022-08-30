@@ -8,9 +8,9 @@ frappe.ui.form.on('Employee Schedule', {
 	shift : function(frm) {
 		let {shift} = frm.doc;
 		if(shift){
-			frm.set_query("post_type", function() {
+			frm.set_query("operations_role", function() {
 				return {
-					query: "one_fm.operations.doctype.employee_schedule.employee_schedule.get_post_types",
+					query: "one_fm.operations.doctype.employee_schedule.employee_schedule.get_operations_roles",
 					filters: {shift}
 				};
 			});

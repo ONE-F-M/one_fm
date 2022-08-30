@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "format:{post_name}-{gender}|{site_shift}",
  "creation": "2020-05-02 16:31:15.111264",
  "doctype": "DocType",
@@ -7,18 +8,17 @@
  "field_order": [
   "handover",
   "post_name",
-  "post_template",
-  "column_break_4",
   "site_shift",
   "site",
   "project",
-  "section_break_6",
+  "post_template",
+  "column_break_4",
   "priority_level",
   "allow_staff_rotation",
   "day_off_priority",
-  "column_break_10",
   "post_location",
   "gender",
+  "section_break_6",
   "section_break_12",
   "post_description",
   "section_break_14",
@@ -51,7 +51,9 @@
    "options": "Operations Shift"
   },
   {
+   "depends_on": "site_shift",
    "fetch_from": "site_shift.site",
+   "fetch_if_empty": 1,
    "fieldname": "site",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -99,11 +101,14 @@
   {
    "fieldname": "post_template",
    "fieldtype": "Link",
-   "label": "Post Type",
-   "options": "Post Type"
+   "label": "Operations Role",
+   "options": "Operations Role",
+   "reqd": 1
   },
   {
+   "depends_on": "site_shift",
    "fetch_from": "site_shift.project",
+   "fetch_if_empty": 1,
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
@@ -125,10 +130,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "0",
    "fieldname": "allow_staff_rotation",
    "fieldtype": "Check",
@@ -142,7 +143,8 @@
    "label": "Day Off Priority"
   }
  ],
- "modified": "2021-05-06 10:55:03.703840",
+ "links": [],
+ "modified": "2022-08-28 13:26:52.855216",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",

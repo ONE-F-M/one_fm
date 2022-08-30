@@ -3,19 +3,19 @@
 
 frappe.ui.form.on('Duty Commencement', {
 	refresh: function(frm) {
-		set_post_type_filter(frm);
+		set_operations_role_filter(frm);
 	},
 	operations_shift: function(frm) {
-		set_post_type_filter(frm);
+		set_operations_role_filter(frm);
 	}
 });
 
 // Apply filters to get post types for a operations shift
-var set_post_type_filter = function(frm) {
+var set_operations_role_filter = function(frm) {
 	if(frm.doc.operations_shift){
-		frm.set_query('post_type', function () {
+		frm.set_query('operations_role', function () {
 			return {
-				query: "one_fm.one_fm.page.roster.roster.get_filtered_post_types",
+				query: "one_fm.one_fm.page.roster.roster.get_filtered_operations_roles",
 				filters: {
 					'shift': frm.doc.operations_shift
 				}

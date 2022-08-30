@@ -84,7 +84,7 @@ class DutyCommencement(Document):
 					shift_assignment = frappe.new_doc("Shift Assignment")
 					shift_assignment.start_date = self.date_of_joining
 					shift_assignment.employee = self.employee
-					shift_assignment.post_type = self.post_type
+					shift_assignment.operations_role = self.operations_role
 					shift_assignment.shift = self.operations_shift
 					shift_assignment.site = self.operations_site
 					shift_assignment.project = self.project
