@@ -980,6 +980,7 @@ function bind_events(page) {
 	}
 	let d2 = performance.now();
 	console.log("EVENTS TIME", d2 - d1);
+	window.employees_list = [];
 	bind_search_bar_event(page);
 
     // manage employee selection
@@ -1661,7 +1662,6 @@ function get_projects(page) {
 	let { employee_id } = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_projects', { employee_id })
 		.then(res => {
-		    window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringprojectselect');
 			let project_data = [{ 'id': '', 'text': 'Select Project' }];
 			res.forEach(element => {
@@ -1687,7 +1687,6 @@ function get_sites(page) {
 	let { project } = page.filters;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_sites', { employee_id, project })
 		.then(res => {
-			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringsiteselect');
 			let site_data = [{ 'id': '', 'text': 'Select Site' }];
 			res.forEach(element => {
@@ -1709,11 +1708,11 @@ function get_sites(page) {
 }
 
 function get_shifts(page) {
+
 	let { employee_id } = page;
 	let { project, site } = page.filters;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts', { employee_id, project, site })
 		.then(res => {
-			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringshiftselect');
 			let shift_data = [{ 'id': '', 'text': 'Select Shift' }];
 			res.forEach(element => {
@@ -1740,7 +1739,6 @@ function get_operations_roles(page) {
 	let { employee_id, shift } = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_operations_roles', { employee_id, shift })
 		.then(res => {
-			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringpostselect');
 			let operations_role_data = [];
 			res.forEach(element => {
@@ -1762,7 +1760,6 @@ function get_operations_roles(page) {
 function get_departments(page) {
 	frappe.xcall('one_fm.api.mobile.roster.get_departments')
 		.then(res => {
-			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringdepartmentselect');
 			let department_data = [];
 			res.forEach(element => {
@@ -1784,7 +1781,6 @@ function get_departments(page) {
 function get_designations(page){
 	frappe.xcall('one_fm.api.mobile.roster.get_designations')
 		.then(res => {
-			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringdesignationselect');
 			let designation_data = [];
 			res.forEach(element => {
@@ -2454,9 +2450,7 @@ function ClearServiceBoard(e) {
 function staff_edit_dialog() {
 	let employees = [];
 	if ($(".layoutSidenav_content").attr("data-view") == "list") {
-		employees = $(".datatablecjeckbox:checked").map(function () {
-			return $(this).attr("data-employee-id");
-		}).get();
+		employees = window.employees_list;
 	} else if ($(".layoutSidenav_content").attr("data-view") == "card") {
 		employees = $(".cardviewcheckbox:checked").map(function () {
 			return $(this).attr("data-employee-id");
@@ -2863,16 +2857,16 @@ function change_post(page) {
 
 function schedule_change_post(page) {
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
-	let employees = [];
+	let employees = window.employees_list;
 	let selected = [... new Set(classgrt)];
 	let otRoster = false;
-	if (selected.length > 0) {
-		selected.forEach(function (i) {
-			let [employee, date] = i.split("|");
-			employees.push(employee);
-			employees = [... new Set(employees)];
-		});
-	}
+//	if (selected.length > 0) {
+//		selected.forEach(function (i) {
+//			let [employee, date] = i.split("|");
+//			employees.push(employee);
+//			employees = [... new Set(employees)];
+//		});
+//	}
 	let d = new frappe.ui.Dialog({
 		'title': 'Schedule/Change Post',
 		'fields': [
@@ -2948,7 +2942,6 @@ function schedule_change_post(page) {
 				)
 				frappe.throw()
 			}
-			let employees = window.employees_list;
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
 				{ employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date })
 				.then(res => {
@@ -2970,7 +2963,6 @@ function update_roster_view(element, page) {
 		// message = JSON.parse(output);
 		console.log(output);
 		page[element](page);
-		window.employees_list = [];
 	});
 }
 function paginateTable(page) {
