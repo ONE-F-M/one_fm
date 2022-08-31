@@ -983,6 +983,7 @@ function bind_events(page) {
 	bind_search_bar_event(page);
 
     // manage employee selection
+
 	$('.checkboxcontainer.simplecheckbox').click((e)=>{
 	    if(window.clickcount>0){
 	        window.clickcount = 0;
@@ -997,7 +998,6 @@ function bind_events(page) {
             }
             window.clickcount = window.clickcount + 1
 	    }
-        console.log(window.employees_list)
 
     })
 }
@@ -1661,6 +1661,7 @@ function get_projects(page) {
 	let { employee_id } = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_projects', { employee_id })
 		.then(res => {
+		    window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringprojectselect');
 			let project_data = [{ 'id': '', 'text': 'Select Project' }];
 			res.forEach(element => {
@@ -1686,6 +1687,7 @@ function get_sites(page) {
 	let { project } = page.filters;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_sites', { employee_id, project })
 		.then(res => {
+			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringsiteselect');
 			let site_data = [{ 'id': '', 'text': 'Select Site' }];
 			res.forEach(element => {
@@ -1711,6 +1713,7 @@ function get_shifts(page) {
 	let { project, site } = page.filters;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts', { employee_id, project, site })
 		.then(res => {
+			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringshiftselect');
 			let shift_data = [{ 'id': '', 'text': 'Select Shift' }];
 			res.forEach(element => {
@@ -1737,6 +1740,7 @@ function get_operations_roles(page) {
 	let { employee_id, shift } = page;
 	frappe.xcall('one_fm.api.mobile.roster.get_operations_roles', { employee_id, shift })
 		.then(res => {
+			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringpostselect');
 			let operations_role_data = [];
 			res.forEach(element => {
@@ -1758,6 +1762,7 @@ function get_operations_roles(page) {
 function get_departments(page) {
 	frappe.xcall('one_fm.api.mobile.roster.get_departments')
 		.then(res => {
+			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringdepartmentselect');
 			let department_data = [];
 			res.forEach(element => {
@@ -1779,6 +1784,7 @@ function get_departments(page) {
 function get_designations(page){
 	frappe.xcall('one_fm.api.mobile.roster.get_designations')
 		.then(res => {
+			window.employees_list = [];
 			let parent = $('[data-page-route="roster"] #rosteringdesignationselect');
 			let designation_data = [];
 			res.forEach(element => {
