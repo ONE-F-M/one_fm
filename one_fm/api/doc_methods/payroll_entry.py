@@ -2,7 +2,7 @@ import frappe, erpnext, json
 from dateutil.relativedelta import relativedelta
 from frappe.utils import (
 	cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff,
-	get_first_day
+	get_first_day, get_last_day
 )
 from frappe import _
 from frappe.utils.pdf import get_pdf
@@ -90,8 +90,6 @@ def get_emp_list(self, project_list=False):
 	filters = self.make_filters()
 	cond = get_filter_condition(filters)
 	cond += get_joining_relieving_condition(self.start_date, self.end_date)
-
-	payroll_date = getdate().day
 
 	condition = ""
 	if self.payroll_frequency:
@@ -234,7 +232,7 @@ def get_count_employee_attendance(self, employee):
 		marked_days = attendances[0][0]
 	return marked_days, scheduled_days
 
-def auto_create_payroll_entry():
+def auto_create_payroll_entry(payroll_date=None):
 	"""
 		Create Payroll Entry record with payroll cycle configured in HR and Payroll Additional Settings.
 	"""
@@ -249,9 +247,14 @@ def auto_create_payroll_entry():
 
 	payroll_configured_projects = []
 
+	if not payroll_date:
+		payroll_date_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
+		# Calculate payroll date
+		payroll_date = datetime.datetime(getdate().year, getdate().month, cint(payroll_date_day)).strftime("%Y-%m-%d")
+
 	for payroll_start_day in payroll_start_day_list:
 		# Find from date and end date for payroll
-		start_date, end_date = get_payroll_start_end_date_by_start_day(payroll_start_day.payroll_start_day)
+		start_date, end_date = get_payroll_start_end_date_by_start_day(payroll_date, payroll_start_day.payroll_start_day)
 
 		# Find projects comes under the same payroll cycle
 		query = '''
@@ -266,11 +269,11 @@ def auto_create_payroll_entry():
 		project_list = ', '.join(['"{}"'.format(project.project) for project in projects])
 		payroll_configured_projects += projects
 		# Create Payroll Entry
-		create_monthly_payroll_entry(start_date, end_date, project_list)
+		create_monthly_payroll_entry(payroll_date, start_date, end_date, project_list)
 
 	# Find default from date and end date for payroll
 	default_payroll_start_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')
-	default_start_date, default_end_date = get_payroll_start_end_date_by_start_day(default_payroll_start_day)
+	default_start_date, default_end_date = get_payroll_start_end_date_by_start_day(payroll_date, default_payroll_start_day)
 
 	# Fetch employee having project link but project not added in payroll configuration, then take default payroll cycle
 	payroll_configured_project_list = ', '.join(['"{}"'.format(project.project) for project in payroll_configured_projects])
@@ -278,16 +281,16 @@ def auto_create_payroll_entry():
 	if projects_not_configured_in_payroll_cycle:
 		project_list_not_configured_in_payroll_cycle = ', '.join(['"{}"'.format(project.project) for project in projects_not_configured_in_payroll_cycle])
 		# Create Payroll Entry
-		create_monthly_payroll_entry(default_start_date, default_end_date, project_list_not_configured_in_payroll_cycle)
+		create_monthly_payroll_entry(payroll_date, default_start_date, default_end_date, project_list_not_configured_in_payroll_cycle)
 
 	# TODO:
 	# Fetch employee not having project link and set the payroll cycle as default
 	# Create Payroll entry for the employees
 
-def create_monthly_payroll_entry(start_date, end_date, project_list):
+def create_monthly_payroll_entry(payroll_date, start_date, end_date, project_list):
 	try:
 		payroll_entry = frappe.new_doc("Payroll Entry")
-		payroll_entry.posting_date = getdate()
+		payroll_entry.posting_date = getdate(payroll_date)
 		payroll_entry.payroll_frequency = "Monthly"
 		payroll_entry.exchange_rate = 0
 		payroll_entry.payroll_payable_account = frappe.get_value("Company", erpnext.get_default_company(), "default_payroll_payable_account")
@@ -304,16 +307,20 @@ def create_monthly_payroll_entry(start_date, end_date, project_list):
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), cstr(start_date)+' | '+cstr(end_date))
 
-def get_payroll_start_end_date_by_start_day(start_day):
+def get_payroll_start_end_date_by_start_day(payroll_date, start_day):
 	if start_day == 'Month Start':
 		start_day = 1
 	if start_day == 'Month End':
-		start_day = getdate(get_first_day(getdate(today()))).day
-	year = getdate().year - 1 if getdate().day < cint(start_day) and  getdate().month == 1 else getdate().year
-	month = getdate().month if getdate().day >= cint(start_day) else getdate().month - 1
+		start_day = getdate(get_first_day(getdate(payroll_date))).day
+	year = getdate(payroll_date).year - 1 if getdate(payroll_date).day < cint(start_day) and  getdate(payroll_date).month == 1 else getdate(payroll_date).year
+	month = getdate(payroll_date).month if getdate(payroll_date).day >= cint(start_day) else getdate(payroll_date).month - 1
 	date = datetime(year, month, cint(start_day)).strftime("%Y-%m-%d")
-	start_date = add_to_date(date, months=-1)
-	end_date = add_to_date(date, days=-1)
+	if getdate(payroll_date) <= getdate(date):
+		start_date = add_to_date(date, months=-1)
+		end_date = add_to_date(date, days=-1)
+	else:
+		start_date = getdate(date)
+		end_date = add_to_date(date, days=-1, months=1)
 	return start_date, end_date
 
 def get_basic_salary(employee):

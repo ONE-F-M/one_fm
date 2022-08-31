@@ -2,7 +2,7 @@ import frappe
 from frappe import _
 from one_fm.api.doc_methods.payroll_entry import get_basic_salary
 from one_fm.api.notification import create_notification_log
-from frappe.utils import cint, flt, date_diff, cstr, today, getdate, get_last_day
+from frappe.utils import cint, flt, date_diff, cstr, today, getdate, get_last_day, add_days
 
 def get_scheduled_day_off(employee, start_date, end_date):
 	schedule_list = frappe.db.sql_list("""
@@ -44,10 +44,10 @@ def get_working_days_details(
 
 	day_off_dates = get_scheduled_day_off(self.employee, self.start_date, self.end_date)
 
-	if not cint(include_day_off_in_total_working_days):
-		working_days -= len(day_off_dates)
-		if working_days < 0:
-			frappe.throw(_("There are more day off/holidays than working days this month."))
+	# if not cint(include_day_off_in_total_working_days):
+	# 	working_days -= len(day_off_dates)
+	# 	if working_days < 0:
+	# 		frappe.throw(_("There are more day off/holidays than working days this month."))
 
 	if not payroll_based_on:
 		frappe.throw(_("Please set Payroll based on in Payroll settings"))
@@ -130,7 +130,6 @@ def get_unmarked_days(self, include_holidays_in_total_working_days):
 		},
 		fields=["COUNT(*) as marked_days"],
 	)[0].marked_days
-
 	return unmarked_days
 
 def get_unmarked_days_based_on_doj_or_relieving(
@@ -144,15 +143,16 @@ def get_unmarked_days_based_on_doj_or_relieving(
 	include_day_off_in_total_working_days = frappe.db.get_single_value(
 		"HR and Payroll Additional Settings", "include_day_off_in_total_working_days"
 	)
-	if include_holidays_in_total_working_days and include_day_off_in_total_working_days:
-		unmarked_days = date_diff(end_date, start_date) + 1
-	elif include_holidays_in_total_working_days:
-		unmarked_days = date_diff(end_date, start_date) + 1
-		for days in range(date_diff(end_date, start_date) + 1):
-			date = add_days(end_date, -days)
-			# include if not day off
-			if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
-				unmarked_days -= 1
+	# if include_holidays_in_total_working_days and include_day_off_in_total_working_days:
+	# 	unmarked_days = date_diff(end_date, start_date) + 1
+	# el
+	if include_holidays_in_total_working_days:
+		unmarked_days -= date_diff(end_date, start_date) + 1
+		# for days in range(date_diff(end_date, start_date) + 1):
+		# 	date = add_days(end_date, -days)
+		# 	# include if not day off
+		# 	if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
+		# 		unmarked_days -= 1
 	else:
 		for days in range(date_diff(end_date, start_date) + 1):
 			date = add_days(end_date, -days)
@@ -160,8 +160,8 @@ def get_unmarked_days_based_on_doj_or_relieving(
 			if not is_holiday(self.employee, date):
 				unmarked_days -= 1
 			# exclude if not day off
-			if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
-				unmarked_days -= 1
+			# if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
+			# 	unmarked_days -= 1
 	return unmarked_days
 
 def is_day_off(employee, date=None):
@@ -268,42 +268,45 @@ def notify_payroll(doc):
 	create_notification_log(subject,message,[email], doc)
 
 def set_earnings_and_deduction_with_respect_to_payroll_cycle(doc, method):
-	last_salary_slip = get_last_salary_slip(employee)
-	if last_salary_slip:
-		if getdate(today) < self.end_date:
+	last_salary_slip = get_last_salary_slip(doc.employee)
+	if last_salary_slip and len(last_salary_slip) > 0:
+		payroll_based_on = frappe.db.get_value("Payroll Settings", None, "payroll_based_on")
+		last_salary_slip = last_salary_slip[0]
+		if getdate(doc.posting_date) < getdate(doc.end_date):
 			# if paid for last payroll end date to yesterday
-			if last_salary_slip.start_date <= last_salary_slip.payroll_date and \
-				last_salary_slip.payroll_date <= last_salary_slip.end_date:
+			if getdate(last_salary_slip.start_date) <= getdate(last_salary_slip.posting_date) and \
+				getdate(last_salary_slip.posting_date) <= getdate(last_salary_slip.end_date):
 				# deduct salary for last payroll absent/lwp days => find absents and actual_lwp in last payroll end date to yesterday
 				deduct_days = 0
-				holidays = self.get_holidays_for_employee(last_salary_slip.payroll_date, last_salary_slip.end_date)
-				actual_lwp, absent = calculate_lwp_ppl_and_absent_days(doc.employee, last_salary_slip.payroll_date, last_salary_slip.end_date, holidays)
+				holidays = doc.get_holidays_for_employee(last_salary_slip.posting_date, last_salary_slip.end_date)
+				actual_lwp, absent = calculate_lwp_ppl_and_absent_days(doc.employee, last_salary_slip.posting_date, last_salary_slip.end_date, holidays)
 				if payroll_based_on == "Attendance":
 					deduct_days += absent
 					deduct_days += actual_lwp
-				last_salary_slip_daily_wage = last_salary_slip.net_pay / last_salary_slip.working_days
-				deduction = doc.append("deduction")
-				deduction.salary_component = "Last Salary Deduct"
-				deduction.amount = last_salary_slip_daily_wage * deduct_days
+				deduct_from_salary(doc, last_salary_slip, deduct_days)
 			else:
 				# set earnings for last payroll payment days => find payment days in last payroll end date to yesterday
-				payment_days = get_payment_days(doc.employee, last_salary_slip.end_date, get_last_day(last_salary_slip.end_date))
-				last_salary_slip_daily_wage = last_salary_slip.net_pay / last_salary_slip.working_days
+				payment_days = get_payment_days(doc, last_salary_slip.end_date, get_last_day(last_salary_slip.end_date))
+				last_salary_slip_daily_wage = last_salary_slip.net_pay / last_salary_slip.total_working_days
 				deduction = doc.append("earnings")
 				deduction.salary_component = "Not Included in Last Salary"
 				deduction.amount = last_salary_slip_daily_wage * payment_days
 		# if paid for last payroll end date to yesterday
-		if getdate(today) > self.end_date and \
+		if getdate(doc.posting_date) > getdate(doc.end_date) and \
 			is_last_salary_slip_overlap_with_current_salary_slip(last_salary_slip, doc.start_date, doc.end_date):
+			deduct_from_salary(doc, last_salary_slip)
 			# find payment days in last payroll end date to yesterday
-			payment_days = get_payment_days(doc.employee, last_salary_slip.end_date, get_last_day(last_salary_slip.end_date))
+			payment_days = get_payment_days(doc, last_salary_slip.end_date, get_last_day(last_salary_slip.end_date))
 			# deduct salary for paid payment_days
-			last_salary_slip_daily_wage = last_salary_slip.net_pay / last_salary_slip.working_days
-			deduction = doc.append("deductions")
-			deduction.salary_component = "Last Salary Deduct"
-			deduction.amount = last_salary_slip_daily_wage * payment_days
+			deduct_from_salary(doc, last_salary_slip, payment_days)
 
-def get_payment_days(employee, start_date, end_date):
+def deduct_from_salary(doc, last_salary_slip, deduct_days):
+	last_salary_slip_daily_wage = last_salary_slip.net_pay / last_salary_slip.total_working_days
+	deduction = doc.append("deductions")
+	deduction.salary_component = "Last Salary Deduct"
+	deduction.amount = last_salary_slip_daily_wage * deduct_days
+
+def get_payment_days(doc, start_date, end_date):
 	payment_days = date_diff(end_date, start_date) + 1
 
 	include_holidays_in_total_working_days = frappe.db.get_single_value(
@@ -314,12 +317,12 @@ def get_payment_days(employee, start_date, end_date):
 		"HR and Payroll Additional Settings", "include_day_off_in_total_working_days"
 	)
 
-	holidays = self.get_holidays_for_employee(start_date, end_date)
+	holidays = doc.get_holidays_for_employee(start_date, end_date)
 	if not cint(include_holidays_in_total_working_days):
 		payment_days -= len(holidays)
 
 	if not cint(include_day_off_in_total_working_days):
-		day_off_dates = get_scheduled_day_off(employee, start_date, end_date)
+		day_off_dates = get_scheduled_day_off(doc.employee, start_date, end_date)
 		for holiday in holidays:
 			if holiday in day_off_dates:
 				day_off_dates.removes(holiday)
@@ -328,7 +331,7 @@ def get_payment_days(employee, start_date, end_date):
 	return payment_days
 
 def is_last_salary_slip_overlap_with_current_salary_slip(last_salary_slip, start_date, end_date):
-	if start_date <= last_salary_slip.end_date and last_salary_slip.end_date <= end_date:
+	if getdate(start_date) <= getdate(last_salary_slip.end_date) and getdate(last_salary_slip.end_date) <= getdate(end_date):
 		return True # Last salary overlap current salary
 	return False # Last salary not overlap current salary
 
@@ -336,7 +339,7 @@ def get_last_salary_slip(employee):
 	last_salary_slip = frappe.get_list(
 		"Salary Slip",
 		fields=["*"],
-		filters={"employee":doc.employee, "docstatus": 1},
+		filters={"employee":employee, "docstatus": 1},
 		order_by='start_date',
 		limit_page_length=1
 	)
