@@ -374,6 +374,7 @@ def background_schedule_staff(employees, start_date, end_date, shift, operations
 	if cannot_schedule:
 		# send email to session user
 		msglist = ""
+		
 		for i, j in enumerate(cannot_schedule):
 			msglist += f"<i>{i+1}: {j}</i><hr>"
 
