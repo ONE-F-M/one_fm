@@ -288,7 +288,7 @@ def get_current_user_details():
 	
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot=None, end_date=None):
-
+	print(employees, shift, operations_role, otRoster, start_date)
 	validation_logs = []
 	
 	user, user_roles, user_employee = get_current_user_details()
