@@ -483,7 +483,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 	amount = 0
 
 	# Get post types with sale item as item code
-	post_type_list = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
+	operations_role_list = frappe.db.get_list("Operations Role", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
 
 	attendance_filters = {}
 	if current_month:
@@ -491,7 +491,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 	else:
 		attendance_filters.update({'attendance_date': ['between', (first_day_of_month, last_day_of_month)]})
 
-	attendance_filters.update({'post_type': ['in', post_type_list]})
+	attendance_filters.update({'operations_role': ['in', operations_role_list]})
 	attendance_filters.update({'project': project})
 	attendance_filters.update({'status': "Present"})
 
@@ -520,7 +520,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 	if current_month and invoice_date < last_day_of_month:
 		es_filters = {
 			'project': project,
-			'post_type': ['in', post_type_list],
+			'operations_role': ['in', operations_role_list],
 			'employee_availability': 'Working',
 			'date': ['between', (invoice_date, last_day_of_month)]
 		}
@@ -541,7 +541,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 		
 		att_filters = {
 			'project': project,
-			'post_type': ['in', post_type_list],
+			'operations_role': ['in', operations_role_list],
 			'status': 'Absent',
 			'attendance_date': ['between', (previous_invoice_date, previous_month_last_day)]
 		}
@@ -603,7 +603,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 	amount = 0
 
 	# Get post types with sale item as item code
-	post_type_list = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
+	operations_role_list = frappe.db.get_list("Operations Role", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
 
 	attendance_filters = {}
 	if current_month:
@@ -611,7 +611,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 	else:
 		attendance_filters.update({'attendance_date': ['between', (first_day_of_month, last_day_of_month)]})
 
-	attendance_filters.update({'post_type': ['in', post_type_list]})
+	attendance_filters.update({'operations_role': ['in', operations_role_list]})
 	attendance_filters.update({'project': project})
 	attendance_filters.update({'status': "Present"})
 
@@ -627,7 +627,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 	if current_month and invoice_date < last_day_of_month:
 		es_filters = {
 			'project': project,
-			'post_type': ['in', post_type_list],
+			'operations_role': ['in', operations_role_list],
 			'employee_availability': 'Working',
 			'date': ['between', (invoice_date, last_day_of_month)]
 		}
@@ -644,7 +644,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 		
 		att_filters = {
 			'project': project,
-			'post_type': ['in', post_type_list],
+			'operations_role': ['in', operations_role_list],
 			'status': 'Absent',
 			'attendance_date': ['between', (previous_invoice_date, previous_month_last_day)]
 		}
@@ -705,7 +705,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 	amount = 0
 
 	# Get post types with sale item as item code
-	post_type_list = frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
+	operations_role_list = frappe.db.get_list("Operations Role", pluck='name', filters={'sale_item': item_code}) # ==> list of post type names : ['post type A', 'post type B', ...]
 
 	attendance_filters = {}
 	if current_month:
@@ -713,7 +713,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 	else:
 		attendance_filters.update({'attendance_date': ['between', (first_day_of_month, last_day_of_month)]})
 
-	attendance_filters.update({'post_type': ['in', post_type_list]})
+	attendance_filters.update({'operations_role': ['in', operations_role_list]})
 	attendance_filters.update({'project': project})
 	attendance_filters.update({'status': "Present"})
 
@@ -729,7 +729,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 	if current_month and invoice_date < last_day_of_month:
 		es_filters = {
 			'project': project,
-			'post_type': ['in', post_type_list],
+			'operations_role': ['in', operations_role_list],
 			'employee_availability': 'Working',
 			'date': ['between', (invoice_date, last_day_of_month)],
 		}
@@ -745,7 +745,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 		
 		att_filters = {
 			'project': project,
-			'post_type': ['in', post_type_list],
+			'operations_role': ['in', operations_role_list],
 			'status': 'Absent',
 			'attendance_date': ['between', (previous_invoice_date, previous_month_last_day)]
 		}
@@ -804,10 +804,10 @@ def get_separate_invoice_for_sites(contract, date, current_month=False):
 	for item in contract.items:
 		items.append(item.item_code)
 
-	contract_post_types = list(set(frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': ['in', items]})))
+	contract_operations_roles = list(set(frappe.db.get_list("Operations Role", pluck='name', filters={'sale_item': ['in', items]})))
 
 	filters.update({'date': ['between', (first_day_of_month, last_day_of_month)]})
-	filters.update({'post_type': ['in', contract_post_types]})
+	filters.update({'operations_role': ['in', contract_operations_roles]})
 	filters.update({'employee_availability': 'Working'})
 	filters.update({'project': project})
 
@@ -857,13 +857,13 @@ def get_single_invoice_for_separate_sites(contract, date, current_month=False):
 	for item in contract.items:
 		items.append(item.item_code)
 
-	contract_post_types = list(set(frappe.db.get_list("Post Type", pluck='name', filters={'sale_item': ['in', items]})))
+	contract_operations_roles = list(set(frappe.db.get_list("Operations Role", pluck='name', filters={'sale_item': ['in', items]})))
 
 	site_items = {}
 
 	filters = {}
 	filters.update({'date': ['between', (first_day_of_month, last_day_of_month)]})
-	filters.update({'post_type': ['in', contract_post_types]})
+	filters.update({'operations_role': ['in', contract_operations_roles]})
 	filters.update({'employee_availability': 'Working'})
 	filters.update({'project': project})
 

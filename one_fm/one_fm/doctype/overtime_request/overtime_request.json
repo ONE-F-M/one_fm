@@ -19,7 +19,7 @@
   "shift_details_section",
   "shift",
   "column_break_12",
-  "post_type",
+  "operations_role",
   "amended_from"
  ],
  "fields": [
@@ -100,10 +100,10 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "post_type",
+   "fieldname": "operations_role",
    "fieldtype": "Link",
-   "label": "Post Type",
-   "options": "Post Type"
+   "label": "Operations Role",
+   "options": "Operations Role"
   },
   {
    "fieldname": "shift",
@@ -128,7 +128,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-01-04 11:01:44.694748",
+ "modified": "2022-08-25 08:51:24.640722",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Overtime Request",

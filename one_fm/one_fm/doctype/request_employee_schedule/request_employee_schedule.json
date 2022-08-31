@@ -12,14 +12,14 @@
   "from_shift",
   "from_site",
   "form_project",
-  "from_post_type",
+  "from_operations_role",
   "approver",
   "approver_name",
   "col_br_1",
   "to_shift",
   "to_site",
   "to_project",
-  "to_post_type",
+  "to_operations_role",
   "roster_type",
   "requestor",
   "requestor_name",
@@ -131,16 +131,16 @@
    "label": "End Date"
   },
   {
-   "fieldname": "from_post_type",
+   "fieldname": "from_operations_role",
    "fieldtype": "Link",
    "label": "From Post Type",
-   "options": "Post Type"
+   "options": "Operations Role"
   },
   {
-   "fieldname": "to_post_type",
+   "fieldname": "to_operations_role",
    "fieldtype": "Link",
    "label": "To Post Type",
-   "options": "Post Type"
+   "options": "Operations Role"
   },
   {
    "fieldname": "col_br_3",
@@ -170,7 +170,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-09-23 14:25:50.686138",
+ "modified": "2022-08-25 08:51:23.983877",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Request Employee Schedule",

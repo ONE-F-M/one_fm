@@ -6,22 +6,22 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "post_type"
+  "operations_role"
  ],
  "fields": [
   {
-   "fieldname": "post_type",
+   "fieldname": "operations_role",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Post Type",
-   "options": "Post Type",
+   "label": "Operations Role",
+   "options": "Operations Role",
    "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-11-07 10:47:12.278579",
+ "modified": "2022-08-25 08:51:24.371094",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Post Types Not Filled",

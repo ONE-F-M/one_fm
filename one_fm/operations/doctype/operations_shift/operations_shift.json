@@ -129,8 +129,14 @@
    "reqd": 1
   }
  ],
- "links": [],
- "modified": "2022-08-13 19:59:28.622519",
+ "links": [
+  {
+   "group": "Operations",
+   "link_doctype": "Operations Role",
+   "link_fieldname": "shift"
+  }
+ ],
+ "modified": "2022-08-25 09:12:59.805731",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",
