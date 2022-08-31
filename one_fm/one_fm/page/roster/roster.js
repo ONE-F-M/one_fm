@@ -2942,6 +2942,9 @@ function schedule_change_post(page) {
 				)
 				frappe.throw()
 			}
+			if (!employees){
+			    frappe.throw(__('Please select employees to roster.'))
+			}
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
 				{ employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date })
 				.then(res => {

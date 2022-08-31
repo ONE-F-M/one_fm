@@ -341,11 +341,9 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 		return True
 
 def background_schedule_staff(employees, start_date, end_date, shift, operations_role, otRoster, keep_days_off, day_off_ot, request_employee_schedule):
-	import time
 	cannot_schedule = []
-	try:
-		start = time.time()
-		for employee in employees:
+	for employee in employees:
+		try:
 			if not cint(request_employee_schedule):
 				schedule(employee=employee, start_date=start_date, end_date=end_date, shift=shift, operations_role=operations_role,
 						 otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot)
@@ -368,16 +366,29 @@ def background_schedule_staff(employees, start_date, end_date, shift, operations
 					# frappe.throw("This employee is not scheduled. Please uncheck Request Employee Schedule option.")
 					# frappe.log_error("This employee is not scheduled. Please uncheck Request Employee Schedule option.", 'Roster Schedule')
 
-		end = time.time()
-		print("[TOTAL]", end-start)
-		update_roster(key="roster_view")
-		if cannot_schedule:
-			# send email to session user
-			pass
-	except Exception as e:
-		frappe.log_error(e, 'Roster Schedule')
-		# frappe.throw(_(e))
+		except Exception as e:
+			frappe.log_error(e, 'Roster Schedule')
+			# frappe.throw(_(e))
 
+	update_roster(key="roster_view")
+	if cannot_schedule:
+		# send email to session user
+		msglist = ""
+		for i, j in enumerate(cannot_schedule):
+			msglist += f"<i>{i+1}: {j}</i><hr>"
+
+		notification = frappe.new_doc("Notification Log")
+		notification.title = "Roster: Employees not Scheduled"
+		notification.subject = "Roster: Employees not Scheduled"
+		notification.email_content = "This employee is not scheduled. Please uncheck Request Employee Schedule option.<br>"+msglist
+		notification.document_type = "Notification Log"
+		notification.for_user = frappe.session.user
+		notification.document_name = " "
+		notification.category = 'Roster'
+		notification.one_fm_mobile_app = 1
+		notification.save(ignore_permissions=True)
+		notification.document_name = notification.name
+		notification.save(ignore_permissions=True)
 
 def create_request_employee_schedule(employee, from_shift, from_operations_role, to_shift, to_operations_role, otRoster, start_date, end_date):
 	if otRoster == 'false':
