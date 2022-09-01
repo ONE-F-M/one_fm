@@ -121,7 +121,6 @@ frappe.ui.form.on('Item', {
 		}
 	},
 	subitem_group: function(frm) {
-		frm.set_df_property('is_fixed_asset', 'read_only', true);
 		if(cur_frm.doc.parent_item_group){
 			frm.set_value('item_group', '');
 			get_item_code(frm);

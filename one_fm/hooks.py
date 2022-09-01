@@ -413,6 +413,7 @@ override_doctype_class = {
 	"Attendance Request": "one_fm.overrides.attendance_request.AttendanceRequestOverride",
 	"Shift Type": "one_fm.overrides.shift_type.ShiftTypeOverride",
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
+	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
 }
 
 
