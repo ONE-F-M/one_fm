@@ -511,6 +511,7 @@
    "label": "Shift Working Html"
   },
   {
+   "depends_on": "eval:doc.shift_working==1",
    "description": "Will The Employee Work In Night Shifts?",
    "fieldname": "night_shift_html",
    "fieldtype": "HTML",
@@ -852,7 +853,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-16 14:47:40.696719",
+ "modified": "2022-09-01 15:53:13.452352",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
