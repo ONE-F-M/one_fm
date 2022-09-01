@@ -178,9 +178,27 @@ def fetch_leave_approver(employee):
     Return: User ID of Leave Approver
 
     """
-    employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-    approver, Role = get_action_user(employee,employee_shift[0].shift)
-    
+    approver = frappe.db.get_value('Employee', employee, 'leave_approver')
+    if not approver:
+        department = frappe.db.get_value('Employee', employee, 'department')
+        leave_approver = frappe.db.sql("""
+            SELECT approver from `tabDepartment Approver` 
+            WHERE parent='{parent}' AND parentfield='leave_approvers' AND parenttype='Department'
+        """.format(parent=department), as_dict=1)
+        if leave_approver:
+            approver = leave_approver[0].approver
+    elif not approver:
+        frappe.db.get_value('Employee', employee, 'reports_to')
+    elif not approver:
+        project = frappe.db.get_value('Employee', employee, 'project')
+        if project:
+            project_manager = frappe.db.get_value('Project', project, 'account_manager')
+            if project_manager:
+                approver = frappe.db.get_value('Employee', project_manager, 'leave_approver')
+
+    elif not approver:
+        frappe.throw(_('{employee} has not approver, please set an approver.'.format(employee=employee)))
+
     return approver
 
 @frappe.whitelist()
