@@ -288,7 +288,6 @@ def get_current_user_details():
 	
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot=None, end_date=None):
-
 	validation_logs = []
 	
 	user, user_roles, user_employee = get_current_user_details()
@@ -328,37 +327,69 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 	if len(validation_logs) > 0:
 		frappe.throw(validation_logs)
 		frappe.log_error(validation_logs)
-	else:	
-		import time
+	else:
+		employees = json.loads(employees)
+		print(employees)
+		msgprint = "<span style='color:red'>The following employees has been scheduled, if any errors, an email will be sent to {frappe.session.user} </span><br><br>".format(frappe=frappe)
+		for i, j in enumerate(employees):
+			msgprint += f"<i>{i+1}: {j}</i><hr>"
+		frappe.enqueue(background_schedule_staff, employees=employees, start_date=start_date, end_date=end_date, shift=shift,
+			operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot, request_employee_schedule=request_employee_schedule,
+			)
+		update_roster(key="roster_view")
+		frappe.msgprint(msgprint)
+		return True
+
+def background_schedule_staff(employees, start_date, end_date, shift, operations_role, otRoster, keep_days_off, day_off_ot, request_employee_schedule):
+	cannot_schedule = []
+	for employee in employees:
 		try:
-			start = time.time()
-			for employee in json.loads(employees):
-				if not cint(request_employee_schedule):
-					frappe.enqueue(schedule, employee=employee, start_date=start_date, end_date=end_date, shift=shift, operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot, is_async=True, queue='long')
-					frappe.msgprint(f"Successfully started scheduling {employee}", alert=True)
+			if not cint(request_employee_schedule):
+				schedule(employee=employee, start_date=start_date, end_date=end_date, shift=shift, operations_role=operations_role,
+						 otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot)
+				frappe.msgprint(f"Successfully started scheduling {employee}", alert=True)
+			else:
+				from_schedule = frappe.db.sql("""select shift, operations_role from `tabEmployee Schedule` where shift!= %(shift)s and date >= %(start_date)s and date <= %(end_date)s and employee = %(employee)s""",{
+					'shift' : shift,
+					'start_date': start_date,
+					'end_date': end_date,
+					'employee': employee
+				}, as_dict=1)
+				if len(from_schedule) > 0:
+					from_shift = from_schedule[0].shift
+					from_operations_role = from_schedule[0].operations_role
+					create_request_employee_schedule(employee=employee, from_shift=from_shift, from_operations_role=from_operations_role,
+						to_shift=shift, to_operations_role=operations_role, otRoster=otRoster, start_date=start_date, end_date=end_date)
+					# frappe.msgprint(f"Successfully created request for employee schedule for {employee}", alert=True)
 				else:
-					from_schedule = frappe.db.sql("""select shift, operations_role from `tabEmployee Schedule` where shift!= %(shift)s and date >= %(start_date)s and date <= %(end_date)s and employee = %(employee)s""",{
-						'shift' : shift,
-						'start_date': start_date,
-						'end_date': end_date,
-						'employee': employee
-					}, as_dict=1)
-					if len(from_schedule) > 0:
-						from_shift = from_schedule[0].shift
-						from_operations_role = from_schedule[0].operations_role
-						frappe.enqueue(create_request_employee_schedule, employee=employee, from_shift=from_shift, from_operations_role=from_operations_role, to_shift=shift, to_operations_role=operations_role, otRoster=otRoster, start_date=start_date, end_date=end_date, is_async=True, queue='long')
-						frappe.msgprint(f"Successfully created request for employee schedule for {employee}", alert=True)
-					else:
-						frappe.throw("This employee is not scheduled. Please uncheck Request Employee Schedule option.")
-						frappe.log_error("This employee is not scheduled. Please uncheck Request Employee Schedule option.")	
-				frappe.enqueue(update_roster, key="roster_view", is_async=True, queue='long')
-			
-			end = time.time()
-			print("[TOTAL]", end-start)
-			return True
+					cannot_schedule.append(employee)
+					# frappe.throw("This employee is not scheduled. Please uncheck Request Employee Schedule option.")
+					# frappe.log_error("This employee is not scheduled. Please uncheck Request Employee Schedule option.", 'Roster Schedule')
+
 		except Exception as e:
-			frappe.log_error(e)
-			frappe.throw(_(e))
+			frappe.log_error(e, 'Roster Schedule')
+			# frappe.throw(_(e))
+
+	update_roster(key="roster_view")
+	if cannot_schedule:
+		# send email to session user
+		msglist = ""
+		
+		for i, j in enumerate(cannot_schedule):
+			msglist += f"<i>{i+1}: {j}</i><hr>"
+
+		notification = frappe.new_doc("Notification Log")
+		notification.title = "Roster: Employees not Scheduled"
+		notification.subject = "Roster: Employees not Scheduled"
+		notification.email_content = "This employee is not scheduled. Please uncheck Request Employee Schedule option.<br>"+msglist
+		notification.document_type = "Notification Log"
+		notification.for_user = frappe.session.user
+		notification.document_name = " "
+		notification.category = 'Roster'
+		notification.one_fm_mobile_app = 1
+		notification.save(ignore_permissions=True)
+		notification.document_name = notification.name
+		notification.save(ignore_permissions=True)
 
 def create_request_employee_schedule(employee, from_shift, from_operations_role, to_shift, to_operations_role, otRoster, start_date, end_date):
 	if otRoster == 'false':

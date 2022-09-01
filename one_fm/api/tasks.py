@@ -500,6 +500,7 @@ def get_action_user(employee, shift):
 			Shift > Site > Project > Reports to
 	"""
 	action_user = None
+	Role = None
 	operations_shift = frappe.get_doc("Operations Shift", shift)
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
 	project = frappe.get_doc("Project", operations_site.project)
@@ -619,9 +620,9 @@ def checkin_deadline():
 
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
-	
+
 	frappe.enqueue(mark_deadline_attendance, shift_list=shift_list, now_time = now_time, is_async=True, queue='long')
-	
+
 def mark_deadline_attendance(shifts_list, now_time):
 	for shift in shifts_list:
 		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
@@ -704,7 +705,7 @@ def mark_deadline_attendance(shifts_list, now_time):
 					WHERE
 						h.parent = emp.holiday_list
 					AND h.holiday_date = '{date}')
-				""".format(date=cstr(date), shift_type=shift.name), as_list=1)	
+				""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 
 			if len(recipients) > 0:
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
@@ -820,7 +821,7 @@ def end_previous_shifts(time):
 
 	shift_assignments = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'],
 					["shift_type", "IN", shift_type], ["docstatus", "=", 1],["roster_type", "IN", "Basic"]], fields=['name','start_date'])
-	
+
 	overtime_shift = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'],
 					["roster_type", "IN", "Over-Time"], ["docstatus", "=", 1]], fields=['name','start_date'])
 	shift_assignments = shift_assignments + overtime_shift
