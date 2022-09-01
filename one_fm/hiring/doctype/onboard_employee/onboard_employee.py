@@ -139,6 +139,8 @@ class OnboardEmployee(Document):
 						employee.one_fm_nationality = self.nationality
 					employee.leave_policy = self.leave_policy
 					employee.salary_mode = self.salary_mode
+					employee.job_offer = self.job_offer
+					employee.job_applicant = self.job_applicant
 					if self.job_applicant:
 						employee.one_fm_first_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_first_name_in_arabic")
 						employee.one_fm_last_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_last_name_in_arabic")
