@@ -920,14 +920,16 @@ def mark_auto_attendance(shift_type):
 	doc.process_auto_attendance()
 
 def update_shift_details_in_attendance(doc, method):
-	condition = ""
+	condition = ''
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
 		site, project, shift, operations_role, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "operations_role", "start_datetime","end_datetime", "roster_type"])
-		condition += "project = '"+project+"', site = '"+site+"', operations_shift = '"+shift+"', operations_role = '"+operations_role+"', roster_type = '"+roster_type+"'"
+		condition += ' project="{project}", site="{site}", operations_shift="{shift}", operations_role="{operations_role}", roster_type="{roster_type}"'.format(
+			project=project, site=site, shift=shift, operations_role=operations_role, roster_type=roster_type)
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
-			condition += ", in_time = '"+cstr(start_datetime)+"', out_time= '"+cstr(end_datetime)+"'"
-
-	return frappe.db.sql("""UPDATE `tabAttendance` set {condition} where name = '{name}'""".format(condition=condition, name = doc.name))
+			condition += ', in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}"'
+	if condition:
+		return frappe.db.sql("""UPDATE `tabAttendance` SET {condition} WHERE name= '{name}' """.format(condition=condition, name = doc.name))
+	return
 
 def generate_payroll():
 	# start_date = add_to_date(getdate(), months=-1)
