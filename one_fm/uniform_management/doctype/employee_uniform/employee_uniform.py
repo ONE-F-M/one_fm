@@ -255,6 +255,7 @@ def get_issued_items_not_returned(employee_id, item=False):
 		query += " and %(item)s"
 	return frappe.db.sql(query,{'employee': employee_id, 'item': item}, as_dict=True)
 
+@frappe.whitelist()
 def issued_items_not_returned(doctype, txt, searchfield, start, page_len, filters):
 	query = """
 		select
