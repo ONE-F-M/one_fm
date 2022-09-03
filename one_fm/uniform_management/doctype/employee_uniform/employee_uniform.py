@@ -93,7 +93,7 @@ class EmployeeUniform(Document):
 
 	def validate_issued_no_of_items(self):
 		if self.designation:
-			uniforms = get_project_uniform_details(self.designation, self.project)
+			uniforms = get_project_uniform_details(self.designation)
 			if uniforms:
 				for item in self.uniforms:
 					uniform = sorted(uniforms, key=lambda k: k.item == item.item)
@@ -129,7 +129,7 @@ class EmployeeUniform(Document):
 		uniforms = False
 		if self.employee:
 			if self.type == "Issue" and self.designation:
-				uniforms = get_project_uniform_details(self.designation, self.project)
+				uniforms = get_project_uniform_details(self.designation)
 				if not uniforms:
 					frappe.msgprint(msg = 'No Designation Profile - Uniforms Found',
 				       title = 'Warning',
