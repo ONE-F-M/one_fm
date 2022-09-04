@@ -10,6 +10,11 @@ def sendemail(recipients, subject, header=None, message=None,
         content=None, reference_name=None, reference_doctype=None,
         sender=None, cc=None , attachments=None, delay=None):
     logo = "https://one-fm.com/files/ONEFM_Identity.png"
+    
+    if attachments:
+            message += """
+            <p>Please find the attached Proof Document in the mail below.</p>
+            """
 
     frappe.sendmail(template = "default_email",
                     recipients=recipients,

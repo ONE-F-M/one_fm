@@ -209,11 +209,6 @@ def notify_leave_approver(doc):
         
         attachments = get_attachment(doc)
 
-        if attachments:
-            message += """
-            <p>Please find the attached Proof Document in the mail below.</p>
-            """
-
         #send notification
         sendemail(recipients= [doc.leave_approver], subject="Leave Application", message=message,
 					reference_doctype=doc.doctype, reference_name=doc.name, attachments = attachments)        
