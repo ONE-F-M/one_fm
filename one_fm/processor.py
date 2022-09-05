@@ -13,7 +13,7 @@ def sendemail(recipients, subject, header=None, message=None,
     
     if attachments:
             message += """
-            <p>Please find the attached Proof Document in the mail below.</p>
+            <p>Please find the attached Document in the mail below.</p>
             """
 
     frappe.sendmail(template = "default_email",
