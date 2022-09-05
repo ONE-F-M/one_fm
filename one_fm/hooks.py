@@ -672,3 +672,6 @@ jenv = {
 }
 
 # after_migrate = "one_fm.patches.v1_0.rename_posttype_to_operationsrole.execute"
+after_migrate = [
+	"one_fm.after_migrate.copy_linkjs.execute"
+]
