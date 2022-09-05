@@ -9,6 +9,7 @@ from frappe.utils import getdate, cstr
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import get_action_user
 from one_fm.api.api import push_notification_rest_api_for_leave_application
+from one_fm.processor import sendemail
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -223,15 +224,13 @@ def notify_leave_approver(doc):
             return
         email_template = frappe.get_doc("Email Template", template)
         message = frappe.render_template(email_template.response_html, args)
+        
+        attachments = get_attachment(doc)
 
         #send notification
-        doc.notify({
-            # for post in messages
-            "message": message,
-            "message_to": doc.leave_approver,
-            # for email
-            "subject": email_template.subject
-        })
+        sendemail(recipients= [doc.leave_approver], subject="Leave Application", message=message,
+					reference_doctype=doc.doctype, reference_name=doc.name, attachments = attachments)        
+        
         employee_id = frappe.get_value("Employee", {"user_id":doc.leave_approver}, ["name"])
         
         if doc.total_leave_days == 1:
@@ -248,3 +247,15 @@ def proof_document_required_for_leave_type(leave_type):
         return True
 
     return False
+
+def get_attachment(doc):
+    attachments = []
+    if doc.proof_document:
+        name, file_name = frappe.db.get_value("File", {"file_url":doc.proof_document, "attached_to_doctype":"Leave Application", "attached_to_field":"proof_document"}, ["name", "file_name"])
+        content = frappe.get_doc("File", name).get_content()
+        attachments = [{
+			'fname': file_name,
+			'fcontent': content
+		    }]
+    if attachments:
+        return attachments
