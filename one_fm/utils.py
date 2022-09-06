@@ -557,7 +557,7 @@ def notify_employee(doc, method):
             date = cstr(doc.from_date)
         else:
             date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
-        
+
         message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
         push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, doc.name)
 
@@ -1405,11 +1405,11 @@ def validate_get_item_group_parent(doc, method):
     #
     # if first_parent == 'All Item Groups' or second_parent == 'All Item Groups':
     #     doc.is_group = 1
-
+    new_item_group_code_final = '1'
     new_item_group_code = frappe.db.sql("select item_group_code+1 from `tabItem Group` where parent_item_group ='{0}' order by item_group_code desc limit 1".format(doc.parent_item_group))
     if new_item_group_code:
         new_item_group_code_final = new_item_group_code[0][0]
-    else:
+    if not new_item_group_code_final:
         new_item_group_code_final = '1'
 
     doc.item_group_code = str(int(new_item_group_code_final)).zfill(3)
