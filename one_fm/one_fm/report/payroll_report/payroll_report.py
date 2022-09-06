@@ -80,8 +80,7 @@ def get_data(filters):
 						INNER JOIN `tabAttendance` AS att ON att.employee = e.employee
 						WHERE MONTH(p.end_date) = {month}
 							AND YEAR(p.end_date) = {year}
-							AND MONTH(att.attendance_date)={month}
-							AND YEAR(att.attendance_date) = {year}
+							AND att.attendance_date between p.start_date and p.end_date
 							AND att.status IN ('Present','On Leave', 'Work From Home')
 							GROUP BY att.employee 
 						""".format(month=filters.get("month"), year =filters.get("year") ), as_dict=1)
