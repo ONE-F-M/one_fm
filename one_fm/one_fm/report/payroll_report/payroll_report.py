@@ -75,10 +75,16 @@ def get_columns(filters):
 	]
 def get_data(filters):
 	data = []
-	employee_details = frappe.db.sql(""" SELECT e.* from `tabPayroll Entry` AS p 
-						JOIN `tabPayroll Employee Detail` AS e ON e.parent = p.name 
-						WHERE MONTH(p.end_date) = %s"""%
-						filters.get("month"),as_dict=1)
+	employee_details = frappe.db.sql(""" SELECT e.*, COUNT(att.name) as working_days from `tabPayroll Entry` AS p
+						INNER JOIN `tabPayroll Employee Detail` AS e ON e.parent = p.name
+						INNER JOIN `tabAttendance` AS att ON att.employee = e.employee
+						WHERE MONTH(p.end_date) = {month}
+							AND YEAR(p.end_date) = {year}
+							AND MONTH(att.attendance_date)={month}
+							AND YEAR(att.attendance_date) = {year}
+							AND att.status IN ('Present','On Leave', 'Work From Home')
+							GROUP BY att.employee 
+						""".format(month=filters.get("month"), year =filters.get("year") ), as_dict=1)
 	
 	if not employee_details:
 		frappe.msgprint(("No Payroll Submitted this month!"), alert=True, indicator="Blue")
