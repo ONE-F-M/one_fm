@@ -10,7 +10,6 @@ def generate_contracts_invoice():
     """
     try:
         contracts = frappe.get_list('Contracts', filters={
-            'docstatus':0, 
             'workflow_state':'Active',
             # 'due_date':str(datetime.today().date().day)
         })
