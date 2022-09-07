@@ -12,12 +12,16 @@ frappe.pages['roster'].on_page_load = function (wrapper) {
 	$(".mobile-edit").on("click", function () {
         console.log("update mobile number");
     })
+
+
 };
 
-// Initializes the page with default values 
+// Initializes the page with default values
 function load_js(page) {
 	$(this).scrollTop(0);
 
+    window.clickcount = 0;
+    window.employees_list = [];
 	window.isMonth = 1;
 	window.classgrtw = [];
 	window.classgrt = [];
@@ -29,10 +33,12 @@ function load_js(page) {
 			e.preventDefault();
 		}
 	});
+
 	$(".customredropdown .customdropdownheight .dropdown-item").click(function () {
 		var text = $(this).html();
 		$(this).parent().parent().parent().find(".dropdown-toggle .dropdowncustomres").html(text);
 	});
+
 	window.today = new Date();
 	today.setHours(0, 0, 0, 0);
 	if ($('.layoutSidenav_content').attr('data-view') == 'roster') {
@@ -458,7 +464,7 @@ function load_js(page) {
 
 		if ($(this).is(":checked")) {
 			$("#txtpostenddate").addClass("pointerClass");
-			//add values to [] list 
+			//add values to [] list
 
 			$(".selectclass").map(function () {
 				if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
@@ -704,7 +710,7 @@ function bind_events(page) {
 		let $postWeek = $('.postWeek');
 		$postMonth.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
-			// If the id is not already in the array, add it. If it is, remove it  
+			// If the id is not already in the array, add it. If it is, remove it
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 			if (classgrt.join(",") === "") {
@@ -717,7 +723,7 @@ function bind_events(page) {
 
 		$postWeek.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
-			// If the id is not already in the array, add it. If it is, remove it  
+			// If the id is not already in the array, add it. If it is, remove it
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 			if (classgrt.join(",") === "") {
@@ -740,7 +746,7 @@ function bind_events(page) {
 				$(".scheduleleave").show();
 			}
 
-			// If the id is not already in the array, add it. If it is, remove it  
+			// If the id is not already in the array, add it. If it is, remove it
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 			if (classgrt.join(",") === "") {
@@ -758,7 +764,7 @@ function bind_events(page) {
 			$(".dayoff").hide();
 			$(".scheduleleave").hide();
 
-			// If the id is not already in the array, add it. If it is, remove it  
+			// If the id is not already in the array, add it. If it is, remove it
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 			if (classgrt.join(",") === "") {
@@ -772,7 +778,7 @@ function bind_events(page) {
 		//add array on each of data select from calender
 		// $rosterWeek.find(".hoverselectclass").on("click", function () {
 		// 	$(this).toggleClass("selectclass");
-		// 	// If the id is not already in the array, add it. If it is, remove it  
+		// 	// If the id is not already in the array, add it. If it is, remove it
 		// 	classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 		// 	if (classgrt.join(",") === "") {
@@ -831,7 +837,7 @@ function bind_events(page) {
 				$(".Postfilterhideshow").addClass("d-none");
 			}
 			$(".selectclass").map(function () {
-				classgrt.push($(this).attr("data-selectid"));
+			    classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
 
 			});
@@ -974,7 +980,27 @@ function bind_events(page) {
 	}
 	let d2 = performance.now();
 	console.log("EVENTS TIME", d2 - d1);
+	window.employees_list = [];
 	bind_search_bar_event(page);
+
+    // manage employee selection
+
+	$('.checkboxcontainer.simplecheckbox').click((e)=>{
+	    if(window.clickcount>0){
+	        window.clickcount = 0;
+	    } else {
+	        let employee = e.target.parentNode.parentNode.parentNode.getAttributeNode('data-name').value;
+            if(window.employees_list.includes(employee)){
+                window.employees_list = window.employees_list.filter(function(value, index, arr){
+                    return value != employee;
+                });
+            } else {
+                window.employees_list.push(employee);
+            }
+            window.clickcount = window.clickcount + 1
+	    }
+
+    })
 }
 
 function bind_search_bar_event(page) {
@@ -1186,74 +1212,74 @@ function render_roster(res, page, isOt) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Over-Time' && day_off_ot==1){
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if (employee_availability && !post_abbrv) {
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else {
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
 							data-selectid="${employee + "|" + date}"></div>
 					</td>`;
 				}
 				i++;
 				start_date.add(1, 'days');
 				$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
-			} 
+			}
 			//Basic schedule view
 			else {
 				if (post_abbrv && roster_type == 'Basic' && !asa && day_off_ot==0) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Basic' && day_off_ot==1){
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}
 				else if (employee_availability && !post_abbrv) {
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else if (attendance && !employee_availability) {
 					if (attendance == 'Present') { j++; }
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so"
 							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}</div>
 					</td>`;
 				} else {
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so" 
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
 							data-selectid="${employee + "|" + date}"></div>
 					</td>`;
 				}
@@ -1414,7 +1440,7 @@ function get_roster_week_data(page, isOt) {
 				// $('.rosterMonth').find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(`<td></td>`);
 				// let employee_modal = `
 				// <tr>
-				// 	<td> 
+				// 	<td>
 				// 		<a href="#" class="lightbluecolor cursorpointer addpostmodalclick">
 				// 			<span class="fa fa-plus" aria-hidden="true"></span>
 				// 			<span class="pl-2"> Add Employees</span>
@@ -1499,7 +1525,7 @@ function get_post_data(page) {
 							schedule = `
 						<td>
 							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center so"
-								data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"	
+								data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"
 								data-date="${start_date.format('YYYY-MM-DD')}"
 								data-post="${post_name}"
 							</div>
@@ -1516,7 +1542,7 @@ function get_post_data(page) {
 			}).catch(e =>{
 				console.log(e);
 			});
-	}	
+	}
 }
 
 // Get data for Post view weekly and render it
@@ -1587,7 +1613,7 @@ function get_post_week_data(page) {
 						schedule = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
-							data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"	
+							data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"
 							data-date="${start_date.format('YYYY-MM-DD')}"
 							data-post="${post_name}"
 						</div>
@@ -1682,6 +1708,7 @@ function get_sites(page) {
 }
 
 function get_shifts(page) {
+
 	let { employee_id } = page;
 	let { project, site } = page.filters;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts', { employee_id, project, site })
@@ -1701,7 +1728,10 @@ function get_shifts(page) {
 				console.log("3");
 
 				page[element](page);
-			});
+
+			})
+
+
 		});
 }
 
@@ -1867,7 +1897,7 @@ function get_wrapper_element(element) {
 	} else if (roster_element && post_element && !post_week_element) {
 		element = '.postWeek';
 		return element;
-	} 
+	}
 	// else if (roster_element && !roster_week_element && post_element && post_week_element) {
 	// 	element = '.rosterWeek';
 	// 	return element;
@@ -2182,7 +2212,7 @@ function render_staff_list_view(data) {
 				${mobile_no || 'N/A'}
 			</td>
 			<td>
-				${email || 'N/A'}					
+				${email || 'N/A'}
 			</td>
 			<td>
 				${designation || 'N/A'}
@@ -2420,9 +2450,7 @@ function ClearServiceBoard(e) {
 function staff_edit_dialog() {
 	let employees = [];
 	if ($(".layoutSidenav_content").attr("data-view") == "list") {
-		employees = $(".datatablecjeckbox:checked").map(function () {
-			return $(this).attr("data-employee-id");
-		}).get();
+		employees = window.employees_list;
 	} else if ($(".layoutSidenav_content").attr("data-view") == "card") {
 		employees = $(".cardviewcheckbox:checked").map(function () {
 			return $(this).attr("data-employee-id");
@@ -2809,8 +2837,8 @@ function change_post(page) {
 			{
 				'label': 'Choose Operations Role', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'options': 'Operations Role', 'reqd': 1, get_query: function () {
 					// return {
-					// 	// "filters": { 
-					// 	// 	"project_type": "External"							
+					// 	// "filters": {
+					// 	// 	"project_type": "External"
 					// 	// },
 					// 	"page_len": 9999
 					// };
@@ -2829,16 +2857,16 @@ function change_post(page) {
 
 function schedule_change_post(page) {
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
-	let employees = [];
+	let employees = window.employees_list;
 	let selected = [... new Set(classgrt)];
 	let otRoster = false;
-	if (selected.length > 0) {
-		selected.forEach(function (i) {
-			let [employee, date] = i.split("|");
-			employees.push(employee);
-			employees = [... new Set(employees)];
-		});
-	}
+//	if (selected.length > 0) {
+//		selected.forEach(function (i) {
+//			let [employee, date] = i.split("|");
+//			employees.push(employee);
+//			employees = [... new Set(employees)];
+//		});
+//	}
 	let d = new frappe.ui.Dialog({
 		'title': 'Schedule/Change Post',
 		'fields': [
@@ -2913,6 +2941,9 @@ function schedule_change_post(page) {
 					raise_exception=1
 				)
 				frappe.throw()
+			}
+			if (!employees){
+			    frappe.throw(__('Please select employees to roster.'))
 			}
 			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
 				{ employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date })

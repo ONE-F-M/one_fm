@@ -93,7 +93,7 @@ var set_filters = function(frm) {
 
 var set_uniform_details = function(frm) {
 	frm.clear_table('uniforms');
-	if(frm.doc.employee && frm.doc.type && frm.doc.designation){
+	if(frm.doc.employee && frm.doc.type){
 		frappe.call({
 			doc: frm.doc,
 			method: 'set_uniform_details',

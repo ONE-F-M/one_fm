@@ -2,6 +2,7 @@ import frappe
 from frappe import _
 from one_fm.api.notification import create_notification_log
 from one_fm.api.v1.utils import response, validate_date, validate_time
+from one_fm.operations.doctype.shift_permission.shift_permission import fetch_approver
 
 @frappe.whitelist()
 def create_shift_permission(employee_id: str = None, permission_type: str = None, date: str = None, reason: str = None,
@@ -90,7 +91,8 @@ def create_shift_permission(employee_id: str = None, permission_type: str = None
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
-        shift_details = get_shift_details(employee, date)
+        shift_details = get_shift_details(employee)
+
         if shift_details.found:
             shift, shift_type, shift_assignment, shift_supervisor = shift_details.data
         else:
@@ -133,19 +135,16 @@ def create_shift_permission(employee_id: str = None, permission_type: str = None
         return response("Internal Server Error", 500, None, error)
 
 
-def get_shift_details(employee, date):
+def get_shift_details(employee):
     shift = None
     shift_type = None
     shift_assignment = None
     shift_supervisor = None
 
-    employee_schedule = frappe.db.get_value('Employee Schedule', {'employee': employee, 'employee_availability': 'Working', 'date': date, 'roster_type': 'Basic'}, ['shift', 'shift_type'])
-    if not employee_schedule:
+    shift_assignment, shift_supervisor, shift, shift_type = fetch_approver(employee)
+    
+    if not shift_assignment:
         return frappe._dict({'found':False})
-    shift, shift_type = employee_schedule
-    if shift and shift_type:
-        shift_supervisor = frappe.db.get_value('Operations Shift', {'name': shift}, ['supervisor'])
-        shift_assignment = frappe.db.get_value('Shift Assignment', {'employee': employee, 'start_date': date}, ['name'])
 
     return frappe._dict({'found':True, 'data':[shift, shift_type, shift_assignment, shift_supervisor]})
 

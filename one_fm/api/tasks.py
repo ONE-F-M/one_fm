@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from frappe import enqueue
 import frappe, erpnext
 from frappe import _
-from frappe.utils import now_datetime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today
+from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today
 from one_fm.api.doc_events import get_employee_user_id
 from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import create_payroll_entry
@@ -67,45 +67,13 @@ def checkin_checkout_reminder():
 		shifts_list = get_active_shifts(now_time)
 
 		for shift in shifts_list:
-			date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
+			date = getdate()
+			if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
+				date = getdate() - timedelta(days=1)
 
 			# Current time == shift start time => Checkin
 			if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
-				recipients = frappe.db.sql("""
-					SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
-					WHERE
-						tSA.employee=emp.name
-					AND tSA.start_date='{date}'
-					AND tSA.shift_type='{shift_type}'
-					AND tSA.docstatus=1
-					AND tSA.employee
-					NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
-					WHERE
-						emp_sp.employee=emp.name
-					AND emp_sp.workflow_state='Approved'
-					AND emp_sp.shift_type='{shift_type}'
-					AND emp_sp.date='{date}'
-					AND emp_sp.permission_type="Arrive Late")
-					AND tSA.employee
-					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
-					WHERE
-						att_req.employee=emp.name
-					AND att_req.workflow_state='Approved'
-					AND att_req.reason='Work From Home'
-					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
-					AND tSA.employee
-					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
-					WHERE
-						empChkin.log_type="IN"
-					AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
-					AND empChkin.shift_type='{shift_type}')
-					AND tSA.start_date
-					NOT IN(SELECT holiday_date from `tabHoliday` h
-					WHERE
-						h.parent = emp.holiday_list
-					AND h.holiday_date = '{date}')
-				""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
-
+				recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 				if len(recipients) > 0:
 
 					notification_title = _("Checkin reminder")
@@ -127,33 +95,7 @@ def checkin_checkout_reminder():
 
 			# current time == shift end time => Checkout
 			if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
-				recipients = frappe.db.sql("""
-					SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
-					WHERE
-						tSA.employee = emp.name
-					AND tSA.start_date='{date}'
-					AND tSA.shift_type='{shift_type}'
-					AND tSA.docstatus=1
-					AND tSA.employee
-					NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
-					WHERE
-						emp_sp.employee=emp.name
-					AND emp_sp.workflow_state='Approved'
-					AND emp_sp.shift_type='{shift_type}'
-					AND emp_sp.date='{date}'
-					AND emp_sp.permission_type="Leave Early")
-					AND tSA.employee
-					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
-					WHERE
-						empChkin.log_type="OUT"
-					AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
-					AND empChkin.shift_type='{shift_type}')
-					AND tSA.start_date
-					NOT IN(SELECT holiday_date from `tabHoliday` h
-					WHERE
-						h.parent = emp.holiday_list
-					AND h.holiday_date = '{date}')
-				""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+				recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
 
 				if len(recipients) > 0:
 
@@ -181,44 +123,14 @@ def checkin_checkout_final_reminder():
 
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
-		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
+		date = getdate()
+		if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
+			date = getdate() - timedelta(days=1)
 		# shift_start is equal to now time - notification reminder in mins
 		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
 		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
-			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
-				WHERE
-			  		tSA.employee=emp.name
-				AND tSA.start_date='{date}'
-				AND tSA.shift_type='{shift_type}'
-				AND tSA.docstatus=1
-				AND tSA.employee
-				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
-				WHERE
-					emp_sp.employee=emp.name
-				AND emp_sp.workflow_state='Approved'
-				AND emp_sp.shift_type='{shift_type}'
-				AND emp_sp.date='{date}'
-				AND emp_sp.permission_type="Arrive Late")
-				AND tSA.employee
-				NOT IN(SELECT employee FROM `tabAttendance Request` att_req
-				WHERE
-					att_req.employee=emp.name
-				AND att_req.workflow_state='Approved'
-				AND att_req.reason='Work From Home'
-				AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
-				AND tSA.employee
-				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
-				WHERE
-					empChkin.log_type="IN"
-				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
-				AND empChkin.shift_type='{shift_type}')
-				AND tSA.start_date
-				NOT IN(SELECT holiday_date from `tabHoliday` h
-				WHERE
-					h.parent = emp.holiday_list
-				AND h.holiday_date = '{date}')
-			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
+			print(recipients)
 
 			if len(recipients) > 0:
 				frappe.enqueue(notify_checkin_checkout_final_reminder, recipients=recipients,log_type="IN", is_async=True, queue='long')
@@ -226,40 +138,7 @@ def checkin_checkout_final_reminder():
 		# shift_end is equal to now time - notification reminder in mins
 		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
 		if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
-			recipients = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id, emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
-				WHERE
-			  		tSA.employee = emp.name
-				AND tSA.start_date='{date}'
-				AND tSA.shift_type='{shift_type}'
-				AND tSA.docstatus=1
-				AND tSA.employee
-				NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
-				WHERE
-					emp_sp.employee=emp.name
-				AND emp_sp.workflow_state='Approved'
-				AND emp_sp.shift_type='{shift_type}'
-				AND emp_sp.date='{date}'
-				AND emp_sp.permission_type="Leave Early")
-				AND tSA.employee
-				NOT IN(SELECT employee FROM `tabAttendance Request` att_req
-				WHERE
-					att_req.employee=emp.name
-				AND att_req.workflow_state='Approved'
-				AND att_req.reason='Work From Home'
-				AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
-				AND tSA.employee
-				NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
-				WHERE
-					empChkin.log_type="OUT"
-				AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
-				AND empChkin.shift_type='{shift_type}')
-				AND tSA.start_date
-				NOT IN(SELECT holiday_date from `tabHoliday` h
-				WHERE
-					h.parent = emp.holiday_list
-				AND h.holiday_date = '{date}')
-			""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
 
 			if len(recipients) > 0:
 				frappe.enqueue(notify_checkin_checkout_final_reminder, recipients=recipients,log_type="OUT", is_async=True, queue='long')
@@ -336,45 +215,13 @@ def checkin_checkout_supervisor_reminder():
 def supervisor_reminder(shift, today_datetime, now_time):
 	title = "Checkin Report"
 	category = "Attendance"
-	date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
-	now_date = getdate()
+	date = getdate()
+	if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
+		date = getdate() - timedelta(days=1)
+	
 	if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())):
 		checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
-		recipients = frappe.db.sql("""
-			SELECT DISTINCT emp.name, emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
-			WHERE
-				tSA.employee=emp.name
-			AND tSA.start_date='{date}'
-			AND tSA.shift_type='{shift_type}'
-			AND tSA.docstatus=1
-			AND tSA.employee
-			NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
-			WHERE
-				emp_sp.employee=emp.name
-			AND emp_sp.workflow_state="Approved"
-			AND emp_sp.shift_type='{shift_type}'
-			AND emp_sp.date='{date}'
-			AND emp_sp.permission_type IN ("Arrive Late", "Forget to Checkin", "Checkin Issue"))
-			AND tSA.employee
-			NOT IN(SELECT employee FROM `tabAttendance Request` att_req
-			WHERE
-				att_req.employee=emp.name
-			AND att_req.workflow_state='Approved'
-			AND att_req.reason='Work From Home'
-			AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
-			AND tSA.employee
-			NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
-				WHERE
-					empChkin.log_type="IN"
-					AND empChkin.skip_auto_attendance=0
-					AND date(empChkin.time)='{date}'
-					AND empChkin.shift_type='{shift_type}')
-			AND tSA.start_date
-			NOT IN(SELECT holiday_date from `tabHoliday` h
-			WHERE
-				h.parent = emp.holiday_list
-			AND h.holiday_date = '{date}')
-		""".format(date=cstr(date), shift_type=shift.name), as_dict=1)
+		recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 
 		if len(recipients) > 0:
 			for recipient in recipients:
@@ -404,41 +251,7 @@ def supervisor_reminder(shift, today_datetime, now_time):
 	if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_start_ends))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_end_start))).time())):
 		checkout_time = today_datetime + " " + strfdelta(shift.end_time, '%H:%M:%S')
 
-		recipients = frappe.db.sql("""
-			SELECT DISTINCT emp.name, emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
-			WHERE
-				tSA.employee=emp.name
-			AND tSA.start_date='{date}'
-			AND tSA.shift_type='{shift_type}'
-			AND tSA.docstatus=1
-			AND tSA.employee
-			NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
-			WHERE
-				emp_sp.employee=emp.name
-			AND emp_sp.workflow_state="Approved"
-			AND emp_sp.shift_type='{shift_type}'
-			AND emp_sp.date='{date}'
-			AND emp_sp.permission_type IN ("Leave Early", "Forget to Checkout", "Checkout Issue"))
-			AND tSA.employee
-			NOT IN(SELECT employee FROM `tabAttendance Request` att_req
-			WHERE
-				att_req.employee=emp.name
-			AND att_req.workflow_state='Approved'
-			AND att_req.reason='Work From Home'
-			AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
-			AND tSA.employee
-			NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
-				WHERE
-					empChkin.log_type="OUT"
-					AND empChkin.skip_auto_attendance=0
-					AND date(empChkin.time)='{now_date}'
-					AND empChkin.shift_type='{shift_type}')
-			AND tSA.start_date
-			NOT IN(SELECT holiday_date from `tabHoliday` h
-			WHERE
-				h.parent = emp.holiday_list
-			AND h.holiday_date = '{date}')
-		""".format(date=cstr(date), shift_type=shift.name, now_date=now_date), as_dict=1)
+		recipients = recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
 
 		if len(recipients) > 0:
 			for recipient in recipients:
@@ -494,12 +307,61 @@ def get_active_shifts(now_time):
 				IF(end_time < start_time, DATE_ADD(CAST(end_time as date), INTERVAL 1 DAY), CAST(end_time as date))
 	""".format(current_time=now_time), as_dict=1)
 
+def checkin_checkout_query(date, shift_type, log_type):
+	if log_type == "IN":
+		permission_type = ("Arrive Late", "Forget to Checkin", "Checkin Issue")
+	else:
+		permission_type = ("Leave Early", "Forget to Checkout", "Checkout Issue")
+	
+	query = frappe.db.sql("""
+				SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
+					WHERE
+						tSA.employee=emp.name
+					AND tSA.start_date='{date}'
+					AND tSA.shift_type='{shift_type}'
+					AND tSA.docstatus=1
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabShift Permission` emp_sp
+					WHERE
+						emp_sp.employee=emp.name
+					AND emp_sp.workflow_state='Approved'
+					AND emp_sp.shift_type='{shift_type}'
+					AND emp_sp.date='{date}'
+					AND emp_sp.permission_type IN {permission_type})
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabAttendance Request` att_req
+					WHERE
+						att_req.employee=emp.name
+					AND att_req.workflow_state='Approved'
+					AND att_req.reason='Work From Home'
+					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabLeave Application` LA
+					WHERE
+						LA.employee=emp.name
+					AND LA.workflow_state='Approved'
+					AND CAST('{date} ' as date) BETWEEN LA.from_date AND LA.to_date)
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
+					WHERE
+						empChkin.log_type='{log_type}'
+					AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
+					AND empChkin.shift_type='{shift_type}')
+					AND tSA.start_date
+					NOT IN(SELECT holiday_date from `tabHoliday` h
+					WHERE
+						h.parent = emp.holiday_list
+					AND h.holiday_date = '{date}')
+				""".format(date=cstr(date), shift_type=shift_type, log_type=log_type, permission_type=permission_type), as_dict=1)
+	return query
+
 @frappe.whitelist()
 def get_action_user(employee, shift):
 	"""
 			Shift > Site > Project > Reports to
 	"""
 	action_user = None
+	Role = None
 	operations_shift = frappe.get_doc("Operations Shift", shift)
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
 	project = frappe.get_doc("Project", operations_site.project)
@@ -619,12 +481,14 @@ def checkin_deadline():
 
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
-	
+
 	frappe.enqueue(mark_deadline_attendance, shift_list=shift_list, now_time = now_time, is_async=True, queue='long')
-	
+
 def mark_deadline_attendance(shifts_list, now_time):
 	for shift in shifts_list:
-		date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
+		date = getdate()
+		if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
+			date = getdate() - timedelta(days=1)
 
 		if shift.deadline==1:
 			recipients = []
@@ -653,6 +517,12 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND att_req.workflow_state='Approved'
 					AND att_req.reason='Work From Home'
 					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabLeave Application` LA
+					WHERE
+						LA.employee=emp.name
+					AND LA.workflow_state='Approved'
+					AND CAST('{date} ' as date) BETWEEN LA.from_date AND LA.to_date)
 					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
@@ -693,6 +563,12 @@ def mark_deadline_attendance(shifts_list, now_time):
 					AND att_req.reason='Work From Home'
 					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
 					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabLeave Application` LA
+					WHERE
+						LA.employee=emp.name
+					AND LA.workflow_state='Approved'
+					AND CAST('{date} ' as date) BETWEEN LA.from_date AND LA.to_date)
+					AND tSA.employee
 					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
 						empChkin.log_type="IN"
@@ -704,7 +580,7 @@ def mark_deadline_attendance(shifts_list, now_time):
 					WHERE
 						h.parent = emp.holiday_list
 					AND h.holiday_date = '{date}')
-				""".format(date=cstr(date), shift_type=shift.name), as_list=1)	
+				""".format(date=cstr(date), shift_type=shift.name), as_list=1)
 
 			if len(recipients) > 0:
 				employees = [recipient[0] for recipient in recipients if recipient[0]]
@@ -820,7 +696,7 @@ def end_previous_shifts(time):
 
 	shift_assignments = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'],
 					["shift_type", "IN", shift_type], ["docstatus", "=", 1],["roster_type", "IN", "Basic"]], fields=['name','start_date'])
-	
+
 	overtime_shift = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'],
 					["roster_type", "IN", "Over-Time"], ["docstatus", "=", 1]], fields=['name','start_date'])
 	shift_assignments = shift_assignments + overtime_shift
@@ -919,14 +795,16 @@ def mark_auto_attendance(shift_type):
 	doc.process_auto_attendance()
 
 def update_shift_details_in_attendance(doc, method):
-	condition = ""
+	condition = ''
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
 		site, project, shift, operations_role, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "operations_role", "start_datetime","end_datetime", "roster_type"])
-		condition += "project = '"+project+"', site = '"+site+"', operations_shift = '"+shift+"', operations_role = '"+operations_role+"', roster_type = '"+roster_type+"'"
+		condition += ' project="{project}", site="{site}", operations_shift="{shift}", operations_role="{operations_role}", roster_type="{roster_type}"'.format(
+			project=project, site=site, shift=shift, operations_role=operations_role, roster_type=roster_type)
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
-			condition += ", in_time = '"+cstr(start_datetime)+"', out_time= '"+cstr(end_datetime)+"'"
-	
-	return frappe.db.sql("""UPDATE `tabAttendance` set {condition} where name = '{name}'""".format(condition=condition, name = doc.name))
+			condition += ', in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}"'
+	if condition:
+		return frappe.db.sql("""UPDATE `tabAttendance` SET {condition} WHERE name= '{name}' """.format(condition=condition, name = doc.name))
+	return
 
 def generate_payroll():
 	# start_date = add_to_date(getdate(), months=-1)

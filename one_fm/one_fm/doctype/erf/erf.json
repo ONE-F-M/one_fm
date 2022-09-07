@@ -170,6 +170,7 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "ERF Requested By",
+   "no_copy": 1,
    "options": "User",
    "read_only": 1
   },
@@ -179,6 +180,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
+   "no_copy": 1,
    "options": "\nDraft\nAccepted\nDeclined\nClosed\nCancelled",
    "read_only": 1
   },
@@ -206,6 +208,7 @@
    "fieldname": "erf_initiation",
    "fieldtype": "Date",
    "label": "ERF Initiation Date",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -213,6 +216,7 @@
    "fieldname": "erf_finalized",
    "fieldtype": "Date",
    "label": "ERF Finalized",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -426,6 +430,7 @@
    "fieldname": "recruiter_assigned",
    "fieldtype": "Link",
    "label": "Recruiter Assigned",
+   "no_copy": 1,
    "options": "User",
    "permlevel": 1
   },
@@ -483,6 +488,7 @@
    "fieldname": "pam_designation",
    "fieldtype": "Link",
    "label": "PAM Designation",
+   "no_copy": 1,
    "options": "PAM Designation List",
    "permlevel": 1
   },
@@ -511,6 +517,7 @@
    "label": "Shift Working Html"
   },
   {
+   "depends_on": "eval:doc.shift_working==1",
    "description": "Will The Employee Work In Night Shifts?",
    "fieldname": "night_shift_html",
    "fieldtype": "HTML",
@@ -560,7 +567,8 @@
   {
    "fieldname": "schedule_for_okr_workshop_with_recruiter",
    "fieldtype": "Datetime",
-   "label": "Set a Date With Our Recruiter For a Quick Workshop"
+   "label": "Set a Date With Our Recruiter For a Quick Workshop",
+   "no_copy": 1
   },
   {
    "fieldname": "okr_workshop_with",
@@ -585,6 +593,7 @@
    "fieldname": "project_for_recruiter",
    "fieldtype": "Link",
    "label": "Project for Recruiter",
+   "no_copy": 1,
    "options": "Project",
    "read_only": 1
   },
@@ -604,6 +613,7 @@
    "fieldname": "event_for_okr_workshop",
    "fieldtype": "Link",
    "label": "Meeting",
+   "no_copy": 1,
    "options": "Event",
    "read_only": 1
   },
@@ -702,7 +712,8 @@
    "fieldname": "draft_erf_to_hrm",
    "fieldtype": "Check",
    "hidden": 1,
-   "label": "Draft ERF to HRM"
+   "label": "Draft ERF to HRM",
+   "no_copy": 1
   },
   {
    "fieldname": "is_uniform_needed_for_this_job_html",
@@ -746,6 +757,7 @@
    "fieldname": "erf_employee",
    "fieldtype": "Table",
    "label": "ERF Employee",
+   "no_copy": 1,
    "options": "ERF Employee"
   },
   {
@@ -801,6 +813,7 @@
    "fieldname": "pam_file",
    "fieldtype": "Link",
    "label": "PAM File",
+   "no_copy": 1,
    "options": "PAM File",
    "permlevel": 1
   },
@@ -811,6 +824,7 @@
    "fieldname": "pam_file_number",
    "fieldtype": "Link",
    "label": "PAM File Number",
+   "no_copy": 1,
    "options": "PAM File Number",
    "read_only": 1
   },
@@ -852,7 +866,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-16 14:47:40.696719",
+ "modified": "2022-09-06 12:33:35.894059",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
