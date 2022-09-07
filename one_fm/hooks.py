@@ -459,7 +459,7 @@ scheduler_events = {
 	],
 
 	"cron": {
-		"0 8 * * 0,1,2,3,4":[#run durring working days only
+		"40 5 * * 0,1,2,3,4":[#run durring working days only “At 05:40 on Sunday, Monday, Tuesday, Wednesday, and Thursday.”
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_renewal_operator_to_apply',#wp
 			'one_fm.grd.doctype.work_permit.work_permit.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.medical_insurance.medical_insurance.system_remind_renewal_operator_to_apply_mi',#mi
@@ -474,10 +474,10 @@ scheduler_events = {
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
-		"0 8 1 * *": [# first day of the Month at 8 am
+		"15 4 1 * *": [# “At 04:15 on day-of-month 1.”
 			'one_fm.grd.doctype.pifss_monthly_deduction.pifss_monthly_deduction.auto_create_pifss_monthly_deduction_record',
 		],
-		"0/1 * * * *": [
+		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
 			'one_fm.api.tasks.process_attendance'
 		],
@@ -492,7 +492,7 @@ scheduler_events = {
 		"0/15 * * * *": [
 			"one_fm.api.tasks.update_shift_type"
 		],
-		"45 23 * * *": [
+		"37 23 * * *": [  #“At 23:37.”
 			'one_fm.api.tasks.issue_penalties'
 		],
 		"30 10 * * *": [
@@ -501,13 +501,13 @@ scheduler_events = {
 		"45 10 * * *": [
 			'one_fm.utils.send_travel_agent_email'
 		],
-		"0 4 * * *": [
+		"10 4 * * *": [ #“At 04:10.”
 			'one_fm.utils.check_grp_operator_submission_four'
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
 		],
-		"0 8 * * *": [# Runs everyday at 8:00 am.
+		"15 6 * * *": [# Runs everyday at 6:15 am.
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
 			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
@@ -522,33 +522,33 @@ scheduler_events = {
 			'one_fm.utils.issue_roster_actions',
 			'one_fm.grd.doctype.preparation.preparation.auto_create_preparation_record',
 		],
-		"0 9 * * *": [
+		"18 9 * * *": [ #“At 09:18"
 			'one_fm.utils.check_upload_tasriah_submission_nine',
 		],
-		"0 11 * * *": [
+		"10 11 * * *": [ #“At 11:10"
 			'one_fm.utils.check_upload_tasriah_reminder1'
 		],
 		# "one_fm.one_fm.grd" doesnt find the module, only "one_fm.grd"
-		"0 10 * * *": [
+		"20 10 * * *": [ #“At 10:20"
 			'one_fm.utils.check_upload_tasriah_reminder2',
 			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
 		],
 		"30 6 * * *": [
 			'one_fm.utils.check_pam_visa_approval_submission_six_half'
 		],
-		"0 7 * * *": [
+		"05 7 * * *": [ #“At 07:05"
 			'one_fm.utils.check_pam_visa_approval_submission_seven'
 		],
 		"30 12 * * *": [
 			'one_fm.utils.check_upload_original_visa_submission_reminder1'
 		],
-		"0 13 * * *": [
+		"25 13 * * *": [ #“At 13:25"
 			'one_fm.utils.check_upload_original_visa_submission_reminder2'
 		],
-		"0 6 * * *":[
+		"12 3 * * *":[ #“At 03:12"
 			'one_fm.one_fm.sales_invoice_custom.create_sales_invoice'
 		],
-		"00 00 24 * *": [
+		"08 00 24 * *": [ #“At 00:08 on day-of-month 24.”
 			'one_fm.api.tasks.generate_penalties'
 		],
 		"00 01 24 * *": [
@@ -557,7 +557,7 @@ scheduler_events = {
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
 		],
-		"1 23 1-31 * *": [
+		"05 23 1-31 * *": [ #“At 23:05 on every day-of-month from 1 through 31.”
 			'one_fm.tasks.one_fm.daily.mark_future_attendance_request',
 			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
