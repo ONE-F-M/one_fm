@@ -253,8 +253,6 @@ def generate_employee_id(doc):
 	try:
 		if doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
 			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
-		elif doc.one_fm_place_of_birth:
-			country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
 		else:
 			country = 'XX'
 	except Exception as e:
