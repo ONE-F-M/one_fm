@@ -17,6 +17,7 @@ from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 from one_fm.one_fm.doctype.erf.erf import (
     get_description_by_performance_profile, set_erf_skills_in_job_opening, set_erf_language_in_job_opening
 )
+from one_fm.denomyn import get_denomyn
 
 
 @frappe.whitelist()
@@ -250,15 +251,15 @@ def generate_employee_id(doc):
 	Generate employee ID
 	"""
 	try:
-		if doc.one_fm_place_of_birth:
+		if doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
+			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
+		elif doc.one_fm_place_of_birth:
 			country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
-		elif doc.place_of_issue:
-			country = pycountry.countries.search_fuzzy(doc.place_of_issue)[0].alpha_2
 		else:
-			country = ''
+			country = 'XX'
 	except Exception as e:
-		country = ''
-	
+		country = 'XX'
+		
 	count = len(frappe.db.sql(f"""
 		SELECT name FROM tabEmployee
 		WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
