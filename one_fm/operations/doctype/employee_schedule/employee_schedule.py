@@ -20,6 +20,9 @@ class EmployeeSchedule(Document):
 
 
 	def validate(self):
+		self.valuidate_offs()
+
+	def validate_offs(self):
 		"""
 		Validate if the employee is has exceeded weekly or monthly off schedule.
 		:return:
