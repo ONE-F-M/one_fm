@@ -10,8 +10,7 @@ def generate_contracts_invoice():
     """
     try:
         contracts = frappe.get_list('Contracts', filters={
-            'docstatus':1, 
-            'workflow_state':'Active', 
+            'workflow_state':'Active',
             # 'due_date':str(datetime.today().date().day)
         })
         # generate
@@ -34,7 +33,7 @@ def mark_future_attendance_request():
     """
     attendance_requests = frappe.db.sql(f"""
         SELECT name FROM `tabAttendance Request`
-        WHERE '{nowdate()}' BETWEEN from_date AND to_date AND future_request=1 
+        WHERE '{nowdate()}' BETWEEN from_date AND to_date AND future_request=1
         AND docstatus=1
     """, as_dict=1)
     for row in attendance_requests:
@@ -53,4 +52,3 @@ def roster_projection_view_task():
         filters=json.dumps(
             {'month':datetime.today().month, 'year':datetime.today().year}), user='Administrator'
     )
-

@@ -446,9 +446,8 @@
    "options": "Current Month\nPrevious Month"
   }
  ],
- "is_submittable": 1,
  "links": [],
- "modified": "2022-06-20 17:03:07.002247",
+ "modified": "2022-09-07 11:31:58.714181",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
