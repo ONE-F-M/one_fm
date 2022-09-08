@@ -18,14 +18,13 @@ class EmployeeSchedule(Document):
 		if not frappe.db.exists("Employee", {'status':'Active', 'name':self.employee}):
 			frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be scheduled.")
 
-		self.validate_offs()
 
-	def validate_offs(self):
+	def validate(self):
 		"""
 		Validate if the employee is has exceeded weekly or monthly off schedule.
 		:return:
 		"""
-		if self.employee_availability in ['Working', 'Day Off']:
+		if self.employee_availability == 'Day Off':
 			offs = self.get_off_category()
 			daterange = self.get_daterange(offs.category, str(self.date))
 			querystring = """
@@ -34,13 +33,11 @@ class EmployeeSchedule(Document):
 				employee='{self.employee}' AND employee_availability='{self.employee_availability}' 
 				AND date BETWEEN '{daterange.start}' AND '{daterange.end}'
 			""".format(self=self, daterange=daterange)
-
 			total_schedule = frappe.db.sql(querystring, as_dict=1)[0].cnt
-			if ((self.employee_availability == 'Working') and (total_schedule > (int(daterange.end.split('-')[2])-offs.days))):
-				self.employee_availability = 'Day Off'
-			elif ((self.employee_availability == 'Day Off') and (total_schedule > offs.days)):
+			if ((self.employee_availability == 'Day Off') and (total_schedule >= offs.days)):
 				self.employee_availability = 'Working'
 				self.shift = frappe.db.get_value('Employee', self.employee, 'shift')
+				frappe.msgprint(_(f"{self.employee_name} - {self.employee} has exceeded days of for the {offs.category} on {self.date}, employee availability will be set to working."))
 
 
 	def get_off_category(self):
