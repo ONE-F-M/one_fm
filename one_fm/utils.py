@@ -2707,3 +2707,18 @@ def notify_live_user(company, message, users=False):
 		frappe.db.set_value("Company", company, "last_notified", last_notified)
 	else:
 		frappe.throw(__("System Manger can only send the notification!!"))
+
+
+
+def get_week_start_end(date_str):
+    dt = datetime.strptime(date_str, '%Y-%m-%d')
+    start = dt - timedelta(days=dt.weekday()+1)
+    end = start + timedelta(days=6)
+    return frappe._dict({'start': str(start.date()), 'end': str(end.date())})
+
+def get_month_start_end(date_str):
+    cur_date = datetime.strptime(date_str, '%Y-%m-%d')
+    start = cur_date.replace(day=1)
+    _end = cur_date.replace(day=28) + timedelta(days=4)
+    end = _end - timedelta(days=_end.day)
+    return frappe._dict({'start': str(start.date()), 'end': str(end.date())})
