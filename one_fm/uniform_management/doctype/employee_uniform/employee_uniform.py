@@ -25,11 +25,11 @@ class EmployeeUniform(Document):
 	def on_submit(self):
 		self.validate_handover_form()
 		if self.type == "Issue":
-			self.status = 'Issued'
-			self.issued_on = today()
+			self.db_set('status', 'Issued')
+			self.db_set('issued_on', today())
 		elif self.type == "Return":
-			self.status = 'Returned'
-			self.returned_on = today()
+			self.db_set('status', 'Returned')
+			self.db_set('returned_on', today())
 			for item in self.uniforms:
 				if item.issued_item_link:
 					returned = frappe.db.get_value('Employee Uniform Item', item.issued_item_link, 'returned')
