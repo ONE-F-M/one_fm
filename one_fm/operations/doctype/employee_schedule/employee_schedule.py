@@ -20,7 +20,7 @@ class EmployeeSchedule(Document):
 
 
 	def validate(self):
-		self.valuidate_offs()
+		self.validate_offs()
 
 	def validate_offs(self):
 		"""
@@ -38,9 +38,7 @@ class EmployeeSchedule(Document):
 			""".format(self=self, daterange=daterange)
 			total_schedule = frappe.db.sql(querystring, as_dict=1)[0].cnt
 			if ((self.employee_availability == 'Day Off') and (total_schedule >= offs.days)):
-				self.employee_availability = 'Working'
-				self.shift = frappe.db.get_value('Employee', self.employee, 'shift')
-				frappe.msgprint(_(f"{self.employee_name} - {self.employee} has exceeded days of for the {offs.category} on {self.date}, employee availability will be set to working."))
+				frappe.throw(_(f"{self.employee_name} - {self.employee} has exceeded 'days off' for {offs.category} on {self.date} between {daterange.start} and {daterange.end}."))
 
 
 	def get_off_category(self):
