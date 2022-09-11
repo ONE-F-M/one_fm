@@ -16,7 +16,7 @@ frappe.ui.form.on('Job Offer', {
               frm.add_custom_button(__('Go to Transfer Paper'),
               function(){
                 frappe.set_route("Form", "Transfer Paper", r.name)
-                }).addClass('btn-primary'); 
+                }).addClass('btn-primary');
             }
             else{
               frm.add_custom_button(__('Create New Transfer Paper'),
@@ -29,7 +29,7 @@ frappe.ui.form.on('Job Offer', {
                 });
               }
             ).addClass('btn-primary');
-          }  
+          }
       });
     }
   });
@@ -229,7 +229,7 @@ var set_salary_structure_to_salary_details = function(frm) {
                   let salary = frappe.model.add_child(frm.doc, 'ERF Salary Detail', 'one_fm_salary_details');
                   frappe.model.set_value(salary.doctype, salary.name, 'salary_component', item.salary_component);
                   frappe.model.set_value(salary.doctype, salary.name, 'amount', item.amount);
-                } 
+                }
               }
             });
           }
@@ -307,16 +307,11 @@ var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
 	$wrapper
 		.html(field_html);
 	$wrapper.on('click', '.'+field_btn_html, function() {
-		if(frm.doc.docstatus == 0){
+		if(frm.doc.docstatus < 2){
 			var $btn = $(this);
 			$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
 			$btn.addClass('btn-primary');
-			if(field_name == 'open_to_different'){
-				frm.set_value(field_name, $btn.attr('data'));
-			}
-			else{
-				frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
-			}
+			frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
 		}
 	});
 };
