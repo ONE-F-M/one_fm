@@ -30,7 +30,7 @@ class Bed(Document):
 			self.visa_number = ''
 			self.email = ''
 			self.employee_status = ''
-			slef.project = ''
+			self.project = ''
 			self.designation = ''
 			self.civil_id = ''
 			self.employee_id = ''

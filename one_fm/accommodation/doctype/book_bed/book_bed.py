@@ -23,7 +23,7 @@ class BookBed(Document):
 			status = 'Booked'
 		if self.book_for == 'Single':
 			frappe.db.set_value('Bed', self.bed, 'status', status)
-		elif self.book_for == 'Bulk' and slef.bulk_book_bed:
+		elif self.book_for == 'Bulk' and self.bulk_book_bed:
 			for bed in self.bulk_book_bed:
 				frappe.db.set_value('Bed', bed.bed, 'status', status)
 
