@@ -424,7 +424,6 @@ scheduler_events = {
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
-		'one_fm.utils.hooked_leave_allocation_builder',
 		'one_fm.utils.increase_daily_leave_balance',
 		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.daily_indemnity_allocation_builder',
 		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.allocate_daily_indemnity',
