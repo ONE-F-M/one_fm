@@ -258,46 +258,47 @@ def generate_employee_id(doc):
 			country = ''
 	except Exception as e:
 		country = ''
-	
+
 	count = len(frappe.db.sql(f"""
 		SELECT name FROM tabEmployee
 		WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
 		as_dict=1))
-		
+
 	if count == 0:
 		count = count + 1
-		
+
 	doc.reload()
 	joining_year = str(doc.date_of_joining.year)[-2:].zfill(2)
 	joining_month = str(doc.date_of_joining.month).zfill(2)
 	serial_number = str(count).zfill(3)
-	
+
 	while frappe.db.get_list("Employee", {"employee_id": ["LIKE", f"{joining_year}{joining_month}{serial_number}%"]}):
 		count = count + 1
 		serial_number = str(count).zfill(3)
-		
+
 	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{1 if doc.under_company_residency else 0}{doc.date_of_birth.strftime('%y')}".upper())
 	doc.reload()
 
 
 def create_leave_policy_assignment(doc):
-    '''
-        Method to create Leave Policy Assignment for an Employee, if employee have a Leave Policy
-        Create Leave Policy based on Joining Date
-        args:
-            doc: Employee Object
-    '''
-    if doc.leave_policy:
-        assignment = frappe.new_doc("Leave Policy Assignment")
-        assignment.employee = doc.name
-        assignment.assignment_based_on = 'Joining Date'
-        assignment.leave_policy = doc.leave_policy
-        assignment.effective_from = doc.date_of_joining
-        assignment.effective_to = add_years(doc.date_of_joining, 1)
-        assignment.carry_forward = True
-        assignment.leaves_allocated = True # Since Leaves will be allocated from ONE FM Scheduler
-        assignment.save()
-        assignment.submit()
+	'''
+		Method to create Leave Policy Assignment for an Employee, if employee have a Leave Policy
+		Create Leave Policy based on Joining Date
+		args:
+			doc: Employee Object
+	'''
+	if doc.leave_policy:
+		assignment = frappe.new_doc("Leave Policy Assignment")
+		assignment.employee = doc.name
+		assignment.assignment_based_on = 'Joining Date'
+		assignment.leave_policy = doc.leave_policy
+		assignment.effective_from = doc.date_of_joining
+		# effective_to is an year of addition to effective_from
+		assignment.effective_to = getdate(add_days(add_years(doc.date_of_joining, 1), -1))
+		assignment.carry_forward = True
+		assignment.leaves_allocated = True # Since Leaves will be allocated from ONE FM Scheduler
+		assignment.save()
+		assignment.submit()
 
 @frappe.whitelist()
 def grant_leave_alloc_for_employee(doc):
