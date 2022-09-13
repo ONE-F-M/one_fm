@@ -83,9 +83,10 @@
   "create_project_for_recruiter",
   "project_for_recruiter",
   "salary_compensation_budget_section",
+  "select_existing_salary_structure",
   "base",
-  "hourly_rate",
   "salary_structure",
+  "hourly_rate",
   "salary_component",
   "salary_details",
   "salary_per_person",
@@ -397,7 +398,7 @@
    "permlevel": 1
   },
   {
-   "depends_on": "eval:doc.employment_type!=\"Contract\"",
+   "depends_on": "eval:doc.employment_type!=\"Contract\" || doc.select_existing_salary_structure == 1",
    "fieldname": "salary_structure",
    "fieldtype": "Link",
    "label": "Salary Structure",
@@ -892,11 +893,18 @@
    "fieldtype": "Link",
    "label": "Salary Component",
    "options": "Salary Component"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.shift_working==0 && doc.employment_type==\"Contract\"",
+   "fieldname": "select_existing_salary_structure",
+   "fieldtype": "Check",
+   "label": "Select Existing Salary Structure"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-09-11 20:28:34.973069",
+ "modified": "2022-09-13 12:42:12.134437",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
