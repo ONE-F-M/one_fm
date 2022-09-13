@@ -295,7 +295,7 @@ def create_leave_policy_assignment(doc):
 		# effective_to is an year of addition to effective_from
 		assignment.effective_to = getdate(add_days(add_years(doc.date_of_joining, 1), -1))
 		assignment.carry_forward = True
-		assignment.leaves_allocated = True # Since Leaves will be allocated from ONE FM Scheduler
+		assignment.leaves_allocated = False
 		assignment.save()
 		assignment.submit()
 
@@ -715,10 +715,10 @@ def update_leave_policy_assignments_expires_today():
             leave_policy_assignment = frappe.new_doc('Leave Policy Assignment')
             leave_policy_assignment.employee = doc.employee
             leave_policy_assignment.effective_from = add_days(getdate(doc.effective_to), 1)
-            leave_policy_assignment.effective_to = add_years(getdate(leave_policy_assignment.effective_from), 1)
+            leave_policy_assignment.effective_to = add_days(add_years(leave_policy_assignment.effective_from, 1), -1)
             leave_policy_assignment.leave_policy = doc.leave_policy
             leave_policy_assignment.carry_forward = doc.carry_forward
-            leave_policy_assignment.leaves_allocated = True
+            leave_policy_assignment.leaves_allocated = False
             leave_policy_assignment.save(ignore_permissions=True)
             leave_policy_assignment.submit()
 
