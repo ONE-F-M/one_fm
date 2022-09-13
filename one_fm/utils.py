@@ -2669,7 +2669,7 @@ def workflow_approve_reject(doc, recipients=None):
         "recipients": recipients,
         "reference_name": doc.name,
         "reference_doctype": doc.doctype,
-        "message": f"Your {doc.doctype} {doc.title} has been {doc.workflow_state}"
+        "message": f"Your {doc.doctype} {doc.name} has been {doc.workflow_state}"
     }
     frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
 
