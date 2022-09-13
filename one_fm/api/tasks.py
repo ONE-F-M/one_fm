@@ -759,8 +759,8 @@ def create_shift_assignment(schedule, date):
 			if frappe.db.exists("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]}):
 				shift_request, check_in_site, check_out_site = frappe.get_value("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]},["name","check_in_site","check_out_site"])
 				shift_assignment.shift_request = shift_request
-				shift_assignment.check_in_site = check_in_site
-				shift_assignment.check_out_site = check_out_site
+				shift_assignment.check_in_location = check_in_site
+				shift_assignment.check_out_location = check_out_site
 			shift_assignment.submit()
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
