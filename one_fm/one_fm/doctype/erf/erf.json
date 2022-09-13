@@ -862,6 +862,7 @@
    "depends_on": "eval:doc.shift_working==0",
    "fieldname": "default_shift",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Default Shift",
    "mandatory_depends_on": "eval:doc.shift_working==0",
    "options": "Shift Type"
@@ -869,7 +870,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-09-11 20:28:34.973069",
+ "modified": "2022-09-13 09:24:14.314269",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
