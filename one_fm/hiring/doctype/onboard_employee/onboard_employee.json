@@ -230,6 +230,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "date_of_joining",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -1479,7 +1480,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-16 15:05:12.226647",
+ "modified": "2022-09-13 14:40:01.795361",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
