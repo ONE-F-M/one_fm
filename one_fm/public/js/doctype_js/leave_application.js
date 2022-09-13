@@ -7,7 +7,7 @@ frappe.ui.form.on("Leave Application", {
                     doc: frm.doc
                 },
                 callback: function(r) {
-                    var fields = ['is_proof_document_required', 'from_date','to_date', 'status','leave_approver']
+                    var fields = ['is_proof_document_required', 'from_date','to_date','leave_approver']
                     for (var i in fields){
                         if (r && r.message) {
                             cur_frm.set_df_property(fields[i],  'read_only', 0);
