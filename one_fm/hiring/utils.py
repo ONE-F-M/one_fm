@@ -85,8 +85,12 @@ def validate_job_offer(doc, method):
 def validate_job_offer_mandatory_fields(job_offer):
     if job_offer.workflow_state == 'Submit for Candidate Response':
         mandatory_field_required = False
-        fields = ['Reports To', 'Project', 'Operations Site', 'Operations Shift']
+        if job_offer.shift_working == 1:
+            fields = ['Reports To', 'Project', 'Operations Site', 'Operations Shift']
+        else: 
+            fields = ['Reports To', 'Project']
         msg = "Mandatory fields required to Submit Job Offer<br/><br/><ul>"
+
         for field in fields:
             if not job_offer.get(scrub(field)):
                 mandatory_field_required = True
@@ -355,13 +359,35 @@ def update_erf_close_with(doc):
 @frappe.whitelist()
 def create_salary_structure_assignment(doc, method):
     if doc.job_offer_salary_structure:
+        job_offer = frappe.get_doc("Job Offer", doc.job_offer)
         assignment = frappe.new_doc("Salary Structure Assignment")
         assignment.employee = doc.name
-        assignment.salary_structure = doc.job_offer_salary_structure
+        if doc.shift_working == 0 and doc.employment_type=="Contract":
+            if job_offer.select_existing_salary_structure == 1 :
+                assignment.salary_structure = job_offer.one_fm_salary_structure
+            else:
+                salary_structure = create_new_salary_structure(job_offer)
+                assignment.salary_structure = salary_structure.name
+
         assignment.company = doc.company
         assignment.from_date = doc.date_of_joining
-        assignment.base = doc.one_fm_basic_salary
+        if doc.one_fm_basic_salary:
+            assignment.base = doc.one_fm_basic_salary
         assignment.save(ignore_permissions = True)
+        assignment.submit()
+        frappe.db.commit()
+
+@frappe.whitelist()
+def create_new_salary_structure(doc):
+    salary_structure = frappe.new_doc("Salary Structure")
+    salary_structure.name = doc.name
+    salary_structure.salary_slip_based_on_timesheet = 1
+    salary_structure.salary_component = doc.salary_component
+    salary_structure.hour_rate = doc.hourly_rate
+    salary_structure.save()
+    salary_structure.submit()
+    frappe.db.commit()
+    return salary_structure
 
 @frappe.whitelist()
 def update_job_offer_from_applicant(jo, status):
