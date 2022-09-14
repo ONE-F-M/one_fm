@@ -25,11 +25,11 @@ class EmployeeUniform(Document):
 	def on_submit(self):
 		self.validate_handover_form()
 		if self.type == "Issue":
-			self.status = 'Issued'
-			self.issued_on = today()
+			self.db_set('status', 'Issued')
+			self.db_set('issued_on', today())
 		elif self.type == "Return":
-			self.status = 'Returned'
-			self.returned_on = today()
+			self.db_set('status', 'Returned')
+			self.db_set('returned_on', today())
 			for item in self.uniforms:
 				if item.issued_item_link:
 					returned = frappe.db.get_value('Employee Uniform Item', item.issued_item_link, 'returned')
@@ -93,7 +93,7 @@ class EmployeeUniform(Document):
 
 	def validate_issued_no_of_items(self):
 		if self.designation:
-			uniforms = get_project_uniform_details(self.designation, self.project)
+			uniforms = get_project_uniform_details(self.designation)
 			if uniforms:
 				for item in self.uniforms:
 					uniform = sorted(uniforms, key=lambda k: k.item == item.item)
@@ -129,7 +129,7 @@ class EmployeeUniform(Document):
 		uniforms = False
 		if self.employee:
 			if self.type == "Issue" and self.designation:
-				uniforms = get_project_uniform_details(self.designation, self.project)
+				uniforms = get_project_uniform_details(self.designation)
 				if not uniforms:
 					frappe.msgprint(msg = 'No Designation Profile - Uniforms Found',
 				       title = 'Warning',
@@ -255,6 +255,7 @@ def get_issued_items_not_returned(employee_id, item=False):
 		query += " and %(item)s"
 	return frappe.db.sql(query,{'employee': employee_id, 'item': item}, as_dict=True)
 
+@frappe.whitelist()
 def issued_items_not_returned(doctype, txt, searchfield, start, page_len, filters):
 	query = """
 		select

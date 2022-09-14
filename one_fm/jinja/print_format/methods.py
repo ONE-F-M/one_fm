@@ -87,11 +87,11 @@ def sic_attendance_absent_present(doc):
             sale_items += ")"
             sale_items = sale_items.replace(',)', ')')
 
-            # get post_type in attendance
-            post_types_query = frappe.db.sql(f"""
-                SELECT pt.name, pt.post_name, pt.sale_item, at.post_type
+            # get operations_role in attendance
+            operations_roles_query = frappe.db.sql(f"""
+                SELECT pt.name, pt.post_name, pt.sale_item, at.operations_role
                 FROM `tabPost Type` pt JOIN `tabAttendance` at
-                ON pt.name=at.post_type
+                ON pt.name=at.operations_role
                 WHERE at.attendance_date BETWEEN '{posting_date.year}-{posting_date.month}-0{first_day}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
                 AND at.project="{contracts.project}"
@@ -101,28 +101,28 @@ def sic_attendance_absent_present(doc):
 
 
             # filter post types
-            post_types = "("
-            if(len(post_types_query)==0):
-                post_types=f"('')"
+            operations_roles = "("
+            if(len(operations_roles_query)==0):
+                operations_roles=f"('')"
             else:
-                for c, i in enumerate(post_types_query):
-                    if(len(post_types_query)==c+1):
-                        post_types+=f" '{i.name}'"
+                for c, i in enumerate(operations_roles_query):
+                    if(len(operations_roles_query)==c+1):
+                        operations_roles+=f" '{i.name}'"
                     else:
-                        post_types+=f" '{i.name}',"
-                post_types += ")"
-                post_types = post_types.replace(',)', ')')
+                        operations_roles+=f" '{i.name}',"
+                operations_roles += ")"
+                operations_roles = operations_roles.replace(',)', ')')
 
 
             attendances = frappe.db.sql(f"""
                 SELECT at.employee, em.employee_id, em.employee_name,
-                at.post_type, at.status, at.project, at.site, at.attendance_date
+                at.operations_role, at.status, at.project, at.site, at.attendance_date
                 FROM `tabAttendance` at JOIN `tabEmployee` em
                 ON at.employee=em.name WHERE at.attendance_date
                 BETWEEN '{posting_date.year}-{posting_date.month}-0{first_day}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
                 AND at.project="{contracts.project}"
-                AND at.docstatus=1 AND at.post_type IN {post_types}
+                AND at.docstatus=1 AND at.operations_role IN {operations_roles}
                 ORDER BY at.employee ASC
                 ;
             """, as_dict=1)
@@ -146,9 +146,9 @@ def sic_attendance_absent_present(doc):
 
             # get schedule
             remaining_schedule = frappe.db.sql(f"""
-                SELECT es.employee, pt.name, pt.post_name, pt.sale_item, es.post_type, es.date
+                SELECT es.employee, pt.name, pt.post_name, pt.sale_item, es.operations_role, es.date
                 FROM `tabPost Type` pt JOIN `tabEmployee Schedule` es
-                ON pt.name=es.post_type
+                ON pt.name=es.operations_role
                 WHERE es.date BETWEEN '{posting_date.year}-{posting_date.month}-{due_date}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
                 AND es.project="{contracts.project}"
@@ -227,11 +227,11 @@ def sic_separate_invoice_attendance(doc):
             sale_items += ")"
             sale_items = sale_items.replace(',)', ')')
 
-            # get post_type in attendance
-            post_types_query = frappe.db.sql(f"""
-                SELECT pt.name, pt.post_name, pt.sale_item, at.post_type, at.site
+            # get operations_role in attendance
+            operations_roles_query = frappe.db.sql(f"""
+                SELECT pt.name, pt.post_name, pt.sale_item, at.operations_role, at.site
                 FROM `tabPost Type` pt JOIN `tabAttendance` at
-                ON pt.name=at.post_type
+                ON pt.name=at.operations_role
                 WHERE at.attendance_date BETWEEN '{posting_date.year}-{posting_date.month}-0{first_day}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
                 AND at.project="{contracts.project}" AND at.site="{post_site}"
@@ -240,28 +240,28 @@ def sic_separate_invoice_attendance(doc):
             ;""", as_dict=1)
 
             # filter post types
-            post_types = "("
-            if(len(post_types_query)==0):
-                post_types=f"('')"
+            operations_roles = "("
+            if(len(operations_roles_query)==0):
+                operations_roles=f"('')"
             else:
-                for c, i in enumerate(post_types_query):
-                    if(len(post_types_query)==c+1):
-                        post_types+=f"'{i.name}'"
+                for c, i in enumerate(operations_roles_query):
+                    if(len(operations_roles_query)==c+1):
+                        operations_roles+=f"'{i.name}'"
                     else:
-                        post_types+=f" '{i.name}',"
-                post_types += ")"
-                post_types = post_types.replace(',)', ')')
+                        operations_roles+=f" '{i.name}',"
+                operations_roles += ")"
+                operations_roles = operations_roles.replace(',)', ')')
 
 
             attendances = frappe.db.sql(f"""
                 SELECT at.employee, em.employee_id, em.employee_name,
-                at.post_type, at.status, at.project, at.site, at.attendance_date
+                at.operations_role, at.status, at.project, at.site, at.attendance_date
                 FROM `tabAttendance` at JOIN `tabEmployee` em
                 ON at.employee=em.name WHERE at.attendance_date
                 BETWEEN '{posting_date.year}-{posting_date.month}-0{first_day}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
                 AND at.project="{contracts.project}"
-                AND at.docstatus=1 AND at.post_type IN {post_types}
+                AND at.docstatus=1 AND at.operations_role IN {operations_roles}
                 AND at.site="{post_site}"
                 ORDER BY at.employee ASC
                 ;
@@ -286,9 +286,9 @@ def sic_separate_invoice_attendance(doc):
 
             # get schedule
             remaining_schedule = frappe.db.sql(f"""
-                SELECT es.employee, pt.name, pt.post_name, pt.sale_item, es.post_type, es.date
+                SELECT es.employee, pt.name, pt.post_name, pt.sale_item, es.operations_role, es.date
                 FROM `tabPost Type` pt JOIN `tabEmployee Schedule` es
-                ON pt.name=es.post_type
+                ON pt.name=es.operations_role
                 WHERE es.date BETWEEN '{posting_date.year}-{posting_date.month}-{due_date}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
                 AND es.project="{contracts.project}" AND es.site="{post_site}"
@@ -375,11 +375,11 @@ def sic_single_invoice_separate_attendance(doc):
             sale_items += ")"
             sale_items = sale_items.replace(',)', ')')
 
-            # get post_type in attendance
-            post_types_query = frappe.db.sql(f"""
-                SELECT pt.name, pt.post_name, pt.sale_item, at.post_type, at.site
+            # get operations_role in attendance
+            operations_roles_query = frappe.db.sql(f"""
+                SELECT pt.name, pt.post_name, pt.sale_item, at.operations_role, at.site
                 FROM `tabPost Type` pt JOIN `tabAttendance` at
-                ON pt.name=at.post_type
+                ON pt.name=at.operations_role
                 WHERE at.attendance_date BETWEEN '{posting_date.year}-{posting_date.month}-0{first_day}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
                 AND at.project="{contracts.project}" AND at.site in {post_sites}
@@ -388,28 +388,28 @@ def sic_single_invoice_separate_attendance(doc):
             ;""", as_dict=1)
 
             # filter post types
-            post_types = "("
-            if(len(post_types_query)==0):
-                post_types=f"('')"
+            operations_roles = "("
+            if(len(operations_roles_query)==0):
+                operations_roles=f"('')"
             else:
-                for c, i in enumerate(post_types_query):
-                    if(len(post_types_query)==c+1):
-                        post_types+=f"'{i.name}'"
+                for c, i in enumerate(operations_roles_query):
+                    if(len(operations_roles_query)==c+1):
+                        operations_roles+=f"'{i.name}'"
                     else:
-                        post_types+=f" '{i.name}',"
-                post_types += ")"
-                post_types = post_types.replace(',)', ')')
+                        operations_roles+=f" '{i.name}',"
+                operations_roles += ")"
+                operations_roles = operations_roles.replace(',)', ')')
 
 
             attendances = frappe.db.sql(f"""
                 SELECT at.employee, em.employee_id, em.employee_name,
-                at.post_type, at.status, at.project, at.site, at.attendance_date
+                at.operations_role, at.status, at.project, at.site, at.attendance_date
                 FROM `tabAttendance` at JOIN `tabEmployee` em
                 ON at.employee=em.name WHERE at.attendance_date
                 BETWEEN '{posting_date.year}-{posting_date.month}-0{first_day}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
                 AND at.project="{contracts.project}" AND at.site in {post_sites}
-                AND at.docstatus=1 AND at.post_type IN {post_types}
+                AND at.docstatus=1 AND at.operations_role IN {operations_roles}
                 ORDER BY at.employee ASC
                 ;
             """, as_dict=1)
@@ -438,9 +438,9 @@ def sic_single_invoice_separate_attendance(doc):
 
             # get schedule
             remaining_schedule = frappe.db.sql(f"""
-                SELECT es.employee, pt.name, pt.post_name, pt.sale_item, es.post_type, es.date
+                SELECT es.employee, pt.name, pt.post_name, pt.sale_item, es.operations_role, es.date
                 FROM `tabPost Type` pt JOIN `tabEmployee Schedule` es
-                ON pt.name=es.post_type
+                ON pt.name=es.operations_role
                 WHERE es.date BETWEEN '{posting_date.year}-{posting_date.month}-{due_date}'
                 AND '{posting_date.year}-{posting_date.month}-{last_day}'
                 AND es.project="{contracts.project}" AND es.site in {post_sites}
@@ -474,7 +474,7 @@ def sic_single_invoice_separate_attendance(doc):
                 # push ready employee data
                 sites[v.get('site')]['employees'].append({
                 'sn':count_loop, 'employee_id':v.get('employee_id'),
-                'site':v.get('site'), 'post_type':v.get('post_type'),
+                'site':v.get('site'), 'operations_role':v.get('operations_role'),
                 'employee_name':v.get('employee_name'),
                 'days_worked':days_worked
                 })
@@ -576,10 +576,10 @@ def get_attendance_by_site(contracts, site, item, date_range):
     return frappe.db.sql(f"""
         SELECT a.employee, a.employee_name, a.attendance_date, a.working_hours,
         a.status, a.site, a.project, os.start_time, os.end_time, os.duration,
-        os.shift_classification, pt.name as post_type, pt.sale_item
+        os.shift_classification, pt.name as operations_role, pt.sale_item
         FROM `tabAttendance` a JOIN `tabOperations Shift` os
         ON a.operations_shift=os.name JOIN `tabPost Type` pt
-        ON a.post_type=pt.name WHERE a.attendance_date
+        ON a.operations_role=pt.name WHERE a.attendance_date
         BETWEEN '{date_range.start_date}' AND '{date_range.end_date}' AND a.project="{contracts.project}"
         AND a.site="{site}" AND pt.sale_item="{item}"
         AND a.status='Present' ORDER BY a.attendance_date ASC;
@@ -592,10 +592,10 @@ def get_remaining_checkin_checkout_schedule(contracts, site, item, date_range):
     return frappe.db.sql(f"""
         SELECT es.employee, es.employee_name, es.date as attendance_date, os.duration as working_hours,
         'Present' as status, es.site, es.project, os.start_time, os.end_time, os.duration,
-        os.shift_classification, pt.name as post_type, pt.sale_item
+        os.shift_classification, pt.name as operations_role, pt.sale_item
         FROM `tabEmployee Schedule` es JOIN `tabOperations Shift` os
         ON es.shift=os.name JOIN `tabPost Type` pt
-        ON es.post_type=pt.name WHERE es.date
+        ON es.operations_role=pt.name WHERE es.date
         BETWEEN '{date_range.start_date}' AND '{date_range.end_date}' AND es.project="{contracts.project}"
         AND es.site="{site}" AND pt.sale_item="{item}"
         ORDER BY es.date ASC;
@@ -606,7 +606,7 @@ def get_sites(contracts, date_range):
 
     return [i.site for i in frappe.db.sql(f"""
         SELECT es.site, es.name FROM `tabEmployee Schedule` es
-        JOIN `tabPost Type` pt ON es.post_type=pt.name
+        JOIN `tabPost Type` pt ON es.operations_role=pt.name
         WHERE pt.sale_item IN {get_sale_items(contracts)} AND project="{contracts.project}"
         AND date BETWEEN '{date_range.start_date}' AND '{date_range.end_date}'
         GROUP BY es.site
@@ -632,7 +632,7 @@ def get_item_map(contracts, item_list, date_range):
     items_map = {}
     query = frappe.db.sql(f"""
         SELECT es.site, pt.name, pt.sale_item FROM `tabEmployee Schedule` es
-        JOIN `tabPost Type` pt ON es.post_type=pt.name
+        JOIN `tabPost Type` pt ON es.operations_role=pt.name
         WHERE pt.sale_item IN {get_sale_items(contracts)} AND project="{contracts.project}"
         AND date BETWEEN '{date_range.start_date}' AND '{date_range.end_date}'
         GROUP BY pt.sale_item
@@ -704,7 +704,7 @@ def get_shift_types(contracts, site, item, attandances, day_name_map, date_forma
                 # attache to invoice
 
 
-                value['sheets']['position'] = i.post_type
+                value['sheets']['position'] = i.operations_role
                 value['sheets']['shift_type'] = i.shift_classification
                 _day = value['sheets']['table'][i.attendance_date.day]
                 _day['time_in'] = str(i.start_time)

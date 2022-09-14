@@ -31,14 +31,14 @@ frappe.ui.form.on('Operations Shift', {
 								data: [],
 							},	
 							{'fieldname': 'cb2', 'fieldtype': 'Column Break'},
-							{'label': 'Post Type', 'fieldname': 'post_template', 'fieldtype': 'Link', 'options': 'Post Type', onchange: function(){
-								let post_type = this.value;
-								if(post_type !== undefined){
+							{'label': 'Operations Role', 'fieldname': 'post_template', 'fieldtype': 'Link', 'options': 'Operations Role', onchange: function(){
+								let operations_role = this.value;
+								if(operations_role !== undefined){
 									frappe.call({
 										method:'frappe.client.get',
 										args: {
-											doctype: 'Post Type',
-											name: post_type,
+											doctype: 'Operations Role',
+											name: operations_role,
 										},
 										callback: function(r) {
 											if(!r.exc) {

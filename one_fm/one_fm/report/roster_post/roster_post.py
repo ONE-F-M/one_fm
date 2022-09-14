@@ -8,7 +8,7 @@ from calendar import monthrange
 from frappe import msgprint
 import pandas as pd
 
-post_types_not_filled = set()
+operations_roles_not_filled = set()
 
 def execute(filters=None):
 	if filters:
@@ -82,17 +82,17 @@ class RosterPost(object):
 
 		if self.filters:
 			for date in pd.date_range(start=self.filters["start_date"], end=self.filters["end_date"]):
-				active_posts = len(frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["post_type"]))
+				active_posts = len(frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["operations_role"]))
 				posts_off = len(frappe.db.get_list("Post Schedule", {'post_status': 'Post Off', 'date': date}))
 
 				posts_filled_count = 0
 				posts_not_filled_count = 0
 
-				post_types = frappe.db.get_list("Post Schedule", ["distinct post_type", "post_abbrv"])
-				for post_type in post_types:
+				operations_roles = frappe.db.get_list("Post Schedule", ["distinct operations_role", "post_abbrv"])
+				for operations_role in operations_roles:
 					# For each post type, get all post schedules and employee schedules assigned to the post type
-					posts_count = len(frappe.db.get_list("Post Schedule", {'post_type': post_type.post_type, 'date': date, 'post_status': 'Planned'}))
-					posts_fill_count = len(frappe.db.get_list("Employee Schedule", {'post_type': post_type.post_type, 'date': date, 'employee_availability': 'Working'}))
+					posts_count = len(frappe.db.get_list("Post Schedule", {'operations_role': operations_role.operations_role, 'date': date, 'post_status': 'Planned'}))
+					posts_fill_count = len(frappe.db.get_list("Employee Schedule", {'operations_role': operations_role.operations_role, 'date': date, 'employee_availability': 'Working'}))
 
 					# Compare count of post schedule vs employee schedule for the given post type, compute post filled/not filled count
 					if posts_count == posts_fill_count:
@@ -100,8 +100,8 @@ class RosterPost(object):
 					elif posts_count > posts_fill_count:
 						posts_filled_count = posts_filled_count + posts_fill_count
 						posts_not_filled_count = posts_not_filled_count + (posts_count - posts_fill_count)
-						global post_types_not_filled
-						post_types_not_filled.add(post_type.post_type)
+						global operations_roles_not_filled
+						operations_roles_not_filled.add(operations_role.operations_role)
 
 				result = "OK"
 				if posts_not_filled_count > 0:
@@ -135,7 +135,7 @@ class RosterPost(object):
 
 
 	def get_active_posts(self, date):
-		return frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["post_type"])
+		return frappe.db.get_list("Post Schedule", {'post_status': 'Planned', 'date': date}, ["operations_role"])
 
 	def get_posts_off(self, date):
 		return frappe.db.get_list("Post Schedule", {'post_status': 'Post Off', 'date': date})
@@ -150,5 +150,5 @@ def get_years():
 
 
 @frappe.whitelist()
-def get_post_types_not_filled():
-	return post_types_not_filled	
+def get_operations_roles_not_filled():
+	return operations_roles_not_filled	

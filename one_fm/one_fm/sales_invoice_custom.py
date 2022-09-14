@@ -311,8 +311,8 @@ def add_site_wise_contracts_item_details_into_invoice(sales_invoice, site_group,
     timesheet_details = list(site_group)
     sales_invoice = add_timesheet_details_into_invoice(sales_invoice, timesheet_details, contract_item.item_code)
     monthly_rate, hourly_rate = get_monthly_and_hourly_rate(sales_invoice.project, contract_item, first_day)
-    post_type = frappe.db.get_value('Post Type', {'sale_item':contract_item.item_code}, 'name')
-    post_list = frappe.db.get_list('Operations Post', fields="name", filters={'post_template':post_type,'project':sales_invoice.project,'site':site}, order_by="name")
+    operations_role = frappe.db.get_value('Operations Role', {'sale_item':contract_item.item_code}, 'name')
+    post_list = frappe.db.get_list('Operations Post', fields="name", filters={'post_template':operations_role,'project':sales_invoice.project,'site':site}, order_by="name")
     total_working_days = calculate_total_working_days(sales_invoice.project, contract_item.item_code, first_day)
     site_wise_option = frappe.db.get_value('Contracts', sales_invoice.contracts, 'site_wise_option')
     for post in post_list:
@@ -502,14 +502,14 @@ def add_contracts_item_details_post_wise(sales_invoice, contract_item, today, st
     filters['gender'] = contract_item.gender
     filters['shift_hours'] = contract_item.shift_hours
     monthly_rate, hourly_rate = get_monthly_and_hourly_rate(sales_invoice.project, contract_item, first_day)
-    post_type = frappe.db.get_value('Post Type', {'sale_item':contract_item.item_code}, 'name')
-    filters['post_type'] = post_type
+    operations_role = frappe.db.get_value('Operations Role', {'sale_item':contract_item.item_code}, 'name')
+    filters['operations_role'] = operations_role
     #only select post with condition item_code, gender, shift hour, days offs (based on contract_item)
     post_list = frappe.db.sql("""
         SELECT
             name
         FROM `tabOperations Post`
-        WHERE post_template = %(post_type)s and project = %(project)s
+        WHERE post_template = %(operations_role)s and project = %(project)s
             and gender = %(gender)s
             and (select duration from `tabOperations Shift`
             where name = `tabOperations Post`.site_shift) = %(shift_hours)s
@@ -598,9 +598,9 @@ def advance_service_list_of_post(operations_post, contract_item, project, start_
 
 def get_actual_service_list(day_list, project, item_code):
     actual_service_list = []
-    post_type = frappe.db.get_value('Post Type', {'sale_item': item_code}, 'name')
+    operations_role = frappe.db.get_value('Operations Role', {'sale_item': item_code}, 'name')
     for day in day_list:
-        post_schedule_count = get_post_schedule_count_for_day(project, post_type, day)
+        post_schedule_count = get_post_schedule_count_for_day(project, operations_role, day)
         timesheet = get_timesheet_for_day(project, item_code, day)
         if timesheet.billing_amount != None:
             case = {'item_code': item_code, 'date': day, 'billing_amount': timesheet.billing_amount,'post_schedule_count': post_schedule_count,'timesheet_count': timesheet.count }
@@ -609,9 +609,9 @@ def get_actual_service_list(day_list, project, item_code):
 
 def get_advance_service_list(day_list, project, item_code, hourly_rate, shift_hours, first_day):
     advance_service_list = []
-    post_type = frappe.db.get_value('Post Type', {'sale_item': item_code}, 'name')
+    operations_role = frappe.db.get_value('Operations Role', {'sale_item': item_code}, 'name')
     for day in day_list:
-        post_schedule_count = get_post_schedule_count_for_day(project, post_type, day)
+        post_schedule_count = get_post_schedule_count_for_day(project, operations_role, day)
         if post_schedule_count > 0:
             timesheet_billing_amount = (flt(hourly_rate) * flt(shift_hours)) * flt(post_schedule_count)
             if timesheet_billing_amount != None:
@@ -644,10 +644,10 @@ def get_workdays_and_amount(project, item_code, from_time, to_time, site=None, p
                 and sales_invoice is null order by from_time asc
             """.format(conditions=conditions), values=filters, as_dict=1)[0]
 
-def get_post_schedule_count_for_day(project, post_type, date):
+def get_post_schedule_count_for_day(project, operations_role, date):
     return frappe.db.get_value('Post Schedule',
                 {'post_status': 'Planned','project': project,
-                'post_type': post_type,'date': date},
+                'operations_role': operations_role,'date': date},
                 ['count(name) as post_schedule_count'])
 
 def get_timesheet_for_day(project, item_code, date):
@@ -666,7 +666,7 @@ def get_timesheet_for_day(project, item_code, date):
 #Append invoice details for seperate item for seperate site and post wise
 def append_seperate_item_for_each_site(sales_invoice, site_group, today, start_date, end_date, first_day, site, income_account, cost_center):
     for key, group in itertools.groupby(site_group, key=lambda x: (x['activity_type'])):
-        item_code = frappe.db.get_value("Post Type", key, 'sale_item')
+        item_code = frappe.db.get_value("Operations Role", key, 'sale_item')
         contract_item = get_contract_item_list(None, sales_invoice.project, item_code)
         monthly_rate, hourly_rate = get_monthly_and_hourly_rate(sales_invoice.project, contract_item, first_day)
         timesheet_details = list(group)
@@ -848,8 +848,8 @@ def add_contracts_item_details_for_t4(sales_invoice, contract_item, first_day, l
     monthly_rate, hourly_rate = get_monthly_and_hourly_rate(sales_invoice.project, contract_item, first_day)
     total_working_days = calculate_total_working_days(sales_invoice.project, contract_item.item_code, first_day)
     inputted_qty = 0
-    post_type = frappe.db.get_value('Post Type', {'sale_item':contract_item.item_code}, 'name')
-    post_list = frappe.db.get_list('Operations Post', fields="name", filters={'post_template':post_type,'project':sales_invoice.project}, order_by="name")
+    operations_role = frappe.db.get_value('Operations Role', {'sale_item':contract_item.item_code}, 'name')
+    post_list = frappe.db.get_list('Operations Post', fields="name", filters={'post_template':operations_role,'project':sales_invoice.project}, order_by="name")
     for post in post_list:
         actual_service_list = []
         timesheet = frappe.db.sql("""select count(t.operations_post) as count, sum(billing_amount) as billing_amount

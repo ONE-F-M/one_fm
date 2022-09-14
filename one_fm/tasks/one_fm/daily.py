@@ -1,6 +1,7 @@
 from datetime import datetime
-import frappe
+import frappe, json
 from frappe.utils import getdate, nowdate, get_last_day
+from frappe.desk.query_report import *
 
 
 def generate_contracts_invoice():
@@ -9,8 +10,7 @@ def generate_contracts_invoice():
     """
     try:
         contracts = frappe.get_list('Contracts', filters={
-            'docstatus':1, 
-            'workflow_state':'Active', 
+            'workflow_state':'Active',
             # 'due_date':str(datetime.today().date().day)
         })
         # generate
@@ -33,7 +33,7 @@ def mark_future_attendance_request():
     """
     attendance_requests = frappe.db.sql(f"""
         SELECT name FROM `tabAttendance Request`
-        WHERE '{nowdate()}' BETWEEN from_date AND to_date AND future_request=1 
+        WHERE '{nowdate()}' BETWEEN from_date AND to_date AND future_request=1
         AND docstatus=1
     """, as_dict=1)
     for row in attendance_requests:
@@ -41,3 +41,14 @@ def mark_future_attendance_request():
             frappe.get_doc("Attendance Request", row.name).create_future_attendance()
         except Exception as e:
             frappe.log_error(str(e), 'Attendance Request')
+
+
+def roster_projection_view_task():
+    """
+        Generate ROSTER projection
+    """
+    report = frappe.get_doc("Report", 'Roster Projection View')
+    background_enqueue_run(report.name,
+        filters=json.dumps(
+            {'month':datetime.today().month, 'year':datetime.today().year}), user='Administrator'
+    )

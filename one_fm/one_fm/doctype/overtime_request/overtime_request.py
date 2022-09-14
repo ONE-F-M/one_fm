@@ -23,7 +23,7 @@ class OvertimeRequest(Document):
 
 		elif self.request_type == 'Operations':
 			filters['shift'] = self.shift
-			filters['post_type'] = self.post_type
+			filters['operations_role'] = self.operations_role
 
 		exists_overtime_request = frappe.db.exists('Overtime Request', filters)
 		if exists_overtime_request:
@@ -107,13 +107,13 @@ class OvertimeRequest(Document):
 		"""
 		setting data << employee, shift, post type, date, employee_availability, Roster Type >>
 		"""
-		if not frappe.db.exists("Employee Schedule",{'employee':self.employee, 'date':self.date, 'shift':self.operation_shift, 'post_type':self.post_type, 'roster_type':"Over-Time"}):
+		if not frappe.db.exists("Employee Schedule",{'employee':self.employee, 'date':self.date, 'shift':self.operation_shift, 'operations_role':self.operations_role, 'roster_type':"Over-Time"}):
 			print("created successfully")
 			employee_schedule = frappe.new_doc("Employee Schedule")
 			employee_schedule.employee = self.employee
 			employee_schedule.date = cstr(self.date)
 			employee_schedule.employee_availability = "Working"
-			employee_schedule.post_type = self.post_type
+			employee_schedule.operations_role = self.operations_role
 			employee_schedule.shift = self.shift
 			employee_schedule.roster_type = "Over-Time"
 			employee_schedule.save(ignore_permissions=True)
@@ -131,8 +131,8 @@ class OvertimeRequest(Document):
 		elif self.request_type == "Operations":
 			if not self.shift:
 				mandatory_fields.append('Shift')
-			if not self.post_type:
-				mandatory_fields.append('Post Type')
+			if not self.operations_role:
+				mandatory_fields.append('Operations Role')
 			self.set_mendatory_fields(mandatory_fields)
 
 		# FILTER OUT OPERATIONS REQUEST TYPE

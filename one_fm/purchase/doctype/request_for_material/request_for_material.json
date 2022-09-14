@@ -438,10 +438,10 @@
   {
    "fieldname": "t_warehouse",
    "fieldtype": "Link",
+   "hidden": 1,
    "in_standard_filter": 1,
    "label": "To Warehouse",
-   "options": "Warehouse",
-   "reqd": 1
+   "options": "Warehouse"
   },
   {
    "default": "0",
@@ -472,7 +472,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-14 09:12:29.387742",
+ "modified": "2022-09-10 19:44:58.554792",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",

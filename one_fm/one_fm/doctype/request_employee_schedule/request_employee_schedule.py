@@ -26,7 +26,7 @@ class RequestEmployeeSchedule(Document):
 		if not self.approver or not self.requestor:
 			frappe.throw(_("Please set requestor and approver"))
 
-		if not self.from_post_type or not self.to_post_type:
+		if not self.from_operations_role or not self.to_operations_role:
 			frappe.throw(_("Please set post types"))
 
 		if self.from_shift == self.to_shift:
@@ -55,16 +55,16 @@ def approve_shift_change(doctype, docname):
 		for date in	pd.date_range(start=doc.start_date, end=doc.end_date):
 			if frappe.db.exists("Employee Schedule", {"employee": doc.employee, "date": cstr(date.date()), "roster_type" : doc.roster_type}):
 				site, project, shift_type= frappe.get_value("Operations Shift", doc.to_shift, ["site", "project", "shift_type"])
-				post_abbrv = frappe.get_value("Post Type", doc.to_post_type, "post_abbrv")
+				post_abbrv = frappe.get_value("Operations Role", doc.to_operations_role, "post_abbrv")
 				roster = frappe.get_value("Employee Schedule", {"employee": doc.employee, "date": cstr(date.date()), "roster_type" : doc.roster_type })
-				update_existing_schedule(roster, doc.to_shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", doc.to_post_type, doc.roster_type)
+				update_existing_schedule(roster, doc.to_shift, site, shift_type, project, post_abbrv, cstr(date.date()), "Working", doc.to_operations_role, doc.roster_type)
 			else:
 				roster_doc = frappe.new_doc("Employee Schedule")
 				roster_doc.employee = doc.employee
 				roster_doc.date = cstr(date.date())
 				roster_doc.shift = doc.to_shift
 				roster_doc.employee_availability = "Working"
-				roster_doc.post_type = doc.to_post_type
+				roster_doc.operations_role = doc.to_operations_role
 				roster_doc.roster_type = doc.roster_type
 				roster_doc.save(ignore_permissions=True)
 
@@ -109,7 +109,7 @@ def get_current_user_details():
 	return user, user_roles, user_employee
 
 
-def update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, date, employee_availability, post_type, roster_type):
+def update_existing_schedule(roster, shift, site, shift_type, project, post_abbrv, date, employee_availability, operations_role, roster_type):
 	frappe.db.set_value("Employee Schedule", roster, "shift", val=shift)
 	frappe.db.set_value("Employee Schedule", roster, "site", val=site)
 	frappe.db.set_value("Employee Schedule", roster, "shift_type", val=shift_type)
@@ -117,5 +117,5 @@ def update_existing_schedule(roster, shift, site, shift_type, project, post_abbr
 	frappe.db.set_value("Employee Schedule", roster, "post_abbrv", val=post_abbrv)
 	frappe.db.set_value("Employee Schedule", roster, "date", val=date)
 	frappe.db.set_value("Employee Schedule", roster, "employee_availability", val=employee_availability)
-	frappe.db.set_value("Employee Schedule", roster, "post_type", val=post_type)
+	frappe.db.set_value("Employee Schedule", roster, "operations_role", val=operations_role)
 	frappe.db.set_value("Employee Schedule", roster, "roster_type", val=roster_type)

@@ -4,7 +4,7 @@ from one_fm.api.notification import create_notification_log
 
 # This method is creating overtime request record and setting the the shift details
 @frappe.whitelist()
-def create_overtime_request(employee, request_type, date, start_time=None, end_time=None, shift=None, post_type=None):
+def create_overtime_request(employee, request_type, date, start_time=None, end_time=None, shift=None, operations_role=None):
     """
         Params:
             employee: Employee ID in ERP
@@ -19,7 +19,7 @@ def create_overtime_request(employee, request_type, date, start_time=None, end_t
         doc.start_time = start_time
         doc.end_time = end_time
         doc.shift = shift
-        doc.post_type = post_type
+        doc.operations_role = operations_role
         doc.save()
         frappe.db.commit()
         return response("Overtime Request Successfully Created", doc, True, 201)

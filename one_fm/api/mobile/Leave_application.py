@@ -5,9 +5,11 @@ from datetime import date
 import datetime
 import collections
 import base64, json
-from frappe.utils import getdate
+from frappe.utils import getdate, cstr
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import get_action_user
+from one_fm.api.api import push_notification_rest_api_for_leave_application
+from one_fm.processor import sendemail
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -177,9 +179,27 @@ def fetch_leave_approver(employee):
     Return: User ID of Leave Approver
 
     """
-    employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-    approver, Role = get_action_user(employee,employee_shift[0].shift)
-    
+    approver = frappe.db.get_value('Employee', employee, 'leave_approver')
+    if not approver:
+        department = frappe.db.get_value('Employee', employee, 'department')
+        leave_approver = frappe.db.sql("""
+            SELECT approver from `tabDepartment Approver` 
+            WHERE parent='{parent}' AND parentfield='leave_approvers' AND parenttype='Department'
+        """.format(parent=department), as_dict=1)
+        if leave_approver:
+            approver = leave_approver[0].approver
+    elif not approver:
+        frappe.db.get_value('Employee', employee, 'reports_to')
+    elif not approver:
+        project = frappe.db.get_value('Employee', employee, 'project')
+        if project:
+            project_manager = frappe.db.get_value('Project', project, 'account_manager')
+            if project_manager:
+                approver = frappe.db.get_value('Employee', project_manager, 'leave_approver')
+
+    elif not approver:
+        frappe.throw(_('{employee} has not approver, please set an approver.'.format(employee=employee)))
+
     return approver
 
 @frappe.whitelist()
@@ -204,18 +224,38 @@ def notify_leave_approver(doc):
             return
         email_template = frappe.get_doc("Email Template", template)
         message = frappe.render_template(email_template.response_html, args)
+        
+        attachments = get_attachment(doc)
 
         #send notification
-        doc.notify({
-            # for post in messages
-            "message": message,
-            "message_to": doc.leave_approver,
-            # for email
-            "subject": email_template.subject
-        })
+        sendemail(recipients= [doc.leave_approver], subject="Leave Application", message=message,
+					reference_doctype=doc.doctype, reference_name=doc.name, attachments = attachments)        
+        
+        employee_id = frappe.get_value("Employee", {"user_id":doc.leave_approver}, ["name"])
+        
+        if doc.total_leave_days == 1:
+            date = "for "+cstr(doc.from_date)
+        else:
+            date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
+
+        push_notication_message = doc.employee_name+" has applied for "+doc.leave_type+" "+date+". Kindly, take action."
+        push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, doc.name)
+
 
 def proof_document_required_for_leave_type(leave_type):
     if int(frappe.db.get_value("Leave Type", {'name': leave_type}, "is_proof_document_required")):
         return True
 
     return False
+
+def get_attachment(doc):
+    attachments = []
+    if doc.proof_document:
+        name, file_name = frappe.db.get_value("File", {"file_url":doc.proof_document, "attached_to_doctype":"Leave Application", "attached_to_field":"proof_document"}, ["name", "file_name"])
+        content = frappe.get_doc("File", name).get_content()
+        attachments = [{
+			'fname': file_name,
+			'fcontent': content
+		    }]
+    if attachments:
+        return attachments

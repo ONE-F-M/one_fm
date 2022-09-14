@@ -17,6 +17,7 @@ from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 from one_fm.one_fm.doctype.erf.erf import (
     get_description_by_performance_profile, set_erf_skills_in_job_opening, set_erf_language_in_job_opening
 )
+from one_fm.denomyn import get_denomyn
 
 
 @frappe.whitelist()
@@ -250,54 +251,53 @@ def generate_employee_id(doc):
 	Generate employee ID
 	"""
 	try:
-		if doc.one_fm_place_of_birth:
-			country = pycountry.countries.search_fuzzy(doc.one_fm_place_of_birth)[0].alpha_2
-		elif doc.place_of_issue:
-			country = pycountry.countries.search_fuzzy(doc.place_of_issue)[0].alpha_2
+		if doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
+			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
 		else:
-			country = ''
+			country = 'XX'
 	except Exception as e:
-		country = ''
-	
+		country = 'XX'
+
 	count = len(frappe.db.sql(f"""
 		SELECT name FROM tabEmployee
 		WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
 		as_dict=1))
-		
+
 	if count == 0:
 		count = count + 1
-		
+
 	doc.reload()
 	joining_year = str(doc.date_of_joining.year)[-2:].zfill(2)
 	joining_month = str(doc.date_of_joining.month).zfill(2)
 	serial_number = str(count).zfill(3)
-	
+
 	while frappe.db.get_list("Employee", {"employee_id": ["LIKE", f"{joining_year}{joining_month}{serial_number}%"]}):
 		count = count + 1
 		serial_number = str(count).zfill(3)
-		
+
 	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{1 if doc.under_company_residency else 0}{doc.date_of_birth.strftime('%y')}".upper())
 	doc.reload()
 
 
 def create_leave_policy_assignment(doc):
-    '''
-        Method to create Leave Policy Assignment for an Employee, if employee have a Leave Policy
-        Create Leave Policy based on Joining Date
-        args:
-            doc: Employee Object
-    '''
-    if doc.leave_policy:
-        assignment = frappe.new_doc("Leave Policy Assignment")
-        assignment.employee = doc.name
-        assignment.assignment_based_on = 'Joining Date'
-        assignment.leave_policy = doc.leave_policy
-        assignment.effective_from = doc.date_of_joining
-        assignment.effective_to = add_years(doc.date_of_joining, 1)
-        assignment.carry_forward = True
-        assignment.leaves_allocated = True # Since Leaves will be allocated from ONE FM Scheduler
-        assignment.save()
-        assignment.submit()
+	'''
+		Method to create Leave Policy Assignment for an Employee, if employee have a Leave Policy
+		Create Leave Policy based on Joining Date
+		args:
+			doc: Employee Object
+	'''
+	if doc.leave_policy:
+		assignment = frappe.new_doc("Leave Policy Assignment")
+		assignment.employee = doc.name
+		assignment.assignment_based_on = 'Joining Date'
+		assignment.leave_policy = doc.leave_policy
+		assignment.effective_from = doc.date_of_joining
+		# effective_to is an year of addition to effective_from
+		assignment.effective_to = getdate(add_days(add_years(doc.date_of_joining, 1), -1))
+		assignment.carry_forward = True
+		assignment.leaves_allocated = False
+		assignment.save()
+		assignment.submit()
 
 @frappe.whitelist()
 def grant_leave_alloc_for_employee(doc):
@@ -715,10 +715,10 @@ def update_leave_policy_assignments_expires_today():
             leave_policy_assignment = frappe.new_doc('Leave Policy Assignment')
             leave_policy_assignment.employee = doc.employee
             leave_policy_assignment.effective_from = add_days(getdate(doc.effective_to), 1)
-            leave_policy_assignment.effective_to = add_years(getdate(leave_policy_assignment.effective_from), 1)
+            leave_policy_assignment.effective_to = add_days(add_years(leave_policy_assignment.effective_from, 1), -1)
             leave_policy_assignment.leave_policy = doc.leave_policy
             leave_policy_assignment.carry_forward = doc.carry_forward
-            leave_policy_assignment.leaves_allocated = True
+            leave_policy_assignment.leaves_allocated = False
             leave_policy_assignment.save(ignore_permissions=True)
             leave_policy_assignment.submit()
 

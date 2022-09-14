@@ -1,6 +1,14 @@
 {
  "add_total_row": 0,
- "columns": [],
+ "columns": [
+  {
+   "fieldname": "client",
+   "fieldtype": "Link",
+   "label": "Client",
+   "options": "Customer",
+   "width": 180
+  }
+ ],
  "creation": "2022-07-25 08:34:20.429528",
  "disable_prepared_report": 0,
  "disabled": 0,
@@ -10,7 +18,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": "ONEFM",
- "modified": "2022-07-25 08:34:20.429528",
+ "modified": "2022-08-17 14:37:42.818984",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Roster Projection View",

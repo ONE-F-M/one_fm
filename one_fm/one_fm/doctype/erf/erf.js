@@ -20,6 +20,7 @@ frappe.ui.form.on('ERF', {
 			};
 		});
 
+        filterDefaultShift(frm);
 		set_shift_working_btn(frm);
 		set_driving_license_required_btn(frm);
 		set_is_uniform_needed_for_this_job_btn(frm);
@@ -49,7 +50,7 @@ frappe.ui.form.on('ERF', {
 				__('Set a Date With {0} For a Quick Workshop',[frm.doc.__onload.okr_workshop_with_full_name]))
 		}
 		if (frm.doc.docstatus == 1 && frm.doc.__onload && 'erf_approver' in frm.doc.__onload){
-			if(frm.doc.__onload.erf_approver.includes(frappe.session.user) && frm.doc.status == "Draft"){
+			if(frm.doc.__onload.erf_approver.includes(frappe.session.user) && !['Accepted', 'Declined', 'Closed', 'Cancelled'].includes(frm.doc.status)){
 				frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_decline_erf(frm, 'Accepted', false)).addClass('btn-primary');
 				frm.add_custom_button(__('Decline'), () => frm.events.decline_erf(frm, 'Declined')).addClass('btn-danger');
 			}
@@ -228,6 +229,7 @@ frappe.ui.form.on('ERF', {
 	},
 	shift_working: function(frm) {
 		set_shift_working_btn(frm);
+		filterDefaultShift(frm);
 	},
 	night_shift: function(frm) {
 		set_night_shift_btn(frm);
@@ -664,7 +666,7 @@ var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
 	$wrapper
 		.html(field_html);
 	$wrapper.on('click', '.'+field_btn_html, function() {
-		if(frm.doc.docstatus == 0){
+		if(frm.doc.docstatus == 0 || field_name == 'shift_working'){
 			var $btn = $(this);
 			$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
 			$btn.addClass('btn-primary');
@@ -1024,4 +1026,18 @@ const loadJobOpening = frm => {
 			frm.add_custom_button(__('Close Job Opening'), () => closeJobOpening(frm)).addClass('btn-primary');
 		}
 	})
+}
+
+const filterDefaultShift = (frm) => {
+    let state = 0;
+    if (frm.doc.shift_working==1) {
+        state=1;
+    }
+    frm.set_query('default_shift', () => {
+        return {
+            filters: {
+                shift_work: state
+            }
+        }
+    })
 }

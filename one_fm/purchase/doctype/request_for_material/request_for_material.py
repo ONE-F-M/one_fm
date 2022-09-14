@@ -434,50 +434,7 @@ def make_stock_entry(source_name, target_doc=None):
 		target.t_warehouse = obj.t_warehouse
 
 	def set_missing_values(source, target):
-		target.purpose = 'Material Transfer'
-		target.run_method("calculate_rate_and_amount")
-		target.set_stock_entry_type()
-		target.set_job_card_data()
-
-	doclist = get_mapped_doc("Request for Material", source_name, {
-		"Request for Material": {
-			"doctype": "Stock Entry",
-			"field_map": [
-				["name", "one_fm_request_for_material"]
-			],
-			"validation": {
-				"docstatus": ["=", 1]
-			}
-		},
-		"Request for Material Item": {
-			"doctype": "Stock Entry Detail",
-			"field_map": {
-				"uom": "stock_uom",
-				"name": "one_fm_request_for_material_item",
-				"parent": "one_fm_request_for_material"
-			},
-			"postprocess": update_item,
-			"condition": lambda doc: (doc.item_code and doc.reject_item==0)
-		}
-	}, target_doc, set_missing_values)
-
-	return doclist
-
-@frappe.whitelist()
-def make_stock_entry_issue(source_name, target_doc=None):
-	def update_item(obj, target, source_parent):
-		# qty = flt(obj.qty)/ target.conversion_factor \
-		# 	if flt(obj.actual_qty) > flt(obj.qty) else flt(obj.quantity_to_transfer)
-		qty = obj.quantity_to_transfer
-		target.qty = qty
-		target.transfer_qty = qty * obj.conversion_factor
-		target.conversion_factor = obj.conversion_factor
-
-		target.s_warehouse = obj.warehouse
-		target.t_warehouse = obj.t_warehouse
-
-	def set_missing_values(source, target):
-		target.purpose = 'Material Transfer'
+		target.purpose = 'Material Issue' if source.type == 'Individual' else 'Material Transfer'
 		target.run_method("calculate_rate_and_amount")
 		target.set_stock_entry_type()
 		target.set_job_card_data()

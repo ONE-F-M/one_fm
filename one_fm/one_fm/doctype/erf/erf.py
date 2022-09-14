@@ -289,9 +289,9 @@ class ERF(Document):
 		self.status = status
 		self.reason_for_decline = reason_for_decline
 		self.save()
-		assign_recruiter_to_project_task(self)
 		self.notify_recruiter_and_requester()
 		if self.status == 'Accepted':
+			assign_recruiter_to_project_task(self)
 			self.notify_grd_supervisor()
 			self.notify_gsd_department()
 			if self.provide_salary_advance:

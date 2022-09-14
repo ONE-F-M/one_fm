@@ -1,6 +1,13 @@
 import frappe
 import base64
+from datetime import date
+import datetime
 from one_fm.api.v1.utils import response
+from one_fm.api.api import upload_file
+from pathlib import Path
+import hashlib
+import base64, json
+from frappe.utils import cint, cstr, getdate
 
 @frappe.whitelist()
 def get_user_details(employee_id: str = None):
@@ -49,15 +56,15 @@ def change_user_profile_image(employee_id: str = None, image: str = None):
         return response("Bad Request", 400, None, "image must be of type str.")
     
     content = base64.b64decode(image)
-    filename = employee_id + ".png"
+    filename = hashlib.md5((employee_id + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + ".png"
+    attachment_path = f"/files/profile_image/{employee_id}/{filename}"
+
+    Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/profile_image/{employee_id}").mkdir(parents=True, exist_ok=True)
+    OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/profile_image/{employee_id}/{filename}"
     
-    OUTPUT_IMAGE_PATH = frappe.utils.cstr(frappe.local.site)+"/public/files/ProfileImage/"+filename
-    fh = open(OUTPUT_IMAGE_PATH, "wb")
-    fh.write(content)
-    fh.close()
-    
-    image_file="/files/ProfileImage/"+filename
-    
+    with open(OUTPUT_FILE_PATH, "wb") as fh:
+        fh.write(content)
+
     try:
         employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
 
@@ -69,7 +76,8 @@ def change_user_profile_image(employee_id: str = None, image: str = None):
         if not user:
             return response("Resource Not Found", 404, None, "No user found with {user_id}".format(user_id = employee_id))
 
-        user.user_image = image_file
+        user_image = upload_file(user, "user_image", filename, attachment_path, content, is_private=False)
+        user.user_image = user_image.file_url
         user.save()
         frappe.db.commit()
         

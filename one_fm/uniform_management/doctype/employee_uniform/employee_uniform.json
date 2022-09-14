@@ -17,7 +17,6 @@
   "column_break_4",
   "civil_id",
   "designation",
-  "project",
   "status",
   "issued_on",
   "returned_on",
@@ -33,6 +32,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
@@ -45,15 +45,6 @@
    "in_list_view": 1,
    "label": "Designation",
    "options": "Designation",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.project",
-   "fieldname": "project",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Project",
-   "options": "Project",
    "read_only": 1
   },
   {
@@ -178,7 +169,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-27 08:38:27.019524",
+ "modified": "2022-09-03 19:31:37.906993",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",
