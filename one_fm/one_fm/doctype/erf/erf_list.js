@@ -1,8 +1,8 @@
 frappe.listview_settings['ERF'] = {
 	add_fields: ["status"],
 	get_indicator: function(doc) {
-		if(doc.status=="Draft") {
-			return [__("Draft"), "orange"];
+		if(doc.status=="Draft" && doc.docstatus==1) {
+			return [__("Waiting for Approval"), "orange"];
 		} else if(doc.status=="Accepted") {
 			return [__("Accepted"), "blue"];
 		} else if(doc.status=="Closed") {

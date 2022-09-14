@@ -101,8 +101,6 @@ frappe.ui.form.on('Request for Material', {
 	// },
 	make_custom_buttons: function(frm) {
 		if (frm.doc.docstatus == 1 && frm.doc.status == 'Approved' && frappe.user.has_role("Stock User")) {
-			// console.log(frm.doc.items[0].actual_qty);
-			// console.log(frm.doc.items[0].actual_qty-frm.doc.items[0].qty);
 			if(frm.doc.items){
 				var any_items_ordered = false;
 				var item_exist_in_stock = false;
@@ -139,14 +137,11 @@ frappe.ui.form.on('Request for Material', {
 										indicator:'red'
 									}, 5);
 								}
-								if (frm.doc.type=="Stock"){
-									frm.add_custom_button(__("Material Transfer"),
-									    () => frm.events.make_stock_entry(frm), __('Create'));
-								}else{
-									frm.add_custom_button(__("Material Transfer"),//changed from Issue to transfer temporarily
-									    () => frm.events.make_stock_entry_issue(frm), __('Create'));
+								var stock_entry_button_name = __("Material Transfer");
+								if(frm.doc.type == "Individual"){
+									stock_entry_button_name = __("Material Issue");
 								}
-
+								frm.add_custom_button(stock_entry_button_name, () => frm.events.make_stock_entry(frm), __('Create'));
 							}
 						});
 						if(purchase_item_exist){
@@ -366,17 +361,6 @@ frappe.ui.form.on('Request for Material', {
 		else{
 			frappe.model.open_mapped_doc({
 				method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_stock_entry",
-				frm: frm
-			});
-		}
-	},
-	make_stock_entry_issue: function(frm) {
-		if(frm.is_dirty()){
-			frappe.msgprint(__("Please Update the Document and Create."))
-		}
-		else{
-			frappe.model.open_mapped_doc({
-				method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_stock_entry_issue",
 				frm: frm
 			});
 		}

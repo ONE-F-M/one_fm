@@ -25,7 +25,7 @@ frappe.ui.form.on('Accommodation Checkin Checkout', {
 	print_accommodation_policy: function(frm) {
 //		frm.meta.default_print_format = "Accommodation Policy";
 		frm.print_doc();
-		window.location.href = `/printview?doctype=Accommodation%20Checkin%20Checkout&name=${frm.doc.name}&trigger_print=1&format=Accommodation%20Policy&no_letterhead=0&letterhead=ONEFM&settings=%7B%7D&_lang=en`
+		window.location.href = `/printview?doctype=Accommodation%20Checkin%20Checkout&name=${frm.doc.name}&trigger_print=1&format=New%20Accommodation%20Policy&no_letterhead=0&letterhead=ONEFM&settings=%7B%7D&_lang=en`
 	},
 	checkin_reference: function(frm) {
 		set_checkin_details(frm);
