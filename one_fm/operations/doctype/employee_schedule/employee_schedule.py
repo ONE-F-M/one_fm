@@ -28,6 +28,7 @@ class EmployeeSchedule(Document):
 		:return:
 		"""
 		if self.employee_availability in ['Day Off', 'Working']:
+			stopthrow = False
 			offs = self.get_off_category()
 			daterange = self.get_daterange(offs.category, str(self.date))
 			querystring = """
@@ -37,13 +38,22 @@ class EmployeeSchedule(Document):
 				AND date BETWEEN '{daterange.start}' AND '{daterange.end}'
 			""".format(self=self, daterange=daterange)
 			total_schedule = frappe.db.sql(querystring, as_dict=1)[0].cnt
+			msg = f"{self.employee_name} - {self.employee} has exceeded '{self.employee_availability}' for {offs.category} on {self.date} between {daterange.start} and {daterange.end}. Off days is {offs.days} day(s)."
 			if ((self.employee_availability == 'Day Off') and (total_schedule >= offs.days)):
-				frappe.throw(_(f"{self.employee_name} - {self.employee} has exceeded 'days off' for {offs.category} on {self.date} between {daterange.start} and {daterange.end}."))
+				stopthrow = True
 			else:
 				if ((offs.category == 'Monthly') and (total_schedule > (int(daterange.end.split('-')[2])-offs.days))):
-					frappe.throw(_(f"{self.employee_name} - {self.employee} has exceeded 'working days' for {offs.category} on {self.date} between {daterange.start} and {daterange.end}."))
+					stopthrow = True
 				elif ((offs.category == 'Weekly') and (total_schedule > (7-offs.days))):
-					frappe.throw(_(f"{self.employee_name} - {self.employee} has exceeded 'working' for {offs.category} on {self.date} between {daterange.start} and {daterange.end}."))
+					stopthrow = True
+			if stopthrow:
+				frappe.enqueue(
+					frappe.sendmail,
+					recipients=[frappe.session.user],
+					subject=frappe._('Employee Schedule Error'),
+					message=msg
+				)
+				frappe.throw(_(msg))
 	def get_off_category(self):
 		days_off = frappe.db.get_values("Employee", self.employee, ["day_off_category", "number_of_days_off"])[0]
 		return frappe._dict({'category': days_off[0], 'days':days_off[1]})
