@@ -251,12 +251,14 @@ def generate_employee_id(doc):
 	Generate employee ID
 	"""
 	try:
-		if doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
+		if doc.one_fm_nationality=='No Nationality':
+			country = 'XX'
+		elif doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
 			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
 		else:
 			country = 'XX'
 	except Exception as e:
-		country = 'XX'
+		frappe.throw(_(str(e)))
 
 	count = len(frappe.db.sql(f"""
 		SELECT name FROM tabEmployee
