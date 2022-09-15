@@ -53,6 +53,7 @@ class EmployeeSchedule(Document):
 					subject=frappe._('Employee Schedule Error'),
 					message=msg
 				)
+				frappe.publish_realtime(event='background_schedule_staff', message={'status':'error', 'message':msg}, user=frappe.session.user)
 				frappe.throw(_(msg))
 	def get_off_category(self):
 		days_off = frappe.db.get_values("Employee", self.employee, ["day_off_category", "number_of_days_off"])[0]

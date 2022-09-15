@@ -354,10 +354,10 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 
 def background_schedule_staff(employees, start_date, end_date, shift, operations_role, otRoster, keep_days_off, day_off_ot, request_employee_schedule):
 	for employee in employees:
+		frappe.publish_realtime(event='background_schedule_staff', message={'status':'success', 'message':f'Schedule started for {employee}'}, user=frappe.session.user)
 		frappe.enqueue(queue_employee_schedule, employee=employee, start_date=start_date, end_date=end_date,
 			shift=shift, operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off,
 			day_off_ot=keep_days_off, request_employee_schedule=request_employee_schedule, is_async=True, now=False, queue='long')
-
 
 
 def queue_employee_schedule(employee, start_date, end_date, shift, operations_role, otRoster, keep_days_off, day_off_ot, request_employee_schedule):
@@ -494,8 +494,8 @@ def schedule(employee, shift, operations_role, otRoster, start_date, end_date, k
 
 	elif emp_project and emp_site is None and emp_shift is None:
 		update_employee_assignment(employee, project, site, shift)
-	end = time.time()
-	print("Scheduled employee : ", employee, end-start)
+	frappe.publish_realtime(event='background_schedule_staff',
+							message={'status':'success', 'message':f"{employee} schedule between {start_date} and {end_date} is complete."}, user=frappe.session.user)
 
 def update_employee_assignment(employee, project, site, shift):
 	""" This function updates the employee project, site and shift in the employee doctype """
@@ -989,3 +989,13 @@ def get_employee_detail(employee_pk):
 	if employee_pk:
 		pk, employee_id, employee_name, enrolled, cell_number = frappe.db.get_value("Employee", employee_pk, ["name", "employee_id", "employee_name", "enrolled", "cell_number"])
 		return {'pk':pk, 'employee_id': employee_id, 'employee_name': employee_name, 'enrolled': enrolled, "cell_number": cell_number}
+
+
+@frappe.whitelist()
+def check_realtime():
+	frappe.log_error('Checking realtime', 'check_realtime')
+	frappe.publish_progress(25, title='Some title', description='Some description')
+	frappe.publish_realtime('test_1', {'key': 'value'})
+	frappe.publish_realtime('msgprint', 'Starting long job...')
+	frappe.publish_realtime('show_alert', 'hi you hVE...')
+	frappe.publish_realtime(event='eval_js', message='alert("{0}")'.format(msg_var), user=frappe.session.user)
