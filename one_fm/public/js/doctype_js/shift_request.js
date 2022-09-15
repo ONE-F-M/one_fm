@@ -10,11 +10,11 @@ frappe.ui.form.on('Shift Request', {
 		window.circles = [];
 		// JS API is loaded and available
 		console.log("Called")
-		window.map = new google.maps.Map(document.getElementById('in_map'), {
+		const in_map = new google.maps.Map(document.getElementById('in_map'), {
 			center: {lat: 29.338394, lng: 48.005958},
 			zoom: 17
 		});
-		window.map = new google.maps.Map(document.getElementById('out_map'), {
+		const out_map  = new google.maps.Map(document.getElementById('out_map'), {
 			center: {lat: 29.338394, lng: 48.005958},
 			zoom: 17
 		});
@@ -127,23 +127,25 @@ function set_approver(frm){
 }
 
 function loadGoogleMap(frm, log_type){
-	var lat, lng, radius;
+	var lat, lng, radius, title;
 	if(log_type == "IN"){
 		lat = frm.doc.checkin_latitude;
 		lng = frm.doc.checkin_longitude;
 		radius = frm.doc.checkin_radius;
+		title = frm.doc.check_in_site
 	}
 	else{
 		lat = frm.doc.checkout_latitude;
 		lng = frm.doc.checkout_longitude;
 		radius = frm.doc.checkout_radius;
+		title = frm.doc.check_out_site
 	}
 	
 	if(lat !== undefined && lng !== undefined){
 		let marker = new google.maps.Marker({
 			position: {lat, lng},
 			map: map,
-			title: frm.doc.location_name
+			title: title
 		});
 		marker.setMap(map);
 		map.setCenter({lat, lng});
