@@ -19,16 +19,21 @@ class EmployeeSchedule(Document):
 			frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be scheduled.")
 
 	def on_update(self):
-		self.validate_offs()
+		pass
+		# self.validate_offs()
 
 	def validate(self):
-		self.validate_offs()
+		validate_offs = self.validate_offs()
+		if validate_offs.status:
+			frappe.throw(_(validate_offs.msg))
 
 	def validate_offs(self):
 		"""
 		Validate if the employee is has exceeded weekly or monthly off schedule.
 		:return:
 		"""
+		if not self.employee_name:
+			self.employee_name = frappe.db.get_value("Employee", self.employee, ['employee_name'])
 		if self.employee_availability in ['Day Off', 'Working']:
 			stopthrow = False
 			offs = self.get_off_category()
@@ -40,14 +45,13 @@ class EmployeeSchedule(Document):
 				AND date BETWEEN '{daterange.start}' AND '{daterange.end}'
 			""".format(self=self, daterange=daterange)
 			total_schedule = frappe.db.sql(querystring, as_dict=1)[0].cnt
-			print('TOTAL SCHEDULES:', total_schedule)
 			msg = f"{self.employee_name} - {self.employee} has exceeded '{self.employee_availability}' for {offs.category} on {self.date} between {daterange.start} and {daterange.end}. Off days is {offs.days} day(s)."
 			if ((self.employee_availability == 'Day Off') and (total_schedule >= offs.days)):
 				stopthrow = True
 			else:
-				if ((offs.category == 'Monthly') and (total_schedule > (int(daterange.end.split('-')[2])-offs.days))):
+				if ((offs.category == 'Monthly') and (total_schedule >= (int(daterange.end.split('-')[2])-offs.days))):
 					stopthrow = True
-				elif ((offs.category == 'Weekly') and (total_schedule > (7-offs.days))):
+				elif ((offs.category == 'Weekly') and (total_schedule >= (7-offs.days))):
 					stopthrow = True
 			if stopthrow:
 				frappe.enqueue(
@@ -56,8 +60,11 @@ class EmployeeSchedule(Document):
 					subject=frappe._('Employee Schedule Error'),
 					message=msg
 				)
-				frappe.publish_realtime(event='background_schedule_staff', message={'status':'error', 'message':msg}, user=frappe.session.user)
-				frappe.throw(_(msg))
+				return frappe._dict({'status':True, 'msg':msg})
+			return frappe._dict({'status':False, 'msg':msg})
+		return frappe._dict({'status':False, 'msg':''})
+
+
 	def get_off_category(self):
 		days_off = frappe.db.get_values("Employee", self.employee, ["day_off_category", "number_of_days_off"])[0]
 		return frappe._dict({'category': days_off[0], 'days':days_off[1]})

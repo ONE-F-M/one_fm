@@ -429,8 +429,8 @@ def schedule(employee, shift, operations_role, otRoster, start_date, end_date, k
 	elif otRoster == 'true':
 		roster_type = 'Over-Time'
 
-	emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", employee, ["project", "site", "shift"])
-			
+	emp_project, emp_site, emp_shift, employee_name = frappe.db.get_value("Employee", employee, ["project", "site", "shift", 'employee_name'])
+
 	for date in	pd.date_range(start=start_date, end=end_date):
 		try:
 			if not cint(keep_days_off):
@@ -448,7 +448,11 @@ def schedule(employee, shift, operations_role, otRoster, start_date, end_date, k
 					roster_doc.operations_role = operations_role
 					roster_doc.roster_type = roster_type
 					roster_doc.day_off_ot = cint(day_off_ot)
-					roster_doc.save(ignore_permissions=True)
+					roster_doc_validate = roster_doc.validate_offs()
+					if roster_doc_validate.status:
+						frappe.publish_realtime(event='background_schedule_staff', message={'status':'error', 'message':roster_doc_validate.msg}, user=frappe.session.user)
+					else:
+						roster_doc.save(ignore_permissions=True)
 			else:
 				if frappe.db.exists("Employee Schedule", {"employee": employee, "date": cstr(date.date()), "roster_type" : roster_type, 'employee_availability': 'Working'}):
 					site, project, shift_type= frappe.get_value("Operations Shift", shift, ["site", "project", "shift_type"])
@@ -464,9 +468,13 @@ def schedule(employee, shift, operations_role, otRoster, start_date, end_date, k
 					roster_doc.operations_role = operations_role
 					roster_doc.roster_type = roster_type
 					roster_doc.day_off_ot = day_off_ot
-					roster_doc.save(ignore_permissions=True)
+					if roster_doc_validate.status:
+						frappe.publish_realtime(event='background_schedule_staff', message={'status':'error', 'message':roster_doc_validate.msg}, user=frappe.session.user)
+					else:
+						roster_doc.save(ignore_permissions=True)
 		except Exception as e:
-			frappe.publish_realtime(event='background_schedule_staff', message={'status':'error', 'message':str(e)}, user=frappe.session.user)
+			frappe.log_error(frappe.get_traceback(), 'ATTendance EXCEPT')
+			# frappe.publish_realtime(event='background_schedule_staff', message={'status':'error', 'message':str(e)}, user=frappe.session.user)
 
 	"""Update employee assignment"""
 	site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
