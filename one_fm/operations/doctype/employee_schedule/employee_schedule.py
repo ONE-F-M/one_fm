@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe import _
 from frappe.utils import cstr
 from one_fm.utils import get_week_start_end, get_month_start_end
+from one_fm.one_fm.page.roster.roster import make_notification_log
 
 class EmployeeSchedule(Document):
 	def before_insert(self):
@@ -60,6 +61,7 @@ class EmployeeSchedule(Document):
 					subject=frappe._('Employee Schedule Error'),
 					message=msg
 				)
+				# make_notification_log(self.employee, msg)
 				return frappe._dict({'status':True, 'msg':msg})
 			return frappe._dict({'status':False, 'msg':msg})
 		return frappe._dict({'status':False, 'msg':''})

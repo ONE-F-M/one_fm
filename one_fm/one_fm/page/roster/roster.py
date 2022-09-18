@@ -386,18 +386,7 @@ def queue_employee_schedule(employee, start_date, end_date, shift, operations_ro
 
 	except Exception as e:
 		frappe.log_error(e, 'Roster Schedule')
-		notification = frappe.new_doc("Notification Log")
-		notification.title = "Roster: {employee} not Scheduled".format(employee=employee)
-		notification.subject = "Roster: {employee} not Scheduled".format(employee=employee)
-		notification.email_content = f"This employee is not scheduled. {e}.<br>"
-		notification.document_type = "Notification Log"
-		notification.for_user = frappe.session.user
-		notification.document_name = " "
-		notification.category = 'Roster'
-		notification.one_fm_mobile_app = 1
-		notification.save(ignore_permissions=True)
-		notification.document_name = notification.name
-		notification.save(ignore_permissions=True)
+		make_notification_log(employee, str(e))
 
 def create_request_employee_schedule(employee, from_shift, from_operations_role, to_shift, to_operations_role, otRoster, start_date, end_date):
 	if otRoster == 'false':
@@ -450,6 +439,7 @@ def schedule(employee, shift, operations_role, otRoster, start_date, end_date, k
 					roster_doc.day_off_ot = cint(day_off_ot)
 					roster_doc_validate = roster_doc.validate_offs()
 					if roster_doc_validate.status:
+						make_notification_log(employee, roster_doc_validate.msg)
 						frappe.publish_realtime(event='background_schedule_staff', message={'status':'error', 'message':roster_doc_validate.msg}, user=frappe.session.user)
 					else:
 						roster_doc.save(ignore_permissions=True)
@@ -469,7 +459,9 @@ def schedule(employee, shift, operations_role, otRoster, start_date, end_date, k
 					roster_doc.roster_type = roster_type
 					roster_doc.day_off_ot = day_off_ot
 					if roster_doc_validate.status:
+						make_notification_log(employee, roster_doc_validate.msg)
 						frappe.publish_realtime(event='background_schedule_staff', message={'status':'error', 'message':roster_doc_validate.msg}, user=frappe.session.user)
+
 					else:
 						roster_doc.save(ignore_permissions=True)
 		except Exception as e:
@@ -1010,3 +1002,18 @@ def check_realtime():
 	frappe.publish_realtime('msgprint', 'Starting long job...')
 	frappe.publish_realtime('show_alert', 'hi you hVE...')
 	frappe.publish_realtime(event='eval_js', message='alert("{0}")'.format(msg_var), user=frappe.session.user)
+
+
+def make_notification_log(employee, message):
+	notification = frappe.new_doc("Notification Log")
+	notification.title = "Roster: {employee} not Scheduled".format(employee=employee)
+	notification.subject = "Roster: {employee} not Scheduled".format(employee=employee)
+	notification.email_content = f"This employee is not scheduled. {message}.<br>"
+	notification.document_type = "Notification Log"
+	notification.for_user = frappe.session.user
+	notification.document_name = " "
+	notification.category = 'Roster'
+	notification.one_fm_mobile_app = 1
+	notification.save(ignore_permissions=True)
+	notification.document_name = notification.name
+	notification.save(ignore_permissions=True)
