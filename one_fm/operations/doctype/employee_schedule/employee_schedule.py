@@ -18,6 +18,8 @@ class EmployeeSchedule(Document):
 		if not frappe.db.exists("Employee", {'status':'Active', 'name':self.employee}):
 			frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be scheduled.")
 
+	def on_update(self):
+		self.validate_offs()
 
 	def validate(self):
 		self.validate_offs()
@@ -38,6 +40,7 @@ class EmployeeSchedule(Document):
 				AND date BETWEEN '{daterange.start}' AND '{daterange.end}'
 			""".format(self=self, daterange=daterange)
 			total_schedule = frappe.db.sql(querystring, as_dict=1)[0].cnt
+			print('TOTAL SCHEDULES:', total_schedule)
 			msg = f"{self.employee_name} - {self.employee} has exceeded '{self.employee_availability}' for {offs.category} on {self.date} between {daterange.start} and {daterange.end}. Off days is {offs.days} day(s)."
 			if ((self.employee_availability == 'Day Off') and (total_schedule >= offs.days)):
 				stopthrow = True

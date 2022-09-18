@@ -29,7 +29,7 @@ let updateEmployeeScheduleRealtime = () => {
             }, 10);
         } else {
             frappe.show_alert({
-                message:__('data.message'),
+                message:__(data.message),
                 indicator:'red'
             }, 10);
         }
