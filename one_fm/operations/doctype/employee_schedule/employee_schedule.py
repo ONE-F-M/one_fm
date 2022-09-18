@@ -61,7 +61,6 @@ class EmployeeSchedule(Document):
 					subject=frappe._('Employee Schedule Error'),
 					message=msg
 				)
-				# make_notification_log(self.employee, msg)
 				return frappe._dict({'status':True, 'msg':msg})
 			return frappe._dict({'status':False, 'msg':msg})
 		return frappe._dict({'status':False, 'msg':''})
