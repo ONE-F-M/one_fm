@@ -2583,27 +2583,33 @@ def notify_issue_responder_or_assignee_on_comment_in_issue(doc, method):
                 pass
 
 def create_notification_log_for_issue_comments(users, issue, comment):
-    """
-        Method used to create notification log from the issue commnets
-        args:
-            users: list of recipients
-            issue: Object of Issue
-            comment: Object of Comment
-    """
-    title = get_title("Issue", issue.name)
-    subject = _("New comment on {0}".format(get_title_html(title)))
-    notification_message = _('''Comment: <br/>{0}'''.format(comment.content))
+	"""
+		Method used to create notification log from the issue commnets
+		args:
+			users: list of recipients
+			issue: Object of Issue
+			comment: Object of Comment
+	"""
+	title = get_title("Issue", issue.name)
+	subject = _("New comment on {0}".format(get_title_html(title)))
+	notification_message = _('''Comment: <br/>{0}'''.format(comment.content))
 
-    """
-        Extracts mentions to remove from notification log recipients,
-        since mentions will be notified by frappe core
-    """
-    mentions = extract_mentions(comment.content)
-    if mentions and len(mentions) > 0:
-        for mention in mentions:
-            if mention in users:
-                users.remove(mention)
-    create_notification_log(subject, notification_message, users, issue)
+	# Remove commenter from the notification
+	if comment.comment_email and comment.comment_email in users:
+		users.remove(comment.comment_email)
+
+	"""
+		Extracts mentions to remove from notification log recipients,
+		since mentions will be notified by frappe core
+	"""
+	mentions = extract_mentions(comment.content)
+	if mentions and len(mentions) > 0:
+		for mention in mentions:
+			if mention in users:
+				users.remove(mention)
+
+	if users and len(users) > 0:
+		create_notification_log(subject, notification_message, users, issue)
 
 def set_expire_magic_link(reference_doctype, reference_docname, link_for):
     """
