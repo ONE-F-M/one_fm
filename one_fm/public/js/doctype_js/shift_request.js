@@ -2,12 +2,53 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Shift Request', {
+	onload_post_render: function(frm){
+		$('[data-fieldname="checkin_map_html"]').append(`<div style='width:100%; height:500px' id='in_map'></div>`);
+		$('[data-fieldname="checkout_map_html"]').append(`<div style='width:100%; height:500px' id='out_map'></div>`);
+		let {checkin_latitude, checkin_longitude, checkout_latitude,checkout_longitude }= frm.doc;
+		window.markers = [];
+		window.circles = [];
+		// JS API is loaded and available
+		console.log("Called")
+		const in_map = new google.maps.Map(document.getElementById('in_map'), {
+			center: {lat: 29.338394, lng: 48.005958},
+			zoom: 17
+		});
+		const out_map  = new google.maps.Map(document.getElementById('out_map'), {
+			center: {lat: 29.338394, lng: 48.005958},
+			zoom: 17
+		});
+		loadGoogleMap(frm, "IN");
+		loadGoogleMap(frm, "OUT");
+
+
+		// Configure the click listener.
+		in_map.addListener('click', function(mapsMouseEvent) {
+			clearMarkers();
+			clearCircles();
+			frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'checkin_latitude', mapsMouseEvent.latLng.lat());
+			frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'checkin_longitude',mapsMouseEvent.latLng.lng());
+		});
+		out_map.addListener('click', function(mapsMouseEvent) {
+			clearMarkers();
+			clearCircles();
+			frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'checkout_latitude', mapsMouseEvent.latLng.lat());
+			frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'checkout_longitude',mapsMouseEvent.latLng.lng());
+		});
+
+	},
 	refresh: function(frm) {
 		set_update_request_btn(frm);
 	},
 	employee: function(frm) {
 		set_approver(frm)
-	}
+	},
+	check_in_site:function(frm){
+		loadGoogleMap(frm, "IN");
+	},
+	check_out_site:function(frm){
+		loadGoogleMap(frm, "OUT");
+	},
 });
 
 function set_update_request_btn(frm) {
@@ -83,4 +124,58 @@ function set_approver(frm){
             }
         });
     }
+}
+
+function loadGoogleMap(frm, log_type){
+	var lat, lng, radius, title;
+	if(log_type == "IN"){
+		lat = frm.doc.checkin_latitude;
+		lng = frm.doc.checkin_longitude;
+		radius = frm.doc.checkin_radius;
+		title = frm.doc.check_in_site
+	}
+	else{
+		lat = frm.doc.checkout_latitude;
+		lng = frm.doc.checkout_longitude;
+		radius = frm.doc.checkout_radius;
+		title = frm.doc.check_out_site
+	}
+	
+	if(lat !== undefined && lng !== undefined){
+		let marker = new google.maps.Marker({
+			position: {lat, lng},
+			map: map,
+			title: title
+		});
+		marker.setMap(map);
+		map.setCenter({lat, lng});
+		markers.push(marker);
+
+		if(radius){
+			let geofence_circle = new google.maps.Circle({
+				strokeColor: '#FF0000',
+				strokeOpacity: 0.8,
+				strokeWeight: 2,
+				fillColor: '#FF0000',
+				fillOpacity: 0.35,
+				map: map,
+				center: {lat, lng},
+				radius: radius,
+				clickable: false
+			});
+			circles.push(geofence_circle);
+		}
+		}
+			
+} 
+
+function clearMarkers(){
+    for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+      }
+}
+function clearCircles(){
+    for (var i = 0; i < circles.length; i++) {
+        circles[i].setMap(null);
+      }
 }

@@ -7,10 +7,10 @@ def before_insert(doc, events):
     """
     if not frappe.db.exists("Employee", {'name':doc.employee, 'status':'Active'}):
         frappe.throw(f"{doc.employee} - {doc.employee_name} is not active and cannot be assigned to a shift")
-
-    shift = frappe.get_doc("Operations Shift", doc.shift)
-    doc.start_datetime = f"{doc.start_date} {shift.start_time}"
-    if shift.end_time.total_seconds() < shift.start_time.total_seconds():
-        doc.end_datetime = f"{add_days(doc.start_date, 1)} {shift.end_time}"
-    else:
-        doc.end_datetime = f"{doc.start_date} {shift.end_time}"
+    if doc.shift_type:
+        shift = frappe.get_doc("Shift Type", doc.shift_type)
+        doc.start_datetime = f"{doc.start_date} {shift.start_time}"
+        if shift.end_time.total_seconds() < shift.start_time.total_seconds():
+            doc.end_datetime = f"{add_days(doc.start_date, 1)} {shift.end_time}"
+        else:
+            doc.end_datetime = f"{doc.start_date} {shift.end_time}"
