@@ -185,6 +185,12 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
     for field in one_fm_prefix_fields:
         target.set(field, job_applicant.get('one_fm_'+field))
 
+    fields = ['one_fm_second_name_in_arabic', 'one_fm_third_name', 'one_fm_third_name_in_arabic', 'one_fm_forth_name',
+        'one_fm_forth_name_in_arabic', 'one_fm_last_name_in_arabic', 'one_fm_place_of_birth', 'one_fm_religion',
+        'one_fm_passport_type', 'one_fm_centralized_number']
+    for field in fields:
+        target.set(field, job_applicant.get(field))
+
     if job_applicant.one_fm_erf:
         target.department, target.designation, target.grade, target.project = frappe.db.get_value("ERF", \
             job_applicant.one_fm_erf, ["department", "designation", "grade", "project"])
