@@ -311,7 +311,21 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.leave_approver = leave_approver
     if attachment_path:
         leave.proof_document = frappe.utils.get_url()+attachment_path
-    leave.save()
+    leave.save(ignore_permissions=True)
+
+    if attachment_path:
+        proof_doc = frappe.get_doc({
+            "is_private": 0,
+            "is_home_folder": 0,
+            "is_attachments_folder": 0,
+            "file_url": frappe.utils.get_url()+attachment_path,
+            "folder": "Home",
+            "is_folder": 0,
+            "doctype": "File",
+            "attached_to_doctype": "Leave Application",
+            "attached_to_name": leave.name
+        })
+        leave.db_set('proof_document', attachment_path)
     frappe.db.commit()
     return leave.as_dict()
 
