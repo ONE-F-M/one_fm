@@ -185,8 +185,9 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
     for field in one_fm_prefix_fields:
         target.set(field, job_applicant.get('one_fm_'+field))
 
-    target.department, target.designation, target.grade, target.project = frappe.db.get_value("ERF", \
-		job_applicant.one_fm_erf, ["department", "designation", "grade", "project"])
+    if job_applicant.one_fm_erf:
+        target.department, target.designation, target.grade, target.project = frappe.db.get_value("ERF", \
+            job_applicant.one_fm_erf, ["department", "designation", "grade", "project"])
 
     target.status = 'Active'
     if target.department:
