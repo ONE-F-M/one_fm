@@ -293,9 +293,10 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         if attachment_path:
             upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
         
-        return response("Success", 201, doc)
+        return response("Success", 201, doc.as_dict())
     
     except Exception as error:
+        frappe.log_error(error, 'Leave API')
         return response("Internal Server Error", 500, None, error)
 
 def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachment_path = None) -> dict:
