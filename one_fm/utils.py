@@ -22,7 +22,6 @@ from frappe.model.naming import set_name_by_naming_series
 from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
     expire_allocation, create_leave_ledger_entry
 )
-from frappe.utils.file_manager import upload
 from dateutil.relativedelta import relativedelta
 from frappe.utils import (
     cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
@@ -2729,8 +2728,3 @@ def get_month_start_end(date_str):
     _end = cur_date.replace(day=28) + timedelta(days=4)
     end = _end - timedelta(days=_end.day)
     return frappe._dict({'start': str(start.date()), 'end': str(end.date())})
-
-
-def upload_file_token(doctype, docname, filename, isprivate, filedata, docfield):
-    upload_data = upload()
-    return upload_data
