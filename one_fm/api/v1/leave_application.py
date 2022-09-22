@@ -288,7 +288,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
 
             attachment_path = f"/files/leave-application/{employee_doc.user_id}/{filename}"
 
-        #doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
+        doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
         
         # if attachment_path:
         #     upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
@@ -300,20 +300,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         return response("Internal Server Error", 500, None, error)
 
 def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachment_path = None) -> dict:
-    print(frappe.utils.get_url()+attachment_path, '\n\n\n')
-    proof_doc = frappe.get_doc({
-        "is_private": 0,
-        "is_home_folder": 0,
-        "is_attachments_folder": 0,
-        "file_url": frappe.utils.get_url()+attachment_path,
-        "folder": "Home",
-        "is_folder": 0,
-        "doctype": "File",
-        # "attached_to_doctype": "Leave Application",
-        # "attached_to_name": leave.name
-    }).insert(ignore_permissions=True)
 
-    print(proof_doc.as_dict())
     leave = frappe.new_doc("Leave Application")
     leave.employee=employee
     leave.leave_type=leave_type
@@ -326,27 +313,6 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     if attachment_path:
         leave.proof_document = frappe.utils.get_url()+attachment_path
     leave.save(ignore_permissions=True)
-
-    # if attachment_path:
-    try:
-        proof_doc = frappe.get_doc({
-            "is_private": 0,
-            "is_home_folder": 0,
-            "is_attachments_folder": 0,
-            "file_url": frappe.utils.get_url()+attachment_path,
-            "folder": "Home",
-            "is_folder": 0,
-            "doctype": "File",
-            # "attached_to_doctype": "Leave Application",
-            # "attached_to_name": leave.name
-        }).insert(ignore_permissions=True)
-
-        leave.db_set('proof_document', attachment_path)
-        print(proof_doc.as_dict())
-    except Exception as e:
-        print(str(e))
-
-    # frappe.db.commit()
     return leave.as_dict()
 
 @frappe.whitelist()
