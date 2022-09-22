@@ -224,12 +224,14 @@ def notify_leave_approver(doc):
             return
         email_template = frappe.get_doc("Email Template", template)
         message = frappe.render_template(email_template.response_html, args)
+        if doc.proof_document:
+            message+=f"<img src='{doc.proof_document}'/>"
         
-        attachments = get_attachment(doc)
+        # attachments = get_attachment(doc) // when attachment needed
 
         #send notification
         sendemail(recipients= [doc.leave_approver], subject="Leave Application", message=message,
-					reference_doctype=doc.doctype, reference_name=doc.name, attachments = attachments)        
+					reference_doctype=doc.doctype, reference_name=doc.name, attachments = [])
         
         employee_id = frappe.get_value("Employee", {"user_id":doc.leave_approver}, ["name"])
         
@@ -250,12 +252,13 @@ def proof_document_required_for_leave_type(leave_type):
 
 def get_attachment(doc):
     attachments = []
-    if doc.proof_document:
-        name, file_name = frappe.db.get_value("File", {"file_url":doc.proof_document, "attached_to_doctype":"Leave Application", "attached_to_field":"proof_document"}, ["name", "file_name"])
-        content = frappe.get_doc("File", name).get_content()
-        attachments = [{
-			'fname': file_name,
-			'fcontent': content
-		    }]
+    pass
+    # if doc.proof_document:
+    #     name, file_name = frappe.db.get_value("File", {"file_url":doc.proof_document, "attached_to_doctype":"Leave Application", "attached_to_field":"proof_document"}, ["name", "file_name"])
+    #     content = frappe.get_doc("File", name).get_content()
+    #     attachments = [{
+	# 		'fname': file_name,
+	# 		'fcontent': content
+	# 	    }]
     if attachments:
         return attachments
