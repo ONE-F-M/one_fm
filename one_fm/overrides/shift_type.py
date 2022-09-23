@@ -43,14 +43,6 @@ class ShiftTypeOverride(ShiftType):
                 out_time,
                 self.name,
             )
-        frappe.enqueue(process_attendance_overide, doc=self)
-
-
-def process_attendance_overide(doc):
-    """
-        Used for sending job to background_jobs
-    :param self:
-    :return:
-    """
-    for employee in doc.get_assigned_employee(doc.process_attendance_after, True):
-        doc.mark_absent_for_dates_with_no_attendance(employee)
+        for employee in self.get_assigned_employee(self.process_attendance_after, True):
+            self.mark_absent_for_dates_with_no_attendance(employee)
+            frappe.db.commit()
