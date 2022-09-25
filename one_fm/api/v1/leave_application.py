@@ -246,10 +246,10 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         return response("Bad Request", 400, None, "reason must be of type str.")
 
     if proof_document_required_for_leave_type(leave_type) and not proof_document:
-        return response('Leave type requires a proof_document.', {}, 400)
+        return response("Bad Request", 400, None, "Leave type requires a proof_document.")
 
     if not check_if_backdate_allowed(leave_type, from_date):
-        return response('You are not allowed to apply for later or previous date.', {}, 400)
+        return response("Bad Request", 400, None, "You are not allowed to apply for later or previous date.")
 
     try:
         from pathlib import Path
