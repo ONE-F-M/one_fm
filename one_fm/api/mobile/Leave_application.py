@@ -162,10 +162,10 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,le
 
 # Function to create response to the API. It generates json with message, data object and the status code.
 def response(message, data, status_code):
-     frappe.local.response["message"] = message
-     frappe.local.response["data_obj"] = data
-     frappe.local.response["http_status_code"] = status_code
-     return
+    frappe.local.response["message"] = message
+    frappe.local.response["data_obj"] = data
+    frappe.local.response["http_status_code"] = status_code
+    return
 
 @frappe.whitelist()
 def fetch_leave_approver(employee):
@@ -225,16 +225,16 @@ def notify_leave_approver(doc):
         email_template = frappe.get_doc("Email Template", template)
         message = frappe.render_template(email_template.response_html, args)
         if doc.proof_document:
-            message+=f"<img src='{doc.proof_document}'/>"
-        
+            message+=f"<hr><img src='{doc.proof_document}' height='400'/>"
+
         # attachments = get_attachment(doc) // when attachment needed
 
         #send notification
         sendemail(recipients= [doc.leave_approver], subject="Leave Application", message=message,
-					reference_doctype=doc.doctype, reference_name=doc.name, attachments = [])
-        
+                  reference_doctype=doc.doctype, reference_name=doc.name, attachments = [])
+
         employee_id = frappe.get_value("Employee", {"user_id":doc.leave_approver}, ["name"])
-        
+
         if doc.total_leave_days == 1:
             date = "for "+cstr(doc.from_date)
         else:
@@ -257,8 +257,8 @@ def get_attachment(doc):
     #     name, file_name = frappe.db.get_value("File", {"file_url":doc.proof_document, "attached_to_doctype":"Leave Application", "attached_to_field":"proof_document"}, ["name", "file_name"])
     #     content = frappe.get_doc("File", name).get_content()
     #     attachments = [{
-	# 		'fname': file_name,
-	# 		'fcontent': content
-	# 	    }]
+    # 		'fname': file_name,
+    # 		'fcontent': content
+    # 	    }]
     if attachments:
         return attachments

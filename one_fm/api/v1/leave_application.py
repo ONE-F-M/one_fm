@@ -35,21 +35,21 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
         return response("Bad Request", 400, None, "employee_id must be of type str.")
 
     if leave_id and not isinstance(leave_id, str):
-            return response("Bad Request", 400, None, "leave_id must be of type str.")
-    
+        return response("Bad Request", 400, None, "leave_id must be of type str.")
+
     try:
         employee = frappe.db.get_value("Employee", {'employee_id':employee_id})
-        
+
         if not employee:
             return response("Resource Not Found", 404, None, "No employee record found for {employee_id}".format(employee_id=employee_id))
-        
+
         if not leave_id:
             leave_list = frappe.get_all("Leave Application", {'employee':employee}, ["name","leave_type", "status","from_date", "total_leave_days"])
             if leave_list and len(leave_list) > 0:
                 return response("Success", 200, leave_list)
             else:
                 return response("Resource Not Found", 404, None, "No leaves found for {employee_id}".format(employee_id=employee_id))
-        
+
         elif leave_id:
             leave_details = frappe.get_doc("Leave Application", leave_id)
             if leave_details.leave_approver == frappe.session.user:
@@ -63,10 +63,10 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
                 return response("Success", 200, data)
             else:
                 return response("Resource Not Found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
-    
+
     except Exception as error:
-       return response("Internal Server Error", 500, None, error)
-    
+        return response("Internal Server Error", 500, None, error)
+
 @frappe.whitelist()
 def approver_leave() -> dict:
     """This method gets the list of leave application, where the current user is the leave approver.
@@ -79,17 +79,17 @@ def approver_leave() -> dict:
             error (str): Any error handled.
         }
     """
-    
-    try:    
+
+    try:
         leave_data = frappe.get_all("Leave Application", filters={'leave_approver':frappe.session.user}, fields=["name","leave_type", "status","from_date", "total_leave_days"] )
-        
+
         if leave_data:
             return response("Success", 200, leave_data)
         else:
             return response("Resource Not Found", 404, None, "No leave data found")
-    
+
     except Exception as error:
-       return response("Internal Server Error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
@@ -112,7 +112,7 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
 
     # if not leave_type:
     #     return response("Bad Request", 400, None, "leave_type required.")
-    
+
     if not isinstance(employee_id, str):
         return response("Bad Request", 400, None, "employee_id must be of type str.")
 
@@ -120,13 +120,13 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
         return response("Bad Request", 400, None, "leave_type must be of type str.")
 
     today=date.today()
-    
+
     try:
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-        
+
         allocation_records = get_leave_details(employee, today)
         leave_type = leave_type.title()
         if allocation_records["leave_allocation"]:
@@ -144,7 +144,7 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
         else:
             return response("Resource Not Found", 404, None, "No allocated to {employee}".format(
                 employee=employee_id))
-            
+
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
@@ -169,24 +169,24 @@ def get_leave_types(employee_id: str = None) -> dict:
 
     if not isinstance(employee_id, str):
         return response("Bad Request", 400, None, "employee_id must be of type str")
-    
+
     try:
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-        
+
         leave_types_set = set()
         leave_type_list = frappe.get_list("Leave Allocation", {"employee": employee}, 'leave_type')
-        
+
         if not leave_type_list or len(leave_type_list) == 0:
             return response("Resource Not Found", 404, None, "No leave allocated to {employee}".format(employee=employee_id))
-        
+
         for leave_type in leave_type_list:
             leave_types_set.add(leave_type.leave_type)
-        
+
         return response("Success", 200, list(leave_types_set))
-        
+
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
@@ -247,9 +247,9 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
 
     if proof_document_required_for_leave_type(leave_type) and not proof_document:
         return response('Leave type requires a proof_document.', {}, 400)
-    
+
     if not check_if_backdate_allowed(leave_type, from_date):
-            return response('You are not allowed to apply for later or previous date.', {}, 400)
+        return response('You are not allowed to apply for later or previous date.', {}, 400)
 
     try:
         from pathlib import Path
@@ -262,13 +262,13 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
 
         employee_doc = frappe.get_doc("Employee", employee)
         leave_approver = fetch_leave_approver(employee)
-        
+
         if not leave_approver:
             return response("Resource Not Found", 404, None, "No leave approver found for {employee}.".format(employee=employee_id))
-        
+
         if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
             return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
-        
+
         attachment_path = None
         if proof_document_required_for_leave_type(leave_type):
             proof_doc_json = json.loads(proof_document)
@@ -289,12 +289,12 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             attachment_path = f"/files/leave-application/{employee_doc.user_id}/{filename}"
 
         doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
-        
+
         # if attachment_path:
         #     upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
-        
-        return response("Success", 201, doc.as_dict())
-    
+
+        return response("Success", 201, doc)
+
     except Exception as error:
         frappe.log_error(error, 'Leave API')
         return response("Internal Server Error", 500, None, error)
@@ -330,7 +330,7 @@ def fetch_leave_approver(employee: str) -> str:
 
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
     approver, Role = get_action_user(employee,employee_shift[0].shift)
-    
+
     return approver
 
 
