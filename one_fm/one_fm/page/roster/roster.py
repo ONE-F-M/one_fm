@@ -390,7 +390,7 @@ def queue_employee_schedule(employee, start_date, end_date, shift, operations_ro
 		notification = frappe.new_doc("Notification Log")
 		notification.title = "Roster: {employee} not Scheduled".format(employee=employee)
 		notification.subject = "Roster: {employee} not Scheduled".format(employee=employee)
-		notification.email_content = "This employee is not scheduled. {str(e)}.<br>".format(e=e)
+		notification.email_content = f"This employee is not scheduled. {str(e)}.<br>"
 		notification.document_type = "Notification Log"
 		notification.for_user = frappe.session.user
 		notification.document_name = " "
