@@ -19,6 +19,7 @@ def get_data(filters):
 		FROM `tabPrepared Report`
 		WHERE ref_report_doctype='Roster Projection View'
 		{conditions}
+		ORDER BY CREATION DESC
 	"""
 	data = frappe.db.sql(query, as_dict=1)
 	for row in data:

@@ -657,6 +657,25 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.submit()
 	frappe.msgprint(_('A penalty has been issued against {0}'.format(employee_name)))
 
+def fetch_non_shift(date, s_type):
+	if s_type == "AM":
+		roster = frappe.db.sql("""SELECT name as employee, default_shift as shift_type, checkin_location from `tabEmployee` E
+				WHERE E.shift_working = 0
+				AND E.default_shift IN(
+					SELECT name from `tabShift Type` st
+					WHERE st.start_time >= '00:00:00'
+					AND  st.start_time < '12:00:00')
+		""".format(date=cstr(date)), as_dict=1)
+	else:
+		roster = frappe.db.sql("""SELECT name as employee, default_shift as shift_type, checkin_location from `tabEmployee` E
+				WHERE E.shift_working = 0
+				AND E.default_shift IN(
+				SELECT name from `tabShift Type` st
+				WHERE st.start_time >= '12:00:00')
+		""".format(date=cstr(date)), as_dict=1)
+	
+	return roster
+
 def assign_am_shift():
 	date = cstr(getdate())
 	end_previous_shifts("AM")
@@ -671,6 +690,11 @@ def assign_am_shift():
 				WHERE st.start_time >= '00:00:00'
 				AND  st.start_time < '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
+
+	non_shift = fetch_non_shift(date, "AM")
+	if non_shift:
+		roster.extend(non_shift)
+
 	frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
 
 def assign_pm_shift():
@@ -686,6 +710,11 @@ def assign_pm_shift():
 				SELECT name from `tabShift Type` st
 				WHERE st.start_time >= '12:00:00')
 	""".format(date=cstr(date)), as_dict=1)
+
+	non_shift = fetch_non_shift(date, "PM")
+	if non_shift:
+		roster.extend(non_shift)
+
 	frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
 
 def end_previous_shifts(time):
@@ -726,6 +755,7 @@ def create_shift_assignment(schedule, date):
 			shift_assignment.operations_role = schedule.operations_role
 			shift_assignment.post_abbrv = schedule.post_abbrv
 			shift_assignment.roster_type = schedule.roster_type
+			shift_assignment.site_location = schedule.checkin_location
 			if frappe.db.exists("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]}):
 				shift_request, check_in_site, check_out_site = frappe.get_value("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]},["name","check_in_site","check_out_site"])
 				shift_assignment.shift_request = shift_request
@@ -734,7 +764,6 @@ def create_shift_assignment(schedule, date):
 			shift_assignment.submit()
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
-
 def overtime_shift_assignment():
 	"""
 	This method is to generate Shift Assignment for Employee Scheduling
@@ -797,11 +826,13 @@ def mark_auto_attendance(shift_type):
 def update_shift_details_in_attendance(doc, method):
 	condition = ''
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
-		site, project, shift, operations_role, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}, ["site", "project", "shift", "operations_role", "start_datetime","end_datetime", "roster_type"])
+		name, site, project, shift, operations_role, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment",
+			{"employee": doc.employee, "start_date": doc.attendance_date},
+			['name', "site", "project", "shift", "operations_role", "start_datetime","end_datetime", "roster_type"])
 		condition += ' project="{project}", site="{site}", operations_shift="{shift}", operations_role="{operations_role}", roster_type="{roster_type}"'.format(
 			project=project, site=site, shift=shift, operations_role=operations_role, roster_type=roster_type)
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
-			condition += ', in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}"'.format(start_datetime, end_datetime)
+			condition += f', in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}"'
 	if condition:
 		return frappe.db.sql("""UPDATE `tabAttendance` SET {condition} WHERE name= '{name}' """.format(condition=condition, name = doc.name))
 	return

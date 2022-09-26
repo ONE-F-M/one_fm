@@ -52,7 +52,7 @@ function set_required_property(frm){
     frm.set_df_property('gender', 'reqd', true);
     frm.set_df_property('shift_hours', 'reqd', true);
     frm.set_df_property('days_off', 'reqd', true);
-    frm.set_df_property('customer', 'reqd', true);
+    frm.set_df_property('customer', 'reqd', false);
 }
 
 function remove_required_property(frm){

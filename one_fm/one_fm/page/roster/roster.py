@@ -111,8 +111,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		employee_filters.update({'shift': shift})
 		additional_assignment_filters.update({'shift': shift})	
 	if department:
-		employee_filters.update({'department': department})	
-
+		employee_filters.update({'department': department}) 
 
 	#--------------------- Fetch Employee list ----------------------------#
 	if isOt:
@@ -123,6 +122,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		employee_filters.pop('employee_availability')
 	else: 
 		employee_filters.update({'status': 'Active'})
+		employee_filters.update({'shift_working':'1'})
 		if designation:
 			employee_filters.update({'designation' : designation})
 		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
@@ -132,6 +132,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 			employees = filter_redundant_employees(employees)
 		master_data.update({'total': len(employees)})
 		employee_filters.pop('status', None)	
+		employee_filters.pop('shift_working', None)
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 
 	if employee_search_name:
@@ -344,7 +345,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 		employee_dict = {}
 		for i in employees_list:
 			employee_dict[i.name] = i
-		msgprint = "<span style='color:blue'>The following employees has been scheduled, if any errors, an email will be sent to {frappe.session.user} </span><br><br>".format(frappe=frappe)
+		msgprint = "<span style='color:blue'>The following employees has been scheduled, the roster will be updated as soon as possible, please continue rostering other staffs if need be. </span><br><br>".format(frappe=frappe)
 		for i, j in enumerate(employees):
 			msgprint += f"<i>{i+1}: {employee_dict[j].employee_id} - {employee_dict[j].employee_name} - {employee_dict[j].name}</i><hr>"
 
@@ -389,7 +390,7 @@ def queue_employee_schedule(employee, start_date, end_date, shift, operations_ro
 		notification = frappe.new_doc("Notification Log")
 		notification.title = "Roster: {employee} not Scheduled".format(employee=employee)
 		notification.subject = "Roster: {employee} not Scheduled".format(employee=employee)
-		notification.email_content = "This employee is not scheduled. {str(e)}.<br>".format(e=e)
+		notification.email_content = f"This employee is not scheduled. {str(e)}.<br>"
 		notification.document_type = "Notification Log"
 		notification.for_user = frappe.session.user
 		notification.document_name = " "

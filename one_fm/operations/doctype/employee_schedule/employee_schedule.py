@@ -20,7 +20,8 @@ class EmployeeSchedule(Document):
 
 
 	def validate(self):
-		self.validate_offs()
+		pass
+		#self.validate_offs()
 
 	def validate_offs(self):
 		"""
