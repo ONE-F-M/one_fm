@@ -345,7 +345,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 		employee_dict = {}
 		for i in employees_list:
 			employee_dict[i.name] = i
-		msgprint = "<span style='color:blue'>The following employees has been scheduled, if any errors, an email will be sent to {frappe.session.user} </span><br><br>".format(frappe=frappe)
+		msgprint = "<span style='color:blue'>The following employees has been scheduled, the roster will be updated as soon as possible, please continue rostering other staffs if need be. </span><br><br>".format(frappe=frappe)
 		for i, j in enumerate(employees):
 			msgprint += f"<i>{i+1}: {employee_dict[j].employee_id} - {employee_dict[j].employee_name} - {employee_dict[j].name}</i><hr>"
 
