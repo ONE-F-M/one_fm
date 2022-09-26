@@ -35,7 +35,7 @@ def get_data(filters):
 			FROM `tabContracts` con
 			LEFT JOIN `tabContract Item` con_item ON con_item.parent=con.name
 			LEFT JOIN `tabEmployee Schedule` es ON es.project=con.project
-			LEFT JOIN `tabPost Type` pt ON pt.name=es.operations_role
+			LEFT JOIN `tabOperations Role` pt ON pt.name=es.operations_role
 			WHERE con.name = \"{contracts.name}\"
 			AND es.employee_availability='Working'
 			AND con_item.item_code=pt.sale_item
@@ -48,7 +48,7 @@ def get_data(filters):
 			FROM `tabContracts` con
 			LEFT JOIN `tabContract Item` con_item ON con_item.parent=con.name
 			LEFT JOIN `tabPost Schedule` ps ON ps.project=con.project
-			LEFT JOIN `tabPost Type` pt ON pt.name=ps.operations_role
+			LEFT JOIN `tabOperations Role` pt ON pt.name=ps.operations_role
 			WHERE con.name = \"{contracts.name}\"
 			AND ps.post_status='Planned'
 			AND con_item.item_code=pt.sale_item
@@ -111,7 +111,7 @@ def get_live_schedule_query(contracts, filters, start_date):
 		FROM `tabContracts` con
 		LEFT JOIN `tabContract Item` con_item ON con_item.parent=con.name
 		LEFT JOIN `tabEmployee Schedule` es ON es.project=con.project
-		LEFT JOIN `tabPost Type` pt ON pt.name=es.operations_role
+		LEFT JOIN `tabOperations Role` pt ON pt.name=es.operations_role
 		WHERE con.name = \"{contracts.name}\"
 		AND es.employee_availability='Working'
 		AND con_item.item_code=pt.sale_item
@@ -128,7 +128,7 @@ def get_live_attendance_query(contracts, filters, to_date):
 		FROM `tabContracts` con
 		LEFT JOIN `tabContract Item` con_item ON con_item.parent=con.name
 		LEFT JOIN `tabAttendance` at ON at.project=con.project
-		LEFT JOIN `tabPost Type` pt ON pt.name=at.operations_role
+		LEFT JOIN `tabOperations Role` pt ON pt.name=at.operations_role
 		WHERE con.name = \"{contracts.name}\"
 		AND at.status !='Absent'
 		AND con_item.item_code=pt.sale_item
