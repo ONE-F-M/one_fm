@@ -236,11 +236,12 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                         """.format(site=site), as_dict=1)
 
 
+        if not site:
+            return response("Resource Not Found", 404, None, "User not assigned to a shift.")
+
         if not location and site:
             return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
 
-        if not location and not site:
-            return response("Resource Not Found", 404, None, "No site and location set.")
 
         result=location[0]
         result['user_within_geofence_radius'] = True
