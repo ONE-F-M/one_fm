@@ -239,6 +239,9 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if not location and site:
             return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
 
+        if not location and not site:
+            return response("Resource Not Found", 404, None, "No site and location set.")
+
         result=location[0]
         result['user_within_geofence_radius'] = True
 
