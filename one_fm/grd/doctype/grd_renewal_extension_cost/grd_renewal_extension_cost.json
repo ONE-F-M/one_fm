@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "autoname": "employee:",
+ "creation": "2022-09-27 04:37:47.417263",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "renewal_or_extend",
+  "no_of_years",
+  "work_permit_amount",
+  "medical_insurance_amount",
+  "column_break_5",
+  "residency_stamp_amount",
+  "civil_id_amount",
+  "total_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "renewal_or_extend",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Renewal Or Extend",
+   "options": "\nRenewal\nExtend 1 month\nExtend 2 months\nExtend 3 months\nLocal Transfer\nCancellation"
+  },
+  {
+   "depends_on": "eval: doc.renewal_or_extend == \"Renewal\"",
+   "fieldname": "no_of_years",
+   "fieldtype": "Select",
+   "label": "No. of Years",
+   "options": "\n1 Year\n2 Years\n3 Years"
+  },
+  {
+   "fieldname": "work_permit_amount",
+   "fieldtype": "Currency",
+   "label": "Work Permit Amount"
+  },
+  {
+   "fieldname": "medical_insurance_amount",
+   "fieldtype": "Currency",
+   "label": "Medical Insurance Amount"
+  },
+  {
+   "fieldname": "residency_stamp_amount",
+   "fieldtype": "Currency",
+   "label": "Residency Stamp Amount"
+  },
+  {
+   "fieldname": "civil_id_amount",
+   "fieldtype": "Currency",
+   "label": "Civil ID Amount"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Amount",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2022-09-27 05:00:06.271161",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "GRD Renewal Extension Cost",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
