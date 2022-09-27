@@ -18,7 +18,9 @@
   "last_preparation_record_created_on",
   "last_preparation_record_created_by",
   "renewal_extension_costing_section",
-  "renewal_extension_cost"
+  "renewal_extension_cost",
+  "inform_the_costing_to",
+  "costing_print_format"
  ],
  "fields": [
   {
@@ -100,11 +102,25 @@
    "fieldname": "renewal_extension_cost",
    "fieldtype": "Table",
    "options": "GRD Renewal Extension Cost"
+  },
+  {
+   "description": "Email ID to get informed the finance team about the costing from preparation.",
+   "fieldname": "inform_the_costing_to",
+   "fieldtype": "Data",
+   "label": "Inform The Costing to",
+   "options": "Email"
+  },
+  {
+   "description": "The print format to attach in the notification to the finance team about the preparation cost. If leave this field blank the will consider Standard print format for attachment.",
+   "fieldname": "costing_print_format",
+   "fieldtype": "Link",
+   "label": "Costing Print Format",
+   "options": "Print Format"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2022-09-27 04:41:28.670890",
+ "modified": "2022-09-27 09:46:50.752615",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "GRD Settings",

@@ -97,15 +97,25 @@ class Preparation(Document):
 
     def send_notifications(self):
         """
-        runs: `on_submit`
-        This method will notifiy operator to apply for the wp, mi, moi, paci, fp that are created for all employees in the list
+            runs: `on_submit`
+            This method will notifiy operator to apply for the wp, mi, moi, paci, fp that are created for all employees in the list
         """
         if self.grd_operator:
             page_link = get_url(self.get_url())
             message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
             subject = 'Records are created for WP, MI, MOI, PACI, and FP'
-            send_email(self, [self.grd_operator], message, subject)
             create_notification_log(subject, message, [self.grd_operator], self)
+
+        inform_the_costing_to = frappe.db.get_single_value('GRD Settings', 'inform_the_costing_to')
+        if inform_the_costing_to:
+            page_link = get_url(self.get_url())
+            message = "<p>Records are created<a href='{0}'>{1}</a>.</p>".format(page_link, self.name)
+            subject = 'Details of the Preparation Cost for WP, MI, MOI, PACI, and FP'
+            print_format = frappe.db.get_single_value('GRD Settings', 'costing_print_format')
+            if not print_format:
+                print_format = 'Standard'
+            attachments = [frappe.attach_print(self.doctype, self.name, file_name=self.name, print_format=print_format)]
+            send_email(self, [inform_the_costing_to], message, subject, attachments)
 
     def after_insert(self):
         self.update_last_preparation_details_to_grd_settings()
@@ -174,13 +184,14 @@ def notify_request_for_renewal_or_extend():# Notify finance
     send_email(preparation_list, [preparation_list.notify_finance_user], message, subject)
     create_notification_log(subject, message, [preparation_list.notify_finance_user], preparation_list)
 
-def send_email(doc, recipients, message, subject):
+def send_email(doc, recipients, message, subject, attachments=None):
     sendemail(
         recipients= recipients,
         subject=subject,
         message=message,
         reference_doctype=doc.doctype,
-        reference_name=doc.name
+        reference_name=doc.name,
+        attachments=attachments
     )
 
 def create_notification_log(subject, message, for_users, reference_doc):
