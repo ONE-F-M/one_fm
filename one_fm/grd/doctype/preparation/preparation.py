@@ -193,3 +193,24 @@ def create_notification_log(subject, message, for_users, reference_doc):
         doc.document_name = reference_doc.name
         doc.from_user = reference_doc.modified_by
         doc.insert(ignore_permissions=True)
+
+@frappe.whitelist()
+def get_grd_renewal_extension_cost(renewal_or_extend, no_of_years=False):
+	if renewal_or_extend == 'Renewal' and not no_of_years:
+		return False
+	else:
+		query = """
+			select
+				*
+			from
+				`tabGRD Renewal Extension Cost`
+			where
+				parent = 'GRD Settings'
+				and
+				renewal_or_extend = '{0}'
+		""".format(renewal_or_extend)
+		if renewal_or_extend == 'Renewal':
+			query += " and no_of_years = '{0}'".format(no_of_years)
+		result = frappe.db.sql(query, as_dict=True)
+		if result and len(result) > 0:
+			return result[0]
