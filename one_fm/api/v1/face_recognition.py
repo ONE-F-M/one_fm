@@ -211,7 +211,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         shift = get_current_shift(employee)
-        site = None
+        site, location = None, None
         if shift:
             if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
                 check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
@@ -236,8 +236,12 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                         """.format(site=site), as_dict=1)
 
 
+        if not site:
+            return response("Resource Not Found", 404, None, "User not assigned to a shift.")
+
         if not location and site:
             return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
+
 
         result=location[0]
         result['user_within_geofence_radius'] = True
