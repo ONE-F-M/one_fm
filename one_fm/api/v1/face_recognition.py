@@ -159,7 +159,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response(msg, 400, None, data)
 
         doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
-        return response(f"Check {doc.log_type.lower()} successful - {doc.name}", 201, doc)
+        return response("Success", 201, doc, None)
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
@@ -170,7 +170,7 @@ def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latit
     checkin.employee = employee
     checkin.log_type = log_type
     checkin.device_id = frappe.utils.cstr(latitude)+","+frappe.utils.cstr(longitude)
-    checkin.skip_auto_attendance = 0 #skip_attendance
+    checkin.skip_auto_attendance = skip_attendance
     checkin.save()
     frappe.db.commit()
     return checkin.as_dict()
