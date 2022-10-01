@@ -170,7 +170,7 @@ def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latit
     checkin.employee = employee
     checkin.log_type = log_type
     checkin.device_id = frappe.utils.cstr(latitude)+","+frappe.utils.cstr(longitude)
-    checkin.skip_auto_attendance = skip_attendance
+    checkin.skip_auto_attendance = 0 #skip_attendance
     checkin.save()
     frappe.db.commit()
     return checkin.as_dict()
