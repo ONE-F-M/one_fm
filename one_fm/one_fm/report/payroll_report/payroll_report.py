@@ -150,3 +150,12 @@ def get_data(filters):
 	if not query:
 		frappe.msgprint(("No Payroll Submitted this month!"), alert=True, indicator="Blue")
 	return query
+
+
+@frappe.whitelist()
+def get_attendance_years():
+	year_list = frappe.db.sql_list("""select distinct YEAR(attendance_date) from tabAttendance ORDER BY YEAR(attendance_date) DESC""")
+	if not year_list:
+		year_list = [getdate().year]
+
+	return "\n".join(str(year) for year in year_list)
