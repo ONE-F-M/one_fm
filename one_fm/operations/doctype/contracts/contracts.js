@@ -342,12 +342,12 @@ frappe.ui.form.on('Contract Item', {
 	uom: (frm, cdt, cdn)=>{
 		// check uom agains Service item
 		let row = locals[cdt][cdn];
-		if(row.subitem_group=='Service' &&
-			!['Hourly', 'Daily', 'Monthly'].includes(row.uom)){
-				row.uom = null;
-				frm.refresh_field('items');
-				frappe.throw("Item of subgroup 'Service' UOM must be <b>Hourly, Daily or Month'</b>.");
-			}
+//		if(row.subitem_group=='Service' &&
+//			!['Hourly', 'Daily', 'Monthly'].includes(row.uom)){
+//				row.uom = null;
+//				frm.refresh_field('items');
+//				frappe.throw("Item of subgroup 'Service' UOM must be <b>Hourly, Daily or Monthly'</b>.");
+//			}
 	},
 	item_code: function(frm, cdt, cdn) {
 		let d = locals[cdt][cdn];
