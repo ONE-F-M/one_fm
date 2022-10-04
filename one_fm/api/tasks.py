@@ -218,7 +218,7 @@ def supervisor_reminder(shift, today_datetime, now_time):
 	date = getdate()
 	if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
 		date = getdate() - timedelta(days=1)
-	
+
 	if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())):
 		checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
 		recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
@@ -312,7 +312,7 @@ def checkin_checkout_query(date, shift_type, log_type):
 		permission_type = ("Arrive Late", "Forget to Checkin", "Checkin Issue")
 	else:
 		permission_type = ("Leave Early", "Forget to Checkout", "Checkout Issue")
-	
+
 	query = frappe.db.sql("""
 				SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 					WHERE
@@ -673,7 +673,7 @@ def fetch_non_shift(date, s_type):
 				SELECT name from `tabShift Type` st
 				WHERE st.start_time >= '12:00:00')
 		""".format(date=cstr(date)), as_dict=1)
-	
+
 	return roster
 
 def assign_am_shift():
@@ -825,6 +825,9 @@ def mark_auto_attendance(shift_type):
 
 def update_shift_details_in_attendance(doc, method):
 	condition = ''
+	if frappe.db.exists("Employee Schedule",
+		{"employee": doc.employee, "date": doc.attendance_date, "roster_type": "Over-Time", "day_off_ot": True}):
+		condition += ' day_off_ot="1"'
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
 		name, site, project, shift, operations_role, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment",
 			{"employee": doc.employee, "start_date": doc.attendance_date},
@@ -834,7 +837,8 @@ def update_shift_details_in_attendance(doc, method):
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
 			condition += f', in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}"'
 	if condition:
-		return frappe.db.sql("""UPDATE `tabAttendance` SET {condition} WHERE name= '{name}' """.format(condition=condition, name = doc.name))
+		query = """UPDATE `tabAttendance` SET {condition} WHERE name= '{name}' """.format(condition=condition, name = doc.name)
+		return frappe.db.sql(query)
 	return
 
 def generate_payroll():
