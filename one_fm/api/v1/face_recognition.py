@@ -159,7 +159,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response(msg, 400, None, data)
 
         doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
-        return response("Success", 201, doc)
+        return response("Success", 201, doc, None)
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
@@ -170,7 +170,7 @@ def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latit
     checkin.employee = employee
     checkin.log_type = log_type
     checkin.device_id = frappe.utils.cstr(latitude)+","+frappe.utils.cstr(longitude)
-    checkin.skip_auto_attendance = skip_attendance
+    checkin.skip_auto_attendance = 0 #skip_attendance
     checkin.save()
     frappe.db.commit()
     return checkin.as_dict()
@@ -211,7 +211,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         shift = get_current_shift(employee)
-        site = None
+        site, location = None, None
         if shift:
             if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
                 check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
@@ -236,8 +236,12 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                         """.format(site=site), as_dict=1)
 
 
+        if not site:
+            return response("Resource Not Found", 404, None, "User not assigned to a shift.")
+
         if not location and site:
             return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
+
 
         result=location[0]
         result['user_within_geofence_radius'] = True

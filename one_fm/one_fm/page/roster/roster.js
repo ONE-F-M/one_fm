@@ -1162,6 +1162,9 @@ function render_roster(res, page, isOt) {
 					<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
 					<span class="checkmark"></span>
 				</label>
+				<label >
+					<span class="lightgrey employee_day_off">${employee_day_off}</span>
+				</label>
 			</td>
 		</tr>
 		`;
@@ -1382,6 +1385,9 @@ function get_roster_week_data(page, isOt) {
 						<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
 						<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
 						<span class="checkmark"></span>
+					</label>
+					<label >
+						<span class="lightgrey employee_day_off">${employee_day_off}</span>
 					</label>
 				</td>
 			</tr>

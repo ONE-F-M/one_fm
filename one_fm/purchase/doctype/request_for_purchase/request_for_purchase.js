@@ -119,11 +119,11 @@ frappe.ui.form.on('Request for Purchase', {
 			run_link_triggers: true
 		});
 	},
-	make_purchase_order: function(frm) {
-		console.log(frm.doc)
+	make_purchase_order_for_quotation: function(frm, warehouse) {
 		frappe.call({
 			doc: frm.doc,
 			method: 'make_purchase_order_for_quotation',
+			args: {warehouse: warehouse},
 			callback: function(data) {
 				if(!data.exc){
 					frm.reload_doc();
@@ -136,6 +136,25 @@ frappe.ui.form.on('Request for Purchase', {
 			freeze: true,
 			freeze_message: "Creating Purchase Order"
 		})
+	},
+	make_purchase_order: function(frm) {
+		var stock_item_in_items_to_order = frm.doc.items_to_order.filter(items_to_order => items_to_order.is_stock_item === 1);
+		var stock_item_code_in_items_to_order = stock_item_in_items_to_order.map(pt => {return pt.item_code}).join(', ');
+		if(stock_item_in_items_to_order && stock_item_in_items_to_order.length > 0 && !frm.doc.warehouse) {
+			var d = new frappe.ui.Dialog({
+				title: __("Warehouse is mandatory for stock Item {0}", [stock_item_code_in_items_to_order]),
+				fields : [{fieldtype: "Link", label: "Warehouse", options: "Warehouse", fieldname: "warehouse", reqd : 1}],
+				primary_action_label: __("Create Purchase Order"),
+				primary_action: function(){
+					frm.events.make_purchase_order_for_quotation(frm, d.get_value('warehouse'));
+					d.hide();
+				},
+			});
+			d.show();
+		}
+		else{
+			frm.events.make_purchase_order_for_quotation(frm, false);
+		}
 	},
 	get_requested_items_to_order: function(frm) {
 		frm.clear_table('items_to_order');
