@@ -278,7 +278,10 @@ doc_events = {
 	},
 	"Salary Slip": {
 		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
-		"validate": "one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip"
+		"validate": [
+			"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
+			"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
+		]
 	},
 	"Salary Structure Assignment": {
 		"before_save": "one_fm.api.doc_methods.salary_structure_assignment.fetch_salary_component",
