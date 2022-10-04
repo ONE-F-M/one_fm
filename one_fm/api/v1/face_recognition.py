@@ -61,12 +61,12 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         return response("Success", 201, "User enrolled successfully.")
 
     except Exception as error:
-       return response("Internal Server Error", 500, None, error)
+        return response("Internal Server Error", 500, None, error)
 
 
 @frappe.whitelist()
 def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None,
-    skip_attendance: str = None, latitude: str = None, longitude: str = None):
+                            skip_attendance: str = None, latitude: str = None, longitude: str = None):
     """This method verifies user checking in/checking out.
 
     Args:
@@ -177,7 +177,7 @@ def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latit
 
 def check_employee_non_shift(employee):
     shift_working, employement_type = frappe.get_value("Employee", employee, ["shift_working","employment_type"])
-    if shift_working==0 and employement_type!="Contract": 
+    if shift_working==0 and employement_type!="Contract":
         return True
     return False
 
@@ -220,8 +220,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                     location = frappe.get_list("Location", {'name':check_in_site}, ["latitude","longitude", "geofence_radius"])
                 else:
                     site = check_out_site
-                    location = frappe.get_list("Location", {'name':check_out_site}, ["latitude","longitude", "geofence_radius"])			
-            
+                    location = frappe.get_list("Location", {'name':check_out_site}, ["latitude","longitude", "geofence_radius"])
+
             else:
                 if shift.site_location:
                     site = shift.site_location
@@ -251,7 +251,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             result['user_within_geofence_radius'] = False
 
         result['site_name'] = site
-        
+
         # log to checkin radius log
         data = result.copy()
         data = {
@@ -259,7 +259,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             **{'employee':employee_id, 'user_latitude':latitude, 'user_longitude':longitude, 'user_distance':distance, 'diff':distance-result.geofence_radius}
         }
         frappe.enqueue('one_fm.one_fm.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
-            **{'data':data})
+                       **{'data':data})
         return response("Success", 200, result)
 
     except Exception as error:

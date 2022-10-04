@@ -10,6 +10,11 @@ def response(message, status_code, data=None, error=None):
         status_code (int): Status code of API response.
         data (Any, optional): Any data to be passed as response (Dict, List, etc). Defaults to None.
     """
+
+    if not status_code in [200, 201]:
+        frappe.enqueue(frappe.log_error, message=message + "\n" + str(error), title="API Response Error", queue='long')
+
+
     frappe.local.response["message"] = message
     frappe.local.response["http_status_code"] = status_code
     frappe.local.response["status_code"] = status_code
@@ -18,6 +23,8 @@ def response(message, status_code, data=None, error=None):
     elif error:
         frappe.local.response["error"] = error
     return
+
+
 
 @frappe.whitelist()
 def get_current_user_details():

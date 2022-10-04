@@ -1,0 +1,50 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-08-09 07:42:21.632573",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "project",
+  "payroll_start_day",
+  "payroll_end_day"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "description": "Day of the month in which payroll start date will define",
+   "fieldname": "payroll_start_day",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Payroll Start Day",
+   "options": "\nMonth Start\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\nMonth End",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payroll_end_day",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Payroll End Day",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2022-08-09 07:57:07.746840",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Project Payroll Cycle",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

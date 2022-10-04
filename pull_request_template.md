@@ -2,6 +2,8 @@
 - [ ] Feature
 - [ ] Chore
 - [ ] Bug
+
+
 ## Clearly and concisely describe the feature, chore or bug.
 
 ## Analysis and design (optional)
