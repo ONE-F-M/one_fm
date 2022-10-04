@@ -171,7 +171,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		employee_number_of_days_off = frappe.db.get_value("Employee", {'employee': key[0]}, ["number_of_days_off"])
 		employee_day_off = ""
 		if employee_days_off_category:
-			employee_day_off = employee_days_off_category
+			employee_day_off = employee_days_off_category + " "
 		if employee_number_of_days_off:
 			employee_day_off += str(employee_number_of_days_off) + " Day(s) Off"
 
