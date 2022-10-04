@@ -1154,6 +1154,7 @@ function render_roster(res, page, isOt) {
 	for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
 		// let { employee_name, employee, date } = employees_data[employee_key];
 		let employee = employees_data[employee_key][0]['employee']
+		let employee_day_off = employees_data[employee_key][0]['employee_day_off']
 		let emp_row = `
 		<tr data-name="${employee}">
 			<td class="sticky">
@@ -1378,6 +1379,7 @@ function get_roster_week_data(page, isOt) {
 
 			for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
 				let { employee_name, employee, date } = employees_data[employee_key];
+				let employee_day_off = employees_data[employee_key][0]['employee_day_off']
 				let emp_row = `
 			<tr data-name="${employee_key}">
 				<td class="sticky">
