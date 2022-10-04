@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe.utils import *
 
 def execute(filters=None):
 	if not filters: filters = {}
@@ -107,7 +108,6 @@ def get_columns(filters):
 		},
 	]
 def get_data(filters):
-	print(filters)
 	data = []
 	query = frappe.db.sql(f"""
 		SELECT DISTINCT e.name as employee_id, e.employee_name, e.project, e.work_permit_salary, e.one_fm_civil_id, e.bank_ac_no,
@@ -140,16 +140,33 @@ def get_data(filters):
 		GROUP BY e.name
 		ORDER BY e.name ASC
 	""", as_dict=1)
+
+	payroll_cycle = get_payroll_cycle(filters)
 	ot_dict = frappe._dict({})
 	for i in ot_query:
 		ot_dict[i.employee_id] = i.working_days
 	for i in query:
 		if ot_dict.get(i.employee_id):
 			i.ot = ot_dict.get(i.employee_id)
+		if payroll_cycle.get(i.project):
+			i.start_date = payroll_cycle.get(i.project)['start_date']
+			i.end_date = payroll_cycle.get(i.project)['end_date']
 
 	if not query:
 		frappe.msgprint(("No Payroll Submitted this month!"), alert=True, indicator="Blue")
 	return query
+
+
+
+def get_payroll_cycle(filters):
+	settings = frappe.get_doc("HR and Payroll Additional Settings").project_payroll_cycle
+	payroll_cycle = {}
+	for row in settings:
+		payroll_cycle[row.project] = {
+			'start_date':f'{filters.year}-{filters.month}-{row.payroll_start_day}',
+			'end_date':add_days(add_months(f'{filters.year}-{filters.month}-{row.payroll_start_day}', 1), -1)
+		}
+	return payroll_cycle
 
 
 @frappe.whitelist()
