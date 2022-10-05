@@ -406,7 +406,6 @@ def create_additional_salary_for_overtime(doc, method):
 		doc: The attendance document
 
 	"""
-	return
 	roster_type_basic = "Basic"
 	roster_type_overtime = "Over-Time"
 
