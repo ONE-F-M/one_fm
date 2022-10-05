@@ -70,7 +70,7 @@ def get_columns():
 	    },
 	    {
 	     "fieldname": "shift_supervisor",
-	     "fieldtype": "Link",
+	     "fieldtype": "Data",
 	     "label": "Shift Supervisor",
 	     "options": "Employee",
 	     "width": 0

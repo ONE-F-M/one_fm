@@ -39,12 +39,13 @@ class RequestforPurchase(Document):
 			self.reload()
 
 	@frappe.whitelist()
-	def make_purchase_order_for_quotation(self):
+	def make_purchase_order_for_quotation(self, warehouse=None):
 		if self.items_to_order:
+			wh = warehouse if warehouse else self.warehouse
 			for item in self.items_to_order:
 				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
 					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description,
-					warehouse=self.warehouse, quotation=item.quotation)
+					warehouse=wh, quotation=item.quotation)
 
 	@frappe.whitelist()
 	def accept_approve_reject_request_for_purchase(self, status, approver, accepter, reason_for_rejection=None):
@@ -57,7 +58,7 @@ class RequestforPurchase(Document):
 			message = "<p>Please Review and Approve or Reject the Request for Purchase <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
 			subject = '{0} Request for Purchase by {1}'.format(status, frappe.session.user)
 			send_email(self, [approver], message, subject)
-			create_notification_log(subject, message, [approver], self)			
+			create_notification_log(subject, message, [approver], self)
 
 		# Notify Accepter
 		if status in ['Approved', 'Rejected'] and frappe.session.user == approver:
