@@ -23,7 +23,7 @@ frappe.query_reports["Payroll Report"] = {
 				{ "value": 11, "label": __("Nov") },
 				{ "value": 12, "label": __("Dec") },
 			],
-			"default": frappe.datetime.str_to_obj(frappe.datetime.get_today()).getMonth() + 01
+			"default": frappe.datetime.str_to_obj(frappe.datetime.get_today()).getMonth() + 1
 		},
 		{
 			"fieldname":"year",

@@ -5,9 +5,10 @@ import frappe
 from frappe.utils import *
 
 def execute(filters=None):
+	print(filters)
 	if not filters: filters = {}
 
-	if not (filters.get("month") and filters.get("year")):
+	if not (filters.month and filters.year):
 		msgprint(_("Please select month and year"), raise_exception=1)
 	
 	columns, data =  get_columns(filters), get_data(filters)
@@ -143,6 +144,7 @@ def get_data(filters):
 
 	payroll_cycle = get_payroll_cycle(filters)
 	ot_dict = frappe._dict({})
+	attendance_by_project = get_attendance(payroll_cycle)
 	for i in ot_query:
 		ot_dict[i.employee_id] = i.working_days
 	for i in query:
@@ -151,7 +153,10 @@ def get_data(filters):
 		if payroll_cycle.get(i.project):
 			i.start_date = payroll_cycle.get(i.project)['start_date']
 			i.end_date = payroll_cycle.get(i.project)['end_date']
-
+			if attendance_by_project.get('employee'):
+				att_project = attendance_by_project.get('employee')
+				i.working_days = att_project['working_days']
+				i.ot = att_project['ot']
 	if not query:
 		frappe.msgprint(("No Payroll Submitted this month!"), alert=True, indicator="Blue")
 	return query
@@ -162,12 +167,51 @@ def get_payroll_cycle(filters):
 	settings = frappe.get_doc("HR and Payroll Additional Settings").project_payroll_cycle
 	payroll_cycle = {}
 	for row in settings:
+		if row.payroll_start_day == 'Month Start':
+			row.payroll_start_day = 1
 		payroll_cycle[row.project] = {
 			'start_date':f'{filters.year}-{filters.month}-{row.payroll_start_day}',
 			'end_date':add_days(add_months(f'{filters.year}-{filters.month}-{row.payroll_start_day}', 1), -1)
 		}
 	return payroll_cycle
 
+
+def get_attendance(projects):
+	attendance_dict = {}
+	ot_dict = {}
+	for key, value in projects.items():
+		start_date = projects[key]['start_date']
+		end_date = projects[key]['end_date']
+		attendance_list = frappe.db.sql("""
+			SELECT employee,  COUNT(employee) as working_days FROM `tabAttendance` 
+			WHERE attendance_date BETWEEN '{start_date}' AND '{end_date}' 
+			AND project='{key}' AND status in ('Present', 'Work From Home', 'On Leave') 
+			AND roster_type='Basic'
+			GROUP BY employee
+		""", as_dict=1)
+		attendance_list_ot = frappe.db.sql("""
+			SELECT employee,  COUNT(employee) as ot FROM `tabAttendance` 
+			WHERE attendance_date BETWEEN '{start_date}' AND '{end_date}' 
+			AND project='{key}' AND status in ('Present', 'Work From Home', 'On Leave') 
+			AND roster_type='Over-Time'
+			GROUP BY employee
+		""", as_dict=1)
+
+		for row in attendance_list_ot:
+			if ot_dict.get(row.employee):
+				ot_dict[row.employee] += row.ot
+			else:
+				ot_dict[row.employee] = row.ot
+
+		for row in attendance_list:
+			if attendance_dict.get(row.employee):
+				attendance_dict[row.employee]['working_days'] += row.working_days
+			else:
+				attendance_dict[row.employee] = {'working_days': row.working_days, 'ot': 0}
+			if ot_dict.get(row.employee):
+				attendance_dict[row.employee]['ot'] += ot_dict.get(row.employee)
+
+	return attendance_dict
 
 @frappe.whitelist()
 def get_attendance_years():
