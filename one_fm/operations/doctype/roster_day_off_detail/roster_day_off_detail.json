@@ -13,6 +13,7 @@
   "column_break_5",
   "day_off_type",
   "number_of_days_off",
+  "day_off_schedule",
   "days_off_ot",
   "day_off_difference"
  ],
@@ -23,6 +24,7 @@
    "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -38,7 +40,8 @@
    "fieldname": "monthweek",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Month/Week"
+   "label": "Month/Week",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.day_off_category",
@@ -58,9 +61,10 @@
   },
   {
    "fieldname": "day_off_difference",
-   "fieldtype": "Int",
+   "fieldtype": "Small Text",
    "in_list_view": 1,
-   "label": "Day Off Difference"
+   "label": "Day Off Difference",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.employee_id",
@@ -81,13 +85,20 @@
    "fieldname": "number_of_days_off",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "No of Days Off"
+   "label": "No of Days Off",
+   "read_only": 1
+  },
+  {
+   "fieldname": "day_off_schedule",
+   "fieldtype": "Int",
+   "label": "Day Off Schedule",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-10-06 18:22:47.857716",
+ "modified": "2022-10-10 15:36:43.153874",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Roster Day Off Detail",

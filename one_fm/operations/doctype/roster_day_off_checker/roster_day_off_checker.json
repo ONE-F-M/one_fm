@@ -1,6 +1,6 @@
 {
  "actions": [],
- "allow_rename": 1,
+ "autoname": "format:{date}-{supervisor_name}",
  "creation": "2022-10-06 13:46:44.016881",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -9,8 +9,7 @@
   "supervisor",
   "supervisor_name",
   "column_break_3",
-  "start_date",
-  "end_date",
+  "date",
   "detail_section_section",
   "detail",
   "amended_from"
@@ -22,20 +21,6 @@
    "in_list_view": 1,
    "label": "Supervisor",
    "options": "Employee",
-   "reqd": 1
-  },
-  {
-   "fieldname": "start_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Start Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "end_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "End Date",
    "reqd": 1
   },
   {
@@ -70,12 +55,19 @@
    "options": "Roster Day Off Checker",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-10-06 18:18:25.013915",
+ "modified": "2022-10-10 15:43:37.912536",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Roster Day Off Checker",
