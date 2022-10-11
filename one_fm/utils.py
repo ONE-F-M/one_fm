@@ -2715,8 +2715,18 @@ def notify_live_user(company, message, users=False):
 
 def get_week_start_end(date_str):
     dt = datetime.strptime(date_str, '%Y-%m-%d')
-    start = dt - timedelta(days=dt.weekday()+1)
+    start = dt - timedelta(days=dt.weekday())
     end = start + timedelta(days=6)
+    if str(end.date()) == date_str:
+        start = start = end
+        end = start + timedelta(days=6)
+    elif str(start.date()) == date_str:
+        start = start + timedelta(days=-1)
+        end = end + timedelta(days=-1)
+    else:
+        start = start + timedelta(days=-1)
+        end = end + timedelta(days=-1)
+
     return frappe._dict({'start': str(start.date()), 'end': str(end.date())})
 
 def get_month_start_end(date_str):
@@ -2725,3 +2735,42 @@ def get_month_start_end(date_str):
     _end = cur_date.replace(day=28) + timedelta(days=4)
     end = _end - timedelta(days=_end.day)
     return frappe._dict({'start': str(start.date()), 'end': str(end.date())})
+
+def get_payroll_cycle(filters={}):
+    if not filters:
+        filters = frappe._dict({})
+    if not filters.year:
+        filters.year = datetime.today().date().year
+    if not filters.month:
+        filters.month = datetime.today().date().month
+
+    settings = frappe.get_doc("HR and Payroll Additional Settings")
+    payroll_cycle = {}
+    for row in settings.project_payroll_cycle:
+        if row.payroll_start_day == 'Month Start':
+            row.payroll_start_day = 1
+        payroll_cycle[row.project] = {
+            'start_date':f'{filters.year}-{filters.month}-{row.payroll_start_day}',
+            'end_date':add_days(add_months(f'{filters.year}-{filters.month}-{row.payroll_start_day}', 1), -1)
+        }
+    ## get other projects
+    projects = frappe.db.sql("""
+        SELECT project FROM `tabEmployee` 
+            WHERE
+        shift_working=1 and status='Active'
+            GROUP BY project 
+    """, as_dict=1)
+
+    default_payroll_cycle = settings.default_payroll_start_day
+    if default_payroll_cycle in ['', 'Month Start']:
+        default_payroll_cycle = 1
+    _date =  {
+        'start_date':f'{filters.year}-{filters.month}-{default_payroll_cycle}',
+        'end_date':add_days(add_months(f'{filters.year}-{filters.month}-{default_payroll_cycle}', 1), -1)
+    }
+    for p in projects:
+        if not payroll_cycle.get(p.project) and p.project != None:
+            payroll_cycle[p.project] = _date
+    return payroll_cycle
+
+
