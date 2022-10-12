@@ -505,7 +505,7 @@ scheduler_events = {
 		],
 		"10 4 * * *": [ #“At 04:10.”
 			'one_fm.utils.check_grp_operator_submission_four'
-			'one_fm.operations.doctype.roster_day_off_checkerroster_day_off_checker.check_roster_day_off'
+			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.check_roster_day_off'
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
