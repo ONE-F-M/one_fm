@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from . import __version__ as app_version
 import frappe as _frappe
 from frappe import _
-from erpnext.hr.doctype.shift_type.shift_type import ShiftType
+from hrms.hr.doctype.shift_type.shift_type import ShiftType
 from one_fm.api.doc_methods.shift_type import process_auto_attendance
 
 
@@ -504,7 +504,7 @@ scheduler_events = {
 			'one_fm.utils.send_travel_agent_email'
 		],
 		"10 4 * * *": [ #“At 04:10.”
-			'one_fm.utils.check_grp_operator_submission_four'
+			'one_fm.utils.check_grp_operator_submission_four',
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.check_roster_day_off'
 		],
 		"30 4 * * *": [
@@ -513,15 +513,15 @@ scheduler_events = {
 		"15 6 * * *": [# Runs everyday at 6:15 am.
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
-			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
-			'one_fm.grd.doctype.paci.paci.notify_to_upload_hawiyati',
+			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
+			# 'one_fm.grd.doctype.paci.paci.notify_to_upload_hawiyati',
 			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
-			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
+			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_under_process_status_on_pifss',
 			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp',
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
-			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
+			# 'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
 			'one_fm.utils.issue_roster_actions',
 			'one_fm.grd.doctype.preparation.preparation.auto_create_preparation_record',
 		],
@@ -534,7 +534,7 @@ scheduler_events = {
 		# "one_fm.one_fm.grd" doesnt find the module, only "one_fm.grd"
 		"20 10 * * *": [ #“At 10:20"
 			'one_fm.utils.check_upload_tasriah_reminder2',
-			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
+			#'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
 		],
 		"30 6 * * *": [
 			'one_fm.utils.check_pam_visa_approval_submission_six_half'

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from erpnext.hr.doctype.shift_request.shift_request import ShiftRequest
-from erpnext.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
-from erpnext.payroll.doctype.salary_slip.salary_slip import SalarySlip
+from hrms.hr.doctype.shift_request.shift_request import ShiftRequest
+from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
+from hrms.payroll.doctype.salary_slip.salary_slip import SalarySlip
 from erpnext.stock.doctype.item_price.item_price import ItemPrice
 from one_fm.api.doc_methods.shift_request import shift_request_submit, validate_approver, shift_request_cancel
 from one_fm.api.doc_methods.payroll_entry import (
@@ -12,7 +12,7 @@ from one_fm.api.doc_methods.salary_slip import (
 	get_working_days_details, get_unmarked_days_based_on_doj_or_relieving, get_unmarked_days
 )
 from one_fm.api.doc_methods.item_price import validate,check_duplicates
-from erpnext.hr.doctype.leave_application.leave_application import LeaveApplication
+from hrms.hr.doctype.leave_application.leave_application import LeaveApplication
 from one_fm.api.mobile.Leave_application import notify_leave_approver
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 from one_fm.operations.doctype.contracts.contracts import calculate_item_values

@@ -8,9 +8,9 @@ import frappe, erpnext
 from frappe import _
 from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today
 from one_fm.api.doc_events import get_employee_user_id
-from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
+from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
-from erpnext.hr.doctype.attendance.attendance import mark_attendance
+from hrms.hr.doctype.attendance.attendance import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 
