@@ -570,7 +570,7 @@ def leave_appillication_paid_sick_leave(doc, method):
 def create_additional_salary_for_paid_sick_leave(doc):
     salary = get_salary(doc.employee)
     daily_rate = salary/30
-    from erpnext.hr.doctype.leave_application.leave_application import get_leave_details
+    from hrms.hr.doctype.leave_application.leave_application import get_leave_details
     leave_details = get_leave_details(doc.employee, nowdate())
     curr_year_applied_days = 0
     if doc.leave_type in leave_details['leave_allocation'] and leave_details['leave_allocation'][doc.leave_type]:
@@ -766,7 +766,7 @@ def leave_allocation_builder(employee_list):
         args:
             employee_list: List of Employees with minimum data (name, date_of_joining, went_to_hajj, grade and leave_policy)
     '''
-    from erpnext.hr.doctype.leave_allocation.leave_allocation import get_leave_allocation_for_period
+    from hrms.hr.doctype.leave_allocation.leave_allocation import get_leave_allocation_for_period
 
     # Get Leave Type details (configurations)
     leave_type_details = get_leave_type_details()
@@ -950,7 +950,7 @@ def get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type):
 
     # Set Daily Allocation from annual leave dependent leave type and reduction level
     if leave_type.one_fm_annual_leave_allocation_reduction:
-        from erpnext.hr.doctype.leave_application.leave_application import get_leaves_for_period
+        from hrms.hr.doctype.leave_application.leave_application import get_leaves_for_period
         leave_days = 0
         if leave_type.one_fm_paid_sick_leave_type_dependent:
             leave_days += get_leaves_for_period(allocation.employee, leave_type.one_fm_paid_sick_leave_type_dependent, allocation.from_date, allocation.to_date)

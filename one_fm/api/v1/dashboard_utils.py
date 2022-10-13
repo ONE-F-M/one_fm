@@ -3,7 +3,7 @@ import calendar
 import frappe, json
 from frappe import _
 from frappe.desk.notifications import get_filters_for
-from erpnext.hr.report.employee_leave_balance.employee_leave_balance import get_data as get_leave_balance
+from hrms.hr.report.employee_leave_balance.employee_leave_balance import get_data as get_leave_balance
 from one_fm.api.v1.utils import response
 
 

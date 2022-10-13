@@ -1,4 +1,4 @@
-from erpnext.hr.doctype.employee_transfer.employee_transfer import *
+from hrms.hr.doctype.employee_transfer.employee_transfer import *
 
 class EmployeeTransferOverride(EmployeeTransfer):
 

@@ -4,7 +4,7 @@
 from warnings import filters
 import frappe
 from frappe import _
-from erpnext.hr.doctype.department.department import get_children
+from hrms.hr.doctype.department.department import get_children
 
 def execute(filters=None):
 	columns, data = get_columns(filters), get_data(filters)

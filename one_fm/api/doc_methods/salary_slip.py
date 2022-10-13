@@ -139,7 +139,7 @@ def get_unmarked_days_based_on_doj_or_relieving(
 	Exclude days before DOJ or after
 	Relieving Date from unmarked days
 	"""
-	from erpnext.hr.doctype.employee.employee import is_holiday
+	from hrms.hr.doctype.employee.employee import is_holiday
 	include_day_off_in_total_working_days = frappe.db.get_single_value(
 		"HR and Payroll Additional Settings", "include_day_off_in_total_working_days"
 	)

@@ -2,9 +2,9 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_days, date_diff, getdate, nowdate
-from erpnext.hr.doctype.employee.employee import is_holiday
-from erpnext.hr.utils import validate_active_employee, validate_dates
-from erpnext.hr.doctype.attendance_request.attendance_request import AttendanceRequest
+from hrms.hr.doctype.employee.employee import is_holiday
+from hrms.hr.utils import validate_active_employee, validate_dates
+from hrms.hr.doctype.attendance_request.attendance_request import AttendanceRequest
 from frappe.model.workflow import apply_workflow
 from one_fm.utils import send_workflow_action_email
 
