@@ -59,7 +59,7 @@ def check_roster_day_off():
 
 	# create data
 	for k, v in supervisor_dict.items():
-		if k:
+		if k and v:
 			frappe.get_doc({
 				'doctype': 'Roster Day Off Checker',
 				'supervisor': k,
