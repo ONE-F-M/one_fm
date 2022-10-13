@@ -275,7 +275,6 @@ def update_onboarding_employee(employee):
 def check_existing():
 	"""API to determine the applicable Log type.
 	The api checks employee's last lcheckin log type. and determine what next log type needs to be
-
 	Returns:
 		True: The log in was "IN", so his next Log Type should be "OUT".
 		False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
@@ -288,13 +287,13 @@ def check_existing():
 
 	#get Employee Schedule
 	last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee},order_by='creation desc',limit_page_length=1)
-	
+
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
 
 	shift = get_current_shift(employee)
 	#if employee schedule is linked with the previous Checkin doc
-	
+
 	if shift and last_shift:
 		start_date = (shift.start_date).strftime("%Y-%m-%d")
 		if start_date == today or start_date == prev_date:

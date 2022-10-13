@@ -237,6 +237,7 @@
   {
    "fieldname": "get_projects_not_configured_in_payroll_cycle",
    "fieldtype": "Button",
+   "hidden": 1,
    "label": "Show Projects Not Configured in Payroll Cycle But Linked in Employee"
   },
   {
@@ -250,7 +251,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-08-16 10:18:43.161493",
+ "modified": "2022-08-30 13:57:00.427138",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
