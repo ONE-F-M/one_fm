@@ -12,4 +12,4 @@ one_fm.patches.v1_0.change_educational_qualification_options_in_job_applicant
 execute:frappe.delete_doc("DocType", 'Uniform Management Settings')
 one_fm.patches.v1_0.update_workflow_state #2022-08-11
 one_fm.patches.v1_0.remove_any_nationality
-one_fm.patches.v14_0.fix_customizations #2022-10-01
+one_fm.patches.v14_0.fix_customizations
