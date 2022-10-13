@@ -36,7 +36,7 @@ gitdb==4.0.9
 GitPython==3.1.28
 gocardless-pro==1.22.0
 google-api-core==2.10.2
-google-api-python-client==2.2.0
+google-api-python-client
 google-auth==1.29.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.4.6
