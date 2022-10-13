@@ -18,7 +18,7 @@ from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 from one_fm.operations.doctype.contracts.contracts import calculate_item_values
 
 
-__version__ = '0.13.0'
+__version__ = '14.0.0'
 
 
 ShiftRequest.on_submit = shift_request_submit
