@@ -66,6 +66,7 @@ def check_roster_day_off():
 				'date': datetime.today().date(),
 				'detail': v
 			}).insert(ignore_permissions=True)
+			frappe.db.commit()
 
 def validate_offs(emp, project_cycle, supervisor):
 	"""
