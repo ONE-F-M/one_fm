@@ -127,7 +127,7 @@ pytz==2022.1
 PyYAML==5.4.1
 rauth==0.7.3
 razorpay==1.2.0
-redis==3.5.3
+redis
 redisearch==2.1.1
 regex==2022.9.13
 rejson==0.5.6
