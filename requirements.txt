@@ -28,12 +28,9 @@ defusedxml==0.7.1
 docopt==0.6.2
 dropbox==11.7.0
 email-reply-parser==0.5.12
--e git+https://github.com/frappe/erpnext.git@c50d6c5e74bc2a4aa5b3acba91bc6096df406336#egg=erpnext
 et-xmlfile==1.1.0
 executing==1.1.0
 firebase-admin==6.0.0
--e git+https://github.com/frappe/frappe.git@ea296321b9eb156fe445ae71fee91fcf2181af04#egg=frappe
--e git+https://github.com/frappe/desk@a9c5e29cac4bae425ac152e27856dbaa8beeaed5#egg=frappedesk
 git-url-parse==1.2.2
 gitdb==4.0.9
 GitPython==3.1.28
@@ -57,7 +54,6 @@ grpcio-status==1.49.1
 grpcio-tools==1.49.1
 gunicorn==20.1.0
 hiredis==2.0.0
--e git+https://github.com/frappe/hrms.git@2f6186f7edad923e0b15e83bd70210f853e99df9#egg=hrms
 html2text==2020.1.16
 html5lib==1.1
 httplib2==0.20.4
@@ -83,14 +79,11 @@ mypy-extensions==0.4.3
 num2words==0.5.12
 numpy==1.23.3
 oauthlib==3.1.1
--e git+https://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@github.com/ONE-F-M/One-FM@b3dc1ef8a8699ef9f8e04f7d2480d4cf6e9da450#egg=one_fm
--e git+https://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@github.com/ONE-F-M/password_management@11d0fe7bbafd1809d13b577eef89bcdb0e8488ff#egg=one_fm_password_management
 openpyxl==3.0.10
 packaging==21.3
 pandas==1.5.0
 parso==0.8.3
 passlib==1.7.4
--e git+https://github.com/frappe/payments.git@487747b73f658de78fbe1741a06e7447927cfa79#egg=payments
 paytmchecksum==1.7.0
 pbr==5.10.0
 pdfkit==1.0.0
@@ -163,7 +156,6 @@ traceback-with-variables==2.0.4
 traitlets==5.4.0
 tweepy==3.10.0
 twilio==6.44.2
--e git+https://github.com/frappe/twilio-integration.git@cb474c54d794c3a58a8c5287d387cf3d41e5ed0a#egg=twilio_integration
 typing-inspect==0.8.0
 typing_extensions==4.4.0
 Unidecode==1.2.0
