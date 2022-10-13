@@ -302,7 +302,7 @@ def haversine(ofc_lat, ofc_lng, emp_lat, emp_lng):
 
 
 def employee_before_validate(doc, method):
-	from hrms.hr.doctype.employee.employee import Employee
+	from erpnext.setup.doctype.employee.employee import Employee
 	Employee.validate = employee_validate
 
 
