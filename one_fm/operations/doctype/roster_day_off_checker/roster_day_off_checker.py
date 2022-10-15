@@ -60,13 +60,15 @@ def check_roster_day_off():
 	# create data
 	for k, v in supervisor_dict.items():
 		if k and v:
-			frappe.get_doc({
-				'doctype': 'Roster Day Off Checker',
-				'supervisor': k,
-				'date': datetime.today().date(),
-				'detail': v
-			}).insert(ignore_permissions=True)
-			time.sleep(3)
+			frappe.enqueue(create_roster_checker, supervisor=k, employees=v)
+			
+def create_roster_checker(supervisor, employees):
+	frappe.get_doc({
+		'doctype': 'Roster Day Off Checker',
+		'supervisor': supervisor,
+		'date': datetime.today().date(),
+		'detail': employees
+	}).insert(ignore_permissions=True)
 
 def validate_offs(emp, project_cycle, supervisor):
 	"""
