@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 from datetime import datetime
-import frappe
+import frappe, time
 from frappe.utils import getdate, add_days, add_months
 from frappe.model.document import Document
 from one_fm.utils import get_payroll_cycle
@@ -66,7 +66,7 @@ def check_roster_day_off():
 				'date': datetime.today().date(),
 				'detail': v
 			}).insert(ignore_permissions=True)
-			frappe.db.commit()
+			time.sleep(3)
 
 def validate_offs(emp, project_cycle, supervisor):
 	"""
