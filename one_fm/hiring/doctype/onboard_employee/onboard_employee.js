@@ -13,6 +13,9 @@ frappe.ui.form.on('Onboard Employee', {
 		create_custom_buttons(frm);
 		filterDefaultShift(frm);
 		set_shift_working_btn(frm);
+		if(frm.doc.duty_commencement_status == "Applicant Signed and Uploaded" && !frm.doc.employee && !frm.doc.company_email){
+			frm.scroll_to_field('company_email');
+		}
 	},
     shift_working: function(frm) {
         set_shift_working_btn(frm);
