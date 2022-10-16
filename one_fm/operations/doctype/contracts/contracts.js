@@ -339,51 +339,21 @@ function set_contact(doc){
 }
 
 frappe.ui.form.on('Contract Item', {
-	uom: (frm, cdt, cdn)=>{
-		// check uom agains Service item
-		let row = locals[cdt][cdn];
-//		if(row.subitem_group=='Service' &&
-//			!['Hourly', 'Daily', 'Monthly'].includes(row.uom)){
-//				row.uom = null;
-//				frm.refresh_field('items');
-//				frappe.throw("Item of subgroup 'Service' UOM must be <b>Hourly, Daily or Monthly'</b>.");
-//			}
-	},
 	item_code: function(frm, cdt, cdn) {
 		let d = locals[cdt][cdn];
 		if(d.item_code){
-			frappe.call({
-				method: 'frappe.client.get_value',
-				args:{
-					'doctype':'Item',
-					'filters':{
-						'item_code': d.item_code,
-						'disabled': 0,
-					},
-					'fieldname':[
-						'description'
-					]
-				},
-				callback:function(s){
-					if (!s.exc) {
-						if(s.message){
-							frappe.model.set_value(d.doctype, d.name, "item_name", s.message.description);
-							frm.refresh_field("items");
-						}
-					}
-				}
+			frappe.db.get_value('Item Price', {'customer': frm.doc.client, 'item_code': d.item_code}, ['name', 'price_list_rate'] , function(r) {
+				frappe.model.set_value(d.doctype, d.name, "item_price", r.name);
+				frappe.model.set_value(d.doctype, d.name, "price_list_rate", r.price_list_rate);
+				frappe.model.set_value(d.doctype, d.name, "rate", r.price_list_rate);
+				frm.refresh_field("items");
 			});
-			frappe.model.set_value(d.doctype, d.name, "item_price", null);
-			// frappe.model.set_value(d.doctype, d.name, "uom", null);
-			frappe.model.set_value(d.doctype, d.name, "price_list_rate", 0);
-			frappe.model.set_value(d.doctype, d.name, "rate", 0);
 			if(d.subitem_group=="Service"){
 				frappe.model.set_value(d.doctype, d.name, "gender", null);
 				frappe.model.set_value(d.doctype, d.name, "shift_hours", 0);
 				frappe.model.set_value(d.doctype, d.name, "days_off", 0);
 			}
 		}
-
 	},
 	management_fee_percentage: function(frm, cdt, cdn){
 		let d = locals[cdt][cdn];
