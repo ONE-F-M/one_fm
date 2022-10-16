@@ -3,7 +3,6 @@
 
 frappe.ui.form.on('Request for Purchase', {
 	refresh: function(frm) {
-		set_item_name_options_to_items_to_order(frm);
 		set_intro_related_to_status(frm);
 		frm.events.make_custom_buttons(frm);
 		if(!frm.doc.approver || (frm.doc.approver != frm.doc.__onload.approver)){
@@ -175,12 +174,6 @@ frappe.ui.form.on('Request for Purchase', {
 		set_supplier_to_items_to_order(frm);
 	}
 });
-
-var set_item_name_options_to_items_to_order = function(frm) {
-	var df = frappe.meta.get_docfield("Request for Purchase Quotation Item", "item_name", frm.doc.name);
-	var requested_items = frm.doc.items.map(pt => {return pt.item_name}).join('\n');
-	df.options = "\n"+requested_items;
-};
 
 var set_intro_related_to_status = function(frm) {
 	if (frm.doc.docstatus == 1){

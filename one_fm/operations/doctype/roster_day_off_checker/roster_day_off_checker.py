@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 from datetime import datetime
-import frappe, time
+import frappe
 from frappe.utils import getdate, add_days, add_months
 from frappe.model.document import Document
 from one_fm.utils import get_payroll_cycle
@@ -60,16 +60,12 @@ def check_roster_day_off():
 	# create data
 	for k, v in supervisor_dict.items():
 		if k and v:
-			frappe.enqueue(create_roster_checker, supervisor=k, employees=v)
-			
-def create_roster_checker(supervisor, employees):
-	frappe.get_doc({
-		'doctype': 'Roster Day Off Checker',
-		'supervisor': supervisor,
-		'date': datetime.today().date(),
-		'detail': employees
-	}).insert(ignore_permissions=True)
-
+			frappe.get_doc({
+				'doctype': 'Roster Day Off Checker',
+				'supervisor': k,
+				'date': datetime.today().date(),
+				'detail': v
+			}).insert(ignore_permissions=True)
 
 def validate_offs(emp, project_cycle, supervisor):
 	"""
@@ -163,4 +159,5 @@ def validate_offs(emp, project_cycle, supervisor):
 			start_date = add_days(end_date, 1)
 			end_date = add_days(start_date, 7)
 	return frappe._dict({'supervisor': supervisor, 'data': datalist})
+
 

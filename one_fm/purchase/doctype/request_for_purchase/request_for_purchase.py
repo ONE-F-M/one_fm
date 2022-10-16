@@ -12,27 +12,6 @@ from one_fm.utils import fetch_employee_signature
 from one_fm.processor import sendemail
 
 class RequestforPurchase(Document):
-	def validate(self):
-		self.validate_items_to_order_qty()
-
-	def on_update_after_submit(self):
-		self.validate_items_to_order_qty()
-
-	def validate_items_to_order_qty(self):
-		if self.items and self.items_to_order:
-			for item in self.items:
-				query = """
-					select
-						sum(qty) as qty
-					from
-						`tabRequest for Purchase Quotation Item`
-					where
-						item_name = '{0}' and parent = '{1}'
-				"""
-				qty = frappe.db.sql(query.format(item.item_name, item.parent), as_dict=True)
-				if qty and len(qty) > 0 and item.qty < qty[0].qty:
-					frappe.throw(_('Quantity of the Item {0} should be equal or less than {1}'.format(item.item_name, item.qty)))
-
 	def onload(self):
 		self.set_onload('accepter', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_accepter'))
 		self.set_onload('approver', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver'))
