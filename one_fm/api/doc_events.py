@@ -6,11 +6,11 @@ from frappe import _
 from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
 from one_fm.api.v1.roster import get_current_shift
-from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
+from hrms.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 import datetime
 from frappe.permissions import remove_user_permission
-from erpnext.hr.utils import get_holidays_for_employee
+from hrms.hr.utils import get_holidays_for_employee
 
 #Shift Type
 @frappe.whitelist()
@@ -302,7 +302,7 @@ def haversine(ofc_lat, ofc_lng, emp_lat, emp_lng):
 
 
 def employee_before_validate(doc, method):
-	from erpnext.hr.doctype.employee.employee import Employee
+	from erpnext.setup.doctype.employee.employee import Employee
 	Employee.validate = employee_validate
 
 

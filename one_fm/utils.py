@@ -6,7 +6,7 @@ from one_fm.api.notification import create_notification_log
 from frappe import _
 import frappe, os, erpnext, json, math
 from frappe.model.document import Document
-from erpnext.hr.doctype.employee.employee import get_holiday_list_for_employee
+from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils.csvutils import read_csv_content
 from frappe.utils import (
@@ -18,7 +18,7 @@ from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
 from frappe.model.naming import set_name_by_naming_series
-from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
+from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
     expire_allocation, create_leave_ledger_entry
 )
 from dateutil.relativedelta import relativedelta
@@ -31,11 +31,11 @@ import datetime
 from datetime import datetime, time
 from frappe import utils
 import pandas as pd
-from erpnext.hr.utils import get_holidays_for_employee
+from hrms.hr.utils import get_holidays_for_employee
 from one_fm.processor import sendemail
 from frappe.desk.form import assign_to
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
-from frappe.core.doctype.user.user import extract_mentions
+from frappe.desk.notifications import extract_mentions
 from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
@@ -570,7 +570,7 @@ def leave_appillication_paid_sick_leave(doc, method):
 def create_additional_salary_for_paid_sick_leave(doc):
     salary = get_salary(doc.employee)
     daily_rate = salary/30
-    from erpnext.hr.doctype.leave_application.leave_application import get_leave_details
+    from hrms.hr.doctype.leave_application.leave_application import get_leave_details
     leave_details = get_leave_details(doc.employee, nowdate())
     curr_year_applied_days = 0
     if doc.leave_type in leave_details['leave_allocation'] and leave_details['leave_allocation'][doc.leave_type]:
@@ -766,7 +766,7 @@ def leave_allocation_builder(employee_list):
         args:
             employee_list: List of Employees with minimum data (name, date_of_joining, went_to_hajj, grade and leave_policy)
     '''
-    from erpnext.hr.doctype.leave_allocation.leave_allocation import get_leave_allocation_for_period
+    from hrms.hr.doctype.leave_allocation.leave_allocation import get_leave_allocation_for_period
 
     # Get Leave Type details (configurations)
     leave_type_details = get_leave_type_details()
@@ -950,7 +950,7 @@ def get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type):
 
     # Set Daily Allocation from annual leave dependent leave type and reduction level
     if leave_type.one_fm_annual_leave_allocation_reduction:
-        from erpnext.hr.doctype.leave_application.leave_application import get_leaves_for_period
+        from hrms.hr.doctype.leave_application.leave_application import get_leaves_for_period
         leave_days = 0
         if leave_type.one_fm_paid_sick_leave_type_dependent:
             leave_days += get_leaves_for_period(allocation.employee, leave_type.one_fm_paid_sick_leave_type_dependent, allocation.from_date, allocation.to_date)

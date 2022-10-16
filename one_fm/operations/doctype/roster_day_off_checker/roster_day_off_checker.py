@@ -70,6 +70,7 @@ def create_roster_checker(supervisor, employees):
 		'detail': employees
 	}).insert(ignore_permissions=True)
 
+
 def validate_offs(emp, project_cycle, supervisor):
 	"""
 	Validate if the employee is has exceeded weekly or monthly off schedule.

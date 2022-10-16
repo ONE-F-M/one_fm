@@ -7,7 +7,7 @@ import frappe, os
 import json
 from frappe.model.document import Document
 from frappe.utils import get_site_base_path
-from erpnext.hr.doctype.employee.employee import get_holiday_list_for_employee
+from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils.csvutils import read_csv_content
 from frappe.utils import cint, cstr, flt, nowdate, comma_and, date_diff, getdate, formatdate ,get_url, get_datetime
@@ -15,7 +15,7 @@ from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
 from frappe.model.naming import set_name_by_naming_series
-from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import expire_allocation, create_leave_ledger_entry
+from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import expire_allocation, create_leave_ledger_entry
 from dateutil.relativedelta import relativedelta
 from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form, \
     comma_or, get_fullname, add_years, add_months, add_days, nowdate,get_first_day,get_last_day, today
