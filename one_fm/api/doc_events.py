@@ -151,15 +151,18 @@ def get_notification_user(doc, employee=None):
 	"""
 		Shift > Site > Project > Reports to
 	"""
+	if not doc.operations_shift:
+		return
+	
 	operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
-	print(operations_shift.supervisor, operations_shift.name)
+
 	if operations_shift.supervisor:
 		supervisor = get_employee_user_id(operations_shift.supervisor)
 		if supervisor != doc.owner:
 			return supervisor
 
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-	print(operations_site.account_supervisor, operations_site.name)
+
 	if operations_site.account_supervisor:
 		account_supervisor = get_employee_user_id(operations_site.account_supervisor)
 		if account_supervisor != doc.owner:
@@ -177,6 +180,7 @@ def get_notification_user(doc, employee=None):
 	return get_employee_user_id(reporting_manager)
 
 def validate_location(doc):
+	print(doc.operations_shift)
 	checkin_lat, checkin_lng = doc.device_id.split(",") if doc.device_id else (0, 0)
 	site_name = frappe.get_value("Operations Shift", doc.operations_shift, "site")
 	site_location = frappe.get_value("Operations Site", site_name, "site_location")
