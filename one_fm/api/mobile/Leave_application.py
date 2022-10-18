@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from erpnext.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
+from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
 from datetime import date
 import datetime
 import collections

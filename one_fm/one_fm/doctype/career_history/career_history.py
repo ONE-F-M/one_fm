@@ -149,7 +149,7 @@ def get_interview(career_history):
 	interview_exists = frappe.db.exists('Interview',
 		{'career_history': career_history.name, 'docstatus': ['!=', 2]})
 	if interview_exists:
-		from erpnext.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
+		from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
 		applicable_interviewers = get_applicable_interviewers(interview_exists)
 		if frappe.session.user in applicable_interviewers:
 			return interview_exists

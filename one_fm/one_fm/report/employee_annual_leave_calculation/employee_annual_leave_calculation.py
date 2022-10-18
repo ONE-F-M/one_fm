@@ -5,10 +5,10 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.utils import getdate, date_diff, add_days, month_diff, formatdate, add_months
-from erpnext.hr.doctype.leave_application.leave_application \
+from hrms.hr.doctype.leave_application.leave_application \
 	import get_leave_balance_on, get_leaves_for_period
 
-from erpnext.hr.report.employee_leave_balance_summary.employee_leave_balance_summary \
+from hrms.hr.report.employee_leave_balance_summary.employee_leave_balance_summary \
 	import get_department_leave_approver_map
 
 def execute(filters=None):
