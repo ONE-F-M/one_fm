@@ -308,7 +308,6 @@ def get_active_shifts(now_time):
 	""".format(current_time=now_time), as_dict=1)
 
 def checkin_checkout_query(date, shift_type, log_type):
-	print(date)
 	if log_type == "IN":
 		permission_type = ("Arrive Late", "Forget to Checkin", "Checkin Issue")
 	else:
