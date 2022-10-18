@@ -202,7 +202,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
         date = cstr(getdate())
         log = check_existing()
-        if log == True:
+
+        if log == False:
             log_type = "IN"
         else:
             log_type = "OUT"
