@@ -308,7 +308,6 @@ def get_active_shifts(now_time):
 	""".format(current_time=now_time), as_dict=1)
 
 def checkin_checkout_query(date, shift_type, log_type):
-	print(date)
 	if log_type == "IN":
 		permission_type = ("Arrive Late", "Forget to Checkin", "Checkin Issue")
 	else:
@@ -480,7 +479,7 @@ def checkin_deadline():
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
 
-	frappe.enqueue(mark_deadline_attendance, shift_list=shift_list, now_time = now_time, is_async=True, queue='long')
+	frappe.enqueue(mark_deadline_attendance, shift_list=shifts_list, now_time = now_time, is_async=True, queue='long')
 
 def mark_deadline_attendance(shifts_list, now_time):
 	for shift in shifts_list:
@@ -657,19 +656,27 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 
 def fetch_non_shift(date, s_type):
 	if s_type == "AM":
-		roster = frappe.db.sql("""SELECT name as employee, default_shift as shift_type, checkin_location from `tabEmployee` E
+		roster = frappe.db.sql("""SELECT name as employee, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time >= '00:00:00'
 					AND  st.start_time < '12:00:00')
+				AND NOT EXISTS(SELECT * from `tabHoliday` h
+					WHERE
+						h.parent = E.holiday_list
+					AND h.holiday_date = '{date}')
 		""".format(date=cstr(date)), as_dict=1)
 	else:
-		roster = frappe.db.sql("""SELECT name as employee, default_shift as shift_type, checkin_location from `tabEmployee` E
+		roster = frappe.db.sql("""SELECT name as employee, holiday_list default_shift as shift_type, checkin_location from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
-				SELECT name from `tabShift Type` st
-				WHERE st.start_time >= '12:00:00')
+					SELECT name from `tabShift Type` st
+					WHERE st.start_time >= '12:00:00')
+				AND NOT EXISTS(SELECT * from `tabHoliday` h
+					WHERE
+						h.parent = E.holiday_list
+					AND h.holiday_date = '{date}')
 		""".format(date=cstr(date)), as_dict=1)
 
 	return roster
@@ -762,6 +769,7 @@ def create_shift_assignment(schedule, date):
 			shift_assignment.submit()
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
+
 def overtime_shift_assignment():
 	"""
 	This method is to generate Shift Assignment for Employee Scheduling
