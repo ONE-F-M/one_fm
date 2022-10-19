@@ -6,11 +6,11 @@ from frappe import _
 from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
 from one_fm.api.v1.roster import get_current_shift
-from erpnext.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
+from hrms.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 import datetime
 from frappe.permissions import remove_user_permission
-from erpnext.hr.utils import get_holidays_for_employee
+from hrms.hr.utils import get_holidays_for_employee
 
 #Shift Type
 @frappe.whitelist()
@@ -151,15 +151,18 @@ def get_notification_user(doc, employee=None):
 	"""
 		Shift > Site > Project > Reports to
 	"""
+	if not doc.operations_shift:
+		return
+	
 	operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
-	print(operations_shift.supervisor, operations_shift.name)
+
 	if operations_shift.supervisor:
 		supervisor = get_employee_user_id(operations_shift.supervisor)
 		if supervisor != doc.owner:
 			return supervisor
 
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-	print(operations_site.account_supervisor, operations_site.name)
+
 	if operations_site.account_supervisor:
 		account_supervisor = get_employee_user_id(operations_site.account_supervisor)
 		if account_supervisor != doc.owner:
@@ -177,6 +180,7 @@ def get_notification_user(doc, employee=None):
 	return get_employee_user_id(reporting_manager)
 
 def validate_location(doc):
+	print(doc.operations_shift)
 	checkin_lat, checkin_lng = doc.device_id.split(",") if doc.device_id else (0, 0)
 	site_name = frappe.get_value("Operations Shift", doc.operations_shift, "site")
 	site_location = frappe.get_value("Operations Site", site_name, "site_location")
@@ -302,7 +306,7 @@ def haversine(ofc_lat, ofc_lng, emp_lat, emp_lng):
 
 
 def employee_before_validate(doc, method):
-	from erpnext.hr.doctype.employee.employee import Employee
+	from erpnext.setup.doctype.employee.employee import Employee
 	Employee.validate = employee_validate
 
 

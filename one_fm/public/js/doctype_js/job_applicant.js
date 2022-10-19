@@ -617,8 +617,17 @@ var change_applicant_status = function(frm, status_field, status) {
 		msg,
 		function(){
 			// Yes
-			frm.set_value(status_field, status);
-			frm.save();
+			frappe.call({
+				method: 'one_fm.hiring.utils.update_job_applicant_status',
+				args: {'applicant': frm.doc.name, 'status_field': status_field, 'status': status},
+				callback: function(r) {
+					if(!r.exc){
+						frm.reload_doc();
+					}
+				},
+				freeze: true,
+				freeze_message: __("Updating .....")
+			});
 		},
 		function(){
 			// No

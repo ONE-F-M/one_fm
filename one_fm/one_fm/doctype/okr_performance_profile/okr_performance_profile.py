@@ -16,7 +16,7 @@ class OKRPerformanceProfile(Document):
 			for objective in self.objectives:
 				total_days_to_achieve_target = 0
 				for key_result in self.key_results:
-					if key_result.objective == objective.objective:
+					if (key_result.objective == objective.objective) and (type(key_result.target_to_be_achieved_by) in [float, int]):
 						total_days_to_achieve_target += key_result.target_to_be_achieved_by
 				if total_days_to_achieve_target > objective.time_frame:
 					frappe.msgprint(_("""Total of Achieve Target by for the objective <b>{0}</b> is greater than the Time Frame""").format(objective.objective))

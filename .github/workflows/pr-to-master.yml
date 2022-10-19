@@ -1,12 +1,12 @@
 # This is a basic workflow to help you get started with Actions
 
-name: PRs to master-13
+name: PRs to master-14
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on closed pull request events but only for the master-13 branch
   pull_request:
-    branches: [master-13]
+    branches: [master-14]
     types: [closed]
 
   # Allows you to run this workflow manually from the Actions tab
@@ -37,24 +37,24 @@ jobs:
       - name: Merge master back to staging
         run: |
           git fetch
-          git checkout master-13
+          git checkout master-14
           git pull
           git checkout staging
           git reset --hard
           git clean -fd
           git pull
-          git merge --ff master-13 -m "Auto-merge master back to staging" --allow-unrelated-histories
+          git merge --ff master-14 -m "Auto-merge master back to staging" --allow-unrelated-histories
           git push
           
       # Merges master back to sandbox
       - name: Merge master back to sandbox
         run: |
           git fetch
-          git checkout master-13
+          git checkout master-14
           git pull
           git checkout sandbox
           git reset --hard
           git clean -fd
           git pull
-          git merge --ff master-13 -m "Auto-merge master back to sandbox" --allow-unrelated-histories
+          git merge --ff master-14 -m "Auto-merge master back to sandbox" --allow-unrelated-histories
           git push

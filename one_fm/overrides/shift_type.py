@@ -1,4 +1,4 @@
-from erpnext.hr.doctype.shift_type.shift_type import *
+from hrms.hr.doctype.shift_type.shift_type import *
 
 class ShiftTypeOverride(ShiftType):
 

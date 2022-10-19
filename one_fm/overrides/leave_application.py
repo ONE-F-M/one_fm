@@ -1,5 +1,5 @@
 from frappe import _
-from erpnext.hr.doctype.leave_application.leave_application import *
+from hrms.hr.doctype.leave_application.leave_application import *
 
 
 class LeaveApplicationOverride(LeaveApplication):

@@ -161,6 +161,7 @@ class OnboardEmployee(Document):
 					if date_of_joining:
 						employee.date_of_joining = getdate(date_of_joining)
 						self.date_of_joining = getdate(date_of_joining)
+					employee.company_email = self.company_email
 					employee.save(ignore_permissions=True)
 					self.employee = employee.name
 				user_id = frappe.db.get_value("Employee", self.employee, "user_id")
