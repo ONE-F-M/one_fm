@@ -160,10 +160,10 @@
   "erp_user_section",
   "company_email",
   "create_user_permission",
-  "btn_create_erpnext_user",
-  "column_break_107",
   "user_created",
+  "column_break_107",
   "role_profile",
+  "btn_create_erpnext_user",
   "enrol_face_recognition_section",
   "inform_and_send_enrolment_details_to_employee",
   "enrolled",
@@ -230,10 +230,12 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "date_of_joining",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Date of Joining"
+   "label": "Date of Joining",
+   "read_only_depends_on": "eval: doc.docstatus > 0"
   },
   {
    "allow_on_submit": 1,
@@ -794,7 +796,7 @@
    "label": "Bank Account Docstatus"
   },
   {
-   "depends_on": "employee",
+   "depends_on": "eval: doc.employee || doc.duty_commencement_status == \"Applicant Signed and Uploaded\"",
    "fieldname": "erp_user_section",
    "fieldtype": "Section Break",
    "label": "ERP User"
@@ -804,11 +806,13 @@
    "fieldname": "company_email",
    "fieldtype": "Data",
    "label": "Company Email",
-   "options": "Email"
+   "options": "Email",
+   "read_only_depends_on": "user_created"
   },
   {
    "allow_on_submit": 1,
    "default": "0",
+   "depends_on": "eval:!doc.user_created && doc.employee",
    "description": "This will restrict user access to other employee records",
    "fieldname": "create_user_permission",
    "fieldtype": "Check",
@@ -1059,6 +1063,7 @@
   {
    "allow_on_submit": 1,
    "default": "0",
+   "depends_on": "employee",
    "fieldname": "user_created",
    "fieldtype": "Check",
    "label": "User Created",
@@ -1096,7 +1101,7 @@
    "label": "Create Bank Account"
   },
   {
-   "depends_on": "eval:!doc.user_created",
+   "depends_on": "eval:!doc.user_created && doc.employee",
    "fieldname": "btn_create_erpnext_user",
    "fieldtype": "Button",
    "label": "Create ERPNext User"
@@ -1479,7 +1484,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-16 15:05:12.226647",
+ "modified": "2022-10-16 10:08:48.174281",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
