@@ -668,7 +668,7 @@ def fetch_non_shift(date, s_type):
 					AND h.holiday_date = '{date}')
 		""".format(date=cstr(date)), as_dict=1)
 	else:
-		roster = frappe.db.sql("""SELECT name as employee, holiday_list default_shift as shift_type, checkin_location from `tabEmployee` E
+		roster = frappe.db.sql("""SELECT name as employee, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
