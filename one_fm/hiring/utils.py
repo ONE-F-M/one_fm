@@ -215,14 +215,22 @@ def employee_after_insert(doc, method):
 	create_leave_policy_assignment(doc)
 	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_generate_employee_id_on_employee_creation") and not doc.employee_id:
 		generate_employee_id(doc)
+
 	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
-		create_employee_user_from_employee_id(doc)
+		if not doc.company_email:
+			create_employee_user_from_employee_id(doc)
+		else:
+			create_employee_user_from_company_email(doc)
 
 def employee_before_insert(doc, method):
     # check for nationality, then set residency
     if doc.one_fm_nationality != "Kuwaiti":
         doc.under_company_residency = 1
 
+def create_employee_user_from_company_email(doc):
+	if not doc.user_id and doc.company_email:
+		doc.reload()
+		create_employee_user(doc, doc.company_email)
 
 def create_employee_user_from_employee_id(doc):
 	"""
@@ -233,22 +241,28 @@ def create_employee_user_from_employee_id(doc):
 			generate_employee_id(doc)
 		if not doc.user_id and doc.employee_id:
 			doc.reload()
-			user = frappe.get_doc({
-				'doctype':'User',
-				'email':f"{doc.employee_id.upper()}@one-fm.com",
-				'first_name':doc.first_name,
-				'last_name':doc.last_name,
-				'gender':doc.gender,
-				'date_of_birth':doc.date_of_birth,
-				'send_welcome_email': 0,
-				'enabled':1,
-				'role_profile_name': "Only Employee",
-				'user_type':"System User",
-			})
-			user.insert(ignore_permissions=True)
-			doc.db_set("user_id", user.name)
-			doc.db_set("create_user_permission", 1)
-			doc.reload()
+			create_employee_user(doc, f"{doc.employee_id.upper()}@one-fm.com")
+	except Exception as e:
+		frappe.log_error(str(e), 'CREATE USER')
+
+def create_employee_user(doc, email):
+	try:
+		user = frappe.get_doc({
+			'doctype':'User',
+			'email': email,
+			'first_name':doc.first_name,
+			'last_name':doc.last_name,
+			'gender':doc.gender,
+			'date_of_birth':doc.date_of_birth,
+			'send_welcome_email': 0,
+			'enabled':1,
+			'role_profile_name': "Only Employee",
+			'user_type':"System User",
+		})
+		user.insert(ignore_permissions=True)
+		doc.db_set("user_id", user.name)
+		doc.db_set("create_user_permission", 1)
+		doc.reload()
 	except Exception as e:
 		frappe.log_error(str(e), 'CREATE USER')
 
@@ -380,12 +394,18 @@ def update_job_offer_from_applicant(jo, status):
 
 @frappe.whitelist()
 def update_applicant_status(names, status_field, status, reason_for_rejection=False):
-    names = json.loads(names)
-    for name in names:
-        job_applicant = frappe.get_doc("Job Applicant", name)
-        job_applicant.set(status_field, status)
-        job_applicant.one_fm_reason_for_rejection = reason_for_rejection if reason_for_rejection else ''
-        job_applicant.save()
+	names = json.loads(names)
+	for name in names:
+		update_job_applicant_status(name, status_field, status, reason_for_rejection)
+
+@frappe.whitelist()
+def update_job_applicant_status(applicant, status_field, status, reason_for_rejection=False):
+	job_applicant = frappe.get_doc("Job Applicant", applicant)
+	job_applicant.set(status_field, status)
+	job_applicant.one_fm_reason_for_rejection = reason_for_rejection if reason_for_rejection else ''
+	if status == 'Rejected':
+		job_applicant.flags.ignore_mandatory = True
+	job_applicant.save()
 
 @frappe.whitelist()
 def send_magic_link_to_selected_applicants(names, magic_link):
