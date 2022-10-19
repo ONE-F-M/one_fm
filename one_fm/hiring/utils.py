@@ -380,12 +380,18 @@ def update_job_offer_from_applicant(jo, status):
 
 @frappe.whitelist()
 def update_applicant_status(names, status_field, status, reason_for_rejection=False):
-    names = json.loads(names)
-    for name in names:
-        job_applicant = frappe.get_doc("Job Applicant", name)
-        job_applicant.set(status_field, status)
-        job_applicant.one_fm_reason_for_rejection = reason_for_rejection if reason_for_rejection else ''
-        job_applicant.save()
+	names = json.loads(names)
+	for name in names:
+		update_job_applicant_status(name, status_field, status, reason_for_rejection)
+
+@frappe.whitelist()
+def update_job_applicant_status(applicant, status_field, status, reason_for_rejection=False):
+	job_applicant = frappe.get_doc("Job Applicant", applicant)
+	job_applicant.set(status_field, status)
+	job_applicant.one_fm_reason_for_rejection = reason_for_rejection if reason_for_rejection else ''
+	if status == 'Rejected':
+		job_applicant.flags.ignore_mandatory = True
+	job_applicant.save()
 
 @frappe.whitelist()
 def send_magic_link_to_selected_applicants(names, magic_link):
