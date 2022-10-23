@@ -14,6 +14,7 @@ frappe.ui.form.on('Employee', {
         set_shift_working_btn(frm);
         filterDefaultShift(frm);
         setProjects(frm);
+        TransferToNonShift(frm);
     },
 	set_queries: frm => {
 		// set bank account query
@@ -113,11 +114,17 @@ const filterDefaultShift = (frm) => {
 }
 
 const setProjects = frm => {
-    if (frm.doc.shift_working) {
-        frm.toggle_enable(['project', 'site'], 0);
-        frm.toggle_enable('shift', 1);
-    } else {
-        frm.toggle_enable('project', 1);
-        frm.toggle_enable(['site','shift'], 0);
-    }
+
+}
+
+
+const TransferToNonShift = frm => {
+    if (frm.doc.shift_working == 0) {
+        frm.set_value({
+            'project': '',
+            'shift': '',
+            'holiday_list': '',
+        })
+        frm.toggle_reqd(['holiday_list'], 1);
+    } else {}
 }
