@@ -305,34 +305,6 @@ def haversine(ofc_lat, ofc_lng, emp_lat, emp_lng):
 		print(frappe.get_traceback())
 
 
-def employee_before_validate(doc, method):
-	from hrms.overrides.employee_master import EmployeeMaster as Employee
-	Employee.validate = employee_validate
-
-
-
-def employee_validate(self):
-	from erpnext.controllers.status_updater import validate_status
-	validate_status(self.status, ["Active", "Court Case", "Absconding", "Left"])
-
-	self.employee = self.name
-	self.set_employee_name()
-	self.validate_date()
-	self.validate_email()
-	self.validate_status()
-	self.validate_reports_to()
-	self.validate_preferred_email()
-	if self.job_applicant:
-		self.validate_onboarding_process()
-
-	if self.user_id:
-		self.validate_user_details()
-	else:
-		existing_user_id = frappe.db.get_value("Employee", self.name, "user_id")
-		if existing_user_id:
-			remove_user_permission(
-				"Employee", self.name, existing_user_id)
-
 #Training Result
 @frappe.whitelist()
 def update_certification_data(doc, method):
