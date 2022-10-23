@@ -113,6 +113,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	if department:
 		employee_filters.update({'department': department})
 
+
 	#--------------------- Fetch Employee list ----------------------------#
 	if isOt:
 		employee_filters.update({'employee_availability' : 'Working'})
@@ -231,6 +232,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 
 	end = time.time()
 	print("[[[[[[]]]]]]]", end-start)
+	print(master_data, type(master_data), '\n\n')
 	return master_data
 
 def filter_redundant_employees(employees):
