@@ -1,35 +1,27 @@
 // Copyright (c) 2020, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Quotation From Supplier', {
-	refresh: function(frm) {
-		frm.set_query("supplier", function() {
+{% include 'erpnext/public/js/controllers/buying.js' %};
+
+erpnext.buying.QuotationFromSupplier = class QuotationFromSupplier extends erpnext.buying.BuyingController {
+	request_for_quotation() {
+		set_items(this.frm);
+	}
+	setup_queries(doc, cdt, cdn) {
+		var me = this;
+
+		me.frm.set_query('contact_person', erpnext.queries.contact_query);
+		me.frm.set_query('supplier_address', erpnext.queries.address_query);
+
+		me.frm.set_query('billing_address', erpnext.queries.company_address_query);
+		me.frm.set_query("supplier", function() {
 			return {
 				query: "one_fm.purchase.utils.get_supplier_list",
-				filters: {'request_for_quotation': frm.doc.request_for_quotation}
+				filters: {'request_for_quotation': me.frm.doc.request_for_quotation}
 			}
 		});
-	},
-	request_for_quotation: function(frm) {
-		set_items(frm);
 	}
-});
-
-frappe.ui.form.on('Quotation From Supplier Item', {
-	rate: function(frm, cdt, cdn) {
-		calculate_rate_and_amount(frm, cdt, cdn);
-	},
-	qty: function(frm, cdt, cdn) {
-		calculate_rate_and_amount(frm, cdt, cdn);
-	}
-});
-
-var calculate_rate_and_amount = function(frm, cdt, cdn) {
-	var child = locals[cdt][cdn];
-	if(child.rate && child.qty){
-		frappe.model.set_value(cdt, cdn, 'amount', child.rate*child.qty);
-	}
-};
+}
 
 var set_items = function(frm) {
 	frm.clear_table('items');
@@ -59,3 +51,6 @@ var set_items = function(frm) {
 		});
 	}
 };
+
+// for backward compatibility: combine new and previous states
+extend_cscript(cur_frm.cscript, new erpnext.buying.QuotationFromSupplier({frm: cur_frm}));
