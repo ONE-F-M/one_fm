@@ -10,13 +10,15 @@ def sendemail(recipients, subject, header=None, message=None,
         content=None, reference_name=None, reference_doctype=None,
         sender=None, cc=None , attachments=None, delay=None):
     logo = "https://one-fm.com/files/ONEFM_Identity.png"
-    
+
     if attachments:
             message += """
             <p>Please find the attached Document in the mail below.</p>
             """
-
-    frappe.sendmail(template = "default_email",
+    if "Administrator" in recipients:
+        recipients.remove("Administrator")
+    if recipients and len(recipients) > 0:
+        frappe.sendmail(template = "default_email",
                     recipients=recipients,
                     sender= sender,
                     cc=cc,
@@ -36,14 +38,14 @@ def sendemail(recipients, subject, header=None, message=None,
 @frappe.whitelist()
 def send_whatsapp(sender_id, body):
 	twilio = frappe.get_doc('Twilio Setting' )
-	
+
 	client =  TwilioClient(twilio.sid, twilio.token)
-	
-	message = client.messages.create( 
-		from_='whatsapp:' + twilio.t_number,  
-		body=body,      
+
+	message = client.messages.create(
+		from_='whatsapp:' + twilio.t_number,
+		body=body,
 		to= 'whatsapp:+'+ sender_id
-	) 
+	)
 	return message
 
 @frappe.whitelist(allow_guest=True)
@@ -59,7 +61,7 @@ def whatsapp():
 	return '200'
 
 def decode_data(data):
-    """Fetched Data from request is in form of bytes. 
+    """Fetched Data from request is in form of bytes.
     This function is to convert Bytes to string and then into Dictionary
 
     Args:
@@ -68,7 +70,7 @@ def decode_data(data):
     Returns:
         dict_data: dictionary consisting keys and values from data
     """
-    decode_data = data.decode("utf-8") 
+    decode_data = data.decode("utf-8")
     dict_data = {}
     lists = list(decode_data.split("&"))
     for l in lists:
