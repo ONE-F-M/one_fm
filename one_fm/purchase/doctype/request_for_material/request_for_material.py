@@ -76,7 +76,7 @@ class RequestforMaterial(BuyingController):
 	def notify_material_requester(self, page_link, status):
 		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}. You will be notified of the expected delivery date as soon as the order is processed".format(page_link, self.name, status, frappe.session.user)
 		subject = '{0} Request for Material by {1}'.format(status, self.requested_by)
-		send_email(self, self.requested_by, message, subject)
+		send_email(self, [self.requested_by], message, subject)
 		create_notification_log(subject, message, [self.requested_by], self)
 
 	def notify_requester_accepter(self, page_link, status, recipients, reason_for_rejection=None):
