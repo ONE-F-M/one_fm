@@ -67,6 +67,7 @@ class RequestforSupplierQuotation(Document):
         # RFQ link for supplier portal
         return get_url("/rfq1/" + self.name)
 
+    @frappe.whitelist()
     def send_supplier_quotation_emails(self):
         for supplier in self.suppliers:
             if not supplier.email_id:
