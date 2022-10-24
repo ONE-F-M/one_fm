@@ -40,16 +40,13 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 		set_custom_buttons(frm);
 	},
 	request_for_quotation: function(frm) {
-		frm.trigger('get_rfq');
 		set_quotation_against_rfq(frm);
 		set_custom_buttons(frm)
 		frm.clear_table('items');
+
 	},
 	request_for_purchase: function(frm){
 		set_rfq(frm);
-	},
-	compare_quotation_by: function(frm) {
-		set_quotation_against_rfq(frm);
 	},
 	set_query: (frm)=>{
 		// filter submitted rfq
@@ -218,7 +215,7 @@ var set_quotation_item_details = function(frm, item, quotation) {
 
 // SET BUTTONS FOR QUOTATION COMPARISON
 let set_custom_buttons = (frm)=>{
-	if(![2,1].includes(frm.doc.docstatus)){
+	if(!frm.is_new() && ![2,1].includes(frm.doc.docstatus)){
 		// Custom buttons in groups
 		frm.add_custom_button('Best Rate from One Supplier', () => {
 			best_price_same_supplier(frm);
@@ -238,10 +235,6 @@ let set_custom_buttons = (frm)=>{
 		frm.add_custom_button('Custom', () => {
 			custom_filter(frm);
 		}, 'Analyse');
-	} else if(frm.doc.docstatus==1){
-		frm.add_custom_button('Purchase Order', () => {
-			create_purchase_order(frm);
-		}, 'Create');
 	}
 }
 
@@ -433,6 +426,7 @@ let complete_filters_table = (frm, data, selected_by)=>{
 	// process table
 
 	let new_items = [];
+	frm.trigger('get_rfq');
 	let all_items = Object.keys(window.rfq_dataset.quotation_items);
 	let data_items = [];
 	let items_qty = {};

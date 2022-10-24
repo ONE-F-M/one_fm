@@ -197,6 +197,7 @@ def create_purchase_order(**args):
 		po.conversion_factor = args.conversion_factor or 1
 		po.supplier_warehouse = args.supplier_warehouse or None
 		po.one_fm_request_for_purchase = args.request_for_purchase
+		po.is_subcontracted = False
 
 	po.append("items", {
 		"item_code": args.item_code,
@@ -205,6 +206,7 @@ def create_purchase_order(**args):
 		"uom": args.uom,
 		"qty": args.qty,
 		"rate": args.rate,
+		"amount": args.qty * args.rate,
 		"schedule_date": getdate(args.delivery_date) if (args.delivery_date and getdate(nowdate()) < getdate(args.delivery_date)) else getdate(nowdate()),
 		"expected_delivery_date": args.delivery_date
 	})
