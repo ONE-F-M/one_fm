@@ -37,7 +37,7 @@ frappe.ui.form.on('Request for Purchase', {
 		if (frm.doc.docstatus == 1){
 			if(frappe.session.user==frm.doc.owner && frm.doc.status == "Draft" && frm.doc.items_to_order && frm.doc.items_to_order.length > 0){
 				// Changed from "Send request" while removing authorizations and approvals.
-				frm.add_custom_button(__('Confirm Item Details'), () => frm.events.send_request_for_purchase(frm, 'Draft Request')).addClass('btn-primary');
+				frm.add_custom_button(__('Confirm Item Details and Send for Approval'), () => frm.events.accept_approve_reject_request_for_purchase(frm, "Draft Request", false)).addClass('btn-primary');
 			}
 			if("accepter" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.accepter && frm.doc.status == "Draft Request"){
 				frm.add_custom_button(__('Accept'), () => frm.events.accept_approve_reject_request_for_purchase(frm, "Accepted", false)).addClass('btn-primary');
@@ -65,27 +65,6 @@ frappe.ui.form.on('Request for Purchase', {
 			},
 		});
 		d.show();
-	},
-	//Currently just being used as confirmation(i.e bypassing approvals)
-	send_request_for_purchase: function(frm, status) {
-		frappe.confirm(
-			__('Do You Want to confirm Request for Purchase'),
-			function(){
-				// Yes
-				frappe.call({
-					doc: frm.doc,
-					method: 'send_request_for_purchase',
-					callback(r) {
-						if (!r.exc) {
-							frm.events.accept_approve_reject_request_for_purchase(frm, status, false);
-						}
-					},
-					freeze: true,
-					freeze_message: "Sending ..!"
-				});
-			},
-			function(){} // No
-		);
 	},
 	accept_approve_reject_request_for_purchase: function(frm, status, reason_for_rejection) {
 		frappe.call({
