@@ -2,6 +2,7 @@ import frappe
 import itertools
 from frappe.utils import cstr, flt, add_days, time_diff_in_hours
 from calendar import monthrange  
+from one_fm.api.utils import get_reports_to_employee_name
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
     filters = {
@@ -122,3 +123,29 @@ def add_time_log(timesheet, attendance, start, end, post, billable, billing_hour
         "billing_rate":billing_rate
     })
     return timesheet
+
+@frappe.whitelist()
+def fetch_approver(employee):
+    if employee:
+        approver = get_reports_to_employee_name(employee)
+
+        if approver:
+            return frappe.get_value("Employee", approver, ["user_id"])
+        else:
+            frappe.throw("No approver found for {employee}".format(employee=employee))
+
+def mark_attendance_from_timesheet(doc, event):
+    if doc.workflow_state == "Approved":
+        employee_shift = frappe.get_value("Employee", doc.employee,["default_shift"])
+        expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
+        
+        att = frappe.new_doc("Attendance")
+        att.employee = doc.employee
+        att.employee_name = doc.employee_name
+        att.attendance_date = doc.start_date
+        att.company = doc.company
+        att.status = "Present"
+        att.shift = employee_shift
+        att.working_hours = doc.total_hours
+        att.insert(ignore_permissions=True)
+        att.submit()

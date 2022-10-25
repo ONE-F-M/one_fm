@@ -89,6 +89,7 @@ doctype_js = {
 	"Attendance Request": "public/js/doctype_js/attendance_request.js",
 	"Shift Request": "public/js/doctype_js/shift_request.js",
 	"Shift Assignment": "public/js/doctype_js/shift_assignment.js",
+	"Timesheet": "public/js/doctype_js/timesheet.js",
 	"Employee Checkin": "public/js/doctype_js/employee_checkin.js",
 	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
 	"Company" : "public/js/doctype_js/company.js",
@@ -177,6 +178,9 @@ doc_events = {
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po"
 
+	},
+	"Timesheet":{
+		"on_update_after_submit":"one_fm.one_fm.timesheet_custom.mark_attendance_from_timesheet"
 	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
@@ -627,8 +631,6 @@ fixtures = [
 	},
 	{
 		"dt": "Workflow"
-
-
 	},
 	{
 		"dt": "Client Script",
