@@ -139,7 +139,7 @@ def mark_attendance_from_timesheet(doc, event):
         employee_shift = frappe.get_value("Employee", doc.employee,["default_shift"])
         expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
 
-        if expected_working_duration < doc.total_hours:
+        if expected_working_duration and expected_working_duration < doc.total_hours:
             frappe.msgprint("Kindly, note that {employee} has overtimed the expected working hour".format(employee=doc.employee))
         else:
             att = frappe.new_doc("Attendance")
@@ -164,6 +164,6 @@ def validate_timesheet_count(doc, event):
 def validate_date(doc, method):
     current_date = getdate()
     allowed_role = "HR Manager"
-    if allowed_role not in frappe.get_roles("nuha@mail.com"):
+    if allowed_role not in frappe.get_roles(frappe.session.user):
         if doc.start_date != current_date or doc.end_date != current_date:
             frappe.throw("Not allowed to submit doc for previous date")
