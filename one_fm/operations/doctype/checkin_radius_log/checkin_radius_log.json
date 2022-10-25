@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:CRL-{YY}-{MM}-{DD}-{####}",
+ "autoname": "format:CRL-{YY}-{MM}-{DD}-{#}",
  "creation": "2022-05-29 16:19:09.864218",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -29,6 +29,14 @@
  ],
  "fields": [
   {
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
    "fieldname": "employee",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -46,15 +54,48 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "user_within_geofence_radius",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "User within Geofence Radius",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "site.project",
+   "fetch_if_empty": 1,
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
    "read_only": 1
   },
   {
    "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user_latitude",
+   "fieldtype": "Float",
+   "label": "User Latitude",
+   "precision": "9",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_longitude",
+   "fieldtype": "Float",
+   "label": "User Longitude",
+   "precision": "9",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_distance_from_site_location",
+   "fieldtype": "Float",
+   "label": "User Distance from Site Location",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
    "fieldtype": "Column Break"
   },
   {
@@ -85,61 +126,21 @@
    "reqd": 1
   },
   {
-   "fieldname": "section_break_8",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "map",
-   "fieldtype": "Geolocation",
-   "label": "Map"
-  },
-  {
-   "fieldname": "site",
-   "fieldtype": "Link",
-   "label": "Site",
-   "options": "Operations Site",
-   "read_only": 1,
-   "reqd": 1
-  },
-  {
-   "fetch_from": "site.project",
-   "fetch_if_empty": 1,
-   "fieldname": "project",
-   "fieldtype": "Link",
-   "label": "Project",
-   "options": "Project",
-   "read_only": 1
-  },
-  {
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Employee ID",
-   "read_only": 1
-  },
-  {
-   "fieldname": "user_latitude",
-   "fieldtype": "Float",
-   "label": "User Latitude",
-   "precision": "9",
-   "read_only": 1
-  },
-  {
-   "fieldname": "user_longitude",
-   "fieldtype": "Float",
-   "label": "User Longitude",
-   "precision": "9",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "result_section",
    "fieldtype": "Section Break",
    "label": "Result"
+  },
+  {
+   "default": "0",
+   "fieldname": "user_within_geofence_radius",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "User within Geofence Radius",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "difference",
@@ -149,22 +150,22 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_16",
-   "fieldtype": "Column Break"
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
   },
   {
-   "fieldname": "user_distance_from_site_location",
-   "fieldtype": "Float",
-   "label": "User Distance from Site Location",
-   "read_only": 1
+   "fieldname": "map",
+   "fieldtype": "Geolocation",
+   "label": "Map"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-06-27 09:35:17.493037",
+ "modified": "2022-10-25 10:18:50.538767",
  "modified_by": "Administrator",
- "module": "One Fm",
+ "module": "Operations",
  "name": "Checkin Radius Log",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -193,5 +194,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "employee_name"
 }
