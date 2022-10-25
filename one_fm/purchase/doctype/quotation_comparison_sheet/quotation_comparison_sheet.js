@@ -28,16 +28,15 @@ let make_rfq_dataset_itemsfilter = (frm, item_name, order_by)=>{
 
 
 frappe.ui.form.on('Quotation Comparison Sheet', {
-	onload: (frm)=>{
-		if(frm.doc.request_for_quotation){
-			frm.trigger('get_rfq');
-		}
+	validate: function (frm) {
+		frm.trigger('get_rfq');
 	},
 	refresh: function(frm) {
 		frm.trigger('set_query');
 		set_filter_for_quotation_in_item(frm);
 		set_filter_for_quotation_item_in_item(frm);
 		set_custom_buttons(frm);
+		frm.trigger('get_rfq');
 	},
 	request_for_quotation: function(frm) {
 		set_quotation_against_rfq(frm);
@@ -61,29 +60,31 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 
 	},
 	get_rfq: (frm)=>{
-		frm.call('get_rfq', {
-				rfq:frm.doc.request_for_quotation,
-				rfm:frm.doc.request_for_material,
-				}).then(
-			res=>{
-				window.rfq_dataset.quotation_items = {};
-				window.rfq_dataset.items_qtyobj = {};
-				window.rfq_dataset.suppliers_dict = {};
-				window.rfq_dataset.items_codes = {};
-				window.rfq_dataset.rfq = res.message.rfq;
-				window.rfq_dataset.rfn = res.message.rfm;
-				res.message.rfq.items.forEach((item, i) => {
-					window.rfq_dataset.items_qtyobj[item.item_name] = item.qty;
-					window.rfq_dataset.quotation_items[item.item_name] = item
-				});
-				res.message.rfm.items.forEach((item, i) => {
-					window.rfq_dataset.items_codes[item.requested_item_name] = item.item_code;
-				});
-				frm.doc.quotations.forEach((item, i) => {
-					window.rfq_dataset.suppliers_dict[item.quotation] = {supplier:item.supplier, name:item.supplier_name}
-				});
-			}
-		)
+		if(frm.doc.request_for_quotation && frm.doc.request_for_material){
+			frm.call('get_rfq', {
+					rfq:frm.doc.request_for_quotation,
+					rfm:frm.doc.request_for_material,
+					}).then(
+				res=>{
+					window.rfq_dataset.quotation_items = {};
+					window.rfq_dataset.items_qtyobj = {};
+					window.rfq_dataset.suppliers_dict = {};
+					window.rfq_dataset.items_codes = {};
+					window.rfq_dataset.rfq = res.message.rfq;
+					window.rfq_dataset.rfn = res.message.rfm;
+					res.message.rfq.items.forEach((item, i) => {
+						window.rfq_dataset.items_qtyobj[item.item_name] = item.qty;
+						window.rfq_dataset.quotation_items[item.item_name] = item
+					});
+					res.message.rfm.items.forEach((item, i) => {
+						window.rfq_dataset.items_codes[item.requested_item_name] = item.item_code;
+					});
+					frm.doc.quotations.forEach((item, i) => {
+						window.rfq_dataset.suppliers_dict[item.quotation] = {supplier:item.supplier, name:item.supplier_name}
+					});
+				}
+			)
+		}
 	}
 });
 

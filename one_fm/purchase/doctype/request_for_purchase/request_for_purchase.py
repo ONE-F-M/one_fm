@@ -43,6 +43,8 @@ class RequestforPurchase(Document):
 		if self.items_to_order:
 			wh = warehouse if warehouse else self.warehouse
 			for item in self.items_to_order:
+				if item.t_warehouse:
+					wh = item.t_warehouse
 				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
 					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description,
 					warehouse=wh, quotation=item.quotation)
@@ -135,9 +137,6 @@ def make_quotation_comparison_sheet(source_name, target_doc=None):
 			"validation": {
 				"docstatus": ["=", 1]
 			}
-		},
-		"Request for Purchase Item": {
-			"doctype": "Quotation Comparison Sheet Item"
 		}
 	}, target_doc)
 	rfq = frappe.db.get_value('Request for Supplier Quotation', {'request_for_purchase': doclist.request_for_purchase}, 'name')

@@ -43,6 +43,8 @@ var set_items = function(frm) {
 							item.description = r_item.description
 							item.qty = r_item.qty
 							item.uom = r_item.uom
+							item.item_code = r_item.item_code
+							item.warehouse = r_item.t_warehouse
 						});
 					}
 				}
