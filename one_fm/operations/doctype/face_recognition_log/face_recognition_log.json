@@ -10,6 +10,7 @@
   "employee_id",
   "log_type",
   "verification",
+  "source",
   "column_break_5",
   "message",
   "data"
@@ -32,7 +33,7 @@
   },
   {
    "fieldname": "message",
-   "fieldtype": "Small Text",
+   "fieldtype": "Data",
    "label": "Message"
   },
   {
@@ -53,11 +54,17 @@
   {
    "fieldname": "column_break_5",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Enroll\nCheckin"
   }
  ],
  "in_create": 1,
  "links": [],
- "modified": "2022-10-25 10:30:35.566391",
+ "modified": "2022-10-25 10:55:46.332774",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Face Recognition Log",

@@ -18,6 +18,7 @@ def create_face_recognition_log(data):
 		verification= data['verification'],
 		log_type= data['log_type'],
 		message= data['message'],
-		data= data['data']
+		data= data['data'],
+		source=data['source'],
 	))
 	doc.insert(ignore_permissions=1)
