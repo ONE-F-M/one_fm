@@ -114,27 +114,18 @@ const filterDefaultShift = (frm) => {
 }
 
 const setProjects = frm => {
-	   //if (frm.doc.shift_working) {
-      //  frm.toggle_enable(['project', 'site'], 0);
-        //frm.toggle_enable('shift', 1);
-    //} else {
-      //  frm.toggle_enable(['project', 'site'],  0);
-        //frm.toggle_enable('shift', frm.doc.shift_working == 0);
-    //}
 
 }
 
 
 const TransferToNonShift = frm => {
-    if (frm.doc.shift_working == 0) {
         frm.set_value({
             'project': '',
             'shift': '',
+            'site': '',
             'holiday_list': '',
         })
-        frm.toggle_reqd(['holiday_list', "shift", "site", "project"], frm.doc.shift_working ==  0);
-		frm.toggle_enable("shift", frm.doc.shift_working == 0)
-    } else {
-		frm.toggle_reqd(["holiday _list", "shift", "site", "project"], frm.doc.shift_working == 1)
-	}
+        if (frm.doc.shift_working == 0){
+                    frm.toggle_reqd(['holiday_list',], 1);
+        }
 }
