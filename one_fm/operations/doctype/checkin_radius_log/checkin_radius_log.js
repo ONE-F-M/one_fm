@@ -3,6 +3,6 @@
 
 frappe.ui.form.on('Checkin Radius Log', {
 	refresh: function(frm) {
-    frm.disable_save();
+        frm.disable_save();
 	}
 });
