@@ -125,7 +125,4 @@ const TransferToNonShift = frm => {
             'site': '',
             'holiday_list': '',
         })
-        if (frm.doc.shift_working == 0){
-                    frm.toggle_reqd(['holiday_list',], 1);
-        }
 }
