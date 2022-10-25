@@ -1,6 +1,6 @@
 import frappe
 
-from erpnext.hr.doctype.leave_policy_assignment.leave_policy_assignment import (
+from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import (
     LeavePolicyAssignment
 )
 

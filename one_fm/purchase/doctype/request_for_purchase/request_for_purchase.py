@@ -10,60 +10,56 @@ from frappe.model.mapper import get_mapped_doc
 from frappe.utils import nowdate, getdate, get_url
 from one_fm.utils import fetch_employee_signature
 from one_fm.processor import sendemail
+from frappe.utils.user import get_users_with_role
+from frappe.permissions import has_permission
+from one_fm.api.doc_events import get_employee_user_id
 
 class RequestforPurchase(Document):
-	def validate(self):
-		self.validate_items_to_order_qty()
-
-	def on_update_after_submit(self):
-		self.validate_items_to_order_qty()
-
-	def validate_items_to_order_qty(self):
-		if self.items and self.items_to_order:
-			for item in self.items:
-				query = """
-					select
-						sum(qty) as qty
-					from
-						`tabRequest for Purchase Quotation Item`
-					where
-						item_name = '{0}' and parent = '{1}'
-				"""
-				qty = frappe.db.sql(query.format(item.item_name, item.parent), as_dict=True)
-				if qty and len(qty) > 0 and item.qty < qty[0].qty:
-					frappe.throw(_('Quantity of the Item {0} should be equal or less than {1}'.format(item.item_name, item.qty)))
-
 	def onload(self):
-		self.set_onload('accepter', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_accepter'))
-		self.set_onload('approver', frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver'))
+		self.set_accepter_and_approver()
+
+	def set_accepter_and_approver(self):
+		accepter = frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_accepter')
+		approver = frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver')
+		if self.type == 'Project' and self.project:
+			reports_to = frappe.db.get_value('Project', self.project, 'account_manager')
+		elif self.employee:
+			reports_to = frappe.db.get_value('Employee', self.employee, 'reports_to')
+		if reports_to:
+			approver = get_employee_user_id(reports_to)
+			if approver:
+				accepter = approver
+		self.set_onload('accepter', accepter)
+		self.set_onload('approver', approver)
 
 	def on_submit(self):
-		self.notify_request_for_material_accepter()
-		frappe.msgprint(_("Notification sent to purchaser"))
+		self.notify_purchase_manager()
 
-	@frappe.whitelist()
-	def send_request_for_purchase(self):
-		self.status = "Approved"
-		self.save()
+	def notify_purchase_manager(self):
+		users = get_users_with_role('Purchase Manager')
+		filtered_users = []
+		page_link = get_url(self.get_url())
+		notified = False
+		for user in users:
+			if has_permission(doctype=self.doctype, user=user):
+				filtered_users.append(user)
+			if filtered_users and len(filtered_users) > 0:
+				message = "Dear Purchase Manager, <br/> <p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
+				subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
+				send_email(self, filtered_users, message, subject)
+				create_notification_log(subject, message, [self.accepter], self)
+				notified = True
+		if notified:
+			frappe.msgprint(_("Notification sent to Purchase Manager"))
 		self.reload()
-		#self.notify_request_for_material_accepter()
-
-	def notify_request_for_material_accepter(self):
-		if self.accepter:
-			page_link = get_url(self.get_url())
-			message = "<p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
-			subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
-			send_email(self, [self.accepter], message, subject)
-			create_notification_log(subject, message, [self.accepter], self)
-			# self.status = "Draft Request"
-			self.save()
-			self.reload()
 
 	@frappe.whitelist()
 	def make_purchase_order_for_quotation(self, warehouse=None):
 		if self.items_to_order:
 			wh = warehouse if warehouse else self.warehouse
 			for item in self.items_to_order:
+				if item.t_warehouse:
+					wh = item.t_warehouse
 				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
 					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description,
 					warehouse=wh, quotation=item.quotation)
@@ -72,7 +68,7 @@ class RequestforPurchase(Document):
 	def accept_approve_reject_request_for_purchase(self, status, approver, accepter, reason_for_rejection=None):
 		page_link = get_url(self.get_url())
 		# Notify Requester
-		self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
+		self.notify_requester_accepter(page_link, status, [self.requested_by], "Dear {0}, <br/>".format(self.requested_by), reason_for_rejection)
 
 		# Notify Approver
 		if status == 'Accepted' and frappe.session.user == accepter:
@@ -82,19 +78,19 @@ class RequestforPurchase(Document):
 			create_notification_log(subject, message, [approver], self)
 
 		# Notify Accepter
-		if status in ['Approved', 'Rejected'] and frappe.session.user == approver:
-			self.notify_requester_accepter(page_link, status, [accepter], reason_for_rejection)
+		if status in ['Draft Request'] or (status in ['Approved', 'Rejected'] and frappe.session.user == approver):
+			self.notify_requester_accepter(page_link, status, [accepter], "Dear FRP Accepter({0}), <br/>".format(accepter), reason_for_rejection)
 
 		self.status = status
 		self.reason_for_rejection = reason_for_rejection
 		self.save()
 		self.reload()
 
-	def notify_requester_accepter(self, page_link, status, recipients, reason_for_rejection=None):
-		message = "Request for Purchase <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
+	def notify_requester_accepter(self, page_link, status, recipients, message="", reason_for_rejection=None):
+		message += "Request for Purchase <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
 		if status == 'Rejected' and reason_for_rejection:
 			message += " due to {0}".format(reason_for_rejection)
-		subject = '{0} Request for Purchase by {1}'.format(status, frappe.session.user)
+		subject = '{0} - Request for Purchase by {1}'.format(status, frappe.session.user)
 		send_email(self, recipients, message, subject)
 		create_notification_log(subject, message, recipients, self)
 
@@ -156,9 +152,6 @@ def make_quotation_comparison_sheet(source_name, target_doc=None):
 			"validation": {
 				"docstatus": ["=", 1]
 			}
-		},
-		"Request for Purchase Item": {
-			"doctype": "Quotation Comparison Sheet Item"
 		}
 	}, target_doc)
 	rfq = frappe.db.get_value('Request for Supplier Quotation', {'request_for_purchase': doclist.request_for_purchase}, 'name')
@@ -218,6 +211,7 @@ def create_purchase_order(**args):
 		po.conversion_factor = args.conversion_factor or 1
 		po.supplier_warehouse = args.supplier_warehouse or None
 		po.one_fm_request_for_purchase = args.request_for_purchase
+		po.is_subcontracted = False
 
 	po.append("items", {
 		"item_code": args.item_code,
@@ -226,6 +220,7 @@ def create_purchase_order(**args):
 		"uom": args.uom,
 		"qty": args.qty,
 		"rate": args.rate,
+		"amount": args.qty * args.rate,
 		"schedule_date": getdate(args.delivery_date) if (args.delivery_date and getdate(nowdate()) < getdate(args.delivery_date)) else getdate(nowdate()),
 		"expected_delivery_date": args.delivery_date
 	})

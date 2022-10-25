@@ -5,3 +5,4 @@ __pycache__/
 *.swp
 tags
 one_fm/docs/current
+/one_fm/public/dist

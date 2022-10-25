@@ -18,14 +18,19 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 	},
 
 	onload: function(frm) {
-		frm.add_fetch('email_template', 'response', 'message_for_supplier');
-
 		if(!frm.doc.message_for_supplier) {
 			frm.set_value("message_for_supplier", __("Please supply the specified items at the best possible rates"))
 		}
 	},
 
-	refresh: function(frm, cdt, cdn) {
+	refresh: function(frm) {
+		frm.set_query('email_template', () => {
+		    return {
+		        filters: {
+		            buying: 1
+		        }
+		    }
+		})
 		if (frm.doc.docstatus === 1) {
 
 			frm.add_custom_button(__("Send Supplier Emails"), function() {

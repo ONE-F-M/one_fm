@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from . import __version__ as app_version
 import frappe as _frappe
 from frappe import _
-from erpnext.hr.doctype.shift_type.shift_type import ShiftType
+from hrms.hr.doctype.shift_type.shift_type import ShiftType
 from one_fm.api.doc_methods.shift_type import process_auto_attendance
 
 
@@ -192,10 +192,10 @@ doc_events = {
 	},
 	"Employee": {
 		"validate":"one_fm.hiring.utils.set_employee_name",
-		"before_validate": "one_fm.api.doc_events.employee_before_validate",
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"before_insert": "one_fm.hiring.utils.employee_before_insert",
-		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti"
+		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
+		"before_save": "one_fm.events.employee.before_save",
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -417,6 +417,7 @@ override_doctype_class = {
 	"Shift Type": "one_fm.overrides.shift_type.ShiftTypeOverride",
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
+	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 }
 
 
@@ -513,15 +514,15 @@ scheduler_events = {
 		"15 6 * * *": [# Runs everyday at 6:15 am.
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
-			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
-			'one_fm.grd.doctype.paci.paci.notify_to_upload_hawiyati',
+			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
+			# 'one_fm.grd.doctype.paci.paci.notify_to_upload_hawiyati',
 			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
-			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
+			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
 			'one_fm.grd.doctype.pifss_form_103.pifss_form_103.notify_grd_to_check_under_process_status_on_pifss',
 			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp',
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
-			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
+			# 'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
 			'one_fm.utils.issue_roster_actions',
 			'one_fm.grd.doctype.preparation.preparation.auto_create_preparation_record',
 		],
@@ -534,7 +535,7 @@ scheduler_events = {
 		# "one_fm.one_fm.grd" doesnt find the module, only "one_fm.grd"
 		"20 10 * * *": [ #“At 10:20"
 			'one_fm.utils.check_upload_tasriah_reminder2',
-			'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
+			#'one_fm.grd.doctype.medical_insurance.medical_insurance.notify_grd_operator_to_mark_completed_second'
 		],
 		"30 6 * * *": [
 			'one_fm.utils.check_pam_visa_approval_submission_six_half'
@@ -657,7 +658,7 @@ fixtures = [
 # ------------------------------
 #
 override_whitelisted_methods = {
-	"erpnext.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.mobile.Leave_application.fetch_leave_approver"
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.mobile.Leave_application.fetch_leave_approver"
 	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 }
 ShiftType.process_auto_attendance = process_auto_attendance

@@ -113,6 +113,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	if department:
 		employee_filters.update({'department': department})
 
+
 	#--------------------- Fetch Employee list ----------------------------#
 	if isOt:
 		employee_filters.update({'employee_availability' : 'Working'})
@@ -228,10 +229,26 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		post_count_data.update({key[0]: post_list })
 
 	master_data.update({'operations_roles_data': post_count_data})
-
-	end = time.time()
-	print("[[[[[[]]]]]]]", end-start)
+	master_data = get_active_employees(start_date, end_date, master_data)
 	return master_data
+
+def get_active_employees(start_date, end_date, master_data):
+	employees = [i.name for i in frappe.db.get_list('Employee', filters={'status': ['!=', 'Left']})]
+	employees += [i.name for i in frappe.db.sql("""
+		SELECT name FROM `tabEmployee` 
+		WHERE status='Left' AND relieving_date BETWEEN '{start_date}' AND '{end_date}'""".format(
+		start_date=start_date, end_date=end_date), as_dict=1
+	)]
+	new_employees = {}
+	employees_data = master_data.get('employees_data')
+	for k, v in employees_data.items():
+		if v[0]['employee'] in employees:
+			new_employees[k] = v
+	master_data['total'] = len(new_employees)
+	master_data['employees_data'] = new_employees
+
+	return master_data
+
 
 def filter_redundant_employees(employees):
 	return list({employee['employee']:employee for employee in employees}.values())
