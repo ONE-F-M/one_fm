@@ -15,6 +15,7 @@
   "column_break1",
   "transaction_date",
   "request_for_material",
+  "type",
   "accepter",
   "approver",
   "section_break_5",
@@ -258,15 +259,24 @@
    "hidden": 1,
    "label": "Series",
    "options": "RFP-.YYYY.-"
+  },
+  {
+   "fetch_from": "request_for_material.material_request_type",
+   "fetch_if_empty": 1,
+   "fieldname": "type",
+   "fieldtype": "Data",
+   "label": "Type",
+   "read_only": 1
   }
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-14 09:12:02.926644",
+ "modified": "2022-10-25 10:54:35.259177",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -321,5 +331,6 @@
  "search_fields": "status, transaction_date",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }
