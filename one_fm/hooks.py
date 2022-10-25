@@ -192,10 +192,10 @@ doc_events = {
 	},
 	"Employee": {
 		"validate":"one_fm.hiring.utils.set_employee_name",
-		"before_validate": "one_fm.api.doc_events.employee_before_validate",
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"before_insert": "one_fm.hiring.utils.employee_before_insert",
-		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti"
+		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
+		"before_save": "one_fm.events.employee.before_save",
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -417,6 +417,7 @@ override_doctype_class = {
 	"Shift Type": "one_fm.overrides.shift_type.ShiftTypeOverride",
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
+	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 }
 
 

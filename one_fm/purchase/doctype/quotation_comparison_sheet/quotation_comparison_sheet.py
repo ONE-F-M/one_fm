@@ -9,6 +9,8 @@ from frappe.model.document import Document
 
 class QuotationComparisonSheet(Document):
 	def on_submit(self):
+		if not self.items:
+			frappe.throw("To submit the comparison sheet - Please fill the result to the items table")
 		update_request_for_purchase(self)
 
 	@frappe.whitelist()
@@ -66,6 +68,8 @@ def update_request_for_purchase(doc):
 			items_to_order.description = item.description
 			items_to_order.uom = item.uom
 			items_to_order.qty = item.qty
+			items_to_order.item_code = item.item_code
+			items_to_order.t_warehouse = item.t_warehouse
 			items_to_order.quotation = item.quotation
 			items_to_order.quotation_item = item.quotation_item
 			items_to_order.rate = frappe.db.get_value('Quotation From Supplier Item', item.quotation_item, 'rate')

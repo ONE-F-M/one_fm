@@ -98,7 +98,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "RFQ",
    "fieldname": "email_template",
    "fieldtype": "Link",
    "label": "Email Template",
@@ -107,6 +106,7 @@
   },
   {
    "fetch_from": "email_template.response",
+   "fetch_if_empty": 1,
    "fieldname": "message_for_supplier",
    "fieldtype": "Text Editor",
    "in_list_view": 1,
@@ -196,10 +196,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-11 08:21:35.285799",
+ "modified": "2022-10-24 11:14:04.959381",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Request for Supplier Quotation",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -254,5 +255,6 @@
  "search_fields": "status, transaction_date",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }

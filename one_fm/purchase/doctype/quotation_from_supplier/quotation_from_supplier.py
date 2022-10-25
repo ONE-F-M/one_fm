@@ -33,3 +33,5 @@ class QuotationFromSupplier(Document):
 					item.description = rfq_item.description
 					item.qty = rfq_item.qty
 					item.uom = rfq_item.uom
+					item.item_code = rfq_item.item_code
+					item.warehouse = rfq_item.t_warehouse
