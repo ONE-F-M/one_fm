@@ -180,7 +180,8 @@ doc_events = {
 
 	},
 	"Timesheet":{
-		"on_update_after_submit":"one_fm.one_fm.timesheet_custom.mark_attendance_from_timesheet"
+		"on_update_after_submit":"one_fm.one_fm.timesheet_custom.mark_attendance_from_timesheet",
+		"validate":"one_fm.one_fm.timesheet_custom.validate_date",
 	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",

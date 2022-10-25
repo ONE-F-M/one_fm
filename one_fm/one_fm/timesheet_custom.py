@@ -1,6 +1,6 @@
 import frappe
 import itertools
-from frappe.utils import cstr, flt, add_days, time_diff_in_hours
+from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
 from calendar import monthrange  
 from one_fm.api.utils import get_reports_to_employee_name
 
@@ -138,14 +138,32 @@ def mark_attendance_from_timesheet(doc, event):
     if doc.workflow_state == "Approved":
         employee_shift = frappe.get_value("Employee", doc.employee,["default_shift"])
         expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
-        
-        att = frappe.new_doc("Attendance")
-        att.employee = doc.employee
-        att.employee_name = doc.employee_name
-        att.attendance_date = doc.start_date
-        att.company = doc.company
-        att.status = "Present"
-        att.shift = employee_shift
-        att.working_hours = doc.total_hours
-        att.insert(ignore_permissions=True)
-        att.submit()
+
+        if expected_working_duration < doc.total_hours:
+            frappe.msgprint("Kindly, note that {employee} has overtimed the expected working hour".format(employee=doc.employee))
+        else:
+            att = frappe.new_doc("Attendance")
+            att.employee = doc.employee
+            att.employee_name = doc.employee_name
+            att.attendance_date = doc.start_date
+            att.company = doc.company
+            att.status = "Present"
+            att.shift = employee_shift
+            att.working_hours = doc.total_hours
+            att.insert(ignore_permissions=True)
+            att.submit()
+
+def validate_timesheet_count(doc, event):
+    if doc.workflow_state == "Approved":
+        employee_shift = frappe.get_value("Employee", doc.employee,["default_shift"])
+        expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
+
+        if expected_working_duration < doc.total_hours:
+            frappe.msgprint("Kindly, note that {employee} has timed over".format(employee=employee))
+
+def validate_date(doc, method):
+    current_date = getdate()
+    allowed_role = "HR Manager"
+    if allowed_role not in frappe.get_roles("nuha@mail.com"):
+        if doc.start_date != current_date or doc.end_date != current_date:
+            frappe.throw("Not allowed to submit doc for previous date")
