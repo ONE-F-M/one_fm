@@ -19,6 +19,10 @@ app_license = "MIT"
 # Includes in <head>
 # ------------------
 
+website_context = {
+	"splash_image": "/assets/onefm.png"
+}
+
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
@@ -112,7 +116,7 @@ doctype_tree_js = {
 
 # application home page (will override Website Settings)
 # home_page = "login"
-home_page = "index"
+# home_page = "index"
 
 # website user home page (by Role)
 # role_home_page = {
