@@ -46,7 +46,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         )
 
         res = stub.FaceRecognitionEnroll(req)
-        data = {'employee':doc.name, 'log_type':'Enrollment', 'verification':res.verification,
+        data = {'employee':doc.name, 'log_type':'Enrollment', 'verification':res.enrollment,
                 'message':res.message, 'data':res.data, 'source': 'Enroll'}
         frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
                    **{'data':data})
