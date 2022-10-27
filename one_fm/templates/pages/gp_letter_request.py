@@ -106,7 +106,7 @@ def update_gp_letter_request_status(pid, gp_status):
 
                 gp_letter_request = frappe.db.get_value("GP Letter Request", filters = {"pid": pid}, fieldname = "name")
 
-                page_link = get_url(doc.get_url("/app/gp-letter-request/" + cstr(gp_letter_request)"))
+                page_link = get_url(doc.get_url("/app/gp-letter-request/" + cstr(gp_letter_request)))
 
                 msg = frappe.render_template('one_fm/templates/emails/gp_letter_request_rejected.html', context={"page_link": page_link, "gp_letter_request": gp_letter_request})
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
