@@ -140,6 +140,16 @@ class FingerprintAppointment(Document):
         if self.date_and_time_confirmation and getdate(self.date_and_time_confirmation) <= getdate(today):
             frappe.throw(_("You can't set previous/Today's dates"))
 
+def before_one_day_of_appointment_date():
+    today = date.today()
+    query = frappe.db.sql("""
+        SELECT name FROM `tabFingerprint Appointment`
+        WHERE
+        DATEDIFF(date_and_time_confirmation, '{today}')=-1 AND preparing_documents='No'
+    """, as_dict=1)
+    for row in query:
+        frappe.get_doc("Fingerprint Appointment", row.name).notify_operator_to_prepare_for_fp()
+
 def nationality_requires_fp():
     """Getting the nationality that requires Fingerprint"""
     nationalities = frappe.db.get_single_value('Fingerprint Appointment Settings','nationality')

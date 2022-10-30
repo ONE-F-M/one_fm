@@ -513,7 +513,7 @@ scheduler_events = {
 		"15 6 * * *": [# Runs everyday at 6:15 am.
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
-			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
 			# 'one_fm.grd.doctype.paci.paci.notify_to_upload_hawiyati',
 			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
 			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
@@ -521,7 +521,7 @@ scheduler_events = {
 			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp',
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
-			# 'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
+			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
 			'one_fm.utils.issue_roster_actions',
 			'one_fm.grd.doctype.preparation.preparation.auto_create_preparation_record',
 		],
