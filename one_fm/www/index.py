@@ -32,12 +32,11 @@ def get_data():
         'status':'Active'
     })})
     context.projects = projects
-    partners = [i.website_image for i in
+    partners = ['https://one-fm.com/'+i.website_image for i in
             frappe.db.sql("""
                 SELECT website_image FROM `tabCustomer`
                 WHERE website_image IS NOT NULL;""",
         as_dict=1)]
-    print(partners)
     try:
         out_sample = random.sample(partners, 12)
     except Exception as e:

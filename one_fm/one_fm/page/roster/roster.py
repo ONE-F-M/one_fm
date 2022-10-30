@@ -301,9 +301,9 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, op
 def get_filtered_operations_roles(doctype, txt, searchfield, start, page_len, filters):
 	shift = filters.get('shift')
 	return frappe.db.sql("""
-		select distinct post_template
-		from `tabOperations Post`
-		where site_shift="{shift}"
+		select distinct name
+		from `tabOperations Role`
+		where shift="{shift}"
 	""".format(shift=shift))
 
 
