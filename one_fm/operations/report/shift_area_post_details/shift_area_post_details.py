@@ -23,7 +23,7 @@ def get_data(filters):
 	conditions = get_conditions(filters)
 	operations_shifts=frappe.db.sql("""select * from `tabOperations Shift` where docstatus < 2 {0}""".format(conditions), as_dict=1)
 	for operations_shift in operations_shifts:
-		no_of_posts = frappe.db.count("Operations Post", {'site_shift': operations_shift.name})
+		no_of_posts = frappe.db.count("Operations Role", {'site_shift': operations_shift.name})
 		total_staffs = frappe.db.count("Employee Schedule",
 			{'date': getdate(filters.get('date')), 'employee_availability': 'Working', 'shift': operations_shift.name}
 		)

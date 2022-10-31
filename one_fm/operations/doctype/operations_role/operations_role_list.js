@@ -1,4 +1,4 @@
-frappe.listview_settings['Operations Post'] = {
+frappe.listview_settings['Operations Role'] = {
 	add_fields: ["paused"],
 	get_indicator: function(doc) {
 		if(!doc.paused) {

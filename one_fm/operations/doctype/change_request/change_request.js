@@ -6,7 +6,7 @@ frappe.ui.form.on('Change Request', {
 		frm.set_query("document_type", function() {
 			return {
 				"filters": [
-					["DocType", "name", "in", ["Operations Site", "Operations Post", "Operations Shift", "Project"]],
+					["DocType", "name", "in", ["Operations Site", "Operations Role", "Operations Shift", "Project"]],
 				]
 			}
 		});

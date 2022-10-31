@@ -33,7 +33,7 @@ def get_data():
                 {
 					"type": "doctype",
 					"onboard": 1,
-					"name": "Operations Post",
+					"name": "Operations Role",
 					"label": _("Post")
 				},
                 {

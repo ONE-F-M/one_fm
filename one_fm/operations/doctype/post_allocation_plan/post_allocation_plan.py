@@ -58,7 +58,7 @@ def post_sorting(post):
 def get_posts(operations_shift, date):
 	return frappe.db.sql("""
 		SELECT ps.post, p.priority_level
-		FROM `tabPost Schedule` ps, `tabOperations Post` p
+		FROM `tabPost Schedule` ps, `tabOperations Role` p
 		WHERE 
 			ps.post=p.name
 		AND	ps.post_status="Planned"
@@ -114,7 +114,7 @@ def get_employee_license_documents(employee):
 
 def get_post_data_map(post):
 	post_data = frappe._dict()
-	post_doc = frappe.get_doc("Operations Post", post.post).as_dict()
+	post_doc = frappe.get_doc("Operations Role", post.post).as_dict()
 	post_data.gender = post_doc.gender
 	post_data.priority_level = post_doc.priority_level
 	post_data.skills =  [{'skill': skill.skill, 'proficiency': skill.minimum_proficiency_required } for skill in post_doc.skills]
@@ -130,7 +130,7 @@ def get_post_data_map(post):
 def get_post_employee_data(employee, operations_shift, post, date):
 	return {
 		'employee': get_employee_data_map(frappe.get_value("Employee", employee, ["name as employee", "employee_name"], as_dict=1), operations_shift, date),
-		'post': get_post_data_map(frappe.get_value("Operations Post", post, ["name as post", "priority_level"], as_dict=1))
+		'post': get_post_data_map(frappe.get_value("Operations Role", post, ["name as post", "priority_level"], as_dict=1))
 	}
 
 @frappe.whitelist()
