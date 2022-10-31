@@ -167,3 +167,8 @@ def set_attachments_to_doctype(source_dt, list_of_source, target_dt, target_name
             "attached_to_doctype": target_dt,
             "folder": "Home/Attachments"})
             _file.save()
+
+def set_po_letter_head(doc, method):
+	if doc.workflow_state == "Approved" and not doc.letter_head:
+		if frappe.db.exists('Letter Head', {'name': 'Authorization Signature'}):
+			doc.db_set('letter_head', 'Authorization Signature')
