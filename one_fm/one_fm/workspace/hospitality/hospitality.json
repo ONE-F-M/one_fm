@@ -1,28 +1,29 @@
 {
  "charts": [],
- "content": "[]",
- "creation": "2022-10-30 20:08:33.221280",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Hospitality</span>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Accommodation\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Accommodation Master\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "creation": "2022-10-31 20:16:25.329751",
  "docstatus": 0,
  "doctype": "Workspace",
+ "for_user": "",
  "hide_custom": 0,
+ "icon": "organization",
  "idx": 0,
- "label": "Government Relation",
+ "label": "Hospitality",
  "links": [
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Public Institution for Social Security",
-   "link_count": 0,
-   "link_type": "DocType",
+   "label": "Accommodation",
+   "link_count": 7,
    "onboard": 0,
    "type": "Card Break"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PIFSS Authorized Signatory List",
+   "label": "Accommodation",
    "link_count": 0,
-   "link_to": "PIFSS Authorized Signatory",
+   "link_to": "Accommodation",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -30,9 +31,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PIFSS Form 103 List",
+   "label": "Unit",
    "link_count": 0,
-   "link_to": "PIFSS Form 103",
+   "link_to": "Accommodation Unit",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -40,9 +41,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PIFSS Form 55 List",
+   "label": "Space",
    "link_count": 0,
-   "link_to": "PIFSS Form 55",
+   "link_to": "Accommodation Space",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -50,9 +51,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PIFSS Monthly Deduction List",
+   "label": "Bed",
    "link_count": 0,
-   "link_to": "PIFSS Monthly Deduction",
+   "link_to": "Bed",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -60,18 +61,47 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Manpower and Government Restructuring Program",
+   "label": "Checkin/Checkout",
    "link_count": 0,
+   "link_to": "Accommodation Checkin Checkout",
    "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Water/Electricity Meter Reading",
+   "link_count": 0,
+   "link_to": "Accommodation Meter Reading Record",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Asset and Consumable",
+   "link_count": 0,
+   "link_to": "Accommodation Asset and Consumable",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Master",
+   "link_count": 7,
    "onboard": 0,
    "type": "Card Break"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "MGRP",
+   "label": "Accommodation Type",
    "link_count": 0,
-   "link_to": "MGRP",
+   "link_to": "Accommodation Type",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -79,168 +109,162 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Ministry Of Commerce And Industry",
+   "label": "Accommodation Space Type",
    "link_count": 0,
+   "link_to": "Accommodation Space Type",
    "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bed Space Type",
+   "link_count": 0,
+   "link_to": "Bed Space Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Accommodation Meter",
+   "link_count": 0,
+   "link_to": "Accommodation Meter",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Governorate",
+   "link_count": 0,
+   "link_to": "Governorate",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Governorate Area",
+   "link_count": 0,
+   "link_to": "Governorate Area",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Designation Profile",
+   "link_count": 0,
+   "link_to": "Designation Profile",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 8,
    "onboard": 0,
    "type": "Card Break"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "MOCI License List",
+   "label": "Maintenance Report",
    "link_count": 0,
-   "link_to": "MOCI License",
-   "link_type": "DocType",
+   "link_to": "Maintenance Report",
+   "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Public Authority Of Manpower",
+   "label": "Units List Report",
    "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "PAM File List",
-   "link_count": 0,
-   "link_to": "PAM File",
-   "link_type": "DocType",
+   "link_to": "Units List Report",
+   "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PAM Authorized Signatory List",
+   "label": "Bed Space Summary Report",
    "link_count": 0,
-   "link_to": "PAM Authorized Signatory List",
-   "link_type": "DocType",
+   "link_to": "Bed Space Summary Report",
+   "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "PAM Designation List",
+   "label": "Bed Space Detailed Report",
    "link_count": 0,
-   "link_to": "PAM Designation List",
-   "link_type": "DocType",
+   "link_to": "Bed Space Detailed Report",
+   "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Work Permit List",
+   "label": "Accommodation Checkin Checkout Report",
    "link_count": 0,
-   "link_to": "Work Permit",
-   "link_type": "DocType",
+   "link_to": "Accommodation Checkin Checkout Report",
+   "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Medical Insurance",
+   "label": "Accommodation Meter Reading Report",
    "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Medical Insurance List",
-   "link_count": 0,
-   "link_to": "Medical Insurance",
-   "link_type": "DocType",
+   "link_to": "Accommodation Meter Reading Report",
+   "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Ministry Of Interior ",
+   "label": "Monthly Consumption Report",
    "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "MOI Residency Jawazat List",
-   "link_count": 0,
-   "link_to": "MOI Residency Jawazat",
-   "link_type": "DocType",
+   "link_to": "Monthly Consumption Report",
+   "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Fingerprint Appointment List",
+   "label": "Accommodation Nationalities",
    "link_count": 0,
-   "link_to": "Fingerprint Appointment",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Public Authority For Civil Information",
-   "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "PACI List",
-   "link_count": 0,
-   "link_to": "PACI",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Roster",
-   "link_count": 0,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "Daily Roster Projection View",
-   "link_count": 0,
-   "link_to": "Daily Roster Projection View",
+   "link_to": "Accommodation Nationalities",
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2022-10-31 21:19:32.691154",
+ "modified": "2022-10-31 21:19:33.769979",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Government Relation",
+ "name": "Hospitality",
  "owner": "Administrator",
- "parent_page": "",
+ "parent_page": "GSD",
  "public": 1,
  "quick_lists": [],
  "roles": [],
- "sequence_id": 1.0,
+ "sequence_id": 8.0,
  "shortcuts": [],
- "title": "Government Relation"
+ "title": "Hospitality"
 }
