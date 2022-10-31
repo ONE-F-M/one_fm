@@ -317,6 +317,8 @@ def import_deduction_data(doc_name):
 				'actual_salary': flt(row[2]), 'social_security_salary':flt(row[3]), 'employee_contribution':flt(row[4]),
 				'company_contribution':flt(row[5]),'total_contribution':flt(row[6]),
 				})
+		return table_data,len(table_data)
+
 			# employee_amount = flt(row[1] * (47.730/ 100))
 	#
 	# Fetch the second csv file for additional deduction records and store its content in a dictionary list `additional_table`
@@ -337,5 +339,3 @@ def import_deduction_data(doc_name):
 	# 		employee.update({
 	# 			'additional_deduction':additional_table.get(employee['civil_id'])
 	# 		})
-
-	return table_data,len(table_data)
