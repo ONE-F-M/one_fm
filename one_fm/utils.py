@@ -1496,7 +1496,7 @@ def validate_transferable_field(doc):
 def validate_mandatory_childs(doc):
     if doc.one_fm_languages:
         for language in doc.one_fm_languages:
-            if not language.read or int(language.read) < 1 or not language.write or int(language.write) < 1 or not language.speak or int(language.speak) < 1:
+            if not language.read or float(language.read) == 0 or not language.write or float(language.write) == 0 or not language.speak or float(language.speak) == 0:
                 frappe.throw(_("Language - Row {0}: Should Rate You Read, Write and Speak for {1}".format(language.idx, language.language_name)))
 
     if doc.one_fm_designation_skill:
