@@ -6,6 +6,10 @@ frappe.ui.form.on('Preparation Record',{
 	renewal_or_extend: function(frm, cdt, cdn){
 		var row = locals[cdt][cdn];
 		if(row.renewal_or_extend){
+			if(row.renewal_or_extend == 'Renewal' & !row.no_of_years){
+				frappe.model.set_value(row.doctype, row.name, "no_of_years", '1 Year');
+				frm.refresh_field('preparation_record');
+			}
 			frappe.call({
 				method: 'one_fm.grd.doctype.preparation.preparation.get_grd_renewal_extension_cost',
 				args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
