@@ -60,10 +60,11 @@
   }
  ],
  "links": [],
- "modified": "2020-11-16 08:45:51.745199",
+ "modified": "2022-10-31 11:17:32.699045",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed Space Type",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -92,9 +93,9 @@
   }
  ],
  "quick_entry": 1,
- "restrict_to_domain": "Hospitality",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "bed_space_type",
  "track_changes": 1
 }
