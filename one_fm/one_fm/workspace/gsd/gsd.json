@@ -1,0 +1,54 @@
+{
+ "charts": [],
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Goods and Service Department</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"RFM\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"RFP\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Checkin/Checkout\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Employee Uniform\",\"col\":3}}]",
+ "creation": "2022-10-31 21:12:45.531143",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "projects",
+ "idx": 0,
+ "label": "GSD",
+ "links": [],
+ "modified": "2022-10-31 21:19:33.614825",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "GSD",
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 7.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "RFM",
+   "link_to": "Request for Material",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "RFP",
+   "link_to": "Request for Purchase",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Checkin/Checkout",
+   "link_to": "Accommodation Checkin Checkout",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Employee Uniform",
+   "link_to": "Employee Uniform",
+   "type": "DocType"
+  }
+ ],
+ "title": "GSD"
+}
