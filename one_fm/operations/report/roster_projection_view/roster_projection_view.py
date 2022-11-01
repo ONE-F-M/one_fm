@@ -69,9 +69,9 @@ def get_data(filters):
 				i.projection_rate = i.rate*i.projection
 				i.ps_projection = ps_key.projection
 			else:
-				i.projection = 0
-				i.projection_rate = 0
-				i.ps_projection = 0
+				# i.projection = 0
+				i.projection_rate = i.rate*i.projection
+				# i.ps_projection = 0
 
 		# 	# Compute live projection
 		if es_data and use_attendance:

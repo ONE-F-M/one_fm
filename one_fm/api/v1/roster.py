@@ -209,7 +209,7 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 def edit_post(post, post_status, start_date, end_date, paid=0, never_end=0, repeat=0, repeat_freq=None):
 	try:
 		if never_end:
-			project = frappe.get_value("Operations Post", post, ["project"])
+			project = frappe.get_value("Operations Role", post, ["project"])
 			end_date = frappe.get_value("Contracts", {"project": project}, ["end_date"])
 		if repeat:
 			if repeat_freq == "Daily":
@@ -419,7 +419,7 @@ def get_operations_roles(shift=None):
 			return frappe.get_list("Operations Role", limit_page_length=9999, order_by="name asc")
 
 		if "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles or "Shift Supervisor" in user_roles:
-			return frappe.get_list("Operations Post",{"site_shift": shift}, "post_template", limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Operations Role",{"site_shift": shift}, "post_template", limit_page_length=9999, order_by="name asc")
 
 		return []
 	except Exception as e:
@@ -435,7 +435,7 @@ def get_designations():
 @frappe.whitelist()
 def get_post_details(post_name):
 	try:
-		return frappe.get_value("Operations Post", post_name, "*")
+		return frappe.get_value("Operations Role", post_name, "*")
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
@@ -560,7 +560,7 @@ def get_handover_posts(shift=None):
 		filters = {"handover": 1}
 		if shift:
 			filters.update({"site_shift": shift})
-		return frappe.get_list("Operations Post", filters)
+		return frappe.get_list("Operations Role", filters)
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 

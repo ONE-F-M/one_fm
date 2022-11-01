@@ -33,7 +33,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         return response("Bad Request", 400, None, "video type must be str.")
 
     try:
-
+        doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
         # Setup channel
         face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
         channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
@@ -46,14 +46,13 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         )
 
         res = stub.FaceRecognitionEnroll(req)
-        data = {'employee':employee, 'log_type':'Enrollment', 'verification':res.verification,
+        data = {'employee':doc.name, 'log_type':'Enrollment', 'verification':res.enrollment,
                 'message':res.message, 'data':res.data, 'source': 'Enroll'}
         frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
                    **{'data':data})
         if res.enrollment == "FAILED":
             return response(res.message, 400, None, res.data)
 
-        doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
         doc.enrolled = 1
         doc.save(ignore_permissions=True)
         update_onboarding_employee(doc)

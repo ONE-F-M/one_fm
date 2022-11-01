@@ -27,7 +27,7 @@
    "fieldname": "post",
    "fieldtype": "Link",
    "label": "Post",
-   "options": "Operations Post"
+   "options": "Operations Role"
   },
   {
    "fieldname": "column_break_2",

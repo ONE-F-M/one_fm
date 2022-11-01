@@ -89,6 +89,7 @@ doctype_js = {
 	"Attendance Request": "public/js/doctype_js/attendance_request.js",
 	"Shift Request": "public/js/doctype_js/shift_request.js",
 	"Shift Assignment": "public/js/doctype_js/shift_assignment.js",
+	"Timesheet": "public/js/doctype_js/timesheet.js",
 	"Employee Checkin": "public/js/doctype_js/employee_checkin.js",
 	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
 	"Company" : "public/js/doctype_js/company.js",
@@ -111,7 +112,6 @@ doctype_tree_js = {
 # ----------
 
 # application home page (will override Website Settings)
-# home_page = "login"
 home_page = "index"
 
 # website user home page (by Role)
@@ -175,8 +175,12 @@ doc_events = {
 	"Purchase Order": {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
-		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po"
-
+		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po",
+		"on_update_after_submit": "one_fm.purchase.utils.set_po_letter_head"
+	},
+	"Timesheet":{
+		"on_update_after_submit":"one_fm.one_fm.timesheet_custom.mark_attendance_from_timesheet",
+		"validate":"one_fm.one_fm.timesheet_custom.validate_date",
 	},
 	"Leave Application": {
 		"on_submit": "one_fm.utils.leave_appillication_on_submit",
@@ -514,7 +518,7 @@ scheduler_events = {
 		"15 6 * * *": [# Runs everyday at 6:15 am.
 			'one_fm.utils.send_gp_letter_attachment_reminder2',
 			'one_fm.utils.send_gp_letter_attachment_no_response',
-			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
+			'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.before_one_day_of_appointment_date',
 			# 'one_fm.grd.doctype.paci.paci.notify_to_upload_hawiyati',
 			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.get_employee_list',
 			# 'one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_grd_operator_documents',
@@ -522,7 +526,7 @@ scheduler_events = {
 			'one_fm.grd.doctype.mgrp.mgrp.notify_awaiting_response_mgrp',
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
-			# 'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
+			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
 			'one_fm.utils.issue_roster_actions',
 			'one_fm.grd.doctype.preparation.preparation.auto_create_preparation_record',
 		],
@@ -628,8 +632,6 @@ fixtures = [
 	},
 	{
 		"dt": "Workflow"
-
-
 	},
 	{
 		"dt": "Client Script",

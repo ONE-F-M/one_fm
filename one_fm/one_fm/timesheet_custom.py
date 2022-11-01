@@ -1,7 +1,8 @@
 import frappe
 import itertools
-from frappe.utils import cstr, flt, add_days, time_diff_in_hours
+from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
 from calendar import monthrange  
+from one_fm.api.utils import get_reports_to_employee_name
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
     filters = {
@@ -28,7 +29,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             end = frappe.get_list("Employee Checkin", {"employee": key, "time": ['between', (date, date)], "log_type": "OUT"}, "time", order_by="time desc")[0].time
             #Get the sale item of post type
             item = frappe.get_value("Operations Role", attendance.operations_role, 'sale_item')
-            gender = frappe.get_value("Operations Post", post, 'gender')
+            gender = frappe.get_value("Operations Role", post, 'gender')
             shift_hours = frappe.get_value("Operations Shift", attendance.operations_shift, ['duration'])
             #pass gender, shift hour, dayoffs, uom
             contract_item_detail = get_contrat_item_detail(attendance.project, item, gender, shift_hours)
@@ -114,7 +115,7 @@ def add_time_log(timesheet, attendance, start, end, post, billable, billing_hour
         "to_time": end,
         "project": attendance.project,
         "site": attendance.site,
-        "operations_post": post,
+        "operations_role": post,
         "shift": attendance.operations_shift,
         "hours": attendance.working_hours,
         "billable": billable,
@@ -122,3 +123,47 @@ def add_time_log(timesheet, attendance, start, end, post, billable, billing_hour
         "billing_rate":billing_rate
     })
     return timesheet
+
+@frappe.whitelist()
+def fetch_approver(employee):
+    if employee:
+        approver = get_reports_to_employee_name(employee)
+
+        if approver:
+            return frappe.get_value("Employee", approver, ["user_id"])
+        else:
+            frappe.throw("No approver found for {employee}".format(employee=employee))
+
+def mark_attendance_from_timesheet(doc, event):
+    if doc.workflow_state == "Approved":
+        employee_shift = frappe.get_value("Employee", doc.employee,["default_shift"])
+        expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
+
+        if expected_working_duration and expected_working_duration < doc.total_hours:
+            frappe.msgprint("Kindly, note that {employee} has overtimed the expected working hour".format(employee=doc.employee))
+        else:
+            att = frappe.new_doc("Attendance")
+            att.employee = doc.employee
+            att.employee_name = doc.employee_name
+            att.attendance_date = doc.start_date
+            att.company = doc.company
+            att.status = "Present"
+            att.shift = employee_shift
+            att.working_hours = doc.total_hours
+            att.insert(ignore_permissions=True)
+            att.submit()
+
+def validate_timesheet_count(doc, event):
+    if doc.workflow_state == "Approved":
+        employee_shift = frappe.get_value("Employee", doc.employee,["default_shift"])
+        expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
+
+        if expected_working_duration < doc.total_hours:
+            frappe.msgprint("Kindly, note that {employee} has timed over".format(employee=employee))
+
+def validate_date(doc, method):
+    current_date = getdate()
+    allowed_role = "HR Manager"
+    if allowed_role not in frappe.get_roles(frappe.session.user):
+        if doc.start_date != current_date or doc.end_date != current_date:
+            frappe.throw("Not allowed to submit doc for previous date")

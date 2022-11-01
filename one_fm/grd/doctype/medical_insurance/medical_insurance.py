@@ -139,7 +139,7 @@ def email_notification_reminder(grd_user,medical_insurance_list,reminder_number,
     """
     message_list=[]
     for medical_insurance in medical_insurance_list:
-        page_link = get_url(medical_insurance.get_url())
+        page_link = get_url(frappe.get_doc("Medical Insurance", medical_insurance.name).get_url())
         message = "<a href='{0}'>{1}</a>".format(page_link, medical_insurance.civil_id)
         message_list.append(message)
 

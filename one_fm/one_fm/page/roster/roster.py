@@ -269,8 +269,8 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, op
 		filters.update({'site_shift': shift})
 	if operations_role:
 		filters.update({'post_template': operations_role})
-	post_total = len(frappe.db.get_list("Operations Post", filters))
-	post_list = frappe.db.get_list("Operations Post", filters, "name", order_by="name asc", limit_start=limit_start, limit_page_length=limit_page_length)
+	post_total = len(frappe.db.get_list("Operations Role", filters))
+	post_list = frappe.db.get_list("Operations Role", filters, "name", order_by="name asc", limit_start=limit_start, limit_page_length=limit_page_length)
 	fields = ['name', 'post', 'operations_role','date', 'post_status', 'site', 'shift', 'project']
 
 	filters.pop('post_template', None)
@@ -301,9 +301,9 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, op
 def get_filtered_operations_roles(doctype, txt, searchfield, start, page_len, filters):
 	shift = filters.get('shift')
 	return frappe.db.sql("""
-		select distinct post_template
-		from `tabOperations Post`
-		where site_shift="{shift}"
+		select distinct name
+		from `tabOperations Role`
+		where shift="{shift}"
 	""".format(shift=shift))
 
 
@@ -646,7 +646,7 @@ def plan_post(posts, args):
 
 	for post in json.loads(posts):
 		if cint(args.project_end_date) and not args.plan_end_date:
-			project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+			project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 			if frappe.db.exists("Contracts", {'project': project}):
 				contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 				if not end_date:
@@ -673,7 +673,7 @@ def cancel_post(posts, args):
 
 	for post in json.loads(posts):
 		if cint(args.project_end_date) and not args.cancel_end_date:
-			project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+			project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 			if frappe.db.exists("Contracts", {'project': project}):
 				contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 				if not end_date:
@@ -702,7 +702,7 @@ def suspend_post(posts, args):
 
 	for post in json.loads(posts):
 		if cint(args.project_end_date) and not args.suspend_to_date:
-			project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+			project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 			if frappe.db.exists("Contracts", {'project': project}):
 				contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 				if not end_date:
@@ -741,7 +741,7 @@ def post_off(posts, args):
 			if args.repeat == "Daily":
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
-						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+						project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 						if frappe.db.exists("Contracts", {'project': project}):
 							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
@@ -763,7 +763,7 @@ def post_off(posts, args):
 				if args.saturday: week_days.append("Saturday")
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
-						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+						project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 						if frappe.db.exists("Contracts", {'project': project}):
 							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
@@ -778,7 +778,7 @@ def post_off(posts, args):
 			elif args.repeat == "Monthly":
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
-						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+						project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 						if frappe.db.exists("Contracts", {'project': project}):
 							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
@@ -792,7 +792,7 @@ def post_off(posts, args):
 			elif args.repeat == "Yearly":
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
-						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+						project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 						if frappe.db.exists("Contracts", {'project': project}):
 							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
