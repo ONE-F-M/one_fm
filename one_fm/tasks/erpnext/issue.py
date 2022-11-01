@@ -23,9 +23,9 @@ def daily_open():
         """, as_dict=1)
 
 
-        if query:
+        if query[0].status_count:
             # send slack message if open issues
-            send_slack_message(f"There are {query[0]['status_count']} open issue(s) that have not been replied to in the last 24 hours")
+            send_slack_message(f"There are {query[0].status_count} open issue(s) that have not been replied to in the last 24 hours")
 
     else:
         pass
