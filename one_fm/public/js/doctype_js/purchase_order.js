@@ -9,12 +9,11 @@ frappe.ui.form.on('Purchase Order', {
 	},
 	refresh: function(frm) {
 		hide_tax_fields(frm);
-		set_signed_letter_head(frm);
 		hide_subscription_section(frm);
 		set_field_property_for_documents(frm);
 		set_field_property_for_other_documents(frm);
 	},
-	
+
 	set_warehouse: function(frm){
 		if(frm.doc.set_warehouse){
 			frappe.call({
@@ -42,19 +41,15 @@ frappe.ui.form.on('Purchase Order', {
 	}
 });
 
-var set_signed_letter_head = function(frm) {
-	if(frm.doc.workflow_state == "Approved"){
-		frm.set_value('letter_head', 'Authorization Signature');
-	}
-};
-
 var set_field_property_for_other_documents = function(frm) {
 	if(frm.doc.one_fm_other_documents_required && frm.doc.one_fm_other_documents_required == 'Yes'){
 		frm.set_df_property('one_fm_details_of_other_documents', 'reqd', true);
 	}
 	else{
 		frm.set_df_property('one_fm_details_of_other_documents', 'reqd', false);
-		frm.set_value('one_fm_details_of_other_documents', '');
+		if(frm.doc.one_fm_details_of_other_documents){
+			frm.set_value('one_fm_details_of_other_documents', '');
+		}
 	}
 };
 
@@ -66,8 +61,12 @@ var set_field_property_for_documents = function(frm) {
 	else{
 		frm.set_df_property('one_fm_certificate_of_origin_required', 'reqd', false);
 		frm.set_df_property('one_fm_other_documents_required', 'reqd', false);
-		frm.set_value('one_fm_certificate_of_origin_required', '');
-		frm.set_value('one_fm_other_documents_required', '');
+		if(frm.doc.one_fm_certificate_of_origin_required){
+			frm.set_value('one_fm_certificate_of_origin_required', '');
+		}
+		if(frm.doc.one_fm_other_documents_required == 'Yes'){
+			frm.set_value('one_fm_other_documents_required', '');
+		}
 	}
 };
 
