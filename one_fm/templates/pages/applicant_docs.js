@@ -372,6 +372,8 @@ function get_details_from_form() {
   applicant_details['one_fm_third_name_in_arabic'] = $('#Third_Arabic_Name').val();
   applicant_details['one_fm_last_name_in_arabic'] = $('#Last_Arabic_Name').val();
   applicant_details['one_fm_gender'] = $('#Gender').val();
+  applicant_details['one_fm_educational_qualification'] = $('#EducationalQualification').val();
+  applicant_details['one_fm_university'] = $('#University').val();
   applicant_details['one_fm_marital_status'] = $('#MaritalStatus').val();
   applicant_details['one_fm_religion'] = $('#Religion').val();
   applicant_details['one_fm_date_of_birth'] = $('#Date_Of_Birth').val();
