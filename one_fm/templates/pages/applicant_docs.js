@@ -270,7 +270,7 @@ function fill_form(data, type,token){
       if(is_kuwaiti==0){
         input_data(data,'back_text','Sponsor_Name');
       }
-      
+
       let front_side_cid_filled_fields_count = count_filled_fields(data, 'front_text', CIVIL_ID_FRONT_TEXT_FIELDS);
       let back_side_cid_filled_fields_count = count_filled_fields(data, 'back_text', CIVIL_ID_BACK_TEXT_FIELDS);
 
@@ -372,6 +372,8 @@ function get_details_from_form() {
   applicant_details['one_fm_third_name_in_arabic'] = $('#Third_Arabic_Name').val();
   applicant_details['one_fm_last_name_in_arabic'] = $('#Last_Arabic_Name').val();
   applicant_details['one_fm_gender'] = $('#Gender').val();
+  applicant_details['one_fm_marital_status'] = $('#MaritalStatus').val();
+  applicant_details['one_fm_religion'] = $('#Religion').val();
   applicant_details['one_fm_date_of_birth'] = $('#Date_Of_Birth').val();
   applicant_details['one_fm_cid_number'] = $('#Civil_ID_No').val();
   applicant_details['one_fm_cid_expire'] = $('#Expiry_Date').val();

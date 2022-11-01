@@ -55,12 +55,12 @@
                 <h6 style="color:#ffff"><strong>{{applicant_designation}}</strong></h6>
             </div>
         </div>
-        
+
         <br><br>
         <article class="main-container m-auto p-auto">
             <div>
                 <div class="row col-lg-12 col-md-12 mb-12">
-                    <h6>Dear {{applicant_name}}, greetings from One Facilities Management!</h6> 
+                    <h6>Dear {{applicant_name}}, greetings from One Facilities Management!</h6>
                     <h6>As a part of the onboarding process for the {{applicant_designation}} role, we request you to provide us with the following documents and complete the below form.</h6>
                     <ul>
                         <li><h6>Passport - front and back side</h6></li>
@@ -181,9 +181,31 @@
                                             <option value="Female">Female</option>
                                         </select>
                                     </div>
+                                    <div class="form-group col-md-6 w-50">
+                                        <label class="form-label" for="MaritalStatus">Marital Status *</label>
+                                        <select class="form-control input" id="MaritalStatus" name="marital_status" aria-placeholder="Marital Status">
+                                            <option value="select" selected disabled>Select Your Marital Status</option>
+                                            <option value="Unmarried">Unmarried</option>
+                                            <option value="Married">Married</option>
+                                            <option value="Widow">Widow</option>
+                                            <option value="Divorce">Divorce</option>
+                                            <option value="Unknown">Unknown</option>
+                                        </select>
+                                    </div>
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Date_Of_Birth">Date Of Birth *</label>
                                         <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" size="50">
+                                    </div>
+                                    <div class="form-group col-md-6 w-50">
+                                        <label class="form-label" for="Religion">Religion *</label>
+                                        <select class="form-control input" id="Religion" name="religion" aria-placeholder="Religion">
+                                            <option value="select" selected disabled>Select Your Religion</option>
+                                            <option value="Muslim">Muslim</option>
+                                            <option value="Christian">Christian</option>
+                                            <option value="Hindu">Hindu</option>
+                                            <option value="Buddhist">Buddhist</option>
+                                            <option value="Unknown">Unknown</option>
+                                        </select>
                                     </div>
                                 </div>
 
@@ -236,7 +258,7 @@
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Passport_Type">Passport Type</label>
-                                        <select class="form-control input" id="Passport_Type" name="passport_type" aria-placeholder="Passport Type">
+                                        <select class="form-control input" id="Passport_Type" name="passport_type" aria-placeholder="Select Passport Type">
                                             <option value="select" selected disabled>Passport Type</option>
                                             <option value="Normal">Normal</option>
                                             <option value="Diplomat">Diplomat</option>
