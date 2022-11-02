@@ -38,6 +38,9 @@ frappe.ui.form.on('Shift Request', {
 
 	},
 	refresh: function(frm) {
+		frm.set_df_property('shift_type', 'hidden', 1);
+		frm.set_df_property('company', 'hidden', 1);
+		frm.set_df_property('approver', 'hidden', 1);
 		set_update_request_btn(frm);
 	},
 	employee: function(frm) {
@@ -119,7 +122,9 @@ function set_approver(frm){
             },
             callback: function(r) {
                 if(r.message){
+					console.log(r.message)
                     frm.set_value("approver",r.message)
+					frm.set_value("shift_approver",r.message)
                 }
             }
         });
