@@ -1721,6 +1721,8 @@ function get_shifts(page) {
 	let { project, site } = page.filters;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts', { employee_id, project, site })
 		.then(res => {
+			console.log(res)
+			console.log("CALLED AFTER AJAX")
 			let parent = $('[data-page-route="roster"] #rosteringshiftselect');
 			let shift_data = [{ 'id': '', 'text': 'Select Shift' }];
 			res.forEach(element => {
@@ -2907,6 +2909,9 @@ function schedule_change_post(page) {
 					let start_date = d.get_value('start_date');
 					if (start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
 						// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
+						// Set the date to null and refresh the field 
+						d.fields_dict.start_date.value  = '';
+						d.fields_dict.start_date.refresh()
 						frappe.throw(__("Start Date cannot be before today."));
 					}
 				}
@@ -2921,9 +2926,15 @@ function schedule_change_post(page) {
 					let end_date = d.get_value('end_date');
 					let start_date = d.get_value('start_date');
 					if (end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
+						// Set the date to null and refresh the field 
+						d.fields_dict.end_date.value  = '';
+						d.fields_dict.end_date.refresh()
 						frappe.throw(__("End Date cannot be before today."));
 					}
 					if (start_date && end_date && moment(end_date).isBefore(moment(frappe.datetime.nowdate()))) {
+						// Set the date to null and refresh the field 
+						d.fields_dict.end_date.value  = '';
+						d.fields_dict.end_date.refresh()
 						frappe.throw(__("End Date cannot be before Start Date."));
 					}
 				}
