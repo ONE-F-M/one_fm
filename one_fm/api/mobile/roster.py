@@ -420,8 +420,9 @@ def get_operations_roles(shift=None):
 			return frappe.get_list("Operations Role", limit_page_length=9999, order_by="name asc")
 
 		if "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles or "Shift Supervisor" in user_roles:
-			return frappe.get_list("Operations Role",{"site_shift": shift}, "post_template", limit_page_length=9999, order_by="name asc")
-
+			return frappe.db.sql("""
+				SELECT name AS post_template FROM `tabOperations Role` WHERE shift="{shift}" ORDER BY name ASC;
+				""".format(shift=shift), as_dict=1)
 		return []
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
