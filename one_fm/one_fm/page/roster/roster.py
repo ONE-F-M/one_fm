@@ -113,6 +113,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	if department:
 		employee_filters.update({'department': department})
 
+
 	#--------------------- Fetch Employee list ----------------------------#
 	if isOt:
 		employee_filters.update({'employee_availability' : 'Working'})
@@ -228,10 +229,26 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		post_count_data.update({key[0]: post_list })
 
 	master_data.update({'operations_roles_data': post_count_data})
-
-	end = time.time()
-	print("[[[[[[]]]]]]]", end-start)
+	master_data = get_active_employees(start_date, end_date, master_data)
 	return master_data
+
+def get_active_employees(start_date, end_date, master_data):
+	employees = [i.name for i in frappe.db.get_list('Employee', filters={'status': ['!=', 'Left']})]
+	employees += [i.name for i in frappe.db.sql("""
+		SELECT name FROM `tabEmployee` 
+		WHERE status='Left' AND relieving_date BETWEEN '{start_date}' AND '{end_date}'""".format(
+		start_date=start_date, end_date=end_date), as_dict=1
+	)]
+	new_employees = {}
+	employees_data = master_data.get('employees_data')
+	for k, v in employees_data.items():
+		if v[0]['employee'] in employees:
+			new_employees[k] = v
+	master_data['total'] = len(new_employees)
+	master_data['employees_data'] = new_employees
+
+	return master_data
+
 
 def filter_redundant_employees(employees):
 	return list({employee['employee']:employee for employee in employees}.values())
@@ -252,8 +269,8 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, op
 		filters.update({'site_shift': shift})
 	if operations_role:
 		filters.update({'post_template': operations_role})
-	post_total = len(frappe.db.get_list("Operations Post", filters))
-	post_list = frappe.db.get_list("Operations Post", filters, "name", order_by="name asc", limit_start=limit_start, limit_page_length=limit_page_length)
+	post_total = len(frappe.db.get_list("Operations Role", filters))
+	post_list = frappe.db.get_list("Operations Role", filters, "name", order_by="name asc", limit_start=limit_start, limit_page_length=limit_page_length)
 	fields = ['name', 'post', 'operations_role','date', 'post_status', 'site', 'shift', 'project']
 
 	filters.pop('post_template', None)
@@ -284,9 +301,9 @@ def get_post_view(start_date, end_date,  project=None, site=None, shift=None, op
 def get_filtered_operations_roles(doctype, txt, searchfield, start, page_len, filters):
 	shift = filters.get('shift')
 	return frappe.db.sql("""
-		select distinct post_template
-		from `tabOperations Post`
-		where site_shift="{shift}"
+		select distinct name
+		from `tabOperations Role`
+		where shift="{shift}"
 	""".format(shift=shift))
 
 
@@ -629,7 +646,7 @@ def plan_post(posts, args):
 
 	for post in json.loads(posts):
 		if cint(args.project_end_date) and not args.plan_end_date:
-			project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+			project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 			if frappe.db.exists("Contracts", {'project': project}):
 				contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 				if not end_date:
@@ -656,7 +673,7 @@ def cancel_post(posts, args):
 
 	for post in json.loads(posts):
 		if cint(args.project_end_date) and not args.cancel_end_date:
-			project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+			project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 			if frappe.db.exists("Contracts", {'project': project}):
 				contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 				if not end_date:
@@ -685,7 +702,7 @@ def suspend_post(posts, args):
 
 	for post in json.loads(posts):
 		if cint(args.project_end_date) and not args.suspend_to_date:
-			project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+			project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 			if frappe.db.exists("Contracts", {'project': project}):
 				contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 				if not end_date:
@@ -724,7 +741,7 @@ def post_off(posts, args):
 			if args.repeat == "Daily":
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
-						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+						project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 						if frappe.db.exists("Contracts", {'project': project}):
 							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
@@ -746,7 +763,7 @@ def post_off(posts, args):
 				if args.saturday: week_days.append("Saturday")
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
-						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+						project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 						if frappe.db.exists("Contracts", {'project': project}):
 							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
@@ -761,7 +778,7 @@ def post_off(posts, args):
 			elif args.repeat == "Monthly":
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
-						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+						project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 						if frappe.db.exists("Contracts", {'project': project}):
 							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:
@@ -775,7 +792,7 @@ def post_off(posts, args):
 			elif args.repeat == "Yearly":
 				for post in json.loads(posts):
 					if cint(args.project_end_date) and not args.repeat_till:
-						project = frappe.db.get_value("Operations Post", post["post"], ["project"])
+						project = frappe.db.get_value("Operations Role", post["post"], ["project"])
 						if frappe.db.exists("Contracts", {'project': project}):
 							contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
 							if not end_date:

@@ -55,7 +55,7 @@ var set_reading_month = function(frm) {
 }
 
 var calculate_consumption = function(frm) {
-	if(frm.doc.last_reading && frm.doc.current_reading){
+	if(frm.doc.last_reading >= 0 && frm.doc.current_reading >= 0){
 		frm.set_value('consumption', frm.doc.current_reading - frm.doc.last_reading)
 	}
 };

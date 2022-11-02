@@ -6,7 +6,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "item_code",
   "item_name",
+  "t_warehouse",
   "section_break_5",
   "description",
   "quantity",
@@ -99,17 +101,31 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Request for Material Item"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item"
+  },
+  {
+   "fieldname": "t_warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-06-04 20:58:05.270893",
+ "modified": "2022-10-24 14:37:38.707290",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Request for Supplier Quotation Item",
- "owner": "omar.ja93@gmail.com",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

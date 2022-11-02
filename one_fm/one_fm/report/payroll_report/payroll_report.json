@@ -19,13 +19,13 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": "ONE FM - Job Offer",
- "modified": "2022-10-02 09:23:47.979374",
+ "modified": "2022-10-25 16:51:07.276840",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Payroll Report",
  "owner": "Administrator",
  "prepared_report": 0,
- "ref_doctype": "Payroll Employee Detail",
+ "ref_doctype": "Employee",
  "report_name": "Payroll Report",
  "report_type": "Script Report",
  "roles": [
@@ -34,6 +34,9 @@
   },
   {
    "role": "Finance User"
+  },
+  {
+   "role": "Payroll Operator"
   }
  ]
 }

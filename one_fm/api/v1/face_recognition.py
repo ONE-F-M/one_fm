@@ -1,11 +1,9 @@
-import frappe, ast, base64, time
+import frappe, ast, base64, time, grpc, json
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.v1.utils import response
 from frappe.utils import cstr, getdate
-import grpc
-import json
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 
 
@@ -35,7 +33,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         return response("Bad Request", 400, None, "video type must be str.")
 
     try:
-
+        doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
         # Setup channel
         face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
         channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
@@ -48,11 +46,13 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         )
 
         res = stub.FaceRecognitionEnroll(req)
-
+        data = {'employee':doc.name, 'log_type':'Enrollment', 'verification':res.enrollment,
+                'message':res.message, 'data':res.data, 'source': 'Enroll'}
+        frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+                   **{'data':data})
         if res.enrollment == "FAILED":
             return response(res.message, 400, None, res.data)
 
-        doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
         doc.enrolled = 1
         doc.save(ignore_permissions=True)
         update_onboarding_employee(doc)
@@ -152,7 +152,10 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         )
         # Call service stub and get response
         res = stub.FaceRecognition(req)
-
+        data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
+            'message':res.message, 'data':res.data, 'source': 'Checkin'}
+        frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+                       **{'data':data})
         if res.verification == "FAILED":
             msg = res.message
             data = res.data
@@ -259,7 +262,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             **data,
             **{'employee':employee_id, 'user_latitude':latitude, 'user_longitude':longitude, 'user_distance':distance, 'diff':distance-result.geofence_radius}
         }
-        frappe.enqueue('one_fm.one_fm.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
+        frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
                        **{'data':data})
         return response("Success", 200, result)
 

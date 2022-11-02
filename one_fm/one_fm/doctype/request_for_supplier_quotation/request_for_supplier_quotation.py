@@ -54,6 +54,8 @@ class RequestforSupplierQuotation(Document):
                 item.qty = rfq_item.qty
                 item.uom = rfq_item.uom
                 item.stock_uom = rfq_item.uom
+                item.item_code = rfq_item.item_code
+                item.warehouse = rfq_item.t_warehouse
         return quotation.as_dict()
 
     def get_supplier_group_list(self,supplier_group):
@@ -67,6 +69,7 @@ class RequestforSupplierQuotation(Document):
         # RFQ link for supplier portal
         return get_url("/rfq1/" + self.name)
 
+    @frappe.whitelist()
     def send_supplier_quotation_emails(self):
         for supplier in self.suppliers:
             if not supplier.email_id:

@@ -7,9 +7,6 @@
   "modified": "2021-02-23 09:43:21.268790",
   "name": "Purchase Order",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -172,9 +169,6 @@
   "modified": "2021-07-12 09:15:43.204784",
   "name": "Duty Commencement 1",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -300,9 +294,6 @@
   "modified": "2021-10-07 10:34:37.383278",
   "name": "Request Employee Assignment",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -380,9 +371,6 @@
   "modified": "2021-10-07 10:39:00.247756",
   "name": "Request Employee Schedule",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -460,9 +448,6 @@
   "modified": "2021-11-18 01:42:58.530722",
   "name": "MGRP",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -599,9 +584,6 @@
   "modified": "2021-09-12 15:27:39.765866",
   "name": "Work Permit",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -891,9 +873,6 @@
   "modified": "2021-11-18 01:43:30.455952",
   "name": "Medical Insurance",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -947,9 +926,6 @@
   "modified": "2021-11-18 01:43:23.247401",
   "name": "MOI",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -1003,9 +979,6 @@
   "modified": "2021-10-26 15:49:10.692911",
   "name": "PACI",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -1083,9 +1056,6 @@
   "modified": "2021-09-12 11:08:16.101921",
   "name": "Fingerprint Appointment",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -1163,9 +1133,6 @@
   "modified": "2021-11-18 01:43:05.706066",
   "name": "Transfer Paper",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -1291,9 +1258,6 @@
   "modified": "2021-09-12 11:25:24.335418",
   "name": "PIFSS Form 103",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -1535,9 +1499,6 @@
   "modified": "2021-07-05 12:51:09.713462",
   "name": "Employee ID",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -1700,9 +1661,6 @@
   "modified": "2022-05-16 11:01:06.040684",
   "name": "Work Contract",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -1957,9 +1915,6 @@
   "modified": "2022-04-21 16:04:57.683090",
   "name": "Job Offer",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -2264,9 +2219,6 @@
   "modified": "2021-07-05 12:51:08.737501",
   "name": "Candidate Orientation",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -2427,9 +2379,6 @@
   "modified": "2021-07-13 10:17:36.212745",
   "name": "Duty Commencement",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -2555,9 +2504,6 @@
   "modified": "2021-10-04 08:58:59.196865",
   "name": "Bank Account",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -2731,9 +2677,6 @@
   "modified": "2020-12-04 18:19:24.820549",
   "name": "Missed MOM Follow-up Action Workflow",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -2835,9 +2778,6 @@
   "modified": "2020-08-26 18:42:05.930799",
   "name": "Penalty",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -2915,9 +2855,6 @@
   "modified": "2020-05-21 21:15:27.464530",
   "name": "Operations Site",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -3113,9 +3050,6 @@
   "modified": "2021-11-18 01:44:03.912134",
   "name": "Shift Permission",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -3217,9 +3151,6 @@
   "modified": "2020-05-31 10:49:44.720572",
   "name": "GP Letter Request WF",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -3273,9 +3204,6 @@
   "modified": "2019-12-05 15:26:42.914414",
   "name": "Inovice",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -3316,9 +3244,6 @@
   "modified": "2019-12-11 10:38:27.577451",
   "name": "Item Request WF",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -3380,16 +3305,13 @@
   "doctype": "Workflow",
   "document_type": "Request for Supplier Quotation",
   "is_active": 1,
-  "modified": "2020-05-11 10:50:46.693481",
+  "modified": "2022-10-25 11:03:43.857807",
   "name": "Request for Supplier Quotation WF",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Employee",
+    "allow_edit": "Purchase User",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3402,7 +3324,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "HR Manager",
+    "allow_edit": "Finance User",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3415,7 +3337,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "HR Manager",
+    "allow_edit": "Finance User",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3428,7 +3350,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "HR Manager",
+    "allow_edit": "Purchase Manager",
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3441,7 +3363,7 @@
     "update_value": null
    },
    {
-    "allow_edit": "HR Manager",
+    "allow_edit": "Purchase Manager",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3458,7 +3380,7 @@
    {
     "action": "Approve",
     "allow_self_approval": 1,
-    "allowed": "Stock Manager",
+    "allowed": "Finance User",
     "condition": null,
     "next_state": "Approved by Financial",
     "parent": "Request for Supplier Quotation WF",
@@ -3469,7 +3391,7 @@
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "HR Manager",
+    "allowed": "Finance User",
     "condition": null,
     "next_state": "Rejected by Financial",
     "parent": "Request for Supplier Quotation WF",
@@ -3480,7 +3402,7 @@
    {
     "action": "Approve",
     "allow_self_approval": 1,
-    "allowed": "HR Manager",
+    "allowed": "Purchase Manager",
     "condition": null,
     "next_state": "Approved by Management",
     "parent": "Request for Supplier Quotation WF",
@@ -3491,7 +3413,7 @@
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "HR Manager",
+    "allowed": "Purchase Manager",
     "condition": null,
     "next_state": "Rejected by Management",
     "parent": "Request for Supplier Quotation WF",
@@ -3511,9 +3433,6 @@
   "modified": "2020-05-11 10:51:38.541609",
   "name": "Purchase Request WF",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -3639,9 +3558,6 @@
   "modified": "2020-05-11 10:33:24.755129",
   "name": "Supplier Purchase Order WF",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -3767,9 +3683,6 @@
   "modified": "2020-07-27 19:38:16.646366",
   "name": "Legal Investigation",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -3847,9 +3760,6 @@
   "modified": "2020-11-02 10:41:25.535595",
   "name": "Sales Invoice",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -3999,9 +3909,6 @@
   "modified": "2020-12-17 14:13:16.993467",
   "name": "Asset",
   "override_status": 1,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -4079,9 +3986,6 @@
   "modified": "2020-12-19 22:39:45.112963",
   "name": "Asset Movement",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -4159,9 +4063,6 @@
   "modified": "2021-10-18 13:03:56.736827",
   "name": "PIFSS Monthly Deduction",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -4263,9 +4164,6 @@
   "modified": "2021-10-22 15:39:46.662280",
   "name": "PIFSS Monthly Deduction Tool",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -4426,9 +4324,6 @@
   "modified": "2021-11-14 09:09:02.815632",
   "name": "Overtime Request",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -4530,9 +4425,6 @@
   "modified": "2021-11-18 13:52:51.357986",
   "name": "Employee Incentive",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -4658,9 +4550,6 @@
   "modified": "2022-05-12 14:42:46.223057",
   "name": "Onboard Employee",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -4948,9 +4837,6 @@
   "modified": "2022-09-07 11:49:11.926106",
   "name": "Contracts",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 1,
   "states": [
    {
@@ -5028,9 +4914,6 @@
   "modified": "2022-07-16 04:15:27.362566",
   "name": "Shift Request",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -5189,9 +5072,6 @@
   "modified": "2022-07-17 20:27:22.476944",
   "name": "Attendance Request",
   "override_status": 0,
-  "parent": null,
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -5363,9 +5243,6 @@
   "modified": "2022-08-03 15:01:59.953677",
   "name": "Leave Application",
   "override_status": 0,
-  "parent": "Leave Application",
-  "parentfield": null,
-  "parenttype": null,
   "send_email_alert": 0,
   "states": [
    {
@@ -5447,5 +5324,133 @@
   ],
   "workflow_name": "Leave Application",
   "workflow_state_field": "workflow_state"
- }
+ },
+ {
+    "docstatus": 0,
+    "doctype": "Workflow",
+    "document_type": "Timesheet",
+    "is_active": 1,
+    "modified": "2022-10-25 01:16:52.488227",
+    "name": "Timesheet",
+    "override_status": 0,
+    "parent": null,
+    "parentfield": null,
+    "parenttype": null,
+    "send_email_alert": 0,
+    "states": [
+     {
+      "allow_edit": "Employee",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "message": null,
+      "next_action_email_template": null,
+      "parent": "Timesheet",
+      "parentfield": "states",
+      "parenttype": "Workflow",
+      "state": "Draft",
+      "update_field": "",
+      "update_value": ""
+     },
+     {
+      "allow_edit": "Employee",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "message": null,
+      "next_action_email_template": null,
+      "parent": "Timesheet",
+      "parentfield": "states",
+      "parenttype": "Workflow",
+      "state": "Submit",
+      "update_field": "",
+      "update_value": ""
+     },
+     {
+      "allow_edit": "Shift Supervisor",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "message": null,
+      "next_action_email_template": null,
+      "parent": "Timesheet",
+      "parentfield": "states",
+      "parenttype": "Workflow",
+      "state": "Approved",
+      "update_field": "",
+      "update_value": ""
+     },
+     {
+      "allow_edit": "Shift Supervisor",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "message": null,
+      "next_action_email_template": null,
+      "parent": "Timesheet",
+      "parentfield": "states",
+      "parenttype": "Workflow",
+      "state": "Rejected",
+      "update_field": "",
+      "update_value": ""
+     },
+     {
+      "allow_edit": "Shift Supervisor",
+      "doc_status": "2",
+      "is_optional_state": 0,
+      "message": null,
+      "next_action_email_template": null,
+      "parent": "Timesheet",
+      "parentfield": "states",
+      "parenttype": "Workflow",
+      "state": "Cancelled",
+      "update_field": "",
+      "update_value": ""
+     }
+    ],
+    "transitions": [
+     {
+      "action": "Submit",
+      "allow_self_approval": 1,
+      "allowed": "Employee",
+      "condition": null,
+      "next_state": "Submit",
+      "parent": "Timesheet",
+      "parentfield": "transitions",
+      "parenttype": "Workflow",
+      "state": "Draft"
+     },
+     {
+      "action": "Approve",
+      "allow_self_approval": 1,
+      "allowed": "Shift Supervisor",
+      "condition": "frappe.session.user == doc.approver",
+      "next_state": "Approved",
+      "parent": "Timesheet",
+      "parentfield": "transitions",
+      "parenttype": "Workflow",
+      "state": "Submit"
+     },
+     {
+      "action": "Reject",
+      "allow_self_approval": 1,
+      "allowed": "Shift Supervisor",
+      "condition": "frappe.session.user == doc.approver",
+      "next_state": "Rejected",
+      "parent": "Timesheet",
+      "parentfield": "transitions",
+      "parenttype": "Workflow",
+      "state": "Submit"
+     },
+     {
+      "action": "Cancel",
+      "allow_self_approval": 1,
+      "allowed": "Shift Supervisor",
+      "condition": "frappe.session.user == doc.leave_approver",
+      "next_state": "Cancelled",
+      "parent": "Timesheet",
+      "parentfield": "transitions",
+      "parenttype": "Workflow",
+      "state": "Approved"
+     }
+    ],
+    "workflow_name": "Timesheet",
+    "workflow_state_field": "workflow_state"
+   }
 ]

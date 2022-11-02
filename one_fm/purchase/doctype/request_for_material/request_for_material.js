@@ -523,7 +523,7 @@ var set_item_field_property = function(frm) {
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = false;
 	}
 	else if((frm.doc.docstatus == 1 && frm.doc.status == 'Approved')){
-		var fields = ['requested_item_name', 'requested_description', 'qty', 'uom', 'stock_uom', 't_warehouse'];
+		var fields = ['requested_item_name', 'requested_description', 'qty', 'uom', 'stock_uom'];
 		fields.forEach((field, i) => {
 			fields_dict[i] = {'fieldname': field, 'read_only': true}
 		});
@@ -775,28 +775,28 @@ frappe.ui.form.on("Request for Material Item", {
 	}
 });
 
-erpnext.buying.MaterialRequestController = erpnext.buying.BuyingController.extend({
-	tc_name: function() {
+erpnext.buying.MaterialRequestController = class MaterialRequestController extends erpnext.buying.BuyingController{
+	tc_name() {
 		this.get_terms();
-	},
+	}
 
-	item_code: function() {
+	item_code() {
 		// to override item code trigger from transaction.js
-	},
+	}
 
-	validate_company_and_party: function() {
+	validate_company_and_party() {
 		return true;
-	},
+	}
 
-	calculate_taxes_and_totals: function() {
+	calculate_taxes_and_totals() {
 		return;
-	},
+	}
 
-	validate: function() {
+	validate() {
 		set_schedule_date(this.frm);
-	},
+	}
 
-	items_add: function(doc, cdt, cdn) {
+	items_add(doc, cdt, cdn) {
 		var row = frappe.get_doc(cdt, cdn);
 		if(!row.uom){
 			this.frm.script_manager.copy_from_first_row("items", row, ["uom"]);
@@ -808,16 +808,16 @@ erpnext.buying.MaterialRequestController = erpnext.buying.BuyingController.exten
 			this.frm.script_manager.copy_from_first_row("items", row, ["schedule_date"]);
 			this.frm.script_manager.copy_from_first_row("items", row, ["t_warehouse"]);
 		}
-	},
+	}
 
-	items_on_form_rendered: function() {
-		set_schedule_date(this.frm);
-	},
-
-	schedule_date: function() {
+	items_on_form_rendered() {
 		set_schedule_date(this.frm);
 	}
-});
+
+	schedule_date() {
+		set_schedule_date(this.frm);
+	}
+};
 
 // for backward compatibility: combine new and previous states
 $.extend(cur_frm.cscript, new erpnext.buying.MaterialRequestController({frm: cur_frm}));

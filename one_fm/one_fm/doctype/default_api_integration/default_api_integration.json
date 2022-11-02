@@ -6,7 +6,8 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "integration_setting"
+  "integration_setting",
+  "allowed_ip_address"
  ],
  "fields": [
   {
@@ -15,12 +16,18 @@
    "label": "Integration Setting",
    "options": "Default API Integration Detail",
    "reqd": 1
+  },
+  {
+   "fieldname": "allowed_ip_address",
+   "fieldtype": "Table",
+   "label": "Allowed IP Address",
+   "options": "IP Address"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-02-20 09:37:18.882566",
+ "modified": "2022-10-27 15:24:40.312739",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Default API Integration",
@@ -38,5 +45,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }

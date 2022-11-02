@@ -23,6 +23,8 @@
   "request_for_material_item",
   "quotation_item",
   "quotation",
+  "item_code",
+  "t_warehouse",
   "column_break_16",
   "quotation_remarks"
  ],
@@ -166,17 +168,37 @@
   {
    "fieldname": "column_break_16",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "quotation_item.item_code",
+   "fetch_if_empty": 1,
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "quotation_item.warehouse",
+   "fetch_if_empty": 1,
+   "fieldname": "t_warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2022-01-06 12:30:35.303884",
+ "modified": "2022-10-25 09:13:32.489976",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Quotation Comparison Sheet Item",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

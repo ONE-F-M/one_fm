@@ -14,6 +14,7 @@ from erpnext.controllers.buying_controller import BuyingController
 from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_balance
 from one_fm.utils import fetch_employee_signature
 from one_fm.processor import sendemail
+from one_fm.api.doc_events import get_employee_user_id
 
 class RequestforMaterial(BuyingController):
 	def on_submit(self):
@@ -51,14 +52,13 @@ class RequestforMaterial(BuyingController):
 				create_notification_log(subject, message, [self.request_for_material_approver], self)
 
 			# Notify Accepter and requester
-			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver and self.request_for_material_accepter:
-				self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
+			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver:
+				if self.request_for_material_accepter:
+					self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
 				self.notify_material_requester(status, page_link)
 
 			self.status = status
-
 			if status == "Approved":
-
 				# Notify Stock Manager - Stock Manger Check If Item Available
 				# If Item Available then Create SE Issue and Transfer and update qty issued in the RFMItem
 				# If Qty - qty Issued > 0 then Create RFP button appear
@@ -68,15 +68,17 @@ class RequestforMaterial(BuyingController):
 					if has_permission(doctype=self.doctype, user=user):
 						filtered_users.append(user)
 				if filtered_users and len(filtered_users) > 0:
-					self.notify_requester_accepter(page_link, status, filtered_users)
-
+					message = "Dear Stock Manager, <br/>A Request for Material <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
+					subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
+					send_email(self, filtered_users, message, subject)
+					create_notification_log(subject, message, filtered_users, self)
 			self.reason_for_rejection = reason_for_rejection
 			self.save()
 			self.reload()
 	def notify_material_requester(self, page_link, status):
 		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}. You will be notified of the expected delivery date as soon as the order is processed".format(page_link, self.name, status, frappe.session.user)
 		subject = '{0} Request for Material by {1}'.format(status, self.requested_by)
-		send_email(self, self.requested_by, message, subject)
+		send_email(self, [self.requested_by], message, subject)
 		create_notification_log(subject, message, [self.requested_by], self)
 
 	def notify_requester_accepter(self, page_link, status, recipients, reason_for_rejection=None):
@@ -169,10 +171,20 @@ class RequestforMaterial(BuyingController):
 					item.requested_description = item.description
 
 	def set_request_for_material_accepter_and_approver(self):
-		if not self.request_for_material_accepter:
-			self.request_for_material_accepter = frappe.db.get_value('Purchase Settings', None, 'request_for_material_accepter')
+		# if not self.request_for_material_accepter:
+		# 	self.request_for_material_accepter = frappe.db.get_value('Purchase Settings', None, 'request_for_material_accepter')
 		if not self.request_for_material_approver:
-			self.request_for_material_approver = frappe.db.get_value('Purchase Settings', None, 'request_for_material_approver')
+			reports_to = False
+			if self.type == 'Project' and self.project:
+				reports_to = frappe.db.get_value('Project', self.project, 'account_manager')
+			elif self.employee:
+				reports_to = frappe.db.get_value('Employee', self.employee, 'reports_to')
+			if reports_to:
+				request_for_material_approver = get_employee_user_id(reports_to)
+			else:
+				request_for_material_approver = frappe.db.get_value('Purchase Settings', None, 'request_for_material_approver')
+			if request_for_material_approver:
+				self.request_for_material_approver = request_for_material_approver
 
 	def validate_details_against_type(self):
 		if self.type:

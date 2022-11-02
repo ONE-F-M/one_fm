@@ -1,0 +1,188 @@
+{
+ "charts": [],
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">Purchasing</span><br>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"RFM/RFP\",\"col\":6}},{\"type\":\"card\",\"data\":{\"card_name\":\"Quotation\",\"col\":6}},{\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":6}},{\"type\":\"card\",\"data\":{\"card_name\":\"Item Description Masters\",\"col\":6}}]",
+ "creation": "2022-10-31 20:50:26.833261",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "buying",
+ "idx": 0,
+ "label": "Purchasing",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Quotation",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Request for Quotation",
+   "link_count": 0,
+   "link_to": "Request for Quotation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Quotation From Supplier",
+   "link_count": 0,
+   "link_to": "Quotation From Supplier",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Quotation Comparison Sheet",
+   "link_count": 0,
+   "link_to": "Quotation Comparison Sheet",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Settings",
+   "link_count": 1,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Purchase Settings",
+   "link_count": 0,
+   "link_to": "Purchase Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item Description Masters",
+   "link_count": 5,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Uniform Type",
+   "link_count": 0,
+   "link_to": "Uniform Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Uniform Type Description",
+   "link_count": 0,
+   "link_to": "Uniform Type Description",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Size",
+   "link_count": 0,
+   "link_to": "Size",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Color",
+   "link_count": 0,
+   "link_to": "Color",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Material",
+   "link_count": 0,
+   "link_to": "Material",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "RFM/RFP",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Purchase Dashboard",
+   "link_count": 0,
+   "link_to": "stock-balance-1",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Request for Material",
+   "link_count": 0,
+   "link_to": "Request for Material",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Request for Purchase",
+   "link_count": 0,
+   "link_to": "Request for Purchase",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Document Approval History",
+   "link_count": 0,
+   "link_to": "Purchase Process",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2022-10-31 21:19:34.370940",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Purchasing",
+ "owner": "Administrator",
+ "parent_page": "GSD",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 10.0,
+ "shortcuts": [],
+ "title": "Purchasing"
+}

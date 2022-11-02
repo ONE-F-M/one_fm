@@ -13,6 +13,8 @@ class AccommodationCheckinCheckout(Document):
 	def validate(self):
 		if self.is_new():
 			self.validate_checkin_checkout()
+			if self.type == 'IN' and frappe.db.get_value('Bed', self.bed, 'status') != 'Vacant':
+				frappe.throw(_('Selected Bed {0} is not Vacant !'.format(self.bed)))
 		self.set_accommodation_policy()
 
 	@frappe.whitelist()

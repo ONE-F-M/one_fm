@@ -69,7 +69,7 @@ def get_operations_roles(doctype, txt, searchfield, start, page_len, filters):
 	shift = filters.get('shift')
 	operations_roles = frappe.db.sql("""
 		SELECT DISTINCT post_template
-		FROM `tabOperations Post`
+		FROM `tabOperations Role`
 		WHERE site_shift="{shift}"
 	""".format(shift=shift))
 	return operations_roles

@@ -28,28 +28,24 @@ let make_rfq_dataset_itemsfilter = (frm, item_name, order_by)=>{
 
 
 frappe.ui.form.on('Quotation Comparison Sheet', {
-	onload: (frm)=>{
-		if(frm.doc.request_for_quotation){
-			frm.trigger('get_rfq');
-		}
+	validate: function (frm) {
+		frm.trigger('get_rfq');
 	},
 	refresh: function(frm) {
 		frm.trigger('set_query');
 		set_filter_for_quotation_in_item(frm);
 		set_filter_for_quotation_item_in_item(frm);
 		set_custom_buttons(frm);
+		frm.trigger('get_rfq');
 	},
 	request_for_quotation: function(frm) {
-		frm.trigger('get_rfq');
 		set_quotation_against_rfq(frm);
 		set_custom_buttons(frm)
 		frm.clear_table('items');
+
 	},
 	request_for_purchase: function(frm){
 		set_rfq(frm);
-	},
-	compare_quotation_by: function(frm) {
-		set_quotation_against_rfq(frm);
 	},
 	set_query: (frm)=>{
 		// filter submitted rfq
@@ -64,29 +60,31 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 
 	},
 	get_rfq: (frm)=>{
-		frm.call('get_rfq', {
-				rfq:frm.doc.request_for_quotation,
-				rfm:frm.doc.request_for_material,
-				}).then(
-			res=>{
-				window.rfq_dataset.quotation_items = {};
-				window.rfq_dataset.items_qtyobj = {};
-				window.rfq_dataset.suppliers_dict = {};
-				window.rfq_dataset.items_codes = {};
-				window.rfq_dataset.rfq = res.message.rfq;
-				window.rfq_dataset.rfn = res.message.rfm;
-				res.message.rfq.items.forEach((item, i) => {
-					window.rfq_dataset.items_qtyobj[item.item_name] = item.qty;
-					window.rfq_dataset.quotation_items[item.item_name] = item
-				});
-				res.message.rfm.items.forEach((item, i) => {
-					window.rfq_dataset.items_codes[item.requested_item_name] = item.item_code;
-				});
-				frm.doc.quotations.forEach((item, i) => {
-					window.rfq_dataset.suppliers_dict[item.quotation] = {supplier:item.supplier, name:item.supplier_name}
-				});
-			}
-		)
+		if(frm.doc.request_for_quotation && frm.doc.request_for_material){
+			frm.call('get_rfq', {
+					rfq:frm.doc.request_for_quotation,
+					rfm:frm.doc.request_for_material,
+					}).then(
+				res=>{
+					window.rfq_dataset.quotation_items = {};
+					window.rfq_dataset.items_qtyobj = {};
+					window.rfq_dataset.suppliers_dict = {};
+					window.rfq_dataset.items_codes = {};
+					window.rfq_dataset.rfq = res.message.rfq;
+					window.rfq_dataset.rfn = res.message.rfm;
+					res.message.rfq.items.forEach((item, i) => {
+						window.rfq_dataset.items_qtyobj[item.item_name] = item.qty;
+						window.rfq_dataset.quotation_items[item.item_name] = item
+					});
+					res.message.rfm.items.forEach((item, i) => {
+						window.rfq_dataset.items_codes[item.requested_item_name] = item.item_code;
+					});
+					frm.doc.quotations.forEach((item, i) => {
+						window.rfq_dataset.suppliers_dict[item.quotation] = {supplier:item.supplier, name:item.supplier_name}
+					});
+				}
+			)
+		}
 	}
 });
 
@@ -218,7 +216,7 @@ var set_quotation_item_details = function(frm, item, quotation) {
 
 // SET BUTTONS FOR QUOTATION COMPARISON
 let set_custom_buttons = (frm)=>{
-	if(![2,1].includes(frm.doc.docstatus)){
+	if(!frm.is_new() && ![2,1].includes(frm.doc.docstatus)){
 		// Custom buttons in groups
 		frm.add_custom_button('Best Rate from One Supplier', () => {
 			best_price_same_supplier(frm);
@@ -238,10 +236,6 @@ let set_custom_buttons = (frm)=>{
 		frm.add_custom_button('Custom', () => {
 			custom_filter(frm);
 		}, 'Analyse');
-	} else if(frm.doc.docstatus==1){
-		frm.add_custom_button('Purchase Order', () => {
-			create_purchase_order(frm);
-		}, 'Create');
 	}
 }
 
@@ -433,6 +427,7 @@ let complete_filters_table = (frm, data, selected_by)=>{
 	// process table
 
 	let new_items = [];
+	frm.trigger('get_rfq');
 	let all_items = Object.keys(window.rfq_dataset.quotation_items);
 	let data_items = [];
 	let items_qty = {};

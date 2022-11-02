@@ -11,7 +11,7 @@ def execute():
 def set_posts_planned_for_t4():
 	start_date = cstr(getdate())
 	end_date = add_to_date(start_date, months=12)
-	for post in frappe.db.get_list("Operations Post", {'project': 'Airport', 'site': 'Airport Terminal 4'}, "name"):
+	for post in frappe.db.get_list("Operations Role", {'project': 'Airport', 'site': 'Airport Terminal 4'}, "name"):
 		for date in pd.date_range(start=start_date, end=end_date):
 			if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post.name}):
 				doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post.name})

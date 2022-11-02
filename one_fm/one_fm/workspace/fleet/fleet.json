@@ -1,0 +1,54 @@
+{
+ "charts": [],
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Fleet Management</span>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Fleet\",\"col\":4}}]",
+ "creation": "2022-10-31 21:02:45.195181",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "group-by",
+ "idx": 0,
+ "label": "Fleet",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fleet",
+   "link_count": 2,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Vehicle Leasing Contract",
+   "link_count": 0,
+   "link_to": "Vehicle Leasing Contract",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Vehicle",
+   "link_count": 0,
+   "link_to": "Vehicle",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2022-10-31 21:19:34.517944",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Fleet",
+ "owner": "Administrator",
+ "parent_page": "GSD",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 11.0,
+ "shortcuts": [],
+ "title": "Fleet"
+}

@@ -37,7 +37,7 @@ function apply_post_allocation_filters(frm){
 		frm.set_query("post", "assignments", function() {
 			return {
 				"filters": [
-					["Operations Post", "site_shift", "=", operations_shift],
+					["Operations Role", "site_shift", "=", operations_shift],
 				]
 			}
 		});

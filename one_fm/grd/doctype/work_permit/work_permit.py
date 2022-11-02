@@ -481,7 +481,7 @@ def email_notification_reminder(grd_user,work_permit_list,reminder_number, actio
     """
     message_list=[]
     for work_permit in work_permit_list:
-        page_link = get_url(work_permit.get_url())
+        page_link = get_url(frappe.get_doc("Work Permit", work_permit.name).get_url())
         message = "<a href='{0}'>{1}</a>".format(page_link, work_permit.civil_id)
         message_list.append(message)
 
