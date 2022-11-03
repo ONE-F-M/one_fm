@@ -82,8 +82,6 @@ def get_staff_filters_data():
 
 @frappe.whitelist()
 def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, operations_role=None, designation=None, isOt=None, limit_start=0, limit_page_length=9999):
-	start = time.time()
-
 	master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
 	operations_roles_list = []
 	employees = []
@@ -201,7 +199,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 					schedule.update({'employee_day_off': employee_day_off})
 			schedule_list.append(schedule)
 		formatted_employee_data.update({key[1]: schedule_list})
-
 	master_data.update({'employees_data': formatted_employee_data})
 
 
@@ -229,7 +226,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		post_count_data.update({key[0]: post_list })
 
 	master_data.update({'operations_roles_data': post_count_data})
-	master_data = get_active_employees(start_date, end_date, master_data)
+	#master_data = get_active_employees(start_date, end_date, master_data)
 	return master_data
 
 def get_active_employees(start_date, end_date, master_data):
