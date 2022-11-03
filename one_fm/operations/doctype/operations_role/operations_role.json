@@ -15,7 +15,10 @@
   "shift",
   "site",
   "column_break_9",
-  "project"
+  "project",
+  "requirements_section",
+  "post_certifications",
+  "post_licenses"
  ],
  "fields": [
   {
@@ -79,10 +82,27 @@
    "label": "Project",
    "options": "Project",
    "read_only": 1
+  },
+  {
+   "fieldname": "requirements_section",
+   "fieldtype": "Section Break",
+   "label": "Requirements"
+  },
+  {
+   "fieldname": "post_certifications",
+   "fieldtype": "Table",
+   "label": "Certifications",
+   "options": "Post Certification"
+  },
+  {
+   "fieldname": "post_licenses",
+   "fieldtype": "Table",
+   "label": "Licenses",
+   "options": "Post License"
   }
  ],
  "links": [],
- "modified": "2022-11-01 00:47:14.214405",
+ "modified": "2022-11-02 21:25:15.081361",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Role",
