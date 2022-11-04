@@ -2862,5 +2862,21 @@
   "property": "print_hide",
   "property_type": "Check",
   "value": "0"
+ },
+ {
+  "default_value": null,
+  "doc_type": "Employee",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "marital_status",
+  "is_system_generated": 0,
+  "modified": "2022-11-03 11:30:37.354103",
+  "module": null,
+  "name": "Employee-marital_status-options",
+  "property": "options",
+  "property_type": null,
+  "row_name": null,
+  "value": "\nUnmarried\nMarried\nDivorce\nWidow\nUnknown"
  }
 ]

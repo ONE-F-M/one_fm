@@ -414,7 +414,7 @@
    "fieldname": "marital_status",
    "fieldtype": "Select",
    "label": "Marital Status",
-   "options": "\nSingle\nMarried\nDivorced\nWidowed"
+   "options": "\nUnmarried\nMarried\nDivorce\nWidow\nUnknown"
   },
   {
    "fieldname": "nationality",
@@ -1484,10 +1484,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-10-16 10:08:48.174281",
+ "modified": "2022-11-03 07:24:56.922865",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -1536,6 +1537,7 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "employee_name",
  "track_changes": 1
 }
