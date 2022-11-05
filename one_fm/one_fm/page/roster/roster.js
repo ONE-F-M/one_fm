@@ -10,7 +10,7 @@ frappe.pages['roster'].on_page_load = function (wrapper) {
 	load_js(page);
 
 	$(".mobile-edit").on("click", function () {
-        console.log("update mobile number");
+        ;
     })
 
 
@@ -979,7 +979,7 @@ function bind_events(page) {
 		//on checkbox select change
 	}
 	let d2 = performance.now();
-	console.log("EVENTS TIME", d2 - d1);
+	
 	window.employees_list = [];
 	bind_search_bar_event(page);
 
@@ -1086,7 +1086,7 @@ function get_roster_data(page, isOt) {
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, operations_role, designation, isOt, limit_start, limit_page_length })
 			.then(res => {
 				let a2 = performance.now();
-				console.log("REQ TIME", a2 - a1);
+				// console.log("REQ TIME", a2 - a1);
 				$('#cover-spin').hide();
 				render_roster(res, page, isOt);
 			});
@@ -1137,7 +1137,7 @@ function render_roster(res, page, isOt) {
 		$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(operations_roles_data[operations_role_name][i - 1]["operations_role"])}']`).append(`<td></td>`);
 	}
 	let b2 = performance.now();
-	console.log("Operations Role TIME", b2 - b1);
+	// console.log("Operations Role TIME", b2 - b1);
 
 	let c1 = performance.now();
 
@@ -1297,7 +1297,7 @@ function render_roster(res, page, isOt) {
 
 	}
 	let c2 = performance.now();
-	console.log("EMPLOYEES TIME", c2 - c1);
+	// console.log("EMPLOYEES TIME", c2 - c1);
 
 	// frappe.show_alert({message:__("Roster updated"), indicator:'green'});
 	bind_events(page);
@@ -1320,7 +1320,7 @@ function get_roster_week_data(page, isOt) {
 	let { start_date, end_date } = page;
 	let { project, site, shift, department, operations_role } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	console.log(limit_start, limit_page_length);
+	// console.log(limit_start, limit_page_length);
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_name, project, site, shift, department, operations_role, isOt, limit_start, limit_page_length })
 		.then(res => {
 			let { operations_roles_data, employees_data, total } = res;
@@ -1355,7 +1355,7 @@ function get_roster_week_data(page, isOt) {
 				while (day <= end_date) {
 					// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 					let { date, operations_role, count, highlight } = operations_roles_data[operations_role_name][i];
-					console.log(count, typeof (count));
+					// console.log(count, typeof (count));
 					let pt_count = `
 				<td class="${highlight}">
 					<div class="text-center" data-selectid="${operations_role + "|" + date}">${count}</div>
@@ -1474,7 +1474,7 @@ function get_post_data(page) {
 		// console.log(start_date, end_date, project, site, shift, operations_role,limit_start, limit_page_length);
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 			.then(res => {
-				// console.log(res);
+				
 				$('#cover-spin').hide();
 				page.pagination.total = res.total;
 				let $postMonth = $('.postMonth');
@@ -1563,7 +1563,7 @@ function get_post_week_data(page) {
 	let { limit_start, limit_page_length } = page.pagination;
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 		.then(res => {
-			// console.log(res);
+			
 			page.pagination.total = res.total;
 			let $postWeek = $('.postWeek');
 			let $postWeekbody = $('.postWeek').find('#calenderweekviewtable tbody');
@@ -1684,7 +1684,7 @@ function get_projects(page) {
 				get_sites(page);
 				get_shifts(page);
 				let element = get_wrapper_element().slice(1);
-				console.log("1");
+				// console.log("1");
 				page[element](page);
 			});
 		});
@@ -1721,8 +1721,7 @@ function get_shifts(page) {
 	let { project, site } = page.filters;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts', { employee_id, project, site })
 		.then(res => {
-			console.log(res)
-			console.log("CALLED AFTER AJAX")
+			
 			let parent = $('[data-page-route="roster"] #rosteringshiftselect');
 			let shift_data = [{ 'id': '', 'text': 'Select Shift' }];
 			res.forEach(element => {
@@ -1801,12 +1800,12 @@ function get_designations(page){
 			$(parent).on('select2:select', function (e) {
 				page.filters.designation = $(this).val();
 				let element = get_wrapper_element().slice(1);
-				console.log("6");
+				
 				page[element](page);
 			});
 		})
 		.catch(e => {
-			console.log(e);
+			;
 		})
 }
 
@@ -2382,7 +2381,7 @@ function setup_staff_filters(page) {
 		cur_page.page.page.filters = filters;
 		cur_page.page.page.pagination = pagination;
 	}
-	console.log(page);
+	
 }
 
 function setup_staff_filters_data() {
@@ -2540,7 +2539,7 @@ function staff_edit_dialog() {
 
 function update_staff_view() {
 	frappe.realtime.on("staff_view", function (output) {
-		console.log(output, typeof (output));
+		
 		render_staff($(".layoutSidenav_content").attr("data-view"));
 	});
 }
@@ -2701,7 +2700,7 @@ function displayWeekCalendar(weekCalendarSettings, page) {
 	let endcalendarmonth = weekCalendarSettings.date.endOf("week").format("MMM");
 	let calendaryear = weekCalendarSettings.date.format("YYYY");
 	let startofday, endofday;
-	console.log(page.start_date, page.end_date);
+	
 	if (page.start_date) {
 		startofday = moment(page.start_date, 'YYYY-MM-DD').startOf("week").date();
 		endofday = moment(page.start_date, 'YYYY-MM-DD').endOf("week").date();
@@ -2972,7 +2971,7 @@ function schedule_change_post(page) {
 					let element = get_wrapper_element().slice(1);
 					update_roster_view(element, page);
 				}).catch(e => {
-					console.log(e);
+					
 					$('#cover-spin').hide();
 				});
 		}
@@ -2983,7 +2982,7 @@ function update_roster_view(element, page) {
 	page[element](page);
 	frappe.realtime.on("roster_view", function (output) {
 		// message = JSON.parse(output);
-		console.log(output);
+		
 		page[element](page);
 	});
 }
@@ -3002,7 +3001,7 @@ function paginateTable(page) {
 		var children = listElement.children();
 		let wrapper_element = $(get_wrapper_element());
 		var pager = wrapper_element.find('.pager');
-		console.log(listElement, children, pager);
+		
 		if (typeof settings.childSelector != "undefined") {
 			children = listElement.find(settings.childSelector);
 		}
@@ -3046,7 +3045,7 @@ function paginateTable(page) {
 		pager.find('li .page_link').click(function () {
 			var clickedPage = $(this).html().valueOf() - 1;
 			let limit_start = ((clickedPage + 1) * 100) - 100;
-			console.log(clickedPage, limit_start);
+			
 			page.pagination.limit_start = limit_start;
 			// goTo(clickedPage,perPage);
 			let element = get_wrapper_element().slice(1);
@@ -3174,7 +3173,7 @@ function dayoff(page) {
 					args["repeat_freq"] = repeat_freq;
 				}
 			}
-			console.log(args);
+			// console.log(args);
 			frappe.xcall('one_fm.one_fm.page.roster.roster.dayoff', args)
 				.then(res => {
 					d.hide();
@@ -3182,7 +3181,7 @@ function dayoff(page) {
 					let element = get_wrapper_element().slice(1);
 					page[element](page);
 				}).catch(e => {
-					console.log(e);
+					;
 					$('#cover-spin').hide();
 				});
 		}
@@ -3242,7 +3241,7 @@ function editMobileNumber(){
         ],
         primary_action_label: 'Submit',
         primary_action(values) {
-            console.log(values);
+            
             d.hide();
         }
     });
