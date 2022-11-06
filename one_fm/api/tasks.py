@@ -359,10 +359,12 @@ def get_action_user(employee, shift):
 	"""
 	action_user = None
 	Role = None
+
 	operations_shift = frappe.get_doc("Operations Shift", shift)
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
 	project = frappe.get_doc("Project", operations_site.project)
 	report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
+	current_user = frappe.get_value("Employee", {"name":employee},["user_id")
 
 	if report_to:
 		action_user = get_employee_user_id(report_to)
@@ -370,20 +372,20 @@ def get_action_user(employee, shift):
 	else:
 		if operations_shift.supervisor:
 			shift_supervisor = get_employee_user_id(operations_shift.supervisor)
-			if shift_supervisor != operations_shift.owner:
+			if shift_supervisor != operations_shift.owner and shift_supervisor != current_user:
 				action_user = shift_supervisor
 				Role = "Shift Supervisor"
 
 		elif operations_site.account_supervisor:
 			site_supervisor = get_employee_user_id(operations_site.account_supervisor)
-			if site_supervisor != operations_shift.owner:
+			if site_supervisor != operations_shift.owner and site_supervisor != current_user:
 				action_user = site_supervisor
 				Role = "Site Supervisor"
 
 		elif operations_site.project:
 			if project.account_manager:
 				project_manager = get_employee_user_id(project.account_manager)
-				if project_manager != operations_shift.owner:
+				if project_manager != operations_shift.owner and project_manager != current_user:
 					action_user = project_manager
 					Role = "Project Manager"
 
