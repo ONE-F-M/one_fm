@@ -15,6 +15,9 @@ def execute():
     # delete operations post in custom field
     frappe.db.sql("""DELETE FROM `tabCustom Field` WHERE dt="Operations Post" """)
 
-    # delete operations post in custom docper
+    # delete operations post in custom docperm
     frappe.db.sql("""DELETE FROM `tabCustom DocPerm` WHERE parent="Operations Post" """)
+
+    # delete operations role custom fields
+    frappe.db.sql("""DELETE FROM `tabCustom Field` WHERE parent="Operations Role" """)
     frappe.db.commit()
