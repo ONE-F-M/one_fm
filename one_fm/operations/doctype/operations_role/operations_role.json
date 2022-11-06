@@ -16,17 +16,14 @@
   "site",
   "column_break_9",
   "project",
-  "requirements_section",
-  "post_certifications",
-  "post_licenses"
+  "requirements_section"
  ],
  "fields": [
   {
    "fieldname": "post_name",
    "fieldtype": "Data",
    "label": "Role Name",
-   "reqd": 1,
-   "unique": 1
+   "reqd": 1
   },
   {
    "fieldname": "post_abbrv",
@@ -87,22 +84,10 @@
    "fieldname": "requirements_section",
    "fieldtype": "Section Break",
    "label": "Requirements"
-  },
-  {
-   "fieldname": "post_certifications",
-   "fieldtype": "Table",
-   "label": "Certifications",
-   "options": "Post Certification"
-  },
-  {
-   "fieldname": "post_licenses",
-   "fieldtype": "Table",
-   "label": "Licenses",
-   "options": "Post License"
   }
  ],
  "links": [],
- "modified": "2022-11-02 21:25:15.081361",
+ "modified": "2022-11-06 12:46:01.093018",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Role",
