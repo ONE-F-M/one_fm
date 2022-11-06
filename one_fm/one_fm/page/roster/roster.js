@@ -1085,8 +1085,7 @@ function get_roster_data(page, isOt) {
 		$('#cover-spin').show(0);
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, operations_role, designation, isOt, limit_start, limit_page_length })
 			.then(res => {
-				let a2 = performance.now();
-				// console.log("REQ TIME", a2 - a1);
+				
 				$('#cover-spin').hide();
 				render_roster(res, page, isOt);
 			});
