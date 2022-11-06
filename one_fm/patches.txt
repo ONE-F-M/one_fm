@@ -14,3 +14,5 @@ one_fm.patches.v1_0.update_workflow_state #2022-08-11
 one_fm.patches.v1_0.remove_any_nationality
 one_fm.patches.v14_0.fix_customizations
 one_fm.patches.v14_0.job_applicant_marital_status_list_updated
+one_fm.patches.v14_0.onboard_employee_marital_status_list_updated
+one_fm.patches.v14_0.employee_marital_status_list_updated

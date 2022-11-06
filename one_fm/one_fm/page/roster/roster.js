@@ -1067,7 +1067,6 @@ function bind_search_bar_event(page) {
 // Get data for Roster monthly view and render it
 // isOt Parms is passed for Roster OT
 function get_roster_data(page, isOt) {
-	let a1 = performance.now();
 	classgrt = [];
 	classgrtw = [];
 	let employee_search_name = '';
@@ -1085,7 +1084,6 @@ function get_roster_data(page, isOt) {
 		$('#cover-spin').show(0);
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, operations_role, designation, isOt, limit_start, limit_page_length })
 			.then(res => {
-				
 				$('#cover-spin').hide();
 				render_roster(res, page, isOt);
 			});

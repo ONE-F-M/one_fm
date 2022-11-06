@@ -1,8 +1,8 @@
 ## One Fm
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Frappe-12.7.1-blue?style=for-the-badge&logo=frappe">
-  <img src="https://img.shields.io/badge/ERPNext-12.0.0-green?style=for-the-badge&logo=erpnext">
+  <img src="https://img.shields.io/badge/Frappe-14.XX.X-blue?style=for-the-badge&logo=frappe">
+  <img src="https://img.shields.io/badge/ERPNext-14.XX.X-green?style=for-the-badge&logo=erpnext">
   <br/>
 </p>
 
@@ -15,11 +15,11 @@ One Facilities Management is a leader in the fields of commercial automation and
 
 #### Requirements
 
-- Python 3.7 or above
-- MariaDB
-- Node V10
+- Python 3.10 or above
+- MariaDB 10.6 or above
+- Node V16
 - Redis
-- Local installion of Frappe and ERPNext
+- Local installation of Frappe and ERPNext
 
 ### Package installation
 Execute the following command on your terminal in the frapp-bench directory to get and install OneFm app

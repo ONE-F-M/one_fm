@@ -564,7 +564,7 @@
    "fieldname": "marital_status",
    "fieldtype": "Select",
    "label": "Marital Status",
-   "options": "\nSingle\nMarried\nDivorced\nWidowed",
+   "options": "\nUnmarried\nMarried\nDivorce\nWidow\nUnknown",
    "read_only": 1
   },
   {
@@ -605,10 +605,11 @@
   }
  ],
  "links": [],
- "modified": "2020-08-13 08:49:22.354054",
+ "modified": "2022-11-03 07:20:15.600923",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "PAM Visa",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -662,5 +663,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
