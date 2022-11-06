@@ -364,7 +364,7 @@ def get_action_user(employee, shift):
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
 	project = frappe.get_doc("Project", operations_site.project)
 	report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
-	current_user = frappe.get_value("Employee", {"name":employee},["user_id")
+	current_user = frappe.get_value("Employee", {"name":employee},["user_id"])
 
 	if report_to:
 		action_user = get_employee_user_id(report_to)
