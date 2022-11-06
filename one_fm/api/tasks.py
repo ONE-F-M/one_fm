@@ -836,12 +836,22 @@ def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Employee Schedule",
 		{"employee": doc.employee, "date": doc.attendance_date, "roster_type": "Over-Time", "day_off_ot": True}):
 		condition += ' day_off_ot="1"'
+	
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
-		name, site, project, shift, operations_role, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment",
-			{"employee": doc.employee, "start_date": doc.attendance_date},
-			['name', "site", "project", "shift", "operations_role", "start_datetime","end_datetime", "roster_type"])
-		condition += ' project="{project}", site="{site}", operations_shift="{shift}", operations_role="{operations_role}", roster_type="{roster_type}"'.format(
-			project=project, site=site, shift=shift, operations_role=operations_role, roster_type=roster_type)
+		shift_assignment = frappe.get_list("Shift Assignment",{"employee": doc.employee, "start_date": doc.attendance_date},["name", "site", "project", "shift", "shift_type", "operations_role", "start_datetime","end_datetime", "roster_type"])
+
+		shift_data = shift_assignment[0]
+		condition += " shift_assignment='{shift_assignment[0].name}'".format(shift_assignment=shift_assignment)
+		
+		for key in shift_assignment[0]:
+			if shift_data[key] and key not in ["name","start_datetime","end_datetime", "shift", "shift_type"]: 
+				condition += ", {key}='{value}'".format(key= key,value=shift_data[key])
+			if key == "shift" and shift_data["shift"]:
+				condition += ", operations_shift='{shift}'".format(shift=shift_data["shift"])
+			if key == "shift_type" and shift_data["shift_type"]:
+				print(shift_data["shift_type"])
+				condition += ", shift='{shift_type}'".format(shift_type=shift_data["shift_type"])
+
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
 			condition += f', in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}"'
 	if condition:
