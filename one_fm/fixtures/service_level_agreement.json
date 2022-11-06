@@ -12,7 +12,7 @@
   "entity": null,
   "entity_type": "",
   "holiday_list": "Default Company Holiday List 2022",
-  "modified": "2022-11-06 10:10:10.057104",
+  "modified": "2022-11-06 12:10:17.091883",
   "name": "SLA-Issue-Issue Agreement",
   "pause_sla_on": [
    {
@@ -38,6 +38,24 @@
     "parentfield": "priorities",
     "parenttype": "Service Level Agreement",
     "priority": "Medium",
+    "resolution_time": 3600.0,
+    "response_time": 3600.0
+   },
+   {
+    "default_priority": 0,
+    "parent": "SLA-Issue-Issue Agreement",
+    "parentfield": "priorities",
+    "parenttype": "Service Level Agreement",
+    "priority": "Low",
+    "resolution_time": 3600.0,
+    "response_time": 3600.0
+   },
+   {
+    "default_priority": 0,
+    "parent": "SLA-Issue-Issue Agreement",
+    "parentfield": "priorities",
+    "parenttype": "Service Level Agreement",
+    "priority": "Urgent",
     "resolution_time": 3600.0,
     "response_time": 3600.0
    }

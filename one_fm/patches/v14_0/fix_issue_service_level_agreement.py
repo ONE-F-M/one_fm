@@ -8,8 +8,13 @@ def execute():
               "document_type": "Issue",
           })
     if sla_list:
-        doc.service_level_agreement = sla_list[0].name
         frappe.db.sql(f"""
-        UPDATE tabIssue SET service_level_agreement = "{sla_list[0].name}
+        UPDATE tabIssue SET service_level_agreement = "{sla_list[0].name}"
         """)
-        frappe.db.commit()
+
+    # delete operations post in custom field
+    frappe.db.sql("""DELETE FROM `tabCustom Field` WHERE dt="Operations Post" """)
+
+    # delete operations post in custom docper
+    frappe.db.sql("""DELETE FROM `tabCustom DocPerm` WHERE parent="Operations Post" """)
+    frappe.db.commit()
