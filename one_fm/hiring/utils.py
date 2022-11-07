@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import frappe, json, pycountry, random
 from frappe.utils import (
     get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form,
-    get_first_day, get_last_day
+    get_first_day, get_last_day, now
 )
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
@@ -18,6 +18,8 @@ from one_fm.one_fm.doctype.erf.erf import (
     get_description_by_performance_profile, set_erf_skills_in_job_opening, set_erf_language_in_job_opening
 )
 from one_fm.denomyn import get_denomyn
+import json
+from six import string_types
 
 
 @frappe.whitelist()
@@ -772,11 +774,13 @@ def get_interview_question_set(interview_round):
 	return frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
 
 @frappe.whitelist()
-def get_interview_skill_and_question_set(interview_round, interviewer, interview_name):
-	feedback_exists = frappe.db.exists(
-		"Interview Feedback",
-		{"interviewer": interviewer, "interview": interview_name, "docstatus": 0},
-	)
+def get_interview_skill_and_question_set(interview_round, interviewer=False, interview_name=False):
+	feedback_exists = False
+	if interviewer and interview_name:
+		feedback_exists = frappe.db.exists(
+			"Interview Feedback",
+			{"interviewer": interviewer, "interview": interview_name, "docstatus": 0},
+		)
 	if feedback_exists:
 		interview_feedback = frappe.get_doc('Interview Feedback', feedback_exists)
 		return interview_feedback.interview_question_assessment, interview_feedback.skill_assessment, feedback_exists
@@ -786,11 +790,29 @@ def get_interview_skill_and_question_set(interview_round, interviewer, interview
 		return question, skill, False
 
 @frappe.whitelist()
+def create_interview_and_feedback(data, interview_round, interviewer, job_applicant, method='save', feedback_exists=False, interview_name=False):
+	if not feedback_exists:
+		interview = frappe.new_doc('Interview')
+		interview.interview_round = interview_round
+		interview.job_applicant = job_applicant
+		interview.scheduled_on = today()
+		interview.from_time = now()
+		interview.to_time = now()
+		interview.append('interview_details', {'interviewer': interviewer})
+		interview.save(ignore_permissions=True)
+		frappe.db.set_value('Job Applicant', job_applicant, 'bulk_interview', interview.name)
+		interview_name = interview.name
+	if interview_name:
+		create_interview_feedback(data, interview_name, interviewer, job_applicant, method, feedback_exists)
+		if method == 'submit':
+			if isinstance(data, string_types):
+				data = frappe._dict(json.loads(data))
+			interview = frappe.get_doc('Interview', interview_name)
+			interview.status = data.result
+			interview.submit()
+
+@frappe.whitelist()
 def create_interview_feedback(data, interview_name, interviewer, job_applicant, method='save', feedback_exists=False):
-	import json
-
-	from six import string_types
-
 	if isinstance(data, string_types):
 		data = frappe._dict(json.loads(data))
 

@@ -143,6 +143,8 @@ class ERF(Document):
 	def on_submit(self):
 		self.validate_total_required_candidates()
 		self.validate_submit_to_hr()
+		if not self.hiring_method:
+			frappe.throw(_("Please set Hiring Method in HR section"))
 		self.erf_finalized = today()
 		self.validate_recruiter_assigned()
 		self.notify_approver()

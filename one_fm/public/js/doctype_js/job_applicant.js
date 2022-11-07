@@ -35,6 +35,22 @@ frappe.ui.form.on('Job Applicant', {
 		set_field_properties_on_agency_applying(frm);
 		set_mandatory_fields_for_current_employment(frm);
 
+		if(frm.doc.one_fm_hiring_method == 'Bulk Recruitment' && frm.doc.interview_round){
+			if(frm.doc.bulk_interview){
+				frappe.db.get_value('Interview', frm.doc.bulk_interview, 'docstatus', function(r) {
+					if(r.docstatus == 0){
+						frm.add_custom_button(__('Submit Interview and Feedback'), function() {
+							frm.events.submit_interview_and_feedback(frm)
+						});
+					}
+				})
+			}
+			else{
+				frm.add_custom_button(__('Submit Interview and Feedback'), function() {
+					frm.events.submit_interview_and_feedback(frm)
+				});
+			}
+		}
 
 		if(!frm.doc.__islocal){
 			frm.set_df_property('one_fm_erf', 'read_only', true);
@@ -496,9 +512,175 @@ frappe.ui.form.on('Job Applicant', {
 			}
 		);
 
-	}
+	},
+	submit_interview_and_feedback: function(frm) {
+		var args = {interview_round: frm.doc.interview_round}
+		if(frm.doc.bulk_interview){
+			args['interviewer'] = frappe.session.user
+			args['interview_name'] = frm.doc.bulk_interview
+		}
+		frappe.call({
+			method: 'one_fm.hiring.utils.get_interview_skill_and_question_set',
+			args: args,
+			callback: function (r) {
+				if(r.message){
+					frm.events.show_custom_feedback_dialog(frm, r.message[1], r.message[0], r.message[2]);
+				}
+				frm.refresh();
+			},
+			freeze: true,
+			freeze_message: __("Fecth interview details..!")
+		});
+	},
+	show_custom_feedback_dialog: function (frm, data, question_data, feedback_exists) {
+		let fields = frm.events.get_fields_for_feedback();
+		fields.push({
+			fieldtype: 'Data',
+			fieldname: 'parent',
+			hidden: 1,
+			label: __('Parent')
+		})
+		fields.push({
+			fieldtype: 'Data',
+			fieldname: 'name',
+			hidden: 1,
+			label: __('Name')
+		})
+		var dialog_fields = [
+			{
+				fieldname: 'skill_set',
+				fieldtype: 'Table',
+				label: __('Skill Assessment'),
+				cannot_add_rows: false,
+				in_editable_grid: true,
+				reqd: 1,
+				fields: fields,
+				data: data
+			}
+		]
+		if(question_data && question_data.length > 0){
+			let question_fields = frm.events.get_fields_for_questions();
+			dialog_fields.push({
+				fieldname: 'questions',
+				fieldtype: 'Table',
+				label: __('Question Assessment'),
+				cannot_add_rows: false,
+				in_editable_grid: true,
+				reqd: 1,
+				fields: question_fields,
+				data: question_data
+			})
+		}
+		dialog_fields.push(
+			{
+				fieldname: 'result',
+				fieldtype: 'Select',
+				options: ['', 'Cleared', 'Rejected'],
+				label: __('Result')
+			},
+			{
+				fieldname: 'feedback',
+				fieldtype: 'Small Text',
+				label: __('Feedback')
+			}
+		)
 
+
+		let d = new frappe.ui.Dialog({
+			title: __('Submit Feedback'),
+			fields: dialog_fields,
+			size: 'large',
+			minimizable: true,
+			primary_action_label: __("Save"),
+			primary_action: function(values) {
+				create_interview_feedback(frm, values, feedback_exists, 'save');
+				d.hide();
+			},
+			secondary_action_label: __("Save and Submit"),
+			secondary_action: function() {
+				create_interview_feedback(frm, d.get_values(), feedback_exists, 'submit');
+				d.hide();
+			}
+		});
+		d.show();
+	},
+
+	get_fields_for_questions: function () {
+		return [{
+			fieldtype: 'Data',
+			fieldname: 'questions',
+			in_list_view: 1,
+			label: __('Question'),
+		}, {
+			fieldtype: 'Data',
+			fieldname: 'answer',
+			label: __('Answer'),
+		}, {
+			fieldtype: 'Float',
+			fieldname: 'weight',
+			label: __('Weight'),
+		}, {
+			fieldtype: 'Data',
+			fieldname: 'applicant_answer',
+			label: __('Applicant Answer'),
+			in_list_view: 1,
+			reqd: 1,
+		}, {
+			fieldtype: 'Float',
+			fieldname: 'score',
+			label: __('Score'),
+			in_list_view: 1,
+			reqd: 1,
+		}, {
+			fieldtype: 'Data',
+			fieldname: 'parent',
+			hidden: 1,
+			label: __('Parent')
+		}, {
+			fieldtype: 'Data',
+			fieldname: 'name',
+			hidden: 1,
+			label: __('Name')
+		}];
+
+	},
+	get_fields_for_feedback: function () {
+		return [{
+			fieldtype: 'Link',
+			fieldname: 'skill',
+			options: 'Skill',
+			in_list_view: 1,
+			label: __('Skill')
+		}, {
+			fieldtype: 'Rating',
+			fieldname: 'rating',
+			label: __('Rating'),
+			in_list_view: 1,
+			reqd: 1,
+		}];
+	},
 });
+
+var create_interview_feedback = function(frm, values, feedback_exists, save_submit) {
+	var args = {
+		data: values,
+		interview_round: frm.doc.interview_round,
+		interviewer: frappe.session.user,
+		job_applicant: frm.doc.name,
+		method: save_submit
+	}
+	if(feedback_exists){
+		args['feedback_exists'] = feedback_exists
+		args['interview_name'] = frm.doc.bulk_interview
+	}
+	frappe.call({
+		method: 'one_fm.hiring.utils.create_interview_and_feedback',
+		args: args
+	}).then(() => {
+		frm.reload_doc();
+	});
+}
+
 
 var set_grd_field_properties = function(frm){
 	// Hide GRD section if transferable not selected yet
@@ -1034,7 +1216,6 @@ var set_erf_to_applicant = function(frm) {
 					set_pam_file_number_and_designation(frm,erf);
 					set_uniform_fields(frm, erf);
 					set_job_opening_form_erf(frm, erf);
-					set_erf_basic_details(frm, erf);
 					set_work_details_section(frm, erf);
 					validate_date_of_birth(frm, erf.minimum_age_required);
 				}
@@ -1088,10 +1269,6 @@ var set_work_details_section = function(frm, erf) {
 		frm.set_df_property('one_fm_type_of_driving_license', 'reqd', erf.driving_license_required);
 		frm.set_df_property('one_fm_type_of_driving_license', 'hidden', !erf.driving_license_required);
 	}
-};
-
-var set_erf_basic_details = function(frm, erf) {
-	frm.set_value('one_fm_hiring_method', erf.hiring_method);
 };
 
 var set_job_opening_to_applicant = function(frm) {
