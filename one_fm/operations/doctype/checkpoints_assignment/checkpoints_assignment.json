@@ -47,7 +47,7 @@
    "fieldname": "post",
    "fieldtype": "Link",
    "label": "Post",
-   "options": "Operations Role"
+   "options": "Operations Post"
   },
   {
    "fieldname": "checkpoint_form_template",
