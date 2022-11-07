@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:{date}/{employee}/{roster_type}",
+ "autoname": "format:{date}_{employee}-{roster_type}",
  "creation": "2020-05-12 15:44:18.133872",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -149,10 +149,11 @@
   }
  ],
  "links": [],
- "modified": "2022-08-25 08:51:25.888681",
+ "modified": "2022-11-07 19:51:12.038169",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -171,5 +172,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
