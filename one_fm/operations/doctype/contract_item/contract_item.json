@@ -23,8 +23,10 @@
   "item_name",
   "shift_hours",
   "gender",
+  "rate_type",
+  "full_month_of_days_off",
+  "days_off_type",
   "days_off",
-  "days",
   "overtime_rate",
   "site"
  ],
@@ -85,19 +87,12 @@
    "options": "Hourly\nMonthly"
   },
   {
-   "depends_on": "eval:doc.subitem_group=='Service'",
+   "depends_on": "eval:doc.days_off_type",
    "fetch_from": "item_price.days_off",
    "fieldname": "days_off",
    "fieldtype": "Select",
-   "label": "Weekly Days Off",
-   "options": "0\n1\n2\n3\n4\n5\n6",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:doc.subitem_group=='Service'",
-   "fieldname": "days",
-   "fieldtype": "Int",
-   "label": "Days"
+   "label": "Days Off",
+   "options": "0\n1\n2\n3\n4\n5\n6"
   },
   {
    "default": "0",
@@ -204,11 +199,33 @@
    "in_list_view": 1,
    "label": "Count",
    "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.subitem_group=='Service'",
+   "fieldname": "rate_type",
+   "fieldtype": "Select",
+   "label": "Rate Type",
+   "options": "Monthly\nHourly"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.rate_type=='Monthly'",
+   "fieldname": "full_month_of_days_off",
+   "fieldtype": "Check",
+   "label": "Full Month of Days Off",
+   "mandatory_depends_on": "eval:doc.rate_type=='Montly'"
+  },
+  {
+   "depends_on": "eval:doc.full_month_of_days_off",
+   "fieldname": "days_off_type",
+   "fieldtype": "Select",
+   "label": "Days off Type",
+   "options": "Weekly\nMonthly"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2022-09-13 20:04:48.408583",
+ "modified": "2022-11-07 16:42:17.778873",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",
@@ -217,5 +234,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

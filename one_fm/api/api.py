@@ -24,7 +24,7 @@ def _one_fm():
     print(frappe.local.lang)
 
 def set_posts_active():
-    posts = frappe.get_all("Operations Role", {"site": "Head Office"})
+    posts = frappe.get_all("Operations Post", {"site": "Head Office"})
     print(posts)
     for post in posts:
         for date in pd.date_range(start="2021-03-01", end="2021-03-31"):
@@ -103,9 +103,7 @@ def get_user_roles():
 def rename_posts():
     sites = frappe.get_all("Operations Site")
     for site in sites:
-        print(site)
-        posts = frappe.get_all("Operations Role", {"site": site.name}, ["name", "post_name", "gender", "site_shift"])
-        print(posts)
+        posts = frappe.get_all("Operations Post", {"site": site.name}, ["name", "post_name", "gender", "site_shift"])
         frappe.enqueue(rename_post, posts=posts, is_async=True, queue="long")
 
 
@@ -114,7 +112,7 @@ def rename_post(posts):
         new_name = "{post_name}-{gender}|{site_shift}".format(post_name=post.post_name, gender=post.gender, site_shift=post.site_shift)
         print(new_name)
         try:
-            rename_doc("Operations Role", post.name, new_name, force=True)
+            rename_doc("Operations Post", post.name, new_name, force=True)
         except Exception as e:
             print(frappe.get_traceback())
 

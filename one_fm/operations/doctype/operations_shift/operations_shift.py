@@ -49,28 +49,28 @@ def create_posts(data, site_shift, site, project=None):
 		post_location = data.post_location
 
 		for post_name in post_names:
-			operations_role = frappe.new_doc("Operations Role")
-			operations_role.post_name = post_name["post_name"]
-			operations_role.gender = gender
-			operations_role.post_location = post_location
-			operations_role.post_description = post_description
-			operations_role.post_template = post_template
-			operations_role.sale_item = sale_item
-			operations_role.site_shift = site_shift
-			operations_role.site = site
-			operations_role.project = project
+			operations_post = frappe.new_doc("Operations Post")
+			operations_post.post_name = post_name["post_name"]
+			operations_post.gender = gender
+			operations_post.post_location = post_location
+			operations_post.post_description = post_description
+			operations_post.post_template = post_template
+			operations_post.sale_item = sale_item
+			operations_post.site_shift = site_shift
+			operations_post.site = site
+			operations_post.project = project
 			for designation in designations:
-				operations_role.append("designations",{
+				operations_post.append("designations",{
 					"designation": designation["designation"],
 					"primary": designation["primary"] if "primary" in designation else 0
 				})
 			for skill in skills:
-				operations_role.append("skills",{
+				operations_post.append("skills",{
 					"skill": skill["skill"],
 					"minimum_proficiency_required": skill["minimum_proficiency_required"]
 				})
-				
-			operations_role.save()
+
+			operations_post.save()
 
 		frappe.db.commit()
 		frappe.msgprint(_("Posts created successfully."))
