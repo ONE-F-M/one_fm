@@ -1655,7 +1655,7 @@ function setup_filters(page) {
 			get_sites(page);
 			get_shifts(page);
 			get_departments(page);
-			get_operations_roles(page);
+			get_operations_posts(page);
 			get_designations(page);
 		})
 		.then(r => {
@@ -1741,9 +1741,9 @@ function get_shifts(page) {
 		});
 }
 
-function get_operations_roles(page) {
+function get_operations_posts(page) {
 	let { employee_id, shift } = page;
-	frappe.xcall('one_fm.api.mobile.roster.get_operations_roles', { employee_id, shift })
+	frappe.xcall('one_fm.api.mobile.roster.get_operations_posts', { employee_id, shift })
 		.then(res => {
 			let parent = $('[data-page-route="roster"] #rosteringpostselect');
 			let operations_role_data = [];
@@ -2892,9 +2892,9 @@ function schedule_change_post(page) {
 			{ 'label': 'Site', 'fieldname': 'site', 'fieldtype': 'Link', 'options': 'Operations Site', 'read_only': 1 },
 			{ 'label': 'Project', 'fieldname': 'project', 'fieldtype': 'Link', 'options': 'Project', 'read_only': 1 },
 			{
-				'label': 'Choose Operations Role', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'reqd': 1, 'options': 'Operations Role', get_query: function () {
+				'label': 'Choose Operations Post', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'reqd': 1, 'options': 'Operations Role', get_query: function () {
 					return {
-						query: "one_fm.one_fm.page.roster.roster.get_filtered_operations_roles",
+						query: "one_fm.one_fm.page.roster.roster.get_filtered_operations_role",
 						filters: { "shift": d.get_value('shift') }
 					};
 				}

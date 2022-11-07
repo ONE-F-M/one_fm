@@ -10,7 +10,7 @@ frappe.ui.form.on('Employee Schedule', {
 		if(shift){
 			frm.set_query("operations_role", function() {
 				return {
-					query: "one_fm.operations.doctype.employee_schedule.employee_schedule.get_operations_roles",
+					query: "one_fm.operations.doctype.employee_schedule.employee_schedule.get_operations_posts",
 					filters: {shift}
 				};
 			});
