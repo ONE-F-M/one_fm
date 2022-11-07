@@ -18,7 +18,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Post",
-   "options": "Operations Role"
+   "options": "Operations Post"
   },
   {
    "fieldname": "employee",

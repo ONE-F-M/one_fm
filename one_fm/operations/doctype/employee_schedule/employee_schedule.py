@@ -65,11 +65,11 @@ class EmployeeSchedule(Document):
 		return get_week_start_end(datestr)
 
 @frappe.whitelist()
-def get_operations_roles(doctype, txt, searchfield, start, page_len, filters):
+def get_operations_posts(doctype, txt, searchfield, start, page_len, filters):
 	shift = filters.get('shift')
 	operations_roles = frappe.db.sql("""
-		SELECT DISTINCT post_template
-		FROM `tabOperations Role`
+		SELECT DISTINCT name
+		FROM `tabOperations Post`
 		WHERE site_shift="{shift}"
 	""".format(shift=shift))
 	return operations_roles
