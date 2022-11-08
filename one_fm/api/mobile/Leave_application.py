@@ -224,8 +224,10 @@ def notify_leave_approver(doc):
             return
         email_template = frappe.get_doc("Email Template", template)
         message = frappe.render_template(email_template.response_html, args)
-        if doc.proof_document:
-            message+=f"<hr><img src='{doc.proof_document}' height='400'/>"
+        if doc.proof_documents:
+            proof_doc = doc.proof_documents
+            for p in proof_doc:
+                message+=f"<hr><img src='{p.attachments}' height='400'/>"
 
         # attachments = get_attachment(doc) // when attachment needed
 
