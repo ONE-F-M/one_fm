@@ -8,7 +8,6 @@ from one_fm.api.api import upload_file
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
 from one_fm.api.v1.roster import get_current_shift
-from one_fm.api.tasks import get_action_user
 from frappe.utils import cint, cstr, getdate
 from one_fm.utils import check_if_backdate_allowed
 
@@ -269,26 +268,27 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
             return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
 
-        attachment_path = None
+        attachment_paths = []
         if proof_document_required_for_leave_type(leave_type):
             proof_doc_json = json.loads(proof_document)
-            attachment = proof_doc_json['attachment']
-            attachment_name = proof_doc_json['attachment_name']
-            if not attachment or not attachment_name:
-                return response('proof_document key requires attachment and attachment_name', {}, 400)
+            for proof_doc in proof_doc_json:
+                attachment = proof_doc['attachment']
+                attachment_name = proof_doc['attachment_name']
+                if not attachment or not attachment_name:
+                    return response('proof_document key requires attachment and attachment_name', {}, 400)
 
-            file_ext = "." + attachment_name.split(".")[-1]
-            content = base64.b64decode(attachment)
-            filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
+                file_ext = "." + attachment_name.split(".")[-1]
+                content = base64.b64decode(attachment)
+                filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
 
-            Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
-            OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
-            with open(OUTPUT_FILE_PATH, "wb") as fh:
-                fh.write(content)
+                Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
+                with open(OUTPUT_FILE_PATH, "wb") as fh:
+                    fh.write(content)
 
-            attachment_path = f"/files/leave-application/{employee_doc.user_id}/{filename}"
-
-        doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_path)
+                attachment_paths.append(f"/files/leave-application/{employee_doc.user_id}/{filename}")
+       
+        doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_paths)
 
         # if attachment_path:
         #     upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
@@ -299,7 +299,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         frappe.log_error(error, 'Leave API')
         return response("Internal Server Error", 500, None, error)
 
-def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachment_path = None) -> dict:
+def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachment_paths = []) -> dict:
 
     leave = frappe.new_doc("Leave Application")
     leave.employee=employee
@@ -310,8 +310,9 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.follow_via_email=1
     leave.status=status
     leave.leave_approver = leave_approver
-    if attachment_path:
-        leave.proof_document = frappe.utils.get_url()+attachment_path
+    if len(attachment_paths)>0:
+        for attachment_path in attachment_paths:
+            leave.append("proof_documents",{"attachments": frappe.utils.get_url()+attachment_path})
     leave.save(ignore_permissions=True)
     return leave.as_dict()
 
@@ -329,7 +330,11 @@ def fetch_leave_approver(employee: str) -> str:
     """
 
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-    approver, Role = get_action_user(employee,employee_shift[0].shift)
+    if employee_shift[0].shift:
+        approver, Role = get_action_user(employee,employee_shift[0].shift)
+    else:
+        reports_to = frappe.get_value("Employee", employee, ["reports_to"])
+        approver = frappe.get_value("Employee", reports_to, ["user_id"])
 
     return approver
 
