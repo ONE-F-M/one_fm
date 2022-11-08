@@ -314,6 +314,7 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
         for attachment_path in attachment_paths:
             leave.append("proof_documents",{"attachments": frappe.utils.get_url()+attachment_path})
     leave.save(ignore_permissions=True)
+    frappe.db.commit()
     return leave.as_dict()
 
 @frappe.whitelist()
