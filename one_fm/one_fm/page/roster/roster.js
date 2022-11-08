@@ -2903,12 +2903,20 @@ function schedule_change_post(page) {
 			{
 				'label': 'From Date', 'fieldname': 'start_date', 'fieldtype': 'Date', 'default': date, onchange: function () {
 					let start_date = d.get_value('start_date');
+					let end_date = d.get_value('end_date');
 					if (start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
 						// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
 						// Set the date to null and refresh the field 
 						d.fields_dict.start_date.value  = '';
 						d.fields_dict.start_date.refresh()
 						frappe.throw(__("Start Date cannot be before today."));
+					}
+					if (start_date && end_date && moment(end_date).isBefore(moment(start_date))) {
+						// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
+						// Set the date to null and refresh the field 
+						d.fields_dict.start_date.value  = '';
+						d.fields_dict.start_date.refresh()
+						frappe.throw(__("From Date cannot be after Till Date."));
 					}
 				}
 			},
@@ -2927,7 +2935,7 @@ function schedule_change_post(page) {
 						d.fields_dict.end_date.refresh()
 						frappe.throw(__("End Date cannot be before today."));
 					}
-					if (start_date && end_date && moment(end_date).isBefore(moment(frappe.datetime.nowdate()))) {
+					if (start_date && end_date && moment(end_date).isBefore(moment(start_date))) {
 						// Set the date to null and refresh the field 
 						d.fields_dict.end_date.value  = '';
 						d.fields_dict.end_date.refresh()
