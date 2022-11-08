@@ -658,7 +658,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 
 def fetch_non_shift(date, s_type):
 	if s_type == "AM":
-		roster = frappe.db.sql("""SELECT name as employee, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
+		roster = frappe.db.sql("""SELECT name as employee, holiday_list, default_shift as shift_type, project, checkin_location from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
@@ -670,7 +670,7 @@ def fetch_non_shift(date, s_type):
 					AND h.holiday_date = '{date}')
 		""".format(date=cstr(date)), as_dict=1)
 	else:
-		roster = frappe.db.sql("""SELECT name as employee, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
+		roster = frappe.db.sql("""SELECT name as employee, holiday_list, default_shift as shift_type,project, checkin_location from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
@@ -849,7 +849,6 @@ def update_shift_details_in_attendance(doc, method):
 			if key == "shift" and shift_data["shift"]:
 				condition += ", operations_shift='{shift}'".format(shift=shift_data["shift"])
 			if key == "shift_type" and shift_data["shift_type"]:
-				print(shift_data["shift_type"])
 				condition += ", shift='{shift_type}'".format(shift_type=shift_data["shift_type"])
 
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
