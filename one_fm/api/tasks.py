@@ -663,8 +663,8 @@ def fetch_non_shift(date, s_type):
 					WHERE E.shift_working = 0
 					AND E.default_shift IN(
 						SELECT name from `tabShift Type` st
-						WHERE st.start_time >= '00:00:00'
-						AND  st.start_time < '12:00:00')
+						WHERE st.start_time >= '01:00:00'
+						AND  st.start_time < '13:00:00')
 					AND NOT EXISTS(SELECT * from `tabHoliday` h
 						WHERE
 							h.parent = E.holiday_list
@@ -675,7 +675,8 @@ def fetch_non_shift(date, s_type):
 					WHERE E.shift_working = 0
 					AND E.default_shift IN(
 						SELECT name from `tabShift Type` st
-						WHERE st.start_time >= '12:00:00')
+						WHERE st.start_time >= '13:00:00'
+						AND st.start_time < '01:00:00')
 					AND NOT EXISTS(SELECT * from `tabHoliday` h
 						WHERE
 							h.parent = E.holiday_list
@@ -698,8 +699,8 @@ def assign_am_shift():
 				AND ES.roster_type = "Basic"
 				AND ES.shift_type IN(
 					SELECT name from `tabShift Type` st
-					WHERE st.start_time >= '00:00:00'
-					AND  st.start_time < '12:00:00')
+					WHERE st.start_time >= '01:00:00'
+					AND  st.start_time < '13:00:00')
 		""".format(date=cstr(date)), as_dict=1)
 
 		non_shift = fetch_non_shift(date, "AM")
@@ -722,7 +723,8 @@ def assign_pm_shift():
 				AND ES.roster_type = "Basic"
 				AND ES.shift_type IN(
 					SELECT name from `tabShift Type` st
-					WHERE st.start_time >= '12:00:00')
+					WHERE st.start_time >= '13:00:00'
+					AND st.start_time < '01:00:00'))
 		""".format(date=cstr(date)), as_dict=1)
 
 		non_shift = fetch_non_shift(date, "PM")
