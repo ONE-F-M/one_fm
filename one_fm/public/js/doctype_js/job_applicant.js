@@ -38,16 +38,20 @@ frappe.ui.form.on('Job Applicant', {
 		if(frm.doc.one_fm_hiring_method == 'Bulk Recruitment' && frm.doc.interview_round){
 			if(frm.doc.bulk_interview){
 				frappe.db.get_value('Interview', frm.doc.bulk_interview, 'docstatus', function(r) {
-					if(r.docstatus == 0){
+					var interview_exists = true;
+					if(r.docstatus == 2){
+						interview_exists = false;
+					}
+					if(r.docstatus != 1){
 						frm.add_custom_button(__('Submit Interview and Feedback'), function() {
-							frm.events.submit_interview_and_feedback(frm)
+							frm.events.submit_interview_and_feedback(frm, interview_exists)
 						});
 					}
 				})
 			}
 			else{
 				frm.add_custom_button(__('Submit Interview and Feedback'), function() {
-					frm.events.submit_interview_and_feedback(frm)
+					frm.events.submit_interview_and_feedback(frm, false)
 				});
 			}
 		}
@@ -513,9 +517,9 @@ frappe.ui.form.on('Job Applicant', {
 		);
 
 	},
-	submit_interview_and_feedback: function(frm) {
+	submit_interview_and_feedback: function(frm, interview_exists) {
 		var args = {interview_round: frm.doc.interview_round}
-		if(frm.doc.bulk_interview){
+		if(frm.doc.bulk_interview && interview_exists){
 			args['interviewer'] = frappe.session.user
 			args['interview_name'] = frm.doc.bulk_interview
 		}
