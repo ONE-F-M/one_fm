@@ -246,6 +246,7 @@ class OnboardEmployee(Document):
 			user.first_name = self.employee_name
 			user.email = self.company_email
 			user.role_profile_name = self.role_profile
+			user.username = self.employee
 			user.save(ignore_permissions = True)
 			employee = frappe.get_doc('Employee', self.employee)
 			employee.user_id = user.name

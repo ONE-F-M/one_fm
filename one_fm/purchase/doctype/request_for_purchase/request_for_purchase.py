@@ -21,6 +21,7 @@ class RequestforPurchase(Document):
 	def set_accepter_and_approver(self):
 		accepter = frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_accepter')
 		approver = frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver')
+		reports_to = False
 		if self.type == 'Project' and self.project:
 			reports_to = frappe.db.get_value('Project', self.project, 'account_manager')
 		elif self.employee:
