@@ -718,7 +718,7 @@ def assign_pm_shift():
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
 				WHERE st.start_time >= '13:00:00'
-				AND  st.start_time < '01:00:00'
+				AND  st.end_time < '01:00:00'
 				)
 	""".format(date=cstr(date)), as_dict=1)
 
