@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:{date}_{employee}-{roster_type}",
+ "autoname": "format:{date}_{employee}_{roster_type}",
  "creation": "2020-05-12 15:44:18.133872",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -149,7 +149,7 @@
   }
  ],
  "links": [],
- "modified": "2022-11-07 19:51:12.038169",
+ "modified": "2022-11-07 20:27:14.252669",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",
