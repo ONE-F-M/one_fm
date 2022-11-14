@@ -97,16 +97,16 @@
   },
   {
    "fieldname": "pam_file_number",
-   "fieldtype": "Link",
-   "label": "PAM File Number",
-   "options": "PAM File Number"
+   "fieldtype": "Data",
+   "label": "PAM File Number"
   }
  ],
  "links": [],
- "modified": "2022-05-26 11:15:12.066809",
+ "modified": "2022-11-14 14:11:36.885971",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM File",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -125,5 +125,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
