@@ -123,7 +123,7 @@ def checkin_checkout_final_reminder():
 
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
-		frappe.enqueue(schedule_final_notification, shift=shift, now_time, is_async=True, queue='long')
+		frappe.enqueue(schedule_final_notification, shift=shift, now_time=now_time, is_async=True, queue='long')
 
 def schedule_final_notification(shift, now_time):
 	date = getdate()
