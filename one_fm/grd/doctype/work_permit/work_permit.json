@@ -14,7 +14,6 @@
   "ref_doctype",
   "ref_name",
   "transfer_paper",
-  "pam_file",
   "column_break_8",
   "work_permit_type",
   "work_permit_status",
@@ -83,6 +82,7 @@
   "date_of_issuance_of_visa",
   "column_break_42",
   "pam_designation",
+  "pam_file",
   "pam_file_number",
   "salary_type",
   "work_permit_salary",
@@ -131,7 +131,6 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
-   "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
@@ -345,11 +344,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "employee.pam_file",
    "fieldname": "pam_file",
-   "fieldtype": "Link",
-   "hidden": 1,
+   "fieldtype": "Data",
    "label": "PAM File",
-   "options": "PAM File"
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -886,7 +885,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-08 07:37:45.748526",
+ "modified": "2022-11-15 18:31:39.072744",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

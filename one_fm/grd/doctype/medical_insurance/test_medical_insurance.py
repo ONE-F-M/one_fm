@@ -7,6 +7,5 @@ import frappe
 import unittest
 
 
-
 class TestMedicalInsurance(unittest.TestCase):
 	pass

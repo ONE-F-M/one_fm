@@ -40,6 +40,7 @@ class TestPAMFile(unittest.TestCase):
 	def test_if_license_and_file_number_can_be_set_when_governent_project_is_False(self):
 		doc = self.get_doc()
 		doc.government_project = False
+		doc.pam_file_number = 902100
 		doc.file_number = 12345
 		doc.license_number = 47
 		doc.save()
