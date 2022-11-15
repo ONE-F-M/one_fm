@@ -6,6 +6,10 @@ import frappe
 from frappe.utils import today, add_days, get_url
 import unittest
 
+
+def create_object():
+	pass
+
 class TestMOIResidencyJawazat(unittest.TestCase):
 	pass
 

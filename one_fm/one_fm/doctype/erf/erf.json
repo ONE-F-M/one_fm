@@ -75,7 +75,6 @@
   "performance_profile",
   "grade",
   "hiring_method",
-  "interview_round",
   "column_break_56",
   "recruiter_assigned",
   "need_to_assign_more_recruiter",
@@ -825,10 +824,9 @@
    "depends_on": "pam_file",
    "fetch_from": "pam_file.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "PAM File Number",
    "no_copy": 1,
-   "options": "PAM File Number",
    "read_only": 1
   },
   {
@@ -867,19 +865,11 @@
    "label": "Default Shift",
    "mandatory_depends_on": "eval:doc.shift_working==0",
    "options": "Shift Type"
-  },
-  {
-   "depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
-   "fieldname": "interview_round",
-   "fieldtype": "Link",
-   "label": "Interview Round",
-   "mandatory_depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
-   "options": "Interview Round"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-07 16:39:44.562323",
+ "modified": "2022-11-15 14:10:22.576186",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
