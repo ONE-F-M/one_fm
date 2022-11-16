@@ -12,16 +12,12 @@ class PAMFile(Document):
 			self.db_set('pam_file_number',self.contract_pam_file_number)
 
 	def validate(self):
-		if self.government_project == 1:
-			if self.file_number is not None:
+		if self.government_project:
+			if self.file_number:
 				frappe.throw("File Number cannot be set with Government project")
-			else:
-				pass
 
-			if self.license_number is not None:
+			if self.license_number:
 				frappe.throw("Company License cannot be set with Governement Project")
-			else:
-				pass
 
 		
 

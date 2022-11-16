@@ -33,7 +33,7 @@
    "in_preview": 0,
    "in_standard_filter": 0,
    "insert_after": "skill",
-   "is_system_generated": 1,
+   "is_system_generated": 0,
    "is_virtual": 0,
    "label": "Proficiency",
    "length": 0,

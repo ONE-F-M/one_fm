@@ -737,7 +737,7 @@
    "name": "Employee-one_fm__highest_educational_qualification",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "\nGraduate\nMasters\nPost Graduate\nUnder Graduate\nHigh School\nOther",
+   "options": "\nPost Graduate\nMasters\nGraduate\nDiploma\nUnder Graduate\nHigh School",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,
