@@ -6,52 +6,68 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "operations_post",
-  "operations_role",
   "item",
+  "expected",
+  "scheduled",
+  "column_break_4",
   "from_date",
-  "to_date"
+  "to_date",
+  "comment"
  ],
  "fields": [
-  {
-   "fieldname": "operations_post",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Operations Post",
-   "options": "Operations Post",
-   "reqd": 1
-  },
-  {
-   "fieldname": "operations_role",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Operations Role",
-   "options": "Operations Role",
-   "reqd": 1
-  },
   {
    "fieldname": "item",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Item",
    "options": "Item",
+   "read_only": 1,
    "reqd": 1
   },
   {
    "fieldname": "from_date",
    "fieldtype": "Date",
-   "label": "From Date"
+   "in_list_view": 1,
+   "label": "From Date",
+   "read_only": 1
   },
   {
    "fieldname": "to_date",
    "fieldtype": "Date",
-   "label": "To Date"
+   "in_list_view": 1,
+   "label": "To Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expected",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Expected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "scheduled",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Scheduled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Comment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-11-15 12:17:06.199400",
+ "modified": "2022-11-17 11:04:45.156140",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Roster Checker Item",
