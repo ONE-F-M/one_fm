@@ -392,6 +392,28 @@ frappe.ui.form.on('Contract Item', {
 		frappe.model.set_value(d.doctype, d.name, "rate", d.price_list_rate + management_fee);
 		frm.refresh_field("items");
 	},
+	rate_type: function(frm, cdt, cdn){
+	    let row = locals[cdt][cdn];
+	    if (row.rate_type=='Hourly'){
+	        frm.fields_dict.items.grid.toggle_display('days_off_category', 0);
+	        frm.fields_dict.items.grid.toggle_display('days_off', 0);
+	    } else {
+            if (row.rate_type_off == 'Days Off'){
+                frm.fields_dict.items.grid.toggle_display('days_off_category', 1);
+                frm.fields_dict.items.grid.toggle_display('days_off', 1);
+            }
+	    }
+	},
+	rate_type_off: function(frm, cdt, cdn){
+	    let row = locals[cdt][cdn];
+	    if (row.rate_type_off == 'Days Off'){
+	        frm.fields_dict.items.grid.toggle_display('days_off_category', 1);
+	        frm.fields_dict.items.grid.toggle_display('days_off', 1);
+	    } else {
+            frm.fields_dict.items.grid.toggle_display('days_off_category', 0);
+	        frm.fields_dict.items.grid.toggle_display('days_off', 0);
+	    }
+	}
 })
 frappe.ui.form.on('Contract Asset', {
 	item_code: function(frm, cdt, cdn) {
