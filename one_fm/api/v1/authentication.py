@@ -69,9 +69,6 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 	if not isinstance(password, str):
 		return response("Bad Request", 400, None, "password must be of type str!")
 
-	check = frappe.db.exists({"doctype": "Employee", "employee_id": employee_id})
-	if check is None:
-		return response("Employee Does Not Exist", 404, None, "Employee ID Must belong to an active employee ! " )
 	
 	try:
 		site = frappe.utils.cstr(frappe.local.conf.app_url)
@@ -152,7 +149,7 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		return response("Bad Request", 400, None, "Invalid OTP source. OTP source must be either 'sms', 'email' or 'whatsapp'.")
 	
 	try:
-		employee_user_id =  frappe.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+		employee_user_id =  frappe.get_value("Employee", {'employee_id': employee_id}, 'first_name')
 		
 		if not employee_user_id:
 			return response("Bad Request", 404, None, "No user ID found for employee ID {employee_id}.".format(employee_id=employee_id))
@@ -283,6 +280,10 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 		is_async=True, job_name=None, now=False, **email_args)
 	return True
 
+
 @frappe.whitelist(allow_guest=True)
 def validate_employee_id(employee_id=None):
-	check = frappe.db.exists("doctype": "Employee", "")
+	doc = frappe.db.get_value("Employee",{ "employee_id": "2211003XX120"}, "first_name")
+	if doc == None:
+		return response("Employee Not Found", 404, None, "Employee ID of an active Employee is required")
+	return doc
