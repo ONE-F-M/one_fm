@@ -318,7 +318,7 @@ def checkin_checkout_query(date, shift_type, log_type):
 		permission_type = ("Leave Early", "Forget to Checkout", "Checkout Issue")
 
 	query = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
+				SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, emp.holiday_list, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 					WHERE
 						tSA.employee=emp.name
 					AND tSA.start_date='{date}'
@@ -349,7 +349,7 @@ def checkin_checkout_query(date, shift_type, log_type):
 					AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
 					AND empChkin.shift_type='{shift_type}')
 					AND tSA.start_date
-					NOT IN(SELECT holiday_date from `tabHoliday` h
+					AND NOT EXISTS(SELECT * from `tabHoliday` h
 					WHERE
 						h.parent = emp.holiday_list
 					AND h.holiday_date = '{date}')
