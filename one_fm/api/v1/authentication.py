@@ -149,7 +149,7 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		return response("Bad Request", 400, None, "Invalid OTP source. OTP source must be either 'sms', 'email' or 'whatsapp'.")
 	
 	try:
-		employee_user_id =  frappe.get_value("Employee", {'employee_id': employee_id}, 'first_name')
+		employee_user_id =  frappe.get_value("Employee", {'employee_id': employee_id}, 'user_id')
 		
 		if not employee_user_id:
 			return response("Bad Request", 404, None, "No user ID found for employee ID {employee_id}.".format(employee_id=employee_id))
