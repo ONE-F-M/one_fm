@@ -2,6 +2,7 @@
 # Copyright (c) 2020, omar jaber and contributors
 # For license information, please see license.txt
 
+# days_off was hidden because it reset to 0 on save for no reason
 from __future__ import unicode_literals
 import frappe, json
 from datetime import datetime
@@ -12,8 +13,8 @@ from frappe import _
 class Contracts(Document):
 	def validate(self):
 		self.calculate_contract_duration()
-		if self.overtime_rate == 0:
-			frappe.msgprint(_("Overtime rate not set."), alert=True, indicator='orange')
+		# if self.overtime_rate == 0:
+		# 	frappe.msgprint(_("Overtime rate not set."), alert=True, indicator='orange')
 
 	def before_submit(self):
 		# check if items and poc exists
