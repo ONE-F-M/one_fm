@@ -66,6 +66,7 @@
    "depends_on": "eval: doc.government_project == 1",
    "fieldname": "main_pam_file",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Select PAM File to be Main",
    "options": "PAM File"
   },
@@ -97,16 +98,16 @@
   },
   {
    "fieldname": "pam_file_number",
-   "fieldtype": "Link",
-   "label": "PAM File Number",
-   "options": "PAM File Number"
+   "fieldtype": "Data",
+   "label": "PAM File Number"
   }
  ],
  "links": [],
- "modified": "2022-05-26 11:15:12.066809",
+ "modified": "2022-11-15 18:23:45.890802",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PAM File",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -125,5 +126,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

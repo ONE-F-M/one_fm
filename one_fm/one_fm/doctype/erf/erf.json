@@ -825,10 +825,9 @@
    "depends_on": "pam_file",
    "fetch_from": "pam_file.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "PAM File Number",
    "no_copy": 1,
-   "options": "PAM File Number",
    "read_only": 1
   },
   {
@@ -869,6 +868,7 @@
    "options": "Shift Type"
   },
   {
+
    "depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
    "fieldname": "interview_round",
    "fieldtype": "Link",
