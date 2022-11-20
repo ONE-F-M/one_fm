@@ -23,6 +23,9 @@ class RosterProjectionChecker(Document):
 		if not self.items:
 			frappe.throw('No issues found.')
 
+	def after_insert(self):
+		frappe.db.commit()
+
 	def get_supervisor(self):
 		supervisor_doc = frappe.db.get_list("Operations Shift",
 			filters={'project': self.project},
@@ -41,10 +44,10 @@ class RosterProjectionChecker(Document):
 		for item in contract.items:
 			if item.subitem_group == "Service":
 				if item.rate_type == 'Monthly':
-					if not item.days_off:
-						item.days_off = 0
+					if not item.no_of_days_off:
+						item.no_of_days_off = 0
 					else:
-						item.days_off = int(item.days_off)
+						item.no_of_days_off = int(item.no_of_days_off)
 					roles = frappe.db.sql(f""" 
 						SELECT name FROM `tabOperations Role` 
 						WHERE sale_item="{item.item_code}" AND project="{self.project}" 
@@ -64,10 +67,11 @@ class RosterProjectionChecker(Document):
 						roles_dict[role.name] = len(schedules)
 						schedule_count += roles_dict[role.name]
 					# check counts
+					last_day = getdate(last_day)
 					if item.rate_type_off == 'Full Month':
 						expected = item.count*last_day.day
 					elif item.rate_type_off == 'Days Off' and item.days_off_category == 'Monthly':
-						expected = item.count* (last_day.day - item.days_off)
+						expected = item.count* (last_day.day - item.no_of_days_off)
 					elif item.rate_type_off == 'Days Off' and item.days_off_category == 'Weekly':
 						week_range = get_week_start_end(str(getdate()))
 						first_day = week_range.start
@@ -84,7 +88,7 @@ class RosterProjectionChecker(Document):
 							)
 						roles_dict[role.name] = len(schedules)
 						schedule_count += roles_dict[role.name]
-						expected = item.count* (7 - item.days_off)
+						expected = item.count* (7 - item.no_of_days_off)
 
 					# check counts
 					created = schedule_count
@@ -110,8 +114,9 @@ def schedule_roster_checker():
 	for row in frappe.db.get_list("Contracts"):
 		try:
 			doc = frappe.get_doc({"doctype":"Roster Projection Checker", 'contract': row.name}).insert(ignore_permissions=True)
-		except:
-			pass
+		except Exception as e:
+			print(e)
+	frappe.db.commit()
 
 @frappe.whitelist()
 def generate_checker():

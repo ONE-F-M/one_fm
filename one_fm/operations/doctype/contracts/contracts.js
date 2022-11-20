@@ -379,8 +379,8 @@ frappe.ui.form.on('Contract Item', {
 			frappe.model.set_value(d.doctype, d.name, "rate", 0);
 			if(d.subitem_group=="Service"){
 				frappe.model.set_value(d.doctype, d.name, "gender", null);
-				frappe.model.set_value(d.doctype, d.name, "shift_hours", 0);
-				frappe.model.set_value(d.doctype, d.name, "days_off", 0);
+//				frappe.model.set_value(d.doctype, d.name, "shift_hours", 0);
+//				frappe.model.set_value(d.doctype, d.name, "days_off", 0);
 			}
 		}
 
@@ -396,11 +396,11 @@ frappe.ui.form.on('Contract Item', {
 	    let row = locals[cdt][cdn];
 	    if (row.rate_type=='Hourly'){
 	        frm.fields_dict.items.grid.toggle_display('days_off_category', 0);
-	        frm.fields_dict.items.grid.toggle_display('days_off', 0);
+	        frm.fields_dict.items.grid.toggle_display('no_of_days_off', 0);
 	    } else {
             if (row.rate_type_off == 'Days Off'){
                 frm.fields_dict.items.grid.toggle_display('days_off_category', 1);
-                frm.fields_dict.items.grid.toggle_display('days_off', 1);
+                frm.fields_dict.items.grid.toggle_display('no_of_days_off', 1);
             }
 	    }
 	},
@@ -408,10 +408,10 @@ frappe.ui.form.on('Contract Item', {
 	    let row = locals[cdt][cdn];
 	    if (row.rate_type_off == 'Days Off'){
 	        frm.fields_dict.items.grid.toggle_display('days_off_category', 1);
-	        frm.fields_dict.items.grid.toggle_display('days_off', 1);
+	        frm.fields_dict.items.grid.toggle_display('no_of_days_off', 1);
 	    } else {
             frm.fields_dict.items.grid.toggle_display('days_off_category', 0);
-	        frm.fields_dict.items.grid.toggle_display('days_off', 0);
+	        frm.fields_dict.items.grid.toggle_display('no_of_days_off', 0);
 	    }
 	}
 })
