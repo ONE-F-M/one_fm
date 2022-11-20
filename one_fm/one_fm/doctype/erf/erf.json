@@ -75,6 +75,7 @@
   "performance_profile",
   "grade",
   "hiring_method",
+  "interview_round",
   "column_break_56",
   "recruiter_assigned",
   "need_to_assign_more_recruiter",
@@ -866,14 +867,23 @@
    "label": "Default Shift",
    "mandatory_depends_on": "eval:doc.shift_working==0",
    "options": "Shift Type"
+  },
+  {
+   "depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
+   "fieldname": "interview_round",
+   "fieldtype": "Link",
+   "label": "Interview Round",
+   "mandatory_depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
+   "options": "Interview Round"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-09-13 09:24:14.314269",
+ "modified": "2022-11-07 16:39:44.562323",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -980,5 +990,6 @@
  "search_fields": "designation, project",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

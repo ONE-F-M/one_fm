@@ -1,0 +1,250 @@
+{
+ "actions": [],
+ "autoname": "format:{post_name}-{gender}|{site_shift}",
+ "creation": "2020-05-02 16:31:15.111264",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "handover",
+  "post_name",
+  "site_shift",
+  "site",
+  "project",
+  "post_template",
+  "column_break_4",
+  "priority_level",
+  "allow_staff_rotation",
+  "day_off_priority",
+  "post_location",
+  "gender",
+  "section_break_6",
+  "section_break_12",
+  "post_description",
+  "section_break_14",
+  "skills",
+  "designations"
+ ],
+ "fields": [
+  {
+   "fieldname": "post_name",
+   "fieldtype": "Data",
+   "label": "Post Name"
+  },
+  {
+   "fieldname": "skills",
+   "fieldtype": "Table",
+   "label": "Skills",
+   "options": "Post Skills"
+  },
+  {
+   "fieldname": "designations",
+   "fieldtype": "Table",
+   "label": "Designations",
+   "options": "Post Designations"
+  },
+  {
+   "fieldname": "site_shift",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Shift",
+   "options": "Operations Shift"
+  },
+  {
+   "depends_on": "site_shift",
+   "fetch_from": "site_shift.site",
+   "fetch_if_empty": 1,
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "post_location",
+   "fieldtype": "Select",
+   "label": "Post Location",
+   "options": "Internal\nExternal"
+  },
+  {
+   "default": "Both",
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Gender",
+   "options": "Both\nMale\nFemale"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "post_description",
+   "fieldtype": "Small Text",
+   "label": "Post Description"
+  },
+  {
+   "fieldname": "section_break_14",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "post_template",
+   "fieldtype": "Link",
+   "label": "Operations Role",
+   "options": "Operations Role",
+   "reqd": 1
+  },
+  {
+   "depends_on": "site_shift",
+   "fetch_from": "site_shift.project",
+   "fetch_if_empty": 1,
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "handover",
+   "fieldtype": "Check",
+   "label": "Post Handover Required"
+  },
+  {
+   "description": "10 - Highest <br>\n1- Lowest\n",
+   "fieldname": "priority_level",
+   "fieldtype": "Select",
+   "label": "Priority Level",
+   "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_staff_rotation",
+   "fieldtype": "Check",
+   "label": "Rotate Staff"
+  },
+  {
+   "default": "0",
+   "description": "Employees coming from Day Off will be assigned on these posts",
+   "fieldname": "day_off_priority",
+   "fieldtype": "Check",
+   "label": "Day Off Priority"
+  }
+ ],
+ "links": [],
+ "modified": "2022-11-07 18:24:26.991165",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Operations Post",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Site Supervisor",
+   "select": 1,
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Shift Supervisor",
+   "select": 1,
+   "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruiter",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "search_fields": "site_shift, post_template",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

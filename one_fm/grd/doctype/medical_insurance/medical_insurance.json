@@ -252,6 +252,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee"
@@ -288,10 +289,11 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-26 19:13:10.137312",
+ "modified": "2022-11-08 07:38:16.062987",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -337,5 +339,6 @@
  "search_fields": "civil_id,employee_id,date_of_application",
  "sort_field": "date_of_application",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "civil_id"
 }

@@ -260,6 +260,7 @@
   {
    "fieldname": "operations_role",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Operations Role",
    "options": "Operations Role",
    "reqd": 1
@@ -283,10 +284,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-08-25 08:51:26.274281",
+ "modified": "2022-11-20 15:10:41.844288",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Duty Commencement",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -304,5 +306,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

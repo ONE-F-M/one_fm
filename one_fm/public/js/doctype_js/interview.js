@@ -13,14 +13,18 @@ frappe.ui.form.on('Interview', {
 							frappe.call({
 								method: 'one_fm.hiring.utils.get_interview_skill_and_question_set',
 								args: {
-									interview_round: frm.doc.interview_round
+									interview_round: frm.doc.interview_round,
+									interviewer: frappe.session.user,
+									interview_name: frm.doc.name,
 								},
 								callback: function (r) {
 									if(r.message){
-										frm.events.show_custom_feedback_dialog(frm, r.message[1], r.message[0]);
+										frm.events.show_custom_feedback_dialog(frm, r.message[1], r.message[0], r.message[2]);
 									}
 									frm.refresh();
-								}
+								},
+								freeze: true,
+								freeze_message: __("Fecth interview details..!")
 							});
 						}).addClass('btn-primary');
 					}
@@ -28,8 +32,20 @@ frappe.ui.form.on('Interview', {
 			}
 		}
 	},
-	show_custom_feedback_dialog: function (frm, data, question_data) {
+	show_custom_feedback_dialog: function (frm, data, question_data, feedback_exists) {
 		let fields = frm.events.get_fields_for_feedback();
+		fields.push({
+			fieldtype: 'Data',
+			fieldname: 'parent',
+			hidden: 1,
+			label: __('Parent')
+		})
+		fields.push({
+			fieldtype: 'Data',
+			fieldname: 'name',
+			hidden: 1,
+			label: __('Name')
+		})
 		var dialog_fields = [
 			{
 				fieldname: 'skill_set',
@@ -75,18 +91,14 @@ frappe.ui.form.on('Interview', {
 			fields: dialog_fields,
 			size: 'large',
 			minimizable: true,
+			primary_action_label: __("Save"),
 			primary_action: function(values) {
-				frappe.call({
-					method: 'one_fm.hiring.utils.create_interview_feedback',
-					args: {
-						data: values,
-						interview_name: frm.doc.name,
-						interviewer: frappe.session.user,
-						job_applicant: frm.doc.job_applicant
-					}
-				}).then(() => {
-					frm.refresh();
-				});
+				create_interview_feedback(frm, values, feedback_exists, 'save');
+				d.hide();
+			},
+			secondary_action_label: __("Save and Submit"),
+			secondary_action: function() {
+				create_interview_feedback(frm, d.get_values(), feedback_exists, 'submit');
 				d.hide();
 			}
 		});
@@ -119,7 +131,36 @@ frappe.ui.form.on('Interview', {
 			label: __('Score'),
 			in_list_view: 1,
 			reqd: 1,
+		}, {
+			fieldtype: 'Data',
+			fieldname: 'parent',
+			hidden: 1,
+			label: __('Parent')
+		}, {
+			fieldtype: 'Data',
+			fieldname: 'name',
+			hidden: 1,
+			label: __('Name')
 		}];
 
 	},
 });
+
+var create_interview_feedback = function(frm, values, feedback_exists, save_submit) {
+	var args = {
+		data: values,
+		interview_name: frm.doc.name,
+		interviewer: frappe.session.user,
+		job_applicant: frm.doc.job_applicant,
+		method: save_submit
+	}
+	if(feedback_exists){
+		args['feedback_exists'] = feedback_exists
+	}
+	frappe.call({
+		method: 'one_fm.hiring.utils.create_interview_feedback',
+		args: args
+	}).then(() => {
+		frm.refresh();
+	});
+}
