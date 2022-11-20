@@ -357,6 +357,9 @@ doc_events = {
 	"User": {
 		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
 	},
+	"Email Queue": {
+		"after_insert":"one_fm.events.email_queue.after_insert",
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
