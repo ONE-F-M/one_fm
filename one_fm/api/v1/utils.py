@@ -11,8 +11,8 @@ def response(message, status_code, data=None, error=None):
         data (Any, optional): Any data to be passed as response (Dict, List, etc). Defaults to None.
     """
 
-    if not status_code in [200, 201]:
-        frappe.enqueue(frappe.log_error, message=message + "\n" + str(error), title="API Response Error", queue='long')
+    #if not status_code in [200, 201]:
+    #    frappe.enqueue(frappe.log_error, message=message + "\n" + str(error), title="API Response Error", queue='long')
 
 
     frappe.local.response["message"] = message

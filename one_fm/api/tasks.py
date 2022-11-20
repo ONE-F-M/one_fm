@@ -123,24 +123,28 @@ def checkin_checkout_final_reminder():
 
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
-		date = getdate()
-		if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
-			date = getdate() - timedelta(days=1)
-		# shift_start is equal to now time - notification reminder in mins
-		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
-		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
-			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
+		frappe.enqueue(schedule_final_notification, shift=shift, now_time=now_time, is_async=True, queue='long')
 
-			if len(recipients) > 0:
-				frappe.enqueue(notify_checkin_checkout_final_reminder, recipients=recipients,log_type="IN", is_async=True, queue='long')
+def schedule_final_notification(shift, now_time):
+	date = getdate()
+	if shift.start_time < shift.end_time and now_time < cstr(shift.start_time):
+		date = getdate() - timedelta(days=1)
 
-		# shift_end is equal to now time - notification reminder in mins
-		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
-		if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
-			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
+	# shift_start is equal to now time - notification reminder in mins
+	# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
+	if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
+		recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 
-			if len(recipients) > 0:
-				frappe.enqueue(notify_checkin_checkout_final_reminder, recipients=recipients,log_type="OUT", is_async=True, queue='long')
+		if len(recipients) > 0:
+			notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN")
+
+	# shift_end is equal to now time - notification reminder in mins
+	# Employee won't receive checkout notification when accepted Leave Early shift permission is present
+	if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
+		recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
+
+		if len(recipients) > 0:
+			notify_checkin_checkout_final_reminder(recipients=recipients,log_type="OUT")
 
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
@@ -718,7 +722,7 @@ def assign_pm_shift():
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
 				WHERE st.start_time >= '13:00:00'
-				AND  st.start_time < '01:00:00'
+				AND  st.end_time < '01:00:00'
 				)
 	""".format(date=cstr(date)), as_dict=1)
 
@@ -845,21 +849,20 @@ def update_shift_details_in_attendance(doc, method):
 		shift_assignment = frappe.get_list("Shift Assignment",{"employee": doc.employee, "start_date": doc.attendance_date},["name", "site", "project", "shift", "shift_type", "operations_role", "start_datetime","end_datetime", "roster_type"])
 
 		shift_data = shift_assignment[0]
-		condition += " shift_assignment='{shift_assignment[0].name}'".format(shift_assignment=shift_assignment)
+		condition += """ shift_assignment="{shift_assignment[0].name}" """.format(shift_assignment=shift_assignment)
 		
 		for key in shift_assignment[0]:
 			if shift_data[key] and key not in ["name","start_datetime","end_datetime", "shift", "shift_type"]: 
-				condition += ", {key}='{value}'".format(key= key,value=shift_data[key])
+				condition += """, {key}="{value}" """.format(key= key,value=shift_data[key])
 			if key == "shift" and shift_data["shift"]:
-				condition += ", operations_shift='{shift}'".format(shift=shift_data["shift"])
+				condition += """, operations_shift="{shift}" """.format(shift=shift_data["shift"])
 			if key == "shift_type" and shift_data["shift_type"]:
-				print(shift_data["shift_type"])
-				condition += ", shift='{shift_type}'".format(shift_type=shift_data["shift_type"])
+				condition += """, shift='{shift_type}' """.format(shift_type=shift_data["shift_type"])
 
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
-			condition += f', in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}"'
+			condition += f""", in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}" """
 	if condition:
-		query = """UPDATE `tabAttendance` SET {condition} WHERE name= '{name}' """.format(condition=condition, name = doc.name)
+		query = """UPDATE `tabAttendance` SET {condition} WHERE name= "{name}" """.format(condition=condition, name = doc.name)
 		return frappe.db.sql(query)
 	return
 
