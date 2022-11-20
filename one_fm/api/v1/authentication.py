@@ -68,10 +68,14 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 
 	if not isinstance(password, str):
 		return response("Bad Request", 400, None, "password must be of type str!")
+
+	check = frappe.db.exists({"doctype": "Employee", "employee_id": employee_id})
+	if check is None:
+		return response("Employee Does Not Exist", 404, None, "Employee ID Must belong to an active employee ! " )
 	
 	try:
 		site = frappe.utils.cstr(frappe.local.conf.app_url)
-		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'first_name')
 		
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
