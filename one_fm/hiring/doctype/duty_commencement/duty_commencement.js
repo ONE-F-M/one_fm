@@ -15,7 +15,7 @@ var set_operations_role_filter = function(frm) {
 	if(frm.doc.operations_shift){
 		frm.set_query('operations_role', function () {
 			return {
-				query: "one_fm.one_fm.page.roster.roster.get_filtered_operations_roles",
+				query: "one_fm.one_fm.page.roster.roster.get_filtered_operations_role",
 				filters: {
 					'shift': frm.doc.operations_shift
 				}
