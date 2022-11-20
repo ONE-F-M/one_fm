@@ -897,6 +897,7 @@ def set_dayoff(employee, date):
 	else:
 		doc = frappe.new_doc("Employee Schedule")
 
+	doc.reload()
 	doc.employee = employee
 	doc.date = date
 	doc.shift = None
