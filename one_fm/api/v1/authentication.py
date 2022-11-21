@@ -286,4 +286,4 @@ def validate_employee_id(employee_id=None):
 	doc = frappe.db.get_value("Employee",{ "employee_id": employee_id}, "first_name")
 	if doc == None:
 		return response("Employee Not Found", 404, None, "Employee ID of an active Employee is required")
-	return doc
+	return response("Success", 200, doc)
