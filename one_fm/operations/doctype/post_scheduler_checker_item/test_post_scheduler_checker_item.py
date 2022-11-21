@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestRosterCheckerItem(FrappeTestCase):
+class TestPostSchedulerCheckerItem(FrappeTestCase):
 	pass

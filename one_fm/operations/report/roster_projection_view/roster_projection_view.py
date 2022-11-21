@@ -63,6 +63,7 @@ def get_data(filters):
 			ps_data_dict[i.project+'-'+i.item_code] = i
 
 		for i in es_data:
+
 			ps_key = ps_data_dict.get(i.project+'-'+i.item_code)
 			if ps_key:
 				i.projection = i.projection/ps_key.projection

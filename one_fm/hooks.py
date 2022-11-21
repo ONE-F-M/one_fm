@@ -461,7 +461,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_sites_followup',
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_penalty',
 		'one_fm.tasks.one_fm.monthly.employee_schedule_monthly',
-  ],
+   ],
 
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly",
