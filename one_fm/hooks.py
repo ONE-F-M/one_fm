@@ -357,6 +357,10 @@ doc_events = {
 	"User": {
 		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
 	},
+	"Operations Post": {
+		"after_insert":"one_fm.events.operations_post.after_insert",
+		"on_trash": "one_fm.events.operations_post.on_trash",
+	},
 	"Email Queue": {
 		"after_insert":"one_fm.events.email_queue.after_insert",
 	},
