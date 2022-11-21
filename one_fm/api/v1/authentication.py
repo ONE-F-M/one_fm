@@ -72,7 +72,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 	
 	try:
 		site = frappe.utils.cstr(frappe.local.conf.app_url)
-		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'first_name')
+		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
 		
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
@@ -281,9 +281,3 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 	return True
 
 
-@frappe.whitelist(allow_guest=True)
-def validate_employee_id(employee_id=None):
-	doc = frappe.db.get_value("Employee",{ "employee_id": "2211003XX120"}, "first_name")
-	if doc == None:
-		return response("Employee Not Found", 404, None, "Employee ID of an active Employee is required")
-	return doc
