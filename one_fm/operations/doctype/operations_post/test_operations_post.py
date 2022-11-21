@@ -14,7 +14,7 @@ def create_test_post():
 	doc.post_template = frappe.get_doc({"doctype": "Operations Role", "shift": doc.shift, })
 	doc.post_template.save()
 	doc.save()
-	print("LETS STSTTETETETET")
+
 
 	return doc
  
