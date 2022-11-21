@@ -72,7 +72,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 	
 	try:
 		site = frappe.utils.cstr(frappe.local.conf.app_url)
-		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'first_name')
+		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
 		
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
