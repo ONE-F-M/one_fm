@@ -361,7 +361,6 @@ doc_events = {
 		"after_insert":"one_fm.events.operations_post.after_insert",
 		"on_trash": "one_fm.events.operations_post.on_trash",
 	},
-
 	"Email Queue": {
 		"after_insert":"one_fm.events.email_queue.after_insert",
 	},

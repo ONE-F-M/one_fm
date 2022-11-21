@@ -279,5 +279,3 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 	enqueue(method=sendemail, queue='short', timeout=300, event=None,
 		is_async=True, job_name=None, now=False, **email_args)
 	return True
-
-
