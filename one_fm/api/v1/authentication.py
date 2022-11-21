@@ -278,9 +278,6 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 
 	enqueue(method=sendemail, queue='short', timeout=300, event=None,
 		is_async=True, job_name=None, now=False, **email_args)
-<<<<<<< HEAD
-	return True
-=======
 	return True
 
 
@@ -290,4 +287,3 @@ def validate_employee_id(employee_id=None):
 	if doc == None:
 		return response("Employee Not Found", 404, None, "Employee ID of an active Employee is required")
 	return response("Success", 200, doc)
->>>>>>> 1e73954407f1bc2d9630a65260171ac3ea2ca90e
