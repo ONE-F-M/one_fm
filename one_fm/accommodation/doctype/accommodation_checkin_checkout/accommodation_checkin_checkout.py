@@ -68,7 +68,7 @@ class AccommodationCheckinCheckout(Document):
 				frappe.db.set_value('Employee', self.employee, 'one_fm_accommodation_policy', self.attach_print_accommodation_policy)
 
 	def validate_checkin_checkout(self):
-		if self.type == 'IN':
+		if self.type == 'IN' and self.tenant_category == 'Granted Service':
 			exists_checkin = frappe.db.exists('Accommodation Checkin Checkout', {
 				'employee': self.employee,
 				'type': 'IN',
