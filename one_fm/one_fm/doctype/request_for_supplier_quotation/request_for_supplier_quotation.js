@@ -61,6 +61,39 @@ frappe.ui.form.on('Request for Supplier Quotation', {
 
 	},
 
+	request_for_purchase: function(frm) {
+		if(frm.doc.request_for_purchase){
+			frm.clear_table('items');
+			frappe.call({
+				method: 'frappe.client.get',
+				args: {
+					doctype: 'Request for Purchase',
+					filters: {'name': frm.doc.request_for_purchase}
+				},
+				callback: function(r) {
+					if(r && r.message){
+						var data = r.message;
+						if(data.items){
+							data.items.forEach((item, i) => {
+								var d = frm.add_child('items');
+								d.item_name = item.item_name
+								d.item_code = item.item_code
+								d.t_warehouse = item.t_warehouse
+								d.description = item.description
+								d.qty = item.qty
+								d.uom = item.uom
+								d.schedule_date = item.schedule_date
+								d.request_for_material = item.request_for_material
+								d.request_for_material_item = item.request_for_material_item
+							});
+							frm.refresh()
+						}
+					}
+				}
+			})
+		}
+	},
+
 	get_suppliers_button: function (frm) {
 		var doc = frm.doc;
 		var dialog = new frappe.ui.Dialog({
