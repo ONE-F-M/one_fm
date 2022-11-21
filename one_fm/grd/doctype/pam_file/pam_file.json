@@ -57,6 +57,7 @@
       "label": "Government Project"
      },
      {
+      "depends_on": "eval:doc.government_project==0",
       "fetch_from": "license_trade_name_english.license_trade_name_arabic",
       "fieldname": "license_trade_name_arabic",
       "fieldtype": "Data",
@@ -64,6 +65,7 @@
       "read_only": 1
      },
      {
+      "depends_on": "eval:doc.government_project==0",
       "fetch_from": "license_trade_name_english.license_number",
       "fieldname": "license_number",
       "fieldtype": "Data",

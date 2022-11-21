@@ -279,3 +279,11 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 	enqueue(method=sendemail, queue='short', timeout=300, event=None,
 		is_async=True, job_name=None, now=False, **email_args)
 	return True
+
+
+@frappe.whitelist(allow_guest=True)
+def validate_employee_id(employee_id=None):
+	doc = frappe.db.get_value("Employee",{ "employee_id": employee_id}, "employee_name")
+	if doc == None:
+		return response("Employee Not Found", 404, None, "Employee ID of an active Employee is required")
+	return response("Success", 200, doc)
