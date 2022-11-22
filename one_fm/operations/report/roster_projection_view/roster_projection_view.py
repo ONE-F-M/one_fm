@@ -4,7 +4,7 @@
 from datetime import datetime
 import frappe
 from frappe import _
-from frappe.utils import today, add_days
+from frappe.utils import today, add_days, getdate, get_last_day
 
 def execute(filters=None):
 	columns, data = get_columns(), get_data(filters)
@@ -13,95 +13,67 @@ def execute(filters=None):
 
 def get_data(filters):
 	results = []
-	use_attendance = False
-	to_date = f"{filters.year}-{filters.month}-31"
-	live_today = today()
-	add_schedule = False
+	month_start = getdate().replace(day=1, month=int(filters.month), year=int(filters.year))
+	month_end = get_last_day(getdate())
+	today = getdate()
+	tomorrow = add_days(today, 1)
+	yesterday = add_days(today, -1)
+	schedules = 0
+	use_schedule = True
+	if today.month > month_end.month and today.year <= month_start.year:
+		yesterday = month_end
+		use_schedule = False
 
-	if (int(filters.month) == int(datetime.today().month)) and (int(filters.year) == int(datetime.today().year)):
-		if datetime.today().day != 1:
-			use_attendance = True
-			to_date = add_days(live_today, -1)
-			add_schedule = True
-	else:
-		live_today = f"{filters.year}-{filters.month}-01"
-		use_attendance = True
-
-	contracts = frappe.db.get_list('Contracts')
-	for contracts in contracts:
-		es_query = f"""
-			SELECT con.client, con.project, con_item.item_code, con_item.count, con_item.rate, 
-			con_item.count*con_item.rate as total_rate, COUNT(es.name) as projection
+	contracts_detail = frappe.db.sql("""
+		SELECT con.client, con.project, con_item.item_code, con_item.count, con_item.rate,
+			con_item.count*con_item.rate as total_rate
 			FROM `tabContracts` con
 			LEFT JOIN `tabContract Item` con_item ON con_item.parent=con.name
-			LEFT JOIN `tabEmployee Schedule` es ON es.project=con.project
-			LEFT JOIN `tabOperations Role` pt ON pt.name=es.operations_role
-			WHERE con.name = \"{contracts.name}\"
-			AND es.employee_availability='Working'
-			AND con_item.item_code=pt.sale_item
-			AND es.date BETWEEN "{filters.year}-{filters.month}-01" AND "{filters.year}-{filters.month}-31"
-			GROUP BY con_item.item_code
-		"""
-		ps_query = f"""
-			SELECT con.client, con.project, con_item.item_code, con_item.count, con_item.rate, 
-			con_item.count*con_item.rate as total_rate, COUNT(ps.name) as projection
-			FROM `tabContracts` con
-			LEFT JOIN `tabContract Item` con_item ON con_item.parent=con.name
-			LEFT JOIN `tabPost Schedule` ps ON ps.project=con.project
-			LEFT JOIN `tabOperations Role` pt ON pt.name=ps.operations_role
-			WHERE con.name = \"{contracts.name}\"
-			AND ps.post_status='Planned'
-			AND con_item.item_code=pt.sale_item
-			AND ps.date BETWEEN "{filters.year}-{filters.month}-01" AND "{filters.year}-{filters.month}-31"
-			GROUP BY con_item.item_code
-		"""
-		es_data = frappe.db.sql(es_query, as_dict=1)
-		ps_data = frappe.db.sql(ps_query, as_dict=1)
-		ps_data_dict = {}
-		at_data_dict = {}
-		for i in ps_data:
-			ps_data_dict[i.project+'-'+i.item_code] = i
+	""", as_dict=1)
+	for row in contracts_detail:
+		# get projection
+		row.projection = 0
+		row.projection_rate = 0
+		row.live_projection = 0
+		row.live_projection_rate = 0
+		roles = [i.name for i in frappe.db.sql(f"""
+			SELECT name FROM `tabOperations Role`
+			WHERE sale_item="{row.item_code}" AND project="{row.project}"
+		""", as_dict=1)]
+		if roles:
+			post_schedule = frappe.db.get_list("Post Schedule", filters={
+				'project':row.project,
+				'operations_role': ['IN', roles],
+				'date': ['BETWEEN', [month_start, month_end]]}
+			)
+			if post_schedule:
+				row.projection = len(post_schedule)/row.count
+				row.projection_rate = row.rate*row.projection
 
-		for i in es_data:
-			ps_key = ps_data_dict.get(i.project+'-'+i.item_code)
-			if ps_key:
-				i.projection = i.projection/ps_key.projection
-				i.projection_rate = i.rate*i.projection
-				i.ps_projection = ps_key.projection
+			# get schedules
+			if today == month_start:
+				attendance = 0
 			else:
-				# i.projection = 0
-				i.projection_rate = i.rate*i.projection
-				# i.ps_projection = 0
-
-		# 	# Compute live projection
-		if es_data and use_attendance:
-			attendance_data = get_live_attendance_query(contracts, filters, to_date)
-
-			if attendance_data:
-				for i in attendance_data:
-					at_data_dict[i.project+'-'+i.item_code] = i
-				if add_schedule:
-					schedule_data = get_live_schedule_query(contracts, filters, live_today)
-					if schedule_data:
-						for i in schedule_data:
-							sdt_key = at_data_dict.get(i.project+'-'+i.item_code)
-							if sdt_key:
-								sdt_key.attendance += i.projection
+				attendance = frappe.db.count("Attendance", filters={
+					'docstatus': 1,
+					'project':row.project,
+					'operations_role': ['IN', roles],
+					'status': ['IN', ['Present', 'Work From Home', 'On Leave']],
+					'attendance_date': ['BETWEEN', [month_start, yesterday]]},
+				)
+			if use_schedule:
+				schedules = frappe.db.count("Employee Schedule", filters={
+					'project':row.project,
+					'operations_role': ['IN', roles],
+					'employee_availability': 'Working',
+					'date': ['BETWEEN', [today, month_end]]}
+				)
+				row.live_projection = attendance + schedules
+				row.live_projection_rate = row.live_projection * row.rate
 
 
-				for i in es_data:
-					at_key = at_data_dict.get(i.project+'-'+i.item_code)
-					if at_key:
-						i.live_projection = at_key.attendance/i.ps_projection if i.ps_projection else 0
-						i.live_projection_rate = i.live_projection * i.rate
-					else:
-						i.live_projection = 0
-						i.live_projection_rate = 0
 
-
-		if es_data:
-			results+=es_data
-
+	results = contracts_detail
 	return results
 
 def get_live_schedule_query(contracts, filters, start_date):
@@ -183,7 +155,8 @@ def get_columns():
 			'fieldname': 'projection',
 			'label': _('Projection'),
 			'fieldtype': 'Float',
-			'width': 100
+			'width': 100,
+			'precision':2
 		},
 		{
 			'fieldname': 'projection_rate',

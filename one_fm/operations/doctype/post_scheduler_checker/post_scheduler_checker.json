@@ -61,7 +61,7 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
-   "options": "Roster Checker Item"
+   "options": "Post Scheduler Checker Item"
   },
   {
    "fieldname": "supervisor",
@@ -80,10 +80,10 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-11-17 14:23:55.345463",
+ "modified": "2022-11-21 15:13:50.453671",
  "modified_by": "Administrator",
  "module": "Operations",
- "name": "Roster Projection Checker",
+ "name": "Post Scheduler Checker",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
