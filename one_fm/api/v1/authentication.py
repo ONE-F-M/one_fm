@@ -283,6 +283,8 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 
 @frappe.whitelist(allow_guest=True)
 def validate_employee_id(employee_id=None):
+	if employee_id is None:
+		return response("Employee ID cannot be None", 401, None, "Employee ID is required !")
 	doc = frappe.db.get_value("Employee",{ "employee_id": employee_id}, "employee_name")
 	if doc == None:
 		return response("Employee Not Found", 404, None, "Employee ID of an active Employee is required")
