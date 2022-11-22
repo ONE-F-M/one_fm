@@ -13,5 +13,9 @@ def validate_leave_proof_document_requirement(doc, method):
 
     if doc.leave_type and doc.status in ['Open', 'Approved']:
         doc.is_proof_document_required = frappe.db.get_value('Leave Type', doc.leave_type, 'is_proof_document_required')
-        if doc.is_proof_document_required and not doc.proof_document:
-            frappe.throw(_("Proof Document Required for {0} Leave Type.!".format(doc.leave_type)))
+        if doc.is_proof_document_required and not doc.proof_documents:
+            frappe.throw(_("Proof Document Required for {} Leave Type".format(doc.leave_type)))
+
+        for each in doc.proof_documents:
+            if not each.attachments:
+                frappe.throw(_("Proof Document Required for {} Leave Type in row {}".format(doc.leave_type,each.idx)))

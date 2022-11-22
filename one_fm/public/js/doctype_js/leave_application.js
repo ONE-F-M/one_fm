@@ -31,3 +31,16 @@ frappe.ui.form.on("Leave Application", {
 
     }
 })
+
+
+frappe.ui.form.on("Proof Documents",{
+    refresh:(frm,cdt,cdn)=>{
+        frm.set_intro("Please save the form after adding each row before attaching the proof")
+    },
+    // This ensures that the attachment field is not shown until the row is saved
+    proof_documents_add:function(frm,cdt,cdn) {
+        if(cdn.includes('new')){
+            frm.fields_dict.proof_documents.grid.toggle_display('attachments',false)
+        }
+    }
+})

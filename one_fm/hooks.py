@@ -183,11 +183,10 @@ doc_events = {
 		"validate":"one_fm.one_fm.timesheet_custom.validate_date",
 	},
 	"Leave Application": {
-		"on_submit": "one_fm.utils.leave_appillication_on_submit",
+		"on_submit": ["one_fm.utils.leave_appillication_on_submit","one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"],
 		"validate": [
 			"one_fm.utils.validate_sick_leave_date",
 			"one_fm.utils.validate_hajj_leave",
-			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
 		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
 	},
