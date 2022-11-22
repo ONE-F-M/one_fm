@@ -38,7 +38,7 @@ def on_trash(doc, method=None):
 def delete_schedule(doc):
     check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})
     for schedule in check_list:
-        frappe.get_doc("Post Schedule", schedule.get("name")).delete()
+        frappe.get_doc("Post Schedule", schedule.name).delete()
     frappe.db.commit()
    
     
