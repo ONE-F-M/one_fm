@@ -979,7 +979,7 @@ function bind_events(page) {
 		//on checkbox select change
 	}
 	let d2 = performance.now();
-	
+
 	window.employees_list = [];
 	bind_search_bar_event(page);
 
@@ -1471,7 +1471,7 @@ function get_post_data(page) {
 		// console.log(start_date, end_date, project, site, shift, operations_role,limit_start, limit_page_length);
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 			.then(res => {
-				
+
 				$('#cover-spin').hide();
 				page.pagination.total = res.total;
 				let $postMonth = $('.postMonth');
@@ -1560,7 +1560,7 @@ function get_post_week_data(page) {
 	let { limit_start, limit_page_length } = page.pagination;
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 		.then(res => {
-			
+
 			page.pagination.total = res.total;
 			let $postWeek = $('.postWeek');
 			let $postWeekbody = $('.postWeek').find('#calenderweekviewtable tbody');
@@ -1718,7 +1718,7 @@ function get_shifts(page) {
 	let { project, site } = page.filters;
 	frappe.xcall('one_fm.api.mobile.roster.get_assigned_shifts', { employee_id, project, site })
 		.then(res => {
-			
+
 			let parent = $('[data-page-route="roster"] #rosteringshiftselect');
 			let shift_data = [{ 'id': '', 'text': 'Select Shift' }];
 			res.forEach(element => {
@@ -1797,7 +1797,7 @@ function get_designations(page){
 			$(parent).on('select2:select', function (e) {
 				page.filters.designation = $(this).val();
 				let element = get_wrapper_element().slice(1);
-				
+
 				page[element](page);
 			});
 		})
@@ -2378,7 +2378,7 @@ function setup_staff_filters(page) {
 		cur_page.page.page.filters = filters;
 		cur_page.page.page.pagination = pagination;
 	}
-	
+
 }
 
 function setup_staff_filters_data() {
@@ -2536,7 +2536,7 @@ function staff_edit_dialog() {
 
 function update_staff_view() {
 	frappe.realtime.on("staff_view", function (output) {
-		
+
 		render_staff($(".layoutSidenav_content").attr("data-view"));
 	});
 }
@@ -2697,7 +2697,7 @@ function displayWeekCalendar(weekCalendarSettings, page) {
 	let endcalendarmonth = weekCalendarSettings.date.endOf("week").format("MMM");
 	let calendaryear = weekCalendarSettings.date.format("YYYY");
 	let startofday, endofday;
-	
+
 	if (page.start_date) {
 		startofday = moment(page.start_date, 'YYYY-MM-DD').startOf("week").date();
 		endofday = moment(page.start_date, 'YYYY-MM-DD').endOf("week").date();
@@ -2906,14 +2906,14 @@ function schedule_change_post(page) {
 					let end_date = d.get_value('end_date');
 					if (start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
 						// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
-						// Set the date to null and refresh the field 
+						// Set the date to null and refresh the field
 						d.fields_dict.start_date.value  = '';
 						d.fields_dict.start_date.refresh()
 						frappe.throw(__("Start Date cannot be before today."));
 					}
 					if (start_date && end_date && moment(end_date).isBefore(moment(start_date))) {
 						// d.set_value('start_date', frappe.datetime.add_days(moment(frappe.datetime.nowdate()), '1'));
-						// Set the date to null and refresh the field 
+						// Set the date to null and refresh the field
 						d.fields_dict.start_date.value  = '';
 						d.fields_dict.start_date.refresh()
 						frappe.throw(__("From Date cannot be after Till Date."));
@@ -2930,13 +2930,13 @@ function schedule_change_post(page) {
 					let end_date = d.get_value('end_date');
 					let start_date = d.get_value('start_date');
 					if (end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
-						// Set the date to null and refresh the field 
+						// Set the date to null and refresh the field
 						d.fields_dict.end_date.value  = '';
 						d.fields_dict.end_date.refresh()
 						frappe.throw(__("End Date cannot be before today."));
 					}
 					if (start_date && end_date && moment(end_date).isBefore(moment(start_date))) {
-						// Set the date to null and refresh the field 
+						// Set the date to null and refresh the field
 						d.fields_dict.end_date.value  = '';
 						d.fields_dict.end_date.refresh()
 						frappe.throw(__("End Date cannot be before Start Date."));
@@ -2973,10 +2973,19 @@ function schedule_change_post(page) {
 				.then(res => {
 					d.hide();
 					$('#cover-spin').hide();
-					let element = get_wrapper_element().slice(1);
-					update_roster_view(element, page);
+					if(res && res.length > 1){
+						res[0].forEach((emp, i) => {
+							res[1].forEach((date, i) => {
+								let selectid = emp.name+'|'+date.slice(0, 10)
+								$("[data-selectid='"+selectid+"']").addClass('bluebox')
+								$("[data-selectid='"+selectid+"']").removeClass('selectclass')
+							});
+						});
+
+					}
+					// let element = get_wrapper_element().slice(1);
+					// update_roster_view(element, page);
 				}).catch(e => {
-					
 					$('#cover-spin').hide();
 				});
 		}
@@ -2987,7 +2996,6 @@ function update_roster_view(element, page) {
 	page[element](page);
 	frappe.realtime.on("roster_view", function (output) {
 		// message = JSON.parse(output);
-		
 		page[element](page);
 	});
 }
@@ -3006,7 +3014,7 @@ function paginateTable(page) {
 		var children = listElement.children();
 		let wrapper_element = $(get_wrapper_element());
 		var pager = wrapper_element.find('.pager');
-		
+
 		if (typeof settings.childSelector != "undefined") {
 			children = listElement.find(settings.childSelector);
 		}
@@ -3050,7 +3058,7 @@ function paginateTable(page) {
 		pager.find('li .page_link').click(function () {
 			var clickedPage = $(this).html().valueOf() - 1;
 			let limit_start = ((clickedPage + 1) * 100) - 100;
-			
+
 			page.pagination.limit_start = limit_start;
 			// goTo(clickedPage,perPage);
 			let element = get_wrapper_element().slice(1);
@@ -3246,7 +3254,7 @@ function editMobileNumber(){
         ],
         primary_action_label: 'Submit',
         primary_action(values) {
-            
+
             d.hide();
         }
     });

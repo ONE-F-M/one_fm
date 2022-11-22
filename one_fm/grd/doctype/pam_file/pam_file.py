@@ -3,12 +3,21 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-# import frappe
+import frappe
 from frappe.model.document import Document
 
 class PAMFile(Document):
-	def on_update(self):
-		if self.government_project == 1:
-			self.db_set('pam_file_number',self.contract_pam_file_number)
+	#def on_update(self):
+		#if self.government_project == 1:
+			#self.db_set('pam_file_number',self.contract_pam_file_number)
+
+	def validate(self):
+		if self.government_project:
+			if self.file_number:
+				frappe.throw("File Number cannot be set with Government project")
+
+			if self.license_number:
+				frappe.throw("Company License cannot be set with Governement Project")
+
 		
 
