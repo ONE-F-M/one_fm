@@ -90,7 +90,7 @@ pdfkit==1.0.0
 pexpect==4.8.0
 phonenumbers==8.12.40
 pickleshare==0.7.5
-Pillow==9.1.1
+Pillow==9.3.0
 plaid-python==7.2.1
 ply==3.11
 premailer==3.8.0
