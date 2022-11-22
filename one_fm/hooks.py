@@ -495,7 +495,8 @@ scheduler_events = {
 		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
-			'one_fm.api.tasks.process_attendance'
+			'one_fm.api.tasks.process_attendance',
+			"one_fm.events.email_queue.flush_emails",
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
