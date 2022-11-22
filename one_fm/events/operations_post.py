@@ -5,8 +5,18 @@ import pandas as pd
 from frappe.utils import getdate, add_to_date, cstr
 
 
-def after_insert(doc, method=None):
-    return frappe.enqueue(set_post_schedule(doc=doc), is_async=True, queue="long")
+
+
+def before_save(doc, method=None):
+    print(doc.status)
+    if doc.status == "Active":
+        check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})
+        if len(check_list) < 1 :
+            return frappe.enqueue(set_post_schedule(doc=doc), is_async=True, queue="long")
+
+    elif doc.status == "Inactive":
+        return frappe.enqueue(delete_schedule(doc=doc), is_async=True, queue="long")
+
 
 
 def set_post_schedule(doc):
@@ -30,9 +40,6 @@ def set_post_schedule(doc):
     frappe.db.commit()
 
 
-
-def on_trash(doc, method=None):
-    return frappe.enqueue(delete_schedule(doc=doc), is_async=True, queue="long")
 
 
 def delete_schedule(doc):
