@@ -31,13 +31,15 @@ def set_post_schedule(doc):
 
 
 
-
 def on_trash(doc, method=None):
-    try:
-        check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})
-        for schedule in check_list:
-            frappe.get_doc("Post Schedule", schedule.get("name")).delete()
-    except:
-        pass
+    return frappe.enqueue(delete_schedule(doc=doc), is_async=True, queue="long")
+
+
+def delete_schedule(doc):
+    check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})
+    for schedule in check_list:
+        frappe.get_doc("Post Schedule", schedule.get("name")).delete()
+    frappe.db.commit()
+   
     
   
