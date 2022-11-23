@@ -5,10 +5,7 @@ import pandas as pd
 from frappe.utils import getdate, add_to_date, cstr
 
 
-
-
 def before_save(doc, method=None):
-    print(doc.status)
     if doc.status == "Active":
         check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})
         if len(check_list) < 1 :
