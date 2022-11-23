@@ -357,6 +357,11 @@ doc_events = {
 	"User": {
 		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
 	},
+	"Operations Post": {
+		# "after_insert":"one_fm.events.operations_post.after_insert",
+		# "on_trash": "one_fm.events.operations_post.on_trash",
+		"before_save": "one_fm.events.operations_post.before_save",
+	},
 	"Email Queue": {
 		"after_insert":"one_fm.events.email_queue.after_insert",
 	},
@@ -461,7 +466,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_sites_followup',
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_penalty',
 		'one_fm.tasks.one_fm.monthly.employee_schedule_monthly',
-  ],
+   ],
 
 	"monthly": [
 		"one_fm.accommodation.utils.execute_monthly",
@@ -490,7 +495,8 @@ scheduler_events = {
 		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
-			'one_fm.api.tasks.process_attendance'
+			'one_fm.api.tasks.process_attendance',
+			"one_fm.events.email_queue.flush_emails",
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
@@ -514,7 +520,7 @@ scheduler_events = {
 		],
 		"10 4 * * *": [ #“At 04:10.”
 			'one_fm.utils.check_grp_operator_submission_four',
-			'one_fm.operations.doctype.roster_projection_checker.roster_projection_checker.schedule_roster_checker',
+			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.schedule_roster_checker',
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.check_roster_day_off'
 		],
 		"30 4 * * *": [

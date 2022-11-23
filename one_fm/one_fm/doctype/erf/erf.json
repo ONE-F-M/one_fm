@@ -825,10 +825,9 @@
    "depends_on": "pam_file",
    "fetch_from": "pam_file.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "PAM File Number",
    "no_copy": 1,
-   "options": "PAM File Number",
    "read_only": 1
   },
   {
@@ -869,17 +868,18 @@
    "options": "Shift Type"
   },
   {
+
    "depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
    "fieldname": "interview_round",
    "fieldtype": "Link",
    "label": "Interview Round",
-   "mandatory_depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
+   "mandatory_depends_on": "eval: doc.hiring_method == 'Bulk Recruitment' && doc.status == 'Draft'",
    "options": "Interview Round"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-07 16:39:44.562323",
+ "modified": "2022-11-14 10:10:22.597671",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

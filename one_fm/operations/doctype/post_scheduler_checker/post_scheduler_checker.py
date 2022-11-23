@@ -7,7 +7,7 @@ from frappe.utils import getdate, get_last_day, get_first_day
 from frappe.model.document import Document
 from one_fm.utils import get_week_start_end
 
-class RosterProjectionChecker(Document):
+class PostSchedulerChecker(Document):
 	def autoname(self):
 		self.name = f"{self.contract}-{str(getdate())}"
 	def before_insert(self):
@@ -56,12 +56,12 @@ class RosterProjectionChecker(Document):
 					schedule_count = 0
 					for role in roles:
 						schedules = frappe.db.get_list(
-							"Employee Schedule",
+							"Post Schedule",
 							filters={
 								'date': ['BETWEEN', [first_day, last_day]],
 								'project': self.project,
 								'operations_role': ['in', role.name],
-								'employee_availability': 'Working'
+								'post_status': 'Planned'
 							}
 						)
 						roles_dict[role.name] = len(schedules)
@@ -78,12 +78,12 @@ class RosterProjectionChecker(Document):
 						last_day = week_range.end
 						for role in roles:
 							schedules = frappe.db.get_list(
-								"Employee Schedule",
+								"Post Schedule",
 								filters={
 									'date': ['BETWEEN', [first_day, last_day]],
 									'project': self.project,
 									'operations_role': ['in', role.name],
-									'employee_availability': 'Working'
+									'post_status': 'Planned'
 								}
 							)
 						roles_dict[role.name] = len(schedules)
@@ -113,7 +113,7 @@ class RosterProjectionChecker(Document):
 def schedule_roster_checker():
 	for row in frappe.db.get_list("Contracts"):
 		try:
-			doc = frappe.get_doc({"doctype":"Roster Projection Checker", 'contract': row.name}).insert(ignore_permissions=True)
+			doc = frappe.get_doc({"doctype":"Post Scheduler Checker", 'contract': row.name}).insert(ignore_permissions=True)
 		except Exception as e:
 			print(e)
 	frappe.db.commit()
