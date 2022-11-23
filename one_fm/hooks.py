@@ -495,7 +495,8 @@ scheduler_events = {
 		],
 		"0/15 * * * *": [ #At every 15th minute from 0 through 59.”
 			"one_fm.legal.doctype.penalty.penalty.automatic_reject",
-			'one_fm.api.tasks.process_attendance'
+			'one_fm.api.tasks.process_attendance',
+			"one_fm.events.email_queue.flush_emails",
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
@@ -519,7 +520,7 @@ scheduler_events = {
 		],
 		"10 4 * * *": [ #“At 04:10.”
 			'one_fm.utils.check_grp_operator_submission_four',
-			'one_fm.operations.doctype.post_schedule_checker.post_schedule_checker.schedule_roster_checker',
+			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.schedule_roster_checker',
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.check_roster_day_off'
 		],
 		"30 4 * * *": [

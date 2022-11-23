@@ -56,12 +56,12 @@ class PostSchedulerChecker(Document):
 					schedule_count = 0
 					for role in roles:
 						schedules = frappe.db.get_list(
-							"Employee Schedule",
+							"Post Schedule",
 							filters={
 								'date': ['BETWEEN', [first_day, last_day]],
 								'project': self.project,
 								'operations_role': ['in', role.name],
-								'employee_availability': 'Working'
+								'post_status': 'Planned'
 							}
 						)
 						roles_dict[role.name] = len(schedules)
