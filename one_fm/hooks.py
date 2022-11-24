@@ -583,10 +583,16 @@ scheduler_events = {
 		"30 0 1 * *": [
 			'one_fm.tasks.one_fm.monthly.execute'
 		],
-		"0 0 * * *": [
+		"15 0 * * *": [
+			'one_fm.api.tasks.assign_am_shift'
+		],
+		"45 1 * * *": [
 			'one_fm.api.tasks.assign_am_shift'
 		],
 		"0 12 * * *": [
+			'one_fm.api.tasks.assign_pm_shift'
+		],
+		"45 13 * * *": [
 			'one_fm.api.tasks.assign_pm_shift'
 		]
 	}
