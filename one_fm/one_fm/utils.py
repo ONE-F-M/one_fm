@@ -200,6 +200,11 @@ def validate_mendatory_fields_for_recruiter(doc):
         message += '</ul>'
         frappe.throw(message)
 
+
+def validate_file(doc,ev):
+    if not doc.file_url:
+        doc.file_url=doc.write_file()
+
 @frappe.whitelist()
 def get_signatory_name(parent,name):
     """
