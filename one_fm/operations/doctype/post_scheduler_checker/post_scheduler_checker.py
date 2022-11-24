@@ -66,8 +66,7 @@ class PostSchedulerChecker(Document):
 					message += f"""No operations roles created with sale item {item.item_code} in project {contract.project}, for contract {contract.name} in items row {item.idx}\n\n"""
 				if not operations_post:
 					message += f"""No operations posts created with sale item {item.item_code} in project {contract.project}, for contract {contract.name} in items row {item.idx}\n\n"""
-
-				if len(operations_post)>item.count:
+				elif len(operations_post)>item.count:
 					message += f"""More operations post created, expected: {item.count}, created: {len(operations_post)} for roles {roles}\n\n"""
 				elif len(operations_post)<item.count:
 					message += f"""Less operations post created, expected: {item.count}, created: {len(operations_post)} for roles {roles}\n\n"""
@@ -85,12 +84,11 @@ class PostSchedulerChecker(Document):
 				for post in operations_post:
 					post_schedules = get_post_schedules(project=contract.project, post=post, first_day=first_day, last_day=last_day)
 					if not post_schedules:
-						message += f"""No post schedules created for {post}\n\n"""
-
-					if post_schedules > expected:
-						message += f"""More post schedules created, expected: {expected}, created: {post_schedules} for post {post}\n\n"""
+						message += f"""No post schedules created for {post.name}\n\n"""
+					elif post_schedules > expected:
+						message += f"""More post schedules created, expected: {expected}, created: {post_schedules} for post {post.name}\n\n"""
 					elif post_schedules < expected:
-						message += f"""Less post schedules created, expected: {expected}, created: {post_schedules} for post {post}\n\n"""
+						message += f"""Less post schedules created, expected: {expected}, created: {post_schedules} for post {post.name}\n\n"""
 
 				if message:
 					self.append('items', {
