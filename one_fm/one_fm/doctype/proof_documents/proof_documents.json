@@ -1,31 +1,46 @@
 {
-    "actions": [],
-    "creation": "2022-11-07 15:52:41.618817",
-    "doctype": "DocType",
-    "editable_grid": 1,
-    "engine": "InnoDB",
-    "field_order": [
-     "attachments"
-    ],
-    "fields": [
-     {
-      "allow_on_submit": 1,
-      "fieldname": "attachments",
-      "fieldtype": "Attach",
-      "label": "Attachments"
-     }
-    ],
-    "istable": 1,
-    "links": [],
-    "modified": "2022-11-07 15:52:41.618817",
-    "modified_by": "Administrator",
-    "module": "One Fm",
-    "name": "Proof Documents",
-    "owner": "Administrator",
-    "permissions": [],
-    "quick_entry": 1,
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": [],
-    "track_changes": 1
-   }
+ "actions": [],
+ "creation": "2022-11-07 15:52:41.618817",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "description",
+  "attachments",
+  "html_attach"
+ ],
+ "fields": [
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attachments",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Attachments"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "html_attach",
+   "fieldtype": "HTML",
+   "label": "Attachments",
+   "options": "<input type=\"file\">"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2022-11-24 02:54:47.805933",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Proof Documents",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
