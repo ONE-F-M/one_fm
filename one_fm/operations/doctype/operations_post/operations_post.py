@@ -40,14 +40,14 @@ class OperationsPost(Document):
 		if condition != self.name:
 			rename_doc(self.doctype, self.name, condition, force=True)
 
-	def before_save(doc, method=None):
-		if doc.status == "Active":
-			check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})
+	def on_update(self):
+		if self.status == "Active":
+			check_list = frappe.db.get_list("Post Schedule", filters={"post":self.name, "date": [">", getdate()]})
 			if len(check_list) < 1 :
-				return frappe.enqueue(set_post_schedule(doc=doc), is_async=True, queue="long")
+				return frappe.enqueue(set_post_schedule(doc=self), is_async=True, queue="long")
 
-		elif doc.status == "Inactive":
-			return frappe.enqueue(delete_schedule(doc=doc), is_async=True, queue="long")
+		elif self.status == "Inactive":
+			return frappe.enqueue(delete_schedule(doc=self), is_async=True, queue="long")
 
 
 
