@@ -586,15 +586,15 @@ scheduler_events = {
 		"15 0 * * *": [
 			'one_fm.api.tasks.assign_am_shift'
 		],
-		"45 1 * * *": [
-			'one_fm.api.tasks.assign_am_shift'
-		],
+		# "45 1 * * *": [
+		# 	'one_fm.api.tasks.assign_am_shift'
+		# ],
 		"15 12 * * *": [
 			'one_fm.api.tasks.assign_pm_shift'
 		],
-		"45 13 * * *": [
-			'one_fm.api.tasks.assign_pm_shift'
-		]
+		# "45 13 * * *": [
+		# 	'one_fm.api.tasks.assign_pm_shift'
+		# ]
 	}
 }
 
