@@ -64,6 +64,7 @@ def login(client_id, grant_type, employee_id, password):
 			frappe.throw(_(response.text))
 
 	except Exception as e:
+		print(e)
 		return frappe.utils.response.report_error(e.http_status_code)
 
 def change_enroll_status(employee):
@@ -275,3 +276,4 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 	enqueue(method=sendemail, queue='short', timeout=300, event=None,
 		is_async=True, job_name=None, now=False, **email_args)
 	return True
+
