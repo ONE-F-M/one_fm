@@ -64,7 +64,6 @@ def login(client_id, grant_type, employee_id, password):
 			frappe.throw(_(response.text))
 
 	except Exception as e:
-		print(e)
 		return frappe.utils.response.report_error(e.http_status_code)
 
 def change_enroll_status(employee):

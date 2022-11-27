@@ -16,7 +16,6 @@ from one_fm.processor import sendemail, send_whatsapp
 
 
 
-now = datetime.now().date()
 
 @frappe.whitelist(allow_guest=True)
 def login(client_id: str = None, grant_type: str = None, employee_id: str = None, password: str = None) -> dict:
