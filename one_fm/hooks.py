@@ -317,6 +317,7 @@ doc_events = {
 		"after_insert": [
 			"one_fm.utils.assign_issue",
 			"one_fm.api.doc_methods.issue.notify_issue_raiser",
+			"one_fm.events.issue.send_google_chat_notification"
 		],
     "on_update": "one_fm.utils.notify_on_close",
 	},
