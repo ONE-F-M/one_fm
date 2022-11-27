@@ -177,6 +177,6 @@ def check_signed_workContract_employee_completed():
         Scheduler function
     :return:
     """
-    transfers = frappe.db.get_list("Transfer Paper", filters={'signed':'Yes', 'tp_status': 'Pending By GRD'})
+    transfers = frappe.db.get_list("Transfer Paper", filters={'tp_status': 'Pending By GRD'})
     for t in transfers:
         frappe.get_doc("Transfer Paper", t.name).check_signed_workContract_employee_completed()

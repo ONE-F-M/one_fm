@@ -277,7 +277,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 def get_active_employees(start_date, end_date, master_data):
 	employees = [i.name for i in frappe.db.get_list('Employee', filters={'status': ['!=', 'Left']})]
 	employees += [i.name for i in frappe.db.sql("""
-		SELECT name FROM `tabEmployee` 
+		SELECT name FROM `tabEmployee`
 		WHERE status='Left' AND relieving_date BETWEEN '{start_date}' AND '{end_date}'""".format(
 		start_date=start_date, end_date=end_date), as_dict=1
 	)]
@@ -421,7 +421,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 
 		frappe.msgprint(msgprint)
 		# update_roster(key="roster_view")
-	return True
+	return employees_list, date_range
 
 def background_schedule_staff(employees, start_date, end_date, shift, operations_role, otRoster, keep_days_off, day_off_ot, request_employee_schedule):
 	for employee in employees:

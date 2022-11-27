@@ -198,7 +198,7 @@ def email_notification_reminder(grd_user,paci_list,reminder_number, action,type,
     """
     message_list=[]
     for paci in paci_list:
-        page_link = get_url(frappe.get_doc("Paci", paci.name).get_url())
+        page_link = get_url(frappe.get_doc("PACI", paci.name).get_url())
         message = "<a href='{0}'>{1}</a>".format(page_link, paci.civil_id)
         message_list.append(message)
 

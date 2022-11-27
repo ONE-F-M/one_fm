@@ -14,6 +14,13 @@ frappe.ui.form.on('Job Opening', {
         }
       }
     });
+    frm.set_query('one_fm_erf', function(doc) {
+      return {
+        filters: {
+          'status': 'Accepted'
+        }
+      }
+    });
   },
   one_fm_job_post_valid_till: function(frm) {
     validate_date(frm);

@@ -4,6 +4,9 @@
 {% include 'erpnext/public/js/controllers/buying.js' %};
 
 erpnext.buying.QuotationFromSupplier = class QuotationFromSupplier extends erpnext.buying.BuyingController {
+	setup() {
+		super.setup();
+	}
 	request_for_quotation() {
 		set_items(this.frm);
 	}

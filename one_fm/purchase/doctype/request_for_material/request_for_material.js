@@ -321,6 +321,16 @@ frappe.ui.form.on('Request for Material', {
 							d.quantity_to_transfer = d.qty
 						}
 					});
+
+					if(frm.doc.type == 'Stock' && frm.doc.docstatus == 0){
+						if(item.description && !item.requested_description){
+							frappe.model.set_value(item.doctype, item.name, 'requested_description', item.description);
+						}
+						if(item.item_name && !item.requested_item_name){
+							frappe.model.set_value(item.doctype, item.name, 'requested_item_name', item.item_name);
+						}
+						frm.refresh_field('items');
+					}
 				}
 			}
 		});
@@ -514,11 +524,18 @@ var fetch_erf_items = function(frm){
 
 var set_item_field_property = function(frm) {
 	var fields_dict = [];
+	frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = true;
+	frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).depends_on = 'eval:doc.docstatus==1';
 	if((frm.doc.docstatus == 1 && (frappe.session.user == frm.doc.request_for_material_accepter || frm.doc.status == 'Approved')) || frm.doc.type == 'Stock'){
 		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).read_only = false;
+		frappe.meta.get_docfield("Request for Material Item", "item_code", frm.doc.name).depends_on = '';
 	}
 	if(frm.doc.type == 'Stock'){
-//		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
+		if(frm.is_new()){
+			frm.clear_table('items');
+			frm.refresh_field('items');
+		}
+		fields_dict = [{'fieldname': 'requested_item_name', 'read_only': true}, {'fieldname': 'requested_description', 'read_only': true}];
 		frappe.meta.get_docfield("Request for Material Item", "requested_item_name", frm.doc.name).reqd = false;
 		frappe.meta.get_docfield("Request for Material Item", "requested_description", frm.doc.name).reqd = false;
 	}
@@ -560,14 +577,16 @@ var set_warehouse_filters = function(frm) {
 }
 
 var set_employee_from_the_session_user = function(frm) {
-	frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
-		if(r && r.name){
-			frm.set_value('employee', r.name);
-		}
-		else{
-			frappe.msgprint(__('Employee or Employee email not created for the user <b>{0}</b>', [frappe.session.user]))
-		}
-	});
+	if(frappe.session.user != 'Administrator'){
+		frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
+			if(r && r.name){
+				frm.set_value('employee', r.name);
+			}
+			else{
+				frappe.msgprint(__('Employee or Employee email not created for the user <b>{0}</b>', [frappe.session.user]))
+			}
+		});
+	}
 };
 
 var set_employee_or_project = function(frm) {
@@ -651,7 +670,6 @@ frappe.ui.form.on("Request for Material Item", {
 		// const item = locals[doctype][name];
 		// frm.events.get_item_data(frm, item);
 	},
-
 	item_code: function(frm, doctype, name) {
 		const item = locals[doctype][name];
 		// set childtable button color
@@ -820,7 +838,7 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 };
 
 // for backward compatibility: combine new and previous states
-$.extend(cur_frm.cscript, new erpnext.buying.MaterialRequestController({frm: cur_frm}));
+extend_cscript(cur_frm.cscript, new erpnext.buying.MaterialRequestController({frm: cur_frm}));
 
 function set_schedule_date(frm) {
 	if(frm.doc.schedule_date){
