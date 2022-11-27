@@ -1,5 +1,6 @@
 from pandas.core.indexes.datetimes import date_range
 import frappe
+from one_fm.one_fm.page.roster.employee_map  import CreateMap
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate
 import itertools
 import pandas as pd
@@ -12,6 +13,9 @@ import os
 from multiprocessing.pool import ThreadPool as Pool
 from itertools import product
 from one_fm.api.notification import create_notification_log
+
+
+
 
 @frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
@@ -80,18 +84,26 @@ def get_staff_filters_data():
 	}
 
 
+
+
+
 @frappe.whitelist()
 def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, operations_role=None, designation=None, isOt=None, limit_start=0, limit_page_length=9999):
 	master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
 	operations_roles_list = []
 	employees = []
+	import time
+	t1 = time.time()
+
 
 	filters = {
 		'date': ['between', (start_date, end_date)]
 	}
+	str_filters = f'es.date between "{start_date}" and "{end_date}"' 
 
 	if operations_role:
 		filters.update({'operations_role': operations_role})
+		str_filters +=' and es.operations_role = "{}"'.format(operations_role)
 
 	if employee_search_id:
 		employee_filters.update({'employee_id': employee_search_id})
@@ -111,11 +123,14 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	if department:
 		employee_filters.update({'department': department})
 
-
+	t2 = time.time()
+	print('\n\n\n\n\n\n\n')
+	print("TIME TO INIT VALUES")
+	print(t2-t1)
 	#--------------------- Fetch Employee list ----------------------------#
 	if isOt:
 		employee_filters.update({'employee_availability' : 'Working'})
-		employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
+		employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=25, ignore_permissions=True)
 		master_data.update({'total' : len(employees)})
 		employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 		employee_filters.pop('employee_availability')
@@ -124,8 +139,8 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		employee_filters.update({'shift_working':'1'})
 		if designation:
 			employee_filters.update({'designation' : designation})
-		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
-		employees_asa = frappe.db.get_list("Additional Shift Assignment", additional_assignment_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
+		employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=25, ignore_permissions=True)
+		employees_asa = frappe.db.get_list("Additional Shift Assignment", additional_assignment_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=25, ignore_permissions=True)
 		if len(employees_asa) > 0:
 			employees.extend(employees_asa)
 			employees = filter_redundant_employees(employees)
@@ -144,16 +159,38 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		employee_filters.update({'operations_role': operations_role})
 	if designation:
 		employee_filters.pop('designation', None)
-
+	
 	#------------------- Fetch Operations Roles ------------------------#
 	operations_roles_list = frappe.db.get_list("Post Schedule", employee_filters, ["distinct operations_role", "post_abbrv"], ignore_permissions=True)
 	if operations_role:
 		employee_filters.pop('operations_role', None)
 	employee_filters.pop('date')
 	employee_filters.pop('post_status')
-
+	t3 = time.time()
+	print('TIME TO FETCH EMP LIST')
+	print(t3-t2)
 
 	#------------------- Fetch Employee Schedule --------------------#
+	#The following section creates a iterable that uses the employee name and id as keys and groups  the  employee data fetched in previous queries
+	
+	all_employees = tuple([i.employee for i in employees])
+	query = f"""
+		SELECT em.day_off_category,em.number_of_days_off,em.shift, es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv,  es.shift, roster_type, es.employee_availability, es.day_off_ot
+		from `tabEmployee Schedule`es , `tabEmployee`em  where {str_filters} and es.employee in {all_employees} group by employee order by date asc, employee_name asc 
+		"""
+	query2 = f"""
+		SELECT em.day_off_category,em.number_of_days_off,em.shift,at.status, at.attendance_date,at.employee,at.employee_name
+		from 	`tabAttendance`at , `tabEmployee`em  where at.attendance_date between '{start_date}' and '{add_to_date(cstr(getdate()), days=-1)}' 
+		and at.employee in {all_employees} group by employee
+		"""
+	rs1 = frappe.db.sql(query,as_dict=1)
+	rs2 = frappe.db.sql(query2,as_dict=1)
+	
+	
+
+	new_map=CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters)
+	result = new_map.start_mapping()
+
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
 		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
 		if isOt:
@@ -200,6 +237,10 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 			schedule_list.append(schedule)
 		formatted_employee_data.update({key[1]: schedule_list})
 	master_data.update({'employees_data': formatted_employee_data})
+	t4 = time.time()
+	print('TIME TO FETCH EMP SCHED')
+	print(t4-t3)
+	
 
 
 	#----------------- Get Operations Role count and check fill status -------------------#
@@ -227,6 +268,10 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 
 	master_data.update({'operations_roles_data': post_count_data})
 	#master_data = get_active_employees(start_date, end_date, master_data)
+	t5 = time.time()
+	print("LAST NESTED LOOP")
+	print(t5-t4)
+	print('\n\n\n\n\n\n\n')
 	return master_data
 
 def get_active_employees(start_date, end_date, master_data):
