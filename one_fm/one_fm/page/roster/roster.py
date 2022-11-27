@@ -174,22 +174,22 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	#The following section creates a iterable that uses the employee name and id as keys and groups  the  employee data fetched in previous queries
 	
 	all_employees = tuple([i.employee for i in employees])
-	query = f"""
-		SELECT em.day_off_category,em.number_of_days_off,em.shift, es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv,  es.shift, roster_type, es.employee_availability, es.day_off_ot
-		from `tabEmployee Schedule`es , `tabEmployee`em  where {str_filters} and es.employee in {all_employees} group by employee order by date asc, employee_name asc 
-		"""
-	query2 = f"""
-		SELECT em.day_off_category,em.number_of_days_off,em.shift,at.status, at.attendance_date,at.employee,at.employee_name
-		from 	`tabAttendance`at , `tabEmployee`em  where at.attendance_date between '{start_date}' and '{add_to_date(cstr(getdate()), days=-1)}' 
-		and at.employee in {all_employees} group by employee
-		"""
-	rs1 = frappe.db.sql(query,as_dict=1)
-	rs2 = frappe.db.sql(query2,as_dict=1)
+	# query = f"SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv,  \
+	# 	es.shift, es.roster_type, es.employee_availability, es.day_off_ot from `tabEmployee Schedule`es  where es.employee in {all_employees} and {str_filters}"
+	# 	#  group by es.employee order by date asc, employee_name asc 
+	# query2 = f"SELECT at.status, at.attendance_date,\
+	# 	at.employee,at.employee_name from `tabAttendance`at   where at.employee in {all_employees} and  at.attendance_date between '{start_date}' and \
+	# 		'{add_to_date(cstr(getdate()), days=-1)}'   group by employee"
+	# rs1 = frappe.db.sql(query,as_dict=1)
+	# rs2 = frappe.db.sql(query2,as_dict=1)
 	
+	
+	
+	
+	# new_map=CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters)
+	# new_map.start_mapping()
 	
 
-	new_map=CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters)
-	result = new_map.start_mapping()
 
 	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
 		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
@@ -237,8 +237,9 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 			schedule_list.append(schedule)
 		formatted_employee_data.update({key[1]: schedule_list})
 	master_data.update({'employees_data': formatted_employee_data})
+	# master_data.update({'employees_data': new_map.formated_rs})
 	t4 = time.time()
-	print('TIME TO FETCH EMP SCHED')
+	print('FIRST FOR LOOP TO FETCH EMP SCHED')
 	print(t4-t3)
 	
 
