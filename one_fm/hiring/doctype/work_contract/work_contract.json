@@ -215,9 +215,8 @@
   {
    "fetch_from": "erf.pam_file_number",
    "fieldname": "pam_file_number",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "PAM File Number",
-   "options": "PAM File Number",
    "read_only": 1
   },
   {
@@ -263,10 +262,11 @@
   }
  ],
  "links": [],
- "modified": "2022-06-01 14:58:37.850660",
+ "modified": "2022-11-15 14:14:25.290898",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Work Contract",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -298,5 +298,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

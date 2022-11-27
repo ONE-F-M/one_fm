@@ -2643,7 +2643,7 @@ def send_workflow_action_email(doc, recipients):
 
     common_args = get_common_email_args(doc)
     message = common_args.pop("message", None)
-    if not list(user_data_map.values()):
+    if not list(user_data_map[0].values()):
         email_args = {
             "recipients": recipients,
             "args": {"message": message},
@@ -2653,7 +2653,7 @@ def send_workflow_action_email(doc, recipients):
         email_args.update(common_args)
         frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
     else:
-        for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
+        for d in [i for i in list(user_data_map[0].values()) if i.get('email') in recipients]:
             email_args = {
                 "recipients": recipients,
                 "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message},

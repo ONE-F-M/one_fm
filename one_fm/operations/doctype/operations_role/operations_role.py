@@ -15,28 +15,14 @@ class OperationsRole(Document):
 		if frappe.db.exists("Contracts", {'project': self.project}):
 			start_date, end_date = frappe.db.get_value("Contracts", {'project': self.project}, ["start_date", "end_date"])
 			if start_date and end_date:
-				frappe.enqueue(set_post_active, post=self, operations_role=self.name, post_abbrv=post_abbrv, shift=self.site_shift, site=self.site, project=self.project, start_date=start_date, end_date=end_date, is_async=True, queue="long")
+				frappe.enqueue(set_post_active, post=self, operations_role=self.name, post_abbrv=post_abbrv, shift=self.shift, site=self.site, project=self.project, start_date=start_date, end_date=end_date, is_async=True, queue="long")
 
 	def validate(self):
 		if not self.post_name:
 			frappe.throw("Post Name cannot be empty.")
 
-		if not self.gender:
-			frappe.throw("Gender cannot be empty.")
-
-		if not self.site_shift:
+		if not self.shift:
 			frappe.throw("Shift cannot be empty.")
-
-		if(frappe.db.get_value('Operations Role', self.post_template, 'shift') != self.site_shift):
-			frappe.throw(f"Operations Role ({self.post_template}) does not belong to selected shift ({self.site_shift})")
-
-	def on_update(self):
-		self.validate_name()
-
-	def validate_name(self):
-		condition = self.post_name+"-"+self.gender+"|"+self.site_shift
-		if condition != self.name:
-			rename_doc(self.doctype, self.name, condition, force=True)
 
 
 @frappe.whitelist()

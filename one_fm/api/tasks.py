@@ -123,24 +123,28 @@ def checkin_checkout_final_reminder():
 
 	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
 	for shift in shifts_list:
-		date = getdate()
-		if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
-			date = getdate() - timedelta(days=1)
-		# shift_start is equal to now time - notification reminder in mins
-		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
-		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
-			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
+		frappe.enqueue(schedule_final_notification, shift=shift, now_time=now_time, is_async=True, queue='long')
 
-			if len(recipients) > 0:
-				frappe.enqueue(notify_checkin_checkout_final_reminder, recipients=recipients,log_type="IN", is_async=True, queue='long')
+def schedule_final_notification(shift, now_time):
+	date = getdate()
+	if shift.start_time < shift.end_time and now_time < cstr(shift.start_time):
+		date = getdate() - timedelta(days=1)
 
-		# shift_end is equal to now time - notification reminder in mins
-		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
-		if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
-			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
+	# shift_start is equal to now time - notification reminder in mins
+	# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
+	if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
+		recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 
-			if len(recipients) > 0:
-				frappe.enqueue(notify_checkin_checkout_final_reminder, recipients=recipients,log_type="OUT", is_async=True, queue='long')
+		if len(recipients) > 0:
+			notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN")
+
+	# shift_end is equal to now time - notification reminder in mins
+	# Employee won't receive checkout notification when accepted Leave Early shift permission is present
+	if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
+		recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
+
+		if len(recipients) > 0:
+			notify_checkin_checkout_final_reminder(recipients=recipients,log_type="OUT")
 
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
@@ -314,7 +318,7 @@ def checkin_checkout_query(date, shift_type, log_type):
 		permission_type = ("Leave Early", "Forget to Checkout", "Checkout Issue")
 
 	query = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
+				SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, emp.holiday_list, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
 					WHERE
 						tSA.employee=emp.name
 					AND tSA.start_date='{date}'
@@ -345,7 +349,7 @@ def checkin_checkout_query(date, shift_type, log_type):
 					AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
 					AND empChkin.shift_type='{shift_type}')
 					AND tSA.start_date
-					NOT IN(SELECT holiday_date from `tabHoliday` h
+					AND NOT EXISTS(SELECT * from `tabHoliday` h
 					WHERE
 						h.parent = emp.holiday_list
 					AND h.holiday_date = '{date}')
@@ -359,10 +363,12 @@ def get_action_user(employee, shift):
 	"""
 	action_user = None
 	Role = None
+
 	operations_shift = frappe.get_doc("Operations Shift", shift)
 	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
 	project = frappe.get_doc("Project", operations_site.project)
 	report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
+	current_user = frappe.get_value("Employee", {"name":employee},["user_id"])
 
 	if report_to:
 		action_user = get_employee_user_id(report_to)
@@ -370,20 +376,20 @@ def get_action_user(employee, shift):
 	else:
 		if operations_shift.supervisor:
 			shift_supervisor = get_employee_user_id(operations_shift.supervisor)
-			if shift_supervisor != operations_shift.owner:
+			if shift_supervisor != operations_shift.owner and shift_supervisor != current_user:
 				action_user = shift_supervisor
 				Role = "Shift Supervisor"
 
 		elif operations_site.account_supervisor:
 			site_supervisor = get_employee_user_id(operations_site.account_supervisor)
-			if site_supervisor != operations_shift.owner:
+			if site_supervisor != operations_shift.owner and site_supervisor != current_user:
 				action_user = site_supervisor
 				Role = "Site Supervisor"
 
 		elif operations_site.project:
 			if project.account_manager:
 				project_manager = get_employee_user_id(project.account_manager)
-				if project_manager != operations_shift.owner:
+				if project_manager != operations_shift.owner and project_manager != current_user:
 					action_user = project_manager
 					Role = "Project Manager"
 
@@ -660,8 +666,8 @@ def fetch_non_shift(date, s_type):
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
-					WHERE st.start_time >= '00:00:00'
-					AND  st.start_time < '12:00:00')
+					WHERE st.start_time >= '01:00:00'
+					AND  st.start_time < '13:00:00')
 				AND NOT EXISTS(SELECT * from `tabHoliday` h
 					WHERE
 						h.parent = E.holiday_list
@@ -672,7 +678,9 @@ def fetch_non_shift(date, s_type):
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
-					WHERE st.start_time >= '12:00:00')
+					WHERE st.start_time >= '13:00:00'
+					AND  st.start_time < '01:00:00'
+					)
 				AND NOT EXISTS(SELECT * from `tabHoliday` h
 					WHERE
 						h.parent = E.holiday_list
@@ -692,8 +700,8 @@ def assign_am_shift():
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
-				WHERE st.start_time >= '00:00:00'
-				AND  st.start_time < '12:00:00')
+				WHERE st.start_time >= '01:00:00'
+				AND  st.start_time < '13:00:00')
 	""".format(date=cstr(date)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "AM")
@@ -713,7 +721,8 @@ def assign_pm_shift():
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
-				WHERE st.start_time >= '12:00:00')
+				WHERE st.start_time >= '13:00:00'
+				)
 	""".format(date=cstr(date)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "PM")
@@ -834,16 +843,25 @@ def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Employee Schedule",
 		{"employee": doc.employee, "date": doc.attendance_date, "roster_type": "Over-Time", "day_off_ot": True}):
 		condition += ' day_off_ot="1"'
+	
 	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
-		name, site, project, shift, operations_role, start_datetime, end_datetime, roster_type = frappe.get_value("Shift Assignment",
-			{"employee": doc.employee, "start_date": doc.attendance_date},
-			['name', "site", "project", "shift", "operations_role", "start_datetime","end_datetime", "roster_type"])
-		condition += ' project="{project}", site="{site}", operations_shift="{shift}", operations_role="{operations_role}", roster_type="{roster_type}"'.format(
-			project=project, site=site, shift=shift, operations_role=operations_role, roster_type=roster_type)
+		shift_assignment = frappe.get_list("Shift Assignment",{"employee": doc.employee, "start_date": doc.attendance_date},["name", "site", "project", "shift", "shift_type", "operations_role", "start_datetime","end_datetime", "roster_type"])
+
+		shift_data = shift_assignment[0]
+		condition += """ shift_assignment="{shift_assignment[0].name}" """.format(shift_assignment=shift_assignment)
+		
+		for key in shift_assignment[0]:
+			if shift_data[key] and key not in ["name","start_datetime","end_datetime", "shift", "shift_type"]: 
+				condition += """, {key}="{value}" """.format(key= key,value=shift_data[key])
+			if key == "shift" and shift_data["shift"]:
+				condition += """, operations_shift="{shift}" """.format(shift=shift_data["shift"])
+			if key == "shift_type" and shift_data["shift_type"]:
+				condition += """, shift='{shift_type}' """.format(shift_type=shift_data["shift_type"])
+
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
-			condition += f', in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}"'
+			condition += f""", in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}" """
 	if condition:
-		query = """UPDATE `tabAttendance` SET {condition} WHERE name= '{name}' """.format(condition=condition, name = doc.name)
+		query = """UPDATE `tabAttendance` SET {condition} WHERE name= "{name}" """.format(condition=condition, name = doc.name)
 		return frappe.db.sql(query)
 	return
 

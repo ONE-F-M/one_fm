@@ -54,12 +54,16 @@ def validate_record(employee, date, assigned_shift, permission_type):
 def get_shift_details(employee, date):
     shift, type = frappe.db.get_value('Employee Schedule',{'employee':employee,'employee_availability':'Working','date':date,'roster_type':'Basic'},['shift','shift_type']) 
     if shift and type:
+        reports_to = frappe.get_value("Employee", employee, ["reports_to"])
         shift_supervisor = frappe.db.get_value('Operations Shift',{'name':shift},['supervisor'])
+        
+        approver = reports_to if reports_to else shift_supervisor
+            
         assigned_shift = frappe.db.get_value('Shift Assignment',{'employee':employee,'start_date':date},['name']) # start date and end date of HO employee are the same in the shift assignment
         if not assigned_shift:
             return response("You Don't Have Shift Assignment on {date}".format(date=date), {}, False, 400)
         elif assigned_shift:
-            return shift, type, assigned_shift, shift_supervisor
+            return shift, type, assigned_shift, approver
     elif not shift or not type:
         return response("You Don't Have Shift on {date}".format(date=date), {}, False, 400)
         

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import frappe, json, pycountry, random
 from frappe.utils import (
     get_url, fmt_money, month_diff, today, add_days, add_years, getdate, flt, get_link_to_form,
-    get_first_day, get_last_day
+    get_first_day, get_last_day, now
 )
 from frappe.model.mapper import get_mapped_doc
 from one_fm.api.notification import create_notification_log
@@ -18,6 +18,8 @@ from one_fm.one_fm.doctype.erf.erf import (
     get_description_by_performance_profile, set_erf_skills_in_job_opening, set_erf_language_in_job_opening
 )
 from one_fm.denomyn import get_denomyn
+import json
+from six import string_types
 
 
 @frappe.whitelist()
@@ -772,45 +774,92 @@ def get_interview_question_set(interview_round):
 	return frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
 
 @frappe.whitelist()
-def get_interview_skill_and_question_set(interview_round):
-    question = frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
-    skill = frappe.get_all('Expected Skill Set', filters ={'parent': interview_round}, fields=['skill'])
-    return question, skill
+def get_interview_skill_and_question_set(interview_round, interviewer=False, interview_name=False):
+	feedback_exists = False
+	if interviewer and interview_name:
+		feedback_exists = frappe.db.exists(
+			"Interview Feedback",
+			{"interviewer": interviewer, "interview": interview_name, "docstatus": 0},
+		)
+	if feedback_exists:
+		interview_feedback = frappe.get_doc('Interview Feedback', feedback_exists)
+		return interview_feedback.interview_question_assessment, interview_feedback.skill_assessment, feedback_exists
+	else:
+		question = frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+		skill = frappe.get_all('Expected Skill Set', filters ={'parent': interview_round}, fields=['skill'])
+		return question, skill, False
 
 @frappe.whitelist()
-def create_interview_feedback(data, interview_name, interviewer, job_applicant):
-    import json
+def create_interview_and_feedback(data, interview_round, interviewer, job_applicant, method='save', feedback_exists=False, interview_name=False):
+	if not feedback_exists:
+		interview = frappe.new_doc('Interview')
+		interview.interview_round = interview_round
+		interview.job_applicant = job_applicant
+		interview.scheduled_on = today()
+		interview.from_time = now()
+		interview.to_time = now()
+		interview.append('interview_details', {'interviewer': interviewer})
+		interview.save(ignore_permissions=True)
+		frappe.db.set_value('Job Applicant', job_applicant, 'bulk_interview', interview.name)
+		interview_name = interview.name
+	if interview_name:
+		create_interview_feedback(data, interview_name, interviewer, job_applicant, method, feedback_exists)
+		if method == 'submit':
+			if isinstance(data, string_types):
+				data = frappe._dict(json.loads(data))
+			interview = frappe.get_doc('Interview', interview_name)
+			interview.status = data.result
+			interview.submit()
 
-    from six import string_types
+@frappe.whitelist()
+def create_interview_feedback(data, interview_name, interviewer, job_applicant, method='save', feedback_exists=False):
+	if isinstance(data, string_types):
+		data = frappe._dict(json.loads(data))
 
-    if isinstance(data, string_types):
-        data = frappe._dict(json.loads(data))
+	if frappe.session.user != interviewer:
+		frappe.throw(_('Only Interviewer Are allowed to submit Interview Feedback'))
 
-    if frappe.session.user != interviewer:
-        frappe.throw(_('Only Interviewer Are allowed to submit Interview Feedback'))
+	interview_feedback = False
 
-    interview_feedback = frappe.new_doc('Interview Feedback')
-    interview_feedback.interview = interview_name
-    interview_feedback.interviewer = interviewer
-    interview_feedback.job_applicant = job_applicant
+	if feedback_exists:
+		interview_feedback = frappe.get_doc('Interview Feedback', feedback_exists)
+	else:
+		interview_feedback = frappe.new_doc('Interview Feedback')
+		interview_feedback.interview = interview_name
+		interview_feedback.interviewer = interviewer
+		interview_feedback.job_applicant = job_applicant
 
-    for d in data.skill_set:
-        d = frappe._dict(d)
-        interview_feedback.append('skill_assessment', {'skill': d.skill, 'rating': d.rating})
+	if interview_feedback:
+		for d in data.skill_set:
+			d = frappe._dict(d)
+			if not d.parent:
+				interview_feedback.append('skill_assessment', {'skill': d.skill, 'rating': d.rating})
+			else:
+				for skill in interview_feedback.skill_assessment:
+					if skill.name == d.name:
+						skill.rating = d.rating
 
-    for dq in data.questions:
-        dq = frappe._dict(dq)
-        interview_feedback.append('interview_question_assessment', {'questions': dq.questions, 'answer': dq.answer,
-            'weight': dq.weight, 'applicant_answer': dq.applicant_answer, 'score': dq.score})
+		for dq in data.questions:
+			dq = frappe._dict(dq)
+			if not dq.parent:
+				interview_feedback.append('interview_question_assessment', {'questions': dq.questions, 'answer': dq.answer,
+					'weight': dq.weight, 'applicant_answer': dq.applicant_answer, 'score': dq.score})
+			else:
+				for question in interview_feedback.interview_question_assessment:
+					if question.name == dq.name:
+						question.applicant_answer = dq.applicant_answer
+						question.score = dq.score
 
-    interview_feedback.feedback = data.feedback
-    interview_feedback.result = data.result
+		interview_feedback.result = data.result
+		interview_feedback.feedback = data.feedback
+		if method == 'save':
+			interview_feedback.flags.ignore_mandatory=True
+		interview_feedback.save()
+		if method == 'submit':
+			interview_feedback.submit()
 
-    interview_feedback.save()
-    interview_feedback.submit()
-
-    frappe.msgprint(_('Interview Feedback {0} submitted successfully').format(
-    get_link_to_form('Interview Feedback', interview_feedback.name)))
+		frappe.msgprint(_('{1} Interview Feedback {0} successfully!').format(
+		get_link_to_form('Interview Feedback', interview_feedback.name), method.title()))
 
 def calculate_interview_feedback_average_rating(doc, method):
     total_skill_rating = doc.average_rating if doc.average_rating else 0

@@ -15,15 +15,15 @@
   "shift",
   "site",
   "column_break_9",
-  "project"
+  "project",
+  "requirements_section"
  ],
  "fields": [
   {
    "fieldname": "post_name",
    "fieldtype": "Data",
    "label": "Role Name",
-   "reqd": 1,
-   "unique": 1
+   "reqd": 1
   },
   {
    "fieldname": "post_abbrv",
@@ -79,10 +79,15 @@
    "label": "Project",
    "options": "Project",
    "read_only": 1
+  },
+  {
+   "fieldname": "requirements_section",
+   "fieldtype": "Section Break",
+   "label": "Requirements"
   }
  ],
  "links": [],
- "modified": "2022-11-01 00:47:14.214405",
+ "modified": "2022-11-06 12:46:01.093018",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Role",

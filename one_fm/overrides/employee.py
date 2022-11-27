@@ -1,4 +1,5 @@
 import frappe
+from frappe.permissions import remove_user_permission
 from hrms.overrides.employee_master import *
 
 class EmployeeOverride(EmployeeMaster):

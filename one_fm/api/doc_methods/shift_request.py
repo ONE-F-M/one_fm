@@ -21,6 +21,11 @@ def shift_request_submit(self):
 		if self.workflow_state == 'Approved':
 			create_shift_assignment_from_request(self)
 
+def validate_default_shift(self):
+	default_shift = frappe.get_value("Employee", self.employee, "default_shift")
+	if self.shift_type == default_shift:
+		pass
+
 def on_update(doc, event):
 	if doc.workflow_state in ['Approved', 'Rejected']:
 		workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])

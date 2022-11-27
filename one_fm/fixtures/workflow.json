@@ -3047,7 +3047,7 @@
   "doctype": "Workflow",
   "document_type": "Shift Permission",
   "is_active": 1,
-  "modified": "2021-11-18 01:44:03.912134",
+  "modified": "2022-11-20 09:54:47.575941",
   "name": "Shift Permission",
   "override_status": 0,
   "send_email_alert": 0,
@@ -3108,7 +3108,7 @@
   "transitions": [
    {
     "action": "Approve",
-    "allow_self_approval": 1,
+    "allow_self_approval": 0,
     "allowed": "Shift Supervisor",
     "condition": null,
     "next_state": "Approved",
@@ -3119,7 +3119,7 @@
    },
    {
     "action": "Reject",
-    "allow_self_approval": 1,
+    "allow_self_approval": 0,
     "allowed": "Shift Supervisor",
     "condition": null,
     "next_state": "Rejected",
@@ -3130,7 +3130,7 @@
    },
    {
     "action": "Cancel",
-    "allow_self_approval": 1,
+    "allow_self_approval": 0,
     "allowed": "Shift Supervisor",
     "condition": null,
     "next_state": "Cancelled",

@@ -101,6 +101,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
@@ -270,8 +271,7 @@
   {
    "fieldname": "company_pam_file_number",
    "fieldtype": "Data",
-   "label": "Company PAM File Number",
-   "read_only": 1
+   "label": "Company PAM File Number"
   },
   {
    "fieldname": "company_trade_name",
@@ -528,10 +528,11 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-07 11:18:29.962985",
+ "modified": "2022-11-15 14:53:08.689518",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -577,6 +578,7 @@
  ],
  "sort_field": "date_of_application",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "one_fm_civil_id",
  "track_changes": 1,
  "track_seen": 1,
