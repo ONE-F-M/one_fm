@@ -1,6 +1,6 @@
 import frappe
 import pyotp
-from datetime import datetime
+from frappe.utils import getdate
 from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token,get_email_subject_for_2fa,get_email_body_for_2fa
 from frappe.integrations.oauth2 import get_token
 from frappe.utils.background_jobs import enqueue
@@ -325,14 +325,12 @@ def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_num
 		to_date = from_date 
 	if from_date is not None:
 		try:
-			year, month, day = str(from_date).split("-")
-			from_date = datetime(int(year), int(month), int(day)).date()
+			from_date = getdate(from_date)
 		except:
 			from_date = None
 	if to_date is not None:
 		try:
-			year, month, day = str(to_date).split("-")
-			to_date = datetime(int(year), int(month), int(day)).date()
+			to_date = getdate(to_date)
 		except:
 			to_date = None
 	if from_date > to_date:
