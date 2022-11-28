@@ -16,6 +16,7 @@
   "assigned_shift",
   "shift_supervisor",
   "approver_name",
+  "approver_user_id",
   "column_break_9",
   "shift",
   "shift_type",
@@ -174,14 +175,24 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Title"
+  },
+  {
+   "fetch_from": "shift_supervisor.user_id",
+   "fieldname": "approver_user_id",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Approver User ID",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-08-13 14:38:28.377730",
+ "modified": "2022-11-28 11:58:06.332859",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -213,6 +224,7 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "title",
  "track_changes": 1
 }
