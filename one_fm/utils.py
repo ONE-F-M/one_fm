@@ -2651,7 +2651,7 @@ def send_workflow_action_email(doc, recipients):
             "reference_doctype": doc.doctype,
         }
         email_args.update(common_args)
-        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+        frappe.enqueue(method=sendemail, queue="short", **email_args)
     else:
         for d in [i for i in list(user_data_map[0].values()) if i.get('email') in recipients]:
             email_args = {
@@ -2661,7 +2661,7 @@ def send_workflow_action_email(doc, recipients):
                 "reference_doctype": doc.doctype,
             }
             email_args.update(common_args)
-            frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+            frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 
 def workflow_approve_reject(doc, recipients=None):
@@ -2674,7 +2674,7 @@ def workflow_approve_reject(doc, recipients=None):
         "reference_doctype": doc.doctype,
         "message": f"Your {doc.doctype} {doc.name} has been {doc.workflow_state}"
     }
-    frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+    frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 
 @frappe.whitelist()
@@ -2755,10 +2755,10 @@ def get_payroll_cycle(filters={}):
         }
     ## get other projects
     projects = frappe.db.sql("""
-        SELECT project FROM `tabEmployee` 
+        SELECT project FROM `tabEmployee`
             WHERE
         shift_working=1 and status='Active'
-            GROUP BY project 
+            GROUP BY project
     """, as_dict=1)
 
     default_payroll_cycle = settings.default_payroll_start_day
@@ -2772,5 +2772,3 @@ def get_payroll_cycle(filters={}):
         if not payroll_cycle.get(p.project) and p.project != None:
             payroll_cycle[p.project] = _date
     return payroll_cycle
-
-

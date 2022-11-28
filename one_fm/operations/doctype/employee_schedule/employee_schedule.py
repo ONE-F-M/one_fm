@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe import _
 from frappe.utils import cstr
 from one_fm.utils import get_week_start_end, get_month_start_end
+from one_fm.processor import sendemail
 
 class EmployeeSchedule(Document):
 	def before_insert(self):
@@ -33,9 +34,9 @@ class EmployeeSchedule(Document):
 			offs = self.get_off_category()
 			daterange = self.get_daterange(offs.category, str(self.date))
 			querystring = """
-				SELECT COUNT(name) as cnt FROM `tabEmployee Schedule` 
-					WHERE 
-				employee='{self.employee}' AND employee_availability='{self.employee_availability}' 
+				SELECT COUNT(name) as cnt FROM `tabEmployee Schedule`
+					WHERE
+				employee='{self.employee}' AND employee_availability='{self.employee_availability}'
 				AND date BETWEEN '{daterange.start}' AND '{daterange.end}'
 			""".format(self=self, daterange=daterange)
 			total_schedule = frappe.db.sql(querystring, as_dict=1)[0].cnt
@@ -49,7 +50,7 @@ class EmployeeSchedule(Document):
 					stopthrow = True
 			if stopthrow:
 				frappe.enqueue(
-					frappe.sendmail,
+					sendemail,
 					recipients=[frappe.session.user],
 					subject=frappe._('Employee Schedule Error'),
 					message=msg
