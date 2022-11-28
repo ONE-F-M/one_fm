@@ -1,5 +1,4 @@
 import frappe
-from datetime import datetime
 import pyotp
 from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token,get_email_subject_for_2fa,get_email_body_for_2fa
 from frappe.integrations.oauth2 import get_token
@@ -352,11 +351,3 @@ def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_num
 		"number of checkin": len(check_list)
 	}
 	return response("Successfully Retrieved !", 200, data)
-
-
-
-
-
-
-
-
