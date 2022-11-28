@@ -43,6 +43,7 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_doc_workflow_state, get_workflow_name, get_users_next_action_data
 )
 from six import string_types
+from frappe.core.doctype.doctype.doctype import validate_series
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -1275,7 +1276,7 @@ def check_duplicate_naming_series(set_options):
     dt = frappe.get_doc("DocType", 'Supplier')
     options = scrub_options_list(set_options.split("\n"))
     for series in options:
-        dt.validate_series(series)
+        validate_series(dt, series)
         for i in sr:
             if i[0]:
                 existing_series = [d.split('.')[0] for d in i[0].split("\n")]
@@ -2755,10 +2756,10 @@ def get_payroll_cycle(filters={}):
         }
     ## get other projects
     projects = frappe.db.sql("""
-        SELECT project FROM `tabEmployee` 
+        SELECT project FROM `tabEmployee`
             WHERE
         shift_working=1 and status='Active'
-            GROUP BY project 
+            GROUP BY project
     """, as_dict=1)
 
     default_payroll_cycle = settings.default_payroll_start_day
@@ -2772,5 +2773,3 @@ def get_payroll_cycle(filters={}):
         if not payroll_cycle.get(p.project) and p.project != None:
             payroll_cycle[p.project] = _date
     return payroll_cycle
-
-
