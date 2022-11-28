@@ -5,6 +5,16 @@ from frappe.utils import nowdate, add_to_date, cstr, cint, getdate
 
 
 
+class PostMap():
+    """
+        This class uses maps and list comprehensions to create the data structures to be returned to the front end.
+    """
+    def __init__(self,start,end,employees,filters):
+        pass
+
+
+
+
 
 
 class CreateMap():
