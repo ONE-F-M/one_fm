@@ -14,8 +14,8 @@ def after_insert(doc, event):
             found = False
             break
     if found:
-        send_now(name=doc.name)
-
+        # It will send the email immediately 
+        doc.send()
 
 def flush_emails():
     """
@@ -35,7 +35,7 @@ def delete_eid_emails():
     :return:
     """
     frappe.db.sql("""
-        DELETE FROM `tabEmail Queue` 
-        WHERE name IN (SELECT e.name FROM `tabEmail Queue` e JOIN `tabEmail Queue Recipient` r 
+        DELETE FROM `tabEmail Queue`
+        WHERE name IN (SELECT e.name FROM `tabEmail Queue` e JOIN `tabEmail Queue Recipient` r
         ON r.parent=e.name WHERE r.recipient LIKE '2%');
     """)
