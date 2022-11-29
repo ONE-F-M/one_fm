@@ -24,6 +24,10 @@ class PostMap():
         self.post_schedule_count = frappe.db.get_list("Post Schedule", ['operations_role',"name", "date"], filters, ignore_permissions=True)
 
         
+    def generate_highlights(self):
+        pass
+
+
 
     def sort_post_schedule(self,each):
         #Create a map that uses the operations role as the key and list of entries as the value
@@ -36,14 +40,15 @@ class PostMap():
         
     def sort_post_filled(self,each):
         if self.post_filled_map.get(each.operations_role):
-            pass
+            self.post_filled_map.get(each.operations_role).append(each)
         else:
-            self.post_filled_map[each.operations_role] = [one for one in self.post_filled_count if one.operations_role ==each.operations_role]
+            self.post_filled_map[each.operations_role] = [each]
         return self.post_filled_map
+        
 
     def start_mapping(self):
-        self.post_schedule_map.update(dict(map(self.sort_post_schedule,self.post_schedule_count)))
-        self.post_filled_map.update(dict(map(self.sort_post_filled,self.post_schedule_count)))
+        self.post_schedule_map= list(map(self.sort_post_schedule,self.post_schedule_count))[0] or []
+        self.post_filled_map = list(map(self.sort_post_filled,self.post_schedule_count))[0] or []
 
 
 

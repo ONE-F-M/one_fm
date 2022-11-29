@@ -93,7 +93,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	operations_roles_list = []
 	employees = []
 	import time
-	t1 = time.time()
+	# t1 = time.time()
 
 
 	filters = {
@@ -123,10 +123,10 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	if department:
 		employee_filters.update({'department': department})
 
-	t2 = time.time()
-	print('\n\n\n\n\n\n\n')
-	print("TIME TO INIT VALUES")
-	print(t2-t1)
+	# t2 = time.time()
+	# print('\n\n\n\n\n\n\n')
+	# print("TIME TO INIT VALUES")
+	# print(t2-t1)
 	#--------------------- Fetch Employee list ----------------------------#
 	if isOt:
 		employee_filters.update({'employee_availability' : 'Working'})
@@ -166,9 +166,9 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		employee_filters.pop('operations_role', None)
 	employee_filters.pop('date')
 	employee_filters.pop('post_status')
-	t3 = time.time()
-	print('TIME TO FETCH EMP LIST')
-	print(t3-t2)
+	# t3 = time.time()
+	# print('TIME TO FETCH EMP LIST')
+	# print(t3-t2)
 
 	#------------------- Fetch Employee Schedule --------------------#
 	#The following section creates a iterable that uses the employee name and id as keys and groups  the  employee data fetched in previous queries
@@ -185,9 +185,10 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	
 	
 	
-	
+	t1 = time.time()
 	# new_map=CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters)
 	# new_map.start_mapping()
+	
 	
 
 
@@ -239,8 +240,12 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	master_data.update({'employees_data': formatted_employee_data})
 	# master_data.update({'employees_data': new_map.formated_rs})
 	t4 = time.time()
+	print('\n\n\n\n\n\n\n')
+	print('\n\n\n\n\n\n\n')
 	print('FIRST FOR LOOP TO FETCH EMP SCHED')
-	print(t4-t3)
+	print(t4-t1)
+	print('\n\n\n\n\n\n\n')
+	print('\n\n\n\n\n\n\n')
 	
 
 
@@ -272,10 +277,10 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 
 	master_data.update({'operations_roles_data': post_count_data})
 	#master_data = get_active_employees(start_date, end_date, master_data)
-	t5 = time.time()
-	print("LAST NESTED LOOP")
-	print(t5-t4)
-	print('\n\n\n\n\n\n\n')
+	# t5 = time.time()
+	# print("LAST NESTED LOOP")
+	# print(t5-t4)
+	# print('\n\n\n\n\n\n\n')
 	return master_data
 
 def get_active_employees(start_date, end_date, master_data):
