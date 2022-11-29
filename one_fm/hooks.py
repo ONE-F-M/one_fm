@@ -18,7 +18,7 @@ app_license = "MIT"
 
 # Includes in <head>
 # ------------------
-# write_file  = "one_fm.one_fm.hr_utils.upload_file_for_leave"
+
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
