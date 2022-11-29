@@ -8,11 +8,42 @@ from frappe.utils import nowdate, add_to_date, cstr, cint, getdate
 class PostMap():
     """
         This class uses maps and list comprehensions to create the data structures to be returned to the front end.
+        The general concept is to fetch all the data in one try and aggregate using maps.
     """
-    def __init__(self,start,end,employees,filters):
-        pass
+    def __init__(self,start,end,operations_roles_list,filters):
+        self.start = start
+        self.post_schedule_map,self.post_filled_map  = {},{}
+        self.operations = operations_roles_list
+        self.end = end
+        filters.update({'date':  ['between', (start, end)]})
+        self.operation_roles = tuple([one.operations_role for one in operations_roles_list])
+        self.keys = [[one.post_abbrv,one.operations_role] for one in operations_roles_list]
+        self.post_filled_count = frappe.db.get_list("Employee Schedule",["name", "employee", "date",'operations_role'] ,{'date':  ['between', (start, end)],'operations_role': ['in',self.operation_roles] })
+        filters.update({"post_status": "Planned",'operations_role':['in',self.operation_roles]})
+        self.filters = filters
+        self.post_schedule_count = frappe.db.get_list("Post Schedule", ['operations_role',"name", "date"], filters, ignore_permissions=True)
 
+        
 
+    def sort_post_schedule(self,each):
+        #Create a map that uses the operations role as the key and list of entries as the value
+        if self.post_schedule_map.get(each.operations_role):
+            pass
+        else:
+            self.post_schedule_map[each.operations_role] = [one for one in self.post_schedule_count if one.operations_role ==each.operations_role]
+        return self.post_schedule_map
+
+        
+    def sort_post_filled(self,each):
+        if self.post_filled_map.get(each.operations_role):
+            pass
+        else:
+            self.post_filled_map[each.operations_role] = [one for one in self.post_filled_count if one.operations_role ==each.operations_role]
+        return self.post_filled_map
+
+    def start_mapping(self):
+        self.post_schedule_map.update(dict(map(self.sort_post_schedule,self.post_schedule_count)))
+        self.post_filled_map.update(dict(map(self.sort_post_filled,self.post_schedule_count)))
 
 
 

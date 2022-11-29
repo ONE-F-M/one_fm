@@ -1,6 +1,6 @@
 from pandas.core.indexes.datetimes import date_range
 import frappe
-from one_fm.one_fm.page.roster.employee_map  import CreateMap
+from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate
 import itertools
 import pandas as pd
@@ -244,6 +244,9 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	
 
 
+
+	post_map = PostMap(start=start_date,end=end_date,operations_roles_list=operations_roles_list,filters=employee_filters)
+	post_map.start_mapping()
 	#----------------- Get Operations Role count and check fill status -------------------#
 	for key, group in itertools.groupby(operations_roles_list, key=lambda x: (x['post_abbrv'], x['operations_role'])):
 		post_list = []
