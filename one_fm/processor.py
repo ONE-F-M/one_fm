@@ -19,7 +19,7 @@ def sendemail(recipients, subject, header=None, message=None,
 		recipients.remove("Administrator")
 
 	for recipient in recipients:
-		if is_user_id_not_company_prefred_email_in_employee(recipients):
+		if is_user_id_not_company_prefred_email_in_employee(recipient):
 			recipients.remove(recipient)
 
 	if recipients and len(recipients) > 0:
