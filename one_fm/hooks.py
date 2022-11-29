@@ -19,6 +19,7 @@ app_license = "MIT"
 # Includes in <head>
 # ------------------
 
+
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
@@ -183,11 +184,11 @@ doc_events = {
 		"validate":"one_fm.one_fm.timesheet_custom.validate_date",
 	},
 	"Leave Application": {
-		"on_submit": "one_fm.utils.leave_appillication_on_submit",
+		"on_submit": ["one_fm.utils.leave_appillication_on_submit"],
 		"validate": [
 			"one_fm.utils.validate_sick_leave_date",
 			"one_fm.utils.validate_hajj_leave",
-			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
+			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
 		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
 	},
@@ -203,6 +204,9 @@ doc_events = {
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
+	},
+	"File":{
+		'validate':"one_fm.one_fm.utils.validate_file"
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
