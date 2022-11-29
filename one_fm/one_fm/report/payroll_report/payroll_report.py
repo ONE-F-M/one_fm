@@ -3,6 +3,7 @@
 
 import frappe
 from frappe.utils import *
+import datetime
 
 def execute(filters=None):
 	if not filters: filters = {}
@@ -208,18 +209,21 @@ def get_employee_list(query):
 def get_payroll_cycle(filters):
 	settings = frappe.get_doc("HR and Payroll Additional Settings").project_payroll_cycle
 	default_date = frappe.get_doc("HR and Payroll Additional Settings").payroll_date
+
+	start_date = datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
 	payroll_cycle = {
 		'Other': {
-			'start_date': f'{filters.year}-{filters.month}-{default_date}', 
-			'end_date': add_days(add_months(f'{filters.year}-{filters.month}-{default_date}', 1), -1)
+			'start_date': datetime.date(int(filters["year"]), int(filters["month"]), int(default_date)), 
+			'end_date': add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(default_date)), 1), -1)
 			}
 		}
+
 	for row in settings:
 		if row.payroll_start_day == 'Month Start':
 			row.payroll_start_day = 1
 		payroll_cycle[row.project] = {
-			'start_date':f'{filters.year}-{filters.month}-{row.payroll_start_day}',
-			'end_date':add_days(add_months(f'{filters.year}-{filters.month}-{row.payroll_start_day}', 1), -1)
+			'start_date':datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)),
+			'end_date':add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)), 1), -1)
 		}
 	
 	return payroll_cycle
