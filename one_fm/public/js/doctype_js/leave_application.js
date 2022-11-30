@@ -1,5 +1,6 @@
 frappe.ui.form.on("Leave Application", {
     refresh: function(frm) {
+        // frm.set_intro("Please save the form after adding a new row to the Proof Documents table before attaching the document")
         if (!frm.is_new()){
             frappe.call({
                 method: 'one_fm.utils.enable_edit_leave_application',
@@ -29,5 +30,16 @@ frappe.ui.form.on("Leave Application", {
             }
         }
 
+    }
+})
+
+
+frappe.ui.form.on("Proof Documents",{
+    
+    // This ensures that the attachment field is not shown until the row is saved
+    proof_documents_add:function(frm,cdt,cdn) {
+        if(frm.doc.name.includes('new')){
+            frm.save()
+        }
     }
 })
