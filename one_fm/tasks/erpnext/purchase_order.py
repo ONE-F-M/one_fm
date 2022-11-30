@@ -1,6 +1,7 @@
 from datetime import datetime
 import frappe
 from frappe import _
+from one_fm.processor import sendemail
 
 
 def due_purchase_order_payment_terms():
@@ -35,7 +36,7 @@ def due_purchase_order_payment_terms():
                 AND hr.parent LIKE '%@%' GROUP BY u.name;
             """, as_dict=1)]
             # send mail
-            frappe.sendmail(
+            sendemail(
                 recipients=recipients,
                 subject="Due Purchase Order Payment",
                 message=content)

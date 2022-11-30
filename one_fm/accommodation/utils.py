@@ -38,7 +38,7 @@ def send_bulk_accommodation_policy_one_by_one(accommodation, recipients = ['j.po
             "reference_doctype": 'Accommodation Checkin Checkout',
             "reference_name": checkin.name
         }
-        enqueue(method=sendmail, queue='short', timeout=300, is_async=True, **email_args)
+        enqueue(method=sendemail, queue='short', timeout=300, is_async=True, **email_args)
 
 @frappe.whitelist()
 def send_bulk_accommodation_policy(accommodation, recipients = ['j.poil@armor-services.com']):

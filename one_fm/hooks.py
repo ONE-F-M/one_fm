@@ -19,6 +19,7 @@ app_license = "MIT"
 # Includes in <head>
 # ------------------
 
+
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
@@ -183,11 +184,11 @@ doc_events = {
 		"validate":"one_fm.one_fm.timesheet_custom.validate_date",
 	},
 	"Leave Application": {
-		"on_submit": "one_fm.utils.leave_appillication_on_submit",
+		"on_submit": ["one_fm.utils.leave_appillication_on_submit"],
 		"validate": [
 			"one_fm.utils.validate_sick_leave_date",
 			"one_fm.utils.validate_hajj_leave",
-			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
+			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
 		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
 	},
@@ -203,6 +204,9 @@ doc_events = {
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
+	},
+	"File":{
+		'validate':"one_fm.one_fm.utils.validate_file"
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
@@ -317,6 +321,7 @@ doc_events = {
 		"after_insert": [
 			"one_fm.utils.assign_issue",
 			"one_fm.api.doc_methods.issue.notify_issue_raiser",
+			"one_fm.events.issue.send_google_chat_notification"
 		],
     "on_update": "one_fm.utils.notify_on_close",
 	},
@@ -356,11 +361,6 @@ doc_events = {
 	},
 	"User": {
 		"after_insert":"one_fm.tasks.erpnext.user.after_insert",
-	},
-	"Operations Post": {
-		# "after_insert":"one_fm.events.operations_post.after_insert",
-		# "on_trash": "one_fm.events.operations_post.on_trash",
-		"before_save": "one_fm.events.operations_post.before_save",
 	},
 	"Email Queue": {
 		"after_insert":"one_fm.events.email_queue.after_insert",
@@ -583,12 +583,18 @@ scheduler_events = {
 		"30 0 1 * *": [
 			'one_fm.tasks.one_fm.monthly.execute'
 		],
-		"0 0 * * *": [
+		"15 0 * * *": [
 			'one_fm.api.tasks.assign_am_shift'
 		],
-		"0 12 * * *": [
+		# "45 1 * * *": [
+		# 	'one_fm.api.tasks.assign_am_shift'
+		# ],
+		"15 12 * * *": [
 			'one_fm.api.tasks.assign_pm_shift'
-		]
+		],
+		# "45 13 * * *": [
+		# 	'one_fm.api.tasks.assign_pm_shift'
+		# ]
 	}
 }
 
