@@ -93,6 +93,12 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
+			"label": ("No. of Working Days"),
+			"fieldname": "number_of_working_days",
+			"fieldtype": "Int",
+			"width": 120,
+		},
+		{
 			"label": ("Woring Days (basic)"),
 			"fieldname": "working_days",
 			"fieldtype": "Int",
@@ -136,20 +142,19 @@ def get_columns(filters):
 			"width": 180,
 		},
 		{
-			"label": ("Total"),
-			"fieldname": "total",
-			"fieldtype": "Int",
-			"default": 0,
-			"width": 180,
-		},
-		{
 			"label": ("No. of Absent"),
 			"fieldname": "ab",
 			"fieldtype": "Int",
 			"default": 0,
 			"width": 180,
 		},
-		
+		{
+			"label": ("Total"),
+			"fieldname": "total",
+			"fieldtype": "Int",
+			"default": 0,
+			"width": 180,
+		},
 	]
 def get_data(filters):
 	data = []
@@ -192,6 +197,7 @@ def get_data(filters):
 			i.ab = att_project['ab']
 			i.number_of_days_off = att_project['number_of_days_off']	
 			i.total = i.working_days + i.sl + i.al + i.ol + i.ab
+			i.number_of_working_days = (i.end_date-i.start_date).days - i.number_of_days_off
 
 	if not query:
 		frappe.msgprint(("No Payroll Submitted this month!"), alert=True, indicator="Blue")
@@ -232,6 +238,7 @@ def get_payroll_cycle(filters):
 def get_attendance(projects, employee_list):
 	attendance_dict = {}
 	present_dict = {}
+	working_days = {}
 	ot_dict = {}
 	leave_dict = {}
 	absent_dict = {}
@@ -310,10 +317,7 @@ def get_attendance(projects, employee_list):
 				absent_dict[row.employee] = row.absent
 
 		for row in day_off_list:
-			if day_off_dict.get(row.employee):
-				day_off_dict[row.employee] += row.number_of_days_off
-			else:
-				day_off_dict[row.employee] = row.number_of_days_off
+			day_off_dict[row.employee] = row.number_of_days_off
 				
 		for row in attendance_leave_details:
 			if row.leave_type not in ['Sick Leave', 'Annual Leave']:
@@ -323,7 +327,7 @@ def get_attendance(projects, employee_list):
 				leave_dict[row.employee]["leave_count"] += row.leave_count
 			else:
 				leave_dict[row.employee] = {'leave_type' : row.leave_type, 'leave_count':row.leave_count}
-		
+			
 	for row in attendance_dict:
 		if present_dict.get(row):
 			attendance_dict[row]['working_days'] += present_dict.get(row)
@@ -333,7 +337,7 @@ def get_attendance(projects, employee_list):
 			attendance_dict[row]['do_ot'] += ot_dict.get(row)["do_ot"]
 		
 		if day_off_dict.get(row):
-			attendance_dict[row]['number_of_days_off'] += day_off_dict.get(row)
+			attendance_dict[row]['number_of_days_off'] = day_off_dict.get(row)
 		
 		if leave_dict.get(row):
 			if leave_dict.get(row)["leave_type"] == "Sick Leave":
@@ -344,7 +348,6 @@ def get_attendance(projects, employee_list):
 				attendance_dict[row]['ol'] = leave_dict.get(row)["leave_count"]
 		if absent_dict.get(row):
 			attendance_dict[row]['ab'] += absent_dict.get(row)
-
 	return attendance_dict
 
 @frappe.whitelist()
