@@ -55,7 +55,7 @@ def is_user_id_not_company_prefred_email_in_employee(user_id):
 	if employee:
 		user_id_not_company_prefred_in_employee = True
 		prefered_email, company_email, prefered_contact_email = frappe.db.get_value("Employee", employee, ["prefered_email", "company_email", "prefered_contact_email"])
-		if prefered_contact_email == 'Company Email' and prefered_email == company_email and prefered_email == email_id:
+		if prefered_contact_email == 'Company Email' and prefered_email == company_email and prefered_email == user_id:
 			user_id_not_company_prefred_in_employee = False
 	return user_id_not_company_prefred_in_employee
 
