@@ -2981,7 +2981,7 @@ function schedule_change_post(page) {
 						res[0].forEach((emp, i) => {
 							res[1].forEach((date, i) => {
 								let selectid = emp.name+'|'+date.slice(0, 10)
-								$("[data-selectid='"+selectid+"']").addClass('bluebox')
+								$("[data-selectid='"+selectid+"']").addClass('bg-info')
 								$("[data-selectid='"+selectid+"']").removeClass('selectclass')
 							});
 						});
