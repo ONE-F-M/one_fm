@@ -361,13 +361,16 @@ def update_completed_purchase_qty(purchase_order, method):
 
 					mr_obj.update_purchased_qty(mr_item_rows)
 def send_email(doc, recipients, message, subject):
-	sendemail(
-		recipients= recipients,
-		subject=subject,
-		message=message,
-		reference_doctype=doc.doctype,
-		reference_name=doc.name
-	)
+	try:
+		sendemail(
+			recipients= recipients,
+			subject=subject,
+			message=message,
+			reference_doctype=doc.doctype,
+			reference_name=doc.name
+		)
+	except frappe.OutgoingEmailError:
+		doc.log_error(_("Failed to send notification email"))
 
 def create_notification_log(subject, message, for_users, reference_doc):
 	for user in for_users:
@@ -378,6 +381,8 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		doc.document_type = reference_doc.doctype
 		doc.document_name = reference_doc.name
 		doc.from_user = reference_doc.modified_by
+		# If notification log type is Alert then it will not send email for the log
+		doc.type = 'Alert'
 		doc.insert(ignore_permissions=True)
 
 @frappe.whitelist()
