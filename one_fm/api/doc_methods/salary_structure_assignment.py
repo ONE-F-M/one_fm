@@ -1,8 +1,8 @@
 import frappe
 from frappe import _
 
-frappe.whitelist()
-def fetch_salary_component(doc, method):
+@frappe.whitelist()
+def fetch_salary_component(salary_structure, base):
     """This Function Fetches the Salary Components from a given Salary Structure.
         It further calculates the amount of each component if the component amount is based on 
         a formula. In that case, it checks if the base amount exists. If notify it throws an error.
@@ -16,9 +16,11 @@ def fetch_salary_component(doc, method):
     Result: 
         Appends the "Salary Structure Component" Table with calculated amount.
     """
-    salary_structure_components = frappe.get_doc("Salary Structure",{"name":doc.salary_structure},['*'])
-    base = doc.base
-    if salary_structure_components.earnings and not doc.salary_structure_components:
+    component = {}
+    
+    salary_structure_components = frappe.get_doc("Salary Structure",{"name":salary_structure},['*'])
+    if salary_structure_components.earnings:
+        index = 0
         for item in salary_structure_components.earnings:
             if item.amount_based_on_formula == 1 and item.formula:
                 if not base:
@@ -28,11 +30,13 @@ def fetch_salary_component(doc, method):
                     percent = formula.split("*")[1]
                     amount = int(base)*float(percent)
                     if amount != 0 :
-                        doc.append("salary_structure_components", {"salary_component":item.salary_component,"amount":amount})
+                        component[index] = {"salary_component":item.salary_component,"amount":amount}
             else:
                 if item.amount != 0:
-                    doc.append("salary_structure_components", {"salary_component":item.salary_component,"amount":item.amount})
-    frappe.db.commit()
+                    component[index] = {"salary_component":item.salary_component,"amount":item.amount}
+            index += 1
+    return component
+    
 
 def calculate_indemnity_amount(doc, method):
     """This function calculates the Indemnity Amount considering the salary component is "included in indemnity"

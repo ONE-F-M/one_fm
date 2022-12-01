@@ -95,6 +95,7 @@ doctype_js = {
 	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
 	"Company" : "public/js/doctype_js/company.js",
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
+	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -292,7 +293,6 @@ doc_events = {
 		]
 	},
 	"Salary Structure Assignment": {
-		"before_save": "one_fm.api.doc_methods.salary_structure_assignment.fetch_salary_component",
 		"before_submit": [
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_indemnity_amount",
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_leave_allocation_amount",
