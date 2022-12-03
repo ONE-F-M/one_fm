@@ -16,7 +16,6 @@ def get_data(filters):
 	month_start = getdate().replace(day=1, month=int(filters.month), year=int(filters.year))
 	month_end = get_last_day(getdate())
 	today = getdate()
-	tomorrow = add_days(today, 1)
 	yesterday = add_days(today, -1)
 	schedules = 0
 	use_schedule = True
@@ -32,8 +31,10 @@ def get_data(filters):
 	""", as_dict=1)
 	for row in contracts_detail:
 		# get projection
+		# Projection = Employee Schedule / Post Schedule
 		row.projection = 0
 		row.projection_rate = 0
+		# Live = [Employee Attendance(From Start of Month till Yesterday) + Employee Schedule (From Today to End of Month)] / Post Schedule
 		row.live_projection = 0
 		row.live_projection_rate = 0
 		roles = [i.name for i in frappe.db.sql(f"""
@@ -41,13 +42,19 @@ def get_data(filters):
 			WHERE sale_item="{row.item_code}" AND project="{row.project}"
 		""", as_dict=1)]
 		if roles:
-			post_schedule = frappe.db.get_list("Post Schedule", filters={
+			post_schedule = frappe.db.count("Post Schedule", filters={
 				'project':row.project,
 				'operations_role': ['IN', roles],
 				'date': ['BETWEEN', [month_start, month_end]]}
 			)
-			if post_schedule:
-				row.projection = len(post_schedule)/row.count
+			employee_schedule = frappe.db.count("Employee Schedule", filters={
+				'project':row.project,
+				'operations_role': ['IN', roles],
+				'employee_availability': 'Working',
+				'date': ['BETWEEN', [month_start, month_end]]}
+			)
+			if post_schedule and employee_schedule:
+				row.projection = employee_schedule/post_schedule
 				row.projection_rate = row.rate*row.projection
 
 			# get schedules
@@ -61,14 +68,14 @@ def get_data(filters):
 					'status': ['IN', ['Present', 'Work From Home', 'On Leave']],
 					'attendance_date': ['BETWEEN', [month_start, yesterday]]},
 				)
-			if use_schedule:
+			if use_schedule and post_schedule:
 				schedules = frappe.db.count("Employee Schedule", filters={
 					'project':row.project,
 					'operations_role': ['IN', roles],
 					'employee_availability': 'Working',
 					'date': ['BETWEEN', [today, month_end]]}
 				)
-				row.live_projection = attendance + schedules
+				row.live_projection = (attendance + schedules)/post_schedule
 				row.live_projection_rate = row.live_projection * row.rate
 
 
@@ -78,7 +85,7 @@ def get_data(filters):
 
 def get_live_schedule_query(contracts, filters, start_date):
 	schedule_query = f"""
-		SELECT con.client, con.project, con_item.item_code, con_item.count, con_item.rate, 
+		SELECT con.client, con.project, con_item.item_code, con_item.count, con_item.rate,
 		con_item.count*con_item.rate as total_rate, COUNT(es.name) as projection
 		FROM `tabContracts` con
 		LEFT JOIN `tabContract Item` con_item ON con_item.parent=con.name
@@ -95,7 +102,7 @@ def get_live_schedule_query(contracts, filters, start_date):
 
 def get_live_attendance_query(contracts, filters, to_date):
 	attendance_query = f"""
-		SELECT con.client, con.project, con_item.item_code, con_item.count, con_item.rate, 
+		SELECT con.client, con.project, con_item.item_code, con_item.count, con_item.rate,
 		con_item.count*con_item.rate as total_rate, COUNT(at.name) as attendance
 		FROM `tabContracts` con
 		LEFT JOIN `tabContract Item` con_item ON con_item.parent=con.name
