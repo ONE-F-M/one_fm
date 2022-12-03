@@ -13,8 +13,8 @@ def execute(filters=None):
 
 def get_data(filters):
 	results = []
-	month_start = getdate().replace(day=1, month=int(filters.month), year=int(filters.year))
-	month_end = get_last_day(getdate())
+	month_start = getdate().replace(day=1, month=int(filters.get('month')), year=int(filters.get('year')))
+	month_end = get_last_day(month_start)
 	today = getdate()
 	yesterday = add_days(today, -1)
 	schedules = 0
