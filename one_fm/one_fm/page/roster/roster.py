@@ -185,98 +185,108 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	
 	
 	
-	t1 = time.time()
-	# new_map=CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters)
-	# new_map.start_mapping()
+	# t1 = time.time()
+	new_map=CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters)
 	
 	
-
-
-	for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
-		filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
-		if isOt:
-			filters.update({'roster_type' : 'Over-Time'})
-		schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "operations_role", "post_abbrv",  "shift", "roster_type", "employee_availability", "day_off_ot"], order_by="date asc, employee_name asc", ignore_permissions=True)
-		if isOt:
-			filters.pop("roster_type", None)
-
-		attendances = frappe.db.get_list("Attendance", {'attendance_date': ['between', (start_date, add_to_date(cstr(getdate()), days=-1))], 'employee': key[0]}, ["status", "attendance_date"], ignore_permissions=True)
-		schedule_list = []
-		schedule = {}
-		default_shift = frappe.db.get_value("Employee", {'employee': key[0]}, ["shift"])
-		employee_days_off_category = frappe.db.get_value("Employee", {'employee': key[0]}, ["day_off_category"])
-		employee_number_of_days_off = frappe.db.get_value("Employee", {'employee': key[0]}, ["number_of_days_off"])
-		employee_day_off = ""
-		if employee_days_off_category:
-			employee_day_off = employee_days_off_category + " "
-		if employee_number_of_days_off:
-			employee_day_off += str(employee_number_of_days_off) + " Day(s) Off"
-
-		for date in	pd.date_range(start=start_date, end=end_date):
-			if date < getdate() and any(cstr(attendance.attendance_date) == cstr(date).split(" ")[0] for attendance in attendances):
-				attendance = next((attendance for attendance in attendances if cstr(attendance.attendance_date) == cstr(date).split(" ")[0]), {})
-				schedule = {
-					'employee': key[0],
-					'employee_name': key[1],
-					'date': cstr(date).split(" ")[0],
-					'attendance': attendance.status,
-					'employee_day_off': employee_day_off
-				}
-
-			elif not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
-				schedule = {
-					'employee': key[0],
-					'employee_name': key[1],
-					'date': cstr(date).split(" ")[0],
-					'employee_day_off': employee_day_off
-				}
-			else:
-				schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {})
-				if schedule.shift and schedule.shift != default_shift:
-					schedule.update({'asa': default_shift})
-					schedule.update({'employee_day_off': employee_day_off})
-			schedule_list.append(schedule)
-		formatted_employee_data.update({key[1]: schedule_list})
-	master_data.update({'employees_data': formatted_employee_data})
-	# master_data.update({'employees_data': new_map.formated_rs})
-	t4 = time.time()
-	print('\n\n\n\n\n\n\n')
-	print('\n\n\n\n\n\n\n')
-	print('FIRST FOR LOOP TO FETCH EMP SCHED')
-	print(t4-t1)
-	print('\n\n\n\n\n\n\n')
-	print('\n\n\n\n\n\n\n')
 	
 
 
+	# for key, group in itertools.groupby(employees, key=lambda x: (x['employee'], x['employee_name'])):
+	# 	filters.update({'date': ['between', (start_date, end_date)], 'employee': key[0]})
+	# 	if isOt:
+	# 		filters.update({'roster_type' : 'Over-Time'})
+	# 	schedules = frappe.db.get_list("Employee Schedule",filters, ["employee", "employee_name", "date", "operations_role", "post_abbrv",  "shift", "roster_type", "employee_availability", "day_off_ot"], order_by="date asc, employee_name asc", ignore_permissions=True)
+	# 	if isOt:
+	# 		filters.pop("roster_type", None)
 
+	# 	attendances = frappe.db.get_list("Attendance", {'attendance_date': ['between', (start_date, add_to_date(cstr(getdate()), days=-1))], 'employee': key[0]}, ["status", "attendance_date"], ignore_permissions=True)
+	# 	schedule_list = []
+	# 	schedule = {}
+	# 	default_shift = frappe.db.get_value("Employee", {'employee': key[0]}, ["shift"])
+	# 	employee_days_off_category = frappe.db.get_value("Employee", {'employee': key[0]}, ["day_off_category"])
+	# 	employee_number_of_days_off = frappe.db.get_value("Employee", {'employee': key[0]}, ["number_of_days_off"])
+	# 	employee_day_off = ""
+	# 	if employee_days_off_category:
+	# 		employee_day_off = employee_days_off_category + " "
+	# 	if employee_number_of_days_off:
+	# 		employee_day_off += str(employee_number_of_days_off) + " Day(s) Off"
+
+	# 	for date in	pd.date_range(start=start_date, end=end_date):
+	# 		if date < getdate() and any(cstr(attendance.attendance_date) == cstr(date).split(" ")[0] for attendance in attendances):
+	# 			attendance = next((attendance for attendance in attendances if cstr(attendance.attendance_date) == cstr(date).split(" ")[0]), {})
+	# 			schedule = {
+	# 				'employee': key[0],
+	# 				'employee_name': key[1],
+	# 				'date': cstr(date).split(" ")[0],
+	# 				'attendance': attendance.status,
+	# 				'employee_day_off': employee_day_off
+	# 			}
+
+	# 		elif not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
+	# 			schedule = {
+	# 				'employee': key[0],
+	# 				'employee_name': key[1],
+	# 				'date': cstr(date).split(" ")[0],
+	# 				'employee_day_off': employee_day_off
+	# 			}
+	# 		else:
+	# 			schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {})
+	# 			if schedule.shift and schedule.shift != default_shift:
+	# 				schedule.update({'asa': default_shift})
+	# 				schedule.update({'employee_day_off': employee_day_off})
+	# 		schedule_list.append(schedule)
+	# 	formatted_employee_data.update({key[1]: schedule_list})
+	# master_data.update({'employees_data': formatted_employee_data})
+	master_data.update({'employees_data': new_map.formated_rs})
+	# t4 = time.time()
+	# print('\n\n\n\n\n\n\n')
+	# print('\n\n\n\n\n\n\n')
+	# print('FIRST FOR LOOP TO FETCH EMP SCHED')
+	# print(t4-t1)
+	# print('\n\n\n\n\n\n\n')
+	# print('\n\n\n\n\n\n\n')
+	
+
+
+	t11 = time.time()
 	post_map = PostMap(start=start_date,end=end_date,operations_roles_list=operations_roles_list,filters=employee_filters)
-	post_map.start_mapping()
+	t12 = time.time()
+	print("\n\n\n\n\n\n")
+	print('POST MAP')
+	print(t12-t11)
+	print("\n\n\n\n\n\n")
 	#----------------- Get Operations Role count and check fill status -------------------#
-	for key, group in itertools.groupby(operations_roles_list, key=lambda x: (x['post_abbrv'], x['operations_role'])):
-		post_list = []
-		post_filters = employee_filters
-		post_filters.update({'date':  ['between', (start_date, end_date)], 'operations_role': key[1]})
-		post_filled_count = frappe.db.get_list("Employee Schedule",["name", "employee", "date"] ,{'date':  ['between', (start_date, end_date)],'operations_role': key[1] }, order_by="date asc", ignore_permissions=True)
-		post_filters.update({"post_status": "Planned"})
-		post_schedule_count = frappe.db.get_list("Post Schedule", ["name", "date"], post_filters, ignore_permissions=True)
-		post_filters.pop("post_status", None)
+	# for key, group in itertools.groupby(operations_roles_list, key=lambda x: (x['post_abbrv'], x['operations_role'])):
+	# 	post_list = []
+	# 	post_filters = employee_filters
+	# 	post_filters.update({'date':  ['between', (start_date, end_date)], 'operations_role': key[1]})
+	# 	post_filled_count = frappe.db.get_list("Employee Schedule",["name", "employee", "date"] ,{'date':  ['between', (start_date, end_date)],'operations_role': key[1] }, order_by="date asc", ignore_permissions=True)
+	# 	post_filters.update({"post_status": "Planned"})
+	# 	post_schedule_count = frappe.db.get_list("Post Schedule", ["name", "date"], post_filters, ignore_permissions=True)
+	# 	post_filters.pop("post_status", None)
 
-		for date in	pd.date_range(start=start_date, end=end_date):
-			filled_schedule = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_filled_count)
-			filled_post = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_schedule_count)
-			count = cstr(filled_schedule)+"/"+cstr(filled_post)
-			highlight = "bggreen"
-			if filled_schedule > filled_post:
-				highlight = "bgyellow"
-			elif filled_schedule < filled_post:
-				highlight = "bgred"
-			post_list.append({'count': count, 'operations_role': key[0], 'date': cstr(date).split(" ")[0], 'highlight': highlight})
+	# 	for date in	pd.date_range(start=start_date, end=end_date):
+	# 		filled_schedule = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_filled_count)
+	# 		filled_post = sum(frappe.utils.cstr(x.date) == cstr(date.date()) for x in post_schedule_count)
+	# 		count = cstr(filled_schedule)+"/"+cstr(filled_post)
+	# 		highlight = "bggreen"
+	# 		if filled_schedule > filled_post:
+	# 			highlight = "bgyellow"
+	# 		elif filled_schedule < filled_post:
+	# 			highlight = "bgred"
+	# 		post_list.append({'count': count, 'operations_role': key[0], 'date': cstr(date).split(" ")[0], 'highlight': highlight})
 
-		post_count_data.update({key[0]: post_list })
-
-	master_data.update({'operations_roles_data': post_count_data})
-	#master_data = get_active_employees(start_date, end_date, master_data)
+	# 	post_count_data.update({key[0]: post_list })
+	# print("\n\n\n\n\n\n")
+	# t13 = time.time()
+	# print("SECOND FOR LOOP")
+	# print(t13-t12)
+	# print("\n\n\n\n\n\n")
+	# print("\n\n\n\n\n\n")
+	master_data.update({'operations_roles_data': post_map.template})
+	# master_data.update({'operations_roles_data': post_count_data})
+	# master_data = get_active_employees(start_date, end_date, master_data)
 	# t5 = time.time()
 	# print("LAST NESTED LOOP")
 	# print(t5-t4)
