@@ -23,12 +23,30 @@ def get_data(filters):
 		yesterday = month_end
 		use_schedule = False
 
-	contracts_detail = frappe.db.sql("""
-		SELECT con.client, con.project, con_item.item_code, con_item.count, con_item.rate,
-			con_item.count*con_item.rate as total_rate
-			FROM `tabContracts` con
-			LEFT JOIN `tabContract Item` con_item ON con_item.parent=con.name
-	""", as_dict=1)
+	contracts_detail = frappe.db.sql(
+		"""
+			SELECT
+				con.client, con.project, con_item.item_code, con_item.count, con_item.rate,
+				con_item.count*con_item.rate as total_rate
+			FROM
+				`tabContracts` con
+			LEFT JOIN
+				`tabContract Item` con_item
+				ON
+					con_item.parent = con.name
+			WHERE
+				con.workflow_state = 'Active' and (
+					(%(start_date)s between con.start_date and con.end_date)
+					or (%(end_date)s between con.start_date and con.end_date)
+					or (con.start_date between %(start_date)s and %(end_date)s)
+					or (con.end_date between %(start_date)s and %(end_date)s)
+				)
+		""",{
+			"start_date": month_start,
+			"end_date": month_end
+		},
+		as_dict=True,
+	)
 	for row in contracts_detail:
 		# get projection
 		# Projection = Employee Schedule / Post Schedule
