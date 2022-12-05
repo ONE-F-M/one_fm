@@ -3,8 +3,6 @@ import pandas as pd
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate
 
 
-
-
 class PostMap():
     """
         This class uses maps and list comprehensions to create the data structures to be returned to the front end.
@@ -127,15 +125,12 @@ class PostMap():
         list(map(self.create_date_post_summary,self.date_range))
         list(map(self.create_date_schedule_summary,self.date_range))
         
-# 
-
-
 
 class CreateMap():
     """
         This class uses maps and list comprehensions to create the data structures to be returned to the front end.
     """
-    def __init__(self,start,end,employees,filters):
+    def __init__(self,start,end,employees,filters,isOt):
         self.start = start
         self.formated_rs = {}
         self.employee_period_details = {}
@@ -143,29 +138,33 @@ class CreateMap():
         self.employees = tuple([u.employee for u in  employees])
         self.all_employees = employees
         self.str_filter = filters
+        self.isOt = isOt
+        if self.isOt:
+            self.str_filter+=' and es.roster_type = "Over-Time"'
+        
+            
         
         # self.schedule_query = f"""SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv,  es.shift, roster_type, es.employee_availability, es.day_off_ot
         # from `tabEmployee Schedule`es  where {self.str_filter} and es.employee in {self.employees} group by es.employee order by date asc, es.employee_name asc """
-        #The trailing comma in a tuple is raising a SQL error
+        
+        #Noticed the trailing comma in a tuple is raising a SQL error, using this conditional to create the fetch query based on the employee 
         if len(employees)==1:
-            self.schedule_query  = f"SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
+            self.schedule_query  = f"""SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
             es.shift, es.roster_type, es.employee_availability, es.day_off_ot from `tabEmployee Schedule`es  where \
-                es.employee = {employees[0].employee} and {self.str_filter} order by es.employee "
+                es.employee in  ('{employees[0].employee}') and {self.str_filter} order by es.employee """
+            self.attendance_query = f"SELECT at.status, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in ('{employees[0].employee}')  and at.attendance_date between '{self.start}' and '{add_to_date(cstr(getdate()), days=-1)}' order by at.employee """
+            self.employee_query = f"SELECT name,employee_name,shift,day_off_category,number_of_days_off from `tabEmployee` where name in ('{employees[0].employee}') order by employee_name"
         else:
             self.schedule_query  = f"SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
                 es.shift, es.roster_type, es.employee_availability, es.day_off_ot from `tabEmployee Schedule`es  where \
                     es.employee in {self.employees} and {self.str_filter} order by es.employee "
-            
+            self.attendance_query = f"SELECT at.status, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{add_to_date(cstr(getdate()), days=-1)}' order by at.employee """
+            self.employee_query = f"SELECT name,employee_name,shift,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
         
-        print("\n\n\n\n\n\n\n")
-        print("QUERY")
-        print(self.schedule_query)
-        print("\n\n\n\n\n\n\n")
+        
         self.schedule_set = frappe.db.sql(self.schedule_query,as_dict=1) if self.employees else []
-        
-        self.attendance_query = f"SELECT at.status, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{add_to_date(cstr(getdate()), days=-1)}' order by at.employee """
         self.attendance_set = frappe.db.sql(self.attendance_query,as_dict=1) if self.employees else []
-        self.employee_query = f"SELECT name,employee_name,shift,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
+        
         self.employee_set = frappe.db.sql(self.employee_query,as_dict=1) if self.employees else []
         self.start_mapping()
         
@@ -175,9 +174,13 @@ class CreateMap():
 
     def start_mapping(self):
         filters = [[i.employee,i.employee_name] for i in  self.all_employees]
+        #Create the attendance iterable for each employee using python map
         self.att_map=list(map(self.create_attendance_map,filters))
+        #Create the schedule iterable for each employee using python map
         self.sch_map = list(map(self.create_schedule_map,filters))
+         #Fetch all employee details
         self.employee_details = list(map(self.create_employee_schedule,self.employee_set))
+         #Combine both the attenance and schedule maps,
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
         res=list(map(self.add_blank_days,iter(self.date_range)))
         
@@ -194,6 +197,13 @@ class CreateMap():
                     'employee_day_off':"Monthly"
                 })
             else:
+                print("\n\n\n\n\n\n")
+                print("KEY")
+                print(key)
+                print("\n\n\n\n\n\n")
+                print("DETAILS")
+                print(self.employee_period_details)
+                print("\n\n\n\n\n\n")
                 self.formated_rs[key] = [{
                     'employee':self.employee_period_details[key]['name'],
                     'employee_name':self.employee_period_details[key]['employee_name'],
