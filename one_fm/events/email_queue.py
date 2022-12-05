@@ -1,21 +1,18 @@
 import frappe
 from frappe.email.doctype.email_queue.email_queue import send_now
 def after_insert(doc, event):
-    """
-    Check created email log if sent to employee ID and force push if not
-    :param doc:
-    :param event:
-    :return:
-    """
-    found = True
-    for row in doc.recipients:
-        if row.recipient.startswith('2'):
-            delete_eid_emails()
-            found = False
-            break
-    if found:
-        # It will send the email immediately 
-        doc.send()
+	"""
+	Force push the email if the recipients is not more than 19 records
+	:param doc:
+	:param event:
+	:return:
+	"""
+	found = True
+	if len(doc.recipients) >= 20:
+		found = False
+	if found:
+		# It will send the email immediately
+		doc.send()
 
 def flush_emails():
     """
