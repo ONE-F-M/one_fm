@@ -65,6 +65,7 @@ window.onload = () => {
     $(".required_indicator").show()
   }
   populate_nationality();
+  set_default_values();
 }
 
 let civil_id_image;
@@ -377,6 +378,8 @@ function Save(){
       callback: function(r){
         frappe.unfreeze();
         frappe.msgprint(frappe._("Succesfully Saved your application as draft, you can finish up during your leisure time."));
+        console.log(r)
+        console.log(r.message)
         if(r.message){
           window.location.href = "/careers";
         }
@@ -413,6 +416,7 @@ function get_details_from_form() {
   applicant_details['one_fm_passport_issued'] = $('#Passport_Date_of_Issue').val();
   applicant_details['one_fm_passport_expire'] = $('#Passport_Date_of_Expiry').val();
   applicant_details['one_fm_passport_holder_of'] = $('#Passport_Place_of_Issue').val();
+  applicant_details['one_fm_country_code'] = $('#Country_Code').val();
 
   applicant_details['applicant_doc']={}
 
@@ -433,3 +437,4 @@ function get_filepath(object, value, key){
   }
   return object
 }
+

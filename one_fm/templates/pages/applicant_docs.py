@@ -30,6 +30,7 @@ def get_context(context):
         context.applicant_designation = job_applicant.designation
         context.email_id = job_applicant.one_fm_email_id
         context.doc_status = job_applicant.docstatus
+        context.job_for_js = (vars(job_applicant))
 
 
 @frappe.whitelist(allow_guest=True)
@@ -400,14 +401,16 @@ def update_job_applicant(job_applicant, data):
 def save_as_draft(job_applicant, data):
     doc = update_application_function(job_applicant, data)
     doc.docstatus = 0
+    doc.flags.ignore_validate = True
+    doc.flags.ignore_mandatory = True
     doc.save(ignore_permissions=True)
-    set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
     return True
 
 
 @frappe.whitelist(allow_guest=True)
 def update_application_function(job_applicant, data):
     new_doc = frappe.get_doc('Job Applicant', job_applicant)
+    
     applicant_details = json.loads(data)
 
     for field in applicant_details:
