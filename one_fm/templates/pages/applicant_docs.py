@@ -30,7 +30,6 @@ def get_context(context):
         context.applicant_designation = job_applicant.designation
         context.email_id = job_applicant.one_fm_email_id
 
-
 @frappe.whitelist(allow_guest=True)
 def populate_nationality():
     return frappe.get_list('Nationality', pluck='name', ignore_permissions=True)

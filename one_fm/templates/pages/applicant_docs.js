@@ -65,7 +65,6 @@ window.onload = () => {
     $(".required_indicator").show()
   }
   populate_nationality();
-  set_default_values();
 }
 
 let civil_id_image;
