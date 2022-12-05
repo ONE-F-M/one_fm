@@ -361,6 +361,33 @@ function Submit(){
   }
 }
 
+function Save(){
+  var applicant_details = get_details_from_form();
+
+  if($('#First_Name').attr("data")){
+    frappe.freeze();
+    frappe.call({
+      type: "POST",
+      method: "one_fm.templates.pages.applicant_docs.save_as_draft",
+      args: {
+        job_applicant: $('#First_Name').attr("data"),
+        data: applicant_details
+      },
+      btn: this,
+      callback: function(r){
+        frappe.unfreeze();
+        frappe.msgprint(frappe._("Succesfully Saved your application as draft, you can finish up during your leisure time."));
+        if(r.message){
+          window.location.href = "/careers";
+        }
+      }
+    });
+  }
+  else{
+    frappe.msgprint(frappe._("Please fill All the details to submit the Job Applicant"));
+  }
+}
+
 function get_details_from_form() {
   var applicant_details = {};
   applicant_details['one_fm_first_name'] = $('#First_Name').val();

@@ -29,6 +29,8 @@ def get_context(context):
         context.applicant_name = job_applicant.one_fm_first_name
         context.applicant_designation = job_applicant.designation
         context.email_id = job_applicant.one_fm_email_id
+        context.doc_status = job_applicant.docstatus
+
 
 @frappe.whitelist(allow_guest=True)
 def populate_nationality():
@@ -387,17 +389,33 @@ def send_applicant_doc_magic_link(job_applicant, applicant_name, designation):
 
 @frappe.whitelist(allow_guest=True)
 def update_job_applicant(job_applicant, data):
-    doc = frappe.get_doc('Job Applicant', job_applicant)
+    doc = update_application_function(job_applicant, data)
+    doc.docstatus = 1
+    doc.save(ignore_permissions=True)
+    set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
+    return True
+
+
+@frappe.whitelist(allow_guest=True)
+def save_as_draft(job_applicant, data):
+    doc = update_application_function(job_applicant, data)
+    doc.docstatus = 0
+    doc.save(ignore_permissions=True)
+    set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
+    return True
+
+
+@frappe.whitelist(allow_guest=True)
+def update_application_function(job_applicant, data):
+    new_doc = frappe.get_doc('Job Applicant', job_applicant)
     applicant_details = json.loads(data)
 
     for field in applicant_details:
-        doc.set(field, applicant_details[field])
+        new_doc.set(field, applicant_details[field])
     for documents in applicant_details['applicant_doc']:
-        doc.append("one_fm_documents_required", {
+        new_doc.append("one_fm_documents_required", {
 		"document_required": documents,
 		"attach": frappe.get_value('File', {'file_name':applicant_details['applicant_doc'][documents]},["file_url"]),
         "type_of_copy": "Soft Copy",
 	    })
-    doc.save(ignore_permissions=True)
-    set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
-    return True
+    return new_doc

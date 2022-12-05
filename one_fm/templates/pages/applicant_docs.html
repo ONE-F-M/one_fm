@@ -135,41 +135,41 @@
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="First_Name">First Name *</label>
-                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" civil_id_reqd="{{civil_id_reqd}}" id="First_Name" name="name">
+                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" civil_id_reqd="{{civil_id_reqd}}" id="First_Name" name="name" value="{{ job_applicant.one_fm_first_name }}">
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="First_Arabic_Name">First Name(Arabic)</label>
-                                        <input class="form-control input" type="text" id="First_Arabic_Name" name="first_ar_name">
+                                        <input class="form-control input" type="text" id="First_Arabic_Name" name="first_ar_name" value="{{ job_applicant.one_fm_first_name_in_arabic }}">
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Second_Name">Second Name</label>
-                                        <input class="form-control input" type="text" id="Second_Name" name="second_name">
+                                        <input class="form-control input" type="text" id="Second_Name" name="second_name" value="{{ jon_applicant.one_fm_second_name }}">
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="Second_Arabic_Name">Second Name(Arabic)</label>
-                                        <input class="form-control input" type="text" id="Second_Arabic_Name" name="second_ar_name">
+                                        <input class="form-control input" type="text" id="Second_Arabic_Name" name="second_ar_name" value="{{ job_applicant.one_fm_second_name_in_arabic }}">
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Third_Name">Third Name</label>
-                                        <input class="form-control input" type="text" id="Third_Name" name="third_name">
+                                        <input class="form-control input" type="text" id="Third_Name" name="third_name" value="{{ job_applicant.one_fm_third_name }}">
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="Third_Arabic_Name">Third Name(Arabic)</label>
-                                        <input class="form-control input" type="text" id="Third_Arabic_Name" name="third_ar_name">
+                                        <input class="form-control input" type="text" id="Third_Arabic_Name" name="third_ar_name" value="{{ job_applicant.one_fm_third_name_in_arabic }}">
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Last_Name">Last Name *</label>
-                                        <input class="form-control input" type="text" id="Last_Name" name="last_name">
+                                        <input class="form-control input" type="text" id="Last_Name" name="last_name" value="{{ job_applicant.one_fm_last_name }}">
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="Last_Arabic_Name">Last Name(Arabic)</label>
-                                        <input class="form-control input" type="text" id="Last_Arabic_Name" name="last_ar_name">
+                                        <input class="form-control input" type="text" id="Last_Arabic_Name" name="last_ar_name" value="{{ job_applicant.one_fm_last_name_in_arabic}}">
                                     </div>
                                 </div>
                                 <div class="row">
@@ -194,7 +194,7 @@
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Date_Of_Birth">Date Of Birth *</label>
-                                        <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" size="50">
+                                        <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" size="50" value={{}}>
                                     </div>
                                     <div class="form-group col-md-6 w-50">
                                         <label class="form-label" for="Religion">Religion *</label>
@@ -302,6 +302,10 @@
                                     <label class="form-check-label" for="confirmData">
                                       </span>I hereby confirm that the above information is correct <span style="color:red">*</span>
                                     </label>
+                                </div>
+                                <br>
+                                <div>
+                                    <button class="btn btn-dark" type="button" href="json.json" value="submit" id="submitForm" onclick="S()" disabled="disabled" >Save</button>
                                 </div>
                                 <br>
                                 <div>
