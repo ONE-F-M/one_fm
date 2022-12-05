@@ -629,7 +629,6 @@ var set_employee_or_project = function(frm) {
 frappe.ui.form.on("Request for Material Item", {
 	setup: (frm)=>{
 		// filter Item Reservation
-
 	},
 	// refresh: function (frm){
 	// 	if(frm.doc.docstatus == 1 && frm.doc.status == 'Approved'){
@@ -674,13 +673,7 @@ frappe.ui.form.on("Request for Material Item", {
 		const item = locals[doctype][name];
 		// set childtable button color
 		if(!item.item_reservation){
-			document.querySelectorAll("[data-fieldname='create_reservation']").forEach((e)=>{
-				if(e.classList.contains('btn-default')){
-					e.classList.replace('btn-default', 'btn-primary');
-				} else {
-					e.classList.add('btn-primary');
-				}
-			})
+			frm.fields_dict["items"].grid.frm.$wrapper.find('.btn.btn-xs.btn-default').addClass('btn-primary');
 		}
 
 
@@ -789,6 +782,98 @@ frappe.ui.form.on("Request for Material Item", {
 			} else {
 				set_schedule_date(frm);
 			}
+		}
+	},
+	show_stock_level: function(frm, cdt, cdn) {
+		var row = locals[cdt][cdn];
+		if(row.item_code){
+			var dialog = new frappe.ui.Dialog({
+				title: 'Stock Level',
+				width: 100,
+				fields: [
+					{fieldtype: "HTML", fieldname: "stock_level_html"},
+				]
+			});
+			var stock_level_html = "";
+			frappe.call({
+				method: 'erpnext.stock.dashboard.item_dashboard.get_data',
+				args: {
+					item_code: row.item_code
+				},
+				callback: function (r) {
+					if(r.message && r.message.length > 0){
+						var data = r.message;
+						var $wrapper = dialog.fields_dict.stock_level_html.$wrapper;
+						var template = `{% for d in data %}
+							<div class="dashboard-list-item">
+								<div class="row">
+									<div class="col-sm-3" style="margin-top: 8px;">
+										<a data-type="warehouse" data-name="{{ d.warehouse }}">{{ d.warehouse }}</a>
+									</div>
+									<div class="col-sm-3" style="margin-top: 8px;">
+										{% if show_item %}
+											<a data-type="item"
+												data-name="{{ d.item_code }}">{{ d.item_code }}
+												{% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %}
+											</a>
+										{% endif %}
+									</div>
+									<div class="col-sm-4">
+										<span class="inline-graph">
+											<span class="inline-graph-half" title="{{ __("Reserved Qty") }}">
+												<span class="inline-graph-count">{{ d.total_reserved }}</span>
+												<span class="inline-graph-bar">
+													<span class="inline-graph-bar-inner"
+														style="width: {{ cint(Math.abs(d.total_reserved)/max_count * 100) || 5 }}%">
+													</span>
+												</span>
+											</span>
+											<span class="inline-graph-half" title="{{ __("Actual Qty {0} / Waiting Qty {1}", [d.actual_qty, d.pending_qty]) }}">
+												<span class="inline-graph-count">
+													{{ d.actual_qty }} {{ (d.pending_qty > 0) ? ("(" + d.pending_qty+ ")") : "" }}
+												</span>
+												<span class="inline-graph-bar">
+													<span class="inline-graph-bar-inner dark"
+														style="width: {{ cint(d.actual_qty/max_count * 100) }}%">
+													</span>
+													{% if d.pending_qty > 0 %}
+													<span class="inline-graph-bar-inner" title="{{ __("Projected Qty") }}"
+														style="width: {{ cint(d.pending_qty/max_count * 100) }}%">
+													</span>
+													{% endif %}
+												</span>
+											</span>
+										</span>
+									</div>
+								</div>
+							</div>
+						{% endfor %}
+						`;
+
+						var max_count = 0;
+						data.forEach(function (d) {
+							d.actual_or_pending = d.projected_qty + d.reserved_qty + d.reserved_qty_for_production + d.reserved_qty_for_sub_contract;
+							d.pending_qty = 0;
+							d.total_reserved = d.reserved_qty + d.reserved_qty_for_production + d.reserved_qty_for_sub_contract;
+							if (d.actual_or_pending > d.actual_qty) {
+								d.pending_qty = d.actual_or_pending - d.actual_qty;
+							}
+
+							max_count = Math.max(d.actual_or_pending, d.actual_qty,
+								d.total_reserved, max_count);
+						});
+						stock_level_html = frappe.render_template(template, {'data': data, 'show_item': true, 'max_count': max_count})
+						$wrapper
+						.html(stock_level_html);
+					}
+					else{
+						var msg = __("No Stock Available..!")
+						dialog.fields_dict.stock_level_html.html(msg.bold())
+					}
+				},
+				freeze: true
+			});
+			dialog.show();
 		}
 	}
 });

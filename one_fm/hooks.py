@@ -19,6 +19,7 @@ app_license = "MIT"
 # Includes in <head>
 # ------------------
 
+
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
@@ -94,6 +95,7 @@ doctype_js = {
 	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
 	"Company" : "public/js/doctype_js/company.js",
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
+	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -183,11 +185,11 @@ doc_events = {
 		"validate":"one_fm.one_fm.timesheet_custom.validate_date",
 	},
 	"Leave Application": {
-		"on_submit": "one_fm.utils.leave_appillication_on_submit",
+		"on_submit": ["one_fm.utils.leave_appillication_on_submit"],
 		"validate": [
 			"one_fm.utils.validate_sick_leave_date",
 			"one_fm.utils.validate_hajj_leave",
-			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
+			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
 		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
 	},
@@ -203,6 +205,9 @@ doc_events = {
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
+	},
+	"File":{
+		'validate':"one_fm.one_fm.utils.validate_file"
 	},
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
@@ -288,7 +293,6 @@ doc_events = {
 		]
 	},
 	"Salary Structure Assignment": {
-		"before_save": "one_fm.api.doc_methods.salary_structure_assignment.fetch_salary_component",
 		"before_submit": [
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_indemnity_amount",
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_leave_allocation_amount",
@@ -317,6 +321,7 @@ doc_events = {
 		"after_insert": [
 			"one_fm.utils.assign_issue",
 			"one_fm.api.doc_methods.issue.notify_issue_raiser",
+			"one_fm.events.issue.send_google_chat_notification"
 		],
     "on_update": "one_fm.utils.notify_on_close",
 	},
