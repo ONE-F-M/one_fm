@@ -298,6 +298,9 @@
                                             <option value="select" selected disabled>Select Passport Type</option>
                                             <option value="Normal">Normal</option>
                                             <option value="Diplomat">Diplomat</option>
+                                            {% if job_applicant.one_fm_passport_type != None %} 
+                                                <option value="{{ job_applicant.one_fm_passport_type }}" selected>{{ job_applicant.one_fm_passport_type }}</option> 
+                                            {% endif %}>
                                         </select>
                                     </div>
                                 </div>

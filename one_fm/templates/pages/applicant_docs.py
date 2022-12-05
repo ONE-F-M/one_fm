@@ -29,8 +29,6 @@ def get_context(context):
         context.applicant_name = job_applicant.one_fm_first_name
         context.applicant_designation = job_applicant.designation
         context.email_id = job_applicant.one_fm_email_id
-        context.doc_status = job_applicant.docstatus
-        context.job_for_js = (vars(job_applicant))
 
 
 @frappe.whitelist(allow_guest=True)

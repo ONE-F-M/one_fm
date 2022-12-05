@@ -387,7 +387,7 @@ function Save(){
     });
   }
   else{
-    frappe.msgprint(frappe._("Please fill All the details to submit the Job Applicant"));
+    frappe.msgprint(frappe._("Please, you need to fill some details before you can save "));
   }
 }
 
