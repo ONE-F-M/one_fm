@@ -16,6 +16,8 @@ from hrms.hr.doctype.leave_application.leave_application import LeaveApplication
 from one_fm.api.mobile.Leave_application import notify_leave_approver
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 from one_fm.operations.doctype.contracts.contracts import calculate_item_values
+from wiki.wiki.doctype.wiki_page.wiki_page import WikiPage
+from one_fm.overrides.wiki_page import get_context
 
 
 __version__ = '14.0.0'
@@ -36,3 +38,4 @@ ItemPrice.validate = validate
 ItemPrice.check_duplicates = check_duplicates
 LeaveApplication.notify_leave_approver = notify_leave_approver
 calculate_taxes_and_totals.calculate_item_values = calculate_item_values
+WikiPage.get_context = get_context
