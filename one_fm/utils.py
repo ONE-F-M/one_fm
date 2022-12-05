@@ -2624,7 +2624,7 @@ def set_expire_magic_link(reference_doctype, reference_docname, link_for):
     magic_link = frappe.db.exists('Magic Link', {'reference_doctype': reference_doctype,
         'reference_docname': reference_docname, 'link_for': link_for, 'expired': False})
     if magic_link:
-        frappe.db.set_value('Magic Link', magic_link, 'expired', True, "expired_on", now_datetime())
+        frappe.db.set_value('Magic Link', magic_link, {'expired': True, "expired_on": now_datetime()})
 
 
 def check_path(path):
