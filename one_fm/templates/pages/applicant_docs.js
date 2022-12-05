@@ -123,9 +123,11 @@ function populate_nationality(){
     callback: function(r) {
       langArray = r.message;
       if(langArray){
-        var select = document.getElementById("Nationality");
+        var nationality = document.getElementById("Nationality");
+        var place_of_issue = document.getElementById("Passport_Place_of_Issue");
         for (let i=0; i<=langArray.length;i++) {
-          select.options[select.options.length] = new Option(langArray[i], langArray[i]);
+          nationality.options[nationality.options.length] = new Option(langArray[i], langArray[i]);
+          place_of_issue.options[place_of_issue.options.length] = new Option(langArray[i], langArray[i]);
         }
       }
     }
