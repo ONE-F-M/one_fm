@@ -88,6 +88,11 @@ frappe.ui.form.on('Contracts', {
 			}
 		}
 	},
+	start_date: function(frm){
+		if(frm.doc.start_date){
+			frm.set_value('end_date', frappe.datetime.add_days(frm.doc.start_date, 364))
+		}
+	},
 	before_insert: (frm)=>{
 		if(frm.is_new()){
 			frm.doc.workflow_state=null;
@@ -228,8 +233,10 @@ frappe.ui.form.on('Contracts', {
             }
         }
         frm.refresh_field("assets");
-		days = frappe.meta.get_docfield("Contract Item","days", frm.doc.name);
-		days.hidden = 1;
+		if(frm.doc.items){
+			days = frappe.meta.get_docfield("Contract Item","days", frm.doc.name);
+			days.hidden = 1;
+		}
 		set_hide_management_fee_fields(frm);
 
 	},
