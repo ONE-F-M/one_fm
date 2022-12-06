@@ -487,6 +487,9 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_renewal',#paci hawiyati
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer'
 		],
+		"00 8 * * 0,1,2,3,4":[# run “At 08:00 AM on Sunday, Monday, Tuesday, Wednesday, and Thursday.”
+			'one_fm.events.issue.send_open_issue_count_to_google_chat_notification'
+		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice
 		],
