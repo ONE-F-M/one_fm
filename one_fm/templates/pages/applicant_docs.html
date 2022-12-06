@@ -316,7 +316,9 @@
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Passport_Place_of_Issue">Passport Place of Issue *</label>
-                                        <input class="form-control input2" type="text" id="Passport_Place_of_Issue" name="p_place_of_issue" {% if job_applicant.one_fm_passport_holder_of != None %} value="{{ job_applicant.one_fm_passport_holder_of }}" {% endif %}>
+                                        <select class="form-control input2" id="Passport_Place_of_Issue" name="p_place_of_issue" aria-placeholder="Select Place of Issue">
+                                            <option value="select" selected disabled>Select Place of Issue</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <br>
