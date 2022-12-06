@@ -417,8 +417,9 @@ def auto_renew_contracts():
 		contract_date = contract_doc.append('contract_date')
 		contract_date.contract_start_date = contract_doc.start_date
 		contract_date.contract_end_date = contract_doc.end_date
+		duration = date_diff(contract_doc.end_date, contract_doc.start_date)
 		contract_doc.start_date = add_days(contract_doc.end_date, 1)
-		contract_doc.end_date = add_years(contract_doc.end_date, 1)
+		contract_doc.end_date = add_days(contract_doc.end_date, duration+1)
 		contract_doc.save()
 		frappe.db.commit()
 
