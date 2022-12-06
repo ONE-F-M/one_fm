@@ -158,9 +158,9 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             msg = res.message
             data = res.data
             return response(msg, 400, None, data)
-
-        doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
-        return response("Success", 201, doc, None)
+        if res.verification == "OK":
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
+            return response("Success", 201, doc, None)
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
