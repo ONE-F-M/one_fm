@@ -333,7 +333,7 @@ def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_num
 			to_date = getdate(to_date)
 		except:
 			to_date = None
-	if from_date is not None and to_date is not None:
+	if from_date and to_date:
 		if from_date > to_date:
 			return response("Bad request", 400, None, "From_date cannot be greater than to date")
 	check_list = frappe.db.get_list("Employee Checkin", filters={"employee": employee.name, "time": ["between", (from_date, to_date)]}, fields=["name", "time", "log_type"])
