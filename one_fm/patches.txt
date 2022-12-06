@@ -18,3 +18,4 @@ one_fm.patches.v14_0.onboard_employee_marital_status_list_updated
 one_fm.patches.v14_0.employee_marital_status_list_updated
 one_fm.patches.v14_0.fix_issue_service_level_agreement #31
 one_fm.patches.v14_0.fix_employee_and_PAM_FIle
+one_fm.patches.v14_0.remove_salary_structure
