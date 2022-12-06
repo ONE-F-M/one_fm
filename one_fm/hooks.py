@@ -677,7 +677,7 @@ fixtures = [
 # ------------------------------
 #
 override_whitelisted_methods = {
-	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.mobile.Leave_application.fetch_leave_approver"
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver"
 	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 }
 ShiftType.process_auto_attendance = process_auto_attendance
