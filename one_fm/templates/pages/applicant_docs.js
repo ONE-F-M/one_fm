@@ -363,6 +363,35 @@ function Submit(){
   }
 }
 
+function Save(){
+  var applicant_details = get_details_from_form();
+
+  if($('#First_Name').attr("data")){
+    frappe.freeze();
+    frappe.call({
+      type: "POST",
+      method: "one_fm.templates.pages.applicant_docs.save_as_draft",
+      args: {
+        job_applicant: $('#First_Name').attr("data"),
+        data: applicant_details
+      },
+      btn: this,
+      callback: function(r){
+        frappe.unfreeze();
+        frappe.msgprint(frappe._("Succesfully Saved your application as draft, you can finish up during your leisure time."));
+        console.log(r)
+        console.log(r.message)
+        if(r.message){
+          window.location.href = "/careers";
+        }
+      }
+    });
+  }
+  else{
+    frappe.msgprint(frappe._("Please, you need to fill some details before you can save "));
+  }
+}
+
 function get_details_from_form() {
   var applicant_details = {};
   applicant_details['one_fm_first_name'] = $('#First_Name').val();
@@ -388,6 +417,7 @@ function get_details_from_form() {
   applicant_details['one_fm_passport_issued'] = $('#Passport_Date_of_Issue').val();
   applicant_details['one_fm_passport_expire'] = $('#Passport_Date_of_Expiry').val();
   applicant_details['one_fm_passport_holder_of'] = $('#Passport_Place_of_Issue').val();
+  applicant_details['one_fm_country_code'] = $('#Country_Code').val();
 
   applicant_details['applicant_doc']={}
 
@@ -408,3 +438,4 @@ function get_filepath(object, value, key){
   }
   return object
 }
+
