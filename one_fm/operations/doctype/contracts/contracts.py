@@ -7,7 +7,10 @@ from __future__ import unicode_literals
 import frappe, json
 from datetime import datetime
 from frappe.model.document import Document
-from frappe.utils import cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day, get_last_day, get_datetime, flt
+from frappe.utils import (
+	cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
+	get_last_day, get_datetime, flt, add_days
+)
 from frappe import _
 
 class Contracts(Document):
@@ -56,7 +59,7 @@ class Contracts(Document):
 			invoice_date = temp_invoice_year + "-" + temp_invoice_month + "-" + cstr(self.due_date)
 		else:
 			invoice_date = cstr(getdate())
-		
+
 		# sys_invoice_date = datetime.fromisoformat(invoice_date).date()
 		last_day = get_last_day(date)
 		if datetime.today().date() < last_day:
@@ -411,7 +414,12 @@ def auto_renew_contracts():
 	contracts_list = frappe.db.get_list('Contracts', fields="name", filters=filters, order_by="start_date")
 	for contract in contracts_list:
 		contract_doc = frappe.get_doc('Contracts', contract)
-		contract_doc.end_date = add_years(contract_doc.end_date, 1)
+		contract_date = contract_doc.append('contract_date')
+		contract_date.contract_start_date = contract_doc.start_date
+		contract_date.contract_end_date = contract_doc.end_date
+		duration = date_diff(contract_doc.end_date, contract_doc.start_date)
+		contract_doc.start_date = add_days(contract_doc.end_date, 1)
+		contract_doc.end_date = add_days(contract_doc.end_date, duration+1)
 		contract_doc.save()
 		frappe.db.commit()
 
@@ -539,7 +547,7 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 
 		previous_invoice_date = cstr(add_to_date(invoice_date, months=-1))
 		previous_month_last_day = cstr(get_last_day(add_to_date(getdate(), months=-1)))
-		
+
 		att_filters = {
 			'project': project,
 			'operations_role': ['in', operations_role_list],
@@ -642,7 +650,7 @@ def get_item_daily_amount(item, project, first_day_of_month, last_day_of_month, 
 
 		previous_invoice_date = cstr(add_to_date(invoice_date, months=-1))
 		previous_month_last_day = cstr(get_last_day(add_to_date(getdate(), months=-1)))
-		
+
 		att_filters = {
 			'project': project,
 			'operations_role': ['in', operations_role_list],
@@ -740,10 +748,10 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 		employee_schedules = len(frappe.db.get_list("Employee Schedule", pluck='name', filters=es_filters))
 
 		item_days += employee_schedules
-		
+
 		previous_invoice_date = cstr(add_to_date(invoice_date, months=-1))
 		previous_month_last_day = cstr(get_last_day(add_to_date(getdate(), months=-1)))
-		
+
 		att_filters = {
 			'project': project,
 			'operations_role': ['in', operations_role_list],
@@ -755,7 +763,7 @@ def get_item_monthly_amount(item, project, first_day_of_month, last_day_of_month
 
 		item_days -= previous_attendances
 
-		
+
 	# If total item days exceed expected days, apply overtime rate on extra days
 	if item_days > expected_item_days:
 		overtime_days = item_days - expected_item_days

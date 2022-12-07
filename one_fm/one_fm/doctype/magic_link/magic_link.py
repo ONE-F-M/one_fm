@@ -32,7 +32,8 @@ def get_magic_link(doctype, name, link_for):
 	'''
 
 	# Check if magic_link exists for the given doctype and not expired
-	magic_link = frappe.db.exists('Magic link',
+	
+	magic_link = frappe.db.exists('Magic Link',
 		{'reference_doctype': doctype, 'reference_docname': name, 'expired': False, 'link_for': link_for})
 
 	# If there is no magic link exist for the reference, then create a magic link
@@ -114,4 +115,4 @@ def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subjec
 		magic_link_url = get_url(url_prefix) + encrypted_magic_link
 		msg += "<br/><a href='{0}'>Magic Link</a>".format(magic_link_url)
 		sendemail(sender=sender, recipients=recipients, content=msg, subject=subject)
-		frappe.msgprint(("Email Send to the {0} with the magic link <br/><b><a href='{1}' target='_blank'>Click here to see the maigc link for {2}</a></b>".format(doctype, magic_link_url, link_for)), alert=True)
+		frappe.msgprint(("Email Send to the {0} with the magic link <br/><b><a href='{1}' target='_blank'>Click here to see the magic link for {2}</a></b>".format(doctype, magic_link_url, link_for)), alert=True)

@@ -23,6 +23,10 @@ frappe.ui.form.on('Request for Purchase', {
 	make_custom_buttons: function(frm) {
 		if (frm.doc.docstatus == 1){
 			if(frm.doc.status == 'Draft') {
+				if(frm.doc.items.length > frm.doc.items_to_order.length && !frm.doc.notified_the_rfm_requester){
+					frm.add_custom_button(__("Notify the Requester"),
+						() => frm.events.notify_the_rfm_requester(frm));
+				}
 				frm.add_custom_button(__("Request for Quotation"),
 					() => frm.events.make_request_for_quotation(frm), __('Create'));
 
@@ -89,6 +93,17 @@ frappe.ui.form.on('Request for Purchase', {
 			method: "one_fm.purchase.doctype.request_for_purchase.request_for_purchase.make_request_for_quotation",
 			frm: frm,
 			run_link_triggers: true
+		});
+	},
+	notify_the_rfm_requester: function(frm) {
+		frappe.call({
+			doc: frm.doc,
+			method: "notify_the_rfm_requester",
+			callback: function(r) {
+				console.log(r);
+			},
+			freeze: true,
+			freeze_message: __("Notify The RFM Requester")
 		});
 	},
 	make_quotation_comparison_sheet: function(frm) {

@@ -927,3 +927,13 @@ def change_applicant_erf(job_applicant, old_erf, new_erf):
 		job_applicant_obj.one_fm_erf = new_erf
 		job_applicant_obj.job_title = frappe.db.get_value("Job Opening", {'one_fm_erf': new_erf})
 		job_applicant_obj.save(ignore_permissions=True)
+
+
+@frappe.whitelist()
+def send_magic_link_to_applicant_based_on_link_for(name, link_for):
+    applicant_data = frappe.db.get_values("Job Applicant", name, ["applicant_name", "designation"], as_dict=True)
+    if applicant_data and len(applicant_data) > 0:
+        if link_for == 'Career History':
+            send_career_history_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
+        elif link_for == 'Job Applicant':
+            send_applicant_doc_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
