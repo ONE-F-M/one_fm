@@ -15,6 +15,7 @@
   "column_break1",
   "transaction_date",
   "request_for_material",
+  "notified_the_rfm_requester",
   "type",
   "accepter",
   "approver",
@@ -267,12 +268,19 @@
    "fieldtype": "Data",
    "label": "Type",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "notified_the_rfm_requester",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notified the RFM Requester"
   }
  ],
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2022-10-25 10:54:35.259177",
+ "modified": "2022-12-06 13:38:07.246846",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",
