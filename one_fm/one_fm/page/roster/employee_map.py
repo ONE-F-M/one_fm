@@ -1,4 +1,4 @@
-import frappe
+import frappe,time
 import pandas as pd
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate
 
@@ -134,10 +134,12 @@ class CreateMap():
         self.start = start
         self.formated_rs = {}
         self.employee_period_details = {}
+        self.merged_employees =[]
         self.date_range = pd.date_range(start=start,end=end)
         self.employees = tuple([u.employee for u in  employees])
         self.all_employees = employees
         self.str_filter = filters
+        
         self.isOt = isOt
         if self.isOt:
             self.str_filter+=' and es.roster_type = "Over-Time"'
@@ -172,6 +174,7 @@ class CreateMap():
         key = list(iter1.keys())[0]
         return {key:iter1[key]+iter2[key]}
 
+
     def start_mapping(self):
         filters = [[i.employee,i.employee_name] for i in  self.all_employees]
         #Create the attendance iterable for each employee using python map
@@ -184,39 +187,47 @@ class CreateMap():
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
         res=list(map(self.add_blank_days,iter(self.date_range)))
         
-
     def add_blanks(self,emp_dict):
-        key = list(emp_dict.keys())[0]
-        value = emp_dict[key]
-        if getdate(self.cur_date) not in [i['date'] for i in value]:
-            if self.formated_rs.get(key):
-                self.formated_rs[key].append({
-                    'employee':self.employee_period_details[key]['name'],
-                    'employee_name':self.employee_period_details[key]['employee_name'],
-                    'date':self.cur_date,
-                    'employee_day_off':"Monthly"
-                })
+        try:
+            key = list(emp_dict.keys())[0]
+            value = emp_dict[key]
+            # if key == 'Gigimon Varghese Varkey Keerikkattil':
+            #     emp2 = emp_dict
+            if getdate(self.cur_date) not in [i['date'] for i in value]:
+                if self.formated_rs.get(key):
+                    self.formated_rs[key].append({
+                        'employee':self.employee_period_details[key]['name'],
+                        'employee_name':self.employee_period_details[key]['employee_name'],
+                        'date':self.cur_date,
+                        'employee_day_off':"Monthly"
+                    })
+                else:
+                    self.formated_rs[key] = [{
+                        'employee':self.employee_period_details[key]['name'],
+                        'employee_name':self.employee_period_details[key]['employee_name'],
+                        'date':self.cur_date,
+                        'employee_day_off':"Monthly"
+                    }]
             else:
-                print("\n\n\n\n\n\n")
-                print("KEY")
-                print(key)
-                print("\n\n\n\n\n\n")
-                print("DETAILS")
-                print(self.employee_period_details)
-                print("\n\n\n\n\n\n")
-                self.formated_rs[key] = [{
-                    'employee':self.employee_period_details[key]['name'],
-                    'employee_name':self.employee_period_details[key]['employee_name'],
-                    'date':self.cur_date,
-                    'employee_day_off':"Monthly"
-                }]
-        else:
-            self.formated_rs[key] = value
+                if self.formated_rs.get(key):
+                    if key not in self.merged_employees:
+                        self.formated_rs[key]+=value
+                        self.merged_employees.append(key)
+                else:
+                    self.formated_rs[key] = value
+        except KeyError:
+            pass
+                
+
+
+        
+
 
         return self.formated_rs
 
         
-
+    def create_missing_days(self,key):
+        missing_days = [] 
 
     def add_blank_days(self,date):
         self.cur_date = cstr(date).split(' ')[0]
