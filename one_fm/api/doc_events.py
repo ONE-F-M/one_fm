@@ -6,7 +6,6 @@ from frappe import _
 from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
 from one_fm.api.v1.roster import get_current_shift
-from hrms.hr.doctype.shift_assignment.shift_assignment import get_employee_shift_timings, get_actual_start_end_datetime_of_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 import datetime
 from frappe.permissions import remove_user_permission
@@ -40,16 +39,14 @@ def employee_checkin_validate(doc, method):
 			existing_perm = None
 			checkin_time = get_datetime(doc.time)
 			curr_shift = get_current_shift(doc.employee)
-			last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":doc.employee},order_by='creation desc',limit_page_length=1)
-			if curr_shift and last_shift:
+			if curr_shift:
 				start_date = (curr_shift.start_date).strftime("%Y-%m-%d")
 				existing_perm = frappe.db.exists("Shift Permission", {"date": start_date, "employee": doc.employee, "permission_type": perm_map[doc.log_type], "workflow_state": "Approved"})
-				doc.shift_assignment = last_shift[0].name
-				doc.operations_shift = last_shift[0].shift
-				doc.shift_type = last_shift[0].shift_type
+				doc.shift_assignment = curr_shift.name
+				doc.operations_shift = curr_shift.shift
+				doc.shift_type = curr_shift.shift_type
 
-			if last_shift and last_shift[0].start_datetime and last_shift[0].end_datetime:
-				if existing_perm:
+				if curr_shift.start_datetime and curr_shift.end_datetime and existing_perm:
 					perm_doc = frappe.get_doc("Shift Permission", existing_perm)
 					permitted_time = get_datetime(perm_doc.date) + (perm_doc.arrival_time if doc.log_type == "IN" else perm_doc.leaving_time)
 					if doc.log_type == "IN" and (checkin_time <= permitted_time and checkin_time >= curr_shift.start_datetime):
@@ -67,9 +64,6 @@ def employee_checkin_validate(doc, method):
 def checkin_after_insert(doc, method):
 	from one_fm.api.tasks import send_notification, issue_penalty
 	# These are returned according to dates. Time is not taken into account
-	prev_shift, curr_shift, next_shift = get_employee_shift_timings(doc.employee, get_datetime(doc.time))
-
-
 	log_exist = frappe.db.sql("""
 			SELECT name FROM `tabEmployee Checkin` empChkin
 		 			WHERE
@@ -83,17 +77,15 @@ def checkin_after_insert(doc, method):
 	if not log_exist:
 		# In case of back to back shift
 		if doc.shift_type:
-			shift_doc = frappe.get_doc("Shift Type", doc.shift_type)
+			shift_type = frappe.get_doc("Shift Type", doc.shift_type)
 			curr_shift = frappe._dict({
 				'actual_start': doc.shift_actual_start,
 				'actual_end': doc.shift_actual_end,
 				'end_datetime': doc.shift_end,
 				'start_datetime': doc.shift_start,
-				'shift_type': shift_doc
+				'shift_type': shift_type
 			})
-		# print("72", prev_shift.end_datetime, curr_shift.end_datetime, next_shift.end_datetime)
 		if curr_shift:
-			shift_type = frappe.get_doc("Shift Type", curr_shift.shift_type.name)
 			supervisor_user = get_notification_user(doc, doc.employee)
 			distance, radius = validate_location(doc)
 			message_suffix = _("Location logged is inside the site.") if distance <= radius else _("Location logged is {location}m outside the site location.").format(location=cstr(cint(distance)- radius))
@@ -117,13 +109,13 @@ def checkin_after_insert(doc, method):
 
 			elif doc.log_type == "OUT":
 				# Automatic checkout
-
 				if not doc.device_id:
+					title = "Checkin Report"
+					category = "Attendance"
 					subject = _("Automated Checkout: {employee} forgot to checkout.".format(employee=doc.employee_name))
 					message = _('<a class="btn btn-primary" href="/app/employee-checkin/{name}">Review check out</a>&nbsp;'.format(name=doc.name))
 					for_users = [supervisor_user]
-					print("124", doc.employee, supervisor_user)
-					send_notification(subject, message, for_users)
+					send_notification(title, subject, message, category, for_users)
 				#EARLY: Checkout time is before [Shift End - Early grace exit time]
 				elif shift_type.enable_exit_grace_period == 1 and doc.device_id and get_datetime(doc.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
 					time_diff = get_datetime(curr_shift.end_datetime) - get_datetime(doc.time)

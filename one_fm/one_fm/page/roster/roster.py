@@ -313,7 +313,6 @@ def get_current_user_details():
 
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot=None, end_date=None):
-	print(operations_role, '\n\n')
 	validation_logs = []
 	user, user_roles, user_employee = get_current_user_details()
 
@@ -382,15 +381,13 @@ def background_schedule_staff(employees, start_date, end_date, shift, operations
 	for employee in employees:
 		frappe.enqueue(queue_employee_schedule, employee=employee, start_date=start_date, end_date=end_date,
 			shift=shift, operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off,
-			day_off_ot=keep_days_off, request_employee_schedule=request_employee_schedule, is_async=True, now=False, queue='long')
-
-
+			day_off_ot=day_off_ot, request_employee_schedule=request_employee_schedule, is_async=True, now=False, queue='long')
 
 def queue_employee_schedule(employee, start_date, end_date, shift, operations_role, otRoster, keep_days_off, day_off_ot, request_employee_schedule):
 	try:
 		if not cint(request_employee_schedule):
 			schedule(employee=employee, start_date=start_date, end_date=end_date, shift=shift, operations_role=operations_role,
-					 otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot)
+					otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot)
 			frappe.msgprint(f"Successfully started scheduling {employee}", alert=True)
 		else:
 			from_schedule = frappe.db.sql("""select shift, operations_role from `tabEmployee Schedule` where shift!= %(shift)s and date >= %(start_date)s and date <= %(end_date)s and employee = %(employee)s""",{
@@ -452,7 +449,7 @@ def schedule(employee, shift, operations_role, otRoster, start_date, end_date, k
 
 	if otRoster == 'false':
 		roster_type = 'Basic'
-	elif otRoster == 'true':
+	elif otRoster == 'true' or day_off_ot == 1:
 		roster_type = 'Over-Time'
 
 	emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", employee, ["project", "site", "shift"])
@@ -893,11 +890,9 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 def set_dayoff(employee, date):
 	if frappe.db.exists("Employee Schedule", {"date": date, "employee": employee}):
 		doc = frappe.get_doc("Employee Schedule", {"date": date, "employee": employee})
-
+		doc.reload()
 	else:
 		doc = frappe.new_doc("Employee Schedule")
-
-	doc.reload()
 	doc.employee = employee
 	doc.date = date
 	doc.shift = None

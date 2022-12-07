@@ -95,6 +95,7 @@ doctype_js = {
 	"Employee Transfer": "public/js/doctype_js/employee_transfer.js",
 	"Company" : "public/js/doctype_js/company.js",
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
+	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -292,7 +293,6 @@ doc_events = {
 		]
 	},
 	"Salary Structure Assignment": {
-		"before_save": "one_fm.api.doc_methods.salary_structure_assignment.fetch_salary_component",
 		"before_submit": [
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_indemnity_amount",
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_leave_allocation_amount",
@@ -486,6 +486,9 @@ scheduler_events = {
 			'one_fm.grd.doctype.paci.paci.system_remind_transfer_operator_to_apply',
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_renewal',#paci hawiyati
 			'one_fm.grd.doctype.paci.paci.notify_operator_to_take_hawiyati_transfer'
+		],
+		"00 8 * * 0,1,2,3,4":[# run “At 08:00 AM on Sunday, Monday, Tuesday, Wednesday, and Thursday.”
+			'one_fm.events.issue.send_open_issue_count_to_google_chat_notification'
 		],
 		"15 3 * * *": [
 			'one_fm.tasks.one_fm.daily.generate_contracts_invoice', #Generate contracts sales invoice

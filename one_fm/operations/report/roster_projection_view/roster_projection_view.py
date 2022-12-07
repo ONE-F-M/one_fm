@@ -16,13 +16,8 @@ def get_data(filters):
 	month_start = getdate().replace(day=1, month=int(filters.get('month')), year=int(filters.get('year')))
 	month_end = get_last_day(month_start)
 	today = getdate()
-	yesterday = add_days(today, -1)
-	schedules = 0
-	use_schedule = True
-	if today.month > month_end.month and today.year <= month_start.year:
-		yesterday = month_end
-		use_schedule = False
 
+	# Get active contracts in the given month of the given year
 	contracts_detail = frappe.db.sql(
 		"""
 			SELECT
@@ -48,11 +43,8 @@ def get_data(filters):
 		as_dict=True,
 	)
 	for row in contracts_detail:
-		# get projection
-		# Projection = Employee Schedule / Post Schedule
 		row.projection = 0
 		row.projection_rate = 0
-		# Live = [Employee Attendance(From Start of Month till Yesterday) + Employee Schedule (From Today to End of Month)] / Post Schedule
 		row.live_projection = 0
 		row.live_projection_rate = 0
 		roles = [i.name for i in frappe.db.sql(f"""
@@ -60,11 +52,13 @@ def get_data(filters):
 			WHERE sale_item="{row.item_code}" AND project="{row.project}"
 		""", as_dict=1)]
 		if roles:
+			# Find post schedule from month start to month end
 			post_schedule = frappe.db.count("Post Schedule", filters={
 				'project':row.project,
 				'operations_role': ['IN', roles],
 				'date': ['BETWEEN', [month_start, month_end]]}
 			)
+			# Find employee schedule from month start to month end
 			employee_schedule = frappe.db.count("Employee Schedule", filters={
 				'project':row.project,
 				'operations_role': ['IN', roles],
@@ -72,13 +66,14 @@ def get_data(filters):
 				'date': ['BETWEEN', [month_start, month_end]]}
 			)
 			if post_schedule and employee_schedule:
+				# Projection = Employee Schedule / Post Schedule
 				row.projection = employee_schedule/post_schedule
 				row.projection_rate = row.rate*row.projection
 
-			# get schedules
-			if today == month_start:
-				attendance = 0
-			else:
+			# Find live projection, if today is in the selected month
+			if today > month_start and today < month_end and post_schedule:
+				yesterday = add_days(today, -1)
+				# Find attendance from month start to yesterday
 				attendance = frappe.db.count("Attendance", filters={
 					'docstatus': 1,
 					'project':row.project,
@@ -86,17 +81,21 @@ def get_data(filters):
 					'status': ['IN', ['Present', 'Work From Home', 'On Leave']],
 					'attendance_date': ['BETWEEN', [month_start, yesterday]]},
 				)
-			if use_schedule and post_schedule:
+				# Find employee schedules from today to month end
 				schedules = frappe.db.count("Employee Schedule", filters={
 					'project':row.project,
 					'operations_role': ['IN', roles],
 					'employee_availability': 'Working',
 					'date': ['BETWEEN', [today, month_end]]}
 				)
-				row.live_projection = (attendance + schedules)/post_schedule
-				row.live_projection_rate = row.live_projection * row.rate
-
-
+				if schedules and attendance:
+					'''
+						Live Projection = [Employee Attendance(From Start of Month till Yesterday)
+							+
+							Employee Schedule (From Today to End of Month)] / Post Schedule
+					'''
+					row.live_projection = (attendance + schedules)/post_schedule
+					row.live_projection_rate = row.live_projection * row.rate
 
 	results = contracts_detail
 	return results
