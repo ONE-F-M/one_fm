@@ -196,7 +196,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 				schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {})
 				if schedule.shift and schedule.shift != default_shift:
 					schedule.update({'asa': default_shift})
-					schedule.update({'employee_day_off': employee_day_off})
+				schedule.update({'employee_day_off': employee_day_off})
 			schedule_list.append(schedule)
 		formatted_employee_data.update({key[1]: schedule_list})
 	master_data.update({'employees_data': formatted_employee_data})
