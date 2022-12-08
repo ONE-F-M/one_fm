@@ -135,41 +135,41 @@
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="First_Name">First Name *</label>
-                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" civil_id_reqd="{{civil_id_reqd}}" id="First_Name" name="name">
+                                        <input class="form-control input" type="text" data="{{job_applicant.name}}" is_kuwaiti="{{is_kuwaiti}}" civil_id_reqd="{{civil_id_reqd}}" id="First_Name" name="name" {% if job_applicant.one_fm_first_name != None %} value="{{ job_applicant.one_fm_first_name }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="First_Arabic_Name">First Name(Arabic)</label>
-                                        <input class="form-control input" type="text" id="First_Arabic_Name" name="first_ar_name">
+                                        <input class="form-control input" type="text" id="First_Arabic_Name" name="first_ar_name" {% if job_applicant.one_fm_first_name_in_arabic != None %} value="{{ job_applicant.one_fm_first_name_in_arabic }}" {% endif %}>
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Second_Name">Second Name</label>
-                                        <input class="form-control input" type="text" id="Second_Name" name="second_name">
+                                        <input class="form-control input" type="text" id="Second_Name" name="second_name" {% if job_applicant.one_fm_second_name != None %} value="{{ job_applicant.one_fm_second_name }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="Second_Arabic_Name">Second Name(Arabic)</label>
-                                        <input class="form-control input" type="text" id="Second_Arabic_Name" name="second_ar_name">
+                                        <input class="form-control input" type="text" id="Second_Arabic_Name" name="second_ar_name" {% if job_applicant.one_fm_second_name_in_arabic != None %} value="{{ job_applicant.one_fm_second_name_in_arabic }}" {% endif %}>
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Third_Name">Third Name</label>
-                                        <input class="form-control input" type="text" id="Third_Name" name="third_name">
+                                        <input class="form-control input" type="text" id="Third_Name" name="third_name" {% if job_applicant.one_fm_third_name != None %} value="{{ job_applicant.one_fm_third_name }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="Third_Arabic_Name">Third Name(Arabic)</label>
-                                        <input class="form-control input" type="text" id="Third_Arabic_Name" name="third_ar_name">
+                                        <input class="form-control input" type="text" id="Third_Arabic_Name" name="third_ar_name" {% if job_applicant.one_fm_third_name_in_arabic != None %} value="{{ job_applicant.one_fm_third_name_in_arabic }}" {% endif %}>
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Last_Name">Last Name *</label>
-                                        <input class="form-control input" type="text" id="Last_Name" name="last_name">
+                                        <input class="form-control input" type="text" id="Last_Name" name="last_name" {% if job_applicant.one_fm_last_name != None %} value="{{ job_applicant.one_fm_last_name }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="Last_Arabic_Name">Last Name(Arabic)</label>
-                                        <input class="form-control input" type="text" id="Last_Arabic_Name" name="last_ar_name">
+                                        <input class="form-control input" type="text" id="Last_Arabic_Name" name="last_ar_name" {% if job_applicant.one_fm_last_name_in_arabic != None %} value="{{ job_applicant.one_fm_last_name_in_arabic }}" {% endif %}>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -179,6 +179,12 @@
                                             <option value="select" selected disabled>Select Your Gender</option>
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
+                                            {% if job_applicant.one_fm_gender != None %} 
+                                                <option value="{{ job_applicant.one_fm_gender }}" selected>{{ job_applicant.one_fm_gender }}</option> 
+                                            {% endif %}>
+                                    </div>
+                                </div>
+
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6 w-50">
@@ -190,11 +196,15 @@
                                             <option value="Widow">Widow</option>
                                             <option value="Divorce">Divorce</option>
                                             <option value="Unknown">Unknown</option>
+                                            {% if job_applicant.one_fm_marital_status != None %} 
+                                                <option value="{{ job_applicant.one_fm_marital_status }}" selected>{{ job_applicant.one_fm_marital_status }}</option> 
+                                            {% endif %}>
+                                        </select>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Date_Of_Birth">Date Of Birth *</label>
-                                        <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" size="50">
+                                        <input class="form-control input" type="date" id="Date_Of_Birth" onchange="test(this)" name="dob" size="50" {% if job_applicant.one_fm_date_of_birth != None %} value="{{ job_applicant.one_fm_date_of_birth }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-6 w-50">
                                         <label class="form-label" for="Religion">Religion *</label>
@@ -205,6 +215,9 @@
                                             <option value="Hindu">Hindu</option>
                                             <option value="Buddhist">Buddhist</option>
                                             <option value="Unknown">Unknown</option>
+                                            {% if job_applicant.one_fm_religion != None %} 
+                                                <option value="{{ job_applicant.one_fm_religion }}" selected>{{ job_applicant.one_fm_religion }}</option> 
+                                            {% endif %}>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6 w-50">
@@ -217,22 +230,26 @@
                                             <option value="Diploma">Diploma</option>
                                             <option value="Under Graduate">Under Graduate</option>
                                             <option value="High School">High School</option>
+                                            {% if job_applicant.one_fm_educational_qualification != None %} 
+                                                <option value="{{ job_applicant.one_fm_educational_qualification}}" selected>{{ job_applicant.one_fm_educational_qualification }}</option> 
+                                            {% endif %}>
+                                    </div>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="University">University / School *</label>
-                                        <input class="form-control input" type="text" id="University" name="university">
+                                        <input class="form-control input" type="text" id="University" name="university" {% if job_applicant.one_fm_university != None %} value="{{ job_applicant.one_fm_university }}" {% endif %}>
                                     </div>
                                 </div>
 
                                 <div class="row">
                                     <div class="form-group col-md-6">
                                         <label for="Civil_ID_No">Civil ID Number</label>
-                                        <input class="form-control input" type="text" id="Civil_ID_No" name="civilid" size="50">
+                                        <input class="form-control input" type="text" id="Civil_ID_No" name="civilid" size="50" {% if job_applicant.one_fm_cid_number != None %} value="{{ job_applicant.one_fm_cid_number }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Expiry_Date">Civil ID Expiry Date</label>
-                                        <input class="form-control input" type="date" id="Expiry_Date" name="civil_expiry_date" size="50">
+                                        <input class="form-control input" type="date" id="Expiry_Date" name="civil_expiry_date" size="50" {% if job_applicant.one_fm_cid_expire != None %} value="{{ job_applicant.one_fm_cid_expire }}" {% endif %}>
                                     </div>
                                 </div>
 
@@ -241,15 +258,18 @@
                                         <label class="form-label" for="Nationality">Nationality *</label>
                                         <select class="form-control input2" id="Nationality" name="nationality" aria-placeholder="Select Your Nationality">
                                             <option value="select" selected disabled>Select Your Nationality</option>
+                                            {% if job_applicant.one_fm_nationality != None %} 
+                                                <option value="{{ job_applicant.one_fm_nationality }}" selected>{{ job_applicant.one_fm_nationality }}</option> 
+                                            {% endif %}>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Country_Code">Country Code</label>
-                                        <input class="form-control input2" type="text" id="Country_Code" name="country_code" onchange="fetchNationality(this)" size="50">
+                                        <input class="form-control input2" type="text" id="Country_Code" name="country_code" onchange="fetchNationality(this)" size="50" {% if job_applicant.one_fm_country_code != None %} value="{{ job_applicant.one_fm_country_code }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Birth_Place">Place of Birth *</label>
-                                        <input class="form-control input2" type="text" id="Birth_Place" name="birth_place" size="50">
+                                        <input class="form-control input2" type="text" id="Birth_Place" name="birth_place" size="50" {% if job_applicant.one_fm_place_of_birth != None %} value="{{ job_applicant.one_fm_place_of_birth }}" {% endif %}>
                                     </div>
 
                                 </div>
@@ -270,7 +290,7 @@
                                 <div class="row">
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Passport_Number">Passport Number *</label>
-                                        <input class="form-control input" type="text" id="Passport_Number" name="passport_no">
+                                        <input class="form-control input" type="text" id="Passport_Number" name="passport_no" {% if job_applicant.one_fm_passport_number != None %} value="{{ job_applicant.one_fm_passport_number }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Passport_Type">Passport Type</label>
@@ -278,6 +298,9 @@
                                             <option value="select" selected disabled>Select Passport Type</option>
                                             <option value="Normal">Normal</option>
                                             <option value="Diplomat">Diplomat</option>
+                                            {% if job_applicant.one_fm_passport_type != None %} 
+                                                <option value="{{ job_applicant.one_fm_passport_type }}" selected>{{ job_applicant.one_fm_passport_type }}</option> 
+                                            {% endif %}>
                                         </select>
                                     </div>
                                 </div>
@@ -285,15 +308,17 @@
                                 <div class="row">
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Passport_Date_of_Issue">Passport Date of Issue *</label>
-                                        <input class="form-control input2" type="date" id="Passport_Date_of_Issue" name="p_date_of_issue">
+                                        <input class="form-control input2" type="date" id="Passport_Date_of_Issue" name="p_date_of_issue" {% if job_applicant.one_fm_passport_issued != None %} value="{{ job_applicant.one_fm_passport_issued }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Passport_Date_of_Expiry">Passport Expiry Date *</label>
-                                        <input class="form-control input2" type="date" id="Passport_Date_of_Expiry" name="passport_expiry_date">
+                                        <input class="form-control input2" type="date" id="Passport_Date_of_Expiry" name="passport_expiry_date" {% if job_applicant.one_fm_passport_expire != None %} value="{{ job_applicant.one_fm_passport_expire }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Passport_Place_of_Issue">Passport Place of Issue *</label>
-                                        <input class="form-control input2" type="text" id="Passport_Place_of_Issue" name="p_place_of_issue">
+                                        <select class="form-control input2" id="Passport_Place_of_Issue" name="p_place_of_issue" aria-placeholder="Select Place of Issue">
+                                            <option value="select" selected disabled>Select Place of Issue</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <br>
@@ -302,6 +327,10 @@
                                     <label class="form-check-label" for="confirmData">
                                       </span>I hereby confirm that the above information is correct <span style="color:red">*</span>
                                     </label>
+                                </div>
+                                <br>
+                                <div>
+                                    <button class="btn btn-dark" type="button" href="json.json" value="save" id="saveForm" onclick="Save()" >Save</button>
                                 </div>
                                 <br>
                                 <div>

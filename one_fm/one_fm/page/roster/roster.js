@@ -2874,6 +2874,11 @@ function schedule_change_post(page) {
 //			employees = [... new Set(employees)];
 //		});
 //	}
+	var hide_day_off_ot_check = 0;
+	let element = get_wrapper_element();
+	if (element == ".rosterOtMonth") {
+		hide_day_off_ot_check = 1;
+	}
 	let d = new frappe.ui.Dialog({
 		'title': 'Schedule/Change Post',
 		'fields': [
@@ -2924,7 +2929,7 @@ function schedule_change_post(page) {
 			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
 			{ 'label': 'Keep Days Off', 'fieldname': 'keep_days_off', 'fieldtype': 'Check' },
 			{ 'label': 'Request Employee Schedule', 'fieldname': 'request_employee_schedule', 'fieldtype': 'Check' },
-			{ 'label': 'Day Off OT', 'fieldname': 'day_off_ot', 'fieldtype': 'Check' },
+			{ 'label': 'Day Off OT', 'fieldname': 'day_off_ot', 'fieldtype': 'Check' , 'hidden': hide_day_off_ot_check},
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
 			{
 				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:doc.project_end_date==0', onchange: function () {
@@ -2956,16 +2961,6 @@ function schedule_change_post(page) {
 				otRoster = false;
 			}
 
-			// Validate day off ot while scheduling
-			if (otRoster == false && parseInt(day_off_ot) == 1){
-				$('#cover-spin').hide();
-				frappe.msgprint(
-					msg='Please select OT Roster tab to roster employees in Day Off OT.',
-					title='Error',
-					raise_exception=1
-				)
-				frappe.throw()
-			}
 			if (!employees){
 			    frappe.throw(__('Please select employees to roster.'))
 			}

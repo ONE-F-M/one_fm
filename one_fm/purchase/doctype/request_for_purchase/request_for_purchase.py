@@ -95,6 +95,27 @@ class RequestforPurchase(Document):
 		send_email(self, recipients, message, subject)
 		create_notification_log(subject, message, recipients, self)
 
+	@frappe.whitelist()
+	def notify_the_rfm_requester(self):
+		rfm = frappe.get_doc('Request for Material', self.request_for_material)
+		page_link = get_url(rfm.get_url())
+		message = "Not able to fulfil the RFM <a href='{0}'>{1}</a>".format(page_link, rfm.name)
+		message += "<br/> due to lack of availabilty of the item(s) listed below with the specification"
+		message += "<ul>"
+		for item in self.items:
+			availabilty = False
+			for items_to_order in self.items_to_order:
+				if item.item_name == items_to_order.item_name:
+					availabilty = True
+			if not availabilty:
+				message += "<li>" + item.item_name +"</li>"
+		message += "</ul>"
+		subject = "Not able to fulfil the RFM <a href='{0}'>{1}</a>".format(page_link, rfm.name)
+		send_email(rfm, [rfm.requested_by], message, subject)
+		create_notification_log(subject, message, [rfm.requested_by], rfm)
+		self.db_set('notified_the_rfm_requester', True)
+		frappe.msgprint(_("Notification sent to RFM Requester"))
+
 def send_email(doc, recipients, message, subject):
 	if 'Administrator' in recipients:
 		recipients.remove('Administrator')
@@ -118,6 +139,8 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		doc.document_type = reference_doc.doctype
 		doc.document_name = reference_doc.name
 		doc.from_user = reference_doc.modified_by
+		# If notification log type is Alert then it will not send email for the log
+		doc.type = 'Alert'
 		doc.insert(ignore_permissions=True)
 
 @frappe.whitelist()

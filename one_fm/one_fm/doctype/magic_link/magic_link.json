@@ -45,7 +45,7 @@
   },
   {
    "fieldname": "expired_on",
-   "fieldtype": "Date",
+   "fieldtype": "Datetime",
    "label": "Expired On"
   },
   {
@@ -59,10 +59,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-12-07 08:04:15.779244",
+ "modified": "2022-12-01 16:14:12.289981",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Magic Link",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -79,5 +80,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }

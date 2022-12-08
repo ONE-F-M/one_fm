@@ -33,15 +33,16 @@
   "engagement_type",
   "start_date",
   "end_date",
+  "is_auto_renewal",
+  "contract_date",
+  "column_break_27",
   "due_date",
   "month_of_invoice",
   "overtime_rate",
-  "column_break_27",
   "invoice_output_format",
   "invoice_frequency",
   "duration",
   "duration_in_days",
-  "is_auto_renewal",
   "section_break_26",
   "is_public_holiday_rate",
   "public_holiday_rate",
@@ -166,7 +167,8 @@
    "fieldname": "end_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Contract End Date"
+   "label": "Contract End Date",
+   "reqd": 1
   },
   {
    "fieldname": "due_date",
@@ -444,13 +446,21 @@
    "fieldtype": "Select",
    "label": "Month of Invoice",
    "options": "Current Month\nPrevious Month"
+  },
+  {
+   "fieldname": "contract_date",
+   "fieldtype": "Table",
+   "label": "Contract Date",
+   "options": "Contracts Date",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2022-09-07 11:31:58.714181",
+ "modified": "2022-12-06 10:41:14.586289",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -470,6 +480,7 @@
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "project",
  "track_changes": 1
 }
