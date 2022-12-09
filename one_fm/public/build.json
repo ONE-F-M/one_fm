@@ -4,5 +4,11 @@
       "purchase/dashboard/item_dashboard_1_list.html",
       "purchase/dashboard/item_dashboard_1_heading.html",
       "purchase/dashboard/item_dashboard_1.js"
+  ],
+  "wiki/js/wiki.min.js": [
+    "public/js/override_edit_wiki.js"
+  ],
+  "wiki/css/wiki.css": [
+    "public/css/override_wiki_css.scss"
   ]
 }
