@@ -285,12 +285,18 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 def validate_employee_id(employee_id=None):
 	if employee_id is None:
 		return response("Employee ID cannot be None", 401, None, "Employee ID is required !")
-	doc = frappe.db.get_value("Employee",{ "employee_id": employee_id}, "employee_name")
-	if doc == None:
+	doc = frappe.get_doc("Employee",{ "employee_id": employee_id})
+	if not doc:
 		return response("Employee Not Found", 404, None, "Employee ID of an active Employee is required")
-	return response("Success", 200, doc)
-
-
+	registration_status = frappe.db.get_value("User", doc.user_id, "last_password_reset_date")
+	client_id = frappe.db.get_value("OAuth Client", {"app_name": "OneFM" }, "client_id")
+	data = {
+		"name in arabic": doc.employee_name_in_arabic,
+		"name in english": doc.employee_name,
+		"is_registered": True if registration_status else False,
+		"client_id": client_id
+	}
+	return response("Success", 200, data)
 
 @frappe.whitelist()
 def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_number=1):
@@ -351,3 +357,57 @@ def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_num
 		"number of checkin": len(check_list)
 	}
 	return response("Successfully Retrieved !", 200, data)
+
+@frappe.whitelist(allow_guest=True)
+def new_forgot_password(employee_id=None):
+	if not employee_id:
+		return response("Bad Request", 400, None, "Employee ID required.")
+
+	employee_user_id =  frappe.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+	
+	if not employee_user_id:
+		return response("Bad Request", 404, None, "No user ID found for employee ID {employee_id}.".format(employee_id=employee_id))
+
+	return response("success", 200, {"employee_user_id": employee_user_id})
+
+@frappe.whitelist(allow_guest=True)
+def get_otp(employee_user_id: str=None, otp_source: str=None):
+	otp_secret = get_otpsecret_for_(employee_user_id)
+	token = int(pyotp.TOTP(otp_secret).now())
+	tmp_id = frappe.generate_hash(length=8)
+	cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
+
+	if otp_source.lower() == "sms":
+		verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+			
+	elif otp_source.lower() == "email":
+		verification_obj = process_2fa_for_email(employee_user_id, token, otp_secret)
+		
+	elif otp_source.lower() == "whatsapp":
+		verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
+
+	result = {
+			"message": "Password reset instructions sent via {otp_source}".format(otp_source=otp_source),
+			"temp_id": tmp_id,
+		
+		}
+
+	return response("Success", 201, result)
+
+
+@frappe.whitelist(allow_guest=True)
+def verify_otp(otp, temp_id):
+	login_manager = frappe.local.login_manager
+	check_otp = confirm_otp_token(login_manager, otp, temp_id)
+
+	if check_otp:
+		return("success", 200, "OTP verified Successfully !")
+	return("Error", 400, "invalid OTP")
+
+@frappe.whitelist(allow_guest=True)
+def set_password(employee_user_id, new_password):
+	_update_password(employee_user_id, new_password)
+	message =  {
+			'message': _('Password Updated!')
+		}
+	return response("Success", 200, message)
