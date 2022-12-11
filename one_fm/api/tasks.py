@@ -843,10 +843,8 @@ def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Employee Schedule",
 		{"employee": doc.employee, "date": doc.attendance_date, "roster_type": "Over-Time", "day_off_ot": True}):
 		condition += ' day_off_ot="1"'
-	
-	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
-		shift_assignment = frappe.get_list("Shift Assignment",{"employee": doc.employee, "start_date": doc.attendance_date},["name", "site", "project", "shift", "shift_type", "operations_role", "start_datetime","end_datetime", "roster_type"])
-
+	shift_assignment = frappe.get_list("Shift Assignment",{"employee": doc.employee, "start_date": doc.attendance_date},["name", "site", "project", "shift", "shift_type", "operations_role", "start_datetime","end_datetime", "roster_type"])
+	if shift_assignment and len(shift_assignment) > 0 :
 		shift_data = shift_assignment[0]
 		condition += """ shift_assignment="{shift_assignment[0].name}" """.format(shift_assignment=shift_assignment)
 		
