@@ -191,6 +191,7 @@ function send_request(method, data, token, type){
             $('#finalForm').css('display', 'block');
             r = request.responseText;
           }
+          
         } else if (request.status === 403) {
           $("#cover-spin").hide();
           $('#finalForm').css('display', 'block');
@@ -453,3 +454,23 @@ function get_filepath(object, value, key){
   return object
 }
 
+
+function preview_front(input){
+  var uploaded_pics = `
+  <h4>Passport Front Image</h4>
+  <img src="" alt="Front Page Of Passport" id="passport-front" class="form-control" style="height: 350px;">
+`;
+
+  document.getElementById("uploaded-passport-front").innerHTML = uploaded_pics;
+  document.getElementById('passport-front').src = window.URL.createObjectURL(input.files[0]);
+}
+
+
+function preview_back(input){
+  var uploaded_pics = `
+  <h4>Passport Back Image</h4>
+  <img src="" alt="Front Page Of Passport" id="passport-back" class="form-control" style="height: 350px;">
+`;
+  document.getElementById("uploaded-passport-back").innerHTML = uploaded_pics;
+  document.getElementById('passport-back').src = window.URL.createObjectURL(input.files[0]);
+}
