@@ -283,6 +283,16 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 
 @frappe.whitelist(allow_guest=True)
 def validate_employee_id(employee_id=None):
+	"""
+	params
+	employee_id -  the id of the employee, e.g 2107042EG187
+
+	returns
+	name_in_arabic
+	name_in_english
+	the registration status of the employee
+	client_id
+	"""
 	if employee_id is None:
 		return response("Employee ID cannot be None", 401, None, "Employee ID is required !")
 	doc = frappe.get_doc("Employee",{ "employee_id": employee_id})
@@ -294,7 +304,8 @@ def validate_employee_id(employee_id=None):
 		"name in arabic": doc.employee_name_in_arabic,
 		"name in english": doc.employee_name,
 		"is_registered": True if registration_status else False,
-		"client_id": client_id
+		"client_id": client_id,
+		"is_enrolled": True if doc.enrolled else False
 	}
 	return response("Success", 200, data)
 
@@ -360,6 +371,16 @@ def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_num
 
 @frappe.whitelist(allow_guest=True)
 def new_forgot_password(employee_id=None):
+	"""
+	validates the employee_id and returns the employee_user_id, which will be used to generate OTP
+
+	Params
+	employee_id
+
+	returns
+	employee_user_id
+	
+	"""
 	if not employee_id:
 		return response("Bad Request", 400, None, "Employee ID required.")
 
@@ -372,6 +393,19 @@ def new_forgot_password(employee_id=None):
 
 @frappe.whitelist(allow_guest=True)
 def get_otp(employee_user_id: str=None, otp_source: str=None):
+	"""
+	sends OTP to the employee 
+
+	params
+	emaployee_user_id
+	otp_source - where you want the OTP to be sent to sms, whatsapp, mail
+
+
+	returns
+	success message
+	temp_id - which would be used to verify the authenticity of the OTP
+	
+	"""
 	otp_secret = get_otpsecret_for_(employee_user_id)
 	token = int(pyotp.TOTP(otp_secret).now())
 	tmp_id = frappe.generate_hash(length=8)
@@ -397,6 +431,18 @@ def get_otp(employee_user_id: str=None, otp_source: str=None):
 
 @frappe.whitelist(allow_guest=True)
 def verify_otp(otp, temp_id):
+	"""
+	verifies the OTP entered by the employee
+
+	params
+	otp
+	temp_id
+
+
+	returns
+	status of the OTP entered 
+	
+	"""
 	login_manager = frappe.local.login_manager
 	check_otp = confirm_otp_token(login_manager, otp, temp_id)
 
@@ -406,6 +452,17 @@ def verify_otp(otp, temp_id):
 
 @frappe.whitelist(allow_guest=True)
 def set_password(employee_user_id, new_password):
+	"""
+	used to set the new password
+
+	params
+	new_password
+	employee_user_id
+
+	returns
+	success message
+	
+	"""
 	_update_password(employee_user_id, new_password)
 	message =  {
 			'message': _('Password Updated!')
