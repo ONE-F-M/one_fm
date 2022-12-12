@@ -1022,25 +1022,27 @@ def to_markdown(html):
 
 	return text
 
-def md_to_html(markdown_text):
+def md_to_html(markdown_text: str):
+	from markdown2 import MarkdownError
+	from markdown2 import markdown as _markdown
+
+	name = re.findall(r'[\u0600-\u06FF]+',markdown_text)
+	print(name)
+	if name:
+		markdown_text = '<p style="text-align: right;">'+markdown_text+'</p>'
 	extras = {
-		'fenced-code-blocks': None,
-		'tables': None,
-		'header-ids': None,
-		'highlightjs-lang': None,
-		'html-classes': {
-			'table': 'table table-bordered',
-			'img': 'screenshot'
-		}
+		"fenced-code-blocks": None,
+		"tables": None,
+		"header-ids": None,
+		"toc": None,
+		"highlightjs-lang": None,
+		"html-classes": {"table": "table table-bordered", "img": "screenshot",},
 	}
 
-	html = None
 	try:
-		html = markdown(markdown_text or '', extras=extras)
+		return _markdown(markdown_text or "", extras=extras)
 	except MarkdownError:
 		pass
-
-	return html
 
 def get_source_value(source, key):
 	'''Get value from source (object or dict) based on key'''
