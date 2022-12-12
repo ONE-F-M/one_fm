@@ -797,6 +797,7 @@ def validate_am_shift_assignment():
 			WHERE
 				tSA.employee = ES.employee
 				AND tSA.start_date='{date}'
+				AND tSA.roster_type = "Basic"
 				AND tSA.shift_type IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time >= '01:00:00'
@@ -825,6 +826,7 @@ def validate_pm_shift_assignment():
 			WHERE
 				tSA.employee = ES.employee
 				AND tSA.start_date='{date}'
+				AND tSA.roster_type = "Basic"
 				AND tSA.shift_type IN(
 				SELECT name from `tabShift Type` st
 				WHERE st.start_time >= '13:00:00'
