@@ -76,6 +76,7 @@ window.EditWiki = class EditWiki extends Wiki {
 		});
 	}
 
+	
 	set_add_item() {
 		$(`<div class="text-muted add-sidebar-item small">+ Add Item</div>
 			<div class="text-muted small mt-3"><i>Drag items to re-order</i></div>`).appendTo(
@@ -91,8 +92,10 @@ window.EditWiki = class EditWiki extends Wiki {
 				primary_action: function (fields) {
 					if (fields.type == "Add Wiki Page") {
 						me.add_wiki_page(fields);
-					} else {
+					} else if(fields.type == "Group") {
 						me.add_wiki_sidebar(fields);
+					} else if(fields.type == "Page"){
+						me.add_wiki_sidebar_page(fields);
 					}
 					dialog.hide();
 				},
@@ -189,6 +192,37 @@ window.EditWiki = class EditWiki extends Wiki {
 					pull: ["qux"],
 				},
 			});
+		});
+	}
+
+	add_wiki_sidebar_page(fields) {
+		var me = this;
+		frappe.call({
+			method: "frappe.client.get",
+			args: {
+				doctype: "Wiki Page",
+				name: fields.wiki_page,
+			},
+			callback: function (r) {
+				let $new_page = me.get_wiki_sidebar_html(r.message);
+
+				$new_page.appendTo(
+					$(".doc-sidebar .sidebar-items")
+						.children(".list-unstyled")
+						.not(".hidden")
+						.first()
+				);
+
+				$(".web-sidebar ul").each(function () {
+					new Sortable(this, {
+						group: {
+							name: "qux",
+							put: ["qux"],
+							pull: ["qux"],
+						},
+					});
+				});
+			},
 		});
 	}
 
