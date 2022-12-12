@@ -779,6 +779,64 @@ def create_shift_assignment(schedule, date):
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
 
+def validate_am_shift_assignment():
+	date = cstr(getdate())
+	end_previous_shifts("PM")
+	roster = frappe.db.sql("""
+			SELECT * from `tabEmployee Schedule` ES
+			WHERE
+			ES.date = '{date}'
+			AND ES.employee_availability = "Working"
+			AND ES.roster_type = "Basic"
+			AND ES.shift_type IN(
+				SELECT name from `tabShift Type` st
+				WHERE st.start_time >= '01:00:00'
+				AND  st.start_time < '13:00:00')
+			AND ES.employee
+			NOT IN (Select employee from `tabShift Assignment` tSA
+			WHERE
+				tSA.employee = ES.employee
+				AND tSA.start_date='{date}'
+				AND tSA.shift_type IN(
+					SELECT name from `tabShift Type` st
+					WHERE st.start_time >= '01:00:00'
+					AND  st.start_time < '13:00:00'	))
+	""".format(date=cstr(date)), as_dict=1)
+
+	non_shift = fetch_non_shift(date, "PM")
+	if non_shift:
+		roster.extend(non_shift)
+
+def validate_pm_shift_assignment():
+	date = cstr(getdate())
+	end_previous_shifts("PM")
+	roster = frappe.db.sql("""
+			SELECT * from `tabEmployee Schedule` ES
+			WHERE
+			ES.date = '{date}'
+			AND ES.employee_availability = "Working"
+			AND ES.roster_type = "Basic"
+			AND ES.shift_type IN(
+				SELECT name from `tabShift Type` st
+				WHERE st.start_time >= '13:00:00'
+				)
+			AND ES.employee
+			NOT IN (Select employee from `tabShift Assignment` tSA
+			WHERE
+				tSA.employee = ES.employee
+				AND tSA.start_date='{date}'
+				AND tSA.shift_type IN(
+				SELECT name from `tabShift Type` st
+				WHERE st.start_time >= '13:00:00'
+				))
+	""".format(date=cstr(date)), as_dict=1)
+
+	print(roster)
+	print(len(roster))
+	non_shift = fetch_non_shift(date, "PM")
+	if non_shift:
+		roster.extend(non_shift)
+
 def overtime_shift_assignment():
 	"""
 	This method is to generate Shift Assignment for Employee Scheduling
