@@ -342,13 +342,13 @@ def checkin_checkout_query(date, shift_type, log_type):
 						LA.employee=emp.name
 					AND LA.workflow_state='Approved'
 					AND CAST('{date} ' as date) BETWEEN LA.from_date AND LA.to_date)
-					AND NOT EXISTS(SELECT * FROM `tabEmployee Checkin` empChkin
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
-						empChkin.employee=emp.name
-					AND	empChkin.log_type='{log_type}'
-					AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
+						empChkin.log_type="IN"
+					AND empChkin.skip_auto_attendance=0
+					AND date(empChkin.time)='{date}'
 					AND empChkin.shift_type='{shift_type}')
-					AND tSA.start_date
 					AND NOT EXISTS(SELECT * from `tabHoliday` h
 					WHERE
 						h.parent = emp.holiday_list
