@@ -12,6 +12,7 @@ from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
 from hrms.hr.doctype.attendance.attendance import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
+from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 
 class DeltaTemplate(Template):
@@ -807,6 +808,14 @@ def validate_am_shift_assignment():
 	non_shift = fetch_non_shift(date, "PM")
 	if non_shift:
 		roster.extend(non_shift)
+	
+	if len(roster)>0:
+		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
+		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
+		     
+		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delay=False)
+		frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
 
 def validate_pm_shift_assignment():
 	date = cstr(getdate())
@@ -832,12 +841,18 @@ def validate_pm_shift_assignment():
 				WHERE st.start_time >= '13:00:00'
 				))
 	""".format(date=cstr(date)), as_dict=1)
-
-	print(roster)
-	print(len(roster))
+	
 	non_shift = fetch_non_shift(date, "PM")
 	if non_shift:
 		roster.extend(non_shift)
+	
+	if len(roster)>0:
+		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
+		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
+		     
+		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delay=False)
+		frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
 
 def overtime_shift_assignment():
 	"""
