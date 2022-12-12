@@ -75,9 +75,15 @@
 	}
 }
 
+/* #cover-spin {
+	display: grid; 
+	place-items: center;
+} */
+
 #cover-spin::after {
-	content: "";
-	display: block;
+	display: grid; 
+	place-items: center;
+	content: "We are extracting your information. Please Wait ! ";
 	position: absolute;
 	left: 48%;
 	top: 40%;
@@ -91,3 +97,7 @@
 	-webkit-animation: spin 0.8s linear infinite;
 	animation: spin 0.8s linear infinite;
   }
+
+  /* #cover-spin .loading-message {
+	
+  } */
