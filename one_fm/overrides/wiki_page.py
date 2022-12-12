@@ -27,6 +27,8 @@ def get_context(doc, context):
     context.page_toc_html = html.toc_html
     context.show_sidebar = True
     context.hide_login = True
+    context.lang = frappe.local.lang
+
     context = context.update(
         {
             "post_login": [

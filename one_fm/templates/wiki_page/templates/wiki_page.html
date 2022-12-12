@@ -1,0 +1,28 @@
+{% extends "one_fm/templates/wiki_page/templates/wiki_doc.html" %}
+{%- block page_sidebar -%}
+<!--sidebar-->
+{%- endblock -%}
+
+{%- block head_include %}
+{{ super() }}
+{{ include_style('wiki.bundle.css') }}
+{%- if frappe.form_dict.edit or frappe.form_dict.new -%}
+{{ include_style('edit_wiki.bundle.css') }}
+{%- endif -%}
+
+{% endblock -%}
+
+{% block page_content %}
+{%- if frappe.form_dict.edit or frappe.form_dict.new -%}
+{% include "one_fm/templates/wiki_page/templates/edit.html" %}
+{%- else -%}
+{% include "one_fm/templates/wiki_page/templates/show.html" %}
+{%- endif -%}
+{% endblock %}
+
+
+{%- block navbar -%}
+{% include "one_fm/templates/wiki_page/templates/wiki_navbar.html" %}
+
+{%- endblock -%}
+
