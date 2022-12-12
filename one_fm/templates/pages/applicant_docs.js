@@ -185,6 +185,7 @@ function send_request(method, data, token, type){
             $('#finalForm').css('display', 'block');
             console.log(r.message)
             fill_form(r.message,request.type, token);
+            get_uploaded_data(r.message);
           } catch (e) {
             console.log(e)
             $("#cover-spin").hide();
@@ -202,8 +203,10 @@ function send_request(method, data, token, type){
             message: response._error_message,
           });
         } else {
+          
           $("#cover-spin").hide();
           $('#finalForm').css('display', 'block');
+          
           frappe.msgprint({
             title: __("Error extracting text"),
             indicator: "orange",
@@ -474,3 +477,34 @@ function preview_back(input){
   document.getElementById("uploaded-passport-back").innerHTML = uploaded_pics;
   document.getElementById('passport-back').src = window.URL.createObjectURL(input.files[0]);
 }
+
+
+function get_uploaded_data(data){
+  return frappe.call({
+    method: "one_fm.templates.pages.applicant_docs.get_uploaded_data",
+    args: {
+      data: data
+    },
+    callback: function(r){
+      console.log(r.message)
+      frappe.unfreeze();
+      frappe.msgprint(frappe._(`The following were extracted from the Image <ul>${r.message.map(item => (
+        `<li>${item}</li>`
+      )).join('')}</ul> Kindly fill the remaining fields.`));
+
+    }
+  })
+}
+
+
+
+// var data = {
+//   pasport: {
+//     "fullname":"",
+//     "surname": "",
+//     "PACI":"",
+//     "Nationality":"",
+//     "Passport": "",
+
+//   }
+// };

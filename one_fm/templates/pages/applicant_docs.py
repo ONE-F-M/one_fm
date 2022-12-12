@@ -249,26 +249,35 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
 def get_passport_text():
     try:
         result = {}
+        print(1)
 
+        print(cstr(frappe.local.site))
+        print(frappe.local.conf.encryption_key)
         #initialize google vision client library
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()
+        print(2)
 
         front_passport = frappe.local.form_dict['front_passport']
         back_passport = frappe.local.form_dict['back_passport']
+        print(3)
 
         front_image_path = upload_image(front_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
         back_image_path = upload_image(back_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
+        print(4)
 
         front_text = get_passport_front_text(front_image_path, client)
         back_text = get_passport_back_text(back_image_path, client)
+        print(5)
 
         result.update({'front_text': front_text})
         result.update({'back_text': back_text})
+        print(6)
 
         return result
 
     except Exception as e:
+        print(e)
         frappe.throw(e)
 
 def get_passport_front_text(image_path, client):
@@ -421,3 +430,22 @@ def update_application_function(job_applicant, data):
         "type_of_copy": "Soft Copy",
 	    })
     return new_doc
+
+
+@frappe.whitelist(allow_guest=True)
+def get_uploaded_data(data: dict=None):
+    if not isinstance(data, dict):
+        data = json.loads(data)
+    list_of_keys = []
+    try:
+        if len(data.keys()) > 0:
+            for ind, val in enumerate(data.keys()):
+                if ind == 0 and type(data[val]) == dict:
+                    for key in data[val].keys():
+                        list_of_keys.append(key)
+                break
+                    
+    except:
+        pass
+
+    return list_of_keys
