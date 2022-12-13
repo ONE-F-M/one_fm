@@ -252,7 +252,6 @@ def get_passport_text():
         print(1)
 
         print(cstr(frappe.local.site))
-        print(frappe.local.conf.encryption_key)
         #initialize google vision client library
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()

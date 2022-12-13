@@ -203,10 +203,8 @@ function send_request(method, data, token, type){
             message: response._error_message,
           });
         } else {
-          
           $("#cover-spin").hide();
           $('#finalForm').css('display', 'block');
-          
           frappe.msgprint({
             title: __("Error extracting text"),
             indicator: "orange",
