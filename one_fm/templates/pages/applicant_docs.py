@@ -249,29 +249,22 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
 def get_passport_text():
     try:
         result = {}
-        print(1)
 
-        print(cstr(frappe.local.site))
         #initialize google vision client library
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()
-        print(2)
 
         front_passport = frappe.local.form_dict['front_passport']
         back_passport = frappe.local.form_dict['back_passport']
-        print(3)
 
         front_image_path = upload_image(front_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
         back_image_path = upload_image(back_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
-        print(4)
 
         front_text = get_passport_front_text(front_image_path, client)
         back_text = get_passport_back_text(back_image_path, client)
-        print(5)
 
         result.update({'front_text': front_text})
         result.update({'back_text': back_text})
-        print(6)
 
         return result
 
