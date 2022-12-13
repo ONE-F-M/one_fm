@@ -11,6 +11,7 @@ def get_context(context):
 
     if job_opening:
         opening.update({'name': job_opening.name})
+        opening.update({'job_title': job_opening.job_title})
         opening.update({'designation': job_opening.designation})
         opening.update({'description': job_opening.description if job_opening.description else ""})
 
