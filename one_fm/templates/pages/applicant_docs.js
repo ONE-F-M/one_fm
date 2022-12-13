@@ -65,6 +65,7 @@ window.onload = () => {
     $(".required_indicator").show()
   }
   populate_nationality();
+  populate_country();
 }
 
 let civil_id_image;
@@ -124,9 +125,22 @@ function populate_nationality(){
       langArray = r.message;
       if(langArray){
         var nationality = document.getElementById("Nationality");
-        var place_of_issue = document.getElementById("Passport_Place_of_Issue");
         for (let i=0; i<=langArray.length;i++) {
           nationality.options[nationality.options.length] = new Option(langArray[i], langArray[i]);
+        }
+      }
+    }
+  });
+}
+function populate_country(){
+  frappe.call({
+    type: "GET",
+    method: "one_fm.templates.pages.applicant_docs.populate_country",
+    callback: function(r) {
+      langArray = r.message;
+      if(langArray){
+        var place_of_issue = document.getElementById("Passport_Place_of_Issue");
+        for (let i=0; i<=langArray.length;i++) {
           place_of_issue.options[place_of_issue.options.length] = new Option(langArray[i], langArray[i]);
         }
       }

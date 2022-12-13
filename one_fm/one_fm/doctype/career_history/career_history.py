@@ -164,7 +164,8 @@ def create_interview(career_history):
 		interview.from_time = now()
 		interview.to_time = now()
 		interview_details = interview.append('interview_details')
-		interview_details.interviewer = frappe.session.user
+		if frappe.session.user != "Guest":
+			interview_details.interviewer = frappe.session.user
 		interview.expected_average_rating = 5
 		interview.save(ignore_permissions = True)
 		return interview.name

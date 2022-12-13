@@ -1,0 +1,42 @@
+<div class="from-markdown">
+	<div class="d-flex justify-content-between align-items-center">
+		<h1>{{ title }}</h1>
+
+	</div>
+	{{ content }}
+</div>
+<div class="wiki-footer">
+	<div class="my-4 wiki-revision-meta">
+		<ul class="user-contributions">
+
+			{%- if last_revision -%}
+			{{ last_revision.raised_by_username or last_revision.owner }} تم تحريره {{ frappe.utils.pretty_date(last_revision.creation) }}
+			{%- if number_of_revisions > 0 %}
+			&middot;
+			{% if "ar" in lang%} مسودة التغييرات {% else %}إنشاء صفحة{%- endif -%}
+			<li><a href="/{{ path }}/revisions">{% if "ar" in lang%}{{ number_of_revisions }} التنقيحات {% else %} {{ number_of_revisions }} Revisions {%- endif -%}</a>&nbsp;</li>
+			{%- endif -%}
+			{%- endif -%}
+			<li><a href="/{{ path }}/edit-wiki">{% if "ar" in lang%} تعديل الصفحة {% else %}Edit Page{%- endif -%}</a>&nbsp;</li>
+			<li><a href="/{{ path }}/new-wiki">{% if "ar" in lang%}صفحة جديدة {% else %}New Page{%- endif -%}</a>&nbsp;</li>
+		</ul>
+	</div>
+
+	<div class = "forward-back">
+		<a href="#" class="btn left">Left</a>
+		<a href="#" class="btn pull-right right">Right</a>
+	</div>
+
+</div>
+
+<script type="text/javascript" src="/assets/frappe/js/lib/jquery/jquery.min.js"></script>
+{{ include_script('wiki.bundle.js') }}
+
+<script>
+	new RenderWiki();
+
+</script>
+
+{%- if script -%}
+<script>{{ script }}</script>
+{%- endif -%}

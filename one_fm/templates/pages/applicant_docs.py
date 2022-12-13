@@ -39,7 +39,10 @@ def fetch_nationality(code):
     country = frappe.get_value('Country', {'code_alpha3':code},["country_name"])
     return frappe.get_value('Nationality', {'country':country},["name"])
 
-
+@frappe.whitelist(allow_guest=True)
+def populate_country():
+    return frappe.get_list('Country', pluck='name', ignore_permissions=True)
+    
 @frappe.whitelist(allow_guest=True)
 def token():
     return frappe.local.session.data.csrf_token
