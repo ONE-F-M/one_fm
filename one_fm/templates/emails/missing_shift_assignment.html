@@ -1,0 +1,29 @@
+<tr>
+    <td style="font-family: 'Cairo', sans-serif;color:#4b4b4c;" mc:edit="tm2-04" valign="top" >
+        <p>Hello Developer,</p><br>
+        <p>Few of the following employee's did get their shift assigned. It probably got created in the backup scheduling.
+            Kindly, take a look at them</p>
+        <br>
+        <p>Thank you.</p>
+
+    </td>
+</tr>
+<br><br>
+<tr>
+    <td valign="top" align="center">
+        <table style="color:#71746f;width:80%;" class="table">
+            <tr>
+                <th>Employee ID</th>
+               
+            </tr>
+            {% for roster in rosters %}
+            <tr>
+                <td>
+                    {% if roster.employee %}{{ roster.employee }}{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </td>
+</tr>
+
