@@ -168,6 +168,7 @@ class CreateMap():
         self.attendance_set = frappe.db.sql(self.attendance_query,as_dict=1) if self.employees else []
         
         self.employee_set = frappe.db.sql(self.employee_query,as_dict=1) if self.employees else []
+        
         self.start_mapping()
         
     def combine_maps(self,iter1,iter2):
@@ -183,7 +184,7 @@ class CreateMap():
         self.sch_map = list(map(self.create_schedule_map,filters))
          #Fetch all employee details
         self.employee_details = list(map(self.create_employee_schedule,self.employee_set))
-         #Combine both the attenance and schedule maps,
+        #Combine both the attenance and schedule maps,
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
         res=list(map(self.add_blank_days,iter(self.date_range)))
         
@@ -191,8 +192,7 @@ class CreateMap():
         try:
             key = list(emp_dict.keys())[0]
             value = emp_dict[key]
-            # if key == 'Gigimon Varghese Varkey Keerikkattil':
-            #     emp2 = emp_dict
+            
             if getdate(self.cur_date) not in [i['date'] for i in value]:
                 if self.formated_rs.get(key):
                     self.formated_rs[key].append({
