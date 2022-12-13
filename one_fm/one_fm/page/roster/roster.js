@@ -2881,9 +2881,11 @@ function schedule_change_post(page) {
 //		});
 //	}
 	var hide_day_off_ot_check = 0;
+	var hide_keep_days_off_check = 0;
 	let element = get_wrapper_element();
 	if (element == ".rosterOtMonth") {
 		hide_day_off_ot_check = 1;
+		hide_keep_days_off_check = 1;
 	}
 	let d = new frappe.ui.Dialog({
 		'title': 'Schedule/Change Post',
@@ -2933,7 +2935,7 @@ function schedule_change_post(page) {
 				}
 			},
 			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
-			{ 'label': 'Keep Days Off', 'fieldname': 'keep_days_off', 'fieldtype': 'Check' },
+			{ 'label': 'Keep Days Off', 'fieldname': 'keep_days_off', 'fieldtype': 'Check', 'hidden': hide_keep_days_off_check },
 			{ 'label': 'Request Employee Schedule', 'fieldname': 'request_employee_schedule', 'fieldtype': 'Check' },
 			{ 'label': 'Day Off OT', 'fieldname': 'day_off_ot', 'fieldtype': 'Check' , 'hidden': hide_day_off_ot_check},
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
