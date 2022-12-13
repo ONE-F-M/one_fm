@@ -269,7 +269,6 @@ def get_passport_text():
         return result
 
     except Exception as e:
-        print(e)
         frappe.throw(e)
 
 def get_passport_front_text(image_path, client):

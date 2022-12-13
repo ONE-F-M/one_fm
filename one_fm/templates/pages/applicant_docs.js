@@ -493,16 +493,3 @@ function get_uploaded_data(data){
     }
   })
 }
-
-
-
-// var data = {
-//   pasport: {
-//     "fullname":"",
-//     "surname": "",
-//     "PACI":"",
-//     "Nationality":"",
-//     "Passport": "",
-
-//   }
-// };
