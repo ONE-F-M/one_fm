@@ -79,7 +79,7 @@ window.EditWikiAr = class EditWikiAr extends Wiki {
 	set_add_item() {
 	
 		$(`<div class="text-muted add-sidebar-item small">+ اضافة عنصر </div>
-			<div class="text-muted small mt-3"><i>اسحب العناصر لإعادة ترتيبها </i></div>`).appendTo(.appendTo(
+			<div class="text-muted small mt-3"><i>اسحب العناصر لإعادة ترتيبها </i></div>`).appendTo(
 			$(".web-sidebar")
 		);
 		var me = this;
