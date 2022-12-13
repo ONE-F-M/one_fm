@@ -336,7 +336,7 @@ def fetch_leave_approver(employee: str) -> str:
     else if employee_shift[0].shift:
         approver, Role = get_action_user(employee,employee_shift[0].shift)
     else:
-        frappe.throw(_("Please assign an approver!!"))
+        approver = None
     return approver
 
 
