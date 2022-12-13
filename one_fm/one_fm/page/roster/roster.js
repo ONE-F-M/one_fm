@@ -101,6 +101,7 @@ function load_js(page) {
 			get_roster_data(page);
 		};
 		function otRosterClick() {
+			
 			$(".otRosterClick").addClass("active");
 			$(".otRosterClick").addClass("bg-primary");
 			$(".basicRosterClick").removeClass("active");
@@ -121,6 +122,7 @@ function load_js(page) {
 			if (page.employee_search_id) {
 				$(wrapper_element).find(".search-employee-id").val(page.employee_search_id);
 			}
+			
 			get_roster_data(page, true);
 
 		};
@@ -169,7 +171,9 @@ function load_js(page) {
 			get_post_data(page);
 		});
 		$(".basicRosterClick").click(basicRosterClick);
-		$(".otRosterClick").click(otRosterClick);
+		$(".otRosterClick").click(
+			
+			otRosterClick);
 
 		//week view click jquery
 		$('.postmonthviewclick').click(function () {
@@ -1082,6 +1086,7 @@ function get_roster_data(page, isOt) {
 	let { limit_start, limit_page_length } = page.pagination;
 	if (project || site || shift || department || operations_role || designation){
 		$('#cover-spin').show(0);
+		
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, operations_role, designation, isOt, limit_start, limit_page_length })
 			.then(res => {
 				
@@ -1319,6 +1324,7 @@ function get_roster_week_data(page, isOt) {
 	let { project, site, shift, department, operations_role } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
 	// console.log(limit_start, limit_page_length);
+	
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_name, project, site, shift, department, operations_role, isOt, limit_start, limit_page_length })
 		.then(res => {
 			let { operations_roles_data, employees_data, total } = res;
@@ -1682,7 +1688,7 @@ function get_projects(page) {
 				get_sites(page);
 				get_shifts(page);
 				let element = get_wrapper_element().slice(1);
-				// console.log("1");
+				
 				page[element](page);
 			});
 		});
@@ -1706,7 +1712,7 @@ function get_sites(page) {
 				page.filters.site = $(this).val();
 				get_shifts(page);
 				let element = get_wrapper_element().slice(1);
-				console.log("2");
+		
 
 				page[element](page);
 			});
@@ -1732,7 +1738,7 @@ function get_shifts(page) {
 			$(parent).on('select2:select', function (e) {
 				page.filters.shift = $(this).val();
 				let element = get_wrapper_element().slice(1);
-				console.log("3");
+				
 
 				page[element](page);
 
@@ -1756,7 +1762,7 @@ function get_operations_posts(page) {
 			$(parent).on('select2:select', function (e) {
 				page.filters.operations_role = $(this).val();
 				let element = get_wrapper_element().slice(1);
-				console.log("4");
+				
 
 				page[element](page);
 			});
@@ -1777,7 +1783,7 @@ function get_departments(page) {
 			$(parent).on('select2:select', function (e) {
 				page.filters.department = $(this).val();
 				let element = get_wrapper_element().slice(1);
-				console.log("5");
+				
 
 				page[element](page);
 			});
