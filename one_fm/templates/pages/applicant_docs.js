@@ -308,13 +308,13 @@ function fill_form(data, type,token){
       total_fill_counter += (front_side_pp_filled_fields_count + back_side_pp_filled_fields_count);
     }
 
-    if (total_fill_counter < TOTAL_FORM_FIELDS){
-      frappe.msgprint({
-        title: __("Could not obtain all information"),
-        indicator: "orange",
-        message: __("Some fields in the below form may be empty. Please fill them out correctly."),
-      });
-    }
+    // if (total_fill_counter < TOTAL_FORM_FIELDS){
+    //   frappe.msgprint({
+    //     title: __("Could not obtain all information"),
+    //     indicator: "orange",
+    //     message: __("Some fields in the below form may be empty. Please fill them out correctly."),
+    //   });
+    // }
 
   }
 };
@@ -488,7 +488,7 @@ function get_uploaded_data(data){
       frappe.unfreeze();
       frappe.msgprint(frappe._(`The following were extracted from the Image <ul>${r.message.map(item => (
         `<li>${item}</li>`
-      )).join('')}</ul> Kindly fill the remaining fields.`));
+      )).join('')}</ul> Kindly fill the remaining fields correctly.`));
 
     }
   })
