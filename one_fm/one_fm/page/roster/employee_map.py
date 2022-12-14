@@ -27,7 +27,7 @@ class PostMap():
         self.filters = filters
         self.post_schedule_count = frappe.db.get_all("Post Schedule", ['operations_role',"name", "date"], filters, ignore_permissions=True)
         self.start_mapping()
-    
+
     def create_template(self,row):
         self.template[row.post_abbrv] = []
         return
@@ -45,14 +45,14 @@ class PostMap():
         else:
             self.post_schedule_map[each.operations_role] = [one for one in self.post_schedule_count if one.operations_role ==each.operations_role]
         return self.post_schedule_map
-        
+
     def sort_post_filled(self,each):
         if self.post_filled_map.get(each.operations_role):
             pass
         else:
             self.post_filled_map[each.operations_role] = [one for one in self.post_filled_count if one.operations_role==each.operations_role]
         return self.post_filled_map
-    
+
 
     def summarise_schedule_data(self,data):
         values = self.post_schedule_map[data]
@@ -66,16 +66,16 @@ class PostMap():
         return {'operations_role':data,'date':self.cur_date,'post_count':date_sum}
 
     def create_part_result(self,row):
-        
+
         if not self.preformated_data.get(self.abbrvs.get(row.get('operations_role'))):
             self.preformated_data[self.abbrvs.get(row.get('operations_role'))] = [row]
         else:
             self.preformated_data[self.abbrvs.get(row.get('operations_role'))].append(row)
-    
+
 
     def create_second_section(self,row):
         highlight = "bggreen"
-        
+
         daily_values = self.preformated_data.get(self.abbrvs.get(row.get('operations_role')))  if self.preformated_data.get(self.abbrvs.get(row.get('operations_role'))) else []
         cur_date_values = [i for i in daily_values if self.cur_date == i['date']]
         if not cur_date_values:
@@ -94,7 +94,7 @@ class PostMap():
             self.template[row['abbr']] = [row]
         else:
             self.template[row['abbr']].append(row)
-        
+
         return self.template
 
 
@@ -103,7 +103,7 @@ class PostMap():
         self.cur_date = cstr(date).split(' ')[0]
         summary_data =  list(map(self.summarise_post_data,self.post_filled_map))
         list(map(self.create_part_result,summary_data  ))
-        
+
         self.post_filled_summary.append(summary_data)
 
     def create_date_schedule_summary(self,date):
@@ -124,7 +124,7 @@ class PostMap():
         list(map(self.create_template,self.operations))
         list(map(self.create_date_post_summary,self.date_range))
         list(map(self.create_date_schedule_summary,self.date_range))
-        
+
 
 class CreateMap():
     """
@@ -139,17 +139,17 @@ class CreateMap():
         self.employees = tuple([u.employee for u in  employees])
         self.all_employees = employees
         self.str_filter = filters
-        
+
         self.isOt = isOt
         if self.isOt:
             self.str_filter+=' and es.roster_type = "Over-Time"'
-        
-            
-        
+
+
+
         # self.schedule_query = f"""SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv,  es.shift, roster_type, es.employee_availability, es.day_off_ot
         # from `tabEmployee Schedule`es  where {self.str_filter} and es.employee in {self.employees} group by es.employee order by date asc, es.employee_name asc """
-        
-        #Noticed the trailing comma in a tuple is raising a SQL error, using this conditional to create the fetch query based on the employee 
+
+        #Noticed the trailing comma in a tuple is raising a SQL error, using this conditional to create the fetch query based on the employee
         if len(employees)==1:
             self.schedule_query  = f"""SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
             es.shift, es.roster_type, es.employee_availability, es.day_off_ot from `tabEmployee Schedule`es  where \
@@ -162,15 +162,15 @@ class CreateMap():
                     es.employee in {self.employees} and {self.str_filter} order by es.employee "
             self.attendance_query = f"SELECT at.status, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{add_to_date(cstr(getdate()), days=-1)}' order by at.employee """
             self.employee_query = f"SELECT name,employee_name,shift,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
-        
-        
+
+
         self.schedule_set = frappe.db.sql(self.schedule_query,as_dict=1) if self.employees else []
         self.attendance_set = frappe.db.sql(self.attendance_query,as_dict=1) if self.employees else []
-        
+
         self.employee_set = frappe.db.sql(self.employee_query,as_dict=1) if self.employees else []
-        
+
         self.start_mapping()
-        
+
     def combine_maps(self,iter1,iter2):
         key = list(iter1.keys())[0]
         return {key:iter1[key]+iter2[key]}
@@ -187,28 +187,33 @@ class CreateMap():
         #Combine both the attenance and schedule maps,
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
         res=list(map(self.add_blank_days,iter(self.date_range)))
-        
+
     def add_blanks(self,emp_dict):
         try:
             key = list(emp_dict.keys())[0]
             value = emp_dict[key]
-            
+
+            print("\n\n\n\n###\n\n")
+            print(value)
+
             if getdate(self.cur_date) not in [i['date'] for i in value]:
+                employee_day_off = self.employee_period_details[key]['day_off_category']
+                number_of_days_off = self.employee_period_details[key]['number_of_days_off']
+                if number_of_days_off:
+                    employee_day_off += " " + str(number_of_days_off) + " Day(s) Off"
+
+                result = {
+                    'employee':self.employee_period_details[key]['name'],
+                    'employee_name':self.employee_period_details[key]['employee_name'],
+                    'date':self.cur_date,
+                    'employee_day_off': employee_day_off
+                }
                 if self.formated_rs.get(key):
-                    self.formated_rs[key].append({
-                        'employee':self.employee_period_details[key]['name'],
-                        'employee_name':self.employee_period_details[key]['employee_name'],
-                        'date':self.cur_date,
-                        'employee_day_off':"Monthly"
-                    })
+                    self.formated_rs[key].append(result)
                 else:
-                    self.formated_rs[key] = [{
-                        'employee':self.employee_period_details[key]['name'],
-                        'employee_name':self.employee_period_details[key]['employee_name'],
-                        'date':self.cur_date,
-                        'employee_day_off':"Monthly"
-                    }]
+                    self.formated_rs[key] = [result]
             else:
+                print("AT ELSE....")
                 if self.formated_rs.get(key):
                     if key not in self.merged_employees:
                         self.formated_rs[key]+=value
@@ -217,34 +222,27 @@ class CreateMap():
                     self.formated_rs[key] = value
         except KeyError:
             pass
-                
-
-
-        
-
-
         return self.formated_rs
 
-        
     def create_missing_days(self,key):
-        missing_days = [] 
+        missing_days = []
 
     def add_blank_days(self,date):
         self.cur_date = cstr(date).split(' ')[0]
         self.meme =  list(map(self.add_blanks,self.combined_map))
-        
-        
-    
+
+
+
     def create_employee_schedule(self,row):
         self.employee_period_details[row['employee_name']] = row
         return
-        
+
 
     def create_schedule_map(self,row):
         schedule = [one for  one in self.schedule_set if one.employee==row[0] ]
         return {row[1]:schedule}
-    
-    
+
+
 
     def create_attendance_map(self,row):
        """ Create a data structure in the form of """
@@ -253,7 +251,6 @@ class CreateMap():
                     'employee_name': one.employee_name,
                     'date': one.attendance_date,
                     'attendance': one.status,
-                    'employee_day_off': 'employee_day_off'
+                    'employee_day_off': one.day_off_category + (" " + str(one.number_of_days_off) + " Day(s) Off" if one.number_of_days_off else "")
                 } for  one in self.attendance_set if one.employee == row[0]]
        return {row[1]:attendance}
-    
