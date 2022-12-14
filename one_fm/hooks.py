@@ -413,6 +413,8 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
+	{"from_route": "/<path:wiki_page>/edit-wiki", "to_route": "wiki/edit"},
+	{"from_route": "/<path:wiki_page>/new-wiki", "to_route": "wiki/new"},
 ]
 
 # doc_events = {
@@ -589,11 +591,17 @@ scheduler_events = {
 		"15 0 * * *": [
 			'one_fm.api.tasks.assign_am_shift'
 		],
+		"45 1 * * *": [
+			'one_fm.api.tasks.validate_am_shift_assignment'
+		],
 		# "45 1 * * *": [
 		# 	'one_fm.api.tasks.assign_am_shift'
 		# ],
 		"15 12 * * *": [
 			'one_fm.api.tasks.assign_pm_shift'
+		],
+		"45 13 * * *": [
+			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
 		# "45 13 * * *": [
 		# 	'one_fm.api.tasks.assign_pm_shift'
@@ -680,8 +688,9 @@ fixtures = [
 # ------------------------------
 #
 override_whitelisted_methods = {
-	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.mobile.Leave_application.fetch_leave_approver"
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
 	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
+	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview"
 }
 ShiftType.process_auto_attendance = process_auto_attendance
 

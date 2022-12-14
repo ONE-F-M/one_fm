@@ -329,14 +329,14 @@ def fetch_leave_approver(employee: str) -> str:
     Returns:
         str: user id of leave approver
     """
-
+    reports_to = frappe.get_value("Employee", employee, ["reports_to"])     
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-    if employee_shift[0].shift:
+    if reports_to:
+        approver = frappe.get_value("Employee", reports_to, ["user_id"])
+    else if employee_shift[0].shift:
         approver, Role = get_action_user(employee,employee_shift[0].shift)
     else:
-        reports_to = frappe.get_value("Employee", employee, ["reports_to"])
-        approver = frappe.get_value("Employee", reports_to, ["user_id"])
-
+        approver = None
     return approver
 
 
