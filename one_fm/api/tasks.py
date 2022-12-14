@@ -12,6 +12,7 @@ from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
 from hrms.hr.doctype.attendance.attendance import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
+from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 
 class DeltaTemplate(Template):
@@ -342,13 +343,13 @@ def checkin_checkout_query(date, shift_type, log_type):
 						LA.employee=emp.name
 					AND LA.workflow_state='Approved'
 					AND CAST('{date} ' as date) BETWEEN LA.from_date AND LA.to_date)
-					AND NOT EXISTS(SELECT * FROM `tabEmployee Checkin` empChkin
+					AND tSA.employee
+					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
 					WHERE
-						empChkin.employee=emp.name
-					AND	empChkin.log_type='{log_type}'
-					AND DATE_FORMAT(empChkin.time,'%Y-%m-%d')='{date}'
+						empChkin.log_type="IN"
+					AND empChkin.skip_auto_attendance=0
+					AND date(empChkin.time)='{date}'
 					AND empChkin.shift_type='{shift_type}')
-					AND tSA.start_date
 					AND NOT EXISTS(SELECT * from `tabHoliday` h
 					WHERE
 						h.parent = emp.holiday_list
@@ -779,6 +780,80 @@ def create_shift_assignment(schedule, date):
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
 
+def validate_am_shift_assignment():
+	date = cstr(getdate())
+	end_previous_shifts("PM")
+	roster = frappe.db.sql("""
+			SELECT * from `tabEmployee Schedule` ES
+			WHERE
+			ES.date = '{date}'
+			AND ES.employee_availability = "Working"
+			AND ES.roster_type = "Basic"
+			AND ES.shift_type IN(
+				SELECT name from `tabShift Type` st
+				WHERE st.start_time >= '01:00:00'
+				AND  st.start_time < '13:00:00')
+			AND ES.employee
+			NOT IN (Select employee from `tabShift Assignment` tSA
+			WHERE
+				tSA.employee = ES.employee
+				AND tSA.start_date='{date}'
+				AND tSA.roster_type = "Basic"
+				AND tSA.shift_type IN(
+					SELECT name from `tabShift Type` st
+					WHERE st.start_time >= '01:00:00'
+					AND  st.start_time < '13:00:00'	))
+	""".format(date=cstr(date)), as_dict=1)
+
+	non_shift = fetch_non_shift(date, "PM")
+	if non_shift:
+		roster.extend(non_shift)
+	
+	if len(roster)>0:
+		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
+		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
+		     
+		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delay=False)
+		frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
+
+def validate_pm_shift_assignment():
+	date = cstr(getdate())
+	end_previous_shifts("PM")
+	roster = frappe.db.sql("""
+			SELECT * from `tabEmployee Schedule` ES
+			WHERE
+			ES.date = '{date}'
+			AND ES.employee_availability = "Working"
+			AND ES.roster_type = "Basic"
+			AND ES.shift_type IN(
+				SELECT name from `tabShift Type` st
+				WHERE st.start_time >= '13:00:00'
+				)
+			AND ES.employee
+			NOT IN (Select employee from `tabShift Assignment` tSA
+			WHERE
+				tSA.employee = ES.employee
+				AND tSA.start_date='{date}'
+				AND tSA.roster_type = "Basic"
+				AND tSA.shift_type IN(
+				SELECT name from `tabShift Type` st
+				WHERE st.start_time >= '13:00:00'
+				))
+	""".format(date=cstr(date)), as_dict=1)
+	
+	non_shift = fetch_non_shift(date, "PM")
+	if non_shift:
+		roster.extend(non_shift)
+	
+	if len(roster)>0:
+		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
+		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
+		     
+		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delay=False)
+		frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
+
 def overtime_shift_assignment():
 	"""
 	This method is to generate Shift Assignment for Employee Scheduling
@@ -843,10 +918,8 @@ def update_shift_details_in_attendance(doc, method):
 	if frappe.db.exists("Employee Schedule",
 		{"employee": doc.employee, "date": doc.attendance_date, "roster_type": "Over-Time", "day_off_ot": True}):
 		condition += ' day_off_ot="1"'
-	
-	if frappe.db.exists("Shift Assignment", {"employee": doc.employee, "start_date": doc.attendance_date}):
-		shift_assignment = frappe.get_list("Shift Assignment",{"employee": doc.employee, "start_date": doc.attendance_date},["name", "site", "project", "shift", "shift_type", "operations_role", "start_datetime","end_datetime", "roster_type"])
-
+	shift_assignment = frappe.get_list("Shift Assignment",{"employee": doc.employee, "start_date": doc.attendance_date},["name", "site", "project", "shift", "shift_type", "operations_role", "start_datetime","end_datetime", "roster_type"])
+	if shift_assignment and len(shift_assignment) > 0 :
 		shift_data = shift_assignment[0]
 		condition += """ shift_assignment="{shift_assignment[0].name}" """.format(shift_assignment=shift_assignment)
 		
