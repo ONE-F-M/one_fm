@@ -79,8 +79,8 @@ def validate_offs(emp, project_cycle, supervisor):
 	datalist = []
 
 	if emp.day_off_category == 'Monthly':
-		start_date = project_cycle['start_date']
-		end_date = project_cycle['end_date']
+		start_date = getdate()
+		end_date = add_months(start_date, 1)
 		for i in range(2):
 			off_days = frappe.db.sql("""
 				SELECT COUNT(name) as cnt FROM `tabEmployee Schedule`
@@ -121,9 +121,9 @@ def validate_offs(emp, project_cycle, supervisor):
 			end_date = add_months(start_date, 1)
 
 	elif emp.day_off_category == 'Weekly':
-		start_date = project_cycle['start_date']
+		start_date = getdate()
 		end_date = add_days(start_date, 7)
-		for i in range(7):
+		for i in range(2):
 			off_days = frappe.db.sql("""
 				SELECT COUNT(name) as cnt FROM `tabEmployee Schedule`
 					WHERE
