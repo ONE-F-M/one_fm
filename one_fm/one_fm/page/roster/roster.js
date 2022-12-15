@@ -1199,7 +1199,8 @@ function render_roster(res, page, isOt) {
 				'Day Off': 'DO',
 				'Sick Leave': 'SL',
 				'Annual Leave': 'AL',
-				'Emergency Leave': 'EL'
+				'Emergency Leave': 'EL',
+				'Working': '!'
 			};
 			let attendancemap = {
 				'Present': 'greenboxcolor',
@@ -1423,7 +1424,8 @@ function get_roster_week_data(page, isOt) {
 						'Day Off': 'DO',
 						'Sick Leave': 'SL',
 						'Annual Leave': 'AL',
-						'Emergency Leave': 'EL'
+						'Emergency Leave': 'EL',
+						'Working': '!'
 					};
 					let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift } = employees_data[employee_key][i];
 
