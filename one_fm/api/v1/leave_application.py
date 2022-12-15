@@ -11,7 +11,7 @@ from one_fm.api.v1.roster import get_current_shift
 from frappe.utils import cint, cstr, getdate
 from one_fm.utils import check_if_backdate_allowed
 
-@frappe.whitelist(allow_guest= True)
+@frappe.whitelist()
 def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
     """This method gets the leave data for a specific employee.
 
