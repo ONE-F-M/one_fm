@@ -37,7 +37,6 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
         return response("Bad Request", 400, None, "leave_id must be of type str.")
 
     try:
-        print(1)
         employee = frappe.db.get_value("Employee", {'employee_id':employee_id})
 
         if not employee:
@@ -334,7 +333,7 @@ def fetch_leave_approver(employee: str) -> str:
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
     if reports_to:
         approver = frappe.get_value("Employee", reports_to, ["user_id"])
-    elif employee_shift[0].shift:
+    elif len(employee_shift) > 0 and employee_shift[0].shift:
         approver, Role = get_action_user(employee,employee_shift[0].shift)
     else:
         approver = None
