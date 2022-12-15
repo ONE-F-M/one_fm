@@ -193,27 +193,19 @@ class CreateMap():
             key = list(emp_dict.keys())[0]
             value = emp_dict[key]
 
-            print("\n\n\n\n###\n\n")
-            print(value)
-
             if getdate(self.cur_date) not in [i['date'] for i in value]:
-                employee_day_off = self.employee_period_details[key]['day_off_category']
-                number_of_days_off = self.employee_period_details[key]['number_of_days_off']
-                if number_of_days_off:
-                    employee_day_off += " " + str(number_of_days_off) + " Day(s) Off"
-
                 result = {
                     'employee':self.employee_period_details[key]['name'],
                     'employee_name':self.employee_period_details[key]['employee_name'],
                     'date':self.cur_date,
-                    'employee_day_off': employee_day_off
+                    'day_off_category': self.employee_period_details[key]['day_off_category'],
+                    'number_of_days_off': self.employee_period_details[key]['number_of_days_off']
                 }
                 if self.formated_rs.get(key):
                     self.formated_rs[key].append(result)
                 else:
                     self.formated_rs[key] = [result]
             else:
-                print("AT ELSE....")
                 if self.formated_rs.get(key):
                     if key not in self.merged_employees:
                         self.formated_rs[key]+=value
@@ -251,6 +243,7 @@ class CreateMap():
                     'employee_name': one.employee_name,
                     'date': one.attendance_date,
                     'attendance': one.status,
-                    'employee_day_off': one.day_off_category + (" " + str(one.number_of_days_off) + " Day(s) Off" if one.number_of_days_off else "")
+                    'day_off_category': one.day_off_category,
+                    'number_of_days_off': one.number_of_days_off
                 } for  one in self.attendance_set if one.employee == row[0]]
        return {row[1]:attendance}
