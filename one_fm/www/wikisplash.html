@@ -1,0 +1,24 @@
+
+{% extends "one_fm/templates/wiki_page/templates/wiki_page.html"%}
+{% block page_content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    
+
+</head>
+<h1>Hello {{cur_user}} !</h1>
+
+<p> Would you like to create your wiki page in English </p>
+<button type="button" class="btn btn-primary">English</button>
+<div class = "arabic">
+    <p>هل ترغب في إنشاء صفحة الويكي بالعربية؟</p>
+    <button type="button" class="btn btn-primary">عربي</button>
+</div>
+
+{% endblock %}
+
+
+

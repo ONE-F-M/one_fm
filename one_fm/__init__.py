@@ -17,12 +17,13 @@ from one_fm.api.mobile.Leave_application import notify_leave_approver
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 from one_fm.operations.doctype.contracts.contracts import calculate_item_values
 from wiki.wiki.doctype.wiki_page.wiki_page import WikiPage
-from one_fm.overrides.wiki_page import get_context
+from one_fm.overrides.wiki_page import get_context,update_context_
+from frappe.website.page_renderers.document_page import DocumentPage
 
 
 __version__ = '14.0.0'
 
-
+DocumentPage.update_context = update_context_
 ShiftRequest.on_submit = shift_request_submit
 ShiftRequest.validate_approver = validate_approver
 ShiftRequest.on_cancel = shift_request_cancel

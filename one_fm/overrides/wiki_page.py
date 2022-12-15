@@ -1,6 +1,33 @@
 import frappe
 from one_fm.data import md_to_html
 
+
+def update_context_(me):
+    me.context.doc = me.doc
+    me.context.update(me.context.doc.as_dict())
+    me.context.update(me.context.doc.get_page_info())
+    me.template_path = me.context.template or me.template_path
+    if not me.template_path:
+        if me.doctype == 'Wiki Page':
+            me.template_path = 'one_fm/templates/wiki_page/templates/wiki_page.html'
+        else:
+            me.template_path = me.context.doc.meta.get_web_template()
+    if not me.template_path:
+            me.template_path = me.context.doc.meta.get_web_template()
+    if hasattr(me.doc, "get_context"):
+        ret = me.doc.get_context(me.context)
+        if ret:
+            me.context.update(ret)
+    for prop in ("no_cache", "sitemap"):
+        if prop not in me.context:
+            me.context[prop] = getattr(me.doc, prop, False)
+
+
+
+
+
+
+
 @frappe.whitelist()
 def get_context(doc, context):
     doc.verify_permission("read")
@@ -45,6 +72,7 @@ def get_context(doc, context):
             ]
         }
     )
+    return context
 
 def get_open_contributions():
 	count = len(

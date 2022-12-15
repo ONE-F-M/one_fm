@@ -376,6 +376,13 @@ standard_portal_menu_items = [
 	{"title": _("Job Openings"), "route": "/agency_job_opening", "reference_doctype": "Job Opening", "role": "Agency"}
 ]
 
+website_redirects = [
+	 {"source": "/wikisplash/new-wiki", "target": "/home/new-wiki"},
+	 {"source": "/wikisplash/edit-wiki", "target": "/home/edit-wiki"},
+    
+]
+
+
 has_website_permission = {
 	"Job Applicant": "one_fm.utils.applicant_has_website_permission",
 	"Job Opening": "one_fm.one_fm.doctype.agency.agency.agency_has_website_permission"
