@@ -19,24 +19,24 @@ def get_user_details(employee_id: str = None):
         return response("Bad Request", 400, None, "employee_id must be of type str.")
 
     try:
-        user = frappe.get_value("User", employee_id, ["*"])
-    
-        employee, designation = frappe.get_value("Employee", { "employee_id": employee_id }, ["name", "designation"])
+        employee = frappe.get_doc("Employee", {"employee_id": employee_id})
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
-        user_details = {}
-        if user:
-            user_details.name = user.full_name
-            user_details.email = user.email
-            user_details.mobile_no = user.mobile_no
-            user_details.user_image = user.user_image
-        user_details.designation = designation
-        user_details.employee = employee
+        user = frappe.get_doc("User", employee.user_id)
 
-        return response("Success", 200, user_details)
-    
+        data = {}
+        if user:
+                data["name"] = user.full_name
+                data["email"] =  user.email
+                data["phone_number"] = user.mobile_no
+                data["user_image"] = user.user_image
+        data["designation"] = employee.designation
+        data["employee"] = employee.employee_name
+
+        return response("Success", 200, data)
+
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
