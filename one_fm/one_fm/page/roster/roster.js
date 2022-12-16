@@ -2911,7 +2911,7 @@ function schedule_change_post(page) {
 			{ 'label': 'Site', 'fieldname': 'site', 'fieldtype': 'Link', 'options': 'Operations Site', 'read_only': 1 },
 			{ 'label': 'Project', 'fieldname': 'project', 'fieldtype': 'Link', 'options': 'Project', 'read_only': 1 },
 			{
-				'label': 'Choose Operations Post', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'reqd': 1, 'options': 'Operations Role', get_query: function () {
+				'label': 'Choose Operations Role', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'reqd': 1, 'options': 'Operations Role', get_query: function () {
 					return {
 						query: "one_fm.one_fm.page.roster.roster.get_filtered_operations_role",
 						filters: { "shift": d.get_value('shift') }
