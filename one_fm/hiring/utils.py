@@ -87,7 +87,7 @@ def validate_job_offer(doc, method):
 def validate_job_offer_mandatory_fields(job_offer):
     if job_offer.workflow_state == 'Submit for Candidate Response':
         mandatory_field_required = False
-        fields = ['Reports To', 'Project', 'Operations Site', 'Operations Shift', 'Base', 'Salary Structure']
+        fields = ['Reports To', 'Project', 'Operations Site', 'Operations Shift', 'Base', 'Salary Structure', 'Project']
         msg = "Mandatory fields required to Submit Job Offer<br/><br/><ul>"
         for field in fields:
             if field == 'Salary Structure':
