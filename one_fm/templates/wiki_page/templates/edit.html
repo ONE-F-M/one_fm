@@ -12,7 +12,7 @@
 	
 	
 	<div class='btn btn-primary-light mr-3 draft-wiki-page'>{% if "ar" in lang%} مسودة التغييرات {% else %} Draft Changes{%- endif -%}</div>
-	<div class='btn btn-primary submit-wiki-page'>{% if "ar" in lang%} أرسل التغييرات {% else %} Draft Changes{%- endif -%}</div>
+	<div class='btn btn-primary submit-wiki-page'>{% if "ar" in lang%} أرسل التغييرات {% else %} Submit Changes{%- endif -%}</div>
 </div>
 <form class="mt-8 edit-form" method="POST">
 	<input class="d-none" type="text" name="csrf_token" value="{{ frappe.session.csrf_token }}">
@@ -144,12 +144,14 @@
 	if(languague =="ar"){
 		new EditWikiAr();
 		var edit = new EditAssetAr();
+		
 	}
 	else{
 		new EditWiki();
 		var edit = new EditAsset();
+		
 	}
-
+	
 	
 
 </script>
@@ -161,5 +163,60 @@
 {%- endif -%}
 
 {%- endif -%}
+<script>
+	
+	function update_dom(){
+		$('.ml-auto').append(`
+        <li class="nav-item dropdown logged-in" id="website-post-login" data-label="website-post-login" style="">
+			<a href="#" class="nav-link nav-avatar" data-toggle="dropdown" aria-expanded="false">
+						<span class="langauge-wrapper">
+							<span class="avatar avatar-medium filterable" title="Language:{{lang}}" data-filter="_assign,like,%null%">
+							<div id = "lang_icon" class="avatar-frame standard-image" style="background-color: var(--green-avatar-bg); color: var(--green-avatar-color)">
+									{{lang}}</div>
+							</span>
+						</span>
+					</a>
+					<ul class = "dropdown-menu dropdown-menu-right" id = "language_selector">
+						<ul class="dropdown-menu dropdown-menu-right show" role="menu">
+							<a id = "eng_lang" class="dropdown-item" href="#" rel="nofollow">English</a>
+							<a id = "ar_lang" class="dropdown-item" href="#" rel="nofollow">عربي</a>
+						</ul>
+					</ul>
+                </li>    
+    `)
+	}
+	update_dom()
+	$("#eng_lang").click(()=>{
+		change_lang("en")
+	})
 
+	$("#ar_lang").click(()=>{
+		change_lang("ar")
+	})
+			   
+function change_lang(lang){
+	console.log(lang)
+	frappe.call({
+		method: "one_fm.overrides.wiki_page.change_language",
+		args: {
+			lang: lang,
+			user: frappe.session.user,
+			
+		},
+		freeze: true,
+		freeze_message: __("Changing  Language ..."),
+		callback: function(r) {
+				if(r.message){
+					frappe.msgprint("Changing Langauge to "+lang)
+					location.reload();
+				}
+				else{
+					frappe.msgprint("An Error occured while changing languages, Please review the error log.")
+				}
+				
+			}
+		
+	});
+}      
+</script>
 {% endblock %}

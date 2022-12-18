@@ -9,16 +9,99 @@
     
 
 </head>
-<h1>Hello {{cur_user}} !</h1>
+<h1><b>Hello {{cur_user}} !</b></h1>
+<p></p>
 
-<p> Would you like to create your wiki page in English </p>
-<button type="button" class="btn btn-primary">English</button>
-<div class = "arabic">
-    <p>هل ترغب في إنشاء صفحة الويكي بالعربية؟</p>
-    <button type="button" class="btn btn-primary">عربي</button>
+<p class="hero-subtitle">
+    Are you ready to wiki?
+</p>
+<br>
+
+
+<div class= "image_div" >
+    <img src="images/wiki_image.jpeg" alt="wiki" class= "wiki_image">
 </div>
+
+<div class= "intro">    
+    <div class = "english_intro">
+        <h4> {{opening_quote}} </h4>
+        <a id ="english_button" class="btn btn-lg btn-primary" href="wikisplash/en">
+            English →
+        </a>
+    </div>
+    <br>
+    <br>
+    <br>
+    
+    <div class = "arabic_intro">
+        <h4>هل ترغب في إنشاء صفحة الويكي بالعربية؟</h4>
+        <a id ="arabic_button" class="btn btn-lg btn-primary" href="wikisplash/ar">
+            → عربي 
+        </a>
+    </div>
+
+</div>
+
+
+
+
 
 {% endblock %}
 
+{%- block script -%}
+<script>
+    frappe.ready(()=>{
+        $('#english_button').click(()=>{
+            let new_location = $('#english_button').attr('href')
+            change_lang('en',new_location)
+        })
 
+        $('#arabic_button').click(()=>{
+            let new_location = $('#english_button').attr('href')
+            change_lang('ar',new_location)
+        })
+        $('.image_div').css({
+            'position':'relative',
+            'left':'70%',
+            'width': '40%',
+            'text-align': 'right',
+            'padding': '15px', 
+            'border': '3px solid none'  
+        })
+
+        $('.intro').css({
+            'position':'relative',
+            'bottom':'300px',
+            'width':'50%',
+            'height':'200px'
+        }) 
+
+        $('.arabic_intro').attr("dir", "rtl")
+        $('.arabic_intro').css("text-align", "right")
+    })
+
+    function change_lang(lang,new_location){
+        console.log(lang)
+        frappe.call({
+            method: "one_fm.overrides.wiki_page.change_language",
+            args: {
+                lang: lang,
+                user: frappe.session.user,
+                
+            },
+            callback: function(r) {
+                    if(r.message){
+                        window.location.href = new_location
+                    }
+                    else{
+                        frappe.msgprint("An Error occured while changing languages, Please review the error log.")
+                    }
+                    
+                }
+            
+        });
+    }    
+
+</script>
+{%- endblock -%}
 

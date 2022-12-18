@@ -111,30 +111,63 @@ id="page-{{ name or route | e }}" data-path="{{ pathname | e }}"
 		$('.web-footer .container')
 			.removeClass('container')
 			.addClass('container-fluid doc-container');
-
-		$('.ml-auto').append(`
-			<a href="#" class="nav-link nav-avatar" data-toggle="dropdown" aria-expanded="false">
-						<span class="user-image-wrapper">
-							<span class="avatar avatar-medium filterable" title="Language:{{lang}}" data-filter="_assign,like,%null%">
-							<div id = "lang_icon" class="avatar-frame standard-image" style="background-color: var(--green-avatar-bg); color: var(--green-avatar-color)">
-									{{lang}}</div>
+		
+			
+			$('.ml-auto').append(`
+			<li class="nav-item dropdown logged-in" id="website-post-login" data-label="website-post-login" style="">
+				<a href="#" class="nav-link nav-avatar" data-toggle="dropdown" aria-expanded="false">
+							<span class="user-image-wrapper">
+								<span class="avatar avatar-medium filterable" title="Language:{{lang}}" data-filter="_assign,like,%null%">
+								<div id = "lang_icon" class="avatar-frame standard-image" style="background-color: var(--green-avatar-bg); color: var(--green-avatar-color)">
+										{{lang}}</div>
+								</span>
 							</span>
-						</span>
-					</a>
-					<ul class = "dropdown-menu dropdown-menu-right" id = "language_selector">
-						<ul class="dropdown-menu dropdown-menu-right show" role="menu">
-							<a class="dropdown-item" href="#" rel="nofollow">English</a>
-							<a class="dropdown-item" href="#" rel="nofollow">عربي</a>
+						</a>
+						<ul class = "dropdown-menu dropdown-menu-right" id = "language_selector">
+							<ul class="dropdown-menu dropdown-menu-right show" role="menu">
+								<a id = "eng_lang" class="dropdown-item" href="#" rel="nofollow">English</a>
+								<a id = "ar_lang" class="dropdown-item" href="#" rel="nofollow">عربي</a>
+							</ul>
 						</ul>
-					</ul>`)
-			
+					</li>
+						
+						
+						`)
+			$("#eng_lang").click(()=>{
+				change_lang("en")
+			})
+	
+			$("#ar_lang").click(()=>{
+				change_lang("ar")
+			})
+					   
+		function change_lang(lang){
+			console.log(lang)
+			frappe.call({
+				method: "one_fm.overrides.wiki_page.change_language",
+				args: {
+					lang: lang,
+					user: frappe.session.user,
+					
+				},
+				freeze: true,
+				freeze_message: __("Changing  Language ..."),
+				callback: function(r) {
+						if(r.message){
+							frappe.msgprint("Changing Langauge to "+lang)
+							location.reload();
+						}
+						else{
+							frappe.msgprint("An Error occured while changing languages, Please review the error log.")
+						}
+						
+					}
 				
+			});
+		}        		
 				
-				
-		$('.nav-avatar')[1].click(
-			$('#language_selector').hide()
-			
-		)
+		
+		
 				
 
 	});

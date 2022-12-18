@@ -1,6 +1,20 @@
 import frappe
 from one_fm.data import md_to_html
 
+@frappe.whitelist()
+def change_language(lang,user=None):
+    # change the language of a user
+    try:
+        if not user:
+            user = frappe.session.user
+        frappe.set_value('User',user,'language',lang)
+        return True
+    except:
+        frappe.log_error(frappe.get_traceback(),"Error while changing language")
+        return False
+
+
+
 
 def update_context_(me):
     me.context.doc = me.doc

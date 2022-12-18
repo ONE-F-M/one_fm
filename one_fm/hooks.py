@@ -377,8 +377,8 @@ standard_portal_menu_items = [
 ]
 
 website_redirects = [
-	 {"source": "/wikisplash/new-wiki", "target": "/home/new-wiki"},
-	 {"source": "/wikisplash/edit-wiki", "target": "/home/edit-wiki"},
+	 {"source": "wikisplash/ar", "target": "/home/"},
+	 {"source": "wikisplash/en", "target": "/home/"},
     
 ]
 
@@ -422,6 +422,8 @@ website_route_rules = [
 	},
 	{"from_route": "/<path:wiki_page>/edit-wiki", "to_route": "wiki/edit"},
 	{"from_route": "/<path:wiki_page>/new-wiki", "to_route": "wiki/new"},
+	# {"from_route": "/<path:wiki_page>/edit-wiki", "to_route": "/<path:wiki_page>/wiki/edit"},
+	# {"from_route": "/<path:wiki_page>/new-wiki", "to_route": "wiki/new"},
 ]
 
 # doc_events = {
