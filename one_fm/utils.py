@@ -1956,30 +1956,30 @@ def create_roster_post_actions():
             
             
             print(len(check_list))
-            print(check_list)
+            # print(check_list)
             for ind, val in enumerate(check_list):
                 if ind < (len(check_list) - 1):
                     next = check_list[ind + 1]
                     if val["date"] == next["date"] and val["operations_role"] == next["operations_role"] and val["shift"] == next["shift"]:
-                        val["quantity"] += 1 if val["quantity"] else 1
+                        val["quantity"] = val["quantity"] + 1 if "quantity" in val.keys() else 1
                         val["checked"] = True
-                        check_list.remove(next)
+                        check_list.pop(ind + 1)
 
-                    else:
-                        if not "checked" in val.keys():
-                            val["quantity"] = 1
+                    # else:
+                    #     if not "checked" in val.keys():
+                    #         val["quantity"] = 1
 
 
                 elif ind == (len(check_list) - 1):
                     previous = check_list[ind - 1]
                     if val["date"] == previous["date"] and val["operations_role"] == next["operations_role"] and val["shift"] == next["shift"]:
-                        previous["quantity"] += 1 if previous["quantity"] else 1
+                        previous["quantity"] = previous["quantity"] + 1 if "quantity" in previous.keys() else 1
                         previous.update({"checked": True})
-                        check_list.remove(previous)
+                        check_list.pop(ind)
 
-                    else:
-                        if not "checked" in val.keys():
-                            val["quantity"] = 1
+                    # else:
+                    #     if not "checked" in val.keys():
+                    #         val["quantity"] = 1
 
             print(len(check_list))
             print(check_list)
